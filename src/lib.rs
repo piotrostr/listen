@@ -1,8 +1,10 @@
-mod constants;
-mod listener;
-mod provider;
+pub mod constants;
+pub mod listener;
+pub mod provider;
+pub mod types;
+pub mod util;
+
 mod tests;
-mod types;
 
 pub use crate::listener::*;
 pub use crate::provider::*;

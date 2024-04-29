@@ -1,4 +1,5 @@
 use clap::Parser;
+use listen::util;
 
 #[derive(Parser, Debug)]
 #[command(version)]
@@ -18,6 +19,8 @@ struct Args {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    // 30th April, let's see how well this ages lol
+    let sol_price = 135.;
     let args = Args::parse();
     let listener = listen::Listener::new(args.ws_url);
     let provider = listen::Provider::new(args.url);
@@ -29,8 +32,15 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let pricing = provider.get_pricing(&mint).await?;
         println!("Pricing: {:?}", pricing);
 
-        let token_transfers = listener.parse_token_transfers(&tx)?;
-        println!("Token transfers: {:?}", token_transfers);
+        let swap = listener.parse_token_transfers(&tx)?;
+        println!("Swap: {}", serde_json::to_string_pretty(&swap)?);
+
+        let sol_notional =
+            listen::util::lamports_to_sol(swap.quote_amount as u64);
+
+        let usd_notional = sol_notional * sol_price;
+
+        println!("{} ({} USD)", sol_notional, usd_notional);
 
         return Ok(());
     }

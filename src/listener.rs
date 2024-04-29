@@ -21,10 +21,13 @@ pub struct Listener {
     ws_url: String,
 }
 
-#[derive(Debug, Serialize)]
-pub struct TokenTransfer {
-    pub amount: String,
-    pub mint: String,
+#[derive(Debug, Serialize, Default)]
+pub struct Swap {
+    pub quote_amount: f64,
+    pub quote_mint: String,
+
+    pub base_amount: f64,
+    pub base_mint: String,
 }
 
 impl Listener {
@@ -34,7 +37,7 @@ impl Listener {
 
     pub fn block_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
         let raydium_pubkey =
-            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_PUBKEY)?;
+            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
 
         let filter = RpcBlockSubscribeFilter::MentionsAccountOrProgram(
             raydium_pubkey.to_string(),
@@ -60,7 +63,7 @@ impl Listener {
 
     pub fn program_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
         let raydium_pubkey =
-            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_PUBKEY)?;
+            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
         let mut config = RpcProgramAccountsConfig::default();
         config.account_config = RpcAccountInfoConfig {
             encoding: Some(UiAccountEncoding::JsonParsed),
@@ -91,7 +94,7 @@ impl Listener {
 
     pub fn logs_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
         let raydium_pubkey =
-            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_PUBKEY)?;
+            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
         let config = RpcTransactionLogsConfig {
             commitment: Some(CommitmentConfig::confirmed()),
         };
@@ -172,13 +175,16 @@ impl Listener {
         Ok(tmp_account)
     }
 
+    pub fn parse_signer() -> Result<String, Box<dyn std::error::Error>> {
+        // TODO
+        Err("Not implemented".into())
+    }
+
     pub fn parse_token_transfers(
         &self,
         tx: &EncodedConfirmedTransactionWithStatusMeta,
-    ) -> Result<Vec<TokenTransfer>, Box<dyn std::error::Error>> {
-        let tmp_account = self.parse_tmp_account(tx)?;
-        let quote_mint = self.parse_mint(tx)?;
-        let mut res: Vec<TokenTransfer> = vec![];
+    ) -> Result<Swap, Box<dyn std::error::Error>> {
+        let mut res = Swap::default();
         if let Some(meta) = &tx.transaction.meta {
             match meta.inner_instructions.clone() {
                 OptionSerializer::Some(all_ixs) => {
@@ -195,25 +201,27 @@ impl Listener {
                                             && parsed_ix.parsed["type"]
                                                 == "transfer"
                                         {
-                                            let mint = if parsed_ix.parsed
-                                                ["info"]["destination"]
-                                                == tmp_account
-                                            {
-                                                quote_mint.clone()
-                                            } else {
-                                                // TODO not sure how to support non-sol
-                                                // swaps yet
-                                                // also does not return the mint token properly
-                                                constants::SOLANA_PROGRAM_ID
-                                                    .to_string()
-                                            };
                                             let amount = parsed_ix.parsed
                                                 ["info"]["amount"]
-                                                .to_string();
-                                            res.push(TokenTransfer {
-                                                amount,
-                                                mint,
-                                            });
+                                                .as_str()
+                                                .unwrap()
+                                                .parse::<f64>()
+                                                .unwrap();
+                                            // if the authority is raydium, it is the shitcoin, otherwise SOL
+                                            if parsed_ix.parsed
+                                                ["info"]["authority"]
+                                                == constants::RAYDIUM_AUTHORITY_V4_PUBKEY
+                                            {
+                                                // shitcoin == base quote, like POOP/SOL
+                                                res.base_mint = self.parse_mint(tx)?;
+                                                res.base_amount = amount;
+                                            } else {
+                                                // TODO not sure how to support non-SOL
+                                                // swaps yet
+                                                // also does not return the mint token properly
+                                                res.quote_mint = constants::SOLANA_PROGRAM_ID.to_string();
+                                                res.quote_amount = amount;
+                                            };
                                         }
                                     }
                                     _ => (),
