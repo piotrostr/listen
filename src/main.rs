@@ -5,6 +5,10 @@ use clap::Parser;
 struct Args {
     #[arg(short, long)]
     signature: String,
+
+    #[arg(short, long)]
+    listen: bool,
+
     #[arg(short, long, default_value = "https://api.mainnet-beta.solana.com")]
     url: String,
 
@@ -15,19 +19,22 @@ struct Args {
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let args = Args::parse();
-    let rpc_client = listen::get_client(&args.url)?;
-    let listener = listen::Listener {
-        url: args.url,
-        ws_url: args.ws_url,
-        rpc_client,
-    };
+    let listener = listen::Listener::new(args.ws_url);
+    let provider = listen::Provider::new(args.url);
     if args.signature != "" {
-        let tx = listener.get_tx(&args.signature)?;
+        let tx = provider.get_tx(&args.signature)?;
+        println!("Transaction: {:}", serde_json::to_string_pretty(&tx)?);
         let mint = listener.parse_mint(&tx)?;
         println!("Mint: {:?}", mint);
-        let pricing = listener.get_pricing(&mint).await?;
+        let pricing = provider.get_pricing(&mint).await?;
         println!("Pricing: {:?}", pricing);
+
         return Ok(());
     }
-    Ok(listener.logs_subscribe()?)
+
+    if args.listen {
+        listener.logs_subscribe()?
+    }
+
+    Ok(())
 }
