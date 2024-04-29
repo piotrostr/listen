@@ -29,6 +29,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let pricing = provider.get_pricing(&mint).await?;
         println!("Pricing: {:?}", pricing);
 
+        let token_transfers = listener.parse_token_transfers(&tx)?;
+        println!("Token transfers: {:?}", token_transfers);
+
         return Ok(());
     }
 
