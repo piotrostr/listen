@@ -1,12 +1,12 @@
-use std::{
-    sync::{atomic::AtomicUsize, Arc},
-    time::Duration,
-};
+use std::{sync::Arc, time::Duration};
+
+use prometheus::{Encoder, IntCounter, Registry, TextEncoder};
 
 use clap::Parser;
 use listen::{tx_parser, util, Listener, Provider};
 use solana_client::rpc_response::{Response, RpcLogsResponse};
 use tokio::sync::Mutex;
+use warp::Filter;
 
 #[derive(Parser, Debug)]
 #[command(version)]
@@ -54,6 +54,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     }
 
     if args.listen {
+        let (transactions_received, transactions_processed, registry) =
+            setup_metrics();
+
+        // Start the metrics server
+        let metrics_server = tokio::spawn(async move {
+            run_metrics_server(registry).await;
+        });
+
         let listener = Listener::new(args.ws_url);
         let (mut subs, recv) = listener.logs_subscribe()?; // Subscribe to logs
 
@@ -62,13 +70,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let rx = Arc::new(Mutex::new(rx));
 
         // Worker tasks, increase in prod to way more, talking min 30-50
-        let workers: Vec<_> = (0..3)
+        let workers: Vec<_> = (0..15)
             .map(|_| {
                 let rx = Arc::clone(&rx);
                 let provider = Provider::new(util::must_get_env("RPC_URL"));
+                let transactions_processed = transactions_processed.clone();
                 tokio::spawn(async move {
-                    let mut rx = rx.lock().await;
-                    while let Some(log) = rx.recv().await {
+                    while let Some(log) = rx.lock().await.recv().await {
                         let tx = provider.get_tx(&log.value.signature).unwrap();
                         let changes =
                             tx_parser::parse_swap_from_balances_change(&tx);
@@ -77,6 +85,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             &log.value.signature,
                             serde_json::to_string_pretty(&changes).unwrap()
                         );
+                        transactions_processed.inc();
                     }
                 })
             })
@@ -84,6 +93,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Log receiving task
         let log_receiver = tokio::spawn(async move {
+            let transactions_received = transactions_received.clone();
             while let Ok(log) = recv.recv_timeout(Duration::from_secs(1)) {
                 if log.value.err.is_some() {
                     continue; // Skip error logs
@@ -96,6 +106,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             "https://solana.fm/tx/{}",
                             log.value.signature
                         );
+                        transactions_received.inc();
                     }
                 }
             }
@@ -105,10 +116,55 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
         // Await all tasks
         log_receiver.await?;
+        metrics_server.await?;
         for worker in workers {
             worker.await?;
         }
     }
 
     Ok(())
+}
+
+static TRANSACTIONS_RECEIVED: &str = "transactions_received";
+static TRANSACTIONS_PROCESSED: &str = "transactions_processed";
+
+fn setup_metrics() -> (Arc<IntCounter>, Arc<IntCounter>, Registry) {
+    let registry = Registry::new();
+    let transactions_received = IntCounter::new(
+        TRANSACTIONS_RECEIVED,
+        "Total number of transactions received",
+    )
+    .unwrap();
+    let transactions_processed = IntCounter::new(
+        TRANSACTIONS_PROCESSED,
+        "Total number of transactions processed",
+    )
+    .unwrap();
+
+    registry
+        .register(Box::new(transactions_received.clone()))
+        .unwrap();
+    registry
+        .register(Box::new(transactions_processed.clone()))
+        .unwrap();
+
+    (
+        Arc::new(transactions_received),
+        Arc::new(transactions_processed),
+        registry,
+    )
+}
+
+async fn run_metrics_server(registry: Registry) {
+    // Metrics endpoint
+    let metrics_route = warp::path!("metrics").map(move || {
+        let encoder = TextEncoder::new();
+        let metric_families = registry.gather();
+        let mut buffer = Vec::new();
+        encoder.encode(&metric_families, &mut buffer).unwrap();
+        warp::reply::with_header(buffer, "Content-Type", encoder.format_type())
+    });
+
+    println!("Metrics server running on {}", 3030);
+    warp::serve(metrics_route).run(([127, 0, 0, 1], 3030)).await;
 }
