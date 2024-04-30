@@ -1,6 +1,7 @@
 pub mod constants;
 pub mod listener;
 pub mod provider;
+pub mod tx_parser;
 pub mod types;
 pub mod util;
 

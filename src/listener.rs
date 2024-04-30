@@ -3,7 +3,7 @@ use crate::constants;
 use serde::Serialize;
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::{
-    pubsub_client::PubsubClient,
+    pubsub_client::{LogsSubscription, PubsubClient},
     rpc_config::{
         RpcAccountInfoConfig, RpcBlockSubscribeConfig, RpcBlockSubscribeFilter,
         RpcProgramAccountsConfig, RpcTransactionLogsConfig,
@@ -11,23 +11,28 @@ use solana_client::{
     },
 };
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
-use solana_transaction_status::{
-    option_serializer::OptionSerializer,
-    EncodedConfirmedTransactionWithStatusMeta, EncodedTransaction,
-    UiInstruction, UiMessage, UiParsedInstruction,
-};
 use std::{str::FromStr, time::Duration};
+
 pub struct Listener {
     ws_url: String,
 }
 
 #[derive(Debug, Serialize, Default)]
 pub struct Swap {
+    pub signature: String,
+
     pub quote_amount: f64,
     pub quote_mint: String,
 
     pub base_amount: f64,
     pub base_mint: String,
+
+    pub sol_amount_ui: f64,
+}
+
+trait BlockAndProgramSubscribable {
+    fn block_subscribe(&self) -> Result<(), Box<dyn std::error::Error>>;
+    fn program_subscribe(&self) -> Result<(), Box<dyn std::error::Error>>;
 }
 
 impl Listener {
@@ -35,7 +40,31 @@ impl Listener {
         Listener { ws_url }
     }
 
-    pub fn block_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
+    pub fn logs_subscribe(
+        &self,
+    ) -> Result<LogsSubscription, Box<dyn std::error::Error>> {
+        let raydium_pubkey =
+            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+        let config = RpcTransactionLogsConfig {
+            commitment: Some(CommitmentConfig::confirmed()),
+        };
+        let filter =
+            RpcTransactionLogsFilter::Mentions(
+                vec![raydium_pubkey.to_string()],
+            );
+        let (subs, receiver) = PubsubClient::logs_subscribe(
+            &self.ws_url.as_str(),
+            filter,
+            config,
+        )?;
+
+        println!("Connecting to logs for {:?}", raydium_pubkey);
+        Ok((subs, receiver))
+    }
+}
+
+impl BlockAndProgramSubscribable for Listener {
+    fn block_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
         let raydium_pubkey =
             Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
 
@@ -61,7 +90,7 @@ impl Listener {
         Ok(())
     }
 
-    pub fn program_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
+    fn program_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
         let raydium_pubkey =
             Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
         let mut config = RpcProgramAccountsConfig::default();
@@ -90,163 +119,5 @@ impl Listener {
         subs.shutdown().unwrap();
 
         Ok(())
-    }
-
-    pub fn logs_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let raydium_pubkey =
-            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
-        let config = RpcTransactionLogsConfig {
-            commitment: Some(CommitmentConfig::confirmed()),
-        };
-        let filter =
-            RpcTransactionLogsFilter::Mentions(
-                vec![raydium_pubkey.to_string()],
-            );
-        let (mut subs, receiver) = PubsubClient::logs_subscribe(
-            &self.ws_url.as_str(),
-            filter,
-            config,
-        )?;
-
-        println!("Connecting to logs for {:?}", raydium_pubkey);
-
-        if let Ok(log) = receiver.recv_timeout(Duration::from_secs(1)) {
-            println!("{}", serde_json::to_string_pretty(&log)?);
-        }
-
-        subs.shutdown().unwrap();
-
-        Ok(())
-    }
-
-    pub fn parse_mint(
-        &self,
-        tx: &EncodedConfirmedTransactionWithStatusMeta,
-    ) -> Result<String, Box<dyn std::error::Error>> {
-        let instructions = self.parse_instructions(tx)?;
-        for instruction in instructions {
-            match instruction {
-                UiInstruction::Parsed(ix) => match ix {
-                    UiParsedInstruction::Parsed(ix) => {
-                        if ix.program == "spl-associated-token-account" {
-                            // TODO this might panic, might be handled more gracefully
-                            let mint = ix.parsed["info"]["mint"]
-                                .as_str()
-                                .unwrap()
-                                .to_string();
-                            return Ok(mint);
-                        }
-                    }
-                    UiParsedInstruction::PartiallyDecoded(_) => (),
-                },
-                _ => (),
-            }
-        }
-        return Err("Mint not found in tx".into());
-    }
-
-    pub fn parse_tmp_account(
-        &self,
-        tx: &EncodedConfirmedTransactionWithStatusMeta,
-    ) -> Result<String, Box<dyn std::error::Error>> {
-        let instructions = self.parse_instructions(tx)?;
-        let mut tmp_account = String::new();
-        for instruction in instructions {
-            match instruction {
-                UiInstruction::Parsed(ix) => match ix {
-                    UiParsedInstruction::Parsed(ix) => {
-                        if ix.program == "spl-token"
-                            && ix.parsed["type"] == "closeAccount"
-                        {
-                            tmp_account =
-                                ix.parsed["info"]["account"].to_string();
-                        }
-                    }
-                    UiParsedInstruction::PartiallyDecoded(_) => {}
-                },
-                _ => (),
-            }
-        }
-
-        if tmp_account == "" {
-            return Err("Temp account not found".into());
-        }
-
-        Ok(tmp_account)
-    }
-
-    pub fn parse_signer() -> Result<String, Box<dyn std::error::Error>> {
-        // TODO
-        Err("Not implemented".into())
-    }
-
-    pub fn parse_token_transfers(
-        &self,
-        tx: &EncodedConfirmedTransactionWithStatusMeta,
-    ) -> Result<Swap, Box<dyn std::error::Error>> {
-        let mut res = Swap::default();
-        if let Some(meta) = &tx.transaction.meta {
-            match meta.inner_instructions.clone() {
-                OptionSerializer::Some(all_ixs) => {
-                    for ixs in all_ixs {
-                        // might also be identified based on static index 5 but
-                        // that would be even more brittle than this
-                        if ixs.instructions.len() == 2 {
-                            for ix in ixs.instructions {
-                                match ix {
-                                    UiInstruction::Parsed(
-                                        UiParsedInstruction::Parsed(parsed_ix),
-                                    ) => {
-                                        if parsed_ix.program == "spl-token"
-                                            && parsed_ix.parsed["type"]
-                                                == "transfer"
-                                        {
-                                            let amount = parsed_ix.parsed
-                                                ["info"]["amount"]
-                                                .as_str()
-                                                .unwrap()
-                                                .parse::<f64>()
-                                                .unwrap();
-                                            // if the authority is raydium, it is the shitcoin, otherwise SOL
-                                            if parsed_ix.parsed
-                                                ["info"]["authority"]
-                                                == constants::RAYDIUM_AUTHORITY_V4_PUBKEY
-                                            {
-                                                // shitcoin == base quote, like POOP/SOL
-                                                res.base_mint = self.parse_mint(tx)?;
-                                                res.base_amount = amount;
-                                            } else {
-                                                // TODO not sure how to support non-SOL
-                                                // swaps yet
-                                                // also does not return the mint token properly
-                                                res.quote_mint = constants::SOLANA_PROGRAM_ID.to_string();
-                                                res.quote_amount = amount;
-                                            };
-                                        }
-                                    }
-                                    _ => (),
-                                }
-                            }
-                        }
-                    }
-                }
-                OptionSerializer::None | OptionSerializer::Skip => (),
-            }
-        }
-
-        Ok(res)
-    }
-
-    pub fn parse_instructions(
-        &self,
-        tx: &EncodedConfirmedTransactionWithStatusMeta,
-    ) -> Result<Vec<UiInstruction>, Box<dyn std::error::Error>> {
-        match &tx.transaction.transaction {
-            EncodedTransaction::Json(ui_tx) => match &ui_tx.message {
-                UiMessage::Parsed(msg) => Ok(msg.instructions.clone()),
-                UiMessage::Raw(_) => Err("Raw message not supported".into()),
-            },
-            _ => Err("Only EncodedTransaction::Json txs are supported".into()),
-        }
     }
 }

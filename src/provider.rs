@@ -26,14 +26,12 @@ pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
 // the pricing data from Jupiter
 pub struct Provider {
     rpc_client: RpcClient,
-    rpc_url: String,
 }
 
 impl Provider {
     pub fn new(rpc_url: String) -> Provider {
         Provider {
             rpc_client: get_client(rpc_url.as_str()).unwrap(),
-            rpc_url,
         }
     }
     pub fn get_tx(
@@ -44,12 +42,13 @@ impl Provider {
         Box<dyn std::error::Error>,
     > {
         let sig = Signature::from_str(signature)?;
+        println!("Getting transaction: {:?}", sig);
         let tx = self.rpc_client.get_transaction_with_config(
             &sig,
             RpcTransactionConfig {
                 encoding: Some(UiTransactionEncoding::JsonParsed),
                 commitment: Some(CommitmentConfig::confirmed()),
-                max_supported_transaction_version: Some(0),
+                max_supported_transaction_version: Some(1),
             },
         )?;
         Ok(tx)
@@ -73,14 +72,5 @@ impl Provider {
             .await?;
         let data = res.json::<types::PriceResponse>().await?;
         Ok(data)
-    }
-
-    pub async fn get_notional(
-        &self,
-        signature: &str,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let _ = Signature::from_str(signature)?;
-        let _ = self.get_tx(signature)?;
-        Ok(())
     }
 }
