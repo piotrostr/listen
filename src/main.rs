@@ -1,7 +1,11 @@
-use std::{sync::Arc, time::Duration};
+use std::{
+    sync::{atomic::AtomicUsize, Arc},
+    time::Duration,
+};
 
 use clap::Parser;
-use listen::{tx_parser, Listener, Provider};
+use listen::{tx_parser, util, Listener, Provider};
+use solana_client::rpc_response::{Response, RpcLogsResponse};
 use tokio::sync::Mutex;
 
 #[derive(Parser, Debug)]
@@ -53,8 +57,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let listener = Listener::new(args.ws_url);
         let (mut subs, recv) = listener.logs_subscribe()?; // Subscribe to logs
 
-        let (tx, rx) = tokio::sync::mpsc::channel(64); // Create a channel with a buffer size of 32
+        let (tx, rx) =
+            tokio::sync::mpsc::channel::<Response<RpcLogsResponse>>(64); // Create a channel with a buffer size of 32
         let rx = Arc::new(Mutex::new(rx));
+
+        // Worker tasks, increase in prod to way more, talking min 30-50
+        let workers: Vec<_> = (0..3)
+            .map(|_| {
+                let rx = Arc::clone(&rx);
+                let provider = Provider::new(util::must_get_env("RPC_URL"));
+                tokio::spawn(async move {
+                    let mut rx = rx.lock().await;
+                    while let Some(log) = rx.recv().await {
+                        let tx = provider.get_tx(&log.value.signature).unwrap();
+                        let changes =
+                            tx_parser::parse_swap_from_balances_change(&tx);
+                        println!(
+                            "{}: {}",
+                            &log.value.signature,
+                            serde_json::to_string_pretty(&changes).unwrap()
+                        );
+                    }
+                })
+            })
+            .collect();
 
         // Log receiving task
         let log_receiver = tokio::spawn(async move {
@@ -76,27 +102,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             drop(tx);
             subs.shutdown().unwrap(); // Shutdown subscription on exit
         });
-
-        // Worker tasks
-        let workers: Vec<_> = (0..10)
-            .map(|_| {
-                let rx = Arc::clone(&rx);
-                let url = args.url.clone();
-                let provider = Provider::new(url);
-                tokio::spawn(async move {
-                    let mut rx = rx.lock().await;
-                    if let Some(log) = rx.recv().await {
-                        let tx = provider.get_tx(&log.value.signature).unwrap();
-                        let changes =
-                            tx_parser::parse_swap_from_balances_change(&tx);
-                        println!(
-                            "{}",
-                            serde_json::to_string_pretty(&changes).unwrap()
-                        );
-                    }
-                })
-            })
-            .collect();
 
         // Await all tasks
         log_receiver.await?;
