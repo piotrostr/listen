@@ -1,5 +1,6 @@
 pub mod constants;
 pub mod listener;
+pub mod prometheus;
 pub mod provider;
 pub mod tx_parser;
 pub mod types;
