@@ -6,8 +6,7 @@ use solana_client::{
     pubsub_client::{LogsSubscription, PubsubClient},
     rpc_config::{
         RpcAccountInfoConfig, RpcBlockSubscribeConfig, RpcBlockSubscribeFilter,
-        RpcProgramAccountsConfig, RpcTransactionLogsConfig,
-        RpcTransactionLogsFilter,
+        RpcProgramAccountsConfig, RpcTransactionLogsConfig, RpcTransactionLogsFilter,
     },
 };
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
@@ -40,23 +39,13 @@ impl Listener {
         Listener { ws_url }
     }
 
-    pub fn logs_subscribe(
-        &self,
-    ) -> Result<LogsSubscription, Box<dyn std::error::Error>> {
-        let raydium_pubkey =
-            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+    pub fn logs_subscribe(&self) -> Result<LogsSubscription, Box<dyn std::error::Error>> {
+        let raydium_pubkey = Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
         let config = RpcTransactionLogsConfig {
             commitment: Some(CommitmentConfig::confirmed()),
         };
-        let filter =
-            RpcTransactionLogsFilter::Mentions(
-                vec![raydium_pubkey.to_string()],
-            );
-        let (subs, receiver) = PubsubClient::logs_subscribe(
-            &self.ws_url.as_str(),
-            filter,
-            config,
-        )?;
+        let filter = RpcTransactionLogsFilter::Mentions(vec![raydium_pubkey.to_string()]);
+        let (subs, receiver) = PubsubClient::logs_subscribe(self.ws_url.as_str(), filter, config)?;
 
         println!("Connecting to logs for {:?}", raydium_pubkey);
         Ok((subs, receiver))
@@ -65,19 +54,13 @@ impl Listener {
 
 impl BlockAndProgramSubscribable for Listener {
     fn block_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let raydium_pubkey =
-            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+        let raydium_pubkey = Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
 
-        let filter = RpcBlockSubscribeFilter::MentionsAccountOrProgram(
-            raydium_pubkey.to_string(),
-        );
+        let filter = RpcBlockSubscribeFilter::MentionsAccountOrProgram(raydium_pubkey.to_string());
         let config = RpcBlockSubscribeConfig::default();
 
-        let (mut subs, receiver) = PubsubClient::block_subscribe(
-            self.ws_url.as_str(),
-            filter,
-            Some(config),
-        )?;
+        let (mut subs, receiver) =
+            PubsubClient::block_subscribe(self.ws_url.as_str(), filter, Some(config))?;
 
         println!("Filtering for mentions of {:?}", raydium_pubkey);
 
@@ -91,20 +74,18 @@ impl BlockAndProgramSubscribable for Listener {
     }
 
     fn program_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let raydium_pubkey =
-            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
-        let mut config = RpcProgramAccountsConfig::default();
-        config.account_config = RpcAccountInfoConfig {
-            encoding: Some(UiAccountEncoding::JsonParsed),
-            data_slice: None,
-            commitment: Some(CommitmentConfig::confirmed()),
-            min_context_slot: None,
+        let raydium_pubkey = Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+        let config = RpcProgramAccountsConfig {
+            account_config: RpcAccountInfoConfig {
+                encoding: Some(UiAccountEncoding::JsonParsed),
+                data_slice: None,
+                commitment: Some(CommitmentConfig::confirmed()),
+                min_context_slot: None,
+            },
+            ..RpcProgramAccountsConfig::default()
         };
-        let (mut subs, receiver) = PubsubClient::program_subscribe(
-            &self.ws_url.as_str(),
-            &raydium_pubkey,
-            Some(config),
-        )?;
+        let (mut subs, receiver) =
+            PubsubClient::program_subscribe(self.ws_url.as_str(), &raydium_pubkey, Some(config))?;
 
         println!("Connecting to program {:?}", raydium_pubkey);
 

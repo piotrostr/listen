@@ -1,9 +1,9 @@
-use std::{collections::HashMap, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use prometheus::{Encoder, IntCounter, Registry, TextEncoder};
 
 use clap::Parser;
-use listen::{constants, tx_parser, util, Listener, Provider};
+use listen::{tx_parser, util, Listener, Provider};
 use solana_client::rpc_response::{Response, RpcLogsResponse};
 use tokio::sync::Mutex;
 use warp::Filter;
@@ -84,11 +84,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             continue;
                         }
                         println!(
-                            "{}: {} SOL",
-                            format!(
-                                "https://solana.fm/tx/{}",
-                                &log.value.signature
-                            ),
+                            "https://solana.fm/tx/{}: {} SOL",
+                            &log.value.signature,
                             sol_notional,
                         );
                     }

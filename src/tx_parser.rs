@@ -1,10 +1,9 @@
 use core::panic;
-use std::collections::HashMap;
+
 
 use solana_transaction_status::{
-    option_serializer::OptionSerializer,
-    EncodedConfirmedTransactionWithStatusMeta, EncodedTransaction,
-    UiInstruction, UiMessage, UiParsedInstruction, UiTransactionTokenBalance,
+    option_serializer::OptionSerializer, EncodedConfirmedTransactionWithStatusMeta,
+    EncodedTransaction, UiInstruction, UiMessage, UiParsedInstruction,
 };
 
 use crate::{constants, util, Swap};
@@ -14,24 +13,20 @@ pub fn parse_mint(
 ) -> Result<String, Box<dyn std::error::Error>> {
     let instructions = self::parse_instructions(tx)?;
     for instruction in instructions {
-        match instruction {
-            UiInstruction::Parsed(ix) => match ix {
+        if let UiInstruction::Parsed(ix) = instruction {
+            match ix {
                 UiParsedInstruction::Parsed(ix) => {
                     if ix.program == "spl-associated-token-account" {
                         // TODO this might panic, might be handled more gracefully
-                        let mint = ix.parsed["info"]["mint"]
-                            .as_str()
-                            .unwrap()
-                            .to_string();
+                        let mint = ix.parsed["info"]["mint"].as_str().unwrap().to_string();
                         return Ok(mint);
                     }
                 }
                 UiParsedInstruction::PartiallyDecoded(_) => (),
-            },
-            _ => (),
+            }
         }
     }
-    return Err("Mint not found in tx".into());
+    Err("Mint not found in tx".into())
 }
 
 pub fn parse_tmp_account(
@@ -40,22 +35,19 @@ pub fn parse_tmp_account(
     let instructions = self::parse_instructions(tx)?;
     let mut tmp_account = String::new();
     for instruction in instructions {
-        match instruction {
-            UiInstruction::Parsed(ix) => match ix {
+        if let UiInstruction::Parsed(ix) = instruction {
+            match ix {
                 UiParsedInstruction::Parsed(ix) => {
-                    if ix.program == "spl-token"
-                        && ix.parsed["type"] == "closeAccount"
-                    {
+                    if ix.program == "spl-token" && ix.parsed["type"] == "closeAccount" {
                         tmp_account = ix.parsed["info"]["account"].to_string();
                     }
                 }
                 UiParsedInstruction::PartiallyDecoded(_) => {}
-            },
-            _ => (),
+            }
         }
     }
 
-    if tmp_account == "" {
+    if tmp_account.is_empty() {
         return Err("Temp account not found".into());
     }
 
@@ -98,41 +90,33 @@ pub fn parse_swap(
             // that would be even more brittle than this
             if ixs.instructions.len() == 2 {
                 for ix in ixs.instructions {
-                    match ix {
-                        UiInstruction::Parsed(UiParsedInstruction::Parsed(
-                            parsed_ix,
-                        )) => {
-                            if parsed_ix.program == "spl-token"
-                                && parsed_ix.parsed["type"] == "transfer"
+                    if let UiInstruction::Parsed(UiParsedInstruction::Parsed(parsed_ix)) = ix {
+                        if parsed_ix.program == "spl-token"
+                            && parsed_ix.parsed["type"] == "transfer"
+                        {
+                            let amount = parsed_ix.parsed["info"]["amount"]
+                                .as_str()
+                                .unwrap()
+                                .parse::<f64>()
+                                .unwrap();
+                            // if the authority is raydium, it is the shitcoin, otherwise SOL
+                            if parsed_ix.parsed["info"]["authority"]
+                                == constants::RAYDIUM_AUTHORITY_V4_PUBKEY
                             {
-                                let amount = parsed_ix.parsed["info"]["amount"]
-                                    .as_str()
-                                    .unwrap()
-                                    .parse::<f64>()
-                                    .unwrap();
-                                // if the authority is raydium, it is the shitcoin, otherwise SOL
-                                if parsed_ix.parsed["info"]["authority"]
-                                    == constants::RAYDIUM_AUTHORITY_V4_PUBKEY
-                                {
-                                    // shitcoin == base quote, like POOP/SOL
-                                    swap.base_mint = self::parse_mint(tx)?;
-                                    swap.base_amount = amount;
-                                } else {
-                                    // TODO not sure how to support non-SOL
-                                    // swaps yet also does not return the
-                                    // mint token properly
-                                    swap.quote_mint =
-                                        constants::SOLANA_PROGRAM_ID
-                                            .to_string();
-                                    swap.quote_amount = amount;
-                                };
-                            }
+                                // shitcoin == base quote, like POOP/SOL
+                                swap.base_mint = self::parse_mint(tx)?;
+                                swap.base_amount = amount;
+                            } else {
+                                // TODO not sure how to support non-SOL
+                                // swaps yet also does not return the
+                                // mint token properly
+                                swap.quote_mint = constants::SOLANA_PROGRAM_ID.to_string();
+                                swap.quote_amount = amount;
+                            };
                         }
-                        _ => (),
                     }
                 }
-                swap.sol_amount_ui =
-                    util::lamports_to_sol(swap.quote_amount as u64);
+                swap.sol_amount_ui = util::lamports_to_sol(swap.quote_amount as u64);
             }
         }
     }
