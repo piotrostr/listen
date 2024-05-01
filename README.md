@@ -44,3 +44,4 @@ This will start a server on `localhost:3030/metrics` that contains basic
 information of `transactions_received` and `transactions_processed`
 
 In Grafana it looks like this:
+<img width="910" alt="image" src="https://github.com/piotrostr/listen/assets/63755291/95668158-9f7d-4cd2-be84-7c2b893d3f5c">
