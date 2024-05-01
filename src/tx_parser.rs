@@ -1,9 +1,10 @@
+use core::panic;
 use std::collections::HashMap;
 
 use solana_transaction_status::{
     option_serializer::OptionSerializer,
     EncodedConfirmedTransactionWithStatusMeta, EncodedTransaction,
-    UiInstruction, UiMessage, UiParsedInstruction,
+    UiInstruction, UiMessage, UiParsedInstruction, UiTransactionTokenBalance,
 };
 
 use crate::{constants, util, Swap};
@@ -66,36 +67,17 @@ pub fn parse_signer() -> Result<String, Box<dyn std::error::Error>> {
     Err("Not implemented".into())
 }
 
-pub fn parse_swap_from_balances_change(
+pub fn parse_notional(
     tx: &EncodedConfirmedTransactionWithStatusMeta,
-) -> Vec<HashMap<&str, String>> {
-    let mut changes = vec![];
+) -> Result<u64, Box<dyn std::error::Error>> {
     if let Some(meta) = &tx.transaction.meta {
-        // zip pre and post balances
-        for (pre, post) in std::iter::zip(
-            self::deserialize(&meta.pre_token_balances),
-            self::deserialize(&meta.post_token_balances),
-        ) {
-            if pre.ui_token_amount.ui_amount.is_none()
-                || post.ui_token_amount.ui_amount.is_none()
-            {
-                continue;
-            }
-            let diff = post.ui_token_amount.ui_amount.unwrap()
-                - pre.ui_token_amount.ui_amount.unwrap();
-            let mint = pre.mint.to_string();
-            let mut owner = self::deserialize(&pre.owner).to_string();
-            if owner == constants::RAYDIUM_AUTHORITY_V4_PUBKEY {
-                owner = "RAYDIUM_AUTHORITY".to_string();
-            }
-            let mut m = HashMap::new();
-            m.insert("mint", mint.to_string());
-            m.insert("owner", owner.to_string());
-            m.insert("diff", diff.to_string());
-            changes.push(m);
-        }
+        let max_sol = std::iter::zip(&meta.pre_balances, &meta.post_balances)
+            .map(|(a, b)| (*a as f64 - *b as f64) as u64)
+            .max()
+            .unwrap();
+        return Ok(max_sol);
     }
-    return changes;
+    Err("could not parse notional".into())
 }
 
 pub fn deserialize<T: Clone>(item: &OptionSerializer<T>) -> T {

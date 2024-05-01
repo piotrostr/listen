@@ -1,9 +1,9 @@
-use std::{sync::Arc, time::Duration};
+use std::{collections::HashMap, sync::Arc, time::Duration};
 
 use prometheus::{Encoder, IntCounter, Registry, TextEncoder};
 
 use clap::Parser;
-use listen::{tx_parser, util, Listener, Provider};
+use listen::{constants, tx_parser, util, Listener, Provider};
 use solana_client::rpc_response::{Response, RpcLogsResponse};
 use tokio::sync::Mutex;
 use warp::Filter;
@@ -33,6 +33,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     if let Some(signature) = args.signature {
         let provider = Provider::new(args.url);
         let tx = provider.get_tx(&signature)?;
+        println!("Tx: {}", serde_json::to_string_pretty(&tx)?);
         let mint = tx_parser::parse_mint(&tx)?;
         let pricing = provider.get_pricing(&mint).await?;
         println!("Pricing: {:?}", pricing);
@@ -46,9 +47,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let usd_notional = sol_notional * sol_price;
 
         println!("{} ({} USD)", sol_notional, usd_notional);
-        // TODO
-        // include transaction signature for confirmation
-        // refactor into notional and run in prod with rate limit (10 at a time)
 
         return Ok(());
     }
@@ -66,11 +64,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         let (mut subs, recv) = listener.logs_subscribe()?; // Subscribe to logs
 
         let (tx, rx) =
-            tokio::sync::mpsc::channel::<Response<RpcLogsResponse>>(64); // Create a channel with a buffer size of 32
+            tokio::sync::mpsc::channel::<Response<RpcLogsResponse>>(1280); // Create a channel with a buffer size of 32
         let rx = Arc::new(Mutex::new(rx));
 
         // Worker tasks, increase in prod to way more, talking min 30-50
-        let workers: Vec<_> = (0..15)
+        let workers: Vec<_> = (0..1)
             .map(|_| {
                 let rx = Arc::clone(&rx);
                 let provider = Provider::new(util::must_get_env("RPC_URL"));
@@ -78,14 +76,21 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 tokio::spawn(async move {
                     while let Some(log) = rx.lock().await.recv().await {
                         let tx = provider.get_tx(&log.value.signature).unwrap();
-                        let changes =
-                            tx_parser::parse_swap_from_balances_change(&tx);
-                        println!(
-                            "{}: {}",
-                            &log.value.signature,
-                            serde_json::to_string_pretty(&changes).unwrap()
-                        );
+                        let lamports =
+                            tx_parser::parse_notional(&tx).ok().unwrap();
+                        let sol_notional = util::lamports_to_sol(lamports);
                         transactions_processed.inc();
+                        if sol_notional < 10. {
+                            continue;
+                        }
+                        println!(
+                            "{}: {} SOL",
+                            format!(
+                                "https://solana.fm/tx/{}",
+                                &log.value.signature
+                            ),
+                            sol_notional,
+                        );
                     }
                 })
             })
@@ -101,11 +106,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 match tx.send(log.clone()).await {
                     Err(e) => println!("Failed to send log: {}", e),
                     Ok(_) => {
-                        println!("passing on log, slot: {}", log.context.slot);
-                        println!(
-                            "https://solana.fm/tx/{}",
-                            log.value.signature
-                        );
                         transactions_received.inc();
                     }
                 }

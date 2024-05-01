@@ -42,7 +42,6 @@ impl Provider {
         Box<dyn std::error::Error>,
     > {
         let sig = Signature::from_str(signature)?;
-        println!("Getting transaction: {:?}", sig);
         let tx = self.rpc_client.get_transaction_with_config(
             &sig,
             RpcTransactionConfig {

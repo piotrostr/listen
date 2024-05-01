@@ -1,6 +1,6 @@
 #[cfg(test)]
 mod tests {
-    use crate::provider::Provider;
+    use crate::{provider::Provider, tx_parser};
 
     #[test]
     fn test_get_pricing() {
@@ -10,5 +10,15 @@ mod tests {
 
         let pricing = tokio_test::block_on(provider.get_pricing(mint)).unwrap();
         assert!(pricing.data[mint].price > 0., "Price not found");
+    }
+
+    #[test]
+    fn test_parse_notional() {
+        let tx = serde_json::from_reader(
+            std::fs::File::open("mock/tx.json").unwrap(),
+        )
+        .unwrap();
+        let sol_notional = tx_parser::parse_notional(&tx).unwrap();
+        assert!(1510000000 > sol_notional && sol_notional > 1500000000);
     }
 }
