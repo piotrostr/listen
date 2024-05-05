@@ -6,3 +6,6 @@ pub const RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY: &str =
 
 pub const RAYDIUM_AUTHORITY_V4_PUBKEY: &str =
     "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1";
+
+pub const USDC_TOKEN_PUBKEY: &str =
+    "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";

@@ -57,7 +57,7 @@ enum Command {
         #[arg(long)]
         slippage: Option<u16>,
 
-        #[arg(short, long)]
+        #[clap(short, long, action = clap::ArgAction::SetTrue)]
         yes: Option<bool>,
     },
 }
@@ -98,16 +98,17 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     yes.unwrap_or(false),
                 )
                 .await?;
-                return Ok(());
+            } else {
+                jup.swap_entire_balance(
+                    input_mint,
+                    output_mint,
+                    &keypair,
+                    &provider,
+                    yes.unwrap_or(false),
+                )
+                .await?;
             }
-            jup.swap_entire_balance(
-                input_mint,
-                output_mint,
-                &keypair,
-                &provider,
-                yes.unwrap_or(false),
-            )
-            .await?;
+            return Ok(());
         }
         Command::Wallet {} => {
             let path = match app.args.keypair_path {
@@ -118,7 +119,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             println!("path: {}", path);
             let provider = Provider::new(app.args.url);
 
-            println!("Pubkey: {}", keypair.pubkey().to_string());
+            println!("Pubkey: {}", keypair.pubkey());
             let balance = provider.get_balance(&keypair.pubkey())?;
             println!("Balance: {} lamports", balance);
         }

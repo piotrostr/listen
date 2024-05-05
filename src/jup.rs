@@ -78,7 +78,7 @@ impl Jupiter {
                 input_mint,
                 output_mint,
                 signer.pubkey(),
-                self.slippage / 100
+                self.slippage as f32 / 100.
             );
             if !dialoguer::Confirm::new()
                 .with_prompt("Go for it?")
@@ -114,12 +114,12 @@ impl Jupiter {
         match provider.send_tx(&signed_tx) {
             Ok(signature) => {
                 println!("Transaction {} successful", signature);
-                return Ok(());
+                Ok(())
             }
             Err(e) => {
                 println!("Transaction failed: {}", e);
-                return Err(e);
+                Err(e)
             }
-        };
+        }
     }
 }

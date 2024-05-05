@@ -1,4 +1,4 @@
-use std::{f64::consts::E, str::FromStr};
+use std::str::FromStr;
 
 use crate::{constants, types};
 
@@ -59,15 +59,17 @@ impl Provider {
             pubkey,
             TokenAccountsFilter::Mint(*mint),
         )?;
-        for token_account in token_accounts {
-            let acount_info = self.rpc_client.get_account(
-                &Pubkey::from_str(token_account.pubkey.as_str())?,
-            )?;
-            let token_account_info = Account::unpack(&acount_info.data)?;
-            println!("Token account info: {:?}", token_account_info);
-            return Ok(token_account_info.amount);
+        match token_accounts.first() {
+            Some(token_account) => {
+                let acount_info = self.rpc_client.get_account(
+                    &Pubkey::from_str(token_account.pubkey.as_str())?,
+                )?;
+                let token_account_info = Account::unpack(&acount_info.data)?;
+                println!("Token account info: {:?}", token_account_info);
+                Ok(token_account_info.amount)
+            }
+            None => Err("No token account found".into()),
         }
-        Err("No token account found".into())
     }
 
     pub fn get_tx(
@@ -117,12 +119,8 @@ impl Provider {
             .rpc_client
             .send_and_confirm_transaction_with_spinner(tx)
         {
-            Ok(signature) => {
-                return Ok(signature.to_string());
-            }
-            Err(e) => {
-                return Err(e.into());
-            }
-        };
+            Ok(signature) => Ok(signature.to_string()),
+            Err(e) => Err(e.into()),
+        }
     }
 }

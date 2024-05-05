@@ -4,6 +4,9 @@ Listen to new large transactions on Raydium V4
 
 Swap using Jupiter V6 API
 
+Be careful as the default usage was on mainnet with small txs, be sure to set
+the URLs and signer keypair to testnet
+
 ## Usage
 
 ### Listening on new swaps
@@ -48,9 +51,10 @@ This will start a server on `localhost:3030/metrics` that contains metrics
 
 In Grafana it looks like this:
 <img
-  width="910"
-  alt="image"
-  src="<https://github.com/piotrostr/listen/assets/63755291/95668158-9f7d-4cd2-be84-7c2b893d3f5c>"
+width="910"
+alt="image"
+src="<https://github.com/piotrostr/listen/assets/63755291/95668158-9f7d-4cd2-be84-7c2b893d3f5c>"
+
 >
 
 ### Swapping
@@ -76,3 +80,22 @@ swap the entire balance of the input mint
 
 There is an optional parameter `-y` or `--yes` which skips the confirmation on
 the user side
+
+#### Swap profiling
+
+There is a utility for profiling a single swap using `DTrace` and
+`stackcollapse.pl` ([Repository](https://github.com/brendangregg/FlameGraph)),
+replace your home directory (mine is `/Users/piotrostr`) to point to the right
+`id.json` keypair
+
+```sh
+./hack/profile-swap.sh
+```
+
+The `stackcollapse.pl` can be installed through
+
+```
+gh repo clone brendangregg/FlameGraph && \
+  sudo cp FlameGraph/stackcollapse.pl /usr/local/bin && \
+  sudo cp FlameGraph/flamegraph.pl /usr/local/bin
+```
