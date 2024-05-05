@@ -18,14 +18,16 @@ use crate::Provider;
 
 pub struct Jupiter {
     client: JupiterSwapApiClient,
+    slippage: u16,
 }
 
 impl Jupiter {
-    pub fn new() -> Jupiter {
+    pub fn new(slippage: u16) -> Jupiter {
         Jupiter {
             client: JupiterSwapApiClient::new(
                 "https://quote-api.jup.ag/v6".to_string(),
             ),
+            slippage,
         }
     }
 
@@ -52,6 +54,8 @@ impl Jupiter {
         .await
     }
 
+    // TODO implement automatic retries 3 times say, no delay, sometimes
+    // simulation fails due to low slippage
     pub async fn swap(
         &self,
         input_mint: String,
@@ -62,8 +66,11 @@ impl Jupiter {
         confirmed: bool,
     ) -> Result<(), Box<dyn std::error::Error>> {
         println!(
-            "Initializing swap of {} of {} for {}",
-            amount, input_mint, output_mint
+            "Initializing swap of {} of {} for {} by {}",
+            amount,
+            input_mint,
+            output_mint,
+            signer.pubkey()
         );
         if !confirmed {
             if !dialoguer::Confirm::new()
@@ -79,7 +86,7 @@ impl Jupiter {
                 input_mint: Pubkey::from_str(&input_mint)?,
                 output_mint: Pubkey::from_str(&output_mint)?,
                 amount,
-                slippage_bps: 50,
+                slippage_bps: self.slippage,
                 swap_mode: Some(SwapMode::ExactIn),
                 ..QuoteRequest::default()
             })

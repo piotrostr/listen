@@ -2,7 +2,11 @@
 
 Listen to new large transactions on Raydium V4
 
+Swap using Jupiter V6 API
+
 ## Usage
+
+### Listening on new swaps
 
 Requires env var of `RPC_URL` with some quota, set the size of buffer for new
 transactions and the worker count that process incoming transactions
@@ -43,4 +47,32 @@ This will start a server on `localhost:3030/metrics` that contains metrics
 (`transactions_received` and `transactions_processed`)
 
 In Grafana it looks like this:
-<img width="910" alt="image" src="https://github.com/piotrostr/listen/assets/63755291/95668158-9f7d-4cd2-be84-7c2b893d3f5c">
+<img
+  width="910"
+  alt="image"
+  src="<https://github.com/piotrostr/listen/assets/63755291/95668158-9f7d-4cd2-be84-7c2b893d3f5c>"
+>
+
+### Swapping
+
+The account used to sign the transaction is by default the
+`~/.config/solana/id.json`, but it is possible to specify the path using
+`--keypair-path [PATH]`, the account has to be generated or imported using
+`solana-keygen` executable that ships with remaining the Solana SDK
+
+Slippage can also be adjusted using `--slippage [BPS]`, e.g. `--slippage 50`
+for 0.5% slippage, default is 50, dynamic slippage and retries is in the prod
+roadmap
+
+```sh
+cargo run -- swap \
+  --input-mint sol \
+  --output-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
+  --amount 10000000
+```
+
+Amount is in lamports (or SPL-Token decimals), leave blank to automatically
+swap the entire balance of the input mint
+
+There is an optional parameter `-y` or `--yes` which skips the confirmation on
+the user side

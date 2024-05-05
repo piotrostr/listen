@@ -54,6 +54,8 @@ enum Command {
         output_mint: String,
         #[arg(long)]
         amount: Option<i64>,
+        #[arg(long)]
+        slippage: Option<u16>,
 
         #[arg(short, long)]
         yes: Option<bool>,
@@ -70,6 +72,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             mut input_mint,
             mut output_mint,
             amount,
+            slippage,
             yes,
         } => {
             if input_mint == "sol" {
@@ -78,7 +81,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if output_mint == "sol" {
                 output_mint = constants::SOLANA_PROGRAM_ID.to_string();
             }
-            let jup = listen::jup::Jupiter::new();
+            let jup = listen::jup::Jupiter::new(slippage.unwrap_or(50));
             let provider = Provider::new(app.args.url);
             let path = match app.args.keypair_path {
                 Some(path) => path,
