@@ -65,21 +65,21 @@ impl Jupiter {
         provider: &Provider,
         confirmed: bool,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        println!(
-            "Initializing swap of {} of {} for {} by {}, slippage: {}%",
-            {
-                if input_mint == constants::SOLANA_PROGRAM_ID {
-                    util::lamports_to_sol(amount)
-                } else {
-                    amount as f64
-                }
-            },
-            input_mint,
-            output_mint,
-            signer.pubkey(),
-            self.slippage / 100
-        );
         if !confirmed {
+            println!(
+                "Initializing swap of {} of {} for {} by {}, slippage: {}%",
+                {
+                    if input_mint == constants::SOLANA_PROGRAM_ID {
+                        util::lamports_to_sol(amount)
+                    } else {
+                        amount as f64
+                    }
+                },
+                input_mint,
+                output_mint,
+                signer.pubkey(),
+                self.slippage / 100
+            );
             if !dialoguer::Confirm::new()
                 .with_prompt("Go for it?")
                 .interact()?
