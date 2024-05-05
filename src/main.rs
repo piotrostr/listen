@@ -75,6 +75,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             slippage,
             yes,
         } => {
+            let start = std::time::Instant::now();
             if input_mint == "sol" {
                 input_mint = constants::SOLANA_PROGRAM_ID.to_string();
             }
@@ -108,6 +109,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
                 .await?;
             }
+            let duration = start.elapsed();
+            println!("Time elapsed: {:?}", duration);
             return Ok(());
         }
         Command::Wallet {} => {

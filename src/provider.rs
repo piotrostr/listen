@@ -115,11 +115,15 @@ impl Provider {
         &self,
         tx: &solana_sdk::transaction::VersionedTransaction,
     ) -> Result<String, Box<dyn std::error::Error>> {
+        let start = std::time::Instant::now();
         match self
             .rpc_client
             .send_and_confirm_transaction_with_spinner(tx)
         {
-            Ok(signature) => Ok(signature.to_string()),
+            Ok(signature) => {
+                println!("Finalized in: {:?}", start.elapsed());
+                Ok(signature.to_string())
+            }
             Err(e) => Err(e.into()),
         }
     }

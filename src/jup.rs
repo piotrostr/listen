@@ -65,6 +65,7 @@ impl Jupiter {
         provider: &Provider,
         confirmed: bool,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        let start = std::time::Instant::now();
         if !confirmed {
             println!(
                 "Initializing swap of {} of {} for {} by {}, slippage: {}%",
@@ -111,6 +112,7 @@ impl Jupiter {
         let signed_tx =
             VersionedTransaction::try_new(raw_tx.message, &[signer])?;
 
+        println!("Built tx in {:?}", start.elapsed());
         match provider.send_tx(&signed_tx) {
             Ok(signature) => {
                 println!("Transaction {} successful", signature);
