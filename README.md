@@ -11,8 +11,7 @@ Listening is over `wss://api.mainnet-beta.solana.com/`, fetching transactions
 uses the url set in `RPC_URL`
 
 ```sh
-cargo run -- \
-  --listen \
+cargo run -- listen \
   --worker-count [COUNT] \
   --buffer-size [SIZE]
 ```

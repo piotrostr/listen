@@ -3,7 +3,11 @@ use std::str::FromStr;
 use crate::{constants, types};
 
 use solana_client::{rpc_client::RpcClient, rpc_config::RpcTransactionConfig};
-use solana_sdk::{commitment_config::CommitmentConfig, signature::Signature};
+use solana_sdk::{
+    commitment_config::CommitmentConfig,
+    pubkey::{self, Pubkey},
+    signature::Signature,
+};
 use solana_transaction_status::{
     EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding,
 };
@@ -12,11 +16,11 @@ pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
     let rpc_client =
         RpcClient::new_with_commitment(url, CommitmentConfig::confirmed());
     let latest_blockhash = rpc_client.get_latest_blockhash()?;
-    let signer = rpc_client.get_identity()?;
+    let identity = rpc_client.get_identity()?;
 
     println!("Connecting to blocks through {:?}", url);
     println!("Latest blockhash: {:?}", latest_blockhash);
-    println!("Signer: {:?}", signer);
+    println!("Identity: {:?}", identity);
 
     Ok(rpc_client)
 }
@@ -34,6 +38,15 @@ impl Provider {
             rpc_client: get_client(rpc_url.as_str()).unwrap(),
         }
     }
+
+    pub fn get_balance(
+        &self,
+        pubkey: &Pubkey,
+    ) -> Result<u64, Box<dyn std::error::Error>> {
+        let balance = self.rpc_client.get_balance(pubkey)?;
+        Ok(balance)
+    }
+
     pub fn get_tx(
         &self,
         signature: &str,
