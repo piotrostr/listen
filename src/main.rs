@@ -1,7 +1,7 @@
 use std::{sync::Arc, time::Duration};
 
 use clap::Parser;
-use listen::{prometheus, tx_parser, util, Listener, Provider};
+use listen::{constants, prometheus, tx_parser, util, Listener, Provider};
 use solana_client::rpc_response::{Response, RpcLogsResponse};
 use solana_sdk::{
     signature::Keypair,
@@ -53,7 +53,10 @@ enum Command {
         #[arg(long)]
         output_mint: String,
         #[arg(long)]
-        amount: i64,
+        amount: Option<i64>,
+
+        #[arg(short, long)]
+        yes: Option<bool>,
     },
 }
 
@@ -64,18 +67,44 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let app = App::parse();
     match app.command {
         Command::Swap {
-            input_mint,
-            output_mint,
+            mut input_mint,
+            mut output_mint,
             amount,
+            yes,
         } => {
+            if input_mint == "sol" {
+                input_mint = constants::SOLANA_PROGRAM_ID.to_string();
+            }
+            if output_mint == "sol" {
+                output_mint = constants::SOLANA_PROGRAM_ID.to_string();
+            }
             let jup = listen::jup::Jupiter::new();
+            let provider = Provider::new(app.args.url);
             let path = match app.args.keypair_path {
                 Some(path) => path,
                 None => util::must_get_env("HOME") + "/.config/solana/id.json",
             };
             let keypair = Keypair::read_from_file(&path)?;
-            jup.swap(input_mint, output_mint, amount as u64, &keypair)
+            if let Some(amount) = amount {
+                jup.swap(
+                    input_mint,
+                    output_mint,
+                    amount as u64,
+                    &keypair,
+                    &provider,
+                    yes.unwrap_or(false),
+                )
                 .await?;
+                return Ok(());
+            }
+            jup.swap_entire_balance(
+                input_mint,
+                output_mint,
+                &keypair,
+                &provider,
+                yes.unwrap_or(false),
+            )
+            .await?;
         }
         Command::Wallet {} => {
             let path = match app.args.keypair_path {

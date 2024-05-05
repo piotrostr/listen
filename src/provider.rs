@@ -1,16 +1,19 @@
-use std::str::FromStr;
+use std::{f64::consts::E, str::FromStr};
 
 use crate::{constants, types};
 
-use solana_client::{rpc_client::RpcClient, rpc_config::RpcTransactionConfig};
+use solana_client::{
+    rpc_client::RpcClient, rpc_config::RpcTransactionConfig,
+    rpc_request::TokenAccountsFilter,
+};
 use solana_sdk::{
-    commitment_config::CommitmentConfig,
-    pubkey::{self, Pubkey},
+    commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
     signature::Signature,
 };
 use solana_transaction_status::{
     EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding,
 };
+use spl_token::state::Account;
 
 pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
     let rpc_client =
@@ -45,6 +48,26 @@ impl Provider {
     ) -> Result<u64, Box<dyn std::error::Error>> {
         let balance = self.rpc_client.get_balance(pubkey)?;
         Ok(balance)
+    }
+
+    pub fn get_spl_balance(
+        &self,
+        pubkey: &Pubkey,
+        mint: &Pubkey,
+    ) -> Result<u64, Box<dyn std::error::Error>> {
+        let token_accounts = self.rpc_client.get_token_accounts_by_owner(
+            pubkey,
+            TokenAccountsFilter::Mint(*mint),
+        )?;
+        for token_account in token_accounts {
+            let acount_info = self.rpc_client.get_account(
+                &Pubkey::from_str(token_account.pubkey.as_str())?,
+            )?;
+            let token_account_info = Account::unpack(&acount_info.data)?;
+            println!("Token account info: {:?}", token_account_info);
+            return Ok(token_account_info.amount);
+        }
+        Err("No token account found".into())
     }
 
     pub fn get_tx(
@@ -84,5 +107,22 @@ impl Provider {
             .await?;
         let data = res.json::<types::PriceResponse>().await?;
         Ok(data)
+    }
+
+    pub fn send_tx(
+        &self,
+        tx: &solana_sdk::transaction::VersionedTransaction,
+    ) -> Result<String, Box<dyn std::error::Error>> {
+        match self
+            .rpc_client
+            .send_and_confirm_transaction_with_spinner(tx)
+        {
+            Ok(signature) => {
+                return Ok(signature.to_string());
+            }
+            Err(e) => {
+                return Err(e.into());
+            }
+        };
     }
 }

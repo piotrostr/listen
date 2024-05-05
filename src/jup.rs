@@ -1,56 +1,55 @@
+use std::{f64::consts::E, str::FromStr};
+
 // vim notes
 // - re-enable github copilot some way, defo some possible workaround
 //   - might redelete cache?
-use crate::types::{QuoteRequest, QuoteResponse, SwapRequest, SwapResponse};
-use reqwest::Client;
-use solana_sdk::signer::Signer;
+use jupiter_swap_api_client::{
+    quote::{QuoteRequest, SwapMode},
+    swap::SwapRequest,
+    transaction_config::TransactionConfig,
+    JupiterSwapApiClient,
+};
+use solana_sdk::{
+    pubkey::Pubkey, signature, signer::Signer,
+    transaction::VersionedTransaction,
+};
+
+use crate::Provider;
 
 pub struct Jupiter {
-    client: Client,
+    client: JupiterSwapApiClient,
 }
 
 impl Jupiter {
     pub fn new() -> Jupiter {
         Jupiter {
-            client: Client::new(),
+            client: JupiterSwapApiClient::new(
+                "https://quote-api.jup.ag/v6".to_string(),
+            ),
         }
     }
 
-    async fn get_quote(
+    pub async fn swap_entire_balance(
         &self,
-        request: &QuoteRequest,
-    ) -> Result<QuoteResponse, Box<dyn std::error::Error>> {
-        let res = self
-            .client
-            .get("https://quote-api.jup.ag/v6/quote")
-            .query(request)
-            .send()
-            .await?;
-
-        if res.status() != 200 {
-            return Err(res.text().await.unwrap().into());
-        }
-
-        Ok(res.json::<QuoteResponse>().await?)
-    }
-
-    async fn get_swap_tx(
-        &self,
-        request: &SwapRequest,
-    ) -> Result<SwapResponse, Box<dyn std::error::Error>> {
-        let res = self
-            .client
-            .post("https://quote-api.jup.ag/v6/swap")
-            .json(request)
-            .send()
-            .await?;
-
-        if res.status() != 200 {
-            println!("{}", serde_json::to_string(&request)?);
-            return Err(res.text().await.unwrap().into());
-        }
-
-        Ok(res.json::<SwapResponse>().await?)
+        input_mint: String,
+        output_mint: String,
+        signer: &dyn Signer,
+        provider: &Provider,
+        confirmed: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let spl_token_balance = provider.get_spl_balance(
+            &signer.pubkey(),
+            &Pubkey::from_str(&input_mint)?,
+        )?;
+        self.swap(
+            input_mint,
+            output_mint,
+            spl_token_balance,
+            signer,
+            provider,
+            confirmed,
+        )
+        .await
     }
 
     pub async fn swap(
@@ -59,33 +58,54 @@ impl Jupiter {
         output_mint: String,
         amount: u64,
         signer: &dyn Signer,
+        provider: &Provider,
+        confirmed: bool,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        match self
-            .get_quote(&QuoteRequest {
-                input_mint,
-                output_mint,
+        println!(
+            "Initializing swap of {} of {} for {}",
+            amount, input_mint, output_mint
+        );
+        if !confirmed {
+            if !dialoguer::Confirm::new()
+                .with_prompt("Go for it?")
+                .interact()?
+            {
+                return Ok(());
+            };
+        }
+        let quote_response = self
+            .client
+            .quote(&QuoteRequest {
+                input_mint: Pubkey::from_str(&input_mint)?,
+                output_mint: Pubkey::from_str(&output_mint)?,
                 amount,
-                slippage_bps: Some(50),
-                swap_mode: Some("ExactIn".to_string()),
+                slippage_bps: 50,
+                swap_mode: Some(SwapMode::ExactIn),
                 ..QuoteRequest::default()
             })
-            .await
-        {
-            Ok(response) => {
-                println!("{}", serde_json::to_string_pretty(&response)?);
+            .await?;
+        let swap_response = self
+            .client
+            .swap(&SwapRequest {
+                user_public_key: signer.pubkey(),
+                quote_response,
+                config: TransactionConfig::default(),
+            })
+            .await?;
+        let raw_tx: VersionedTransaction =
+            bincode::deserialize(&swap_response.swap_transaction).unwrap();
+        let signed_tx =
+            VersionedTransaction::try_new(raw_tx.message, &[signer])?;
 
-                let swap_response = self
-                    .get_swap_tx(&SwapRequest {
-                        user_public_key: signer.pubkey().to_string(),
-                        quote_response: response,
-                        ..SwapRequest::default()
-                    })
-                    .await?;
-
-                // TODO sign the transaction
+        match provider.send_tx(&signed_tx) {
+            Ok(signature) => {
+                println!("Transaction {} successful", signature);
+                return Ok(());
             }
-            Err(e) => println!("Error fetching quote: {:?}", e),
-        }
-        Ok(())
+            Err(e) => {
+                println!("Transaction failed: {}", e);
+                return Err(e);
+            }
+        };
     }
 }
