@@ -99,3 +99,9 @@ gh repo clone brendangregg/FlameGraph && \
   sudo cp FlameGraph/stackcollapse.pl /usr/local/bin && \
   sudo cp FlameGraph/flamegraph.pl /usr/local/bin
 ```
+
+yielding
+
+<img width="1210" alt="image" src="https://github.com/piotrostr/listen/assets/63755291/699405b7-adf0-448b-89c1-ba71152dc72b">
+
+
