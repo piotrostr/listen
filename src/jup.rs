@@ -1,8 +1,9 @@
-use std::{f64::consts::E, str::FromStr};
+use std::str::FromStr;
 
 // vim notes
 // - re-enable github copilot some way, defo some possible workaround
 //   - might redelete cache?
+// - add <return> to complete
 use jupiter_swap_api_client::{
     quote::{QuoteRequest, SwapMode},
     swap::SwapRequest,
@@ -10,11 +11,10 @@ use jupiter_swap_api_client::{
     JupiterSwapApiClient,
 };
 use solana_sdk::{
-    pubkey::Pubkey, signature, signer::Signer,
-    transaction::VersionedTransaction,
+    pubkey::Pubkey, signer::Signer, transaction::VersionedTransaction,
 };
 
-use crate::Provider;
+use crate::{constants, util, Provider};
 
 pub struct Jupiter {
     client: JupiterSwapApiClient,
@@ -66,11 +66,18 @@ impl Jupiter {
         confirmed: bool,
     ) -> Result<(), Box<dyn std::error::Error>> {
         println!(
-            "Initializing swap of {} of {} for {} by {}",
-            amount,
+            "Initializing swap of {} of {} for {} by {}, slippage: {}%",
+            {
+                if input_mint == constants::SOLANA_PROGRAM_ID {
+                    util::lamports_to_sol(amount)
+                } else {
+                    amount as f64
+                }
+            },
             input_mint,
             output_mint,
-            signer.pubkey()
+            signer.pubkey(),
+            self.slippage / 100
         );
         if !confirmed {
             if !dialoguer::Confirm::new()
