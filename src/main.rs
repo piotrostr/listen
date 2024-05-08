@@ -1,9 +1,10 @@
-use std::{sync::Arc, time::Duration};
+use std::{str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{constants, prometheus, tx_parser, util, Listener, Provider};
 use solana_client::rpc_response::{Response, RpcLogsResponse};
 use solana_sdk::{
+    pubkey::Pubkey,
     signature::Keypair,
     signer::{EncodableKey, Signer},
 };
@@ -56,9 +57,16 @@ enum Command {
         amount: Option<i64>,
         #[arg(long)]
         slippage: Option<u16>,
+        #[arg(long)]
+        dex: Option<String>,
+        #[arg(long)]
+        amm_pool_id: Option<String>,
 
         #[clap(short, long, action = clap::ArgAction::SetTrue)]
         yes: Option<bool>,
+
+        #[clap(long, action = clap::ArgAction::SetTrue)]
+        testnet: Option<bool>,
     },
 }
 
@@ -74,6 +82,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             amount,
             slippage,
             yes,
+            dex,
+            amm_pool_id,
+            testnet,
         } => {
             let start = std::time::Instant::now();
             if input_mint == "sol" {
@@ -82,12 +93,60 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             if output_mint == "sol" {
                 output_mint = constants::SOLANA_PROGRAM_ID.to_string();
             }
-            let jup = listen::jup::Jupiter::new(slippage.unwrap_or(50));
-            let provider = Provider::new(app.args.url);
             let path = match app.args.keypair_path {
                 Some(path) => path,
                 None => util::must_get_env("HOME") + "/.config/solana/id.json",
             };
+            let raydium = listen::raydium::Raydium::new();
+            if dex.unwrap_or("".to_string()) == "raydium" {
+                let testnet = testnet.unwrap_or(false);
+                let amm_program = Pubkey::from_str(if testnet {
+                    constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY_TESTNET
+                } else {
+                    constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
+                })?;
+                let rpc_url = if testnet {
+                    "https://api.devnet.solana.com".to_string()
+                } else {
+                    util::must_get_env("RPC_URL")
+                    // "https://api.mainnet-beta.solana.com".to_string()
+                };
+                // TODO check out solend also
+                let provider = Provider::new(rpc_url);
+                let amm_pool_id =
+                    Pubkey::from_str(amm_pool_id.unwrap().as_str())?;
+                let input_token_mint = Pubkey::from_str(input_mint.as_str())?;
+                let output_token_mint = Pubkey::from_str(output_mint.as_str())?;
+                let slippage_bps = slippage.unwrap_or(50) as u64;
+                let wallet = Keypair::read_from_file(path)?;
+                println!("Wallet: {}", wallet.pubkey());
+                println!(
+                    "Balance: {}",
+                    provider.get_balance(&wallet.pubkey())?
+                );
+                let amount_specified = if amount.is_some() {
+                    amount.unwrap() as u64
+                } else {
+                    let spl_token_balance = provider
+                        .get_spl_balance(&wallet.pubkey(), &input_token_mint)?;
+                    spl_token_balance
+                };
+                let swap_base_in = true;
+                raydium.swap(
+                    amm_program,
+                    amm_pool_id,
+                    input_token_mint,
+                    output_token_mint,
+                    slippage_bps,
+                    amount_specified,
+                    swap_base_in,
+                    &wallet,
+                    &provider,
+                )?;
+                return Ok(());
+            }
+            let provider = Provider::new(app.args.url);
+            let jup = listen::jup::Jupiter::new(slippage.unwrap_or(50));
             let keypair = Keypair::read_from_file(&path)?;
             if let Some(amount) = amount {
                 jup.swap(
