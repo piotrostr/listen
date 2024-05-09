@@ -4,10 +4,10 @@
 # mainnet, careful this is 0.1 sol
 cargo run -- swap \
   --dex raydium \
-  --input-mint sol \
-  --output-mint ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ74J82 \
+  --input-mint ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ74J82 \
+  --output-mint sol \
   --amm-pool-id DSUvc5qf5LJHHV5e2tD184ixotSnCnwj7i4jJa4Xsrmt \
-  --amount 10000000 \
+  --amount 134706479 \
   --slippage 100
 
 exit

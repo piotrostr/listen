@@ -132,6 +132,7 @@ impl Raydium {
                 .collect::<Vec<Pubkey>>(),
         );
         let ixs = vec![
+            make_compute_budget_ixs(25000, 600000),
             swap.pre_swap_instructions,
             vec![swap_ix],
             swap.post_swap_instructions,
@@ -139,7 +140,10 @@ impl Raydium {
         let mut signing_keypairs: Vec<&Keypair> = vec![];
         signing_keypairs.push(wallet);
         signing_keypairs.append(&mut swap.signers.iter().collect());
-        dbg!(signing_keypairs.clone());
+        dbg!(signing_keypairs
+            .iter()
+            .map(|x| x.pubkey())
+            .collect::<Vec<Pubkey>>());
         println!(
             "Swapping {} of {} for {} by {}, slippage: {}%, block hash",
             {
@@ -161,28 +165,19 @@ impl Raydium {
             &signing_keypairs,
             provider.rpc_client.get_latest_blockhash()?,
         );
-        let res = provider.rpc_client.simulate_transaction(&tx).unwrap();
-        println!("Simulate: {:?}", res);
-        // print the transaction as encoded string
-        println!(
-            "Transaction: {:?}",
-            tx.encode(solana_transaction_status::UiTransactionEncoding::Base58),
-        );
-        match provider.send_tx(&tx, false) {
+        match provider.send_tx(&tx, true) {
             Ok(signature) => {
                 println!("Transaction {} successful", signature);
                 return Ok(());
             }
             Err(e) => {
                 println!("Transaction failed: {}", e);
+                dbg_print_tx(&tx);
+                let res =
+                    provider.rpc_client.simulate_transaction(&tx).unwrap();
+                println!("Simulation: {}", serde_json::to_string_pretty(&res)?);
             }
         };
-        // if !dialoguer::Confirm::new()
-        //     .with_prompt("Go for it?")
-        //     .interact()?
-        // {
-        //     return Ok(());
-        // };
         Ok(())
     }
 }
@@ -197,33 +192,78 @@ pub fn handle_token_account(
 ) -> Result<Pubkey, Box<dyn std::error::Error>> {
     // two cases - an account is a token account or a native account (WSOL)
     if (*mint).to_string() == constants::SOLANA_PROGRAM_ID {
+        println!("Creating a new token account for WSOL");
         let rent = provider.rpc_client.get_minimum_balance_for_rent_exemption(
             spl_token::state::Account::LEN as usize,
         )?;
         let lamports = rent + amount;
-        let token = Keypair::new();
-        let mut init_ixs = common::create_init_token(
-            &token.pubkey(),
-            &mint,
-            owner,
-            funding,
-            lamports,
-        );
-        let mut close_ixs =
-            common::close_account(&token.pubkey(), owner, owner);
-        let token_pubkey = token.pubkey();
-        swap.signers.push(token);
+        let seed = &Keypair::new().pubkey().to_string()[0..32];
+        let token = generate_pub_key(owner, seed);
+        let mut init_ixs =
+            create_init_token(&token, seed, &mint, owner, funding, lamports);
+        let mut close_ixs = common::close_account(&token, owner, owner);
+        // swap.signers.push(token);
         swap.pre_swap_instructions.append(&mut init_ixs);
         swap.post_swap_instructions.append(&mut close_ixs);
-        Ok(token_pubkey)
+        Ok(token)
     } else {
-        let ata_pubkey =
-            &spl_associated_token_account::get_associated_token_address(
-                &owner, &mint,
-            );
+        let token = &spl_associated_token_account::get_associated_token_address(
+            &owner, &mint,
+        );
         let mut ata_ixs =
             common::create_ata_token_or_not(funding, &mint, owner);
         swap.pre_swap_instructions.append(&mut ata_ixs);
-        Ok(*ata_pubkey)
+        Ok(*token)
     }
+}
+
+pub fn create_init_token(
+    token: &Pubkey,
+    seed: &str,
+    mint: &Pubkey,
+    owner: &Pubkey,
+    funding: &Pubkey,
+    lamports: u64,
+) -> Vec<Instruction> {
+    vec![
+        solana_sdk::system_instruction::create_account_with_seed(
+            funding,
+            &token,
+            owner,
+            seed,
+            lamports,
+            spl_token::state::Account::LEN as u64,
+            &spl_token::id(),
+        ),
+        spl_token::instruction::initialize_account(
+            &spl_token::id(),
+            &token,
+            mint,
+            owner,
+        )
+        .unwrap(),
+    ]
+}
+
+pub fn generate_pub_key(from: &Pubkey, seed: &str) -> Pubkey {
+    Pubkey::create_with_seed(from, seed, &spl_token::id()).unwrap()
+}
+
+pub fn make_compute_budget_ixs(price: u64, units: u32) -> Vec<Instruction> {
+    vec![
+        solana_sdk::compute_budget::ComputeBudgetInstruction::set_compute_unit_price(price),
+        solana_sdk::compute_budget::ComputeBudgetInstruction::set_compute_unit_limit(units),
+    ]
+}
+
+pub fn dbg_print_tx(tx: &Transaction) {
+    println!(
+        "Transaction: {}",
+        serde_json::to_string_pretty(
+            &tx.encode(
+                solana_transaction_status::UiTransactionEncoding::Base58
+            )
+        )
+        .unwrap(),
+    );
 }
