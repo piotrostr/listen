@@ -3,6 +3,7 @@ pub mod jup;
 pub mod listener;
 pub mod prometheus;
 pub mod provider;
+pub mod raydium;
 pub mod tx_parser;
 pub mod types;
 pub mod util;

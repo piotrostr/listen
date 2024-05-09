@@ -3,7 +3,8 @@ use std::str::FromStr;
 use crate::{constants, types};
 
 use solana_client::{
-    rpc_client::RpcClient, rpc_config::RpcTransactionConfig,
+    rpc_client::{RpcClient, SerializableTransaction},
+    rpc_config::{RpcSendTransactionConfig, RpcTransactionConfig},
     rpc_request::TokenAccountsFilter,
 };
 use solana_sdk::{
@@ -32,7 +33,7 @@ pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
 // communicate over the REST interface and utilities like getting
 // the pricing data from Jupiter
 pub struct Provider {
-    rpc_client: RpcClient,
+    pub rpc_client: RpcClient,
 }
 
 impl Provider {
@@ -113,13 +114,20 @@ impl Provider {
 
     pub fn send_tx(
         &self,
-        tx: &solana_sdk::transaction::VersionedTransaction,
+        tx: &impl SerializableTransaction,
+        skip_preflight: bool,
     ) -> Result<String, Box<dyn std::error::Error>> {
         let start = std::time::Instant::now();
         match self
             .rpc_client
-            .send_and_confirm_transaction_with_spinner(tx)
-        {
+            .send_and_confirm_transaction_with_spinner_and_config(
+                tx,
+                CommitmentConfig::confirmed(),
+                RpcSendTransactionConfig {
+                    skip_preflight,
+                    ..RpcSendTransactionConfig::default()
+                },
+            ) {
             Ok(signature) => {
                 println!("Finalized in: {:?}", start.elapsed());
                 Ok(signature.to_string())

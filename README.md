@@ -2,7 +2,7 @@
 
 Listen to new large transactions on Raydium V4
 
-Swap using Jupiter V6 API
+Swap using Jupiter V6 API or directly with Raydium (crucial for new listings)
 
 Be careful as the default usage was on mainnet with small txs, be sure to set
 the URLs and signer keypair to testnet
@@ -101,5 +101,3 @@ gh repo clone brendangregg/FlameGraph && \
 yielding
 
 <img width="1210" alt="image" src="https://github.com/piotrostr/listen/assets/63755291/699405b7-adf0-448b-89c1-ba71152dc72b">
-
-

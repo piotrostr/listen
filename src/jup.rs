@@ -113,7 +113,7 @@ impl Jupiter {
             VersionedTransaction::try_new(raw_tx.message, &[signer])?;
 
         println!("Built tx in {:?}", start.elapsed());
-        match provider.send_tx(&signed_tx) {
+        match provider.send_tx(&signed_tx, true) {
             Ok(signature) => {
                 println!("Transaction {} successful", signature);
                 Ok(())
