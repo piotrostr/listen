@@ -1,14 +1,14 @@
 #!/bin/bash
 
 
-# mainnet, careful this is 0.1 sol
+# mainnet, careful this is 0.01 sol
 cargo run -- swap \
   --dex raydium \
   --input-mint ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ74J82 \
   --output-mint sol \
   --amm-pool-id DSUvc5qf5LJHHV5e2tD184ixotSnCnwj7i4jJa4Xsrmt \
-  --amount 134706479 \
-  --slippage 100
+  --slippage 100 \
+  --yes
 
 exit
 

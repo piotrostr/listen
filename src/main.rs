@@ -10,6 +10,8 @@ use solana_sdk::{
 };
 use tokio::sync::Mutex;
 
+use log::{error, info};
+
 #[derive(Parser, Debug)]
 pub struct App {
     #[clap(flatten)]
@@ -72,6 +74,8 @@ enum Command {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
+    env_logger::init();
+
     // 30th April, let's see how well this ages lol
     let sol_price = 135.;
     let app = App::parse();
@@ -119,9 +123,9 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let output_token_mint = Pubkey::from_str(output_mint.as_str())?;
                 let slippage_bps = slippage.unwrap_or(50) as u64;
                 let wallet = Keypair::read_from_file(path)?;
-                println!("Wallet: {}", wallet.pubkey());
-                println!(
-                    "Balance: {}",
+                info!("Wallet: {}", wallet.pubkey());
+                info!(
+                    "Balance (lamports): {}",
                     provider.get_balance(&wallet.pubkey())?
                 );
                 let amount_specified = if amount.is_some() {
@@ -142,6 +146,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     swap_base_in,
                     &wallet,
                     &provider,
+                    yes.unwrap_or(false),
                 )?;
                 return Ok(());
             }
@@ -169,7 +174,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 .await?;
             }
             let duration = start.elapsed();
-            println!("Time elapsed: {:?}", duration);
+            info!("Time elapsed: {:?}", duration);
             return Ok(());
         }
         Command::Wallet {} => {
@@ -178,30 +183,29 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 None => util::must_get_env("HOME") + "/.config/solana/id.json",
             };
             let keypair = Keypair::read_from_file(&path)?;
-            println!("path: {}", path);
             let provider = Provider::new(app.args.url);
 
-            println!("Pubkey: {}", keypair.pubkey());
+            info!("Pubkey: {}", keypair.pubkey());
             let balance = provider.get_balance(&keypair.pubkey())?;
-            println!("Balance: {} lamports", balance);
+            info!("Balance: {} lamports", balance);
         }
         Command::Tx { signature } => {
             let provider = Provider::new(app.args.url);
             let tx = provider.get_tx(signature.as_str())?;
-            println!("Tx: {}", serde_json::to_string_pretty(&tx)?);
+            info!("Tx: {}", serde_json::to_string_pretty(&tx)?);
             let mint = tx_parser::parse_mint(&tx)?;
             let pricing = provider.get_pricing(&mint).await?;
-            println!("Pricing: {:?}", pricing);
+            info!("Pricing: {:?}", pricing);
 
             let swap = tx_parser::parse_swap(&tx)?;
-            println!("Swap: {}", serde_json::to_string_pretty(&swap)?);
+            info!("Swap: {}", serde_json::to_string_pretty(&swap)?);
 
             let sol_notional =
                 listen::util::lamports_to_sol(swap.quote_amount as u64);
 
             let usd_notional = sol_notional * sol_price;
 
-            println!("{} ({} USD)", sol_notional, usd_notional);
+            info!("{} ({} USD)", sol_notional, usd_notional);
 
             return Ok(());
         }
@@ -237,7 +241,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 match provider.get_tx(&log.value.signature) {
                                     Ok(tx) => tx,
                                     Err(e) => {
-                                        println!(
+                                        info!(
                                             "Failed to get tx: {}; sig: {}",
                                             e, log.value.signature
                                         );
@@ -252,7 +256,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                             if sol_notional < 10. {
                                 continue;
                             }
-                            println!(
+                            info!(
                                 "https://solana.fm/tx/{}: {} SOL",
                                 &log.value.signature, sol_notional,
                             );
@@ -269,7 +273,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                         continue; // Skip error logs
                     }
                     match tx.send(log.clone()).await {
-                        Err(e) => println!("Failed to send log: {}", e),
+                        Err(e) => error!("Failed to send log: {}", e),
                         Ok(_) => {
                             transactions_received.inc();
                         }

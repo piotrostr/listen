@@ -1,5 +1,6 @@
-use std::sync::Arc;
+use log::info;
 use prometheus::{Encoder, IntCounter, Registry, TextEncoder};
+use std::sync::Arc;
 use warp::Filter;
 
 static TRANSACTIONS_RECEIVED: &str = "transactions_received";
@@ -42,6 +43,6 @@ pub async fn run_metrics_server(registry: Registry) {
         warp::reply::with_header(buffer, "Content-Type", encoder.format_type())
     });
 
-    println!("Metrics server running on {}", 3030);
+    info!("Metrics server running on {}", 3030);
     warp::serve(metrics_route).run(([127, 0, 0, 1], 3030)).await;
 }

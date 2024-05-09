@@ -36,3 +36,5 @@ raydium_amm = { git = "https://github.com/piotrostr/raydium-amm", default-featur
   "client",
 ] }
 borsh = "1.5.0"
+log = "0.4.21"
+env_logger = "0.11.3"

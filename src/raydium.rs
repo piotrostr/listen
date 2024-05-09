@@ -1,3 +1,4 @@
+use log::{debug, error, info};
 use raydium_library::amm;
 
 use raydium_library::common;
@@ -16,7 +17,6 @@ pub struct Raydium {}
 pub struct Swap {
     pre_swap_instructions: Vec<Instruction>,
     post_swap_instructions: Vec<Instruction>,
-    signers: Vec<Keypair>,
 }
 
 impl Raydium {
@@ -35,31 +35,20 @@ impl Raydium {
         swap_base_in: bool, // keep false
         wallet: &Keypair,
         provider: &Provider,
+        confirmed: bool,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        dbg!(
-            &amm_program,
-            &amm_pool_id,
-            &input_token_mint,
-            &output_token_mint,
-            slippage_bps,
-            amount_specified,
-            swap_base_in,
-            &wallet.pubkey(),
-        );
         // load amm keys
         let amm_keys = amm::utils::load_amm_keys(
             &provider.rpc_client,
             &amm_program,
             &amm_pool_id,
         )?;
-        dbg!(amm_keys);
         // load market keys
         let market_keys = amm::openbook::get_keys_for_market(
             &provider.rpc_client,
             &amm_keys.market_program,
             &amm_keys.market,
         )?;
-        dbg!(&market_keys);
         // calculate amm pool vault with load data at the same time or use simulate to calculate
         let result = raydium_library::amm::calculate_pool_vault_amounts(
             &provider.rpc_client,
@@ -69,7 +58,6 @@ impl Raydium {
             &market_keys,
             amm::utils::CalculateMethod::Simulate(wallet.pubkey()),
         )?;
-        dbg!(&result);
         let direction = if input_token_mint == amm_keys.amm_coin_mint
             && output_token_mint == amm_keys.amm_pc_mint
         {
@@ -87,11 +75,9 @@ impl Raydium {
             swap_base_in,
             slippage_bps,
         )?;
-        dbg!(amount_specified, other_amount_threshold, swap_base_in);
         let mut swap = Swap {
             pre_swap_instructions: vec![],
             post_swap_instructions: vec![],
-            signers: vec![],
         };
         let user_source = handle_token_account(
             &mut swap,
@@ -110,7 +96,6 @@ impl Raydium {
             &wallet.pubkey(),
         )?;
         // build swap instruction
-        dbg!(user_source, user_destination);
         let swap_ix = amm::instructions::swap(
             &amm_program,
             &amm_keys,
@@ -122,14 +107,16 @@ impl Raydium {
             other_amount_threshold,
             swap_base_in,
         )?;
-        println!(
-            "swap_ix program_id: {:?}, accounts: {:?} ",
+        debug!(
+            "swap_ix program_id: {:?}, accounts: {} ",
             swap_ix.program_id,
-            swap_ix
-                .accounts
-                .iter()
-                .map(|x| x.pubkey)
-                .collect::<Vec<Pubkey>>(),
+            serde_json::to_string_pretty(
+                &swap_ix
+                    .accounts
+                    .iter()
+                    .map(|x| x.pubkey.to_string())
+                    .collect::<Vec<String>>()
+            )?,
         );
         let ixs = vec![
             make_compute_budget_ixs(25000, 600000),
@@ -137,14 +124,7 @@ impl Raydium {
             vec![swap_ix],
             swap.post_swap_instructions,
         ];
-        let mut signing_keypairs: Vec<&Keypair> = vec![];
-        signing_keypairs.push(wallet);
-        signing_keypairs.append(&mut swap.signers.iter().collect());
-        dbg!(signing_keypairs
-            .iter()
-            .map(|x| x.pubkey())
-            .collect::<Vec<Pubkey>>());
-        println!(
+        info!(
             "Swapping {} of {} for {} by {}, slippage: {}%, block hash",
             {
                 if input_token_mint.to_string() == constants::SOLANA_PROGRAM_ID
@@ -159,23 +139,31 @@ impl Raydium {
             wallet.pubkey(),
             slippage_bps as f32 / 100.,
         );
+        if !confirmed {
+            if !dialoguer::Confirm::new()
+                .with_prompt("Go for it?")
+                .interact()?
+            {
+                return Ok(());
+            }
+        }
         let tx = Transaction::new_signed_with_payer(
             &ixs.concat(),
             Some(&wallet.pubkey()),
-            &signing_keypairs,
+            &[wallet],
             provider.rpc_client.get_latest_blockhash()?,
         );
         match provider.send_tx(&tx, true) {
             Ok(signature) => {
-                println!("Transaction {} successful", signature);
+                info!("Transaction {} successful", signature);
                 return Ok(());
             }
             Err(e) => {
-                println!("Transaction failed: {}", e);
+                error!("Transaction failed: {}", e);
                 dbg_print_tx(&tx);
                 let res =
                     provider.rpc_client.simulate_transaction(&tx).unwrap();
-                println!("Simulation: {}", serde_json::to_string_pretty(&res)?);
+                info!("Simulation: {}", serde_json::to_string_pretty(&res)?);
             }
         };
         Ok(())
@@ -192,7 +180,6 @@ pub fn handle_token_account(
 ) -> Result<Pubkey, Box<dyn std::error::Error>> {
     // two cases - an account is a token account or a native account (WSOL)
     if (*mint).to_string() == constants::SOLANA_PROGRAM_ID {
-        println!("Creating a new token account for WSOL");
         let rent = provider.rpc_client.get_minimum_balance_for_rent_exemption(
             spl_token::state::Account::LEN as usize,
         )?;
@@ -257,7 +244,7 @@ pub fn make_compute_budget_ixs(price: u64, units: u32) -> Vec<Instruction> {
 }
 
 pub fn dbg_print_tx(tx: &Transaction) {
-    println!(
+    debug!(
         "Transaction: {}",
         serde_json::to_string_pretty(
             &tx.encode(

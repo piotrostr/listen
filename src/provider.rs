@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use crate::{constants, types};
 
+use log::{debug, info};
 use solana_client::{
     rpc_client::{RpcClient, SerializableTransaction},
     rpc_config::{RpcSendTransactionConfig, RpcTransactionConfig},
@@ -22,9 +23,9 @@ pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
     let latest_blockhash = rpc_client.get_latest_blockhash()?;
     let identity = rpc_client.get_identity()?;
 
-    println!("Connecting to blocks through {:?}", url);
-    println!("Latest blockhash: {:?}", latest_blockhash);
-    println!("Identity: {:?}", identity);
+    info!("Connecting to blocks through {:?}", url);
+    info!("Latest blockhash: {:?}", latest_blockhash);
+    info!("Identity: {:?}", identity);
 
     Ok(rpc_client)
 }
@@ -66,7 +67,7 @@ impl Provider {
                     &Pubkey::from_str(token_account.pubkey.as_str())?,
                 )?;
                 let token_account_info = Account::unpack(&acount_info.data)?;
-                println!("Token account info: {:?}", token_account_info);
+                debug!("Token account info: {:?}", token_account_info);
                 Ok(token_account_info.amount)
             }
             None => Err("No token account found".into()),
@@ -101,7 +102,7 @@ impl Provider {
             mint,
             constants::SOLANA_PROGRAM_ID,
         );
-        println!("Getting pricing from: {:?}", url);
+        debug!("Getting pricing from: {:?}", url);
         let client = reqwest::Client::new();
         let res = client
             .get(url)
@@ -129,7 +130,7 @@ impl Provider {
                 },
             ) {
             Ok(signature) => {
-                println!("Finalized in: {:?}", start.elapsed());
+                info!("Finalized in: {:?}", start.elapsed());
                 Ok(signature.to_string())
             }
             Err(e) => Err(e.into()),

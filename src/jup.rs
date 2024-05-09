@@ -10,6 +10,7 @@ use jupiter_swap_api_client::{
     transaction_config::TransactionConfig,
     JupiterSwapApiClient,
 };
+use log::{error, info};
 use solana_sdk::{
     pubkey::Pubkey, signer::Signer, transaction::VersionedTransaction,
 };
@@ -67,7 +68,7 @@ impl Jupiter {
     ) -> Result<(), Box<dyn std::error::Error>> {
         let start = std::time::Instant::now();
         if !confirmed {
-            println!(
+            info!(
                 "Initializing swap of {} of {} for {} by {}, slippage: {}%",
                 {
                     if input_mint == constants::SOLANA_PROGRAM_ID {
@@ -112,14 +113,14 @@ impl Jupiter {
         let signed_tx =
             VersionedTransaction::try_new(raw_tx.message, &[signer])?;
 
-        println!("Built tx in {:?}", start.elapsed());
+        info!("Built tx in {:?}", start.elapsed());
         match provider.send_tx(&signed_tx, true) {
             Ok(signature) => {
-                println!("Transaction {} successful", signature);
+                info!("Transaction {} successful", signature);
                 Ok(())
             }
             Err(e) => {
-                println!("Transaction failed: {}", e);
+                error!("Transaction failed: {}", e);
                 Err(e)
             }
         }
