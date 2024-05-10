@@ -1,3 +1,4 @@
+use log::LevelFilter;
 use std::{str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
@@ -6,7 +7,7 @@ use listen::{
     jup::Jupiter,
     prometheus,
     raydium::Raydium,
-    tx_parser,
+    rpc, tx_parser,
     util::{self, must_get_env},
     Listener, Provider,
 };
@@ -44,6 +45,10 @@ struct Args {
 
 #[derive(Debug, Parser)]
 enum Command {
+    BenchRPC {
+        #[arg(long)]
+        rpc_url: String,
+    },
     PriorityFee {},
     Tx {
         #[arg(short, long)]
@@ -82,7 +87,9 @@ enum Command {
 
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn std::error::Error>> {
-    env_logger::init();
+    env_logger::Builder::from_default_env()
+        .filter_level(LevelFilter::Info)
+        .init();
 
     // 30th April, let's see how well this ages lol
     let sol_price = 135.;
@@ -92,15 +99,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let listener = Listener::new(app.args.ws_url);
     let jup = Jupiter::new();
     match app.command {
+        Command::BenchRPC { rpc_url } => rpc::eval_rpc(rpc_url.as_str()),
         Command::PriorityFee {} => {
             println!(
                 "{:?}",
                 provider.rpc_client.get_recent_prioritization_fees(
-                    vec![Pubkey::from_str(
-                        constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
-                    )
-                    .unwrap()]
-                    .as_slice()
+                    vec![Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY).unwrap()]
+                        .as_slice()
                 )
             );
         }
@@ -109,19 +114,16 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let (mut subs, recv) = listener.new_lp_subscribe()?;
             // let provider = Provider::new(app.args.url);
             println!("Listening for LP events");
-            let wallet = Keypair::read_from_file(
-                must_get_env("HOME") + "/.config/solana/id.json",
-            )?;
+            let wallet = Keypair::read_from_file(must_get_env("HOME") + "/.config/solana/id.json")?;
             let listener = tokio::spawn(async move {
                 while let Ok(log) = recv.recv() {
                     if log.value.err.is_some() {
                         continue; // Skip error logs
                     }
                     println!("{}", serde_json::to_string_pretty(&log).unwrap());
-                    let new_pool_info = tx_parser::parse_new_pool(
-                        &provider.get_tx(&log.value.signature).unwrap(),
-                    )
-                    .unwrap();
+                    let new_pool_info =
+                        tx_parser::parse_new_pool(&provider.get_tx(&log.value.signature).unwrap())
+                            .unwrap();
                     println!("{:?}", new_pool_info);
                     // TODO move this to a separate service listening in a separate thread
                     // same as in case of receiver and processor pool for Command::Listen
@@ -168,8 +170,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
             if dex.unwrap_or("".to_string()) == "raydium" {
                 // TODO check out solend also
-                let amm_pool_id =
-                    Pubkey::from_str(amm_pool_id.unwrap().as_str())?;
+                let amm_pool_id = Pubkey::from_str(amm_pool_id.unwrap().as_str())?;
                 let input_token_mint = Pubkey::from_str(input_mint.as_str())?;
                 let output_token_mint = Pubkey::from_str(output_mint.as_str())?;
                 let slippage_bps = slippage.unwrap_or(50) as u64;
@@ -182,8 +183,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let amount_specified = if amount.is_some() {
                     amount.unwrap() as u64
                 } else {
-                    provider
-                        .get_spl_balance(&wallet.pubkey(), &input_token_mint)?
+                    provider.get_spl_balance(&wallet.pubkey(), &input_token_mint)?
                 };
                 let swap_base_in = true;
                 raydium.swap(
@@ -247,8 +247,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             let swap = tx_parser::parse_swap(&tx)?;
             info!("Swap: {}", serde_json::to_string_pretty(&swap)?);
 
-            let sol_notional =
-                listen::util::lamports_to_sol(swap.quote_amount as u64);
+            let sol_notional = listen::util::lamports_to_sol(swap.quote_amount as u64);
 
             let usd_notional = sol_notional * sol_price;
 
@@ -270,9 +269,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
 
             let (mut subs, recv) = listener.logs_subscribe()?; // Subscribe to logs
 
-            let (tx, rx) = tokio::sync::mpsc::channel::<
-                Response<RpcLogsResponse>,
-            >(buffer_size as usize);
+            let (tx, rx) =
+                tokio::sync::mpsc::channel::<Response<RpcLogsResponse>>(buffer_size as usize);
             let rx = Arc::new(Mutex::new(rx));
 
             // Worker tasks, increase in prod to way more, talking min 30-50
@@ -295,8 +293,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     }
                                 }
                             };
-                            let lamports =
-                                tx_parser::parse_notional(&tx).ok().unwrap();
+                            let lamports = tx_parser::parse_notional(&tx).ok().unwrap();
                             let sol_notional = util::lamports_to_sol(lamports);
                             transactions_processed.inc();
                             if sol_notional < 10. {
