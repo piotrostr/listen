@@ -124,11 +124,11 @@ pub fn parse_new_pool(
                         let mint =
                             parsed_ix.parsed["info"]["mint"].as_str().unwrap();
                         if mint == constants::SOLANA_PROGRAM_ID {
-                            pool_info.output_mint =
+                            pool_info.input_mint =
                                 Pubkey::from_str(constants::SOLANA_PROGRAM_ID)
                                     .unwrap();
                         } else {
-                            pool_info.input_mint =
+                            pool_info.output_mint =
                                 Pubkey::from_str(mint).unwrap();
                         }
                     }

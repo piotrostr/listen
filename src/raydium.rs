@@ -86,7 +86,6 @@ impl Raydium {
 
     pub fn swap(
         &self,
-        amm_program: Pubkey,
         amm_pool_id: Pubkey,
         input_token_mint: Pubkey,
         output_token_mint: Pubkey,
@@ -97,6 +96,8 @@ impl Raydium {
         provider: &Provider,
         confirmed: bool,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        let amm_program =
+            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
         // load amm keys
         let amm_keys = amm::utils::load_amm_keys(
             &provider.rpc_client,
@@ -179,7 +180,7 @@ impl Raydium {
             )?,
         );
         let ixs = vec![
-            make_compute_budget_ixs(25000, 600000),
+            make_compute_budget_ixs(25000, 5000000),
             swap.pre_swap_instructions,
             vec![swap_ix],
             swap.post_swap_instructions,

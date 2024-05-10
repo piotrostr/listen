@@ -1,7 +1,13 @@
 use std::{str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
-use listen::{constants, prometheus, tx_parser, util, Listener, Provider};
+use listen::{
+    constants, prometheus,
+    raydium::Raydium,
+    tx_parser,
+    util::{self, must_get_env},
+    Listener, Provider,
+};
 use solana_client::rpc_response::{Response, RpcLogsResponse};
 use solana_sdk::{
     pubkey::Pubkey,
@@ -36,6 +42,7 @@ struct Args {
 
 #[derive(Debug, Parser)]
 enum Command {
+    PriorityFee {},
     Tx {
         #[arg(short, long)]
         signature: String,
@@ -47,7 +54,10 @@ enum Command {
         #[arg(long, default_value_t = 10)]
         buffer_size: i32,
     },
-    ListenPools {},
+    ListenPools {
+        #[arg(long, action = clap::ArgAction::SetTrue)]
+        snipe: Option<bool>,
+    },
     Wallet {},
     Swap {
         #[arg(long)]
@@ -76,17 +86,49 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sol_price = 135.;
     let app = App::parse();
     match app.command {
-        Command::ListenPools {} => {
+        Command::PriorityFee {  } => {
+            let provider = Provider::new(app.args.url);
+        }
+        Command::ListenPools { snipe } => {
+            let snipe = snipe.unwrap_or(false);
             let listener = Listener::new(app.args.ws_url);
             let (mut subs, recv) = listener.new_lp_subscribe()?;
             // let provider = Provider::new(app.args.url);
             println!("Listening for LP events");
+            let provider = Provider::new(must_get_env("RPC_URL"));
+            let raydium = Raydium::new();
+            let wallet = Keypair::read_from_file(
+                must_get_env("HOME") + "/.config/solana/id.json",
+            )?;
             let listener = tokio::spawn(async move {
                 while let Ok(log) = recv.recv() {
                     if log.value.err.is_some() {
                         continue; // Skip error logs
                     }
                     println!("{}", serde_json::to_string_pretty(&log).unwrap());
+                    let new_pool_info = tx_parser::parse_new_pool(
+                        &provider.get_tx(&log.value.signature).unwrap(),
+                    )
+                    .unwrap();
+                    println!("{:?}", new_pool_info);
+                    if 
+                    // TODO move this to a separate service listening in a separate thread
+                    // same as in case of receiver and processor pool for Command::Listen
+                    if snipe {
+                        raydium
+                            .swap(
+                                new_pool_info.amm_pool_id,
+                                new_pool_info.input_mint,
+                                new_pool_info.output_mint,
+                                200,     // 2.0%
+                                1000000, // 0.001 SOL
+                                true,
+                                &wallet,
+                                &provider,
+                                false,
+                            )
+                            .unwrap();
+                    }
                 }
                 subs.shutdown().unwrap(); // Shutdown subscription on exit
             });
@@ -115,10 +157,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
             let raydium = listen::raydium::Raydium::new();
             if dex.unwrap_or("".to_string()) == "raydium" {
-                let amm_program_id = Pubkey::from_str(
-                    constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY,
-                )
-                .unwrap();
                 let rpc_url = util::must_get_env("RPC_URL");
                 // TODO check out solend also
                 let provider = Provider::new(rpc_url);
@@ -141,7 +179,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 };
                 let swap_base_in = true;
                 raydium.swap(
-                    amm_program_id,
                     amm_pool_id,
                     input_token_mint,
                     output_token_mint,

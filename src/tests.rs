@@ -57,10 +57,10 @@ fn test_parse_new_pool() {
     );
     assert_eq!(
         new_pool_info.input_mint.to_string(),
-        "9TMuCmQqMBaW8JRPGJEAuetJt94JVruuKVY8r8HvtYKd".to_string()
+        constants::SOLANA_PROGRAM_ID.to_string()
     );
     assert_eq!(
         new_pool_info.output_mint.to_string(),
-        constants::SOLANA_PROGRAM_ID.to_string()
+        "9TMuCmQqMBaW8JRPGJEAuetJt94JVruuKVY8r8HvtYKd".to_string()
     );
 }
