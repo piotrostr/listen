@@ -47,9 +47,8 @@ enum Command {
         #[arg(long, default_value_t = 10)]
         buffer_size: i32,
     },
-
+    ListenPools {},
     Wallet {},
-
     Swap {
         #[arg(long)]
         input_mint: String,
@@ -66,9 +65,6 @@ enum Command {
 
         #[clap(short, long, action = clap::ArgAction::SetTrue)]
         yes: Option<bool>,
-
-        #[clap(long, action = clap::ArgAction::SetTrue)]
-        testnet: Option<bool>,
     },
 }
 
@@ -80,6 +76,23 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     let sol_price = 135.;
     let app = App::parse();
     match app.command {
+        Command::ListenPools {} => {
+            let listener = Listener::new(app.args.ws_url);
+            let (mut subs, recv) = listener.new_lp_subscribe()?;
+            // let provider = Provider::new(app.args.url);
+            println!("Listening for LP events");
+            let listener = tokio::spawn(async move {
+                while let Ok(log) = recv.recv() {
+                    if log.value.err.is_some() {
+                        continue; // Skip error logs
+                    }
+                    println!("{}", serde_json::to_string_pretty(&log).unwrap());
+                }
+                subs.shutdown().unwrap(); // Shutdown subscription on exit
+            });
+            listener.await?;
+            return Ok(());
+        }
         Command::Swap {
             mut input_mint,
             mut output_mint,
@@ -88,7 +101,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             yes,
             dex,
             amm_pool_id,
-            testnet,
         } => {
             let start = std::time::Instant::now();
             if input_mint == "sol" {
@@ -103,18 +115,11 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
             };
             let raydium = listen::raydium::Raydium::new();
             if dex.unwrap_or("".to_string()) == "raydium" {
-                let testnet = testnet.unwrap_or(false);
-                let amm_program = Pubkey::from_str(if testnet {
-                    constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY_TESTNET
-                } else {
-                    constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
-                })?;
-                let rpc_url = if testnet {
-                    "https://api.devnet.solana.com".to_string()
-                } else {
-                    util::must_get_env("RPC_URL")
-                    // "https://api.mainnet-beta.solana.com".to_string()
-                };
+                let amm_program_id = Pubkey::from_str(
+                    constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY,
+                )
+                .unwrap();
+                let rpc_url = util::must_get_env("RPC_URL");
                 // TODO check out solend also
                 let provider = Provider::new(rpc_url);
                 let amm_pool_id =
@@ -131,13 +136,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 let amount_specified = if amount.is_some() {
                     amount.unwrap() as u64
                 } else {
-                    let spl_token_balance = provider
-                        .get_spl_balance(&wallet.pubkey(), &input_token_mint)?;
-                    spl_token_balance
+                    provider
+                        .get_spl_balance(&wallet.pubkey(), &input_token_mint)?
                 };
                 let swap_base_in = true;
                 raydium.swap(
-                    amm_program,
+                    amm_program_id,
                     amm_pool_id,
                     input_token_mint,
                     output_token_mint,

@@ -12,3 +12,8 @@ pub const RAYDIUM_AUTHORITY_V4_PUBKEY: &str =
 
 pub const USDC_TOKEN_PUBKEY: &str =
     "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+
+pub const OPENBOOK_PROGRAM_ID: &str =
+    "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX";
+
+pub const FEE_PROGRAM_ID: &str = "7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5";

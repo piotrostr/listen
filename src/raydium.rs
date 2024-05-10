@@ -1,7 +1,15 @@
+use std::str::FromStr;
+
 use log::{debug, error, info};
 use raydium_library::amm;
 
 use raydium_library::common;
+use solana_account_decoder::UiAccountEncoding;
+use solana_client::rpc_config::RpcAccountInfoConfig;
+use solana_client::rpc_config::RpcProgramAccountsConfig;
+use solana_client::rpc_filter::Memcmp;
+use solana_client::rpc_filter::MemcmpEncodedBytes;
+use solana_client::rpc_filter::RpcFilterType;
 use solana_sdk::instruction::Instruction;
 use solana_sdk::program_pack::Pack;
 use solana_sdk::{
@@ -19,9 +27,61 @@ pub struct Swap {
     post_swap_instructions: Vec<Instruction>,
 }
 
+impl Default for Raydium {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Raydium {
     pub fn new() -> Self {
-        Self {}
+        Raydium {}
+    }
+
+    #[deprecated = "slow and not production required"]
+    pub fn get_amm_pool_id(
+        &self,
+        provider: &Provider,
+        input_mint: &Pubkey,
+        output_mint: &Pubkey,
+    ) -> Pubkey {
+        // this is obtained from LIQUIDITY_LAYOUT_V4 from TypeScript Raydium SDK
+        const INPUT_MINT_OFFSET: usize = 53;
+        const OUTPUT_MINT_OFFSET: usize = 85;
+
+        let accounts = provider
+            .rpc_client
+            .get_program_accounts_with_config(
+                &Pubkey::from_str(constants::OPENBOOK_PROGRAM_ID)
+                    .unwrap(),
+                RpcProgramAccountsConfig {
+                    filters: Some(vec![
+                        RpcFilterType::Memcmp(Memcmp::new(
+                            INPUT_MINT_OFFSET,
+                            MemcmpEncodedBytes::Base64(input_mint.to_string()),
+                        )),
+                        RpcFilterType::Memcmp(Memcmp::new(
+                            OUTPUT_MINT_OFFSET,
+                            MemcmpEncodedBytes::Base64(output_mint.to_string()),
+                        )),
+                    ]),
+                    account_config: RpcAccountInfoConfig {
+                        encoding: Some(UiAccountEncoding::Base64),
+                        commitment: Some(solana_sdk::commitment_config::CommitmentConfig::confirmed()),
+                        data_slice: None,
+                        min_context_slot: None,
+                    },
+                    ..Default::default()
+                },
+            )
+            .unwrap();
+        println!("{:?}", &accounts);
+        Pubkey::default()
+    }
+
+    // swap_simple is a wrapper around swap that requires only the token mint
+    pub fn swap_simple(&self, _output_token_mint: Pubkey, _sol_amount: u64) {
+        // need to fetch amm pool by input/output first
     }
 
     pub fn swap(
@@ -139,13 +199,12 @@ impl Raydium {
             wallet.pubkey(),
             slippage_bps as f32 / 100.,
         );
-        if !confirmed {
-            if !dialoguer::Confirm::new()
+        if !confirmed
+            && !dialoguer::Confirm::new()
                 .with_prompt("Go for it?")
                 .interact()?
-            {
-                return Ok(());
-            }
+        {
+            return Ok(());
         }
         let tx = Transaction::new_signed_with_payer(
             &ixs.concat(),
@@ -181,13 +240,13 @@ pub fn handle_token_account(
     // two cases - an account is a token account or a native account (WSOL)
     if (*mint).to_string() == constants::SOLANA_PROGRAM_ID {
         let rent = provider.rpc_client.get_minimum_balance_for_rent_exemption(
-            spl_token::state::Account::LEN as usize,
+            spl_token::state::Account::LEN,
         )?;
         let lamports = rent + amount;
         let seed = &Keypair::new().pubkey().to_string()[0..32];
         let token = generate_pub_key(owner, seed);
         let mut init_ixs =
-            create_init_token(&token, seed, &mint, owner, funding, lamports);
+            create_init_token(&token, seed, mint, owner, funding, lamports);
         let mut close_ixs = common::close_account(&token, owner, owner);
         // swap.signers.push(token);
         swap.pre_swap_instructions.append(&mut init_ixs);
@@ -195,10 +254,9 @@ pub fn handle_token_account(
         Ok(token)
     } else {
         let token = &spl_associated_token_account::get_associated_token_address(
-            &owner, &mint,
+            owner, mint,
         );
-        let mut ata_ixs =
-            common::create_ata_token_or_not(funding, &mint, owner);
+        let mut ata_ixs = common::create_ata_token_or_not(funding, mint, owner);
         swap.pre_swap_instructions.append(&mut ata_ixs);
         Ok(*token)
     }
@@ -215,7 +273,7 @@ pub fn create_init_token(
     vec![
         solana_sdk::system_instruction::create_account_with_seed(
             funding,
-            &token,
+            token,
             owner,
             seed,
             lamports,
@@ -224,7 +282,7 @@ pub fn create_init_token(
         ),
         spl_token::instruction::initialize_account(
             &spl_token::id(),
-            &token,
+            token,
             mint,
             owner,
         )
