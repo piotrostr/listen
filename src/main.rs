@@ -2,7 +2,9 @@ use std::{str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
-    constants, prometheus,
+    constants,
+    jup::Jupiter,
+    prometheus,
     raydium::Raydium,
     tx_parser,
     util::{self, must_get_env},
@@ -85,18 +87,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
     // 30th April, let's see how well this ages lol
     let sol_price = 135.;
     let app = App::parse();
+    let provider = Provider::new(must_get_env("RPC_URL"));
+    let raydium = Raydium::new();
+    let listener = Listener::new(app.args.ws_url);
+    let jup = Jupiter::new();
     match app.command {
-        Command::PriorityFee {  } => {
-            let provider = Provider::new(app.args.url);
+        Command::PriorityFee {} => {
+            println!(
+                "{:?}",
+                provider.rpc_client.get_recent_prioritization_fees(
+                    vec![Pubkey::from_str(
+                        constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
+                    )
+                    .unwrap()]
+                    .as_slice()
+                )
+            );
         }
         Command::ListenPools { snipe } => {
             let snipe = snipe.unwrap_or(false);
-            let listener = Listener::new(app.args.ws_url);
             let (mut subs, recv) = listener.new_lp_subscribe()?;
             // let provider = Provider::new(app.args.url);
             println!("Listening for LP events");
-            let provider = Provider::new(must_get_env("RPC_URL"));
-            let raydium = Raydium::new();
             let wallet = Keypair::read_from_file(
                 must_get_env("HOME") + "/.config/solana/id.json",
             )?;
@@ -111,7 +123,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     )
                     .unwrap();
                     println!("{:?}", new_pool_info);
-                    if 
                     // TODO move this to a separate service listening in a separate thread
                     // same as in case of receiver and processor pool for Command::Listen
                     if snipe {
@@ -120,7 +131,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 new_pool_info.amm_pool_id,
                                 new_pool_info.input_mint,
                                 new_pool_info.output_mint,
-                                200,     // 2.0%
+                                300,     // 2.0%
                                 1000000, // 0.001 SOL
                                 true,
                                 &wallet,
@@ -155,11 +166,8 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 Some(path) => path,
                 None => util::must_get_env("HOME") + "/.config/solana/id.json",
             };
-            let raydium = listen::raydium::Raydium::new();
             if dex.unwrap_or("".to_string()) == "raydium" {
-                let rpc_url = util::must_get_env("RPC_URL");
                 // TODO check out solend also
-                let provider = Provider::new(rpc_url);
                 let amm_pool_id =
                     Pubkey::from_str(amm_pool_id.unwrap().as_str())?;
                 let input_token_mint = Pubkey::from_str(input_mint.as_str())?;
@@ -191,8 +199,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )?;
                 return Ok(());
             }
-            let provider = Provider::new(app.args.url);
-            let jup = listen::jup::Jupiter::new(slippage.unwrap_or(50));
             let keypair = Keypair::read_from_file(&path)?;
             if let Some(amount) = amount {
                 jup.swap(
@@ -202,6 +208,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     &keypair,
                     &provider,
                     yes.unwrap_or(false),
+                    slippage.unwrap_or(50),
                 )
                 .await?;
             } else {
@@ -211,6 +218,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     &keypair,
                     &provider,
                     yes.unwrap_or(false),
+                    slippage.unwrap_or(50),
                 )
                 .await?;
             }
@@ -224,14 +232,12 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 None => util::must_get_env("HOME") + "/.config/solana/id.json",
             };
             let keypair = Keypair::read_from_file(&path)?;
-            let provider = Provider::new(app.args.url);
 
             info!("Pubkey: {}", keypair.pubkey());
             let balance = provider.get_balance(&keypair.pubkey())?;
             info!("Balance: {} lamports", balance);
         }
         Command::Tx { signature } => {
-            let provider = Provider::new(app.args.url);
             let tx = provider.get_tx(signature.as_str())?;
             info!("Tx: {}", serde_json::to_string_pretty(&tx)?);
             let mint = tx_parser::parse_mint(&tx)?;
@@ -262,7 +268,6 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 prometheus::run_metrics_server(registry).await;
             });
 
-            let listener = Listener::new(app.args.ws_url);
             let (mut subs, recv) = listener.logs_subscribe()?; // Subscribe to logs
 
             let (tx, rx) = tokio::sync::mpsc::channel::<

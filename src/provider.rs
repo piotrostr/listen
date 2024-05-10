@@ -119,16 +119,13 @@ impl Provider {
         skip_preflight: bool,
     ) -> Result<String, Box<dyn std::error::Error>> {
         let start = std::time::Instant::now();
-        match self
-            .rpc_client
-            .send_and_confirm_transaction_with_spinner_and_config(
-                tx,
-                CommitmentConfig::confirmed(),
-                RpcSendTransactionConfig {
-                    skip_preflight,
-                    ..RpcSendTransactionConfig::default()
-                },
-            ) {
+        match self.rpc_client.send_transaction_with_config(
+            tx,
+            RpcSendTransactionConfig {
+                skip_preflight,
+                ..RpcSendTransactionConfig::default()
+            },
+        ) {
             Ok(signature) => {
                 info!("Finalized in: {:?}", start.elapsed());
                 Ok(signature.to_string())

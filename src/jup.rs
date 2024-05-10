@@ -19,16 +19,14 @@ use crate::{constants, util, Provider};
 
 pub struct Jupiter {
     client: JupiterSwapApiClient,
-    slippage: u16,
 }
 
 impl Jupiter {
-    pub fn new(slippage: u16) -> Jupiter {
+    pub fn new() -> Jupiter {
         Jupiter {
             client: JupiterSwapApiClient::new(
                 "https://quote-api.jup.ag/v6".to_string(),
             ),
-            slippage,
         }
     }
 
@@ -39,6 +37,7 @@ impl Jupiter {
         signer: &dyn Signer,
         provider: &Provider,
         confirmed: bool,
+        slippage: u16,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let spl_token_balance = provider.get_spl_balance(
             &signer.pubkey(),
@@ -51,6 +50,7 @@ impl Jupiter {
             signer,
             provider,
             confirmed,
+            slippage,
         )
         .await
     }
@@ -65,6 +65,7 @@ impl Jupiter {
         signer: &dyn Signer,
         provider: &Provider,
         confirmed: bool,
+        slippage: u16,
     ) -> Result<(), Box<dyn std::error::Error>> {
         let start = std::time::Instant::now();
         if !confirmed {
@@ -80,7 +81,7 @@ impl Jupiter {
                 input_mint,
                 output_mint,
                 signer.pubkey(),
-                self.slippage as f32 / 100.
+                slippage as f32 / 100.
             );
             if !dialoguer::Confirm::new()
                 .with_prompt("Go for it?")
@@ -95,7 +96,7 @@ impl Jupiter {
                 input_mint: Pubkey::from_str(&input_mint)?,
                 output_mint: Pubkey::from_str(&output_mint)?,
                 amount,
-                slippage_bps: self.slippage,
+                slippage_bps: slippage,
                 swap_mode: Some(SwapMode::ExactIn),
                 ..QuoteRequest::default()
             })

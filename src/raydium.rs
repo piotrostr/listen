@@ -4,6 +4,7 @@ use log::{debug, error, info};
 use raydium_library::amm;
 
 use raydium_library::common;
+use serde_json::json;
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::rpc_config::RpcAccountInfoConfig;
 use solana_client::rpc_config::RpcProgramAccountsConfig;
@@ -157,6 +158,7 @@ impl Raydium {
             &wallet.pubkey(),
         )?;
         // build swap instruction
+        let max_slippage = true;
         let swap_ix = amm::instructions::swap(
             &amm_program,
             &amm_keys,
@@ -165,7 +167,11 @@ impl Raydium {
             &user_source,
             &user_destination,
             amount_specified,
-            other_amount_threshold,
+            if max_slippage {
+                0
+            } else {
+                other_amount_threshold
+            },
             swap_base_in,
         )?;
         debug!(
@@ -180,25 +186,23 @@ impl Raydium {
             )?,
         );
         let ixs = vec![
-            make_compute_budget_ixs(25000, 5000000),
+            // TODO make this configurable, currently static but total is still max
+            // 0.0005 SOL which is peanuts
+            make_compute_budget_ixs(25_000, 500_000),
             swap.pre_swap_instructions,
             vec![swap_ix],
             swap.post_swap_instructions,
         ];
-        info!(
-            "Swapping {} of {} for {} by {}, slippage: {}%, block hash",
-            {
-                if input_token_mint.to_string() == constants::SOLANA_PROGRAM_ID
-                {
-                    util::lamports_to_sol(amount_specified)
-                } else {
-                    amount_specified as f64
-                }
-            },
-            input_token_mint,
-            output_token_mint,
-            wallet.pubkey(),
-            slippage_bps as f32 / 100.,
+        println!(
+            "{}",
+            serde_json::to_string_pretty(&json!({
+                "amount": amount_specified,
+                "input": input_token_mint,
+                "output": output_token_mint,
+                "funder": wallet.pubkey(),
+                "slippage": slippage_bps as f32 / 100.,
+            }))
+            .unwrap()
         );
         if !confirmed
             && !dialoguer::Confirm::new()
@@ -213,6 +217,8 @@ impl Raydium {
             &[wallet],
             provider.rpc_client.get_latest_blockhash()?,
         );
+        let sim_res = provider.rpc_client.simulate_transaction(&tx).unwrap();
+        info!("Simulation: {}", serde_json::to_string_pretty(&sim_res)?);
         match provider.send_tx(&tx, true) {
             Ok(signature) => {
                 info!("Transaction {} successful", signature);
@@ -221,9 +227,6 @@ impl Raydium {
             Err(e) => {
                 error!("Transaction failed: {}", e);
                 dbg_print_tx(&tx);
-                let res =
-                    provider.rpc_client.simulate_transaction(&tx).unwrap();
-                info!("Simulation: {}", serde_json::to_string_pretty(&res)?);
             }
         };
         Ok(())
@@ -295,11 +298,19 @@ pub fn generate_pub_key(from: &Pubkey, seed: &str) -> Pubkey {
     Pubkey::create_with_seed(from, seed, &spl_token::id()).unwrap()
 }
 
-pub fn make_compute_budget_ixs(price: u64, units: u32) -> Vec<Instruction> {
+pub fn make_compute_budget_ixs(price: u64, max_units: u32) -> Vec<Instruction> {
     vec![
         solana_sdk::compute_budget::ComputeBudgetInstruction::set_compute_unit_price(price),
-        solana_sdk::compute_budget::ComputeBudgetInstruction::set_compute_unit_limit(units),
+        solana_sdk::compute_budget::ComputeBudgetInstruction::set_compute_unit_limit(max_units),
     ]
+}
+
+pub fn make_priority_compute_budget_ixs(
+    provider: &Provider,
+    addressess: &[Pubkey],
+) -> Vec<Instruction> {
+    // let res = provider.rpc_client.get_recent_prioritization_fees(addresses).unwrap();
+    vec![]
 }
 
 pub fn dbg_print_tx(tx: &Transaction) {
