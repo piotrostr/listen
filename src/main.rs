@@ -145,12 +145,27 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     if log.value.err.is_some() {
                         continue; // Skip error logs
                     }
-                    println!("{}", serde_json::to_string_pretty(&log).unwrap());
+                    // println!("{}", serde_json::to_string_pretty(&log).unwrap());
                     let new_pool_info = tx_parser::parse_new_pool(
                         &provider.get_tx(&log.value.signature).unwrap(),
                     )
                     .unwrap();
-                    println!("{:?}", new_pool_info);
+                    info!("{:?}", new_pool_info);
+                    let (is_safe, msg) = provider
+                        .sanity_check(&new_pool_info.input_mint)
+                        .unwrap();
+                    if !is_safe {
+                        if !dialoguer::Confirm::new()
+                            .with_prompt(format!(
+                                "Unsafe pool: {}, {}",
+                                new_pool_info.input_mint, msg
+                            ))
+                            .interact()
+                            .unwrap()
+                        {
+                            continue;
+                        }
+                    }
                     // TODO move this to a separate service listening in a separate thread
                     // same as in case of receiver and processor pool for Command::Listen
                     if snipe {

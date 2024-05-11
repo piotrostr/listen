@@ -164,6 +164,7 @@ impl Provider {
         let state = StateWithExtensionsOwned::<Mint>::unpack(account.data)?;
         // could also retry with the spl_token, using spl_token_2022 above, but
         // I assume backwards compatibility
+        info!("{:?}", state);
         if state.base.mint_authority.is_some() {
             return Ok((
                 false,
