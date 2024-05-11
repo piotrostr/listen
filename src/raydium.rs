@@ -3,6 +3,7 @@ use std::str::FromStr;
 use log::{debug, error, info};
 use raydium_library::amm;
 
+use crate::{constants, Provider};
 use raydium_library::common;
 use serde_json::json;
 use solana_account_decoder::UiAccountEncoding;
@@ -13,10 +14,11 @@ use solana_client::rpc_filter::MemcmpEncodedBytes;
 use solana_client::rpc_filter::RpcFilterType;
 use solana_sdk::instruction::Instruction;
 use solana_sdk::program_pack::Pack;
-use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer, transaction::Transaction};
-use solana_transaction_status::Encodable;
-
-use crate::{constants, util, Provider};
+use solana_sdk::transaction::VersionedTransaction;
+use solana_sdk::{
+    pubkey::Pubkey, signature::Keypair, signer::Signer,
+    transaction::Transaction,
+};
 
 pub struct Raydium {}
 
@@ -74,7 +76,6 @@ impl Raydium {
                 },
             )
             .unwrap();
-        println!("{:?}", &accounts);
         Pubkey::default()
     }
 
@@ -83,7 +84,7 @@ impl Raydium {
         // need to fetch amm pool by input/output first
     }
 
-    pub fn swap(
+    pub fn make_swap_ixs(
         &self,
         amm_pool_id: Pubkey,
         input_token_mint: Pubkey,
@@ -91,13 +92,17 @@ impl Raydium {
         slippage_bps: u64,
         amount_specified: u64,
         swap_base_in: bool, // keep false
-        wallet: &Keypair,
         provider: &Provider,
-        confirmed: bool,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let amm_program = Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+        wallet: &Keypair,
+    ) -> Result<Vec<Instruction>, Box<dyn std::error::Error>> {
+        let amm_program =
+            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
         // load amm keys
-        let amm_keys = amm::utils::load_amm_keys(&provider.rpc_client, &amm_program, &amm_pool_id)?;
+        let amm_keys = amm::utils::load_amm_keys(
+            &provider.rpc_client,
+            &amm_program,
+            &amm_pool_id,
+        )?;
         // load market keys
         let market_keys = amm::openbook::get_keys_for_market(
             &provider.rpc_client,
@@ -186,14 +191,39 @@ impl Raydium {
             vec![swap_ix],
             swap.post_swap_instructions,
         ];
+        Ok(ixs.concat())
+    }
+
+    pub fn swap(
+        &self,
+        amm_pool_id: Pubkey,
+        input_token_mint: Pubkey,
+        output_token_mint: Pubkey,
+        slippage_bps: u64,
+        amount_specified: u64,
+        swap_base_in: bool, // keep false
+        wallet: &Keypair,
+        provider: &Provider,
+        confirmed: bool,
+    ) -> Result<(), Box<dyn std::error::Error>> {
+        let ixs = self.make_swap_ixs(
+            amm_pool_id,
+            input_token_mint,
+            output_token_mint,
+            slippage_bps,
+            amount_specified,
+            swap_base_in,
+            provider,
+            wallet,
+        )?;
         println!(
             "{}",
             serde_json::to_string_pretty(&json!({
                 "amount": amount_specified,
-                "input": input_token_mint,
-                "output": output_token_mint,
-                "funder": wallet.pubkey(),
-                "slippage": slippage_bps as f32 / 100.,
+                "input": input_token_mint.to_string(),
+                "output": output_token_mint.to_string(),
+                "funder": wallet.pubkey().to_string(),
+                "slippage": slippage_bps,
             }))
             .unwrap()
         );
@@ -205,11 +235,12 @@ impl Raydium {
             return Ok(());
         }
         let tx = Transaction::new_signed_with_payer(
-            &ixs.concat(),
+            ixs.as_slice(),
             Some(&wallet.pubkey()),
             &[wallet],
             provider.rpc_client.get_latest_blockhash()?,
         );
+        let tx = VersionedTransaction::from(tx);
         let sim_res = provider.rpc_client.simulate_transaction(&tx).unwrap();
         info!("Simulation: {}", serde_json::to_string_pretty(&sim_res)?);
         match provider.send_tx(&tx, true) {
@@ -219,7 +250,6 @@ impl Raydium {
             }
             Err(e) => {
                 error!("Transaction failed: {}", e);
-                dbg_print_tx(&tx);
             }
         };
         Ok(())
@@ -236,20 +266,23 @@ pub fn handle_token_account(
 ) -> Result<Pubkey, Box<dyn std::error::Error>> {
     // two cases - an account is a token account or a native account (WSOL)
     if (*mint).to_string() == constants::SOLANA_PROGRAM_ID {
-        let rent = provider
-            .rpc_client
-            .get_minimum_balance_for_rent_exemption(spl_token::state::Account::LEN)?;
+        let rent = provider.rpc_client.get_minimum_balance_for_rent_exemption(
+            spl_token::state::Account::LEN,
+        )?;
         let lamports = rent + amount;
         let seed = &Keypair::new().pubkey().to_string()[0..32];
         let token = generate_pub_key(owner, seed);
-        let mut init_ixs = create_init_token(&token, seed, mint, owner, funding, lamports);
+        let mut init_ixs =
+            create_init_token(&token, seed, mint, owner, funding, lamports);
         let mut close_ixs = common::close_account(&token, owner, owner);
         // swap.signers.push(token);
         swap.pre_swap_instructions.append(&mut init_ixs);
         swap.post_swap_instructions.append(&mut close_ixs);
         Ok(token)
     } else {
-        let token = &spl_associated_token_account::get_associated_token_address(owner, mint);
+        let token = &spl_associated_token_account::get_associated_token_address(
+            owner, mint,
+        );
         let mut ata_ixs = common::create_ata_token_or_not(funding, mint, owner);
         swap.pre_swap_instructions.append(&mut ata_ixs);
         Ok(*token)
@@ -274,7 +307,13 @@ pub fn create_init_token(
             spl_token::state::Account::LEN as u64,
             &spl_token::id(),
         ),
-        spl_token::instruction::initialize_account(&spl_token::id(), token, mint, owner).unwrap(),
+        spl_token::instruction::initialize_account(
+            &spl_token::id(),
+            token,
+            mint,
+            owner,
+        )
+        .unwrap(),
     ]
 }
 
@@ -295,14 +334,4 @@ pub fn make_priority_compute_budget_ixs(
 ) -> Vec<Instruction> {
     // let res = provider.rpc_client.get_recent_prioritization_fees(addresses).unwrap();
     vec![]
-}
-
-pub fn dbg_print_tx(tx: &Transaction) {
-    debug!(
-        "Transaction: {}",
-        serde_json::to_string_pretty(
-            &tx.encode(solana_transaction_status::UiTransactionEncoding::Base58)
-        )
-        .unwrap(),
-    );
 }

@@ -45,6 +45,7 @@ fn test_get_amm_pool_id() {
 }
 
 #[test]
+#[ignore = "This test requires a live network connection"]
 fn test_parse_new_pool() {
     let new_pool_tx_signature: &str = "2nkbEdznrqqoXyxcrYML8evHtAKcNTurBBXGWACS6cxJDHYGosgVdy66gaqHzgtRWWH13bzMF4kovSEQUVYdDPku";
     let provider = Provider::new(must_get_env("RPC_URL"));
@@ -63,4 +64,13 @@ fn test_parse_new_pool() {
         new_pool_info.output_mint.to_string(),
         "9TMuCmQqMBaW8JRPGJEAuetJt94JVruuKVY8r8HvtYKd".to_string()
     );
+}
+
+#[test]
+fn test_sanity_check() {
+    let mint = Pubkey::from_str("3jGenV1FXBQWKtviJUWXUwXFiA8TNV4QGF2n499HnJmw")
+        .unwrap();
+    let provider = Provider::new(must_get_env("RPC_URL"));
+    provider.sanity_check(&mint).unwrap();
+    assert!(false);
 }

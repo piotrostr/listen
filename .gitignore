@@ -1,3 +1,5 @@
+.env
+auth.json
 out.stacks
 flame-graph.html
 flamegraph.svg

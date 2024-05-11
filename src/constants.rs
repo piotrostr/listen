@@ -17,3 +17,6 @@ pub const OPENBOOK_PROGRAM_ID: &str =
     "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX";
 
 pub const FEE_PROGRAM_ID: &str = "7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5";
+
+pub const JITO_TIP_PUBKEY: &str =
+    "Cw8CFyM9FkoMi7K7Crf6HNQqf4uEMzpKw6QNghXLvLkY";

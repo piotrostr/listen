@@ -1,6 +1,5 @@
-use std::str::FromStr;
-
 use crate::{constants, types};
+use std::str::FromStr;
 
 use log::{debug, info};
 use solana_client::{
@@ -15,7 +14,7 @@ use solana_sdk::{
 use solana_transaction_status::{
     EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding,
 };
-use spl_token::state::Account;
+use spl_token_2022::state::Account;
 
 pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
     let rpc_client =
@@ -82,15 +81,28 @@ impl Provider {
         Box<dyn std::error::Error>,
     > {
         let sig = Signature::from_str(signature)?;
-        let tx = self.rpc_client.get_transaction_with_config(
-            &sig,
-            RpcTransactionConfig {
-                encoding: Some(UiTransactionEncoding::JsonParsed),
-                commitment: Some(CommitmentConfig::confirmed()),
-                max_supported_transaction_version: Some(1),
-            },
-        )?;
-        Ok(tx)
+        let mut backoff = 100;
+        let retries = 5;
+        for _ in 0..retries {
+            match self.rpc_client.get_transaction_with_config(
+                &sig,
+                RpcTransactionConfig {
+                    encoding: Some(UiTransactionEncoding::JsonParsed),
+                    commitment: Some(CommitmentConfig::confirmed()),
+                    max_supported_transaction_version: Some(1),
+                },
+            ) {
+                Ok(tx) => return Ok(tx),
+                Err(e) => {
+                    debug!("Error getting tx: {:?}", e);
+                    std::thread::sleep(std::time::Duration::from_millis(
+                        backoff,
+                    ));
+                    backoff *= 2;
+                }
+            }
+        }
+        Err(format!("could not fetch {}", signature).into())
     }
 
     pub async fn get_pricing(
@@ -127,10 +139,21 @@ impl Provider {
             },
         ) {
             Ok(signature) => {
-                info!("Finalized in: {:?}", start.elapsed());
+                info!("Sent in: {:?}", start.elapsed());
                 Ok(signature.to_string())
             }
             Err(e) => Err(e.into()),
         }
+    }
+
+    pub fn sanity_check(
+        &self,
+        mint: &Pubkey,
+    ) -> Result<bool, Box<dyn std::error::Error>> {
+        let account = self.rpc_client.get_account(&mint)?;
+        println!("{:?}", account);
+        let data = Account::unpack(&account.data)?;
+        println!("{:?}", data);
+        Ok(true)
     }
 }
