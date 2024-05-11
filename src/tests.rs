@@ -68,9 +68,13 @@ fn test_parse_new_pool() {
 
 #[test]
 fn test_sanity_check() {
+    // non-renounced freeze authority
     let mint = Pubkey::from_str("3jGenV1FXBQWKtviJUWXUwXFiA8TNV4QGF2n499HnJmw")
         .unwrap();
     let provider = Provider::new(must_get_env("RPC_URL"));
-    provider.sanity_check(&mint).unwrap();
-    assert!(false);
+    assert!(provider.sanity_check(&mint).unwrap().0 == false);
+    // michi
+    let mint = Pubkey::from_str("5mbK36SZ7J19An8jFochhQS4of8g6BwUjbeCSxBSoWdp")
+        .unwrap();
+    assert!(provider.sanity_check(&mint).unwrap().0 == true);
 }

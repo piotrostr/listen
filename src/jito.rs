@@ -83,7 +83,4 @@ pub async fn send_swap_tx(
         &mut bundle_results_subscription,
     )
     .await
-    .expect("Bundle submission failed");
-
-    Ok(())
 }

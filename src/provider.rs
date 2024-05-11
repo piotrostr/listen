@@ -4,7 +4,11 @@ use std::str::FromStr;
 use log::{debug, info};
 use solana_client::{
     rpc_client::{RpcClient, SerializableTransaction},
-    rpc_config::{RpcSendTransactionConfig, RpcTransactionConfig},
+    rpc_config::{
+        RpcAccountInfoConfig, RpcProgramAccountsConfig,
+        RpcSendTransactionConfig, RpcTransactionConfig,
+    },
+    rpc_filter::RpcFilterType,
     rpc_request::TokenAccountsFilter,
 };
 use solana_sdk::{
@@ -14,7 +18,10 @@ use solana_sdk::{
 use solana_transaction_status::{
     EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding,
 };
-use spl_token_2022::state::Account;
+use spl_token_2022::{
+    extension::StateWithExtensionsOwned,
+    state::{Account, Mint},
+};
 
 pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
     let rpc_client =
@@ -149,11 +156,26 @@ impl Provider {
     pub fn sanity_check(
         &self,
         mint: &Pubkey,
-    ) -> Result<bool, Box<dyn std::error::Error>> {
-        let account = self.rpc_client.get_account(&mint)?;
-        println!("{:?}", account);
-        let data = Account::unpack(&account.data)?;
-        println!("{:?}", data);
-        Ok(true)
+    ) -> Result<(bool, String), Box<dyn std::error::Error>> {
+        let account = self.rpc_client.get_account(mint)?;
+        // recommended approach
+        // get the token account mint based on the account too to confirm
+        // skipping this check for fast testing
+        let state = StateWithExtensionsOwned::<Mint>::unpack(account.data)?;
+        // could also retry with the spl_token, using spl_token_2022 above, but
+        // I assume backwards compatibility
+        if state.base.mint_authority.is_some() {
+            return Ok((
+                false,
+                "mint authority has not been renounced".to_string(),
+            ));
+        }
+        if state.base.freeze_authority.is_some() {
+            return Ok((
+                false,
+                "freeze authority has not been renounced".to_string(),
+            ));
+        }
+        Ok((true, "ok".to_string()))
     }
 }

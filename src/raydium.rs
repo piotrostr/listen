@@ -49,7 +49,7 @@ impl Raydium {
         const INPUT_MINT_OFFSET: usize = 53;
         const OUTPUT_MINT_OFFSET: usize = 85;
 
-        let accounts = provider
+        let _accounts = provider
             .rpc_client
             .get_program_accounts_with_config(
                 &Pubkey::from_str(constants::OPENBOOK_PROGRAM_ID).unwrap(),
@@ -81,7 +81,7 @@ impl Raydium {
 
     // swap_simple is a wrapper around swap that requires only the token mint
     pub fn swap_simple(&self, _output_token_mint: Pubkey, _sol_amount: u64) {
-        // need to fetch amm pool by input/output first
+        // need to fetch amm pool by input/output first, not critical but useful
     }
 
     pub fn make_swap_ixs(
@@ -224,8 +224,7 @@ impl Raydium {
                 "output": output_token_mint.to_string(),
                 "funder": wallet.pubkey().to_string(),
                 "slippage": slippage_bps,
-            }))
-            .unwrap()
+            }))?
         );
         if !confirmed
             && !dialoguer::Confirm::new()
@@ -241,7 +240,7 @@ impl Raydium {
             provider.rpc_client.get_latest_blockhash()?,
         );
         let tx = VersionedTransaction::from(tx);
-        let sim_res = provider.rpc_client.simulate_transaction(&tx).unwrap();
+        let sim_res = provider.rpc_client.simulate_transaction(&tx)?;
         info!("Simulation: {}", serde_json::to_string_pretty(&sim_res)?);
         match provider.send_tx(&tx, true) {
             Ok(signature) => {

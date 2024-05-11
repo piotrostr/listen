@@ -161,7 +161,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     new_pool_info.input_mint,
                                     new_pool_info.output_mint,
                                     300,
-                                    1_000_000,
+                                    10_000_000,
                                     true,
                                     &provider,
                                     &wallet,
@@ -267,7 +267,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     &keypair,
                     &provider,
                     yes.unwrap_or(false),
-                    slippage.unwrap_or(50),
+                    slippage.unwrap_or(800),
                 )
                 .await?;
             } else {
