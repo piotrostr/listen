@@ -47,3 +47,4 @@ tonic = { version = "0.10", features = [
   "tls-roots",
   "tls-webpki-roots",
 ] }
+timed = "0.2.1"

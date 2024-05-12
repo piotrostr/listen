@@ -3,6 +3,7 @@ use std::str::FromStr;
 use log::{debug, error, info};
 use raydium_library::amm;
 use std::error::Error;
+use timed::timed;
 
 use crate::{constants, Provider};
 use raydium_library::common;
@@ -102,6 +103,7 @@ pub async fn make_swap_context(
     })
 }
 
+#[timed(duration(printer = "info!"))]
 pub fn make_swap_ixs(
     provider: &Provider,
     wallet: &Keypair,
@@ -109,7 +111,6 @@ pub fn make_swap_ixs(
 ) -> Result<Vec<Instruction>, Box<dyn Error>> {
     // calculate amm pool vault with load data at the same time or use simulate to calculate
     // this step adds some latency, could be pre-calculated while waiting for the JITO leader
-    let start = std::time::Instant::now();
     let result = raydium_library::amm::calculate_pool_vault_amounts(
         &provider.rpc_client,
         &swap_context.amm_program,
@@ -181,8 +182,6 @@ pub fn make_swap_ixs(
         vec![swap_ix],
         swap_context.swap.post_swap_instructions.clone(),
     ];
-    let end = std::time::Instant::now();
-    info!("Time to make swap ixs: {:?}", end - start);
     Ok(ixs.concat())
 }
 

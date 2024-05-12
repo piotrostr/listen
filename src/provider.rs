@@ -18,6 +18,7 @@ use spl_token_2022::{
     extension::StateWithExtensionsOwned,
     state::{Account, Mint},
 };
+use timed::timed;
 
 pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
     let rpc_client =
@@ -40,12 +41,14 @@ pub struct Provider {
 }
 
 impl Provider {
+    #[timed(duration(printer = "info!"))]
     pub fn new(rpc_url: String) -> Provider {
         Provider {
             rpc_client: get_client(rpc_url.as_str()).unwrap(),
         }
     }
 
+    #[timed(duration(printer = "info!"))]
     pub fn get_balance(
         &self,
         pubkey: &Pubkey,
@@ -54,6 +57,7 @@ impl Provider {
         Ok(balance)
     }
 
+    #[timed(duration(printer = "info!"))]
     pub fn get_spl_balance(
         &self,
         pubkey: &Pubkey,
@@ -76,6 +80,7 @@ impl Provider {
         }
     }
 
+    #[timed(duration(printer = "info!"))]
     pub fn get_tx(
         &self,
         signature: &str,
@@ -108,6 +113,7 @@ impl Provider {
         Err(format!("could not fetch {}", signature).into())
     }
 
+    #[timed(duration(printer = "info!"))]
     pub async fn get_pricing(
         &self,
         mint: &str,
@@ -128,6 +134,7 @@ impl Provider {
         Ok(data)
     }
 
+    #[timed(duration(printer = "info!"))]
     pub fn send_tx(
         &self,
         tx: &impl SerializableTransaction,
@@ -152,6 +159,7 @@ impl Provider {
         }
     }
 
+    #[timed(duration(printer = "info!"))]
     pub async fn sanity_check(
         &self,
         mint: &Pubkey,

@@ -1,4 +1,5 @@
 use core::panic;
+use log::info;
 use std::str::FromStr;
 
 use solana_sdk::pubkey::Pubkey;
@@ -7,6 +8,7 @@ use solana_transaction_status::{
     EncodedConfirmedTransactionWithStatusMeta, EncodedTransaction,
     UiInstruction, UiMessage, UiParsedInstruction,
 };
+use timed::timed;
 
 use crate::{constants, util, Swap};
 
@@ -17,6 +19,7 @@ pub struct NewPool {
     pub output_mint: Pubkey,
 }
 
+#[timed(duration(printer = "info!"))]
 pub fn parse_mint(
     tx: &EncodedConfirmedTransactionWithStatusMeta,
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -41,6 +44,7 @@ pub fn parse_mint(
     Err("Mint not found in tx".into())
 }
 
+#[timed(duration(printer = "info!"))]
 pub fn parse_tmp_account(
     tx: &EncodedConfirmedTransactionWithStatusMeta,
 ) -> Result<String, Box<dyn std::error::Error>> {
@@ -73,6 +77,7 @@ pub fn parse_signer() -> Result<String, Box<dyn std::error::Error>> {
     Err("Not implemented".into())
 }
 
+#[timed(duration(printer = "info!"))]
 pub fn parse_notional(
     tx: &EncodedConfirmedTransactionWithStatusMeta,
 ) -> Result<u64, Box<dyn std::error::Error>> {
@@ -93,6 +98,7 @@ pub fn deserialize<T: Clone>(item: &OptionSerializer<T>) -> T {
     }
 }
 
+#[timed(duration(printer = "info!"))]
 pub fn parse_new_pool(
     tx: &EncodedConfirmedTransactionWithStatusMeta,
 ) -> Result<NewPool, Box<dyn std::error::Error>> {
@@ -139,6 +145,7 @@ pub fn parse_new_pool(
     Ok(pool_info)
 }
 
+#[timed(duration(printer = "info!"))]
 pub fn parse_swap(
     tx: &EncodedConfirmedTransactionWithStatusMeta,
 ) -> Result<Swap, Box<dyn std::error::Error>> {
@@ -189,6 +196,7 @@ pub fn parse_swap(
     Ok(swap)
 }
 
+#[timed(duration(printer = "info!"))]
 pub fn parse_instructions(
     tx: &EncodedConfirmedTransactionWithStatusMeta,
 ) -> Result<Vec<UiInstruction>, Box<dyn std::error::Error>> {

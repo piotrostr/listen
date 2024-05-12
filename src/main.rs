@@ -1,7 +1,6 @@
 use crossbeam::channel::Receiver;
 use jito_searcher_client::get_searcher_client;
 use log::{warn, LevelFilter};
-use serde::Serialize;
 use serde_json::json;
 use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 

@@ -50,6 +50,7 @@ pub async fn wait_leader(
     Ok(true)
 }
 
+#[timed::timed(duration(printer = "info!"))]
 pub async fn send_swap_tx(
     ixs: Vec<Instruction>,
     tip: u64,
