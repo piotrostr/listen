@@ -194,6 +194,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 "input": new_pool_info.input_mint.to_string(),
                                 "output": new_pool_info.output_mint.to_string(),
                                 "pool": new_pool_info.amm_pool_id.to_string(),
+                                "amount": amount,
                             }))
                             .expect("serialize pool info")
                         );
