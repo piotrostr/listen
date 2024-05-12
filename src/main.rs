@@ -119,9 +119,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // 30th April, let's see how well this ages lol
     let sol_price = 135.;
     let app = App::parse();
-    let provider = Provider::new(must_get_env("RPC_URL"));
+    let provider = Provider::new(dotenv::var("RPC_URL").expect("RPC_URL set"));
     let raydium = Raydium::new();
-    let listener = Listener::new(app.args.ws_url);
+    let listener = Listener::new(dotenv::var("WS_URL").expect("WS_URL set"));
     let jup = Jupiter::new();
 
     let auth = Arc::new(
@@ -264,7 +264,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 &wallet,
                                 &mut searcher_client,
                                 &nonblocking::rpc_client::RpcClient::new(
-                                    must_get_env("RPC_URL"),
+                                    dotenv::var("RPC_URL")
+                                        .expect("RPC_URL set"),
                                 ),
                             )
                             .await
