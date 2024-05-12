@@ -167,11 +167,9 @@ impl Provider {
         let account = self.rpc_client.get_account(mint)?;
         // recommended approach
         // get the token account mint based on the account too to confirm
-        // skipping this check for fast testing
-        let state = StateWithExtensionsOwned::<Mint>::unpack(account.data)?;
-        // could also retry with the spl_token, using spl_token_2022 above, but
-        // I assume backwards compatibility
-        info!("{}: {:?}", mint.to_string(), state);
+        // skipping this check for the time being
+        let state = StateWithExtensionsOwned::<Mint>::unpack(account.data)
+            .expect("unpack mint");
         if state.base.mint_authority.is_some() {
             return Ok((
                 false,

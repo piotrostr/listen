@@ -241,16 +241,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             )
                             .expect("make swap ixs");
                             info!(
-                                "https://dexscreener.com/solana/{}",
-                                mint.to_string()
-                            );
-                            info!(
-                                "https://jup.ag/swap/{}-SOL",
-                                mint.to_string()
-                            );
-                            info!(
-                                "https://rugcheck.xyz/tokens/{}",
-                                mint.to_string()
+                                "{}",
+                                serde_json::to_string_pretty(&json!(vec![
+                                    format!(
+                                        "https://dexscreener.com/solana/{}",
+                                        mint.to_string()
+                                    ),
+                                    format!(
+                                        "https://jup.ag/swap/{}-SOL",
+                                        mint.to_string()
+                                    ),
+                                    format!(
+                                        "https://rugcheck.xyz/tokens/{}",
+                                        mint.to_string()
+                                    ),
+                                ]))
+                                .expect("to string pretty")
                             );
                             match jito::send_swap_tx(
                                 ixs,
