@@ -1,4 +1,3 @@
-use dotenv;
 use jito_searcher_client::get_searcher_client;
 use log::{warn, LevelFilter};
 use std::{str::FromStr, sync::Arc, time::Duration};
@@ -7,7 +6,7 @@ use clap::Parser;
 use listen::{
     constants, jito,
     jup::Jupiter,
-    prometheus,
+    prometheus, raydium,
     raydium::Raydium,
     rpc, tx_parser,
     util::{self, must_get_env},
@@ -50,6 +49,10 @@ struct Args {
 
 #[derive(Debug, Parser)]
 enum Command {
+    Price {
+        #[arg(long)]
+        mint: String,
+    },
     BenchRPC {
         #[arg(long)]
         rpc_url: String,
@@ -72,6 +75,12 @@ enum Command {
 
         #[arg(long, action = clap::ArgAction::SetTrue)]
         use_jito: Option<bool>,
+
+        #[arg(long, default_value_t = 1_000_000)]
+        amount: u64,
+
+        #[arg(long, default_value_t = 800)]
+        slippage: u64,
     },
     Wallet {},
     Swap {
@@ -131,15 +140,28 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                 )
             );
         }
-        Command::ListenPools { snipe, use_jito } => {
+        Command::Price { mint } => {
+            println!("{}", mint);
+            // not implemented
+        }
+        Command::ListenPools {
+            snipe,
+            use_jito,
+            amount,
+            slippage,
+        } => {
             let snipe = snipe.unwrap_or(false);
             let use_jito = use_jito.unwrap_or(false);
             let (mut subs, recv) = listener.new_lp_subscribe()?;
             // let provider = Provider::new(app.args.url);
             println!("Listening for LP events");
-            let wallet = Keypair::read_from_file(
-                must_get_env("HOME") + "/.config/solana/id.json",
-            )?;
+            let wallet =
+                Keypair::read_from_file(dotenv::var("FUND_KEYPAIR_PATH")?)?;
+            println!("Funder: {}", wallet.pubkey());
+            println!(
+                "Balance: {}",
+                util::lamports_to_sol(provider.get_balance(&wallet.pubkey())?)
+            );
             let listener = tokio::spawn(async move {
                 while let Ok(log) = recv.recv() {
                     if log.value.err.is_some() {
@@ -149,16 +171,22 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     let new_pool_info = tx_parser::parse_new_pool(
                         &provider.get_tx(&log.value.signature).unwrap(),
                     )
-                    .unwrap();
+                    .expect("parse pool info");
+                    let mint = if new_pool_info.input_mint.to_string()
+                        == constants::SOLANA_PROGRAM_ID
+                    {
+                        new_pool_info.output_mint
+                    } else {
+                        new_pool_info.input_mint
+                    };
                     info!("{:?}", new_pool_info);
-                    let (is_safe, msg) = provider
-                        .sanity_check(&new_pool_info.input_mint)
-                        .unwrap();
+                    let (is_safe, msg) =
+                        provider.sanity_check(&mint).await.unwrap();
                     if !is_safe {
                         if !dialoguer::Confirm::new()
                             .with_prompt(format!(
-                                "Unsafe pool: {}, {}",
-                                new_pool_info.input_mint, msg
+                                "Unsafe pool {}: {}",
+                                mint, msg
                             ))
                             .interact()
                             .unwrap()
@@ -169,19 +197,30 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     // TODO move this to a separate service listening in a separate thread
                     // same as in case of receiver and processor pool for Command::Listen
                     if snipe {
+                        let swap_context = raydium::make_swap_context(
+                            &provider,
+                            new_pool_info.amm_pool_id,
+                            new_pool_info.input_mint,
+                            new_pool_info.output_mint,
+                            &wallet,
+                            slippage,
+                            amount,
+                        )
+                        .await
+                        .expect("make_swap_context");
                         if use_jito {
-                            let ixs = raydium
-                                .make_swap_ixs(
-                                    new_pool_info.amm_pool_id,
-                                    new_pool_info.input_mint,
-                                    new_pool_info.output_mint,
-                                    300,
-                                    10_000_000,
-                                    true,
-                                    &provider,
-                                    &wallet,
-                                )
-                                .expect("makes swap ixs");
+                            jito::wait_leader(&mut searcher_client)
+                                .await
+                                .expect("wait leader");
+
+                            // auto shows 8% slippage on jup for the most part, more might be needed
+                            let ixs = raydium::make_swap_ixs(
+                                &provider,
+                                &wallet,
+                                &swap_context,
+                            )
+                            .expect("make swap ixs");
+
                             match jito::send_swap_tx(
                                 ixs,
                                 50000,
@@ -204,14 +243,14 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     new_pool_info.amm_pool_id,
                                     new_pool_info.input_mint,
                                     new_pool_info.output_mint,
-                                    300,    // 3.0%
                                     100000, // 0.001 SOL
-                                    true,
+                                    300,    // 3.0%
                                     &wallet,
                                     &provider,
                                     false,
                                 )
-                                .unwrap();
+                                .await
+                                .expect("raydium swap without jito");
                         }
                     }
                 }
@@ -259,18 +298,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                     provider
                         .get_spl_balance(&wallet.pubkey(), &input_token_mint)?
                 };
-                let swap_base_in = true;
-                raydium.swap(
-                    amm_pool_id,
-                    input_token_mint,
-                    output_token_mint,
-                    slippage_bps,
-                    amount_specified,
-                    swap_base_in,
-                    &wallet,
-                    &provider,
-                    yes.unwrap_or(false),
-                )?;
+                raydium
+                    .swap(
+                        amm_pool_id,
+                        input_token_mint,
+                        output_token_mint,
+                        amount_specified,
+                        slippage_bps,
+                        &wallet,
+                        &provider,
+                        yes.unwrap_or(false),
+                    )
+                    .await?;
                 return Ok(());
             }
             let keypair = Keypair::read_from_file(&path)?;

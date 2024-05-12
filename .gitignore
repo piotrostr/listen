@@ -1,5 +1,6 @@
 .env
 auth.json
+fund.json
 out.stacks
 flame-graph.html
 flamegraph.svg

@@ -19,20 +19,12 @@ use tonic::{codegen::InterceptedService, transport::Channel};
 
 use crate::constants;
 
-pub async fn send_swap_tx(
-    ixs: Vec<Instruction>,
-    tip: u64,
-    payer: &Keypair,
-    searcher_client: &mut SearcherServiceClient<
-        InterceptedService<Channel, ClientInterceptor>,
-    >,
-    rpc_client: &RpcClient,
+type SearcherClient =
+    SearcherServiceClient<InterceptedService<Channel, ClientInterceptor>>;
+
+pub async fn wait_leader(
+    searcher_client: &mut SearcherClient,
 ) -> Result<(), Box<dyn std::error::Error>> {
-    let mut bundle_results_subscription = searcher_client
-        .subscribe_bundle_results(SubscribeBundleResultsRequest {})
-        .await
-        .expect("subscribe to bundle results")
-        .into_inner();
     let mut is_leader_slot = false;
     while !is_leader_slot {
         let next_leader = searcher_client
@@ -43,13 +35,29 @@ pub async fn send_swap_tx(
             .expect("gets next scheduled leader")
             .into_inner();
         let num_slots = next_leader.next_leader_slot - next_leader.current_slot;
-        is_leader_slot = num_slots <= 2;
+        // give three slots for calc and bundle creation
+        is_leader_slot = num_slots <= 3;
         info!(
             "next jito leader slot in {num_slots} slots in {}",
             next_leader.next_leader_region
         );
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
+    Ok(())
+}
+
+pub async fn send_swap_tx(
+    ixs: Vec<Instruction>,
+    tip: u64,
+    payer: &Keypair,
+    searcher_client: &mut SearcherClient,
+    rpc_client: &RpcClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let mut bundle_results_subscription = searcher_client
+        .subscribe_bundle_results(SubscribeBundleResultsRequest {})
+        .await
+        .expect("subscribe to bundle results")
+        .into_inner();
     // build + sign the transactions
     let blockhash = rpc_client
         .get_latest_blockhash()

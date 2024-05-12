@@ -2,6 +2,7 @@ use std::str::FromStr;
 
 use log::{debug, error, info};
 use raydium_library::amm;
+use std::error::Error;
 
 use crate::{constants, Provider};
 use raydium_library::common;
@@ -25,6 +26,146 @@ pub struct Raydium {}
 pub struct Swap {
     pre_swap_instructions: Vec<Instruction>,
     post_swap_instructions: Vec<Instruction>,
+}
+
+pub struct SwapContext {
+    pub amm_program: Pubkey,
+    pub amm_pool: Pubkey,
+    pub amm_keys: amm::AmmKeys,
+    pub market_keys: amm::openbook::MarketPubkeys,
+    pub swap: Swap,
+    pub user_source: Pubkey,
+    pub user_destination: Pubkey,
+    pub amount: u64,
+    pub input_token_mint: Pubkey,
+    pub output_token_mint: Pubkey,
+    pub slippage: u64,
+    pub swap_base_in: bool,
+}
+
+pub async fn make_swap_context(
+    provider: &Provider,
+    amm_pool: Pubkey,
+    input_token_mint: Pubkey,
+    output_token_mint: Pubkey,
+    wallet: &Keypair,
+    slippage: u64,
+    amount: u64,
+) -> Result<SwapContext, Box<dyn Error>> {
+    let amm_program =
+        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+    // load amm keys
+    let amm_keys = amm::utils::load_amm_keys(
+        &provider.rpc_client,
+        &amm_program,
+        &amm_pool,
+    )?;
+    // load market keys
+    let market_keys = amm::openbook::get_keys_for_market(
+        &provider.rpc_client,
+        &amm_keys.market_program,
+        &amm_keys.market,
+    )?;
+    let mut swap = Swap {
+        pre_swap_instructions: vec![],
+        post_swap_instructions: vec![],
+    };
+    let user_source = handle_token_account(
+        &mut swap,
+        provider,
+        &input_token_mint,
+        amount,
+        &wallet.pubkey(),
+        &wallet.pubkey(),
+    )?;
+    let user_destination = handle_token_account(
+        &mut swap,
+        provider,
+        &output_token_mint,
+        0,
+        &wallet.pubkey(),
+        &wallet.pubkey(),
+    )?;
+    Ok(SwapContext {
+        amm_program,
+        amm_keys,
+        amm_pool,
+        market_keys,
+        swap,
+        user_source,
+        user_destination,
+        amount,
+        input_token_mint,
+        output_token_mint,
+        slippage,
+        swap_base_in: true,
+    })
+}
+
+pub fn make_swap_ixs(
+    provider: &Provider,
+    wallet: &Keypair,
+    swap_context: &SwapContext,
+) -> Result<Vec<Instruction>, Box<dyn Error>> {
+    // calculate amm pool vault with load data at the same time or use simulate to calculate
+    // this step adds some latency, could be pre-calculated while waiting for the JITO leader
+    let result = raydium_library::amm::calculate_pool_vault_amounts(
+        &provider.rpc_client,
+        &swap_context.amm_program,
+        &swap_context.amm_pool,
+        &swap_context.amm_keys,
+        &swap_context.market_keys,
+        amm::utils::CalculateMethod::Simulate(wallet.pubkey()),
+    )?;
+    let direction = if swap_context.input_token_mint
+        == swap_context.amm_keys.amm_coin_mint
+        && swap_context.output_token_mint == swap_context.amm_keys.amm_pc_mint
+    {
+        amm::utils::SwapDirection::Coin2PC
+    } else {
+        amm::utils::SwapDirection::PC2Coin
+    };
+    let other_amount_threshold = amm::swap_with_slippage(
+        result.pool_pc_vault_amount,
+        result.pool_coin_vault_amount,
+        result.swap_fee_numerator,
+        result.swap_fee_denominator,
+        direction,
+        swap_context.amount,
+        swap_context.swap_base_in,
+        swap_context.slippage,
+    )?;
+    let swap_ix = amm::instructions::swap(
+        &swap_context.amm_program,
+        &swap_context.amm_keys,
+        &swap_context.market_keys,
+        &wallet.pubkey(),
+        &swap_context.user_source,
+        &swap_context.user_destination,
+        swap_context.amount,
+        other_amount_threshold,
+        swap_context.swap_base_in,
+    )?;
+    debug!(
+        "swap_ix program_id: {:?}, accounts: {} ",
+        swap_ix.program_id,
+        serde_json::to_string_pretty(
+            &swap_ix
+                .accounts
+                .iter()
+                .map(|x| x.pubkey.to_string())
+                .collect::<Vec<String>>()
+        )?,
+    );
+    let ixs = vec![
+        // TODO make this configurable, currently static but total is still max
+        // 0.0005 SOL which is peanuts
+        make_compute_budget_ixs(25_000, 500_000),
+        swap_context.swap.pre_swap_instructions.clone(),
+        vec![swap_ix],
+        swap_context.swap.post_swap_instructions.clone(),
+    ];
+    Ok(ixs.concat())
 }
 
 impl Default for Raydium {
@@ -84,146 +225,36 @@ impl Raydium {
         // need to fetch amm pool by input/output first, not critical but useful
     }
 
-    pub fn make_swap_ixs(
+    pub async fn swap(
         &self,
-        amm_pool_id: Pubkey,
+        amm_pool: Pubkey,
         input_token_mint: Pubkey,
         output_token_mint: Pubkey,
-        slippage_bps: u64,
-        amount_specified: u64,
-        swap_base_in: bool, // keep false
-        provider: &Provider,
-        wallet: &Keypair,
-    ) -> Result<Vec<Instruction>, Box<dyn std::error::Error>> {
-        let amm_program =
-            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
-        // load amm keys
-        let amm_keys = amm::utils::load_amm_keys(
-            &provider.rpc_client,
-            &amm_program,
-            &amm_pool_id,
-        )?;
-        // load market keys
-        let market_keys = amm::openbook::get_keys_for_market(
-            &provider.rpc_client,
-            &amm_keys.market_program,
-            &amm_keys.market,
-        )?;
-        // calculate amm pool vault with load data at the same time or use simulate to calculate
-        let result = raydium_library::amm::calculate_pool_vault_amounts(
-            &provider.rpc_client,
-            &amm_program,
-            &amm_pool_id,
-            &amm_keys,
-            &market_keys,
-            amm::utils::CalculateMethod::Simulate(wallet.pubkey()),
-        )?;
-        let direction = if input_token_mint == amm_keys.amm_coin_mint
-            && output_token_mint == amm_keys.amm_pc_mint
-        {
-            amm::utils::SwapDirection::Coin2PC
-        } else {
-            amm::utils::SwapDirection::PC2Coin
-        };
-        let other_amount_threshold = amm::swap_with_slippage(
-            result.pool_pc_vault_amount,
-            result.pool_coin_vault_amount,
-            result.swap_fee_numerator,
-            result.swap_fee_denominator,
-            direction,
-            amount_specified,
-            swap_base_in,
-            slippage_bps,
-        )?;
-        let mut swap = Swap {
-            pre_swap_instructions: vec![],
-            post_swap_instructions: vec![],
-        };
-        let user_source = handle_token_account(
-            &mut swap,
-            provider,
-            &input_token_mint,
-            amount_specified,
-            &wallet.pubkey(),
-            &wallet.pubkey(),
-        )?;
-        let user_destination = handle_token_account(
-            &mut swap,
-            provider,
-            &output_token_mint,
-            0,
-            &wallet.pubkey(),
-            &wallet.pubkey(),
-        )?;
-        // build swap instruction
-        let max_slippage = true;
-        let swap_ix = amm::instructions::swap(
-            &amm_program,
-            &amm_keys,
-            &market_keys,
-            &wallet.pubkey(),
-            &user_source,
-            &user_destination,
-            amount_specified,
-            if max_slippage {
-                0
-            } else {
-                other_amount_threshold
-            },
-            swap_base_in,
-        )?;
-        debug!(
-            "swap_ix program_id: {:?}, accounts: {} ",
-            swap_ix.program_id,
-            serde_json::to_string_pretty(
-                &swap_ix
-                    .accounts
-                    .iter()
-                    .map(|x| x.pubkey.to_string())
-                    .collect::<Vec<String>>()
-            )?,
-        );
-        let ixs = vec![
-            // TODO make this configurable, currently static but total is still max
-            // 0.0005 SOL which is peanuts
-            make_compute_budget_ixs(25_000, 500_000),
-            swap.pre_swap_instructions,
-            vec![swap_ix],
-            swap.post_swap_instructions,
-        ];
-        Ok(ixs.concat())
-    }
-
-    pub fn swap(
-        &self,
-        amm_pool_id: Pubkey,
-        input_token_mint: Pubkey,
-        output_token_mint: Pubkey,
-        slippage_bps: u64,
-        amount_specified: u64,
-        swap_base_in: bool, // keep false
+        amount: u64,
+        slippage: u64,
         wallet: &Keypair,
         provider: &Provider,
         confirmed: bool,
-    ) -> Result<(), Box<dyn std::error::Error>> {
-        let ixs = self.make_swap_ixs(
-            amm_pool_id,
+    ) -> Result<(), Box<dyn Error>> {
+        let swap_context = self::make_swap_context(
+            provider,
+            amm_pool,
             input_token_mint,
             output_token_mint,
-            slippage_bps,
-            amount_specified,
-            swap_base_in,
-            provider,
             wallet,
-        )?;
+            slippage,
+            amount,
+        )
+        .await?;
+        let ixs = self::make_swap_ixs(provider, wallet, &swap_context)?;
         println!(
             "{}",
             serde_json::to_string_pretty(&json!({
-                "amount": amount_specified,
+                "amount": amount,
                 "input": input_token_mint.to_string(),
                 "output": output_token_mint.to_string(),
                 "funder": wallet.pubkey().to_string(),
-                "slippage": slippage_bps,
+                "slippage": slippage,
             }))?
         );
         if !confirmed
@@ -262,7 +293,7 @@ pub fn handle_token_account(
     amount: u64,
     owner: &Pubkey,
     funding: &Pubkey,
-) -> Result<Pubkey, Box<dyn std::error::Error>> {
+) -> Result<Pubkey, Box<dyn Error>> {
     // two cases - an account is a token account or a native account (WSOL)
     if (*mint).to_string() == constants::SOLANA_PROGRAM_ID {
         let rent = provider.rpc_client.get_minimum_balance_for_rent_exemption(

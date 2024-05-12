@@ -4,11 +4,7 @@ use std::str::FromStr;
 use log::{debug, info};
 use solana_client::{
     rpc_client::{RpcClient, SerializableTransaction},
-    rpc_config::{
-        RpcAccountInfoConfig, RpcProgramAccountsConfig,
-        RpcSendTransactionConfig, RpcTransactionConfig,
-    },
-    rpc_filter::RpcFilterType,
+    rpc_config::{RpcSendTransactionConfig, RpcTransactionConfig},
     rpc_request::TokenAccountsFilter,
 };
 use solana_sdk::{
@@ -138,13 +134,16 @@ impl Provider {
         skip_preflight: bool,
     ) -> Result<String, Box<dyn std::error::Error>> {
         let start = std::time::Instant::now();
-        match self.rpc_client.send_transaction_with_config(
-            tx,
-            RpcSendTransactionConfig {
-                skip_preflight,
-                ..RpcSendTransactionConfig::default()
-            },
-        ) {
+        match self
+            .rpc_client
+            .send_and_confirm_transaction_with_spinner_and_config(
+                tx,
+                CommitmentConfig::confirmed(),
+                RpcSendTransactionConfig {
+                    skip_preflight,
+                    ..RpcSendTransactionConfig::default()
+                },
+            ) {
             Ok(signature) => {
                 info!("Sent in: {:?}", start.elapsed());
                 Ok(signature.to_string())
@@ -153,7 +152,7 @@ impl Provider {
         }
     }
 
-    pub fn sanity_check(
+    pub async fn sanity_check(
         &self,
         mint: &Pubkey,
     ) -> Result<(bool, String), Box<dyn std::error::Error>> {
@@ -164,7 +163,7 @@ impl Provider {
         let state = StateWithExtensionsOwned::<Mint>::unpack(account.data)?;
         // could also retry with the spl_token, using spl_token_2022 above, but
         // I assume backwards compatibility
-        info!("{:?}", state);
+        info!("{}: {:?}", mint.to_string(), state);
         if state.base.mint_authority.is_some() {
             return Ok((
                 false,
@@ -177,6 +176,25 @@ impl Provider {
                 "freeze authority has not been renounced".to_string(),
             ));
         }
+        // also check if this has been on pump fun, below does not really work
+        // since pumpfun api indexes non-pumpfun tokens
+        // let res = reqwest::get(
+        //     "https://pumpportal.fun/api/data/token-info?ca=".to_string()
+        //         + &mint.to_string(),
+        // )
+        // .await
+        // .unwrap()
+        // .json::<HashMap<String, String>>()
+        // .await
+        // .unwrap();
+
+        // if res.contains_key("data") {
+        //     return Ok((
+        //         false,
+        //         "this is from pump fun, might get dumped".to_string(),
+        //     ));
+        // }
+
         Ok((true, "ok".to_string()))
     }
 }

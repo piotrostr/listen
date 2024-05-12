@@ -21,6 +21,12 @@ pub struct Jupiter {
     client: JupiterSwapApiClient,
 }
 
+impl Default for Jupiter {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl Jupiter {
     pub fn new() -> Jupiter {
         Jupiter {
