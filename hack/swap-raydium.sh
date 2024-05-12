@@ -5,10 +5,10 @@
 cargo run -- swap \
   --dex raydium \
   --input-mint sol \
-  --output-mint 2dEwnfrpkmZbKRySNDtMvd4hdzJtjiuW8iLLA6wiCSJs \
-  --amm-pool-id 2uNCLciBjNEYzTba2Bg3ZKfWTJVaDtqMPi8Qmb633Bfi \
-  --slippage 300 \
-  --amount 1000000 \
+  --output-mint H79qZvpcLfwJC9kiYnZMmwK19Af5FPugfGKqTPDRYP7h \
+  --amm-pool-id 5d9QTvkkjsy46WRWxDZY4VzzBD4RUHMsyxukMdJTi8Qo \
+  --slippage 1000 \
+  --amount $1 \
   --yes
 
 exit

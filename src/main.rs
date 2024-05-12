@@ -1,6 +1,9 @@
+use crossbeam::channel::Receiver;
 use jito_searcher_client::get_searcher_client;
 use log::{warn, LevelFilter};
-use std::{str::FromStr, sync::Arc, time::Duration};
+use serde::Serialize;
+use serde_json::json;
+use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
@@ -14,6 +17,7 @@ use listen::{
 };
 use solana_client::{
     nonblocking,
+    pubsub_client::PubsubClientSubscription,
     rpc_response::{Response, RpcLogsResponse},
 };
 use solana_sdk::{
@@ -73,9 +77,6 @@ enum Command {
         #[arg(long, action = clap::ArgAction::SetTrue)]
         snipe: Option<bool>,
 
-        #[arg(long, action = clap::ArgAction::SetTrue)]
-        use_jito: Option<bool>,
-
         #[arg(long, default_value_t = 1_000_000)]
         amount: u64,
 
@@ -102,8 +103,16 @@ enum Command {
     },
 }
 
+type SubscriptionResponse = Result<
+    (
+        PubsubClientSubscription<Response<RpcLogsResponse>>,
+        Receiver<Response<RpcLogsResponse>>,
+    ),
+    Box<dyn Error>,
+>;
+
 #[tokio::main]
-async fn main() -> Result<(), Box<dyn std::error::Error>> {
+async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::Builder::from_default_env()
         .filter_level(LevelFilter::Info)
         .init();
@@ -125,7 +134,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         &auth,
     )
     .await
-    .unwrap();
+    .expect("makes searcher client");
     match app.command {
         Command::BenchRPC { rpc_url } => rpc::eval_rpc(rpc_url.as_str()),
         Command::PriorityFee {} => {
@@ -146,72 +155,84 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         }
         Command::ListenPools {
             snipe,
-            use_jito,
             amount,
             slippage,
         } => {
-            let snipe = snipe.unwrap_or(false);
-            let use_jito = use_jito.unwrap_or(false);
-            let (mut subs, recv) = listener.new_lp_subscribe()?;
-            // let provider = Provider::new(app.args.url);
-            println!("Listening for LP events");
-            let wallet =
-                Keypair::read_from_file(dotenv::var("FUND_KEYPAIR_PATH")?)?;
-            println!("Funder: {}", wallet.pubkey());
-            println!(
-                "Balance: {}",
-                util::lamports_to_sol(provider.get_balance(&wallet.pubkey())?)
-            );
+            let establish_subscription = move || -> SubscriptionResponse {
+                let (subs, recv) = listener.new_lp_subscribe()?;
+                Ok((subs, recv))
+            };
             let listener = tokio::spawn(async move {
-                while let Ok(log) = recv.recv() {
-                    if log.value.err.is_some() {
-                        continue; // Skip error logs
-                    }
-                    // println!("{}", serde_json::to_string_pretty(&log).unwrap());
-                    let new_pool_info = tx_parser::parse_new_pool(
-                        &provider.get_tx(&log.value.signature).unwrap(),
+                loop {
+                    let wallet = Keypair::read_from_file(
+                        dotenv::var("FUND_KEYPAIR_PATH")
+                            .expect("fund keypair env var is set"),
                     )
-                    .expect("parse pool info");
-                    let mint = if new_pool_info.input_mint.to_string()
-                        == constants::SOLANA_PROGRAM_ID
-                    {
-                        new_pool_info.output_mint
-                    } else {
-                        new_pool_info.input_mint
-                    };
-                    info!("{:?}", new_pool_info);
-                    let (is_safe, msg) =
-                        provider.sanity_check(&mint).await.unwrap();
-                    if !is_safe {
-                        if !dialoguer::Confirm::new()
-                            .with_prompt(format!(
-                                "Unsafe pool {}: {}",
-                                mint, msg
-                            ))
-                            .interact()
-                            .unwrap()
+                    .expect("read fund keypair");
+                    let snipe = snipe.unwrap_or(false);
+                    let (mut subs, recv) =
+                        establish_subscription().expect("subscribe to logs");
+                    info!("Listening for LP events");
+                    while let Ok(log) = recv.recv() {
+                        if log.value.err.is_some() {
+                            continue; // Skip error logs
+                        }
+                        // println!("{}", serde_json::to_string_pretty(&log).unwrap());
+                        let new_pool_info = tx_parser::parse_new_pool(
+                            &provider.get_tx(&log.value.signature).unwrap(),
+                        )
+                        .expect("parse pool info");
+                        let mint = if new_pool_info.input_mint.to_string()
+                            == constants::SOLANA_PROGRAM_ID
+                        {
+                            new_pool_info.output_mint
+                        } else {
+                            new_pool_info.input_mint
+                        };
+                        info!(
+                            "{}",
+                            serde_json::to_string_pretty(&json!({
+                                "input": new_pool_info.input_mint.to_string(),
+                                "output": new_pool_info.output_mint.to_string(),
+                                "pool": new_pool_info.amm_pool_id.to_string(),
+                            }))
+                            .expect("serialize pool info")
+                        );
+                        let (is_safe, msg) = provider
+                            .sanity_check(&mint)
+                            .await
+                            .expect("sanity check");
+                        if !is_safe
+                            && !dialoguer::Confirm::new()
+                                .with_prompt(format!(
+                                    "Unsafe pool {}: {}",
+                                    mint, msg
+                                ))
+                                .interact()
+                                .unwrap()
                         {
                             continue;
                         }
-                    }
-                    // TODO move this to a separate service listening in a separate thread
-                    // same as in case of receiver and processor pool for Command::Listen
-                    if snipe {
-                        let swap_context = raydium::make_swap_context(
-                            &provider,
-                            new_pool_info.amm_pool_id,
-                            new_pool_info.input_mint,
-                            new_pool_info.output_mint,
-                            &wallet,
-                            slippage,
-                            amount,
-                        )
-                        .await
-                        .expect("make_swap_context");
-                        if use_jito {
-                            jito::wait_leader(&mut searcher_client)
+                        // TODO move this to a separate service listening in a separate thread
+                        // same as in case of receiver and processor pool for Command::Listen
+                        if snipe {
+                            let swap_context = raydium::make_swap_context(
+                                &provider,
+                                new_pool_info.amm_pool_id,
+                                new_pool_info.input_mint,
+                                new_pool_info.output_mint,
+                                &wallet,
+                                slippage,
+                                amount,
+                            )
+                            .await
+                            .expect("make_swap_context");
+                            if !jito::wait_leader(&mut searcher_client)
                                 .await
-                                .expect("wait leader");
+                                .expect("wait leader")
+                            {
+                                continue;
+                            };
 
                             // auto shows 8% slippage on jup for the most part, more might be needed
                             let ixs = raydium::make_swap_ixs(
@@ -220,7 +241,18 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                 &swap_context,
                             )
                             .expect("make swap ixs");
-
+                            info!(
+                                "https://dexscreener.com/solana/{}",
+                                mint.to_string()
+                            );
+                            info!(
+                                "https://jup.ag/swap/{}-SOL",
+                                mint.to_string()
+                            );
+                            info!(
+                                "https://rugcheck.xyz/tokens/{}",
+                                mint.to_string()
+                            );
                             match jito::send_swap_tx(
                                 ixs,
                                 50000,
@@ -237,24 +269,13 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                     warn!("swap tx: {}", e)
                                 }
                             }
-                        } else {
-                            raydium
-                                .swap(
-                                    new_pool_info.amm_pool_id,
-                                    new_pool_info.input_mint,
-                                    new_pool_info.output_mint,
-                                    100000, // 0.001 SOL
-                                    300,    // 3.0%
-                                    &wallet,
-                                    &provider,
-                                    false,
-                                )
-                                .await
-                                .expect("raydium swap without jito");
                         }
                     }
+                    subs.shutdown().expect("conn shutdown"); // Shutdown subscription on exit
+                    info!("reconnecting in 1 second");
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1))
+                        .await;
                 }
-                subs.shutdown().unwrap(); // Shutdown subscription on exit
             });
             listener.await?;
             return Ok(());

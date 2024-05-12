@@ -7,7 +7,7 @@ use jito_protos::searcher::{
 };
 use jito_searcher_client::send_bundle_with_confirmation;
 use jito_searcher_client::token_authenticator::ClientInterceptor;
-use log::info;
+use log::{error, info};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
@@ -24,7 +24,7 @@ type SearcherClient =
 
 pub async fn wait_leader(
     searcher_client: &mut SearcherClient,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<bool, Box<dyn std::error::Error>> {
     let mut is_leader_slot = false;
     while !is_leader_slot {
         let next_leader = searcher_client
@@ -41,9 +41,13 @@ pub async fn wait_leader(
             "next jito leader slot in {num_slots} slots in {}",
             next_leader.next_leader_region
         );
+        if num_slots > 50 {
+            error!("next leader slot too far in the future");
+            return Ok(false);
+        }
         tokio::time::sleep(Duration::from_millis(200)).await;
     }
-    Ok(())
+    Ok(true)
 }
 
 pub async fn send_swap_tx(

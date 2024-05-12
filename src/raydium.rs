@@ -109,6 +109,7 @@ pub fn make_swap_ixs(
 ) -> Result<Vec<Instruction>, Box<dyn Error>> {
     // calculate amm pool vault with load data at the same time or use simulate to calculate
     // this step adds some latency, could be pre-calculated while waiting for the JITO leader
+    let start = std::time::Instant::now();
     let result = raydium_library::amm::calculate_pool_vault_amounts(
         &provider.rpc_client,
         &swap_context.amm_program,
@@ -134,7 +135,24 @@ pub fn make_swap_ixs(
         swap_context.amount,
         swap_context.swap_base_in,
         swap_context.slippage,
-    )?;
+    )
+    .unwrap_or(0);
+    info!(
+        "{}",
+        serde_json::to_string_pretty(&json!({
+            "pool_pc_vault_amount": result.pool_pc_vault_amount,
+            "pool_coin_vault_amount": result.pool_coin_vault_amount,
+            "pool_lp_amount": result.pool_lp_amount,
+            "swap_fee_numerator": result.swap_fee_numerator,
+            "swap_fee_denominator": result.swap_fee_denominator,
+            "other_amount_threshold": other_amount_threshold,
+        }))?
+    );
+    // let market_cap = util::lamports_to_sol(result.pool_coin_vault_amount);
+    // info!("market cap: {}", market_cap);
+    // if market_cap < 50. {
+    //     return Err("Market cap too low, aborting swap".into());
+    // }
     let swap_ix = amm::instructions::swap(
         &swap_context.amm_program,
         &swap_context.amm_keys,
@@ -158,13 +176,13 @@ pub fn make_swap_ixs(
         )?,
     );
     let ixs = vec![
-        // TODO make this configurable, currently static but total is still max
-        // 0.0005 SOL which is peanuts
-        make_compute_budget_ixs(25_000, 500_000),
+        make_compute_budget_ixs(0, 300_000),
         swap_context.swap.pre_swap_instructions.clone(),
         vec![swap_ix],
         swap_context.swap.post_swap_instructions.clone(),
     ];
+    let end = std::time::Instant::now();
+    info!("Time to make swap ixs: {:?}", end - start);
     Ok(ixs.concat())
 }
 
@@ -247,7 +265,7 @@ impl Raydium {
         )
         .await?;
         let ixs = self::make_swap_ixs(provider, wallet, &swap_context)?;
-        println!(
+        info!(
             "{}",
             serde_json::to_string_pretty(&json!({
                 "amount": amount,
