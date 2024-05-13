@@ -155,7 +155,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             amount_sol,
             owner,
         } => {
-            let lamports = util::sol_to_lamports(amount_sol);
             let amm_pool = Pubkey::from_str(amm_pool.as_str())
                 .expect("amm pool is a valid pubkey");
 
@@ -204,45 +203,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     &market_keys,
                     amm::CalculateMethod::CalculateWithLoadAccount,
                 )?;
-                if coin_mint_is_sol {
-                    let sol_amount = result.pool_coin_vault_amount as f64 / 1e9;
-                    let usd_amount = sol_amount * sol_price;
-                    let price = result.pool_coin_vault_amount as f64
-                        / result.pool_pc_vault_amount as f64;
-                    let owner_balance_sol = owner_balance as f64 * price / 1e9;
-                    info!(
-                        "{}",
-                        serde_json::to_string_pretty(&json!(
-                            {
-                                "timestamp": chrono::Utc::now().to_rfc3339(),
-                                "sol_amount": sol_amount,
-                                "usd_amount": usd_amount,
-                                "price": price,
-                                "owner_balance": owner_balance,
-                                "owner_balance_sol": owner_balance_sol,
-                            }
-                        ))?
-                    );
-                } else {
-                    let sol_amount = result.pool_pc_vault_amount as f64 / 1e9;
-                    let usd_amount = sol_amount * sol_price;
-                    let price = result.pool_pc_vault_amount as f64
-                        / result.pool_coin_vault_amount as f64;
-                    let owner_balance_sol = owner_balance as f64 * price / 1e9;
-                    info!(
-                        "{}",
-                        serde_json::to_string_pretty(&json!(
-                            {
-                                "timestamp": chrono::Utc::now().to_rfc3339(),
-                                "sol_amount": sol_amount,
-                                "usd_amount": usd_amount,
-                                "price": price,
-                                "owner_balance": owner_balance,
-                                "owner_balance_sol": owner_balance_sol,
-                            }
-                        ))?
-                    );
-                }
+
+                raydium::calc_result_to_financials(
+                    coin_mint_is_sol,
+                    result,
+                    owner_balance,
+                );
+
                 tokio::time::sleep(Duration::from_secs(1)).await;
             }
         }

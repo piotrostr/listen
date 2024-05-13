@@ -44,6 +44,55 @@ pub struct SwapContext {
     pub swap_base_in: bool,
 }
 
+pub fn calc_result_to_financials(
+    coin_mint_is_sol: bool,
+    result: amm::CalculateResult,
+    owner_balance: u64,
+) {
+    let sol_price = 145.;
+    if coin_mint_is_sol {
+        let sol_amount = result.pool_coin_vault_amount as f64 / 1e9;
+        let usd_amount = sol_amount * sol_price;
+        let price = result.pool_coin_vault_amount as f64
+            / result.pool_pc_vault_amount as f64;
+        let owner_balance_sol = owner_balance as f64 * price / 1e9;
+        info!(
+            "{}",
+            serde_json::to_string_pretty(&json!(
+                {
+                    "timestamp": chrono::Utc::now().to_rfc3339(),
+                    "sol_amount": sol_amount,
+                    "usd_amount": usd_amount,
+                    "price": price,
+                    "owner_balance": owner_balance,
+                    "owner_balance_sol": owner_balance_sol,
+                }
+            ))
+            .expect("to string pretty")
+        );
+    } else {
+        let sol_amount = result.pool_pc_vault_amount as f64 / 1e9;
+        let usd_amount = sol_amount * sol_price;
+        let price = result.pool_pc_vault_amount as f64
+            / result.pool_coin_vault_amount as f64;
+        let owner_balance_sol = owner_balance as f64 * price / 1e9;
+        info!(
+            "{}",
+            serde_json::to_string_pretty(&json!(
+                {
+                    "timestamp": chrono::Utc::now().to_rfc3339(),
+                    "sol_amount": sol_amount,
+                    "usd_amount": usd_amount,
+                    "price": price,
+                    "owner_balance": owner_balance,
+                    "owner_balance_sol": owner_balance_sol,
+                }
+            ))
+            .expect("to string pretty")
+        );
+    }
+}
+
 pub async fn make_swap_context(
     provider: &Provider,
     amm_pool: Pubkey,
@@ -121,6 +170,12 @@ pub fn make_swap_ixs(
             &swap_context.market_keys,
             amm::utils::CalculateMethod::Simulate(wallet.pubkey()),
         )?;
+        self::calc_result_to_financials(
+            swap_context.market_keys.coin_mint.to_string()
+                == constants::SOLANA_PROGRAM_ID,
+            result,
+            0,
+        );
         let direction = if swap_context.input_token_mint
             == swap_context.amm_keys.amm_coin_mint
             && swap_context.output_token_mint
