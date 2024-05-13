@@ -207,6 +207,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         if log.value.err.is_some() {
                             continue; // Skip error logs
                         }
+                        let start = tokio::time::Instant::now();
                         // println!("{}", serde_json::to_string_pretty(&log).unwrap());
                         let new_pool_info = tx_parser::parse_new_pool(
                             &provider.get_tx(&log.value.signature).unwrap(),
@@ -275,6 +276,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             )
                             .expect("make swap ixs");
 
+                            info!("took {:?} to pack", start.elapsed());
+
                             let swap_result = jito::send_swap_tx(
                                 &mut ixs,
                                 tip,
@@ -283,6 +286,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 &rpc_client,
                             )
                             .await;
+
+                            info!("took {:?} to send ", start.elapsed());
 
                             match swap_result {
                                 Ok(_) => info!("Bundle OK"),
