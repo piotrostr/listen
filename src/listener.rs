@@ -31,9 +31,10 @@ pub struct Swap {
     pub sol_amount_ui: f64,
 }
 
-trait BlockAndProgramSubscribable {
+pub trait BlockAndProgramSubscribable {
     fn block_subscribe(&self) -> Result<(), Box<dyn std::error::Error>>;
     fn program_subscribe(&self) -> Result<(), Box<dyn std::error::Error>>;
+    fn slot_subscribe(&self) -> Result<(), Box<dyn std::error::Error>>;
 }
 
 impl Listener {
@@ -78,6 +79,28 @@ impl Listener {
 }
 
 impl BlockAndProgramSubscribable for Listener {
+    fn slot_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
+        let (mut subs, receiver) =
+            PubsubClient::slot_subscribe(self.ws_url.as_str())?;
+        info!("listening to slots over {}", self.ws_url);
+
+        if let Ok(slot) = receiver.recv() {
+            let mut ts = tokio::time::Instant::now();
+            info!("starting slot: {:?}", slot);
+            while let Ok(slot) = receiver.recv() {
+                info!(
+                    "slot: {:?} in {}ms",
+                    slot.slot,
+                    ts.elapsed().as_millis()
+                );
+                ts = tokio::time::Instant::now();
+            }
+        }
+
+        subs.shutdown().unwrap();
+
+        Ok(())
+    }
     fn block_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
         let raydium_pubkey =
             Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;

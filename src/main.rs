@@ -7,11 +7,7 @@ use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
-    constants, jito,
-    jup::Jupiter,
-    prometheus,
-    raydium::{self, Raydium},
-    rpc, tx_parser, util, Listener, Provider,
+    constants, jito, jup::Jupiter, prometheus, raydium::{self, Raydium}, rpc, tx_parser, util, BlockAndProgramSubscribable, Listener, Provider
 };
 use solana_client::{
     nonblocking,
@@ -51,6 +47,7 @@ struct Args {
 
 #[derive(Debug, Parser)]
 enum Command {
+    MonitorSlots {},
     Price {
         #[arg(long)]
         mint: String,
@@ -132,6 +129,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("makes searcher client");
     match app.command {
+        Command::MonitorSlots {} => {
+            listener.slot_subscribe()?;
+        }
         Command::BenchRPC { rpc_url } => rpc::eval_rpc(rpc_url.as_str()),
         Command::PriorityFee {} => {
             println!(
