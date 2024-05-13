@@ -3,6 +3,7 @@ use dotenv_codegen::dotenv;
 use jito_protos::searcher::{MempoolSubscription, NextScheduledLeaderRequest};
 use jito_searcher_client::get_searcher_client;
 use log::{warn, LevelFilter};
+use raydium_library::amm;
 use serde_json::json;
 use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
@@ -52,6 +53,16 @@ struct Args {
 
 #[derive(Debug, Parser)]
 enum Command {
+    TrackPosition {
+        #[arg(long)]
+        amm_pool: String,
+
+        #[arg(long)]
+        amount_sol: f64,
+
+        #[arg(long)]
+        owner: String,
+    },
     MonitorLeaders {},
     MonitorSlots {},
     Price {
@@ -122,8 +133,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .format_timestamp_millis()
         .init();
 
-    // 30th April, let's see how well this ages lol
-    let sol_price = 135.;
+    // 30th April, let's see how well this ages lol (was 135.)
+    // 13th May, still going strong with the algo, now at 145
+    let sol_price = 145.;
     let app = App::parse();
     let provider = Provider::new(dotenv!("RPC_URL").to_string());
     let raydium = Raydium::new();
@@ -138,6 +150,102 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("makes searcher client");
     match app.command {
+        Command::TrackPosition {
+            amm_pool,
+            amount_sol,
+            owner,
+        } => {
+            let lamports = util::sol_to_lamports(amount_sol);
+            let amm_pool = Pubkey::from_str(amm_pool.as_str())
+                .expect("amm pool is a valid pubkey");
+
+            let amm_program =
+                Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+            // load amm keys
+            let amm_keys = amm::utils::load_amm_keys(
+                &provider.rpc_client,
+                &amm_program,
+                &amm_pool,
+            )?;
+            // load market keys
+            let market_keys = amm::openbook::get_keys_for_market(
+                &provider.rpc_client,
+                &amm_keys.market_program,
+                &amm_keys.market,
+            )?;
+            info!("{:?}", market_keys);
+            if market_keys.coin_mint.to_string() != constants::SOLANA_PROGRAM_ID
+                && market_keys.pc_mint.to_string()
+                    != constants::SOLANA_PROGRAM_ID
+            {
+                error!("pool is not against solana");
+                return Ok(());
+            }
+            let coin_mint_is_sol = market_keys.coin_mint.to_string()
+                == constants::SOLANA_PROGRAM_ID;
+            let owner_balance = provider.get_spl_balance(
+                &Pubkey::from_str(owner.as_str()).unwrap(),
+                if coin_mint_is_sol {
+                    &market_keys.pc_mint
+                } else {
+                    &market_keys.coin_mint
+                },
+            )?;
+
+            // let (_, recv) = listener.pool_subscribe(&amm_pool)?;
+
+            // while let Ok(log) = recv.recv() {
+            loop {
+                let result = amm::calculate_pool_vault_amounts(
+                    &provider.rpc_client,
+                    &amm_program,
+                    &amm_pool,
+                    &amm_keys,
+                    &market_keys,
+                    amm::CalculateMethod::CalculateWithLoadAccount,
+                )?;
+                if coin_mint_is_sol {
+                    let sol_amount = result.pool_coin_vault_amount as f64 / 1e9;
+                    let usd_amount = sol_amount * sol_price;
+                    let price = result.pool_coin_vault_amount as f64
+                        / result.pool_pc_vault_amount as f64;
+                    let owner_balance_sol = owner_balance as f64 * price / 1e9;
+                    info!(
+                        "{}",
+                        serde_json::to_string_pretty(&json!(
+                            {
+                                "timestamp": chrono::Utc::now().to_rfc3339(),
+                                "sol_amount": sol_amount,
+                                "usd_amount": usd_amount,
+                                "price": price,
+                                "owner_balance": owner_balance,
+                                "owner_balance_sol": owner_balance_sol,
+                            }
+                        ))?
+                    );
+                } else {
+                    let sol_amount = result.pool_pc_vault_amount as f64 / 1e9;
+                    let usd_amount = sol_amount * sol_price;
+                    let price = result.pool_pc_vault_amount as f64
+                        / result.pool_coin_vault_amount as f64;
+                    let owner_balance_sol = owner_balance as f64 * price / 1e9;
+                    info!(
+                        "{}",
+                        serde_json::to_string_pretty(&json!(
+                            {
+                                "timestamp": chrono::Utc::now().to_rfc3339(),
+                                "sol_amount": sol_amount,
+                                "usd_amount": usd_amount,
+                                "price": price,
+                                "owner_balance": owner_balance,
+                                "owner_balance_sol": owner_balance_sol,
+                            }
+                        ))?
+                    );
+                }
+                tokio::time::sleep(Duration::from_secs(1)).await;
+            }
+        }
         Command::MonitorLeaders {} => {
             let regions = vec![
                 "frankfurt".to_string(),
@@ -228,6 +336,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 "output": new_pool_info.output_mint.to_string(),
                                 "pool": new_pool_info.amm_pool_id.to_string(),
                                 "amount": util::lamports_to_sol(amount),
+                                "amm_pool": new_pool_info.amm_pool_id.to_string(),
                             }))
                             .expect("serialize pool info")
                         );

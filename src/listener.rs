@@ -4,7 +4,7 @@ use log::info;
 use serde::Serialize;
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::{
-    pubsub_client::{LogsSubscription, PubsubClient},
+    pubsub_client::{LogsSubscription, ProgramSubscription, PubsubClient},
     rpc_config::{
         RpcAccountInfoConfig, RpcBlockSubscribeConfig, RpcBlockSubscribeFilter,
         RpcProgramAccountsConfig, RpcTransactionLogsConfig,
@@ -40,6 +40,20 @@ pub trait BlockAndProgramSubscribable {
 impl Listener {
     pub fn new(ws_url: String) -> Listener {
         Listener { ws_url }
+    }
+
+    pub fn pool_subscribe(
+        &self,
+        amm_pool: &Pubkey,
+    ) -> Result<LogsSubscription, Box<dyn std::error::Error>> {
+        let (subs, receiver) = PubsubClient::logs_subscribe(
+            self.ws_url.as_str(),
+            RpcTransactionLogsFilter::Mentions(vec![amm_pool.to_string()]),
+            RpcTransactionLogsConfig {
+                commitment: Some(CommitmentConfig::confirmed()),
+            },
+        )?;
+        Ok((subs, receiver))
     }
 
     pub fn new_lp_subscribe(
