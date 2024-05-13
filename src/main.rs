@@ -209,10 +209,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         }
                         let start = tokio::time::Instant::now();
                         // println!("{}", serde_json::to_string_pretty(&log).unwrap());
-                        let new_pool_info = tx_parser::parse_new_pool(
-                            &provider.get_tx(&log.value.signature).unwrap(),
-                        )
-                        .expect("parse pool info");
+                        let tx = provider.get_tx(&log.value.signature).unwrap();
+                        info!("took {:?} to get tx", start.elapsed());
+                        let new_pool_info = tx_parser::parse_new_pool(&tx)
+                            .expect("parse pool info");
                         let mint = if new_pool_info.input_mint.to_string()
                             == constants::SOLANA_PROGRAM_ID
                         {
