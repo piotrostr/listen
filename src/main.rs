@@ -1,6 +1,6 @@
 use crossbeam::channel::Receiver;
 use dotenv_codegen::dotenv;
-use jito_protos::searcher::MempoolSubscription;
+use jito_protos::searcher::{MempoolSubscription, NextScheduledLeaderRequest};
 use jito_searcher_client::get_searcher_client;
 use log::{warn, LevelFilter};
 use serde_json::json;
@@ -52,6 +52,7 @@ struct Args {
 
 #[derive(Debug, Parser)]
 enum Command {
+    MonitorLeaders {},
     MonitorSlots {},
     Price {
         #[arg(long)]
@@ -137,6 +138,23 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("makes searcher client");
     match app.command {
+        Command::MonitorLeaders {} => {
+            let regions = vec![
+                "frankfurt".to_string(),
+                "amsterdam".to_string(),
+                "tokyo".to_string(),
+                "ny".to_string(),
+            ];
+            for region in regions {
+                let res = searcher_client
+                    .get_next_scheduled_leader(NextScheduledLeaderRequest {
+                        regions: vec![region],
+                    })
+                    .await
+                    .unwrap();
+                info!("{:?}", res.into_inner());
+            }
+        }
         Command::MonitorSlots {} => {
             listener.slot_subscribe()?;
             let res = searcher_client
@@ -248,56 +266,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     dotenv!("RPC_URL").to_string(),
                                 );
 
-                            let swap_result = if quick {
-                                // if quick, prepare all instructions, wait for
-                                // leader and send
+                            // auto shows 8% slippage on jup for the most part, more might be needed
+                            let mut ixs = raydium::make_swap_ixs(
+                                &provider,
+                                &wallet,
+                                &swap_context,
+                                quick,
+                            )
+                            .expect("make swap ixs");
 
-                                // auto shows 8% slippage on jup for the most part, more might be needed
-                                let mut ixs = raydium::make_swap_ixs(
-                                    &provider,
-                                    &wallet,
-                                    &swap_context,
-                                    quick,
-                                )
-                                .expect("make swap ixs");
-                                if !jito::wait_leader(&mut searcher_client)
-                                    .await
-                                    .expect("wait leader")
-                                {
-                                    continue;
-                                };
-                                jito::send_swap_tx(
-                                    &mut ixs,
-                                    tip,
-                                    &wallet,
-                                    &mut searcher_client,
-                                    &rpc_client,
-                                )
-                                .await
-                            } else {
-                                // else, wait for leader and see calculate the amount out
-                                if !jito::wait_leader(&mut searcher_client)
-                                    .await
-                                    .expect("wait leader")
-                                {
-                                    continue;
-                                };
-                                let mut ixs = raydium::make_swap_ixs(
-                                    &provider,
-                                    &wallet,
-                                    &swap_context,
-                                    quick,
-                                )
-                                .expect("make swap ixs");
-                                jito::send_swap_tx(
-                                    &mut ixs,
-                                    tip,
-                                    &wallet,
-                                    &mut searcher_client,
-                                    &rpc_client,
-                                )
-                                .await
-                            };
+                            let swap_result = jito::send_swap_tx(
+                                &mut ixs,
+                                tip,
+                                &wallet,
+                                &mut searcher_client,
+                                &rpc_client,
+                            )
+                            .await;
+
                             match swap_result {
                                 Ok(_) => info!("Bundle OK"),
                                 Err(e) => {
