@@ -80,7 +80,7 @@ impl Provider {
         }
     }
 
-    #[timed(duration(printer = "info!"))]
+    #[timed(duration(printer = "println!"))]
     pub fn get_tx(
         &self,
         signature: &str,
