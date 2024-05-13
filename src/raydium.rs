@@ -176,6 +176,11 @@ pub fn make_swap_ixs(
             result,
             0,
         );
+        let sol_amount = result.pool_coin_vault_amount as f64 / 1e9;
+        if sol_amount < 50. {
+            // TODO make this configurable, 7k (50 sol) is a bare threshold
+            return Err("Pool is small, aborting swap".into());
+        }
         let direction = if swap_context.input_token_mint
             == swap_context.amm_keys.amm_coin_mint
             && swap_context.output_token_mint
