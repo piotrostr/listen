@@ -66,6 +66,7 @@ pub fn calc_result_to_financials(
                     "price": price,
                     "owner_balance": owner_balance,
                     "owner_balance_sol": owner_balance_sol,
+                    "pooled_sol": result.pool_pc_vault_amount as f64 / 1e9,
                 }
             ))
             .expect("to string pretty")
@@ -86,6 +87,7 @@ pub fn calc_result_to_financials(
                     "price": price,
                     "owner_balance": owner_balance,
                     "owner_balance_sol": owner_balance_sol,
+                    "pooled_sol": result.pool_coin_vault_amount as f64 / 1e9,
                 }
             ))
             .expect("to string pretty")
