@@ -179,6 +179,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             .expect("read fund keypair");
                     let snipe = snipe.unwrap_or(false);
                     let quick = quick.unwrap_or(false);
+                    if quick {
+                        warn!("caution, quick mode might lead to bad slippage (up to 100%)")
+                    }
                     let (mut subs, recv) =
                         establish_subscription().expect("subscribe to logs");
                     info!("Listening for LP events");
@@ -238,21 +241,70 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             )
                             .await
                             .expect("make_swap_context");
-                            if !jito::wait_leader(&mut searcher_client)
-                                .await
-                                .expect("wait leader")
-                            {
-                                continue;
-                            };
 
-                            // auto shows 8% slippage on jup for the most part, more might be needed
-                            let ixs = raydium::make_swap_ixs(
-                                &provider,
-                                &wallet,
-                                &swap_context,
-                                quick,
-                            )
-                            .expect("make swap ixs");
+                            let tip = 50000;
+                            let rpc_client =
+                                &nonblocking::rpc_client::RpcClient::new(
+                                    dotenv!("RPC_URL").to_string(),
+                                );
+
+                            let swap_result = if quick {
+                                // if quick, prepare all instructions, wait for
+                                // leader and send
+
+                                // auto shows 8% slippage on jup for the most part, more might be needed
+                                let ixs = raydium::make_swap_ixs(
+                                    &provider,
+                                    &wallet,
+                                    &swap_context,
+                                    quick,
+                                )
+                                .expect("make swap ixs");
+                                if !jito::wait_leader(&mut searcher_client)
+                                    .await
+                                    .expect("wait leader")
+                                {
+                                    continue;
+                                };
+                                jito::send_swap_tx(
+                                    ixs,
+                                    tip,
+                                    &wallet,
+                                    &mut searcher_client,
+                                    &rpc_client,
+                                )
+                                .await
+                            } else {
+                                // else, wait for leader and see calculate the amount out
+                                if !jito::wait_leader(&mut searcher_client)
+                                    .await
+                                    .expect("wait leader")
+                                {
+                                    continue;
+                                };
+                                let ixs = raydium::make_swap_ixs(
+                                    &provider,
+                                    &wallet,
+                                    &swap_context,
+                                    quick,
+                                )
+                                .expect("make swap ixs");
+                                jito::send_swap_tx(
+                                    ixs,
+                                    tip,
+                                    &wallet,
+                                    &mut searcher_client,
+                                    &rpc_client,
+                                )
+                                .await
+                            };
+                            match swap_result {
+                                Ok(_) => info!("Bundle OK"),
+                                Err(e) => {
+                                    warn!("swap tx: {}", e)
+                                }
+                            }
+
                             info!(
                                 "{}",
                                 serde_json::to_string_pretty(&json!(vec![
@@ -271,22 +323,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 ]))
                                 .expect("to string pretty")
                             );
-                            match jito::send_swap_tx(
-                                ixs,
-                                50000,
-                                &wallet,
-                                &mut searcher_client,
-                                &nonblocking::rpc_client::RpcClient::new(
-                                    dotenv!("RPC_URL").to_string(),
-                                ),
-                            )
-                            .await
-                            {
-                                Ok(_) => info!("Bundle OK"),
-                                Err(e) => {
-                                    warn!("swap tx: {}", e)
-                                }
-                            }
                         }
                     }
                     subs.shutdown().expect("conn shutdown"); // Shutdown subscription on exit
