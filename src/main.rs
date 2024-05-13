@@ -253,7 +253,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 // leader and send
 
                                 // auto shows 8% slippage on jup for the most part, more might be needed
-                                let ixs = raydium::make_swap_ixs(
+                                let mut ixs = raydium::make_swap_ixs(
                                     &provider,
                                     &wallet,
                                     &swap_context,
@@ -267,7 +267,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     continue;
                                 };
                                 jito::send_swap_tx(
-                                    ixs,
+                                    &mut ixs,
                                     tip,
                                     &wallet,
                                     &mut searcher_client,
@@ -282,7 +282,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 {
                                     continue;
                                 };
-                                let ixs = raydium::make_swap_ixs(
+                                let mut ixs = raydium::make_swap_ixs(
                                     &provider,
                                     &wallet,
                                     &swap_context,
@@ -290,7 +290,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 )
                                 .expect("make swap ixs");
                                 jito::send_swap_tx(
-                                    ixs,
+                                    &mut ixs,
                                     tip,
                                     &wallet,
                                     &mut searcher_client,

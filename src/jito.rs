@@ -52,7 +52,7 @@ pub async fn wait_leader(
 
 #[timed::timed(duration(printer = "info!"))]
 pub async fn send_swap_tx(
-    ixs: Vec<Instruction>,
+    ixs: &mut Vec<Instruction>,
     tip: u64,
     payer: &Keypair,
     searcher_client: &mut SearcherClient,
@@ -69,17 +69,12 @@ pub async fn send_swap_tx(
         .await
         .expect("get blockhash");
 
-    let tip_tx =
-        VersionedTransaction::from(Transaction::new_signed_with_payer(
-            &[transfer(
-                &payer.pubkey(),
-                &Pubkey::from_str(constants::JITO_TIP_PUBKEY)?,
-                tip,
-            )],
-            Some(&payer.pubkey()),
-            &[payer],
-            blockhash,
-        ));
+    // push tip ix
+    ixs.push(transfer(
+        &payer.pubkey(),
+        &Pubkey::from_str(constants::JITO_TIP_PUBKEY)?,
+        tip,
+    ));
 
     let swap_tx =
         VersionedTransaction::from(Transaction::new_signed_with_payer(
@@ -90,7 +85,7 @@ pub async fn send_swap_tx(
         ));
 
     send_bundle_with_confirmation(
-        &[swap_tx, tip_tx],
+        &[swap_tx],
         rpc_client,
         searcher_client,
         &mut bundle_results_subscription,
