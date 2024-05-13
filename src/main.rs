@@ -1,4 +1,5 @@
 use crossbeam::channel::Receiver;
+use dotenv_codegen::dotenv;
 use jito_searcher_client::get_searcher_client;
 use log::{warn, LevelFilter};
 use serde_json::json;
@@ -8,11 +9,9 @@ use clap::Parser;
 use listen::{
     constants, jito,
     jup::Jupiter,
-    prometheus, raydium,
-    raydium::Raydium,
-    rpc, tx_parser,
-    util::{self, must_get_env},
-    Listener, Provider,
+    prometheus,
+    raydium::{self, Raydium},
+    rpc, tx_parser, util, Listener, Provider,
 };
 use solana_client::{
     nonblocking,
@@ -114,26 +113,24 @@ type SubscriptionResponse = Result<
 async fn main() -> Result<(), Box<dyn Error>> {
     env_logger::Builder::from_default_env()
         .filter_level(LevelFilter::Info)
+        .format_timestamp_millis()
         .init();
 
     // 30th April, let's see how well this ages lol
     let sol_price = 135.;
     let app = App::parse();
-    let provider = Provider::new(dotenv::var("RPC_URL").expect("RPC_URL set"));
+    let provider = Provider::new(dotenv!("RPC_URL").to_string());
     let raydium = Raydium::new();
-    let listener = Listener::new(dotenv::var("WS_URL").expect("WS_URL set"));
+    let listener = Listener::new(dotenv!("WS_URL").to_string());
     let jup = Jupiter::new();
 
     let auth = Arc::new(
-        Keypair::read_from_file(dotenv::var("AUTH_KEYPAIR_PATH").unwrap())
-            .unwrap(),
+        Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH")).unwrap(),
     );
-    let mut searcher_client = get_searcher_client(
-        dotenv::var("BLOCK_ENGINE_URL").unwrap().as_str(),
-        &auth,
-    )
-    .await
-    .expect("makes searcher client");
+    let mut searcher_client =
+        get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &auth)
+            .await
+            .expect("makes searcher client");
     match app.command {
         Command::BenchRPC { rpc_url } => rpc::eval_rpc(rpc_url.as_str()),
         Command::PriorityFee {} => {
@@ -163,11 +160,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             };
             let listener = tokio::spawn(async move {
                 loop {
-                    let wallet = Keypair::read_from_file(
-                        dotenv::var("FUND_KEYPAIR_PATH")
-                            .expect("fund keypair env var is set"),
-                    )
-                    .expect("read fund keypair");
+                    let wallet =
+                        Keypair::read_from_file(dotenv!("FUND_KEYPAIR_PATH"))
+                            .expect("read fund keypair");
                     let snipe = snipe.unwrap_or(false);
                     let (mut subs, recv) =
                         establish_subscription().expect("subscribe to logs");
@@ -191,6 +186,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         info!(
                             "{}",
                             serde_json::to_string_pretty(&json!({
+                                "slot": log.context.slot,
                                 "input": new_pool_info.input_mint.to_string(),
                                 "output": new_pool_info.output_mint.to_string(),
                                 "pool": new_pool_info.amm_pool_id.to_string(),
@@ -265,8 +261,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 &wallet,
                                 &mut searcher_client,
                                 &nonblocking::rpc_client::RpcClient::new(
-                                    dotenv::var("RPC_URL")
-                                        .expect("RPC_URL set"),
+                                    dotenv!("RPC_URL").to_string(),
                                 ),
                             )
                             .await
@@ -420,7 +415,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let pool: Vec<_> = (0..worker_count as usize)
                 .map(|_| {
                     let rx = Arc::clone(&rx);
-                    let provider = Provider::new(util::must_get_env("RPC_URL"));
+                    let provider =
+                        Provider::new(dotenv!("RPC_URL").to_string());
                     let transactions_processed = transactions_processed.clone();
                     tokio::spawn(async move {
                         while let Some(log) = rx.lock().await.recv().await {

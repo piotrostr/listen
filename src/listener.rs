@@ -72,7 +72,7 @@ impl Listener {
         let (subs, receiver) =
             PubsubClient::logs_subscribe(self.ws_url.as_str(), filter, config)?;
 
-        info!("Connecting to logs for {:?}", raydium_pubkey);
+        info!("listening to logs for {:?}", raydium_pubkey);
         Ok((subs, receiver))
     }
 }
@@ -122,7 +122,7 @@ impl BlockAndProgramSubscribable for Listener {
             Some(config),
         )?;
 
-        info!("Connecting to program {:?}", raydium_pubkey);
+        info!("listening on program {:?}", raydium_pubkey);
 
         let mut i = 0;
         while let Ok(account) = receiver.recv_timeout(Duration::from_secs(1)) {
