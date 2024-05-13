@@ -1,5 +1,6 @@
 use crossbeam::channel::Receiver;
 use dotenv_codegen::dotenv;
+use jito_protos::searcher::MempoolSubscription;
 use jito_searcher_client::get_searcher_client;
 use log::{warn, LevelFilter};
 use serde_json::json;
@@ -7,7 +8,11 @@ use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
-    constants, jito, jup::Jupiter, prometheus, raydium::{self, Raydium}, rpc, tx_parser, util, BlockAndProgramSubscribable, Listener, Provider
+    constants, jito,
+    jup::Jupiter,
+    prometheus,
+    raydium::{self, Raydium},
+    rpc, tx_parser, util, BlockAndProgramSubscribable, Listener, Provider,
 };
 use solana_client::{
     nonblocking,
@@ -77,6 +82,9 @@ enum Command {
 
         #[arg(long, default_value_t = 800)]
         slippage: u64,
+
+        #[arg(long, action = clap::ArgAction::SetTrue)]
+        quick: Option<bool>,
     },
     Wallet {},
     Swap {
@@ -131,6 +139,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
     match app.command {
         Command::MonitorSlots {} => {
             listener.slot_subscribe()?;
+            let res = searcher_client
+                .subscribe_mempool(MempoolSubscription {
+                    ..Default::default()
+                })
+                .await;
         }
         Command::BenchRPC { rpc_url } => rpc::eval_rpc(rpc_url.as_str()),
         Command::PriorityFee {} => {
@@ -153,6 +166,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             snipe,
             amount,
             slippage,
+            quick,
         } => {
             let establish_subscription = move || -> SubscriptionResponse {
                 let (subs, recv) = listener.new_lp_subscribe()?;
@@ -164,6 +178,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         Keypair::read_from_file(dotenv!("FUND_KEYPAIR_PATH"))
                             .expect("read fund keypair");
                     let snipe = snipe.unwrap_or(false);
+                    let quick = quick.unwrap_or(false);
                     let (mut subs, recv) =
                         establish_subscription().expect("subscribe to logs");
                     info!("Listening for LP events");
@@ -235,6 +250,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 &provider,
                                 &wallet,
                                 &swap_context,
+                                quick,
                             )
                             .expect("make swap ixs");
                             info!(

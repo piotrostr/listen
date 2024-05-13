@@ -108,47 +108,57 @@ pub fn make_swap_ixs(
     provider: &Provider,
     wallet: &Keypair,
     swap_context: &SwapContext,
+    quick: bool,
 ) -> Result<Vec<Instruction>, Box<dyn Error>> {
     // calculate amm pool vault with load data at the same time or use simulate to calculate
     // this step adds some latency, could be pre-calculated while waiting for the JITO leader
-    let result = raydium_library::amm::calculate_pool_vault_amounts(
-        &provider.rpc_client,
-        &swap_context.amm_program,
-        &swap_context.amm_pool,
-        &swap_context.amm_keys,
-        &swap_context.market_keys,
-        amm::utils::CalculateMethod::Simulate(wallet.pubkey()),
-    )?;
-    let direction = if swap_context.input_token_mint
-        == swap_context.amm_keys.amm_coin_mint
-        && swap_context.output_token_mint == swap_context.amm_keys.amm_pc_mint
-    {
-        amm::utils::SwapDirection::Coin2PC
+    let other_amount_threshold = if !quick {
+        let result = raydium_library::amm::calculate_pool_vault_amounts(
+            &provider.rpc_client,
+            &swap_context.amm_program,
+            &swap_context.amm_pool,
+            &swap_context.amm_keys,
+            &swap_context.market_keys,
+            amm::utils::CalculateMethod::Simulate(wallet.pubkey()),
+        )?;
+        let direction = if swap_context.input_token_mint
+            == swap_context.amm_keys.amm_coin_mint
+            && swap_context.output_token_mint
+                == swap_context.amm_keys.amm_pc_mint
+        {
+            amm::utils::SwapDirection::Coin2PC
+        } else {
+            amm::utils::SwapDirection::PC2Coin
+        };
+        let other_amount_threshold = amm::swap_with_slippage(
+            result.pool_pc_vault_amount,
+            result.pool_coin_vault_amount,
+            result.swap_fee_numerator,
+            result.swap_fee_denominator,
+            direction,
+            swap_context.amount,
+            swap_context.swap_base_in,
+            swap_context.slippage,
+        )
+        .unwrap_or(0);
+
+        info!(
+            "{}",
+            serde_json::to_string_pretty(&json!({
+                "pool_pc_vault_amount": result.pool_pc_vault_amount,
+                "pool_coin_vault_amount": result.pool_coin_vault_amount,
+                "pool_lp_amount": result.pool_lp_amount,
+                "swap_fee_numerator": result.swap_fee_numerator,
+                "swap_fee_denominator": result.swap_fee_denominator,
+                "other_amount_threshold": other_amount_threshold,
+            }))?
+        );
+
+        other_amount_threshold
     } else {
-        amm::utils::SwapDirection::PC2Coin
+        info!("Quick swap, skipping pool vault calculation");
+        0
     };
-    let other_amount_threshold = amm::swap_with_slippage(
-        result.pool_pc_vault_amount,
-        result.pool_coin_vault_amount,
-        result.swap_fee_numerator,
-        result.swap_fee_denominator,
-        direction,
-        swap_context.amount,
-        swap_context.swap_base_in,
-        swap_context.slippage,
-    )
-    .unwrap_or(0);
-    info!(
-        "{}",
-        serde_json::to_string_pretty(&json!({
-            "pool_pc_vault_amount": result.pool_pc_vault_amount,
-            "pool_coin_vault_amount": result.pool_coin_vault_amount,
-            "pool_lp_amount": result.pool_lp_amount,
-            "swap_fee_numerator": result.swap_fee_numerator,
-            "swap_fee_denominator": result.swap_fee_denominator,
-            "other_amount_threshold": other_amount_threshold,
-        }))?
-    );
     // let market_cap = util::lamports_to_sol(result.pool_coin_vault_amount);
     // info!("market cap: {}", market_cap);
     // if market_cap < 50. {
@@ -263,7 +273,7 @@ impl Raydium {
             amount,
         )
         .await?;
-        let ixs = self::make_swap_ixs(provider, wallet, &swap_context)?;
+        let ixs = self::make_swap_ixs(provider, wallet, &swap_context, false)?;
         info!(
             "{}",
             serde_json::to_string_pretty(&json!({
