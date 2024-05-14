@@ -353,7 +353,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                 tip,
                                 &wallet,
                                 &mut searcher_client,
-                                &rpc_client,
+                                rpc_client,
                             )
                             .await;
 
@@ -413,7 +413,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             let path = match app.args.keypair_path {
                 Some(path) => path,
-                None => util::must_get_env("HOME") + "/.config/solana/id.json",
+                None => {
+                    std::env::var("HOME").expect("HOME is set")
+                        + "/.config/solana/id.json"
+                }
             };
             if dex.unwrap_or("".to_string()) == "raydium" {
                 // TODO check out solend also
@@ -478,7 +481,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Command::Wallet {} => {
             let path = match app.args.keypair_path {
                 Some(path) => path,
-                None => util::must_get_env("HOME") + "/.config/solana/id.json",
+                None => {
+                    std::env::var("HOME").expect("HOME is set")
+                        + "/.config/solana/id.json"
+                }
             };
             let keypair = Keypair::read_from_file(&path)?;
 

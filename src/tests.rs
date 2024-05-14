@@ -4,15 +4,14 @@ use std::str::FromStr;
 use solana_client::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 
-use crate::{
-    constants, provider::Provider, raydium, tx_parser, util::must_get_env,
-};
+use crate::{constants, provider::Provider, raydium, tx_parser};
+
+const RPC_URL: &str = "https://api.mainnet-beta.solana.com";
 
 #[test]
 #[ignore = "This test requires a live network connection"]
 fn test_get_pricing() {
-    let url = "https://api.mainnet-beta.solana.com";
-    let provider = crate::provider::Provider::new(url.to_string());
+    let provider = crate::provider::Provider::new(RPC_URL.to_string());
     let mint = "Fv17uvL3nsD4tBJaowdKz9SUsKFoxeZdcTuGTaKgyYQU";
 
     let pricing = tokio_test::block_on(provider.get_pricing(mint)).unwrap();
@@ -33,7 +32,7 @@ fn test_parse_notional() {
 #[ignore = "This test requires a live network connection"]
 fn test_parse_new_pool() {
     let new_pool_tx_signature: &str = "2nkbEdznrqqoXyxcrYML8evHtAKcNTurBBXGWACS6cxJDHYGosgVdy66gaqHzgtRWWH13bzMF4kovSEQUVYdDPku";
-    let provider = Provider::new(must_get_env("RPC_URL"));
+    let provider = Provider::new(RPC_URL.to_string());
     let tx = provider.get_tx(new_pool_tx_signature).unwrap();
     println!("{}", serde_json::to_string_pretty(&tx).unwrap());
     let new_pool_info = tx_parser::parse_new_pool(&tx).unwrap();
@@ -57,7 +56,7 @@ async fn test_sanity_check() {
     // non-renounced freeze authority
     let mint = Pubkey::from_str("3jGenV1FXBQWKtviJUWXUwXFiA8TNV4QGF2n499HnJmw")
         .unwrap();
-    let provider = Provider::new(must_get_env("RPC_URL"));
+    let provider = Provider::new(RPC_URL.to_string());
     assert!(provider.sanity_check(&mint).await.unwrap().0 == false);
     // michi
     let mint = Pubkey::from_str("5mbK36SZ7J19An8jFochhQS4of8g6BwUjbeCSxBSoWdp")
@@ -73,8 +72,7 @@ fn test_get_burn_pct() {
     let amm_pool =
         Pubkey::from_str("G5ts2NDTcAhzowLqWTrVN6NcxKoAwrXHg3uPTyskfksd")
             .unwrap();
-    let rpc_client =
-        RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
+    let rpc_client = RpcClient::new(RPC_URL.to_string());
     let result = raydium::get_calc_result(&rpc_client, &amm_pool).unwrap();
     let burn_pct =
         raydium::get_burn_pct(&rpc_client, &lp_mint, result).unwrap();
