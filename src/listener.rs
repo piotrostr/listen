@@ -4,7 +4,7 @@ use log::info;
 use serde::Serialize;
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::{
-    pubsub_client::{LogsSubscription, ProgramSubscription, PubsubClient},
+    pubsub_client::{LogsSubscription, PubsubClient},
     rpc_config::{
         RpcAccountInfoConfig, RpcBlockSubscribeConfig, RpcBlockSubscribeFilter,
         RpcProgramAccountsConfig, RpcTransactionLogsConfig,

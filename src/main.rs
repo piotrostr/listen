@@ -58,9 +58,6 @@ enum Command {
         amm_pool: String,
 
         #[arg(long)]
-        amount_sol: f64,
-
-        #[arg(long)]
         owner: String,
     },
     MonitorLeaders {},
@@ -150,11 +147,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("makes searcher client");
     match app.command {
-        Command::TrackPosition {
-            amm_pool,
-            amount_sol,
-            owner,
-        } => {
+        Command::TrackPosition { amm_pool, owner } => {
             let amm_pool = Pubkey::from_str(amm_pool.as_str())
                 .expect("amm pool is a valid pubkey");
 
@@ -166,6 +159,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 &amm_program,
                 &amm_pool,
             )?;
+            info!("{:?}", amm_keys);
             // load market keys
             let market_keys = amm::openbook::get_keys_for_market(
                 &provider.rpc_client,
@@ -232,7 +226,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::MonitorSlots {} => {
             listener.slot_subscribe()?;
-            let res = searcher_client
+            let _ = searcher_client
                 .subscribe_mempool(MempoolSubscription {
                     ..Default::default()
                 })

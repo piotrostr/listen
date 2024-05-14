@@ -2,6 +2,8 @@ use std::str::FromStr;
 
 use log::{debug, error, info};
 use raydium_library::amm;
+use solana_client::rpc_client::RpcClient;
+use spl_token::state::Mint;
 use std::error::Error;
 use timed::timed;
 
@@ -42,6 +44,69 @@ pub struct SwapContext {
     pub output_token_mint: Pubkey,
     pub slippage: u64,
     pub swap_base_in: bool,
+}
+
+pub fn get_calc_result(
+    rpc_client: &RpcClient,
+    amm_pool: &Pubkey,
+) -> Result<amm::CalculateResult, Box<dyn Error>> {
+    let amm_program =
+        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+    // load amm keys
+    let amm_keys =
+        amm::utils::load_amm_keys(rpc_client, &amm_program, &amm_pool)?;
+    // load market keys
+    let market_keys = amm::openbook::get_keys_for_market(
+        rpc_client,
+        &amm_keys.market_program,
+        &amm_keys.market,
+    )?;
+
+    let result = raydium_library::amm::calculate_pool_vault_amounts(
+        rpc_client,
+        &amm_program,
+        amm_pool,
+        &amm_keys,
+        &market_keys,
+        amm::utils::CalculateMethod::CalculateWithLoadAccount,
+    )?;
+
+    Ok(result)
+}
+
+pub fn get_burn_pct(
+    rpc_client: &RpcClient,
+    lp_mint: &Pubkey,
+    result: amm::CalculateResult,
+) -> Result<f64, Box<dyn Error>> {
+    let mint_account = rpc_client.get_account(lp_mint)?;
+    let mint_data = Mint::unpack(&mint_account.data)?;
+
+    // Calculate divisor for token decimals
+    let base = 10u64;
+    let divisor = base.pow(mint_data.decimals as u32);
+
+    // Convert lp_reserve and supply to proper scale
+    let lp_reserve = result.pool_lp_amount as f64 / divisor as f64;
+    let supply = mint_data.supply as f64 / divisor as f64;
+
+    // Calculate max_lp_supply and burn_amount
+    let max_lp_supply = lp_reserve.max(supply);
+    let burn_amount = max_lp_supply - supply;
+
+    // Avoid division by zero and ensure correct burn percentage calculation
+    let burn_pct = if max_lp_supply > 0.0 {
+        (burn_amount / max_lp_supply) * 100.0
+    } else {
+        0.0
+    };
+
+    info!(
+        "LP total: {}, LP pooled: {}, LP burnt: {}",
+        max_lp_supply, lp_reserve, burn_amount
+    );
+
+    Ok(burn_pct)
 }
 
 pub fn calc_result_to_financials(
@@ -209,10 +274,16 @@ pub fn make_swap_ixs(
             serde_json::to_string_pretty(&json!({
                 "pool_pc_vault_amount": result.pool_pc_vault_amount,
                 "pool_coin_vault_amount": result.pool_coin_vault_amount,
+                "lp_mint": swap_context.amm_keys.amm_lp_mint.to_string(),
                 "pool_lp_amount": result.pool_lp_amount,
                 "swap_fee_numerator": result.swap_fee_numerator,
                 "swap_fee_denominator": result.swap_fee_denominator,
                 "other_amount_threshold": other_amount_threshold,
+                "liquidity_burn_pct": self::get_burn_pct(
+                    &provider.rpc_client,
+                    &swap_context.amm_keys.amm_lp_mint,
+                    result,
+                ).expect("get burn pct"),
             }))?
         );
 

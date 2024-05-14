@@ -1,11 +1,11 @@
 #![cfg(test)]
 use std::str::FromStr;
 
+use solana_client::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 
 use crate::{
-    constants, provider::Provider, raydium::Raydium, tx_parser,
-    util::must_get_env,
+    constants, provider::Provider, raydium, tx_parser, util::must_get_env,
 };
 
 #[test]
@@ -27,21 +27,6 @@ fn test_parse_notional() {
             .unwrap();
     let sol_notional = crate::tx_parser::parse_notional(&tx).unwrap();
     assert!(1510000000 > sol_notional && sol_notional > 1500000000);
-}
-
-#[test]
-#[ignore = "This takes a long time and is likely to be deprecated"]
-fn test_get_amm_pool_id() {
-    let amm_pool_id =
-        Pubkey::from_str("81kGW2fHNV5bSw9ChQ4HZT8SSPKkevtUqWtHPa5Jy7EQ")
-            .unwrap();
-    let mint = Pubkey::from_str("9Q9U4T2qMcXjs4G57RYUBKN2YA3JhbLzPtzMZ5QAvgQ3")
-        .unwrap();
-    let raydium = Raydium::new();
-    let wsol = Pubkey::from_str(constants::SOLANA_PROGRAM_ID).unwrap();
-    let provider = Provider::new(must_get_env("RPC_URL"));
-    let got = raydium.get_amm_pool_id(&provider, &mint, &wsol);
-    assert_eq!(got, amm_pool_id);
 }
 
 #[test]
@@ -67,6 +52,7 @@ fn test_parse_new_pool() {
 }
 
 #[tokio::test]
+#[ignore = "This test requires a live network connection"]
 async fn test_sanity_check() {
     // non-renounced freeze authority
     let mint = Pubkey::from_str("3jGenV1FXBQWKtviJUWXUwXFiA8TNV4QGF2n499HnJmw")
@@ -77,4 +63,21 @@ async fn test_sanity_check() {
     let mint = Pubkey::from_str("5mbK36SZ7J19An8jFochhQS4of8g6BwUjbeCSxBSoWdp")
         .unwrap();
     assert!(provider.sanity_check(&mint).await.unwrap().0 == true);
+}
+
+#[test]
+fn test_get_burn_pct() {
+    let lp_mint =
+        Pubkey::from_str("CcX9jxEAxeBvMjtLCYeMaecr7XGmoB9aiY3wePeXmEu5")
+            .unwrap();
+    let amm_pool =
+        Pubkey::from_str("G5ts2NDTcAhzowLqWTrVN6NcxKoAwrXHg3uPTyskfksd")
+            .unwrap();
+    let rpc_client =
+        RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
+    let result = raydium::get_calc_result(&rpc_client, &amm_pool).unwrap();
+    let burn_pct =
+        raydium::get_burn_pct(&rpc_client, &lp_mint, result).unwrap();
+
+    assert!(burn_pct == 100.);
 }
