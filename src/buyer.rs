@@ -1,8 +1,3 @@
-use std::sync::{
-    atomic::{AtomicBool, Ordering},
-    Arc,
-};
-
 use crate::{
     constants,
     jito::{self, SearcherClient},
@@ -23,6 +18,10 @@ use solana_sdk::{signature::Keypair, signer::Signer};
 // processing
 // ideally it would also track position and sell at the right time
 pub struct Trader {}
+
+// pub async fn top_holders_check(provider: &Provider, mint: &Pubkey) {
+//     provider.rpc_client.get_account(pubkey)
+// }
 
 pub async fn handle_new_pair(
     new_pool_info: NewPool,
@@ -64,21 +63,13 @@ pub async fn handle_new_pair(
     .await
     .expect("makes swap context");
 
-    let running = Arc::new(AtomicBool::new(true));
-    let r = running.clone();
-
-    // Set up the Ctrl+C signal handler
-    ctrlc::set_handler(move || {
-        r.store(false, Ordering::SeqCst);
-    })
-    .expect("Error setting Ctrl-C handler");
-
     info!("Waiting for burn pct to be over 90%, ctrl+c to continue with other pairs");
 
     // this is blocking but the messages wait in the websocket, so if a new pair
     // comes around and liquidity is locked, it is ok to wait here
     // prod might wanna use tokio and spawn this in a task
-    while running.load(Ordering::SeqCst) {
+    let mut ok = false;
+    for _ in 0..10 {
         let result = raydium_library::amm::calculate_pool_vault_amounts(
             &provider.rpc_client,
             &swap_context.amm_program,
@@ -102,11 +93,17 @@ pub async fn handle_new_pair(
         }
 
         if burn_pct > 90. {
+            ok = true;
             break;
         }
 
         info!("Burn pct is {}, waiting", burn_pct);
         tokio::time::sleep(tokio::time::Duration::from_secs(3)).await;
+    }
+
+    if !ok {
+        warn!("Burn pct did not reach 90%, skipping");
+        return Ok(());
     }
 
     let start = std::time::Instant::now();

@@ -122,7 +122,7 @@ pub fn calc_result_to_financials(
             / result.pool_pc_vault_amount as f64;
         let owner_balance_sol = owner_balance as f64 * price / 1e9;
         let pooled_sol = result.pool_pc_vault_amount as f64 / 1e9;
-        info!(
+        debug!(
             "{}",
             serde_json::to_string_pretty(&json!(
                 {
@@ -145,7 +145,7 @@ pub fn calc_result_to_financials(
             / result.pool_coin_vault_amount as f64;
         let owner_balance_sol = owner_balance as f64 * price / 1e9;
         let pooled_sol = result.pool_coin_vault_amount as f64 / 1e9;
-        info!(
+        debug!(
             "{}",
             serde_json::to_string_pretty(&json!(
                 {
