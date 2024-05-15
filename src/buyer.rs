@@ -91,6 +91,16 @@ pub async fn handle_new_pair(
             raydium::get_burn_pct(&provider.rpc_client, &mint, result)
                 .expect("get burn pct");
 
+        let coin_mint_is_sol = swap_context.market_keys.coin_mint.to_string()
+            == constants::SOLANA_PROGRAM_ID;
+        let pooled_sol =
+            raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
+        if pooled_sol < 100. {
+            info!("pooled sol: {} is below the 100. thresh", pooled_sol);
+            info!("there is {}% liq burnt", burn_pct);
+            return Ok(());
+        }
+
         if burn_pct > 90. {
             break;
         }

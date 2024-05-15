@@ -113,7 +113,7 @@ pub fn calc_result_to_financials(
     coin_mint_is_sol: bool,
     result: amm::CalculateResult,
     owner_balance: u64,
-) {
+) -> f64 {
     let sol_price = 145.;
     if coin_mint_is_sol {
         let sol_amount = result.pool_coin_vault_amount as f64 / 1e9;
@@ -121,6 +121,7 @@ pub fn calc_result_to_financials(
         let price = result.pool_coin_vault_amount as f64
             / result.pool_pc_vault_amount as f64;
         let owner_balance_sol = owner_balance as f64 * price / 1e9;
+        let pooled_sol = result.pool_pc_vault_amount as f64 / 1e9;
         info!(
             "{}",
             serde_json::to_string_pretty(&json!(
@@ -131,17 +132,19 @@ pub fn calc_result_to_financials(
                     "price": price,
                     "owner_balance": owner_balance,
                     "owner_balance_sol": owner_balance_sol,
-                    "pooled_sol": result.pool_pc_vault_amount as f64 / 1e9,
+                    "pooled_sol": pooled_sol,
                 }
             ))
             .expect("to string pretty")
         );
+        return pooled_sol;
     } else {
         let sol_amount = result.pool_pc_vault_amount as f64 / 1e9;
         let usd_amount = sol_amount * sol_price;
         let price = result.pool_pc_vault_amount as f64
             / result.pool_coin_vault_amount as f64;
         let owner_balance_sol = owner_balance as f64 * price / 1e9;
+        let pooled_sol = result.pool_coin_vault_amount as f64 / 1e9;
         info!(
             "{}",
             serde_json::to_string_pretty(&json!(
@@ -152,11 +155,12 @@ pub fn calc_result_to_financials(
                     "price": price,
                     "owner_balance": owner_balance,
                     "owner_balance_sol": owner_balance_sol,
-                    "pooled_sol": result.pool_coin_vault_amount as f64 / 1e9,
+                    "pooled_sol": pooled_sol,
                 }
             ))
             .expect("to string pretty")
         );
+        return pooled_sol;
     }
 }
 
