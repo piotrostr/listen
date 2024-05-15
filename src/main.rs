@@ -123,12 +123,20 @@ type SubscriptionResponse = Result<
     Box<dyn Error>,
 >;
 
+use flexi_logger::{Duplicate, FileSpec, Logger, WriteMode};
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
-    env_logger::Builder::from_default_env()
-        .filter_level(LevelFilter::Info)
-        .format_timestamp_millis()
-        .init();
+    let _logger = Logger::try_with_str("info")?
+        .log_to_file(FileSpec::default())
+        .write_mode(WriteMode::Async)
+        .duplicate_to_stdout(Duplicate::Info)
+        .start()?;
+
+    // env_logger::Builder::from_default_env()
+    //     .filter_level(LevelFilter::Info)
+    //     .format_timestamp_millis()
+    //     .init();
 
     // 30th April, let's see how well this ages lol (was 135.)
     // 13th May, still going strong with the algo, now at 145
@@ -301,21 +309,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             }))
                             .expect("serialize pool info")
                         );
-                        // let (is_safe, msg) = provider
-                        //     .sanity_check(&mint)
-                        //     .await
-                        //     .expect("sanity check");
-                        // if !is_safe
-                        //     && !dialoguer::Confirm::new()
-                        //         .with_prompt(format!(
-                        //             "Unsafe pool {}: {}",
-                        //             mint, msg
-                        //         ))
-                        //         .interact()
-                        //         .unwrap()
-                        // {
-                        //     continue;
-                        // }
                         // TODO move this to a separate service listening in a separate thread
                         // same as in case of receiver and processor pool for Command::Listen
                         if snipe {
