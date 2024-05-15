@@ -103,7 +103,7 @@ pub async fn handle_new_pair(
     }
 
     if !ok {
-        warn!("Burn pct did not reach 90%, skipping");
+        warn!("not ok to swap, skipping");
         return Ok(());
     }
 
