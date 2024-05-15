@@ -46,7 +46,7 @@ pub async fn handle_new_pair(
         //     .with_prompt(format!("Unsafe pool {}: {}", mint, msg))
         //     .interact()
         //     .unwrap()
-        warn!("Unsafe pool, skipping");
+        warn!("Unsafe pool: {}, skipping", msg);
         return Ok(());
     }
 
