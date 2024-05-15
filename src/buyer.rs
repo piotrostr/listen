@@ -86,7 +86,6 @@ pub async fn handle_new_pair(
             == constants::SOLANA_PROGRAM_ID;
         let pooled_sol =
             raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
-        info!("pooled sol: {}", pooled_sol);
         if pooled_sol < 100. {
             info!("pooled sol: {} is below the 100. thresh", pooled_sol);
             info!("there is {}% liq burnt", burn_pct);
