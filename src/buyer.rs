@@ -89,7 +89,8 @@ pub async fn handle_new_pair(
         if pooled_sol < 100. {
             info!("pooled sol: {} is below the 100. thresh", pooled_sol);
             info!("there is {}% liq burnt", burn_pct);
-            return Ok(());
+            ok = false;
+            break;
         }
 
         if burn_pct > 90. {
