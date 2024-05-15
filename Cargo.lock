@@ -1374,6 +1374,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ctrlc"
+version = "3.4.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "672465ae37dc1bc6380a6547a8883d5dd397b0f1faaad4f265726cc7042a5345"
+dependencies = [
+ "nix 0.28.0",
+ "windows-sys 0.52.0",
+]
+
+[[package]]
 name = "curve25519-dalek"
 version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2729,6 +2739,7 @@ dependencies = [
  "chrono",
  "clap 4.5.4",
  "crossbeam",
+ "ctrlc",
  "dialoguer 0.11.0",
  "dotenv",
  "dotenv_codegen",
@@ -3005,6 +3016,18 @@ dependencies = [
  "libc",
  "memoffset 0.7.1",
  "pin-utils",
+]
+
+[[package]]
+name = "nix"
+version = "0.28.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ab2156c4fce2f8df6c499cc1c763e4394b7482525bf2a9701c9d79d215f519e4"
+dependencies = [
+ "bitflags 2.5.0",
+ "cfg-if",
+ "cfg_aliases",
+ "libc",
 ]
 
 [[package]]
@@ -4838,7 +4861,7 @@ dependencies = [
  "clap 3.2.25",
  "crossbeam-channel",
  "log",
- "nix",
+ "nix 0.26.4",
  "rand 0.7.3",
  "serde",
  "serde_derive",
@@ -4867,7 +4890,7 @@ dependencies = [
  "lazy_static 1.4.0",
  "libc",
  "log",
- "nix",
+ "nix 0.26.4",
  "rand 0.7.3",
  "rayon",
  "serde",
@@ -5190,7 +5213,7 @@ dependencies = [
  "itertools 0.10.5",
  "libc",
  "log",
- "nix",
+ "nix 0.26.4",
  "pem",
  "percentage",
  "pkcs8",

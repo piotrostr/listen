@@ -9,7 +9,7 @@ use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
-    constants, jito,
+    buyer, constants, jito,
     jup::Jupiter,
     prometheus,
     raydium::{self, Raydium},
@@ -319,6 +319,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         // TODO move this to a separate service listening in a separate thread
                         // same as in case of receiver and processor pool for Command::Listen
                         if snipe {
+                            let res = buyer::handle_new_pair(
+                                new_pool_info,
+                                amount,
+                                slippage,
+                                &wallet,
+                                &provider,
+                                &mut searcher_client,
+                            );
+                            return res;
                             let swap_context = raydium::make_swap_context(
                                 &provider,
                                 new_pool_info.amm_pool_id,

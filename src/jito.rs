@@ -19,7 +19,7 @@ use tonic::{codegen::InterceptedService, transport::Channel};
 
 use crate::constants;
 
-type SearcherClient =
+pub type SearcherClient =
     SearcherServiceClient<InterceptedService<Channel, ClientInterceptor>>;
 
 pub async fn wait_leader(
