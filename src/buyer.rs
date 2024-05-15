@@ -41,12 +41,11 @@ pub async fn handle_new_pair(
 
     let (is_safe, msg) =
         provider.sanity_check(&mint).await.expect("sanity check");
-    if !is_safe
-        && !dialoguer::Confirm::new()
-            .with_prompt(format!("Unsafe pool {}: {}", mint, msg))
-            .interact()
-            .unwrap()
-    {
+    if !is_safe {
+        // && !dialoguer::Confirm::new()
+        //     .with_prompt(format!("Unsafe pool {}: {}", mint, msg))
+        //     .interact()
+        //     .unwrap()
         warn!("Unsafe pool, skipping");
         return Ok(());
     }

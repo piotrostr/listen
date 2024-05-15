@@ -301,21 +301,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             }))
                             .expect("serialize pool info")
                         );
-                        let (is_safe, msg) = provider
-                            .sanity_check(&mint)
-                            .await
-                            .expect("sanity check");
-                        if !is_safe
-                            && !dialoguer::Confirm::new()
-                                .with_prompt(format!(
-                                    "Unsafe pool {}: {}",
-                                    mint, msg
-                                ))
-                                .interact()
-                                .unwrap()
-                        {
-                            continue;
-                        }
+                        // let (is_safe, msg) = provider
+                        //     .sanity_check(&mint)
+                        //     .await
+                        //     .expect("sanity check");
+                        // if !is_safe
+                        //     && !dialoguer::Confirm::new()
+                        //         .with_prompt(format!(
+                        //             "Unsafe pool {}: {}",
+                        //             mint, msg
+                        //         ))
+                        //         .interact()
+                        //         .unwrap()
+                        // {
+                        //     continue;
+                        // }
                         // TODO move this to a separate service listening in a separate thread
                         // same as in case of receiver and processor pool for Command::Listen
                         if snipe {
