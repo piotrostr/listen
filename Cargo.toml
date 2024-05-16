@@ -51,3 +51,5 @@ timed = "0.2.1"
 dotenv_codegen = "0.15.0"
 ctrlc = "3.4.4"
 flexi_logger = { version = "0.28.0", features = ["async"] }
+futures-util = "0.3.30"
+bs58 = "0.5.1"

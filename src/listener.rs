@@ -4,7 +4,6 @@ use log::info;
 use serde::Serialize;
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::{
-    nonblocking,
     pubsub_client::{LogsSubscription, PubsubClient},
     rpc_config::{
         RpcAccountInfoConfig, RpcBlockSubscribeConfig, RpcBlockSubscribeFilter,
@@ -68,22 +67,6 @@ impl Listener {
                 commitment: Some(CommitmentConfig::confirmed()),
             },
         )?;
-        Ok((subs, receiver))
-    }
-
-    pub fn new_lp_subscribe(
-        &self,
-    ) -> Result<LogsSubscription, Box<dyn std::error::Error>> {
-        let (subs, receiver) = PubsubClient::logs_subscribe(
-            "wss://api.mainnet-beta.solana.com/", // override this for now
-            RpcTransactionLogsFilter::Mentions(vec![
-                constants::FEE_PROGRAM_ID.to_string()
-            ]),
-            RpcTransactionLogsConfig {
-                commitment: Some(CommitmentConfig::confirmed()),
-            },
-        )
-        .unwrap();
         Ok((subs, receiver))
     }
 

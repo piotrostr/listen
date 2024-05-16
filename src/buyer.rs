@@ -1,18 +1,27 @@
-use std::error::Error;
+use std::{error::Error, str::FromStr, time::Duration};
 
 use crate::{
     constants,
     jito::{self, SearcherClient},
     listener::Listener,
     provider::Provider,
-    raydium,
+    raydium::{self, get_burn_pct},
     tx_parser::NewPool,
 };
 use dotenv_codegen::dotenv;
+use futures_util::StreamExt;
 use log::{info, warn};
+use raydium_library::amm;
 use serde_json::json;
-use solana_client::nonblocking;
-use solana_sdk::{pubkey::Pubkey, signature::Keypair};
+use solana_account_decoder::UiAccountData;
+use solana_client::{
+    nonblocking, rpc_client::RpcClient, rpc_config::RpcAccountInfoConfig,
+};
+use solana_sdk::{
+    commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
+    signature::Keypair,
+};
+use spl_token::state::Mint;
 
 // Trader is a wrapper to listen on liquidity burn of a new listing
 // plus verify that the supply is not centralized, and perform same sanity
@@ -26,29 +35,74 @@ pub struct Trader {}
 
 // listen_for_burn listens until the liquidity is burnt or a rugpull happens
 pub async fn listen_for_burn(
-    listener: &Listener,
-    provider: &Provider,
-    mint: &Pubkey,
     amm_pool: &Pubkey,
 ) -> Result<bool, Box<dyn Error>> {
-    let (subs, receiver) = listener.account_subscribe(mint).unwrap();
-    while let Ok(_) = receiver.recv() {
-        let result = raydium::get_calc_result(&provider.rpc_client, amm_pool)
-            .expect("get calc result");
-        let burn_pct =
-            raydium::get_burn_pct(&provider.rpc_client, mint, result)
-                .expect("get burn pct");
-        if burn_pct > 90. {
-            info!("Burn pct is over 90%, ready to trade");
-            return Ok(true);
-        }
-        if result.pool_lp_amount as f64 / 9f64 < 1. {
-            warn!("rugpull of {}", mint.to_string());
-            return Ok(false);
+    // load amm keys
+    let rpc_client = RpcClient::new(dotenv!("RPC_URL").to_string());
+    let amm_program =
+        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)
+            .expect("amm program");
+    let amm_keys =
+        amm::utils::load_amm_keys(&rpc_client, &amm_program, amm_pool)?;
+    let lp_mint = amm_keys.amm_lp_mint;
+    let coin_mint_is_sol = amm_keys.amm_coin_mint
+        == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
+
+    let client =
+        nonblocking::pubsub_client::PubsubClient::new(dotenv!("WS_URL"))
+            .await
+            .expect("pubsub client async");
+    let (mut stream, unsub) = client
+        .account_subscribe(
+            &lp_mint,
+            Some(RpcAccountInfoConfig {
+                commitment: Some(CommitmentConfig::confirmed()),
+                ..Default::default()
+            }),
+        )
+        .await
+        .expect("subscribe to logs");
+
+    info!("listening for burn for {}", lp_mint.to_string());
+    while let Some(log) = stream.next().await {
+        info!("log: {:?}", log);
+        if let UiAccountData::LegacyBinary(data) = log.value.data {
+            let mint_data =
+                Mint::unpack(bs58::decode(data).into_vec()?.as_slice())
+                    .expect("unpack mint data");
+            info!("mint data: {:?}", mint_data);
+
+            let (result, market_keys, _) =
+                raydium::get_calc_result(&rpc_client, amm_pool)?;
+
+            // check if any sol pooled before checking burn_pct for correct res
+            // rug-pulled tokens have LP supply of 0
+            let sol_pooled =
+                raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
+            if sol_pooled < 1. {
+                let token_mint = if coin_mint_is_sol {
+                    market_keys.pc_mint
+                } else {
+                    market_keys.coin_mint
+                };
+                warn!("rug pull: {}, sol pooled: {}", token_mint, sol_pooled);
+                return Ok(false);
+            }
+
+            let burn_pct = get_burn_pct(mint_data, result).expect("burn_pct");
+            if burn_pct > 90. {
+                info!("burn pct: {}", burn_pct);
+                // check here if market cap is right
+                if sol_pooled < 30. {
+                    warn!("sol pooled: {} < 30", sol_pooled);
+                    return Ok(false);
+                }
+                return Ok(true);
+            }
         }
     }
 
-    subs.send_unsubscribe()?;
+    unsub().await;
 
     Ok(false)
 }
@@ -69,6 +123,14 @@ pub async fn handle_new_pair(
         new_pool_info.input_mint
     };
 
+    let ok = listen_for_burn(&new_pool_info.amm_pool_id).await?;
+    if !ok {
+        return Ok(());
+    }
+
+    // this should be converted to listening as well
+    // some tokens have mint and freeze authority disabled a bit later
+    // but mostly before the burn
     let (is_safe, msg) =
         provider.sanity_check(&mint).await.expect("sanity check");
     if !is_safe {
@@ -87,29 +149,6 @@ pub async fn handle_new_pair(
     )
     .await
     .expect("makes swap context");
-
-    let result =
-        raydium::get_calc_result(&provider.rpc_client, &swap_context.amm_pool)?;
-    let coin_mint_is_sol = swap_context.market_keys.coin_mint.to_string()
-        == constants::SOLANA_PROGRAM_ID;
-    let pooled_sol =
-        raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
-    if pooled_sol < 80. {
-        info!("pooled sol: {} is below the 100. thresh", pooled_sol);
-        return Ok(());
-    }
-
-    let listener = Listener::new(dotenv!("WS_URL").to_string());
-    let ok = listen_for_burn(
-        &listener,
-        provider,
-        &new_pool_info.input_mint,
-        &swap_context.amm_pool,
-    )
-    .await?;
-    if !ok {
-        return Ok(());
-    }
 
     let start = std::time::Instant::now();
     let quick = true;

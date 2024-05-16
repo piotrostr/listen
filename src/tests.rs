@@ -1,8 +1,12 @@
 #![cfg(test)]
 use std::str::FromStr;
 
+use solana_account_decoder::{
+    parse_account_data::ParsedAccount, UiAccountData,
+};
 use solana_client::rpc_client::RpcClient;
-use solana_sdk::pubkey::Pubkey;
+use solana_sdk::{program_pack::Pack, pubkey::Pubkey};
+use spl_token::state::Mint;
 
 use crate::{constants, provider::Provider, raydium, tx_parser};
 
@@ -65,6 +69,7 @@ async fn test_sanity_check() {
 }
 
 #[test]
+#[ignore = "This test requires a live network connection"]
 fn test_get_burn_pct() {
     let lp_mint =
         Pubkey::from_str("CcX9jxEAxeBvMjtLCYeMaecr7XGmoB9aiY3wePeXmEu5")
@@ -73,9 +78,21 @@ fn test_get_burn_pct() {
         Pubkey::from_str("G5ts2NDTcAhzowLqWTrVN6NcxKoAwrXHg3uPTyskfksd")
             .unwrap();
     let rpc_client = RpcClient::new(RPC_URL.to_string());
-    let result = raydium::get_calc_result(&rpc_client, &amm_pool).unwrap();
-    let burn_pct =
-        raydium::get_burn_pct(&rpc_client, &lp_mint, result).unwrap();
+    let (result, _, _) =
+        raydium::get_calc_result(&rpc_client, &amm_pool).unwrap();
+    let mint_account = rpc_client.get_account(&lp_mint).unwrap();
+    let mint_data = Mint::unpack(&mint_account.data).unwrap();
+    let burn_pct = raydium::get_burn_pct(mint_data, result).unwrap();
 
     assert!(burn_pct == 100.);
+}
+
+#[test]
+fn test_parse_mint_acc() {
+    let data = "DK9N1P4LsskfLtyXTYoeDi44sjaGgT3n8akj2pFAiqsfFhJyaPYhhVqC17vKirYk9vmh2kBf7jQeTKybRETHCMRv9dKQSufNqo457fnX1dZCGCo";
+    let mint_data =
+        Mint::unpack(bs58::decode(data).into_vec().unwrap().as_slice())
+            .expect("unpack mint data");
+    println!("mint data: {:?}", mint_data);
+    assert!(false);
 }

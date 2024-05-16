@@ -1,5 +1,6 @@
 use crossbeam::channel::Receiver;
 use dotenv_codegen::dotenv;
+use futures_util::StreamExt;
 use jito_protos::searcher::{MempoolSubscription, NextScheduledLeaderRequest};
 use jito_searcher_client::get_searcher_client;
 use raydium_library::amm;
@@ -8,17 +9,21 @@ use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
-    buyer, constants,
+    buyer::{self, listen_for_burn},
+    constants,
     jup::Jupiter,
     prometheus,
     raydium::{self, Raydium},
     rpc, tx_parser, util, BlockAndProgramSubscribable, Listener, Provider,
 };
 use solana_client::{
+    nonblocking,
     pubsub_client::PubsubClientSubscription,
+    rpc_config::{RpcTransactionLogsConfig, RpcTransactionLogsFilter},
     rpc_response::{Response, RpcLogsResponse},
 };
 use solana_sdk::{
+    commitment_config::CommitmentConfig,
     pubkey::Pubkey,
     signature::Keypair,
     signer::{EncodableKey, Signer},
@@ -80,6 +85,10 @@ enum Command {
         #[arg(long, default_value_t = 10)]
         buffer_size: i32,
     },
+    ListenForBurn {
+        #[arg(long)]
+        amm_pool: String,
+    },
     Snipe {
         #[arg(long, default_value_t = 1_000_000)]
         amount: u64,
@@ -129,38 +138,33 @@ pub async fn snipe(
     worker_count: i32,
     buffer_size: i32,
 ) -> Result<(), Box<dyn Error>> {
-    let establish_subscription =
-        move |listener: Listener| -> SubscriptionResponse {
-            let (subs, recv) = listener.new_lp_subscribe()?;
-            Ok((subs, recv))
-        };
     let (tx, rx) = tokio::sync::mpsc::channel::<Response<RpcLogsResponse>>(
         buffer_size as usize,
     );
     let rx = Arc::new(Mutex::new(rx));
     let listener = tokio::spawn(async move {
-        loop {
-            let (mut subs, recv) = establish_subscription(Listener::new(
-                dotenv!("WS_URL").to_string(),
-            ))
+        let client =
+            nonblocking::pubsub_client::PubsubClient::new(dotenv!("WS_URL"))
+                .await
+                .expect("pubsub client async");
+        let (mut notifications, unsub) = client
+            .logs_subscribe(
+                RpcTransactionLogsFilter::Mentions(vec![
+                    constants::FEE_PROGRAM_ID.to_string(),
+                ]),
+                RpcTransactionLogsConfig {
+                    commitment: Some(CommitmentConfig::confirmed()),
+                },
+            )
+            .await
             .expect("subscribe to logs");
-            info!("Listening for LP events");
-            match recv.recv_timeout(Duration::from_secs(1)) {
-                Ok(log) => {
-                    if log.value.err.is_some() {
-                        continue; // Skip error logs
-                    }
-                    tx.send(log).await.expect("send log");
-                }
-                Err(_) => {
-                    continue;
-                }
-            };
-            subs.send_unsubscribe().expect("unsub");
-            subs.shutdown().expect("shutdown");
-            info!("reconnecting in 1 second");
-            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        info!("Listening for LP events");
+        while let Some(log) = notifications.next().await {
+            if log.value.err.is_none() {
+                tx.send(log).await.expect("send log");
+            }
         }
+        unsub().await;
     });
     let buyer_pool: Vec<_> = (0..worker_count as usize)
         .map(|_| {
@@ -243,6 +247,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("makes searcher client");
     match app.command {
+        Command::ListenForBurn { amm_pool } => {
+            listen_for_burn(&Pubkey::from_str(amm_pool.as_str())?).await?;
+        }
         Command::TrackPosition { amm_pool, owner } => {
             let amm_pool = Pubkey::from_str(amm_pool.as_str())
                 .expect("amm pool is a valid pubkey");

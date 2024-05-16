@@ -2,6 +2,8 @@ use std::str::FromStr;
 
 use log::{debug, error, info};
 use raydium_library::amm;
+use raydium_library::amm::AmmKeys;
+use raydium_library::amm::MarketPubkeys;
 use solana_client::rpc_client::RpcClient;
 use spl_token::state::Mint;
 use std::error::Error;
@@ -49,18 +51,21 @@ pub struct SwapContext {
 pub fn get_calc_result(
     rpc_client: &RpcClient,
     amm_pool: &Pubkey,
-) -> Result<amm::CalculateResult, Box<dyn Error>> {
+) -> Result<(amm::CalculateResult, MarketPubkeys, AmmKeys), Box<dyn Error>> {
     let amm_program =
         Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+
     // load amm keys
     let amm_keys =
-        amm::utils::load_amm_keys(rpc_client, &amm_program, &amm_pool)?;
+        amm::utils::load_amm_keys(rpc_client, &amm_program, amm_pool)?;
+    debug!("amm keys: {:?}", amm_keys);
     // load market keys
     let market_keys = amm::openbook::get_keys_for_market(
         rpc_client,
         &amm_keys.market_program,
         &amm_keys.market,
     )?;
+    debug!("market keys: {:?}", market_keys);
 
     let result = raydium_library::amm::calculate_pool_vault_amounts(
         rpc_client,
@@ -70,18 +75,14 @@ pub fn get_calc_result(
         &market_keys,
         amm::utils::CalculateMethod::CalculateWithLoadAccount,
     )?;
-
-    Ok(result)
+    debug!("result: {:?}", result);
+    return Ok((result, market_keys, amm_keys));
 }
 
 pub fn get_burn_pct(
-    rpc_client: &RpcClient,
-    lp_mint: &Pubkey,
+    mint_data: Mint,
     result: amm::CalculateResult,
 ) -> Result<f64, Box<dyn Error>> {
-    let mint_account = rpc_client.get_account(lp_mint)?;
-    let mint_data = Mint::unpack(&mint_account.data)?;
-
     // Calculate divisor for token decimals
     let base = 10u64;
     let divisor = base.pow(mint_data.decimals as u32);
@@ -269,6 +270,13 @@ pub fn make_swap_ixs(
         )
         .unwrap_or(0);
 
+        let mint_account = provider
+            .rpc_client
+            .get_account(&swap_context.output_token_mint)?;
+        let mint_data = Mint::unpack(&mint_account.data)?;
+        let burn_pct =
+            self::get_burn_pct(mint_data, result).expect("get burn pct");
+
         info!(
             "{}",
             serde_json::to_string_pretty(&json!({
@@ -279,13 +287,12 @@ pub fn make_swap_ixs(
                 "swap_fee_numerator": result.swap_fee_numerator,
                 "swap_fee_denominator": result.swap_fee_denominator,
                 "other_amount_threshold": other_amount_threshold,
-                "liquidity_burn_pct": self::get_burn_pct(
-                    &provider.rpc_client,
-                    &swap_context.amm_keys.amm_lp_mint,
-                    result,
-                ).expect("get burn pct"),
+                "liquidity_burn_pct": burn_pct,
             }))?
         );
+        if burn_pct < 90. {
+            return Err(format!("LP is only {} burnt", burn_pct).into());
+        }
 
         other_amount_threshold
     } else {
