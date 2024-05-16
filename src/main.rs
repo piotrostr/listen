@@ -156,7 +156,8 @@ pub async fn snipe(
                     continue;
                 }
             };
-            subs.shutdown().expect("conn shutdown"); // Shutdown subscription on exit
+            subs.send_unsubscribe().expect("unsub");
+            subs.shutdown().expect("shutdown");
             info!("reconnecting in 1 second");
             tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
         }
@@ -167,8 +168,10 @@ pub async fn snipe(
             let provider = Provider::new(dotenv!("RPC_URL").to_string());
             let wallet = Keypair::read_from_file(dotenv!("FUND_KEYPAIR_PATH"))
                 .expect("read fund keypair");
-            let auth = Arc::new(Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH"))
-                .expect("read auth keypair"));
+            let auth = Arc::new(
+                Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH"))
+                    .expect("read auth keypair"),
+            );
             let auth = Arc::clone(&auth);
             tokio::spawn(async move {
                 let mut searcher_client =
