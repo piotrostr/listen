@@ -2,21 +2,19 @@ use crossbeam::channel::Receiver;
 use dotenv_codegen::dotenv;
 use jito_protos::searcher::{MempoolSubscription, NextScheduledLeaderRequest};
 use jito_searcher_client::get_searcher_client;
-use log::{warn, LevelFilter};
 use raydium_library::amm;
 use serde_json::json;
 use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
-    buyer, constants, jito,
+    buyer, constants,
     jup::Jupiter,
     prometheus,
     raydium::{self, Raydium},
     rpc, tx_parser, util, BlockAndProgramSubscribable, Listener, Provider,
 };
 use solana_client::{
-    nonblocking,
     pubsub_client::PubsubClientSubscription,
     rpc_response::{Response, RpcLogsResponse},
 };
@@ -82,18 +80,18 @@ enum Command {
         #[arg(long, default_value_t = 10)]
         buffer_size: i32,
     },
-    ListenPools {
-        #[arg(long, action = clap::ArgAction::SetTrue)]
-        snipe: Option<bool>,
-
+    Snipe {
         #[arg(long, default_value_t = 1_000_000)]
         amount: u64,
 
         #[arg(long, default_value_t = 800)]
         slippage: u64,
 
-        #[arg(long, action = clap::ArgAction::SetTrue)]
-        quick: Option<bool>,
+        #[arg(long, default_value_t = 10)]
+        worker_count: i32,
+
+        #[arg(long, default_value_t = 10)]
+        buffer_size: i32,
     },
     Wallet {},
     Swap {
@@ -133,14 +131,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .duplicate_to_stdout(Duplicate::Info)
         .start()?;
 
-    // env_logger::Builder::from_default_env()
-    //     .filter_level(LevelFilter::Info)
-    //     .format_timestamp_millis()
-    //     .init();
-
     // 30th April, let's see how well this ages lol (was 135.)
     // 13th May, still going strong with the algo, now at 145
-    let sol_price = 145.;
+    // 16th May 163, I paperhanded 20+ SOL :(
+    let sol_price = 163.;
     let app = App::parse();
     let provider = Provider::new(dotenv!("RPC_URL").to_string());
     let raydium = Raydium::new();
@@ -193,9 +187,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 },
             )?;
 
-            // let (_, recv) = listener.pool_subscribe(&amm_pool)?;
-
-            // while let Ok(log) = recv.recv() {
             loop {
                 let result = amm::calculate_pool_vault_amounts(
                     &provider.rpc_client,
@@ -257,26 +248,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
             println!("{}", mint);
             // not implemented
         }
-        Command::ListenPools {
-            snipe,
+        Command::Snipe {
             amount,
             slippage,
-            quick,
+            worker_count,
+            buffer_size,
         } => {
             let establish_subscription = move || -> SubscriptionResponse {
                 let (subs, recv) = listener.new_lp_subscribe()?;
                 Ok((subs, recv))
             };
+            let (tx, rx) = tokio::sync::mpsc::channel::<
+                Response<RpcLogsResponse>,
+            >(buffer_size as usize);
+            let rx = Arc::new(Mutex::new(rx));
             let listener = tokio::spawn(async move {
                 loop {
-                    let wallet =
-                        Keypair::read_from_file(dotenv!("FUND_KEYPAIR_PATH"))
-                            .expect("read fund keypair");
-                    let snipe = snipe.unwrap_or(false);
-                    let quick = quick.unwrap_or(false);
-                    if quick {
-                        warn!("caution, quick mode might lead to bad slippage (up to 100%)")
-                    }
                     let (mut subs, recv) =
                         establish_subscription().expect("subscribe to logs");
                     info!("Listening for LP events");
@@ -284,20 +271,36 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         if log.value.err.is_some() {
                             continue; // Skip error logs
                         }
-                        let start = tokio::time::Instant::now();
-                        // println!("{}", serde_json::to_string_pretty(&log).unwrap());
-                        let tx = provider.get_tx(&log.value.signature).unwrap();
-                        info!("took {:?} to get tx", start.elapsed());
-                        let new_pool_info = tx_parser::parse_new_pool(&tx)
-                            .expect("parse pool info");
-                        let mint = if new_pool_info.input_mint.to_string()
-                            == constants::SOLANA_PROGRAM_ID
-                        {
-                            new_pool_info.output_mint
-                        } else {
-                            new_pool_info.input_mint
-                        };
-                        info!(
+                        tx.send(log).await.expect("send log");
+                    }
+                    subs.shutdown().expect("conn shutdown"); // Shutdown subscription on exit
+                    info!("reconnecting in 1 second");
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1))
+                        .await;
+                }
+            });
+            let buyer_pool: Vec<_> = (0..worker_count as usize)
+                .map(|_| {
+                    let rx = Arc::clone(&rx);
+                    let provider = Provider::new(dotenv!("RPC_URL").to_string());
+                    let wallet = Keypair::read_from_file(dotenv!(
+                        "FUND_KEYPAIR_PATH"
+                    ))
+                    .expect("read fund keypair");
+                    let auth = Arc::clone(&auth);
+                    tokio::spawn(async move {
+                        let mut searcher_client = get_searcher_client(
+                            dotenv!("BLOCK_ENGINE_URL"),
+                            &auth,
+                        ).await.expect("makes searcher client");
+                        while let Some(log) = rx.lock().await.recv().await {
+                            let start = tokio::time::Instant::now();
+                            let txn =
+                                provider.get_tx(&log.value.signature).unwrap();
+                            info!("took {:?} to get tx", start.elapsed());
+                            let new_pool_info = tx_parser::parse_new_pool(&txn)
+                                .expect("parse pool info");
+                            info!(
                             "{}",
                             serde_json::to_string_pretty(&json!({
                                 "slot": log.context.slot,
@@ -309,9 +312,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             }))
                             .expect("serialize pool info")
                         );
-                        // TODO move this to a separate service listening in a separate thread
-                        // same as in case of receiver and processor pool for Command::Listen
-                        if snipe {
                             buyer::handle_new_pair(
                                 new_pool_info,
                                 amount,
@@ -322,82 +322,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
                             )
                             .await
                             .expect("handle new pair");
-                            continue;
-
-                            let swap_context = raydium::make_swap_context(
-                                &provider,
-                                new_pool_info.amm_pool_id,
-                                new_pool_info.input_mint,
-                                new_pool_info.output_mint,
-                                &wallet,
-                                slippage,
-                                amount,
-                            )
-                            .await
-                            .expect("make_swap_context");
-
-                            let tip = 50000;
-                            let rpc_client =
-                                &nonblocking::rpc_client::RpcClient::new(
-                                    dotenv!("RPC_URL").to_string(),
-                                );
-
-                            // auto shows 8% slippage on jup for the most part, more might be needed
-                            let mut ixs = raydium::make_swap_ixs(
-                                &provider,
-                                &wallet,
-                                &swap_context,
-                                quick,
-                            )
-                            .expect("make swap ixs");
-
-                            info!("took {:?} to pack", start.elapsed());
-
-                            let swap_result = jito::send_swap_tx(
-                                &mut ixs,
-                                tip,
-                                &wallet,
-                                &mut searcher_client,
-                                rpc_client,
-                            )
-                            .await;
-
-                            info!("took {:?} to send ", start.elapsed());
-
-                            match swap_result {
-                                Ok(_) => info!("Bundle OK"),
-                                Err(e) => {
-                                    warn!("swap tx: {}", e)
-                                }
-                            }
-
-                            info!(
-                                "{}",
-                                serde_json::to_string_pretty(&json!(vec![
-                                    format!(
-                                        "https://dexscreener.com/solana/{}",
-                                        mint.to_string()
-                                    ),
-                                    format!(
-                                        "https://jup.ag/swap/{}-SOL",
-                                        mint.to_string()
-                                    ),
-                                    format!(
-                                        "https://rugcheck.xyz/tokens/{}",
-                                        mint.to_string()
-                                    ),
-                                ]))
-                                .expect("to string pretty")
-                            );
                         }
-                    }
-                    subs.shutdown().expect("conn shutdown"); // Shutdown subscription on exit
-                    info!("reconnecting in 1 second");
-                    tokio::time::sleep(tokio::time::Duration::from_secs(1))
-                        .await;
-                }
-            });
+                    })
+                })
+                .collect();
             listener.await?;
+            for buyer in buyer_pool {
+                buyer.await?;
+            }
             return Ok(());
         }
         Command::Swap {

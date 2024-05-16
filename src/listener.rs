@@ -42,6 +42,20 @@ impl Listener {
         Listener { ws_url }
     }
 
+    pub fn account_subscribe(
+        &self,
+        pubkey: &Pubkey,
+    ) -> Result<LogsSubscription, Box<dyn std::error::Error>> {
+        let (subs, receiver) = PubsubClient::logs_subscribe(
+            self.ws_url.as_str(),
+            RpcTransactionLogsFilter::Mentions(vec![pubkey.to_string()]),
+            RpcTransactionLogsConfig {
+                commitment: Some(CommitmentConfig::confirmed()),
+            },
+        )?;
+        Ok((subs, receiver))
+    }
+
     pub fn pool_subscribe(
         &self,
         amm_pool: &Pubkey,

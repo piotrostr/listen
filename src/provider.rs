@@ -23,12 +23,7 @@ use timed::timed;
 pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
     let rpc_client =
         RpcClient::new_with_commitment(url, CommitmentConfig::confirmed());
-    let latest_blockhash = rpc_client.get_latest_blockhash()?;
-    let identity = rpc_client.get_identity()?;
-
-    info!("Connecting to blocks through {:?}", url);
-    info!("Latest blockhash: {:?}", latest_blockhash);
-    info!("Identity: {:?}", identity);
+    info!("{}", url);
 
     Ok(rpc_client)
 }
