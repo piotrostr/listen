@@ -167,8 +167,8 @@ pub async fn snipe(
             let provider = Provider::new(dotenv!("RPC_URL").to_string());
             let wallet = Keypair::read_from_file(dotenv!("FUND_KEYPAIR_PATH"))
                 .expect("read fund keypair");
-            let auth = Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH"))
-                .expect("read auth keypair");
+            let auth = Arc::new(Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH"))
+                .expect("read auth keypair"));
             let auth = Arc::clone(&auth);
             tokio::spawn(async move {
                 let mut searcher_client =
