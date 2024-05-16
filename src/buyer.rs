@@ -88,11 +88,6 @@ pub async fn handle_new_pair(
     .await
     .expect("makes swap context");
 
-    info!("Waiting for burn pct to be over 90%, ctrl+c to continue with other pairs");
-
-    // this is blocking but the messages wait in the websocket, so if a new pair
-    // comes around and liquidity is locked, it is ok to wait here
-    // prod might wanna use tokio and spawn this in a task
     let result =
         raydium::get_calc_result(&provider.rpc_client, &swap_context.amm_pool)?;
     let coin_mint_is_sol = swap_context.market_keys.coin_mint.to_string()

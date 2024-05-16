@@ -123,6 +123,97 @@ type SubscriptionResponse = Result<
 
 use flexi_logger::{Duplicate, FileSpec, Logger, WriteMode};
 
+pub async fn snipe(
+    amount: u64,
+    slippage: u64,
+    worker_count: i32,
+    buffer_size: i32,
+) -> Result<(), Box<dyn Error>> {
+    let establish_subscription =
+        move |listener: Listener| -> SubscriptionResponse {
+            let (subs, recv) = listener.new_lp_subscribe()?;
+            Ok((subs, recv))
+        };
+    let (tx, rx) = tokio::sync::mpsc::channel::<Response<RpcLogsResponse>>(
+        buffer_size as usize,
+    );
+    let rx = Arc::new(Mutex::new(rx));
+    let listener = tokio::spawn(async move {
+        loop {
+            let (mut subs, recv) = establish_subscription(Listener::new(
+                dotenv!("WS_URL").to_string(),
+            ))
+            .expect("subscribe to logs");
+            info!("Listening for LP events");
+            match recv.recv_timeout(Duration::from_secs(1)) {
+                Ok(log) => {
+                    if log.value.err.is_some() {
+                        continue; // Skip error logs
+                    }
+                    tx.send(log).await.expect("send log");
+                }
+                Err(_) => {
+                    continue;
+                }
+            };
+            subs.shutdown().expect("conn shutdown"); // Shutdown subscription on exit
+            info!("reconnecting in 1 second");
+            tokio::time::sleep(tokio::time::Duration::from_secs(1)).await;
+        }
+    });
+    let buyer_pool: Vec<_> = (0..worker_count as usize)
+        .map(|_| {
+            let rx = Arc::clone(&rx);
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let wallet = Keypair::read_from_file(dotenv!("FUND_KEYPAIR_PATH"))
+                .expect("read fund keypair");
+            let auth = Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH"))
+                .expect("read auth keypair");
+            let auth = Arc::clone(&auth);
+            tokio::spawn(async move {
+                let mut searcher_client =
+                    get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &auth)
+                        .await
+                        .expect("makes searcher client");
+                while let Some(log) = rx.lock().await.recv().await {
+                    let start = tokio::time::Instant::now();
+                    let txn = provider.get_tx(&log.value.signature).unwrap();
+                    info!("took {:?} to get tx", start.elapsed());
+                    let new_pool_info = tx_parser::parse_new_pool(&txn)
+                        .expect("parse pool info");
+                    info!(
+                        "{}",
+                        serde_json::to_string_pretty(&json!({
+                            "slot": log.context.slot,
+                            "input": new_pool_info.input_mint.to_string(),
+                            "output": new_pool_info.output_mint.to_string(),
+                            "pool": new_pool_info.amm_pool_id.to_string(),
+                            "amount": util::lamports_to_sol(amount),
+                            "amm_pool": new_pool_info.amm_pool_id.to_string(),
+                        }))
+                        .expect("serialize pool info")
+                    );
+                    buyer::handle_new_pair(
+                        new_pool_info,
+                        amount,
+                        slippage,
+                        &wallet,
+                        &provider,
+                        &mut searcher_client,
+                    )
+                    .await
+                    .expect("handle new pair");
+                }
+            })
+        })
+        .collect();
+    listener.await?;
+    for buyer in buyer_pool {
+        buyer.await?;
+    }
+    return Ok(());
+}
+
 #[tokio::main]
 async fn main() -> Result<(), Box<dyn Error>> {
     let _logger = Logger::try_with_str("info")?
@@ -254,83 +345,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             worker_count,
             buffer_size,
         } => {
-            let establish_subscription = move || -> SubscriptionResponse {
-                let (subs, recv) = listener.new_lp_subscribe()?;
-                Ok((subs, recv))
-            };
-            let (tx, rx) = tokio::sync::mpsc::channel::<
-                Response<RpcLogsResponse>,
-            >(buffer_size as usize);
-            let rx = Arc::new(Mutex::new(rx));
-            let listener = tokio::spawn(async move {
-                loop {
-                    let (mut subs, recv) =
-                        establish_subscription().expect("subscribe to logs");
-                    info!("Listening for LP events");
-                    while let Ok(log) = recv.recv() {
-                        if log.value.err.is_some() {
-                            continue; // Skip error logs
-                        }
-                        tx.send(log).await.expect("send log");
-                    }
-                    subs.shutdown().expect("conn shutdown"); // Shutdown subscription on exit
-                    info!("reconnecting in 1 second");
-                    tokio::time::sleep(tokio::time::Duration::from_secs(1))
-                        .await;
-                }
-            });
-            let buyer_pool: Vec<_> = (0..worker_count as usize)
-                .map(|_| {
-                    let rx = Arc::clone(&rx);
-                    let provider = Provider::new(dotenv!("RPC_URL").to_string());
-                    let wallet = Keypair::read_from_file(dotenv!(
-                        "FUND_KEYPAIR_PATH"
-                    ))
-                    .expect("read fund keypair");
-                    let auth = Arc::clone(&auth);
-                    tokio::spawn(async move {
-                        let mut searcher_client = get_searcher_client(
-                            dotenv!("BLOCK_ENGINE_URL"),
-                            &auth,
-                        ).await.expect("makes searcher client");
-                        while let Some(log) = rx.lock().await.recv().await {
-                            let start = tokio::time::Instant::now();
-                            let txn =
-                                provider.get_tx(&log.value.signature).unwrap();
-                            info!("took {:?} to get tx", start.elapsed());
-                            let new_pool_info = tx_parser::parse_new_pool(&txn)
-                                .expect("parse pool info");
-                            info!(
-                            "{}",
-                            serde_json::to_string_pretty(&json!({
-                                "slot": log.context.slot,
-                                "input": new_pool_info.input_mint.to_string(),
-                                "output": new_pool_info.output_mint.to_string(),
-                                "pool": new_pool_info.amm_pool_id.to_string(),
-                                "amount": util::lamports_to_sol(amount),
-                                "amm_pool": new_pool_info.amm_pool_id.to_string(),
-                            }))
-                            .expect("serialize pool info")
-                        );
-                            buyer::handle_new_pair(
-                                new_pool_info,
-                                amount,
-                                slippage,
-                                &wallet,
-                                &provider,
-                                &mut searcher_client,
-                            )
-                            .await
-                            .expect("handle new pair");
-                        }
-                    })
-                })
-                .collect();
-            listener.await?;
-            for buyer in buyer_pool {
-                buyer.await?;
-            }
-            return Ok(());
+            snipe(amount, slippage, worker_count, buffer_size).await?;
         }
         Command::Swap {
             mut input_mint,
