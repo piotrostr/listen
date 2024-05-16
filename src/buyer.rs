@@ -5,7 +5,7 @@ use crate::{
     jito::{self, SearcherClient},
     listener::Listener,
     provider::Provider,
-    raydium::{self, get_burn_pct},
+    raydium::{self, calc_result_to_financials, get_burn_pct},
     tx_parser::NewPool,
 };
 use dotenv_codegen::dotenv;
@@ -93,7 +93,7 @@ pub async fn listen_for_burn(
             if burn_pct > 90. {
                 info!("burn pct: {}", burn_pct);
                 // check here if market cap is right
-                if sol_pooled < 30. {
+                if sol_pooled < 20. {
                     warn!("sol pooled: {} < 30", sol_pooled);
                     return Ok(false);
                 }

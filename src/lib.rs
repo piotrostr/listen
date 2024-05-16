@@ -7,6 +7,7 @@ pub mod prometheus;
 pub mod provider;
 pub mod raydium;
 pub mod rpc;
+pub mod snipe;
 pub mod tx_parser;
 pub mod types;
 pub mod util;
