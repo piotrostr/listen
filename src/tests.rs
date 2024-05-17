@@ -70,16 +70,13 @@ async fn test_sanity_check() {
 #[test]
 fn test_parse_mint_acc() {
     let data = "DK9N1P4LsskfLtyXTYoeDi44sjaGgT3n8akj2pFAiqsfFhJyaPYhhVqC17vKirYk9vmh2kBf7jQeTKybRETHCMRv9dKQSufNqo457fnX1dZCGCo";
-    let mint_data =
-        Mint::unpack(bs58::decode(data).into_vec().unwrap().as_slice())
-            .expect("unpack mint data");
-    println!("mint data: {:?}", mint_data);
-    assert!(false);
+    let _ = Mint::unpack(bs58::decode(data).into_vec().unwrap().as_slice())
+        .expect("unpack mint data");
 }
 
 #[tokio::test]
 async fn test_gets_top_holders() {
-    let mint = Pubkey::from_str("JA7ki9r8x3xAtPPgthpep3kTgREAxhfuJYMAo2KVrpCB")
+    let mint = Pubkey::from_str("D2oKMNHb94DSgvibQxCweZPrbFEhayKBQ5eaPMC4Dvnv")
         .unwrap();
     let ok = check_top_holders(
         &mint,
@@ -87,5 +84,5 @@ async fn test_gets_top_holders() {
     )
     .await
     .unwrap();
-    assert!(ok);
+    assert_eq!(false, true);
 }

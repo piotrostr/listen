@@ -105,7 +105,7 @@ pub fn get_burn_pct(
         0.0
     };
 
-    info!(
+    debug!(
         "LP total: {}, LP pooled: {}, LP burnt: {}",
         max_lp_supply, lp_reserve, burn_amount
     );
@@ -125,7 +125,7 @@ pub fn calc_result_to_financials(
         let price = result.pool_coin_vault_amount as f64
             / result.pool_pc_vault_amount as f64;
         let owner_balance_sol = owner_balance as f64 * price / 1e9;
-        info!(
+        debug!(
             "{}",
             serde_json::to_string_pretty(&json!(
                 {
@@ -146,7 +146,7 @@ pub fn calc_result_to_financials(
         let price = result.pool_pc_vault_amount as f64
             / result.pool_coin_vault_amount as f64;
         let owner_balance_sol = owner_balance as f64 * price / 1e9;
-        info!(
+        debug!(
             "{}",
             serde_json::to_string_pretty(&json!(
                 {

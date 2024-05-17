@@ -39,7 +39,6 @@ pub struct Provider {
 }
 
 impl Provider {
-    #[timed(duration(printer = "info!"))]
     pub fn new(rpc_url: String) -> Provider {
         Provider {
             rpc_client: get_client(rpc_url.as_str()).unwrap(),

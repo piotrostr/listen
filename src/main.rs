@@ -7,7 +7,7 @@ use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
-    buyer::listen_for_burn,
+    buyer::{self, listen_for_burn},
     constants,
     jup::Jupiter,
     prometheus,
@@ -55,6 +55,10 @@ enum Command {
 
         #[arg(long)]
         owner: String,
+    },
+    TopHolders {
+        #[arg(long)]
+        mint: String,
     },
     MonitorLeaders {},
     MonitorSlots {},
@@ -129,6 +133,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("makes searcher client");
     match app.command {
+        Command::TopHolders { mint } => {
+            let mint = Pubkey::from_str(mint.as_str()).unwrap();
+            let ok = buyer::check_top_holders(&mint, &provider).await?;
+            info!("Top holders check passed: {}", ok);
+        }
         Command::ListenForBurn { amm_pool } => {
             listen_for_burn(&Pubkey::from_str(amm_pool.as_str())?).await?;
         }

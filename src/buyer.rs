@@ -8,8 +8,9 @@ use crate::{
     tx_parser::NewPool,
 };
 use dotenv_codegen::dotenv;
+use flame::debug;
 use futures_util::StreamExt;
-use log::{info, warn};
+use log::{debug, info, warn};
 use raydium_library::amm;
 use serde_json::json;
 use solana_account_decoder::UiAccountData;
@@ -36,7 +37,9 @@ pub async fn check_top_holders(
     provider: &Provider,
 ) -> Result<bool, Box<dyn Error>> {
     let top_holders =
-        provider.rpc_client.get_token_largest_accounts(mint).await?;
+        provider.rpc_client.get_token_largest_accounts(mint).await?[0..10]
+            .to_vec();
+    let top_holders_len = top_holders.len();
     let total_supply = provider
         .rpc_client
         .get_token_supply(mint)
@@ -45,20 +48,36 @@ pub async fn check_top_holders(
         .unwrap();
     let mut total = 0f64;
     let mut got_raydium = false;
+    let mut raydium_holding = 0f64;
     for holder in top_holders {
+        debug!("holder: {:?}, balance: {:?}", holder.address, holder.amount);
         if !got_raydium {
             let account_info = provider
                 .rpc_client
-                .get_token_account(&Pubkey::from_str(holder.address.as_str())?)
-                .await?
-                .unwrap();
-            if account_info.owner == constants::RAYDIUM_AUTHORITY_V4_PUBKEY {
+                .get_token_account_with_commitment(
+                    &Pubkey::from_str(holder.address.as_str())?,
+                    CommitmentConfig::confirmed(),
+                )
+                .await?;
+            if account_info.value.unwrap().owner
+                == constants::RAYDIUM_AUTHORITY_V4_PUBKEY
+            {
+                raydium_holding = holder.amount.ui_amount.unwrap();
                 got_raydium = true;
-                continue;
             }
         }
         total += holder.amount.ui_amount.unwrap();
     }
+
+    total -= raydium_holding;
+
+    debug!(
+        "{} top {} holders: {}, raydium: {}",
+        mint.to_string(),
+        top_holders_len,
+        total / total_supply,
+        raydium_holding / total_supply
+    );
 
     if total / total_supply > 0.15 {
         warn!(
@@ -115,12 +134,12 @@ pub async fn listen_for_burn(
 
     info!("listening for burn for {}", token_mint.to_string());
     while let Some(log) = stream.next().await {
-        info!("log: {:?}", log);
+        debug!("log: {:?}", log);
         if let UiAccountData::LegacyBinary(data) = log.value.data {
             let mint_data =
                 Mint::unpack(bs58::decode(data).into_vec()?.as_slice())
                     .expect("unpack mint data");
-            info!("mint data: {:?}", mint_data);
+            debug!("mint data: {:?}", mint_data);
 
             let (result, _, _) =
                 raydium::get_calc_result(&rpc_client, amm_pool).await?;
@@ -138,8 +157,8 @@ pub async fn listen_for_burn(
             if burn_pct > 90. {
                 info!("burn pct: {}", burn_pct);
                 // check here if market cap is right
-                if sol_pooled < 20. {
-                    warn!("{} sol pooled: {} < 20", token_mint, sol_pooled);
+                if sol_pooled < 10. {
+                    warn!("{} sol pooled: {} < 10", token_mint, sol_pooled);
                     return Ok(false);
                 }
                 return Ok(true);
@@ -201,7 +220,7 @@ pub async fn handle_new_pair(
     .expect("makes swap context");
 
     let start = std::time::Instant::now();
-    let quick = true;
+    let quick = false;
     let mut ixs =
         raydium::make_swap_ixs(provider, wallet, &swap_context, quick)
             .await
