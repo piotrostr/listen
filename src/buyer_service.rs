@@ -63,8 +63,8 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
     );
     match buyer::handle_new_pair(
         new_pool_info,
-        10000000,
-        2000,
+        1000000,
+        3000,
         &wallet,
         &provider,
         &mut searcher_client,

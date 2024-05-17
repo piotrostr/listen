@@ -204,7 +204,7 @@ pub async fn handle_new_pair(
     let (is_safe, msg) =
         provider.sanity_check(&mint).await.expect("sanity check");
     if !is_safe {
-        warn!("Unsafe pool: {}, skipping", msg);
+        warn!("{} Unsafe pool: {}, skipping", mint, msg);
         return Ok(());
     }
 
