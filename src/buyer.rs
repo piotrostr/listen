@@ -1,11 +1,10 @@
-use std::{error::Error, str::FromStr, time::Duration};
+use std::{error::Error, str::FromStr};
 
 use crate::{
     constants,
     jito::{self, SearcherClient},
-    listener::Listener,
     provider::Provider,
-    raydium::{self, calc_result_to_financials, get_burn_pct},
+    raydium::{self, get_burn_pct},
     tx_parser::NewPool,
 };
 use dotenv_codegen::dotenv;
@@ -17,6 +16,7 @@ use solana_account_decoder::UiAccountData;
 use solana_client::{
     nonblocking::{self, rpc_client::RpcClient},
     rpc_config::RpcAccountInfoConfig,
+    rpc_request::TokenAccountsFilter,
 };
 use solana_sdk::{
     commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
@@ -45,16 +45,26 @@ pub async fn check_top_holders(
         .ui_amount
         .unwrap();
     let mut total = 0f64;
+    let mut got_raydium = false;
     for holder in top_holders {
-        if holder.address == constants::RAYDIUM_AUTHORITY_V4_PUBKEY {
-            continue;
+        if !got_raydium {
+            let account_info = provider
+                .rpc_client
+                .get_token_account(&Pubkey::from_str(holder.address.as_str())?)
+                .await?
+                .unwrap();
+            if account_info.owner == constants::RAYDIUM_AUTHORITY_V4_PUBKEY {
+                got_raydium = true;
+                continue;
+            }
         }
         total += holder.amount.ui_amount.unwrap();
     }
 
     if total / total_supply > 0.15 {
         warn!(
-            "centralized supply: {} / {} = {}",
+            "{}: centralized supply: {} / {} = {}",
+            mint.to_string(),
             total,
             total_supply,
             total / total_supply
@@ -70,7 +80,10 @@ pub async fn listen_for_burn(
     amm_pool: &Pubkey,
 ) -> Result<bool, Box<dyn Error>> {
     // load amm keys
-    let rpc_client = RpcClient::new(dotenv!("RPC_URL").to_string());
+    let rpc_client = RpcClient::new_with_commitment(
+        dotenv!("RPC_URL").to_string(),
+        CommitmentConfig::confirmed(),
+    );
     let amm_program =
         Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)
             .expect("amm program");
@@ -95,7 +108,13 @@ pub async fn listen_for_burn(
         .await
         .expect("subscribe to logs");
 
-    info!("listening for burn for {}", lp_mint.to_string());
+    let token_mint = if coin_mint_is_sol {
+        amm_keys.amm_pc_mint
+    } else {
+        amm_keys.amm_coin_mint
+    };
+
+    info!("listening for burn for {}", token_mint.to_string());
     while let Some(log) = stream.next().await {
         info!("log: {:?}", log);
         if let UiAccountData::LegacyBinary(data) = log.value.data {
@@ -111,11 +130,6 @@ pub async fn listen_for_burn(
             // rug-pulled tokens have LP supply of 0
             let sol_pooled =
                 raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
-            let token_mint = if coin_mint_is_sol {
-                market_keys.pc_mint
-            } else {
-                market_keys.coin_mint
-            };
             if sol_pooled < 1. {
                 warn!("rug pull: {}, sol pooled: {}", token_mint, sol_pooled);
                 return Ok(false);
@@ -125,13 +139,6 @@ pub async fn listen_for_burn(
             if burn_pct > 90. {
                 info!("burn pct: {}", burn_pct);
                 // check here if market cap is right
-                let (result, _, _) =
-                    raydium::get_calc_result(&rpc_client, amm_pool).await?;
-                let sol_pooled = raydium::calc_result_to_financials(
-                    coin_mint_is_sol,
-                    result,
-                    0,
-                );
                 if sol_pooled < 20. {
                     warn!("{} sol pooled: {} < 30", token_mint, sol_pooled);
                     return Ok(false);

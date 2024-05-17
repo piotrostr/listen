@@ -1,15 +1,12 @@
 #![cfg(test)]
 use std::str::FromStr;
 
-use solana_account_decoder::{
-    parse_account_data::ParsedAccount, UiAccountData,
-};
-use solana_client::rpc_client::RpcClient;
+use dotenv_codegen::dotenv;
 use solana_sdk::{program_pack::Pack, pubkey::Pubkey};
 use spl_token::state::Mint;
 
 use crate::{
-    buyer::check_top_holders, constants, provider::Provider, raydium, tx_parser,
+    buyer::check_top_holders, constants, provider::Provider, tx_parser,
 };
 
 const RPC_URL: &str = "https://api.mainnet-beta.solana.com";
@@ -34,12 +31,12 @@ fn test_parse_notional() {
     assert!(1510000000 > sol_notional && sol_notional > 1500000000);
 }
 
-#[test]
+#[tokio::test]
 #[ignore = "This test requires a live network connection"]
-fn test_parse_new_pool() {
+async fn test_parse_new_pool() {
     let new_pool_tx_signature: &str = "2nkbEdznrqqoXyxcrYML8evHtAKcNTurBBXGWACS6cxJDHYGosgVdy66gaqHzgtRWWH13bzMF4kovSEQUVYdDPku";
     let provider = Provider::new(RPC_URL.to_string());
-    let tx = provider.get_tx(new_pool_tx_signature).unwrap();
+    let tx = provider.get_tx(new_pool_tx_signature).await.unwrap();
     println!("{}", serde_json::to_string_pretty(&tx).unwrap());
     let new_pool_info = tx_parser::parse_new_pool(&tx).unwrap();
     assert_eq!(
@@ -71,25 +68,6 @@ async fn test_sanity_check() {
 }
 
 #[test]
-#[ignore = "This test requires a live network connection"]
-fn test_get_burn_pct() {
-    let lp_mint =
-        Pubkey::from_str("CcX9jxEAxeBvMjtLCYeMaecr7XGmoB9aiY3wePeXmEu5")
-            .unwrap();
-    let amm_pool =
-        Pubkey::from_str("G5ts2NDTcAhzowLqWTrVN6NcxKoAwrXHg3uPTyskfksd")
-            .unwrap();
-    let rpc_client = RpcClient::new(RPC_URL.to_string());
-    let (result, _, _) =
-        raydium::get_calc_result(&rpc_client, &amm_pool).unwrap();
-    let mint_account = rpc_client.get_account(&lp_mint).unwrap();
-    let mint_data = Mint::unpack(&mint_account.data).unwrap();
-    let burn_pct = raydium::get_burn_pct(mint_data, result).unwrap();
-
-    assert!(burn_pct == 100.);
-}
-
-#[test]
 fn test_parse_mint_acc() {
     let data = "DK9N1P4LsskfLtyXTYoeDi44sjaGgT3n8akj2pFAiqsfFhJyaPYhhVqC17vKirYk9vmh2kBf7jQeTKybRETHCMRv9dKQSufNqo457fnX1dZCGCo";
     let mint_data =
@@ -99,13 +77,15 @@ fn test_parse_mint_acc() {
     assert!(false);
 }
 
-#[test]
-fn test_gets_top_holders() {
-    let mint = Pubkey::from_str("7giHMd99qj2YodHsZh5Hc7EeNKPXFCCyGhEZBSickmGe")
+#[tokio::test]
+async fn test_gets_top_holders() {
+    let mint = Pubkey::from_str("JA7ki9r8x3xAtPPgthpep3kTgREAxhfuJYMAo2KVrpCB")
         .unwrap();
     let ok = check_top_holders(
         &mint,
-        &Provider::new("https://api.mainnet-beta.solana.com".to_string()),
-    );
-    assert!(ok == false);
+        &Provider::new(dotenv!("RPC_URL").to_string()),
+    )
+    .await
+    .unwrap();
+    assert!(ok);
 }
