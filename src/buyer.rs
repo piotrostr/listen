@@ -8,7 +8,6 @@ use crate::{
     tx_parser::NewPool,
 };
 use dotenv_codegen::dotenv;
-use flame::debug;
 use futures_util::StreamExt;
 use log::{debug, info, warn};
 use raydium_library::amm;
@@ -23,14 +22,6 @@ use solana_sdk::{
     signature::Keypair,
 };
 use spl_token::state::Mint;
-
-// Trader is a wrapper to listen on liquidity burn of a new listing
-// plus verify that the supply is not centralized, and perform same sanity
-// checks as listener
-// this is to separate out listening and parsing too and enable off-line
-// processing
-// ideally it would also track position and sell at the right time
-pub struct Trader {}
 
 pub async fn check_top_holders(
     mint: &Pubkey,
@@ -157,7 +148,16 @@ pub async fn listen_for_burn(
             let burn_pct = get_burn_pct(mint_data, result).expect("burn_pct");
             if burn_pct > 90. {
                 info!("burn pct: {}", burn_pct);
-                // check here if market cap is right
+                let (result, _, _) =
+                    raydium::get_calc_result(&rpc_client, amm_pool).await?;
+
+                // check if any sol pooled before checking burn_pct for correct res
+                // rug-pulled tokens have LP supply of 0
+                let sol_pooled = raydium::calc_result_to_financials(
+                    coin_mint_is_sol,
+                    result,
+                    0,
+                );
                 if sol_pooled < 10. {
                     warn!("{} sol pooled: {} < 10", token_mint, sol_pooled);
                     return Ok(false);
@@ -221,7 +221,7 @@ pub async fn handle_new_pair(
     .expect("makes swap context");
 
     let start = std::time::Instant::now();
-    let quick = true;
+    let quick = false;
     let mut ixs =
         raydium::make_swap_ixs(provider, wallet, &swap_context, quick)
             .await

@@ -1,8 +1,7 @@
+use crate::{buyer, provider::Provider, tx_parser};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use dotenv_codegen::dotenv;
 use jito_searcher_client::get_searcher_client;
-use listen::tx_parser;
-use listen::{buyer, Provider};
 use log::info;
 use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
@@ -16,8 +15,6 @@ use solana_transaction_status::{
 };
 use std::str::FromStr;
 use std::sync::Arc;
-
-use flexi_logger::{Duplicate, FileSpec, Logger, WriteMode};
 
 pub async fn get_tx_async(
     signature: &str,
@@ -79,15 +76,7 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
     }
 }
 
-#[actix_web::main]
-async fn main() -> std::io::Result<()> {
-    let _logger = Logger::try_with_str("info")
-        .unwrap()
-        .log_to_file(FileSpec::default())
-        .write_mode(WriteMode::Async)
-        .duplicate_to_stdout(Duplicate::Info)
-        .start()
-        .unwrap();
+pub async fn run_buyer_service() -> std::io::Result<()> {
     HttpServer::new(move || {
         App::new()
             .route("/new_pair/{signature}", web::get().to(handle_new_pair))

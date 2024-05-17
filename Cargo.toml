@@ -53,3 +53,4 @@ ctrlc = "3.4.4"
 flexi_logger = { version = "0.28.0", features = ["async"] }
 futures-util = "0.3.30"
 bs58 = "0.5.1"
+actix-web = "4.5.1"

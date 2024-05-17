@@ -9,7 +9,7 @@ use solana_client::{
 use solana_sdk::commitment_config::CommitmentConfig;
 use std::error::Error;
 
-pub async fn snipe() -> Result<(), Box<dyn Error>> {
+pub async fn run_listener() -> Result<(), Box<dyn Error>> {
     tokio::spawn(async move {
         let client =
             nonblocking::pubsub_client::PubsubClient::new(dotenv!("WS_URL"))

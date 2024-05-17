@@ -1,4 +1,11 @@
-# TODOs
+# TODOs (and observations)
+
+- the data shows that some projects burn liquidity and dump straight
+afterwards, even when there is a lot of initial traction, the LP burn does not
+guarantee a good entry since it happens quite late for a lot of projects
+- using min amount out 0 is dangerous, as sometimes the pool is not going to be
+updated at the right time and you can send a swap to a rugpulled token, the LP
+is going to be 0 in that case and might be mistaken
 
 - [x] get the pool details beforehand, wait for the amount out calculation for when jito leader is there
 - [ ] track the slot of mint creation and the swap tx execution
@@ -10,14 +17,16 @@
   - [ ] add self initial after a 2x
 - [x] add maximum amount of slots of wait
   - [ ] make the bot run replicas in different regions
-- [ ] migrate the rpc_client to non-blocking
-- [ ] separate the listening and transactions so that it is non-blocking in case of multiple pairs in short span
+- [x] migrate the rpc_client to non-blocking
+- [x] separate the listening and transactions so that it is non-blocking in case of multiple pairs in short span
 - [ ] compare entry to available total liquidity
-- [ ] benchmark the RPCs a bit more, so far <https://api.mainnet-beta.solana.com/> provides best latency
-- [ ] check the liquidity on creation
-- [ ] check the top 10 holders balance (red-flag if already weird at launch)
+- [x] benchmark the RPCs a bit more, so far <https://api.mainnet-beta.solana.com/> provides best latency
+- [x] check the liquidity on creation
+- [x] check the top 10 holders balance (red-flag if already weird at launch)
 - [ ] check the circulating supply (similar check to previous point)
 - [ ] might need to work with larger slippage (20%, 10% does not land many), leaving
+
+below is displayed sometimes but transaction lands
 
 ```txt
 [2024-05-13T15:59:55Z WARN  listen] swap tx: internal error Searcher service did not provide bundle status in time

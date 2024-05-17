@@ -8,7 +8,7 @@ use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 use clap::Parser;
 use listen::{
     buyer::{self, listen_for_burn},
-    constants,
+    buyer_service, constants,
     jup::Jupiter,
     prometheus,
     raydium::{self, Raydium},
@@ -49,6 +49,7 @@ struct Args {
 
 #[derive(Debug, Parser)]
 enum Command {
+    BuyerService {},
     TrackPosition {
         #[arg(long)]
         amm_pool: String,
@@ -86,7 +87,7 @@ enum Command {
         #[arg(long)]
         amm_pool: String,
     },
-    Snipe {},
+    ListenerService {},
     Wallet {},
     Swap {
         #[arg(long)]
@@ -133,6 +134,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("makes searcher client");
     match app.command {
+        Command::BuyerService {} => {
+            buyer_service::run_buyer_service().await?;
+        }
         Command::TopHolders { mint } => {
             let mint = Pubkey::from_str(mint.as_str()).unwrap();
             let ok = buyer::check_top_holders(&mint, &provider).await?;
@@ -248,8 +252,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             println!("{}", mint);
             // not implemented
         }
-        Command::Snipe {} => {
-            snipe::snipe().await?;
+        Command::ListenerService {} => {
+            snipe::run_listener().await?;
         }
         Command::Swap {
             mut input_mint,

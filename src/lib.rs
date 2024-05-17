@@ -11,6 +11,7 @@ pub mod snipe;
 pub mod tx_parser;
 pub mod types;
 pub mod util;
+pub mod buyer_service;
 
 mod tests;
 
