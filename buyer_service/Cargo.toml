@@ -1,0 +1,26 @@
+[package]
+name = "buyer_service"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+actix-web = "4.5.1"
+listen = { version = "0.1.0", path = ".." }
+serde = "1.0.202"
+serde_json = "1.0.117"
+jito-searcher-client = { git = "https://github.com/piotrostr/searcher-examples", version = "0.1.0" }
+jito-protos = { git = "https://github.com/piotrostr/searcher-examples", version = "0.1.0" }
+tonic = { version = "0.10", features = [
+  "tls",
+  "tls-roots",
+  "tls-webpki-roots",
+] }
+dotenv_codegen = "0.15.0"
+solana-client = "<1.17.0"
+solana-transaction-status = "<1.17.0"
+solana-sdk = "<1.17.0"
+log = "0.4.21"
+chrono = "0.4.38"
+flexi_logger = "0.28.0"

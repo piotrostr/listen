@@ -48,7 +48,7 @@ impl Jupiter {
         let spl_token_balance = provider.get_spl_balance(
             &signer.pubkey(),
             &Pubkey::from_str(&input_mint)?,
-        )?;
+        ).await?;
         self.swap(
             input_mint,
             output_mint,
@@ -121,7 +121,7 @@ impl Jupiter {
             VersionedTransaction::try_new(raw_tx.message, &[signer])?;
 
         info!("Built tx in {:?}", start.elapsed());
-        match provider.send_tx(&signed_tx, true) {
+        match provider.send_tx(&signed_tx, true).await {
             Ok(signature) => {
                 info!("Transaction {} successful", signature);
                 Ok(())

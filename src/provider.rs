@@ -3,7 +3,8 @@ use std::str::FromStr;
 
 use log::{debug, info};
 use solana_client::{
-    rpc_client::{RpcClient, SerializableTransaction},
+    nonblocking::rpc_client::RpcClient,
+    rpc_client::SerializableTransaction,
     rpc_config::{RpcSendTransactionConfig, RpcTransactionConfig},
     rpc_request::TokenAccountsFilter,
 };
@@ -21,8 +22,10 @@ use spl_token_2022::{
 use timed::timed;
 
 pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
-    let rpc_client =
-        RpcClient::new_with_commitment(url, CommitmentConfig::confirmed());
+    let rpc_client = RpcClient::new_with_commitment(
+        url.to_string(),
+        CommitmentConfig::confirmed(),
+    );
     info!("{}", url);
 
     Ok(rpc_client)
@@ -44,29 +47,35 @@ impl Provider {
     }
 
     #[timed(duration(printer = "info!"))]
-    pub fn get_balance(
+    pub async fn get_balance(
         &self,
         pubkey: &Pubkey,
     ) -> Result<u64, Box<dyn std::error::Error>> {
-        let balance = self.rpc_client.get_balance(pubkey)?;
+        let balance = self.rpc_client.get_balance(pubkey).await?;
         Ok(balance)
     }
 
     #[timed(duration(printer = "info!"))]
-    pub fn get_spl_balance(
+    pub async fn get_spl_balance(
         &self,
         pubkey: &Pubkey,
         mint: &Pubkey,
     ) -> Result<u64, Box<dyn std::error::Error>> {
-        let token_accounts = self.rpc_client.get_token_accounts_by_owner(
-            pubkey,
-            TokenAccountsFilter::Mint(*mint),
-        )?;
+        let token_accounts = self
+            .rpc_client
+            .get_token_accounts_by_owner(
+                pubkey,
+                TokenAccountsFilter::Mint(*mint),
+            )
+            .await?;
         match token_accounts.first() {
             Some(token_account) => {
-                let acount_info = self.rpc_client.get_account(
-                    &Pubkey::from_str(token_account.pubkey.as_str())?,
-                )?;
+                let acount_info = self
+                    .rpc_client
+                    .get_account(&Pubkey::from_str(
+                        token_account.pubkey.as_str(),
+                    )?)
+                    .await?;
                 let token_account_info = Account::unpack(&acount_info.data)?;
                 debug!("Token account info: {:?}", token_account_info);
                 Ok(token_account_info.amount)
@@ -76,7 +85,7 @@ impl Provider {
     }
 
     #[timed(duration(printer = "println!"))]
-    pub fn get_tx(
+    pub async fn get_tx(
         &self,
         signature: &str,
     ) -> Result<
@@ -87,14 +96,18 @@ impl Provider {
         let mut backoff = 100;
         let retries = 5;
         for _ in 0..retries {
-            match self.rpc_client.get_transaction_with_config(
-                &sig,
-                RpcTransactionConfig {
-                    encoding: Some(UiTransactionEncoding::JsonParsed),
-                    commitment: Some(CommitmentConfig::confirmed()),
-                    max_supported_transaction_version: Some(1),
-                },
-            ) {
+            match self
+                .rpc_client
+                .get_transaction_with_config(
+                    &sig,
+                    RpcTransactionConfig {
+                        encoding: Some(UiTransactionEncoding::JsonParsed),
+                        commitment: Some(CommitmentConfig::confirmed()),
+                        max_supported_transaction_version: Some(1),
+                    },
+                )
+                .await
+            {
                 Ok(tx) => return Ok(tx),
                 Err(e) => {
                     debug!("Error getting tx: {:?}", e);
@@ -130,7 +143,7 @@ impl Provider {
     }
 
     #[timed(duration(printer = "info!"))]
-    pub fn send_tx(
+    pub async fn send_tx(
         &self,
         tx: &impl SerializableTransaction,
         skip_preflight: bool,
@@ -145,7 +158,9 @@ impl Provider {
                     skip_preflight,
                     ..RpcSendTransactionConfig::default()
                 },
-            ) {
+            )
+            .await
+        {
             Ok(signature) => {
                 info!("Sent in: {:?}", start.elapsed());
                 Ok(signature.to_string())
@@ -159,7 +174,7 @@ impl Provider {
         &self,
         mint: &Pubkey,
     ) -> Result<(bool, String), Box<dyn std::error::Error>> {
-        let account = self.rpc_client.get_account(mint)?;
+        let account = self.rpc_client.get_account(mint).await?;
         // recommended approach
         // get the token account mint based on the account too to confirm
         // skipping this check for the time being
@@ -177,24 +192,6 @@ impl Provider {
                 "freeze authority has not been renounced".to_string(),
             ));
         }
-        // also check if this has been on pump fun, below does not really work
-        // since pumpfun api indexes non-pumpfun tokens
-        // let res = reqwest::get(
-        //     "https://pumpportal.fun/api/data/token-info?ca=".to_string()
-        //         + &mint.to_string(),
-        // )
-        // .await
-        // .unwrap()
-        // .json::<HashMap<String, String>>()
-        // .await
-        // .unwrap();
-
-        // if res.contains_key("data") {
-        //     return Ok((
-        //         false,
-        //         "this is from pump fun, might get dumped".to_string(),
-        //     ));
-        // }
 
         Ok((true, "ok".to_string()))
     }

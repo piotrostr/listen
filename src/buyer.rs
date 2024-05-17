@@ -15,7 +15,8 @@ use raydium_library::amm;
 use serde_json::json;
 use solana_account_decoder::UiAccountData;
 use solana_client::{
-    nonblocking, rpc_client::RpcClient, rpc_config::RpcAccountInfoConfig,
+    nonblocking::{self, rpc_client::RpcClient},
+    rpc_config::RpcAccountInfoConfig,
 };
 use solana_sdk::{
     commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
@@ -31,7 +32,38 @@ use spl_token::state::Mint;
 // ideally it would also track position and sell at the right time
 pub struct Trader {}
 
-// TODO check for top holders
+pub async fn check_top_holders(
+    mint: &Pubkey,
+    provider: &Provider,
+) -> Result<bool, Box<dyn Error>> {
+    let top_holders =
+        provider.rpc_client.get_token_largest_accounts(mint).await?;
+    let total_supply = provider
+        .rpc_client
+        .get_token_supply(mint)
+        .await?
+        .ui_amount
+        .unwrap();
+    let mut total = 0f64;
+    for holder in top_holders {
+        if holder.address == constants::RAYDIUM_AUTHORITY_V4_PUBKEY {
+            continue;
+        }
+        total += holder.amount.ui_amount.unwrap();
+    }
+
+    if total / total_supply > 0.15 {
+        warn!(
+            "centralized supply: {} / {} = {}",
+            total,
+            total_supply,
+            total / total_supply
+        );
+        return Ok(false);
+    }
+
+    Ok(true)
+}
 
 // listen_for_burn listens until the liquidity is burnt or a rugpull happens
 pub async fn listen_for_burn(
@@ -43,7 +75,7 @@ pub async fn listen_for_burn(
         Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)
             .expect("amm program");
     let amm_keys =
-        amm::utils::load_amm_keys(&rpc_client, &amm_program, amm_pool)?;
+        amm::utils::load_amm_keys(&rpc_client, &amm_program, amm_pool).await?;
     let lp_mint = amm_keys.amm_lp_mint;
     let coin_mint_is_sol = amm_keys.amm_coin_mint
         == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
@@ -73,18 +105,18 @@ pub async fn listen_for_burn(
             info!("mint data: {:?}", mint_data);
 
             let (result, market_keys, _) =
-                raydium::get_calc_result(&rpc_client, amm_pool)?;
+                raydium::get_calc_result(&rpc_client, amm_pool).await?;
 
             // check if any sol pooled before checking burn_pct for correct res
             // rug-pulled tokens have LP supply of 0
             let sol_pooled =
                 raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
+            let token_mint = if coin_mint_is_sol {
+                market_keys.pc_mint
+            } else {
+                market_keys.coin_mint
+            };
             if sol_pooled < 1. {
-                let token_mint = if coin_mint_is_sol {
-                    market_keys.pc_mint
-                } else {
-                    market_keys.coin_mint
-                };
                 warn!("rug pull: {}, sol pooled: {}", token_mint, sol_pooled);
                 return Ok(false);
             }
@@ -93,8 +125,15 @@ pub async fn listen_for_burn(
             if burn_pct > 90. {
                 info!("burn pct: {}", burn_pct);
                 // check here if market cap is right
+                let (result, _, _) =
+                    raydium::get_calc_result(&rpc_client, amm_pool).await?;
+                let sol_pooled = raydium::calc_result_to_financials(
+                    coin_mint_is_sol,
+                    result,
+                    0,
+                );
                 if sol_pooled < 20. {
-                    warn!("sol pooled: {} < 30", sol_pooled);
+                    warn!("{} sol pooled: {} < 30", token_mint, sol_pooled);
                     return Ok(false);
                 }
                 return Ok(true);
@@ -128,6 +167,11 @@ pub async fn handle_new_pair(
         return Ok(());
     }
 
+    let ok = check_top_holders(&mint, provider).await?;
+    if !ok {
+        return Ok(());
+    }
+
     // this should be converted to listening as well
     // some tokens have mint and freeze authority disabled a bit later
     // but mostly before the burn
@@ -154,6 +198,7 @@ pub async fn handle_new_pair(
     let quick = true;
     let mut ixs =
         raydium::make_swap_ixs(provider, wallet, &swap_context, quick)
+            .await
             .expect("make swap ixs");
 
     info!("took {:?} to pack", start.elapsed());

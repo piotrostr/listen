@@ -8,7 +8,9 @@ use solana_client::rpc_client::RpcClient;
 use solana_sdk::{program_pack::Pack, pubkey::Pubkey};
 use spl_token::state::Mint;
 
-use crate::{constants, provider::Provider, raydium, tx_parser};
+use crate::{
+    buyer::check_top_holders, constants, provider::Provider, raydium, tx_parser,
+};
 
 const RPC_URL: &str = "https://api.mainnet-beta.solana.com";
 
@@ -95,4 +97,15 @@ fn test_parse_mint_acc() {
             .expect("unpack mint data");
     println!("mint data: {:?}", mint_data);
     assert!(false);
+}
+
+#[test]
+fn test_gets_top_holders() {
+    let mint = Pubkey::from_str("7giHMd99qj2YodHsZh5Hc7EeNKPXFCCyGhEZBSickmGe")
+        .unwrap();
+    let ok = check_top_holders(
+        &mint,
+        &Provider::new("https://api.mainnet-beta.solana.com".to_string()),
+    );
+    assert!(ok == false);
 }

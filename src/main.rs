@@ -1,5 +1,5 @@
-use crossbeam::channel::Receiver;
 use dotenv_codegen::dotenv;
+use flexi_logger::{Duplicate, FileSpec, Logger, WriteMode};
 use jito_protos::searcher::{MempoolSubscription, NextScheduledLeaderRequest};
 use jito_searcher_client::get_searcher_client;
 use raydium_library::amm;
@@ -7,7 +7,7 @@ use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
-    buyer::{self, listen_for_burn},
+    buyer::listen_for_burn,
     constants,
     jup::Jupiter,
     prometheus,
@@ -15,10 +15,7 @@ use listen::{
     rpc, snipe, tx_parser, util, BlockAndProgramSubscribable, Listener,
     Provider,
 };
-use solana_client::{
-    pubsub_client::PubsubClientSubscription,
-    rpc_response::{Response, RpcLogsResponse},
-};
+use solana_client::rpc_response::{Response, RpcLogsResponse};
 use solana_sdk::{
     pubkey::Pubkey,
     signature::Keypair,
@@ -85,19 +82,7 @@ enum Command {
         #[arg(long)]
         amm_pool: String,
     },
-    Snipe {
-        #[arg(long, default_value_t = 1_000_000)]
-        amount: u64,
-
-        #[arg(long, default_value_t = 800)]
-        slippage: u64,
-
-        #[arg(long, default_value_t = 10)]
-        worker_count: i32,
-
-        #[arg(long, default_value_t = 10)]
-        buffer_size: i32,
-    },
+    Snipe {},
     Wallet {},
     Swap {
         #[arg(long)]
@@ -118,17 +103,7 @@ enum Command {
     },
 }
 
-type SubscriptionResponse = Result<
-    (
-        PubsubClientSubscription<Response<RpcLogsResponse>>,
-        Receiver<Response<RpcLogsResponse>>,
-    ),
-    Box<dyn Error>,
->;
-
-use flexi_logger::{Duplicate, FileSpec, Logger, WriteMode};
-
-#[tokio::main]
+#[tokio::main(flavor = "multi_thread", worker_threads = 4)]
 async fn main() -> Result<(), Box<dyn Error>> {
     let _logger = Logger::try_with_str("info")?
         .log_to_file(FileSpec::default())
@@ -168,14 +143,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 &provider.rpc_client,
                 &amm_program,
                 &amm_pool,
-            )?;
+            )
+            .await?;
             info!("{:?}", amm_keys);
             // load market keys
             let market_keys = amm::openbook::get_keys_for_market(
                 &provider.rpc_client,
                 &amm_keys.market_program,
                 &amm_keys.market,
-            )?;
+            )
+            .await?;
             info!("{:?}", market_keys);
             if market_keys.coin_mint.to_string() != constants::SOLANA_PROGRAM_ID
                 && market_keys.pc_mint.to_string()
@@ -186,14 +163,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             let coin_mint_is_sol = market_keys.coin_mint.to_string()
                 == constants::SOLANA_PROGRAM_ID;
-            let owner_balance = provider.get_spl_balance(
-                &Pubkey::from_str(owner.as_str()).unwrap(),
-                if coin_mint_is_sol {
-                    &market_keys.pc_mint
-                } else {
-                    &market_keys.coin_mint
-                },
-            )?;
+            let owner_balance = provider
+                .get_spl_balance(
+                    &Pubkey::from_str(owner.as_str()).unwrap(),
+                    if coin_mint_is_sol {
+                        &market_keys.pc_mint
+                    } else {
+                        &market_keys.coin_mint
+                    },
+                )
+                .await?;
 
             loop {
                 let result = amm::calculate_pool_vault_amounts(
@@ -203,7 +182,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     &amm_keys,
                     &market_keys,
                     amm::CalculateMethod::CalculateWithLoadAccount,
-                )?;
+                )
+                .await?;
 
                 raydium::calc_result_to_financials(
                     coin_mint_is_sol,
@@ -243,26 +223,24 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Command::PriorityFee {} => {
             println!(
                 "{:?}",
-                provider.rpc_client.get_recent_prioritization_fees(
-                    vec![Pubkey::from_str(
-                        constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
+                provider
+                    .rpc_client
+                    .get_recent_prioritization_fees(
+                        vec![Pubkey::from_str(
+                            constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
+                        )
+                        .unwrap()]
+                        .as_slice()
                     )
-                    .unwrap()]
-                    .as_slice()
-                )
+                    .await
             );
         }
         Command::Price { mint } => {
             println!("{}", mint);
             // not implemented
         }
-        Command::Snipe {
-            amount,
-            slippage,
-            worker_count,
-            buffer_size,
-        } => {
-            snipe::snipe(amount, slippage, worker_count, buffer_size).await?;
+        Command::Snipe {} => {
+            snipe::snipe().await?;
         }
         Command::Swap {
             mut input_mint,
@@ -298,13 +276,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 info!("Wallet: {}", wallet.pubkey());
                 info!(
                     "Balance (lamports): {}",
-                    provider.get_balance(&wallet.pubkey())?
+                    provider.get_balance(&wallet.pubkey()).await?
                 );
                 let amount_specified = if amount.is_some() {
                     amount.unwrap() as u64
                 } else {
                     provider
-                        .get_spl_balance(&wallet.pubkey(), &input_token_mint)?
+                        .get_spl_balance(&wallet.pubkey(), &input_token_mint)
+                        .await?
                 };
                 raydium
                     .swap(
@@ -358,11 +337,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let keypair = Keypair::read_from_file(&path)?;
 
             info!("Pubkey: {}", keypair.pubkey());
-            let balance = provider.get_balance(&keypair.pubkey())?;
+            let balance = provider.get_balance(&keypair.pubkey()).await?;
             info!("Balance: {} lamports", balance);
         }
         Command::Tx { signature } => {
-            let tx = provider.get_tx(signature.as_str())?;
+            let tx = provider.get_tx(signature.as_str()).await?;
             info!("Tx: {}", serde_json::to_string_pretty(&tx)?);
             let mint = tx_parser::parse_mint(&tx)?;
             let pricing = provider.get_pricing(&mint).await?;
@@ -409,7 +388,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     tokio::spawn(async move {
                         while let Some(log) = rx.lock().await.recv().await {
                             let tx = {
-                                match provider.get_tx(&log.value.signature) {
+                                match provider
+                                    .get_tx(&log.value.signature)
+                                    .await
+                                {
                                     Ok(tx) => tx,
                                     Err(e) => {
                                         info!(
