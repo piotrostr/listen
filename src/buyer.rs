@@ -37,8 +37,9 @@ pub async fn check_top_holders(
     provider: &Provider,
 ) -> Result<bool, Box<dyn Error>> {
     let top_holders =
-        provider.rpc_client.get_token_largest_accounts(mint).await?[0..10]
-            .to_vec();
+        provider.rpc_client.get_token_largest_accounts(mint).await?;
+    let up_to_ten = 10.min(top_holders.len());
+    let top_holders = top_holders[0..up_to_ten].to_vec();
     let top_holders_len = top_holders.len();
     let total_supply = provider
         .rpc_client
@@ -79,7 +80,7 @@ pub async fn check_top_holders(
         raydium_holding / total_supply
     );
 
-    if total / total_supply > 0.15 {
+    if total / total_supply > 0.25 {
         warn!(
             "{}: centralized supply: {} / {} = {}",
             mint.to_string(),
