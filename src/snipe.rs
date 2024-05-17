@@ -47,5 +47,6 @@ pub async fn snipe() -> Result<(), Box<dyn Error>> {
         unsub().await;
     })
     .await?;
-    return Ok(());
+
+    Ok(())
 }

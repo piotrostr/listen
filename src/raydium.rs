@@ -78,7 +78,8 @@ pub async fn get_calc_result(
     )
     .await?;
     debug!("result: {:?}", result);
-    return Ok((result, market_keys, amm_keys));
+
+    Ok((result, market_keys, amm_keys))
 }
 
 pub fn get_burn_pct(
@@ -138,7 +139,7 @@ pub fn calc_result_to_financials(
             ))
             .expect("to string pretty")
         );
-        return sol_amount;
+        sol_amount
     } else {
         let sol_amount = result.pool_pc_vault_amount as f64 / 1e9;
         let usd_amount = sol_amount * sol_price;
@@ -159,7 +160,7 @@ pub fn calc_result_to_financials(
             ))
             .expect("to string pretty")
         );
-        return sol_amount;
+        sol_amount
     }
 }
 

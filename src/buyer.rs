@@ -16,7 +16,6 @@ use solana_account_decoder::UiAccountData;
 use solana_client::{
     nonblocking::{self, rpc_client::RpcClient},
     rpc_config::RpcAccountInfoConfig,
-    rpc_request::TokenAccountsFilter,
 };
 use solana_sdk::{
     commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
@@ -123,7 +122,7 @@ pub async fn listen_for_burn(
                     .expect("unpack mint data");
             info!("mint data: {:?}", mint_data);
 
-            let (result, market_keys, _) =
+            let (result, _, _) =
                 raydium::get_calc_result(&rpc_client, amm_pool).await?;
 
             // check if any sol pooled before checking burn_pct for correct res
@@ -131,7 +130,7 @@ pub async fn listen_for_burn(
             let sol_pooled =
                 raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
             if sol_pooled < 1. {
-                warn!("rug pull: {}, sol pooled: {}", token_mint, sol_pooled);
+                warn!("{} rug pull, sol pooled: {}", token_mint, sol_pooled);
                 return Ok(false);
             }
 
@@ -140,7 +139,7 @@ pub async fn listen_for_burn(
                 info!("burn pct: {}", burn_pct);
                 // check here if market cap is right
                 if sol_pooled < 20. {
-                    warn!("{} sol pooled: {} < 30", token_mint, sol_pooled);
+                    warn!("{} sol pooled: {} < 20", token_mint, sol_pooled);
                     return Ok(false);
                 }
                 return Ok(true);
@@ -216,7 +215,7 @@ pub async fn handle_new_pair(
         dotenv!("RPC_URL").to_string(),
     );
     let swap_result =
-        jito::send_swap_tx(&mut ixs, tip, wallet, searcher_client, &rpc_client)
+        jito::send_swap_tx(&mut ixs, tip, wallet, searcher_client, rpc_client)
             .await;
 
     info!(
