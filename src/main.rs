@@ -108,7 +108,7 @@ enum Command {
     },
 }
 
-#[tokio::main(flavor = "multi_thread", worker_threads = 4)]
+#[tokio::main(flavor = "multi_thread", worker_threads = 10)]
 async fn main() -> Result<(), Box<dyn Error>> {
     let _logger = Logger::try_with_str("info")?
         .log_to_file(FileSpec::default())
