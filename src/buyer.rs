@@ -87,7 +87,7 @@ pub async fn check_top_holders(
     );
 
     let top_10_holders = total / total_supply;
-    if top_10_holders > 0.25 {
+    if top_10_holders > 0.30 {
         warn!(
             "{}: centralized supply: {} / {} = {}",
             mint.to_string(),
