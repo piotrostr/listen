@@ -1,0 +1,11 @@
+[Unit]
+Description=Buyer Service
+After=network.target
+
+[Service]
+Type=simple
+ExecStart=/usr/local/bin/listen buyer-service
+Restart=on-failure
+
+[Install]
+WantedBy=multi-user.target
