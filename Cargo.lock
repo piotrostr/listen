@@ -3020,6 +3020,7 @@ dependencies = [
  "chrono",
  "clap 4.5.4",
  "crossbeam",
+ "csv",
  "ctrlc",
  "dialoguer 0.11.0",
  "dotenv",

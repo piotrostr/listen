@@ -49,18 +49,11 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
     let txn = provider.get_tx(&signature).await.unwrap();
     let new_pool_info =
         tx_parser::parse_new_pool(&txn).expect("parse pool info");
-    info!(
-        "{}",
-        serde_json::to_string_pretty(&json!({
-            "slot": txn.slot,
-            "timestamp": chrono::Utc::now().to_rfc3339(),
-            "input": new_pool_info.input_mint.to_string(),
-            "output": new_pool_info.output_mint.to_string(),
-            "pool": new_pool_info.amm_pool_id.to_string(),
-            "amm_pool": new_pool_info.amm_pool_id.to_string(),
-        }))
-        .expect("serialize pool info")
-    );
+    let mut token_result = buyer::TokenResult::default();
+    token_result.slot_received = txn.slot;
+    token_result.creation_signature = signature.clone();
+    token_result.timestamp_received =
+        chrono::Utc::now().timestamp().to_string();
     match buyer::handle_new_pair(
         new_pool_info,
         1000000,
@@ -68,10 +61,11 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
         &wallet,
         &provider,
         &mut searcher_client,
+        &mut token_result,
     )
     .await
     {
-        Ok(_) => HttpResponse::Ok().body("ok"),
+        Ok(_) => HttpResponse::Ok().json(token_result),
         Err(e) => HttpResponse::InternalServerError().body(format!("{}", e)),
     }
 }

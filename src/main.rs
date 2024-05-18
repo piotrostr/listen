@@ -182,7 +182,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::TopHolders { mint } => {
             let mint = Pubkey::from_str(mint.as_str()).unwrap();
-            let ok = buyer::check_top_holders(&mint, &provider).await?;
+            let (_, ok) = buyer::check_top_holders(&mint, &provider).await?;
             info!("Top holders check passed: {}", ok);
         }
         Command::ListenForSolPooled { amm_pool } => {
