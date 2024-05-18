@@ -9,10 +9,9 @@ use crate::{
 };
 use dotenv_codegen::dotenv;
 use futures_util::StreamExt;
-use jito_searcher_client::token_authenticator;
 use log::{debug, info, warn};
 use raydium_library::amm;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 use serde_json::json;
 use solana_account_decoder::UiAccountData;
 use solana_client::{
@@ -24,9 +23,8 @@ use solana_sdk::{
     signature::Keypair,
 };
 use spl_token::state::Mint;
-use tokio::fs::OpenOptions;
 
-#[derive(Debug, Serialize, Default)]
+#[derive(Debug, Serialize, Default, Deserialize)]
 pub struct TokenResult {
     pub creation_signature: String,
     pub slot_received: u64,

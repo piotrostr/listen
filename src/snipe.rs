@@ -1,4 +1,7 @@
-use crate::constants;
+use crate::{
+    buyer::{self, TokenResult},
+    constants,
+};
 use dotenv_codegen::dotenv;
 use futures_util::StreamExt;
 use log::{info, warn};
@@ -38,7 +41,15 @@ pub async fn run_listener() -> Result<(), Box<dyn Error>> {
                     ))
                     .await
                     {
-                        Ok(_) => info!("ok"),
+                        Ok(res) => {
+                            let token_result =
+                                res.json::<buyer::TokenResult>().await.unwrap();
+                            info!(
+                                "token result: {}",
+                                serde_json::to_string_pretty(&token_result)
+                                    .unwrap()
+                            );
+                        }
                         Err(e) => warn!("error sending log: {}", e),
                     };
                 });
