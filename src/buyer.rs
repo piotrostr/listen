@@ -14,11 +14,7 @@ use raydium_library::amm;
 use serde_json::json;
 use solana_account_decoder::UiAccountData;
 use solana_client::{
-    nonblocking::{
-        self,
-        pubsub_client::PubsubClientResult,
-        rpc_client::{self, RpcClient},
-    },
+    nonblocking::{pubsub_client::PubsubClient, rpc_client::RpcClient},
     rpc_config::RpcAccountInfoConfig,
 };
 use solana_sdk::{
@@ -92,7 +88,7 @@ pub async fn check_top_holders(
 pub async fn listen_for_sol_pooled(
     amm_pool: &Pubkey,
     rpc_client: &RpcClient,
-    pubsub_client: &nonblocking::pubsub_client::PubsubClient,
+    pubsub_client: &PubsubClient,
 ) -> Result<bool, Box<dyn Error>> {
     let (mut stream, unsub) = pubsub_client
         .account_subscribe(
@@ -137,14 +133,14 @@ pub async fn listen_for_sol_pooled(
 pub async fn listen_for_burn(
     amm_pool: &Pubkey,
     rpc_client: &RpcClient,
-    pubsub_client: &nonblocking::pubsub_client::PubsubClient,
+    pubsub_client: &PubsubClient,
 ) -> Result<bool, Box<dyn Error>> {
     // load amm keys
     let amm_program =
         Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)
             .expect("amm program");
     let amm_keys =
-        amm::utils::load_amm_keys(&rpc_client, &amm_program, amm_pool).await?;
+        amm::utils::load_amm_keys(rpc_client, &amm_program, amm_pool).await?;
     let lp_mint = amm_keys.amm_lp_mint;
     let coin_mint_is_sol = amm_keys.amm_coin_mint
         == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
@@ -176,7 +172,7 @@ pub async fn listen_for_burn(
             debug!("mint data: {:?}", mint_data);
 
             let (result, _, _) =
-                raydium::get_calc_result(&rpc_client, amm_pool).await?;
+                raydium::get_calc_result(rpc_client, amm_pool).await?;
 
             // check if any sol pooled before checking burn_pct for correct res
             // rug-pulled tokens have LP supply of 0
@@ -219,10 +215,11 @@ pub async fn handle_new_pair(
     } else {
         new_pool_info.input_mint
     };
-    let pubsub_client =
-        nonblocking::pubsub_client::PubsubClient::new(dotenv!("WS_URL"))
-            .await
-            .expect("pubsub client async");
+
+    let pubsub_client = PubsubClient::new(dotenv!("WS_URL"))
+        .await
+        .expect("pubsub client async");
+
     let ok = listen_for_sol_pooled(
         &new_pool_info.amm_pool_id,
         &provider.rpc_client,
@@ -281,12 +278,14 @@ pub async fn handle_new_pair(
 
     let tip = 50000;
 
-    let rpc_client = &nonblocking::rpc_client::RpcClient::new(
-        dotenv!("RPC_URL").to_string(),
-    );
-    let swap_result =
-        jito::send_swap_tx(&mut ixs, tip, wallet, searcher_client, rpc_client)
-            .await;
+    let swap_result = jito::send_swap_tx(
+        &mut ixs,
+        tip,
+        wallet,
+        searcher_client,
+        &provider.rpc_client,
+    )
+    .await;
 
     info!(
         "{}",

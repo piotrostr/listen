@@ -104,7 +104,6 @@ pub fn parse_new_pool(
     tx: &EncodedConfirmedTransactionWithStatusMeta,
 ) -> Result<NewPool, Box<dyn std::error::Error>> {
     let mut pool_info = NewPool::default();
-    println!("{}", serde_json::to_string_pretty(&tx.transaction.meta)?);
     if let Some(meta) = &tx.transaction.meta {
         for ixs in self::deserialize(&meta.inner_instructions) {
             for ix in ixs.instructions.iter().rev() {
