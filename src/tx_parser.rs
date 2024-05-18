@@ -17,6 +17,7 @@ pub struct NewPool {
     pub amm_pool_id: Pubkey,
     pub input_mint: Pubkey,
     pub output_mint: Pubkey,
+    pub creator: Pubkey,
 }
 
 #[timed(duration(printer = "info!"))]
@@ -103,6 +104,7 @@ pub fn parse_new_pool(
     tx: &EncodedConfirmedTransactionWithStatusMeta,
 ) -> Result<NewPool, Box<dyn std::error::Error>> {
     let mut pool_info = NewPool::default();
+    println!("{}", serde_json::to_string_pretty(&tx.transaction.meta)?);
     if let Some(meta) = &tx.transaction.meta {
         for ixs in self::deserialize(&meta.inner_instructions) {
             for ix in ixs.instructions.iter().rev() {
@@ -136,6 +138,15 @@ pub fn parse_new_pool(
                         } else {
                             pool_info.output_mint =
                                 Pubkey::from_str(mint).unwrap();
+                        }
+                    }
+
+                    if parsed_ix.program == "system" {
+                        if let Some(owner) =
+                            parsed_ix.parsed["info"]["source"].as_str()
+                        {
+                            pool_info.creator =
+                                Pubkey::from_str(owner).unwrap();
                         }
                     }
                 }

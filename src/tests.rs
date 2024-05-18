@@ -75,6 +75,7 @@ fn test_parse_mint_acc() {
 }
 
 #[tokio::test]
+#[ignore = "requires a live network connection"]
 async fn test_gets_top_holders() {
     let mint = Pubkey::from_str("D2oKMNHb94DSgvibQxCweZPrbFEhayKBQ5eaPMC4Dvnv")
         .unwrap();

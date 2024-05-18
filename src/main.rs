@@ -7,15 +7,17 @@ use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
-    buyer::{self, listen_for_burn},
-    buyer_service, constants,
+    buyer, buyer_service, constants,
     jup::Jupiter,
     prometheus,
     raydium::{self, Raydium},
     rpc, snipe, tx_parser, util, BlockAndProgramSubscribable, Listener,
     Provider,
 };
-use solana_client::rpc_response::{Response, RpcLogsResponse};
+use solana_client::{
+    nonblocking,
+    rpc_response::{Response, RpcLogsResponse},
+};
 use solana_sdk::{
     pubkey::Pubkey,
     signature::Keypair,
@@ -49,6 +51,10 @@ struct Args {
 
 #[derive(Debug, Parser)]
 enum Command {
+    ListenForSolPooled {
+        #[arg(long)]
+        amm_pool: String,
+    },
     BuyerService {},
     TrackPosition {
         #[arg(long)]
@@ -89,6 +95,10 @@ enum Command {
     },
     ListenerService {},
     Wallet {},
+    ParsePool {
+        #[arg(long)]
+        signature: String,
+    },
     Swap {
         #[arg(long)]
         input_mint: String,
@@ -134,6 +144,12 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("makes searcher client");
     match app.command {
+        Command::ParsePool { signature } => {
+            let new_pool = tx_parser::parse_new_pool(
+                &provider.get_tx(signature.as_str()).await?,
+            )?;
+            println!("{:?}", new_pool);
+        }
         Command::BuyerService {} => {
             buyer_service::run_buyer_service().await?;
         }
@@ -142,8 +158,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let ok = buyer::check_top_holders(&mint, &provider).await?;
             info!("Top holders check passed: {}", ok);
         }
+        Command::ListenForSolPooled { amm_pool } => {
+            let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
+                dotenv!("WS_URL"),
+            )
+            .await?;
+            buyer::listen_for_sol_pooled(
+                &Pubkey::from_str(amm_pool.as_str())?,
+                &provider.rpc_client,
+                &pubsub_client,
+            )
+            .await?;
+        }
         Command::ListenForBurn { amm_pool } => {
-            listen_for_burn(&Pubkey::from_str(amm_pool.as_str())?).await?;
+            let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
+                dotenv!("WS_URL"),
+            )
+            .await?;
+            buyer::listen_for_burn(
+                &Pubkey::from_str(amm_pool.as_str())?,
+                &provider.rpc_client,
+                &pubsub_client,
+            )
+            .await?;
         }
         Command::TrackPosition { amm_pool, owner } => {
             let amm_pool = Pubkey::from_str(amm_pool.as_str())

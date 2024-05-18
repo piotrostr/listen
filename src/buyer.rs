@@ -14,7 +14,11 @@ use raydium_library::amm;
 use serde_json::json;
 use solana_account_decoder::UiAccountData;
 use solana_client::{
-    nonblocking::{self, rpc_client::RpcClient},
+    nonblocking::{
+        self,
+        pubsub_client::PubsubClientResult,
+        rpc_client::{self, RpcClient},
+    },
     rpc_config::RpcAccountInfoConfig,
 };
 use solana_sdk::{
@@ -85,15 +89,57 @@ pub async fn check_top_holders(
     Ok(true)
 }
 
+pub async fn listen_for_sol_pooled(
+    amm_pool: &Pubkey,
+    rpc_client: &RpcClient,
+    pubsub_client: &nonblocking::pubsub_client::PubsubClient,
+) -> Result<bool, Box<dyn Error>> {
+    let (mut stream, unsub) = pubsub_client
+        .account_subscribe(
+            amm_pool,
+            Some(RpcAccountInfoConfig {
+                commitment: Some(CommitmentConfig::confirmed()),
+                ..Default::default()
+            }),
+        )
+        .await
+        .expect("subscribe to account");
+
+    info!("listening for sol pooled for pool {}", amm_pool.to_string());
+    while let Some(_) = stream.next().await {
+        let (result, _, amm_keys) =
+            raydium::get_calc_result(&rpc_client, amm_pool).await?;
+        let coin_mint_is_sol = amm_keys.amm_coin_mint
+            == Pubkey::from_str(constants::SOLANA_PROGRAM_ID)
+                .expect("sol mint");
+        let token_mint = if coin_mint_is_sol {
+            amm_keys.amm_pc_mint
+        } else {
+            amm_keys.amm_coin_mint
+        };
+        let sol_pooled =
+            raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
+        if sol_pooled > 50. {
+            info!("{} sol pooled: {}", token_mint, sol_pooled);
+            return Ok(true);
+        } else {
+            warn!("{} sol pooled: {}", token_mint, sol_pooled);
+            return Ok(false);
+        }
+    }
+
+    unsub().await;
+
+    Ok(true)
+}
+
 // listen_for_burn listens until the liquidity is burnt or a rugpull happens
 pub async fn listen_for_burn(
     amm_pool: &Pubkey,
+    rpc_client: &RpcClient,
+    pubsub_client: &nonblocking::pubsub_client::PubsubClient,
 ) -> Result<bool, Box<dyn Error>> {
     // load amm keys
-    let rpc_client = RpcClient::new_with_commitment(
-        dotenv!("RPC_URL").to_string(),
-        CommitmentConfig::confirmed(),
-    );
     let amm_program =
         Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)
             .expect("amm program");
@@ -103,11 +149,7 @@ pub async fn listen_for_burn(
     let coin_mint_is_sol = amm_keys.amm_coin_mint
         == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
 
-    let client =
-        nonblocking::pubsub_client::PubsubClient::new(dotenv!("WS_URL"))
-            .await
-            .expect("pubsub client async");
-    let (mut stream, unsub) = client
+    let (mut stream, unsub) = pubsub_client
         .account_subscribe(
             &lp_mint,
             Some(RpcAccountInfoConfig {
@@ -116,7 +158,7 @@ pub async fn listen_for_burn(
             }),
         )
         .await
-        .expect("subscribe to logs");
+        .expect("subscribe to account");
 
     let token_mint = if coin_mint_is_sol {
         amm_keys.amm_pc_mint
@@ -148,18 +190,8 @@ pub async fn listen_for_burn(
             let burn_pct = get_burn_pct(mint_data, result).expect("burn_pct");
             if burn_pct > 90. {
                 info!("burn pct: {}", burn_pct);
-                let (result, _, _) =
-                    raydium::get_calc_result(&rpc_client, amm_pool).await?;
-
-                // check if any sol pooled before checking burn_pct for correct res
-                // rug-pulled tokens have LP supply of 0
-                let sol_pooled = raydium::calc_result_to_financials(
-                    coin_mint_is_sol,
-                    result,
-                    0,
-                );
-                if sol_pooled < 10. {
-                    warn!("{} sol pooled: {} < 10", token_mint, sol_pooled);
+                if sol_pooled < 50. {
+                    warn!("{} sol pooled: {} < 50", token_mint, sol_pooled);
                     return Ok(false);
                 }
                 return Ok(true);
@@ -187,8 +219,26 @@ pub async fn handle_new_pair(
     } else {
         new_pool_info.input_mint
     };
+    let pubsub_client =
+        nonblocking::pubsub_client::PubsubClient::new(dotenv!("WS_URL"))
+            .await
+            .expect("pubsub client async");
+    let ok = listen_for_sol_pooled(
+        &new_pool_info.amm_pool_id,
+        &provider.rpc_client,
+        &pubsub_client,
+    )
+    .await?;
+    if !ok {
+        return Ok(());
+    }
 
-    let ok = listen_for_burn(&new_pool_info.amm_pool_id).await?;
+    let ok = listen_for_burn(
+        &new_pool_info.amm_pool_id,
+        &provider.rpc_client,
+        &pubsub_client,
+    )
+    .await?;
     if !ok {
         return Ok(());
     }
