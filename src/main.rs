@@ -94,6 +94,7 @@ enum Command {
         amm_pool: String,
     },
     ListenerService {},
+    Snipe {},
     Wallet {},
     ParsePool {
         #[arg(long)]
@@ -162,6 +163,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("makes searcher client");
     match app.command {
+        Command::Snipe {} => {
+            let (listener_res, buyer_res) = tokio::join!(
+                snipe::run_listener(),
+                buyer_service::run_buyer_service()
+            );
+            listener_res?;
+            buyer_res?;
+        }
         Command::ParsePool { signature } => {
             let new_pool = tx_parser::parse_new_pool(
                 &provider.get_tx(signature.as_str()).await?,
