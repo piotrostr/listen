@@ -7,6 +7,15 @@ Swap using Jupiter V6 API or directly with Raydium (crucial for new listings)
 Be careful as the default usage was on mainnet with small txs, be sure to set
 the URLs and signer keypair to testnet
 
+## Requirements
+
+0. Install Rust
+1. Install `protoc`, `build-essential`, `pkg-config`, `libssl-dev`
+2. Copy over `.env.example` into `.env`, plug your RPCs (otherwise uses solana default public RPCs)
+3. Copy over `auth.json` - JITO authentication keypair and `fund.json` - the keypair with some SOL to fund the endeavour
+4. Enable Rust Nightly and `cargo build --release`
+5. Run the `./run-systemd-services.sh` to run the microservices
+
 ## Usage
 
 ### Listening on new swaps
