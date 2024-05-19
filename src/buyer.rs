@@ -30,6 +30,7 @@ pub struct TokenResult {
     pub slot_received: u64,
     pub timestamp_received: String,
     pub timestamp_finalized: String,
+    pub timestamp_lp_event: Option<String>,
     pub mint: String,
     pub amm_pool: String,
     pub outcome: String,
@@ -87,7 +88,7 @@ pub async fn check_top_holders(
     );
 
     let top_10_holders = total / total_supply;
-    if top_10_holders > 0.30 {
+    if top_10_holders > 0.35 {
         warn!(
             "{}: centralized supply: {} / {} = {}",
             mint.to_string(),
@@ -259,6 +260,7 @@ pub async fn handle_new_pair(
         &pubsub_client,
     )
     .await?;
+    token_result.timestamp_lp_event = Some(chrono::Utc::now().to_rfc3339());
     if !ok {
         if burn_pct == -1. {
             token_result.outcome =

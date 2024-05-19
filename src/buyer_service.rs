@@ -2,8 +2,6 @@ use crate::{buyer, provider::Provider, tx_parser};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use dotenv_codegen::dotenv;
 use jito_searcher_client::get_searcher_client;
-use log::info;
-use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcTransactionConfig;
 use solana_sdk::commitment_config::CommitmentConfig;
@@ -52,8 +50,7 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
     let mut token_result = buyer::TokenResult::default();
     token_result.slot_received = txn.slot;
     token_result.creation_signature = signature.clone();
-    token_result.timestamp_received =
-        chrono::Utc::now().timestamp().to_string();
+    token_result.timestamp_received = chrono::Utc::now().to_rfc3339();
     match buyer::handle_new_pair(
         new_pool_info,
         1000000,
@@ -65,7 +62,10 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
     )
     .await
     {
-        Ok(_) => HttpResponse::Ok().json(token_result),
+        Ok(_) => {
+            token_result.timestamp_finalized = chrono::Utc::now().to_rfc3339();
+            HttpResponse::Ok().json(token_result)
+        }
         Err(e) => HttpResponse::InternalServerError().body(format!("{}", e)),
     }
 }
