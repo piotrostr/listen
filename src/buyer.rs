@@ -1,4 +1,4 @@
-use std::{error::Error, str::FromStr};
+use std::{error::Error, str::FromStr, sync::Arc};
 
 use crate::{
     constants,
@@ -9,6 +9,7 @@ use crate::{
 };
 use dotenv_codegen::dotenv;
 use futures_util::StreamExt;
+use jito_searcher_client::get_searcher_client;
 use log::{debug, info, warn};
 use raydium_library::amm;
 use serde::{Deserialize, Serialize};
@@ -20,7 +21,7 @@ use solana_client::{
 };
 use solana_sdk::{
     commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
-    signature::Keypair,
+    signature::Keypair, signer::EncodableKey,
 };
 use spl_token::state::Mint;
 
@@ -223,7 +224,6 @@ pub async fn handle_new_pair(
     slippage: u64,
     wallet: &Keypair,
     provider: &Provider,
-    searcher_client: &mut SearcherClient,
     token_result: &mut TokenResult,
 ) -> Result<(), Box<dyn Error>> {
     let mint = if new_pool_info.input_mint.to_string()
@@ -312,12 +312,18 @@ pub async fn handle_new_pair(
     info!("took {:?} to pack", start.elapsed());
 
     let tip = 50000;
+    let auth = Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH"))
+        .expect("read auth keypair");
+    let mut searcher_client =
+        get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &Arc::new(auth))
+            .await
+            .expect("makes searcher client");
 
     let swap_result = jito::send_swap_tx(
         &mut ixs,
         tip,
         wallet,
-        searcher_client,
+        &mut searcher_client,
         &provider.rpc_client,
     )
     .await;

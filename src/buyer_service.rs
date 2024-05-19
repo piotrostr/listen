@@ -1,7 +1,6 @@
 use crate::{buyer, provider::Provider, tx_parser};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use dotenv_codegen::dotenv;
-use jito_searcher_client::get_searcher_client;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcTransactionConfig;
 use solana_sdk::commitment_config::CommitmentConfig;
@@ -12,7 +11,6 @@ use solana_transaction_status::{
     EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding,
 };
 use std::str::FromStr;
-use std::sync::Arc;
 
 pub async fn get_tx_async(
     signature: &str,
@@ -35,12 +33,6 @@ pub async fn get_tx_async(
 
 async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
     let signature = signature.into_inner();
-    let auth = Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH"))
-        .expect("read auth keypair");
-    let mut searcher_client =
-        get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &Arc::new(auth))
-            .await
-            .expect("makes searcher client");
     let provider = Provider::new(dotenv!("RPC_URL").to_string());
     let wallet = Keypair::read_from_file(dotenv!("FUND_KEYPAIR_PATH"))
         .expect("read fund keypair");
@@ -57,7 +49,6 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
         3000,
         &wallet,
         &provider,
-        &mut searcher_client,
         &mut token_result,
     )
     .await

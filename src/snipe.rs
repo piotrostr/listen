@@ -1,7 +1,4 @@
-use crate::{
-    buyer::{self, TokenResult},
-    constants,
-};
+use crate::{buyer, constants};
 use dotenv_codegen::dotenv;
 use futures_util::StreamExt;
 use log::{info, warn};
