@@ -303,7 +303,7 @@ pub async fn handle_new_pair(
     .expect("makes swap context");
 
     let start = std::time::Instant::now();
-    let quick = false;
+    let quick = true;
     let mut ixs =
         raydium::make_swap_ixs(provider, wallet, &swap_context, quick)
             .await
