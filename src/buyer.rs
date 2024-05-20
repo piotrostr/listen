@@ -272,12 +272,12 @@ pub async fn handle_new_pair(
         return Ok(());
     }
 
-    let (top_10_holders, ok) = check_top_holders(&mint, provider).await?;
+    let (top_10_holders, _) = check_top_holders(&mint, provider).await?;
     token_result.top_10_holders = Some(top_10_holders);
-    if !ok {
-        token_result.outcome = "centralized supply".to_string();
-        return Ok(());
-    }
+    // if !ok {
+    //     token_result.outcome = "centralized supply".to_string();
+    //     return Ok(());
+    // }
 
     // this should be converted to listening as well
     // some tokens have mint and freeze authority disabled a bit later
