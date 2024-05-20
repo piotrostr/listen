@@ -55,3 +55,6 @@ futures-util = "0.3.30"
 bs58 = "0.5.1"
 actix-web = "4.5.1"
 csv = "1.3.0"
+mongodb = { version = "2.8.2", features = [
+  "async-std-runtime",
+], default-features = false }

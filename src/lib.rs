@@ -1,4 +1,6 @@
 pub mod buyer;
+pub mod buyer_service;
+pub mod collector;
 pub mod constants;
 pub mod jito;
 pub mod jup;
@@ -11,7 +13,6 @@ pub mod snipe;
 pub mod tx_parser;
 pub mod types;
 pub mod util;
-pub mod buyer_service;
 
 mod tests;
 

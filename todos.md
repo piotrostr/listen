@@ -4,10 +4,14 @@
 afterwards, even when there is a lot of initial traction, the LP burn does not
 guarantee a good entry since it happens quite late for a lot of projects
 - using min amount out 0 is dangerous, as sometimes the pool is not going to be
-updated at the right time and you can send a swap to a rugpulled token, the LP
-is going to be 0 in that case and might be mistaken
+updated at the right time and you can send a swap to a rugpulled token, swapping
+with insta -100% pnl
 
+- [ ] filter out pump.fun tokens (mostly post-launch dumps)
 - [x] get the pool details beforehand, wait for the amount out calculation for when jito leader is there
+- [ ] get the price of entry based on tx receipt, track the positions in another service
+- [ ] screen the liquidity burn before listening onto LP event in case the LP
+  burn has already happened (JITO bundles, network delays)
 - [ ] track the slot of mint creation and the swap tx execution
 - [x] verify the amount out param (slippage)
 - [x] ensure re-connect when socket closes
@@ -15,8 +19,7 @@ is going to be 0 in that case and might be mistaken
 - [ ] track the swaps, see if jupiter pricing api has the fresh tokens, otherwise track based on raydium (custom)
   - [ ] save the new holdings into a key-value store like redis
   - [ ] add self initial after a 2x
-- [x] add maximum amount of slots of wait
-  - [ ] make the bot run replicas in different regions
+- [x] add maximum amount of slots of wait (edit: waiting for leader to be JITO is not required)
 - [x] migrate the rpc_client to non-blocking
 - [x] separate the listening and transactions so that it is non-blocking in case of multiple pairs in short span
 - [ ] compare entry to available total liquidity
