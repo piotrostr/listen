@@ -45,7 +45,7 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
     token_result.timestamp_received = chrono::Utc::now().to_rfc3339();
     match buyer::handle_new_pair(
         new_pool_info,
-        1000000,
+        10_000_000,
         3000,
         &wallet,
         &provider,
