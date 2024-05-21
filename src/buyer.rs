@@ -134,7 +134,7 @@ pub async fn listen_for_sol_pooled(
         };
         let sol_pooled =
             raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
-        if sol_pooled > 50. {
+        if sol_pooled > 25. {
             info!("{} sol pooled: {}", token_mint, sol_pooled);
             return Ok((sol_pooled, true));
         } else {
