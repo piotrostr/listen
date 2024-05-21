@@ -261,12 +261,16 @@ pub async fn handle_new_pair(
         return Ok(());
     }
 
-    let (burn_pct, ok) = listen_for_burn(
-        &new_pool_info.amm_pool_id,
-        &provider.rpc_client,
-        &pubsub_client,
+    // give it 15 mins tops
+    let (burn_pct, ok) = tokio::time::timeout(
+        tokio::time::Duration::from_secs(900),
+        listen_for_burn(
+            &new_pool_info.amm_pool_id,
+            &provider.rpc_client,
+            &pubsub_client,
+        ),
     )
-    .await?;
+    .await??;
     token_result.timestamp_lp_event = Some(chrono::Utc::now().to_rfc3339());
     if !ok {
         if burn_pct == -1. {
