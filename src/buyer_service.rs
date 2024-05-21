@@ -1,6 +1,7 @@
 use crate::{buyer, provider::Provider, tx_parser};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use dotenv_codegen::dotenv;
+use log::info;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcTransactionConfig;
 use solana_sdk::commitment_config::CommitmentConfig;
@@ -54,6 +55,7 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
     .await
     {
         Ok(_) => {
+            info!("OK");
             token_result.timestamp_finalized = chrono::Utc::now().to_rfc3339();
             HttpResponse::Ok().json(token_result)
         }

@@ -34,28 +34,42 @@ pub async fn run_listener() -> Result<(), Box<dyn Error>> {
                 info!("passing log {}", log.value.signature);
                 // tx.send(log).await.expect("send log");
                 tokio::spawn(async move {
-                    match reqwest::get(format!(
-                        "http://localhost:8080/new_pair/{}",
-                        log.value.signature
-                    ))
-                    .await
-                    {
-                        Ok(res) => {
-                            let token_result =
-                                res.json::<buyer::TokenResult>().await.unwrap();
-                            info!(
-                                "token result: {}",
-                                serde_json::to_string_pretty(&token_result)
-                                    .unwrap()
-                            );
-                            let inserted_id = collector
-                                .insert(token_result)
-                                .await
-                                .expect("insert");
-                            info!("inserted id: {}", inserted_id.to_string());
-                        }
-                        Err(e) => warn!("error sending log: {}", e),
-                    };
+                    for _ in 0..3 {
+                        match reqwest::get(format!(
+                            "http://localhost:8080/new_pair/{}",
+                            log.value.signature
+                        ))
+                        .await
+                        {
+                            Ok(res) => {
+                                let token_result = res
+                                    .json::<buyer::TokenResult>()
+                                    .await
+                                    .unwrap();
+                                info!(
+                                    "token result: {}",
+                                    serde_json::to_string_pretty(&token_result)
+                                        .unwrap()
+                                );
+                                let inserted_id = collector
+                                    .insert(token_result)
+                                    .await
+                                    .expect("insert");
+                                info!(
+                                    "inserted id: {}",
+                                    inserted_id.to_string()
+                                );
+                                break;
+                            }
+                            Err(e) => {
+                                warn!("error sending log: {}", e);
+                                tokio::time::sleep(
+                                    tokio::time::Duration::from_secs(5),
+                                )
+                                .await;
+                            }
+                        };
+                    }
                 });
             }
         }
