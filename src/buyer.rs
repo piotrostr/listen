@@ -1,8 +1,7 @@
 use std::{error::Error, str::FromStr, sync::Arc};
 
 use crate::{
-    constants,
-    jito::{self, SearcherClient},
+    constants, jito,
     provider::Provider,
     raydium::{self, get_burn_pct},
     tx_parser::NewPool,
@@ -34,10 +33,12 @@ pub struct TokenResult {
     pub timestamp_lp_event: Option<String>,
     pub mint: String,
     pub amm_pool: String,
+    // outcome should be an enum, string for convenience
     pub outcome: String,
     pub sol_pooled: Option<f64>,
     pub burn_pct: Option<f64>,
     pub top_10_holders: Option<f64>,
+    pub error: Option<String>,
 }
 
 pub async fn check_top_holders(
@@ -242,6 +243,12 @@ pub async fn handle_new_pair(
         .await
         .expect("pubsub client async");
 
+    let is_pump_fun = check_if_pump_fun(&mint).await?;
+    if is_pump_fun {
+        token_result.outcome = "pump fun".to_string();
+        return Ok(());
+    }
+
     let (sol_pooled, ok) = listen_for_sol_pooled(
         &new_pool_info.amm_pool_id,
         &provider.rpc_client,
@@ -274,10 +281,6 @@ pub async fn handle_new_pair(
 
     let (top_10_holders, _) = check_top_holders(&mint, provider).await?;
     token_result.top_10_holders = Some(top_10_holders);
-    // if !ok {
-    //     token_result.outcome = "centralized supply".to_string();
-    //     return Ok(());
-    // }
 
     // this should be converted to listening as well
     // some tokens have mint and freeze authority disabled a bit later
@@ -348,29 +351,36 @@ pub async fn handle_new_pair(
     Ok(())
 }
 
-// pub async fn append_result(
-//     file_path: &str,
-//     record: TokenResult,
-// ) -> Result<(), Box<dyn Error>> {
-//     // Open the file in append mode. Create it if it does not exist.
-//     let file = OpenOptions::new()
-//         .write(true)
-//         .append(true)
-//         .create(true)
-//         .open(file_path)
-//         .await?;
-//
-//     let mut writer = Writer::from_writer(file);
-//
-//     // Check if the file is empty to avoid writing headers multiple times
-//     if writer.has_headers() {
-//         writer.write_record(&["Field1", "Field2", "Field3"])?;
-//     }
-//
-//     // Serialize and append the record
-//     writer.serialize(record)?;
-//
-//     // Flush to ensure all writes are committed
-//     writer.flush()?;
-//     Ok(())
-// }
+pub async fn check_if_pump_fun(mint: &Pubkey) -> Result<bool, Box<dyn Error>> {
+    let base = "https://client-api-2-74b1891ee9f9.herokuapp.com/coins/";
+    let url = format!("{}{}", base, mint.to_string());
+    let res = reqwest::get(&url).await?;
+    Ok(res.status().is_success())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::str::FromStr;
+
+    use solana_sdk::pubkey::Pubkey;
+
+    #[tokio::test]
+    async fn test_check_if_pump_fun_works_for_pump_fun() {
+        // some pump fun shitto
+        let mint =
+            Pubkey::from_str("2yqz8eJvJu1eiaYz34r9i7YbyTveRRJwPFhRJenp6yed")
+                .unwrap();
+        let res = super::check_if_pump_fun(&mint).await.unwrap();
+        assert!(res == true);
+    }
+
+    #[tokio::test]
+    async fn test_check_if_pump_fun_works_for_not_pump_fun() {
+        // wifhat
+        let mint =
+            Pubkey::from_str("EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm")
+                .unwrap();
+        let res = super::check_if_pump_fun(&mint).await.unwrap();
+        assert!(res == false);
+    }
+}

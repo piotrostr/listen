@@ -57,7 +57,11 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
             token_result.timestamp_finalized = chrono::Utc::now().to_rfc3339();
             HttpResponse::Ok().json(token_result)
         }
-        Err(e) => HttpResponse::InternalServerError().body(format!("{}", e)),
+        Err(e) => {
+            token_result.timestamp_finalized = chrono::Utc::now().to_rfc3339();
+            token_result.error = Some(format!("{}", e));
+            HttpResponse::InternalServerError().body(format!("{}", e))
+        }
     }
 }
 
