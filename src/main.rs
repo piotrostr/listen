@@ -158,10 +158,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let auth = Arc::new(
         Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH")).unwrap(),
     );
-    let mut searcher_client =
-        get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &auth)
-            .await
-            .expect("makes searcher client");
     match app.command {
         Command::Snipe {} => {
             let (listener_res, buyer_res) = tokio::join!(
@@ -278,6 +274,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 "tokyo".to_string(),
                 "ny".to_string(),
             ];
+            let mut searcher_client =
+                get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &auth)
+                    .await
+                    .expect("makes searcher client");
             for region in regions {
                 let res = searcher_client
                     .get_next_scheduled_leader(NextScheduledLeaderRequest {
@@ -290,6 +290,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::MonitorSlots {} => {
             listener.slot_subscribe()?;
+            let mut searcher_client =
+                get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &auth)
+                    .await
+                    .expect("makes searcher client");
             let _ = searcher_client
                 .subscribe_mempool(MempoolSubscription {
                     ..Default::default()
