@@ -11,7 +11,7 @@ use listen::{
     jup::Jupiter,
     prometheus,
     raydium::{self, Raydium},
-    rpc, snipe, tx_parser, util, BlockAndProgramSubscribable, Listener,
+    rpc, seller, snipe, tx_parser, util, BlockAndProgramSubscribable, Listener,
     Provider,
 };
 use solana_client::{
@@ -71,7 +71,7 @@ enum Command {
     MonitorSlots {},
     Price {
         #[arg(long)]
-        mint: String,
+        amm_pool: String,
     },
     BenchRPC {
         #[arg(long)]
@@ -312,9 +312,19 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .await
             );
         }
-        Command::Price { mint } => {
-            println!("{}", mint);
-            // not implemented
+        Command::Price { amm_pool } => {
+            let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
+                dotenv!("WS_URL"),
+            )
+            .await?;
+            let amm_pool = Pubkey::from_str(amm_pool.as_str())?;
+            seller::listen_price(
+                &amm_pool,
+                &provider.rpc_client,
+                &pubsub_client,
+            )
+            .await
+            .expect("listen price");
         }
         Command::ListenerService {} => {
             snipe::run_listener().await?;
