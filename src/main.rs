@@ -9,9 +9,9 @@ use clap::Parser;
 use listen::{
     buyer, buyer_service, constants,
     jup::Jupiter,
-    prometheus,
+    listener_service, prometheus,
     raydium::{self, Raydium},
-    rpc, seller, snipe, tx_parser, util, BlockAndProgramSubscribable, Listener,
+    rpc, seller, tx_parser, util, BlockAndProgramSubscribable, Listener,
     Provider,
 };
 use solana_client::{
@@ -51,6 +51,7 @@ struct Args {
 
 #[derive(Debug, Parser)]
 enum Command {
+    Blockhash {},
     ListenForSolPooled {
         #[arg(long)]
         amm_pool: String,
@@ -93,7 +94,10 @@ enum Command {
         #[arg(long)]
         amm_pool: String,
     },
-    ListenerService {},
+    ListenerService {
+        #[arg(long, action = clap::ArgAction::SetTrue)]
+        webhook: Option<bool>,
+    },
     Snipe {},
     Wallet {},
     ParsePool {
@@ -159,9 +163,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH")).unwrap(),
     );
     match app.command {
+        Command::Blockhash {} => {
+            for _ in 0..3 {
+                let start = std::time::Instant::now();
+                let res = provider.rpc_client.get_recent_blockhash().await?;
+                println!("{:?}", res);
+                println!("Time elapsed: {:?}", start.elapsed());
+            }
+        }
         Command::Snipe {} => {
             let (listener_res, buyer_res) = tokio::join!(
-                snipe::run_listener(),
+                listener_service::run_listener_service(),
                 buyer_service::run_buyer_service()
             );
             listener_res?;
@@ -330,8 +342,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("listen price");
         }
-        Command::ListenerService {} => {
-            snipe::run_listener().await?;
+        Command::ListenerService { webhook } => {
+            let webhook = webhook.unwrap_or(false);
+            if webhook {
+                listener_service::run_listener_webhook_service().await?;
+            } else {
+                listener_service::run_listener_service().await?;
+            }
         }
         Command::Swap {
             mut input_mint,
