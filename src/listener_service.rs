@@ -1,6 +1,7 @@
 use crate::{buyer, collector, constants};
 use actix_web::{
-    error, get, post, web, App, Error, HttpResponse, HttpServer, Responder,
+    error, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
+    Responder,
 };
 use dotenv_codegen::dotenv;
 use futures_util::StreamExt;
@@ -25,7 +26,7 @@ pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
                     constants::FEE_PROGRAM_ID.to_string(),
                 ]),
                 RpcTransactionLogsConfig {
-                    commitment: Some(CommitmentConfig::confirmed()),
+                    commitment: Some(CommitmentConfig::processed()),
                 },
             )
             .await
@@ -85,8 +86,10 @@ pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
 
 #[post("/")]
 async fn handle_webhook(
+    req: HttpRequest,
     mut payload: web::Payload,
 ) -> Result<HttpResponse, Error> {
+    dbg!(req);
     info!(
         "received webhook at timestamp (unix) {}",
         chrono::Utc::now().timestamp()
@@ -106,6 +109,13 @@ async fn handle_webhook(
     let obj = serde_json::from_slice::<serde_json::Value>(&body)?;
     println!("{}", serde_json::to_string_pretty(&obj).unwrap());
 
+    // reqwest::get(format!(
+    //     "http://localhost:8080/signature/{}",
+    //     obj["signature"].as_str().unwrap()
+    // ))
+    // .await
+    // .unwrap();
+
     // body is loaded, now we can deserialize serde-json
     Ok(HttpResponse::Ok().body("ok"))
 }
@@ -117,7 +127,7 @@ async fn healthz() -> impl Responder {
 
 pub async fn run_listener_webhook_service() -> std::io::Result<()> {
     HttpServer::new(|| App::new().service(handle_webhook).service(healthz))
-        .bind(("127.0.0.1", 8080))?
+        .bind(("127.0.0.1", 8079))?
         .run()
         .await
 }
