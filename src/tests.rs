@@ -79,11 +79,11 @@ fn test_parse_mint_acc() {
 async fn test_gets_top_holders() {
     let mint = Pubkey::from_str("D2oKMNHb94DSgvibQxCweZPrbFEhayKBQ5eaPMC4Dvnv")
         .unwrap();
-    let ok = check_top_holders(
+    let (_, ok) = check_top_holders(
         &mint,
         &Provider::new(dotenv!("RPC_URL").to_string()),
     )
     .await
     .unwrap();
-    assert_eq!(false, true);
+    assert!(ok);
 }

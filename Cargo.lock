@@ -3491,6 +3491,7 @@ dependencies = [
  "anchor-client",
  "anchor-lang",
  "anyhow",
+ "base64 0.22.1",
  "bincode",
  "borsh 1.5.0",
  "bs58 0.5.1",
