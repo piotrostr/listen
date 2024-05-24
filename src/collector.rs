@@ -31,6 +31,15 @@ impl Collector {
         let res = self.collection.insert_one(doc, None).await?;
         Ok(res.inserted_id)
     }
+
+    pub async fn insert_generic(
+        &self,
+        doc: serde_json::Value,
+    ) -> Result<Bson, Box<dyn Error>> {
+        let doc = mongodb::bson::to_document(&doc)?;
+        let res = self.collection.insert_one(doc, None).await?;
+        Ok(res.inserted_id)
+    }
 }
 
 #[cfg(test)]

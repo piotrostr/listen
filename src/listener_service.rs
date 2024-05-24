@@ -46,17 +46,25 @@ pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
                         .await
                         {
                             Ok(res) => {
+                                if res.status().is_server_error() {
+                                    warn!("server error");
+                                    tokio::time::sleep(
+                                        tokio::time::Duration::from_secs(5),
+                                    )
+                                    .await;
+                                    continue;
+                                }
                                 let token_result = res
-                                    .json::<buyer::TokenResult>()
+                                    .json::<serde_json::Value>()
                                     .await
                                     .unwrap();
                                 info!(
-                                    "token result: {}",
+                                    "result: {}",
                                     serde_json::to_string_pretty(&token_result)
                                         .unwrap()
                                 );
                                 let inserted_id = collector
-                                    .insert(token_result)
+                                    .insert_generic(token_result)
                                     .await
                                     .expect("insert");
                                 info!(
@@ -107,7 +115,7 @@ async fn handle_webhook(
     }
 
     let obj = serde_json::from_slice::<serde_json::Value>(&body)?;
-    println!("{}", serde_json::to_string_pretty(&obj).unwrap());
+    info!("{}", serde_json::to_string_pretty(&obj).unwrap());
 
     // reqwest::get(format!(
     //     "http://localhost:8080/signature/{}",

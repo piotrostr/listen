@@ -147,7 +147,7 @@ pub async fn run_checks(
     let is_pump_fun = check_if_pump_fun(&mint).await?;
     checklist.is_pump_fun = is_pump_fun;
     if is_pump_fun {
-        return Ok((true, checklist));
+        return Ok((false, checklist));
     }
 
     let pubsub_client = PubsubClient::new(dotenv!("WS_URL")).await?;
@@ -219,7 +219,6 @@ pub async fn run_checks(
     let ok = loop {
         tokio::select! {
             lp_log = lp_stream.next() => {
-                println!("{:?}", lp_log);
                 if let UiAccountData::Binary(data, UiAccountEncoding::Base64) = lp_log.unwrap().value.data {
                     let log_data = base64::prelude::BASE64_STANDARD.decode(data).unwrap();
                     let lp_account = spl_token::state::Account::unpack(&log_data).unwrap();
@@ -244,7 +243,6 @@ pub async fn run_checks(
                 }
             }
             mint_log = mint_stream.next() => {
-                println!("{:?}", mint_log);
                 if let UiAccountData::Binary(data, UiAccountEncoding::Base64) = mint_log.unwrap().value.data {
                     let log_data = base64::prelude::BASE64_STANDARD.decode(data).unwrap();
                     let mint_data = Mint::unpack(&log_data).unwrap();

@@ -40,7 +40,13 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
     token_result.timestamp_received = chrono::Utc::now().to_rfc3339();
     let signature = signature.into_inner();
     // TODO match statement this
-    let (ok, checklist) = run_checks(signature).await.expect("checks");
+    let (ok, checklist) = match run_checks(signature).await {
+        Ok((ok, checklist)) => (ok, checklist),
+        Err(_) => {
+            return HttpResponse::InternalServerError()
+                .body("Error running checks");
+        }
+    };
     token_result.checklist = checklist;
     if !ok {
         info!("{} Not OK", token_result.checklist.mint.to_string());
