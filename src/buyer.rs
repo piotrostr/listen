@@ -4,6 +4,7 @@ use crate::{
     constants, jito,
     provider::Provider,
     raydium::{self, get_burn_pct},
+    seller::get_sol_pooled,
     tx_parser::NewPool,
 };
 use dotenv_codegen::dotenv;
@@ -168,7 +169,7 @@ pub async fn listen_for_burn(
         .account_subscribe(
             &lp_mint,
             Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
                 ..Default::default()
             }),
         )
@@ -219,6 +220,13 @@ pub async fn listen_for_burn(
     Ok((-1., false))
 }
 
+/// handle_new_pair checks if
+/// 1. the token is a pump fun
+/// 2. the pool has enough sol pooled
+/// 3. the pool has enough burn pct
+/// 4. the top 10 holders hold less than 35% of the supply
+/// 5. the token is safe (mint authority + freeze authority)
+/// if everything is good, it swaps the token
 pub async fn handle_new_pair(
     new_pool_info: NewPool,
     amount: u64,
@@ -239,27 +247,34 @@ pub async fn handle_new_pair(
 
     info!("processing {}", mint.to_string());
 
-    let pubsub_client = PubsubClient::new(dotenv!("WS_URL"))
-        .await
-        .expect("pubsub client async");
-
     let is_pump_fun = check_if_pump_fun(&mint).await?;
     if is_pump_fun {
         token_result.outcome = "pump fun".to_string();
         return Ok(());
     }
 
-    let (sol_pooled, ok) = listen_for_sol_pooled(
-        &new_pool_info.amm_pool_id,
-        &provider.rpc_client,
-        &pubsub_client,
-    )
-    .await?;
-    token_result.sol_pooled = Some(sol_pooled);
-    if !ok {
+    let sol_pooled =
+        get_sol_pooled(&new_pool_info.amm_pool_id, &provider.rpc_client).await;
+    if sol_pooled < 15. {
         token_result.outcome = "insufficient sol pooled".to_string();
         return Ok(());
     }
+
+    // let (sol_pooled, ok) = listen_for_sol_pooled(
+    //     &new_pool_info.amm_pool_id,
+    //     &provider.rpc_client,
+    //     &pubsub_client,
+    // )
+    // .await?;
+    // token_result.sol_pooled = Some(sol_pooled);
+    // if !ok {
+    //     token_result.outcome = "insufficient sol pooled".to_string();
+    //     return Ok(());
+    // }
+
+    let pubsub_client = PubsubClient::new(dotenv!("WS_URL"))
+        .await
+        .expect("pubsub client async");
 
     // give it 15 mins tops
     let (burn_pct, ok) = tokio::time::timeout(

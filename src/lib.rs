@@ -1,5 +1,6 @@
 pub mod buyer;
 pub mod buyer_service;
+pub mod checker;
 pub mod collector;
 pub mod constants;
 pub mod jito;

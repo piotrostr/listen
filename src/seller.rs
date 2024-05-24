@@ -2,7 +2,7 @@ use std::{error::Error, str::FromStr};
 
 use base64::Engine;
 use futures_util::StreamExt;
-use log::info;
+use log::{debug, info};
 use raydium_amm::state::AmmInfo;
 use raydium_library::amm;
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
@@ -12,7 +12,7 @@ use solana_client::{
 };
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 
-use crate::constants;
+use crate::{constants, raydium};
 
 pub async fn listen_price(
     amm_pool: &Pubkey,
@@ -32,7 +32,7 @@ pub async fn listen_price(
         .account_subscribe(
             &amm_pool,
             Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
                 encoding: Some(UiAccountEncoding::Base64),
                 ..Default::default()
             }),
@@ -54,7 +54,7 @@ pub async fn listen_price(
                     &base64::prelude::BASE64_STANDARD.decode(data).unwrap(),
                 )
                 .expect("unpack amm info");
-                get_financials(&amm_info, rpc_client).await;
+                // get_sol_pooled(&amm_info, rpc_client).await;
             }
             _ => {
                 info!("unexpected data format, only base64 for now");
@@ -71,74 +71,39 @@ pub fn clear() {
     print!("\x1b[2J\x1b[1;1H");
 }
 
-pub async fn get_financials(
-    amm_info: &AmmInfo,
-    rpc_client: &RpcClient,
-) -> (f64, f64) {
-    clear();
-    println!("market {}", amm_info.market.to_string());
-    println!("pc in {}", amm_info.state_data.swap_pc_in_amount);
-    println!("pc out {}", amm_info.state_data.swap_pc_out_amount);
-    println!("coin in {}", amm_info.state_data.swap_coin_in_amount);
-    println!("coin out {}", amm_info.state_data.swap_coin_out_amount);
-    println!("pc vault {}", amm_info.pc_vault);
-    println!("coint vault {}", amm_info.coin_vault);
-    println!("lp amount {}", amm_info.lp_amount);
+pub async fn get_sol_pooled(amm_pool: &Pubkey, rpc_client: &RpcClient) -> f64 {
+    let amm_info = unpack::<AmmInfo>(
+        &rpc_client
+            .get_account_data(amm_pool)
+            .await
+            .expect("get amm pool"),
+    )
+    .expect("unpack");
+    // clear();
+    debug!("market {}", amm_info.market.to_string());
+    debug!("pc in {}", amm_info.state_data.swap_pc_in_amount);
+    debug!("pc out {}", amm_info.state_data.swap_pc_out_amount);
+    debug!("coin in {}", amm_info.state_data.swap_coin_in_amount);
+    debug!("coin out {}", amm_info.state_data.swap_coin_out_amount);
+    debug!("pc vault {}", amm_info.pc_vault);
+    debug!("coint vault {}", amm_info.coin_vault);
+    debug!("lp amount {}", amm_info.lp_amount);
     // check the diff between in and out
-    let state_data = &amm_info.state_data;
 
-    let pc_balance = rpc_client
-        .get_token_account_balance(&amm_info.pc_vault)
+    let sol_pooled = rpc_client
+        .get_token_account_balance(
+            if amm_info.coin_vault_mint.to_string()
+                == constants::SOLANA_PROGRAM_ID
+            {
+                &amm_info.coin_vault
+            } else {
+                &amm_info.pc_vault
+            },
+        )
         .await
-        .expect("pc_balance");
-    let coin_balance = rpc_client
-        .get_token_account_balance(&amm_info.coin_vault)
-        .await
-        .expect("coin_balance");
+        .expect("sol pooled");
 
-    println!("pc balance {}", pc_balance.ui_amount.unwrap());
-    println!("coin balance {}", coin_balance.ui_amount.unwrap());
-
-    // Calculate the differences safely
-    let pc_diff = if state_data.swap_pc_in_amount as u128
-        > state_data.swap_pc_out_amount
-    {
-        state_data.swap_pc_in_amount as u128 - state_data.swap_pc_out_amount
-    } else {
-        state_data.swap_pc_out_amount - state_data.swap_pc_in_amount as u128
-    };
-
-    let coin_diff = if state_data.swap_coin_in_amount
-        > state_data.swap_coin_out_amount as u128
-    {
-        state_data.swap_coin_in_amount - state_data.swap_coin_out_amount as u128
-    } else {
-        state_data.swap_coin_out_amount as u128 - state_data.swap_coin_in_amount
-    };
-
-    println!(
-        "{}, {}",
-        coin_diff as f64 / 10f64.powi(amm_info.coin_decimals as i32),
-        pc_diff as f64 / 10f64.powi(amm_info.pc_decimals as i32)
-    );
-
-    let sol_price = 172.5;
-
-    if amm_info.coin_vault_mint.to_string() == constants::SOLANA_PROGRAM_ID {
-        let usd_pooled = coin_balance.ui_amount.unwrap() as f64 * sol_price;
-        println!(
-            "token price: {}",
-            usd_pooled / pc_balance.ui_amount.unwrap() as f64
-        );
-    } else {
-        let usd_pooled = pc_balance.ui_amount.unwrap() as f64 * sol_price;
-        println!(
-            "token price: {}",
-            usd_pooled / coin_balance.ui_amount.unwrap() as f64
-        );
-    };
-
-    (0., 0.)
+    sol_pooled.ui_amount.unwrap()
 }
 
 pub fn unpack<T>(data: &[u8]) -> Option<T>

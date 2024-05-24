@@ -38,6 +38,7 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
     let wallet = Keypair::read_from_file(dotenv!("FUND_KEYPAIR_PATH"))
         .expect("read fund keypair");
     let txn = provider.get_tx(&signature).await.unwrap();
+    println!("{}", serde_json::to_string_pretty(&txn).unwrap());
     let new_pool_info =
         tx_parser::parse_new_pool(&txn).expect("parse pool info");
     let mut token_result = buyer::TokenResult::default();
