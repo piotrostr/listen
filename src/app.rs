@@ -1,0 +1,101 @@
+use clap::Parser;
+
+#[derive(Parser, Debug)]
+pub struct App {
+    #[clap(flatten)]
+    pub args: Args,
+
+    #[clap(subcommand)]
+    pub command: Command,
+}
+
+#[derive(Parser, Debug)]
+#[command(version)]
+pub struct Args {
+    #[arg(short, long, default_value = "https://api.mainnet-beta.solana.com")]
+    pub url: String,
+
+    #[arg(short, long, default_value = "wss://api.mainnet-beta.solana.com")]
+    pub ws_url: String,
+
+    #[arg(short, long)]
+    pub keypair_path: Option<String>,
+}
+
+#[derive(Debug, Parser)]
+pub enum Command {
+    Checks {
+        #[arg(long)]
+        signature: String,
+    },
+    Blockhash {},
+    ListenForSolPooled {
+        #[arg(long)]
+        amm_pool: String,
+    },
+    BuyerService {},
+    TrackPosition {
+        #[arg(long)]
+        amm_pool: String,
+
+        #[arg(long)]
+        owner: String,
+    },
+    TopHolders {
+        #[arg(long)]
+        mint: String,
+    },
+    MonitorLeaders {},
+    MonitorSlots {},
+    Price {
+        #[arg(long)]
+        amm_pool: String,
+    },
+    BenchRPC {
+        #[arg(long)]
+        rpc_url: String,
+    },
+    PriorityFee {},
+    Tx {
+        #[arg(short, long)]
+        signature: String,
+    },
+    Listen {
+        #[arg(long, default_value_t = 10)]
+        worker_count: i32,
+
+        #[arg(long, default_value_t = 10)]
+        buffer_size: i32,
+    },
+    ListenForBurn {
+        #[arg(long)]
+        amm_pool: String,
+    },
+    ListenerService {
+        #[arg(long, action = clap::ArgAction::SetTrue)]
+        webhook: Option<bool>,
+    },
+    Snipe {},
+    Wallet {},
+    ParsePool {
+        #[arg(long)]
+        signature: String,
+    },
+    Swap {
+        #[arg(long)]
+        input_mint: String,
+        #[arg(long)]
+        output_mint: String,
+        #[arg(long)]
+        amount: Option<i64>,
+        #[arg(long)]
+        slippage: Option<u16>,
+        #[arg(long)]
+        dex: Option<String>,
+        #[arg(long)]
+        amm_pool_id: Option<String>,
+
+        #[clap(short, long, action = clap::ArgAction::SetTrue)]
+        yes: Option<bool>,
+    },
+}

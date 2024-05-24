@@ -1,3 +1,4 @@
+pub mod app;
 pub mod buyer;
 pub mod buyer_service;
 pub mod checker;

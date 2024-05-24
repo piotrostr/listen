@@ -59,3 +59,4 @@ mongodb = { version = "2.8.2", features = [
   "async-std-runtime",
 ], default-features = false }
 base64 = "0.22.1"
+console-subscriber = "0.2.0"

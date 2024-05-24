@@ -3,6 +3,7 @@ use std::str::FromStr;
 use base64::Engine;
 use dotenv_codegen::dotenv;
 use futures_util::StreamExt;
+use log::info;
 use serde::{Deserialize, Serialize};
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
 use solana_client::{
@@ -24,6 +25,7 @@ use crate::{buyer::check_if_pump_fun, constants};
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Checklist {
+    pub slot: u64,
     pub is_pump_fun: bool,
     pub lp_burnt: bool,
     pub mint_authority_renounced: bool,
@@ -111,6 +113,15 @@ where
     Pubkey::from_str(&s).map_err(serde::de::Error::custom)
 }
 
+/// run_checks checks if:
+/// 1. the token is a pump fun
+/// 2. the pool has enough sol pooled
+/// 3. the pool has enough burn pct
+/// 4. the token is safe (mint authority + freeze authority)
+/// if everything is good, it swaps the token
+/// it has the possibility of checking top holders, but this is not relevant
+/// the top holders ratio right after creation does not matter as much, as long
+/// as it is not a pump fun
 pub async fn run_checks(
     signature: String,
 ) -> Result<(bool, Checklist), Box<dyn std::error::Error>> {
@@ -129,7 +140,7 @@ pub async fn run_checks(
         )
         .await?;
     let accounts = parse_accounts(&tx)?;
-    println!("{}", serde_json::to_string_pretty(&accounts).unwrap());
+    info!("{}: {}", signature, serde_json::to_string_pretty(&accounts).unwrap());
 
     let (sol_vault, mint) =
         if accounts.coin_mint.to_string() == constants::SOLANA_PROGRAM_ID {
@@ -138,9 +149,12 @@ pub async fn run_checks(
             (accounts.pool_pc_token_account, accounts.coin_mint)
         };
 
-    let mut checklist = Checklist::default();
-    checklist.accounts = accounts.clone();
-    checklist.mint = mint.clone();
+    let mut checklist = Checklist {
+        slot: tx.slot,
+        accounts,
+        mint,
+        ..Default::default()
+    };
 
     // could be insta-sniping the pump fun launches, generally I am pretty fast
     // (~10 slots) so sniping pumpfuns since they pass all checks is ok
@@ -188,7 +202,7 @@ pub async fn run_checks(
         .await?;
 
     let accounts = &rpc_client
-        .get_multiple_accounts(&vec![accounts.user_lp_token, mint])
+        .get_multiple_accounts(&[accounts.user_lp_token, mint])
         .await?[..];
     let account = match accounts[0].clone() {
         Some(account) => account,
@@ -233,7 +247,7 @@ pub async fn run_checks(
                 let vault_log = vault_log.unwrap();
                 let sol_pooled = vault_log.value.lamports as f64 / 10u64.pow(9) as f64;
                 checklist.sol_pooled = sol_pooled;
-                if sol_pooled < 10. {
+                if sol_pooled < 6.9 {
                     break false;
                 }
                 // this might run for a long time, if no rugpull happens but the

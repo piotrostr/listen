@@ -4,6 +4,7 @@ use crate::{buyer, provider::Provider};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use dotenv_codegen::dotenv;
 use log::info;
+use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcTransactionConfig;
 use solana_sdk::commitment_config::CommitmentConfig;
@@ -35,16 +36,17 @@ pub async fn get_tx_async(
 }
 
 async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
-    let mut token_result = buyer::TokenResult::default();
-    token_result.creation_signature = signature.clone();
-    token_result.timestamp_received = chrono::Utc::now().to_rfc3339();
+    let mut token_result = buyer::TokenResult {
+        creation_signature: signature.clone(),
+        timestamp_received: chrono::Utc::now().to_rfc3339(),
+        ..Default::default()
+    };
     let signature = signature.into_inner();
-    // TODO match statement this
     let (ok, checklist) = match run_checks(signature).await {
         Ok((ok, checklist)) => (ok, checklist),
         Err(_) => {
             return HttpResponse::InternalServerError()
-                .body("Error running checks");
+                .json(json!({ "error": "Error running checks"}));
         }
     };
     token_result.checklist = checklist;
@@ -65,7 +67,9 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
         &token_result.checklist.accounts.amm_pool,
         &input_mint,
         &output_mint,
-        50_000_000, // 0.05 sol, no rugs with the new method
+        // 0.005 sol, no rugs but ppl still dump:( seller service is a
+        // must-have!
+        5_000_000,
         &wallet,
         &Provider::new(dotenv!("RPC_URL").to_string()),
     )
@@ -76,11 +80,7 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
             token_result.timestamp_finalized = chrono::Utc::now().to_rfc3339();
             HttpResponse::Ok().json(token_result)
         }
-        Err(e) => {
-            token_result.timestamp_finalized = chrono::Utc::now().to_rfc3339();
-            token_result.error = Some(format!("{}", e));
-            HttpResponse::InternalServerError().body(format!("{}", e))
-        }
+        Err(e) => HttpResponse::InternalServerError().body(format!("{}", e)),
     }
 }
 

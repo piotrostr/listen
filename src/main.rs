@@ -1,5 +1,7 @@
 use dotenv_codegen::dotenv;
-use flexi_logger::{Duplicate, FileSpec, Logger, WriteMode};
+use flexi_logger::{
+    colored_default_format, Duplicate, FileSpec, Logger, WriteMode,
+};
 use jito_protos::searcher::{MempoolSubscription, NextScheduledLeaderRequest};
 use jito_searcher_client::get_searcher_client;
 use raydium_library::amm;
@@ -7,9 +9,11 @@ use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
+    app::{App, Command},
     buyer, buyer_service, checker, constants,
     jup::Jupiter,
     listener_service, prometheus,
+    raydium::SwapArgs,
     raydium::{self, Raydium},
     rpc, seller, tx_parser, util, BlockAndProgramSubscribable, Listener,
     Provider,
@@ -27,112 +31,12 @@ use tokio::sync::Mutex;
 
 use log::{error, info};
 
-#[derive(Parser, Debug)]
-pub struct App {
-    #[clap(flatten)]
-    args: Args,
-
-    #[clap(subcommand)]
-    command: Command,
-}
-
-#[derive(Parser, Debug)]
-#[command(version)]
-struct Args {
-    #[arg(short, long, default_value = "https://api.mainnet-beta.solana.com")]
-    url: String,
-
-    #[arg(short, long, default_value = "wss://api.mainnet-beta.solana.com")]
-    ws_url: String,
-
-    #[arg(short, long)]
-    keypair_path: Option<String>,
-}
-
-#[derive(Debug, Parser)]
-enum Command {
-    Checks {
-        #[arg(long)]
-        signature: String,
-    },
-    Blockhash {},
-    ListenForSolPooled {
-        #[arg(long)]
-        amm_pool: String,
-    },
-    BuyerService {},
-    TrackPosition {
-        #[arg(long)]
-        amm_pool: String,
-
-        #[arg(long)]
-        owner: String,
-    },
-    TopHolders {
-        #[arg(long)]
-        mint: String,
-    },
-    MonitorLeaders {},
-    MonitorSlots {},
-    Price {
-        #[arg(long)]
-        amm_pool: String,
-    },
-    BenchRPC {
-        #[arg(long)]
-        rpc_url: String,
-    },
-    PriorityFee {},
-    Tx {
-        #[arg(short, long)]
-        signature: String,
-    },
-    Listen {
-        #[arg(long, default_value_t = 10)]
-        worker_count: i32,
-
-        #[arg(long, default_value_t = 10)]
-        buffer_size: i32,
-    },
-    ListenForBurn {
-        #[arg(long)]
-        amm_pool: String,
-    },
-    ListenerService {
-        #[arg(long, action = clap::ArgAction::SetTrue)]
-        webhook: Option<bool>,
-    },
-    Snipe {},
-    Wallet {},
-    ParsePool {
-        #[arg(long)]
-        signature: String,
-    },
-    Swap {
-        #[arg(long)]
-        input_mint: String,
-        #[arg(long)]
-        output_mint: String,
-        #[arg(long)]
-        amount: Option<i64>,
-        #[arg(long)]
-        slippage: Option<u16>,
-        #[arg(long)]
-        dex: Option<String>,
-        #[arg(long)]
-        amm_pool_id: Option<String>,
-
-        #[clap(short, long, action = clap::ArgAction::SetTrue)]
-        yes: Option<bool>,
-    },
-}
-
 fn log_format(
     writer: &mut dyn std::io::Write,
     now: &mut flexi_logger::DeferredNow,
     record: &log::Record,
 ) -> std::io::Result<()> {
-    write!(
+    writeln!(
         writer,
         "{} [{}] {} [{}:{}] {}\n",
         now.now().format("%Y-%m-%d %H:%M:%S"),
@@ -149,19 +53,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let _logger = Logger::try_with_str("info")?
         .log_to_file(FileSpec::default())
         .format(log_format)
+        .format_for_stdout(colored_default_format)
         .write_mode(WriteMode::Async)
         .duplicate_to_stdout(Duplicate::Info)
         .start()?;
+
+    console_subscriber::init();
 
     // 30th April, let's see how well this ages lol (was 135.)
     // 13th May, still going strong with the algo, now at 145
     // 16th May 163, I paperhanded 20+ SOL :(
     let sol_price = 163.;
     let app = App::parse();
-    let provider = Provider::new(dotenv!("RPC_URL").to_string());
-    let raydium = Raydium::new();
-    let listener = Listener::new(dotenv!("WS_URL").to_string());
-    let jup = Jupiter::new();
 
     let auth = Arc::new(
         Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH")).unwrap(),
@@ -172,6 +75,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             println!("ok? {}, {:?}", ok, checklist);
         }
         Command::Blockhash {} => {
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
             for _ in 0..3 {
                 let start = std::time::Instant::now();
                 let res = provider.rpc_client.get_latest_blockhash().await?;
@@ -188,6 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             buyer_res?;
         }
         Command::ParsePool { signature } => {
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
             let new_pool = tx_parser::parse_new_pool(
                 &provider.get_tx(signature.as_str()).await?,
             )?;
@@ -197,11 +102,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
             buyer_service::run_buyer_service().await?;
         }
         Command::TopHolders { mint } => {
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
             let mint = Pubkey::from_str(mint.as_str()).unwrap();
             let (_, ok) = buyer::check_top_holders(&mint, &provider).await?;
             info!("Top holders check passed: {}", ok);
         }
         Command::ListenForSolPooled { amm_pool } => {
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
                 dotenv!("WS_URL"),
             )
@@ -214,6 +121,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
         }
         Command::ListenForBurn { amm_pool } => {
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
                 dotenv!("WS_URL"),
             )
@@ -226,6 +134,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
         }
         Command::TrackPosition { amm_pool, owner } => {
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
             let amm_pool = Pubkey::from_str(amm_pool.as_str())
                 .expect("amm pool is a valid pubkey");
 
@@ -309,7 +218,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
         Command::MonitorSlots {} => {
-            listener.slot_subscribe()?;
+            Listener::new(dotenv!("WS_URL").to_string()).slot_subscribe()?;
             let mut searcher_client =
                 get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &auth)
                     .await
@@ -322,6 +231,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::BenchRPC { rpc_url } => rpc::eval_rpc(rpc_url.as_str()),
         Command::PriorityFee {} => {
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
             println!(
                 "{:?}",
                 provider
@@ -337,6 +247,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             );
         }
         Command::Price { amm_pool } => {
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
                 dotenv!("WS_URL"),
             )
@@ -367,6 +278,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             dex,
             amm_pool_id,
         } => {
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let raydium = Raydium::new();
+            let jup = Jupiter::new();
             let start = std::time::Instant::now();
             if input_mint == "sol" {
                 input_mint = constants::SOLANA_PROGRAM_ID.to_string();
@@ -402,37 +316,38 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         .await?
                 };
                 raydium
-                    .swap(
-                        amm_pool_id,
+                    .swap(SwapArgs {
+                        amm_pool: amm_pool_id,
                         input_token_mint,
                         output_token_mint,
-                        amount_specified,
-                        slippage_bps,
-                        &wallet,
-                        &provider,
-                        yes.unwrap_or(false),
-                    )
+                        amount: amount_specified,
+                        slippage: slippage_bps,
+                        wallet,
+                        provider,
+                        confirmed: yes.unwrap_or(false),
+                    })
                     .await?;
                 return Ok(());
             }
             let keypair = Keypair::read_from_file(&path)?;
             if let Some(amount) = amount {
-                jup.swap(
-                    input_mint,
-                    output_mint,
-                    amount as u64,
-                    &keypair,
-                    &provider,
-                    yes.unwrap_or(false),
-                    slippage.unwrap_or(800),
-                )
+                jup.swap(SwapArgs {
+                    amm_pool: Pubkey::default(),
+                    input_token_mint: Pubkey::from_str(&input_mint)?,
+                    output_token_mint: Pubkey::from_str(&output_mint)?,
+                    amount: amount as u64,
+                    wallet: keypair,
+                    provider,
+                    confirmed: yes.unwrap_or(false),
+                    slippage: slippage.unwrap_or(800) as u64,
+                })
                 .await?;
             } else {
                 jup.swap_entire_balance(
                     input_mint,
                     output_mint,
-                    &keypair,
-                    &provider,
+                    keypair,
+                    provider,
                     yes.unwrap_or(false),
                     slippage.unwrap_or(50),
                 )
@@ -443,6 +358,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             return Ok(());
         }
         Command::Wallet {} => {
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
             let path = match app.args.keypair_path {
                 Some(path) => path,
                 None => {
@@ -457,6 +373,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             info!("Balance: {} lamports", balance);
         }
         Command::Tx { signature } => {
+            let provider = Provider::new(dotenv!("RPC_URL").to_string());
             let tx = provider.get_tx(signature.as_str()).await?;
             info!("Tx: {}", serde_json::to_string_pretty(&tx)?);
             let mint = tx_parser::parse_mint(&tx)?;
@@ -479,6 +396,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             worker_count,
             buffer_size,
         } => {
+            let listener = Listener::new(dotenv!("WS_URL").to_string());
             let (transactions_received, transactions_processed, registry) =
                 prometheus::setup_metrics();
 

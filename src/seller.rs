@@ -30,7 +30,7 @@ pub async fn listen_price(
 
     let (mut stream, unsub) = pubsub_client
         .account_subscribe(
-            &amm_pool,
+            amm_pool,
             Some(RpcAccountInfoConfig {
                 commitment: Some(CommitmentConfig::processed()),
                 encoding: Some(UiAccountEncoding::Base64),

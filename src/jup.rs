@@ -12,10 +12,11 @@ use jupiter_swap_api_client::{
 };
 use log::{error, info};
 use solana_sdk::{
-    pubkey::Pubkey, signer::Signer, transaction::VersionedTransaction,
+    pubkey::Pubkey, signature::Keypair, signer::Signer,
+    transaction::VersionedTransaction,
 };
 
-use crate::{constants, util, Provider};
+use crate::{constants, raydium::SwapArgs, util, Provider};
 
 pub struct Jupiter {
     client: JupiterSwapApiClient,
@@ -40,24 +41,24 @@ impl Jupiter {
         &self,
         input_mint: String,
         output_mint: String,
-        signer: &dyn Signer,
-        provider: &Provider,
+        signer: Keypair,
+        provider: Provider,
         confirmed: bool,
         slippage: u16,
     ) -> Result<(), Box<dyn std::error::Error>> {
-        let spl_token_balance = provider.get_spl_balance(
-            &signer.pubkey(),
-            &Pubkey::from_str(&input_mint)?,
-        ).await?;
-        self.swap(
-            input_mint,
-            output_mint,
-            spl_token_balance,
-            signer,
+        let spl_token_balance = provider
+            .get_spl_balance(&signer.pubkey(), &Pubkey::from_str(&input_mint)?)
+            .await?;
+        self.swap(SwapArgs {
+            input_token_mint: Pubkey::from_str(&input_mint)?,
+            output_token_mint: Pubkey::from_str(&output_mint)?,
+            amount: spl_token_balance,
+            wallet: signer,
             provider,
             confirmed,
-            slippage,
-        )
+            slippage: slippage as u64,
+            amm_pool: Pubkey::default(), // unused
+        })
         .await
     }
 
@@ -65,20 +66,24 @@ impl Jupiter {
     // simulation fails due to low slippage
     pub async fn swap(
         &self,
-        input_mint: String,
-        output_mint: String,
-        amount: u64,
-        signer: &dyn Signer,
-        provider: &Provider,
-        confirmed: bool,
-        slippage: u16,
+        swap_args: SwapArgs,
     ) -> Result<(), Box<dyn std::error::Error>> {
+        let SwapArgs {
+            input_token_mint: input_mint,
+            output_token_mint: output_mint,
+            amount,
+            wallet: signer,
+            provider,
+            confirmed,
+            slippage,
+            amm_pool: _,
+        } = swap_args;
         let start = std::time::Instant::now();
         if !confirmed {
             info!(
                 "Initializing swap of {} of {} for {} by {}, slippage: {}%",
                 {
-                    if input_mint == constants::SOLANA_PROGRAM_ID {
+                    if input_mint.to_string() == constants::SOLANA_PROGRAM_ID {
                         util::lamports_to_sol(amount)
                     } else {
                         amount as f64
@@ -99,10 +104,10 @@ impl Jupiter {
         let quote_response = self
             .client
             .quote(&QuoteRequest {
-                input_mint: Pubkey::from_str(&input_mint)?,
-                output_mint: Pubkey::from_str(&output_mint)?,
+                input_mint,
+                output_mint,
                 amount,
-                slippage_bps: slippage,
+                slippage_bps: slippage as u16,
                 swap_mode: Some(SwapMode::ExactIn),
                 ..QuoteRequest::default()
             })
@@ -118,7 +123,7 @@ impl Jupiter {
         let raw_tx: VersionedTransaction =
             bincode::deserialize(&swap_response.swap_transaction).unwrap();
         let signed_tx =
-            VersionedTransaction::try_new(raw_tx.message, &[signer])?;
+            VersionedTransaction::try_new(raw_tx.message, &[&signer])?;
 
         info!("Built tx in {:?}", start.elapsed());
         match provider.send_tx(&signed_tx, true).await {

@@ -28,6 +28,17 @@ use solana_sdk::{
 
 pub struct Raydium {}
 
+pub struct SwapArgs {
+    pub amm_pool: Pubkey,
+    pub input_token_mint: Pubkey,
+    pub output_token_mint: Pubkey,
+    pub amount: u64,
+    pub slippage: u64,
+    pub wallet: Keypair,
+    pub provider: Provider,
+    pub confirmed: bool,
+}
+
 pub struct Swap {
     pre_swap_instructions: Vec<Instruction>,
     post_swap_instructions: Vec<Instruction>,
@@ -404,27 +415,30 @@ impl Raydium {
 
     pub async fn swap(
         &self,
-        amm_pool: Pubkey,
-        input_token_mint: Pubkey,
-        output_token_mint: Pubkey,
-        amount: u64,
-        slippage: u64,
-        wallet: &Keypair,
-        provider: &Provider,
-        confirmed: bool,
+        swap_args: SwapArgs,
     ) -> Result<(), Box<dyn Error>> {
-        let swap_context = self::make_swap_context(
-            provider,
+        let SwapArgs {
             amm_pool,
             input_token_mint,
             output_token_mint,
+            amount,
+            slippage,
             wallet,
+            provider,
+            confirmed,
+        } = swap_args;
+        let swap_context = self::make_swap_context(
+            &provider,
+            amm_pool,
+            input_token_mint,
+            output_token_mint,
+            &wallet,
             slippage,
             amount,
         )
         .await?;
-        let ixs =
-            self::make_swap_ixs(provider, wallet, &swap_context, false).await?;
+        let ixs = self::make_swap_ixs(&provider, &wallet, &swap_context, false)
+            .await?;
         info!(
             "{}",
             serde_json::to_string_pretty(&json!({
@@ -445,7 +459,7 @@ impl Raydium {
         let tx = Transaction::new_signed_with_payer(
             ixs.as_slice(),
             Some(&wallet.pubkey()),
-            &[wallet],
+            &[&wallet],
             provider.rpc_client.get_latest_blockhash().await?,
         );
         let tx = VersionedTransaction::from(tx);

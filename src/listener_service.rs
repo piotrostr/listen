@@ -1,4 +1,4 @@
-use crate::{buyer, collector, constants};
+use crate::{collector, constants};
 use actix_web::{
     error, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
     Responder,
@@ -46,6 +46,7 @@ pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
                         .await
                         {
                             Ok(res) => {
+                                info!("response: {:?}", res);
                                 if res.status().is_server_error() {
                                     warn!("server error");
                                     tokio::time::sleep(
@@ -54,17 +55,17 @@ pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
                                     .await;
                                     continue;
                                 }
-                                let token_result = res
+                                let result = res
                                     .json::<serde_json::Value>()
                                     .await
                                     .unwrap();
                                 info!(
                                     "result: {}",
-                                    serde_json::to_string_pretty(&token_result)
+                                    serde_json::to_string_pretty(&result)
                                         .unwrap()
                                 );
                                 let inserted_id = collector
-                                    .insert_generic(token_result)
+                                    .insert_generic(result)
                                     .await
                                     .expect("insert");
                                 info!(

@@ -5,8 +5,6 @@ use crate::{
     constants, jito,
     provider::Provider,
     raydium::{self, get_burn_pct},
-    seller::get_sol_pooled,
-    tx_parser::NewPool,
 };
 use dotenv_codegen::dotenv;
 use futures_util::StreamExt;
@@ -14,7 +12,6 @@ use jito_searcher_client::get_searcher_client;
 use log::{debug, info, warn};
 use raydium_library::amm;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use solana_account_decoder::UiAccountData;
 use solana_client::{
     nonblocking::{pubsub_client::PubsubClient, rpc_client::RpcClient},
@@ -29,19 +26,8 @@ use spl_token::state::Mint;
 #[derive(Debug, Serialize, Default, Deserialize)]
 pub struct TokenResult {
     pub creation_signature: String,
-    pub slot_received: u64,
     pub timestamp_received: String,
     pub timestamp_finalized: String,
-    pub timestamp_lp_event: Option<String>,
-    pub mint: String,
-    pub amm_pool: String,
-    // outcome should be an enum, string for convenience
-    pub outcome: String,
-    pub sol_pooled: Option<f64>,
-    pub burn_pct: Option<f64>,
-    pub top_10_holders: Option<f64>,
-    pub error: Option<String>,
-    // new field, other are deprecated but left for backwards compatibility
     pub checklist: Checklist,
 }
 
@@ -176,9 +162,9 @@ pub async fn listen_for_sol_pooled(
         .expect("subscribe to account");
 
     info!("listening for sol pooled for pool {}", amm_pool.to_string());
-    while let Some(_) = stream.next().await {
+    if stream.next().await.is_some() {
         let (result, _, amm_keys) =
-            raydium::get_calc_result(&rpc_client, amm_pool).await?;
+            raydium::get_calc_result(rpc_client, amm_pool).await?;
         let coin_mint_is_sol = amm_keys.amm_coin_mint
             == Pubkey::from_str(constants::SOLANA_PROGRAM_ID)
                 .expect("sol mint");
@@ -274,129 +260,9 @@ pub async fn listen_for_burn(
     Ok((-1., false))
 }
 
-/// handle_new_pair checks if
-/// 1. the token is a pump fun
-/// 2. the pool has enough sol pooled
-/// 3. the pool has enough burn pct
-/// 4. the top 10 holders hold less than 35% of the supply
-/// 5. the token is safe (mint authority + freeze authority)
-/// if everything is good, it swaps the token
-pub async fn handle_new_pair(
-    new_pool_info: NewPool,
-    amount: u64,
-    slippage: u64,
-    wallet: &Keypair,
-    provider: &Provider,
-    token_result: &mut TokenResult,
-) -> Result<(), Box<dyn Error>> {
-    let mint = if new_pool_info.input_mint.to_string()
-        == constants::SOLANA_PROGRAM_ID
-    {
-        new_pool_info.output_mint
-    } else {
-        new_pool_info.input_mint
-    };
-    token_result.mint = mint.to_string();
-    token_result.amm_pool = new_pool_info.amm_pool_id.to_string();
-
-    info!("processing {}", mint.to_string());
-
-    let is_pump_fun = check_if_pump_fun(&mint).await?;
-    if is_pump_fun {
-        token_result.outcome = "pump fun".to_string();
-        return Ok(());
-    }
-
-    let sol_pooled =
-        get_sol_pooled(&new_pool_info.amm_pool_id, &provider.rpc_client).await;
-    if sol_pooled < 15. {
-        token_result.outcome = "insufficient sol pooled".to_string();
-        return Ok(());
-    }
-
-    // let (sol_pooled, ok) = listen_for_sol_pooled(
-    //     &new_pool_info.amm_pool_id,
-    //     &provider.rpc_client,
-    //     &pubsub_client,
-    // )
-    // .await?;
-    // token_result.sol_pooled = Some(sol_pooled);
-    // if !ok {
-    //     token_result.outcome = "insufficient sol pooled".to_string();
-    //     return Ok(());
-    // }
-
-    let pubsub_client = PubsubClient::new(dotenv!("WS_URL"))
-        .await
-        .expect("pubsub client async");
-
-    // give it 15 mins tops
-    let (burn_pct, ok) = tokio::time::timeout(
-        tokio::time::Duration::from_secs(900),
-        listen_for_burn(
-            &new_pool_info.amm_pool_id,
-            &provider.rpc_client,
-            &pubsub_client,
-        ),
-    )
-    .await??;
-    token_result.timestamp_lp_event = Some(chrono::Utc::now().to_rfc3339());
-    if !ok {
-        if burn_pct == -1. {
-            token_result.outcome =
-                "rug pull (insufficient sol pooled post-LP-action)".to_string();
-        } else {
-            token_result.outcome = "insufficient burn pct".to_string();
-            token_result.burn_pct = Some(burn_pct);
-        }
-        return Ok(());
-    }
-
-    let (top_10_holders, _) = check_top_holders(&mint, provider).await?;
-    token_result.top_10_holders = Some(top_10_holders);
-
-    // this should be converted to listening as well
-    // some tokens have mint and freeze authority disabled a bit later
-    // but mostly before the burn
-    let (is_safe, msg) =
-        provider.sanity_check(&mint).await.expect("sanity check");
-    if !is_safe {
-        warn!("{} Unsafe pool: {}, skipping", mint, msg);
-        token_result.outcome = msg;
-        return Ok(());
-    }
-
-    token_result.timestamp_finalized =
-        chrono::Utc::now().timestamp().to_string();
-
-    token_result.outcome = "success (if bundle landed)".to_string();
-
-    info!(
-        "{}",
-        serde_json::to_string_pretty(&json!(vec![
-            format!("https://dexscreener.com/solana/{}", mint.to_string()),
-            format!("https://jup.ag/swap/{}-SOL", mint.to_string()),
-            format!("https://rugcheck.xyz/tokens/{}", mint.to_string()),
-        ]))
-        .expect("to string pretty")
-    );
-
-    buy(
-        &new_pool_info.amm_pool_id,
-        &new_pool_info.input_mint,
-        &new_pool_info.output_mint,
-        amount,
-        wallet,
-        provider,
-    )
-    .await?;
-
-    Ok(())
-}
-
 pub async fn check_if_pump_fun(mint: &Pubkey) -> Result<bool, Box<dyn Error>> {
     let base = "https://client-api-2-74b1891ee9f9.herokuapp.com/coins/";
-    let url = format!("{}{}", base, mint.to_string());
+    let url = format!("{}{}", base, mint);
     let res = reqwest::get(&url).await?;
     Ok(res.status().is_success())
 }
