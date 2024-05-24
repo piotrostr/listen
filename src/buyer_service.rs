@@ -1,4 +1,6 @@
-use crate::{buyer, provider::Provider, tx_parser};
+use crate::checker::run_checks;
+use crate::constants;
+use crate::{buyer, provider::Provider};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
 use dotenv_codegen::dotenv;
 use log::info;
@@ -33,25 +35,33 @@ pub async fn get_tx_async(
 }
 
 async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
-    let signature = signature.into_inner();
-    let provider = Provider::new(dotenv!("RPC_URL").to_string());
-    let wallet = Keypair::read_from_file(dotenv!("FUND_KEYPAIR_PATH"))
-        .expect("read fund keypair");
-    let txn = provider.get_tx(&signature).await.unwrap();
-    println!("{}", serde_json::to_string_pretty(&txn).unwrap());
-    let new_pool_info =
-        tx_parser::parse_new_pool(&txn).expect("parse pool info");
     let mut token_result = buyer::TokenResult::default();
-    token_result.slot_received = txn.slot;
     token_result.creation_signature = signature.clone();
     token_result.timestamp_received = chrono::Utc::now().to_rfc3339();
-    match buyer::handle_new_pair(
-        new_pool_info,
-        10_000_000,
-        3000,
+    let signature = signature.into_inner();
+    // TODO match statement this
+    let (ok, checklist) = run_checks(signature).await.expect("checks");
+    token_result.checklist = checklist;
+    if !ok {
+        info!("{} Not OK", token_result.checklist.mint.to_string());
+        return HttpResponse::Ok().json(token_result);
+    }
+    let wallet = Keypair::read_from_file(dotenv!("FUND_KEYPAIR_PATH"))
+        .expect("read fund keypair");
+    let accounts = &token_result.checklist.accounts;
+    let (input_mint, output_mint) =
+        if accounts.coin_mint.to_string() == constants::SOLANA_PROGRAM_ID {
+            (accounts.coin_mint, accounts.pc_mint)
+        } else {
+            (accounts.pc_mint, accounts.coin_mint)
+        };
+    match buyer::buy(
+        &token_result.checklist.accounts.amm_pool,
+        &input_mint,
+        &output_mint,
+        50_000_000, // 0.05 sol, no rugs with the new method
         &wallet,
-        &provider,
-        &mut token_result,
+        &Provider::new(dotenv!("RPC_URL").to_string()),
     )
     .await
     {

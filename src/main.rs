@@ -7,7 +7,7 @@ use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
 
 use clap::Parser;
 use listen::{
-    buyer, buyer_service, constants,
+    buyer, buyer_service, checker, constants,
     jup::Jupiter,
     listener_service, prometheus,
     raydium::{self, Raydium},
@@ -51,6 +51,10 @@ struct Args {
 
 #[derive(Debug, Parser)]
 enum Command {
+    Checks {
+        #[arg(long)]
+        signature: String,
+    },
     Blockhash {},
     ListenForSolPooled {
         #[arg(long)]
@@ -163,10 +167,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH")).unwrap(),
     );
     match app.command {
+        Command::Checks { signature } => {
+            let (ok, checklist) = checker::run_checks(signature).await?;
+            println!("ok? {}, {:?}", ok, checklist);
+        }
         Command::Blockhash {} => {
             for _ in 0..3 {
                 let start = std::time::Instant::now();
-                let res = provider.rpc_client.get_recent_blockhash().await?;
+                let res = provider.rpc_client.get_latest_blockhash().await?;
                 println!("{:?}", res);
                 println!("Time elapsed: {:?}", start.elapsed());
             }

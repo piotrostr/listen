@@ -1,6 +1,7 @@
 use std::{error::Error, str::FromStr, sync::Arc};
 
 use crate::{
+    checker::Checklist,
     constants, jito,
     provider::Provider,
     raydium::{self, get_burn_pct},
@@ -40,6 +41,59 @@ pub struct TokenResult {
     pub burn_pct: Option<f64>,
     pub top_10_holders: Option<f64>,
     pub error: Option<String>,
+    // new field, other are deprecated but left for backwards compatibility
+    pub checklist: Checklist,
+}
+
+pub async fn buy(
+    amm_pool: &Pubkey,
+    input_mint: &Pubkey,
+    output_mint: &Pubkey,
+    amount: u64,
+    wallet: &Keypair,
+    provider: &Provider,
+) -> Result<(), Box<dyn Error>> {
+    let swap_context = raydium::make_swap_context(
+        provider,
+        *amm_pool,
+        *input_mint,
+        *output_mint,
+        wallet,
+        0,
+        amount,
+    )
+    .await
+    .expect("makes swap context");
+
+    let start = std::time::Instant::now();
+    let quick = true;
+    let mut ixs =
+        raydium::make_swap_ixs(provider, wallet, &swap_context, quick)
+            .await
+            .expect("make swap ixs");
+
+    info!("took {:?} to pack", start.elapsed());
+
+    let tip = 50000;
+    let auth = Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH"))
+        .expect("read auth keypair");
+    let mut searcher_client =
+        get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &Arc::new(auth))
+            .await
+            .expect("makes searcher client");
+
+    let swap_result = jito::send_swap_tx(
+        &mut ixs,
+        tip,
+        wallet,
+        &mut searcher_client,
+        &provider.rpc_client,
+    )
+    .await;
+
+    info!("{:?}", swap_result);
+
+    Ok(())
 }
 
 pub async fn check_top_holders(
@@ -312,44 +366,6 @@ pub async fn handle_new_pair(
         return Ok(());
     }
 
-    let swap_context = raydium::make_swap_context(
-        provider,
-        new_pool_info.amm_pool_id,
-        new_pool_info.input_mint,
-        new_pool_info.output_mint,
-        wallet,
-        slippage,
-        amount,
-    )
-    .await
-    .expect("makes swap context");
-
-    let start = std::time::Instant::now();
-    let quick = true;
-    let mut ixs =
-        raydium::make_swap_ixs(provider, wallet, &swap_context, quick)
-            .await
-            .expect("make swap ixs");
-
-    info!("took {:?} to pack", start.elapsed());
-
-    let tip = 50000;
-    let auth = Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH"))
-        .expect("read auth keypair");
-    let mut searcher_client =
-        get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &Arc::new(auth))
-            .await
-            .expect("makes searcher client");
-
-    let swap_result = jito::send_swap_tx(
-        &mut ixs,
-        tip,
-        wallet,
-        &mut searcher_client,
-        &provider.rpc_client,
-    )
-    .await;
-
     token_result.timestamp_finalized =
         chrono::Utc::now().timestamp().to_string();
 
@@ -365,7 +381,15 @@ pub async fn handle_new_pair(
         .expect("to string pretty")
     );
 
-    info!("swap result: {:?}", swap_result);
+    buy(
+        &new_pool_info.amm_pool_id,
+        &new_pool_info.input_mint,
+        &new_pool_info.output_mint,
+        amount,
+        wallet,
+        provider,
+    )
+    .await?;
 
     Ok(())
 }

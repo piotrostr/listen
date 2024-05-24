@@ -35,10 +35,10 @@ pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
         while let Some(log) = notifications.next().await {
             let collector = Arc::clone(&collector);
             if log.value.err.is_none() {
-                info!("passing log {}", log.value.signature);
                 // tx.send(log).await.expect("send log");
                 tokio::spawn(async move {
                     for _ in 0..3 {
+                        info!("passing log {}", log.value.signature);
                         match reqwest::get(format!(
                             "http://localhost:8080/new_pair/{}",
                             log.value.signature

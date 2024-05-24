@@ -12,7 +12,7 @@ use solana_client::{
 };
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 
-use crate::{constants, raydium};
+use crate::constants;
 
 pub async fn listen_price(
     amm_pool: &Pubkey,
@@ -50,7 +50,7 @@ pub async fn listen_price(
     while let Some(log) = stream.next().await {
         match log.value.data {
             UiAccountData::Binary(data, UiAccountEncoding::Base64) => {
-                let amm_info = unpack::<AmmInfo>(
+                let _ = unpack::<AmmInfo>(
                     &base64::prelude::BASE64_STANDARD.decode(data).unwrap(),
                 )
                 .expect("unpack amm info");
