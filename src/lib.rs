@@ -2,6 +2,7 @@ pub mod app;
 pub mod buyer;
 pub mod buyer_service;
 pub mod checker;
+pub mod checker_service;
 pub mod collector;
 pub mod constants;
 pub mod jito;

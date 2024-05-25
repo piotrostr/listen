@@ -24,6 +24,7 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    CheckerService {},
     Checks {
         #[arg(long)]
         signature: String,

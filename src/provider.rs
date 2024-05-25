@@ -1,4 +1,4 @@
-use crate::{constants, types};
+use crate::{constants, types, util::env};
 use std::str::FromStr;
 
 use log::{debug, info};
@@ -194,4 +194,23 @@ impl Provider {
 
         Ok((true, "ok".to_string()))
     }
+}
+
+pub async fn get_tx_async(
+    signature: &str,
+) -> Result<EncodedConfirmedTransactionWithStatusMeta, Box<dyn std::error::Error>>
+{
+    let rpc_client = RpcClient::new(env("RPC_URL"));
+    let sig = Signature::from_str(signature)?;
+    let tx = rpc_client
+        .get_transaction_with_config(
+            &sig,
+            RpcTransactionConfig {
+                encoding: Some(UiTransactionEncoding::JsonParsed),
+                commitment: Some(CommitmentConfig::confirmed()),
+                max_supported_transaction_version: Some(1),
+            },
+        )
+        .await?;
+    Ok(tx)
 }

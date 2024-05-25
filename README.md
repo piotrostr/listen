@@ -4,6 +4,11 @@ Listen to new large transactions on Raydium V4
 
 Swap using Jupiter V6 API or directly with Raydium (crucial for new listings)
 
+Monitor prices real-time, multiple subscription ways and providers (PubSub, webhooks..)
+
+This tool has accidentally evolved to something of a sort of a Solana
+swiss-knife, has a bunch of stuff useful when trading shitcoins on Raydium
+
 Be careful as the default usage was on mainnet with small txs, be sure to set
 the URLs and signer keypair to testnet
 

@@ -5,7 +5,7 @@ use mongodb::{
 };
 use std::error::Error;
 
-use crate::{buyer::TokenResult, util::env};
+use crate::{checker_service::TokenResult, util::env};
 
 pub struct Collector {
     collection: Collection<Document>,

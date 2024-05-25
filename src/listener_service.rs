@@ -1,10 +1,11 @@
 use crate::{
-    buyer_service::ParsedPayload, checker::PoolAccounts, collector, constants,
-    util::env,
+    checker::PoolAccounts,
+    checker_service::ParsedPayload,
+    collector, constants,
+    util::{env, healthz},
 };
 use actix_web::{
-    error, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
-    Responder,
+    error, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
 };
 use futures_util::StreamExt;
 use log::{debug, info, warn};
@@ -16,7 +17,8 @@ use solana_client::{
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 use std::{str::FromStr, sync::Arc};
 
-pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run_listener_pubsub_service(
+) -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", env("WS_URL"));
     tokio::spawn(async move {
         let collector = Arc::new(collector::new().await.expect("collector"));
@@ -196,7 +198,7 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
                     serde_json::to_string_pretty(&parsed_payload).unwrap()
                 );
                 match client
-                    .post("http://localhost:8080/parsed")
+                    .post("http://localhost:8079/checks")
                     .json(&parsed_payload)
                     .send()
                     .await
@@ -228,20 +230,15 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().body("ok"))
 }
 
-#[get("/healthz")]
-pub async fn healthz() -> impl Responder {
-    HttpResponse::Ok().body("im ok")
-}
-
 pub async fn run_listener_webhook_service() -> std::io::Result<()> {
-    info!("Running listener service (webhooks) on 8079");
+    info!("Running listener service (webhooks) on 8078");
     HttpServer::new(|| {
         App::new()
             .service(receive_webhook)
             .service(handle_webhook)
             .service(healthz)
     })
-    .bind(("127.0.0.1", 8079))?
+    .bind(("127.0.0.1", 8078))?
     .run()
     .await
 }

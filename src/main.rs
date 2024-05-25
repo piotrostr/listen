@@ -10,11 +10,10 @@ use util::env;
 use clap::Parser;
 use listen::{
     app::{App, Command},
-    buyer, buyer_service, checker, constants,
+    buyer, buyer_service, checker, checker_service, constants,
     jup::Jupiter,
     listener_service, prometheus,
-    raydium::SwapArgs,
-    raydium::{self, Raydium},
+    raydium::{self, Raydium, SwapArgs},
     rpc, seller, tx_parser, util, BlockAndProgramSubscribable, Listener,
     Provider,
 };
@@ -85,12 +84,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
         Command::Snipe {} => {
-            let (listener_res, buyer_res) = tokio::join!(
-                listener_service::run_listener_service(),
-                buyer_service::run_buyer_service()
+            let results = tokio::join!(
+                buyer_service::run_buyer_service(),
+                checker_service::run_checker_service(),
+                listener_service::run_listener_webhook_service()
             );
-            listener_res?;
-            buyer_res?;
+            results.0?;
+            results.1?;
+            results.2?;
         }
         Command::ParsePool { signature } => {
             let provider = Provider::new(env("RPC_URL").to_string());
@@ -98,9 +99,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 &provider.get_tx(signature.as_str()).await?,
             )?;
             println!("{:?}", new_pool);
-        }
-        Command::BuyerService {} => {
-            buyer_service::run_buyer_service().await?;
         }
         Command::TopHolders { mint } => {
             let provider = Provider::new(env("RPC_URL").to_string());
@@ -262,12 +260,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await
             .expect("listen price");
         }
+        Command::CheckerService {} => {
+            checker_service::run_checker_service().await?;
+        }
+        Command::BuyerService {} => {
+            buyer_service::run_buyer_service().await?;
+        }
         Command::ListenerService { webhook } => {
             let webhook = webhook.unwrap_or(false);
             if webhook {
                 listener_service::run_listener_webhook_service().await?;
             } else {
-                listener_service::run_listener_service().await?;
+                listener_service::run_listener_pubsub_service().await?;
             }
         }
         Command::Swap {

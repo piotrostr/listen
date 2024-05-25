@@ -1,7 +1,6 @@
 use std::{error::Error, str::FromStr, sync::Arc};
 
 use crate::{
-    checker::Checklist,
     constants, jito,
     provider::Provider,
     raydium::{self, get_burn_pct},
@@ -11,7 +10,6 @@ use futures_util::StreamExt;
 use jito_searcher_client::get_searcher_client;
 use log::{debug, info, warn};
 use raydium_library::amm;
-use serde::{Deserialize, Serialize};
 use solana_account_decoder::UiAccountData;
 use solana_client::{
     nonblocking::{pubsub_client::PubsubClient, rpc_client::RpcClient},
@@ -22,14 +20,6 @@ use solana_sdk::{
     signature::Keypair, signer::EncodableKey,
 };
 use spl_token::state::Mint;
-
-#[derive(Debug, Serialize, Default, Deserialize)]
-pub struct TokenResult {
-    pub creation_signature: String,
-    pub timestamp_received: String,
-    pub timestamp_finalized: String,
-    pub checklist: Checklist,
-}
 
 pub async fn buy(
     amm_pool: &Pubkey,
