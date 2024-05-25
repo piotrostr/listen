@@ -1,8 +1,9 @@
+use base64::Engine;
 use core::panic;
 use log::info;
 use std::str::FromStr;
 
-use solana_sdk::pubkey::Pubkey;
+use solana_sdk::{pubkey::Pubkey, transaction::Transaction};
 use solana_transaction_status::{
     option_serializer::OptionSerializer,
     EncodedConfirmedTransactionWithStatusMeta, EncodedTransaction,
@@ -216,5 +217,26 @@ pub fn parse_instructions(
             UiMessage::Raw(_) => Err("Raw message not supported".into()),
         },
         _ => Err("Only EncodedTransaction::Json txs are supported".into()),
+    }
+}
+
+/// decode_tx decodes a base64 transaction (send from another txlisten service in Go)
+/// this won't be used since the transaction format differs to what is expected
+/// (EncodedTransactionWithStatusMeta in Rust)
+/// solana SDK is trashy I must say..
+pub fn decode_tx(raw_tx: String) -> Result<(), Box<dyn std::error::Error>> {
+    let raw_bytes = base64::prelude::BASE64_STANDARD.decode(&raw_tx)?;
+    let tx: Transaction = bincode::deserialize(&raw_bytes)?;
+
+    println!("{:?}", tx);
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn test_decode_tx() {
+        let raw_tx = "AUqzoqR28ec7nh+XuPEaQ8GDEJRtpdlg+kILyL1G2L7kQ836DqwhnP3AvpqaiR6TmcQAGXwITv5vf0kXu3gzkgeAAQAMF847x3GeLV4VO7eN63MSkgp+jLbu8dka4OKEBgV8ak44ib5hiJjILmxsUCBjFgn2Y4f7QVjWdziegObSFvuzPznNlQVsnTFEmlxsOoCriIOCXTyj25c2tlOF7ZzEKjvB26bZiJ4Hp1o/26BYg9csa7uNdsxPX+gRuGhVECd45oLs/YVwGKWUV2zfHZE2qkR1ddcRpoZU2qv56tYLo+pLf/dTU0/nk/TVeZYR3wgCK+eFqp79zzNVkIzse9MiwmTYW79BkWX5JaN29q8gjSENqQ6KzYMz1INh3Dn4T0F9MzYwI4WjpKu1O+YYZBbhsgVU7zh/COag0oI/cp40afjQFBlhUcscPp0g/YRKOoHODeiXX/AHv7/KUbB30tLvBJnYDkCJDBbp4Rc5wIo5MjGjRzeuQLlliyB4Fqg1PomFbG3fBAU+rsk3XIxisOEl64y2KaBE51AzJolm/VGwofTutTUDBkZv5SEXMv/srbpyw5vnvIzlu8X3EmssQ5s6QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABt324ddloZPZy+FGzut5rBy0he1fWzeROoz1hX7/AKkGm4hX/quBhPtof2NGGMA12sQ53BrrO1WYoPAAAAAAAQan1RcZLFxRIYzJTD1K8X9Y2u4Im6H9ROPb2YoAAAAAS9lJxDYCwz8gd5DtFqNSTKG5l1zxIaKpDP/sffi2is2MlyWPTiSJ8bs9ECkUjg2DC1oTmdr/EIQEjnvY2+n4WUFXsFgPMcX85EpiWC28+deO51lDoISjk7NQNo0iiZMI0hWQJd+mLVEHAODIJNao5niz8Efr3wgqrc/u/TZz5u15/f3z/y6DYV6qShd68DAYic45gTgcm5TTuPJ8CAeYLA0HUagoLaYTBf4pnDe5mOWEcdsRNQNzEPi+EEWmCvbu04oIcnkuTE3nX4rVkwcCBnT6Djny2yHDBDANkf2+Bz70YiUZmfT1BiEModHgTed58H5UTgPBni7NojS7m0KecAYLAAkDQUIPAAAAAAALAAUCQEIPAAwCAAF8AwAAAM47x3GeLV4VO7eN63MSkgp+jLbu8dka4OKEBgV8ak44IAAAAAAAAABGUFJScFpLOWs3Z21hOGlVc3BEd2JTaVlTUkZvVm45SvCRWqQLAAAApQAAAAAAAAAG3fbh12Whk9nL4UbO63msHLSF7V9bN5E6jPWFfv8AqQ0EAQ4ADwEBEBUNEQwPAhIDBBMOBQYHFAgVFgAJAQoaAf6421FmAAAAAAB0O6QLAAAAAADaSTtxfQwNAwEAAAEJAA==".to_string();
+        super::decode_tx(raw_tx).unwrap();
     }
 }

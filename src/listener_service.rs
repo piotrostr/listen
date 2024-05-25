@@ -135,6 +135,7 @@ async fn healthz() -> impl Responder {
 }
 
 pub async fn run_listener_webhook_service() -> std::io::Result<()> {
+    info!("Running listener service (webhooks) on 8079");
     HttpServer::new(|| App::new().service(handle_webhook).service(healthz))
         .bind(("127.0.0.1", 8079))?
         .run()
