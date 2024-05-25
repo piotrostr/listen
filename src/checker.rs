@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use base64::Engine;
-use dotenv_codegen::dotenv;
 use futures_util::StreamExt;
 use log::info;
 use serde::{Deserialize, Serialize};
@@ -21,7 +20,7 @@ use solana_transaction_status::{
 };
 use spl_token::state::Mint;
 
-use crate::{buyer::check_if_pump_fun, constants};
+use crate::{buyer::check_if_pump_fun, constants, util::env};
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Checklist {
@@ -126,7 +125,7 @@ pub async fn run_checks(
     signature: String,
 ) -> Result<(bool, Checklist), Box<dyn std::error::Error>> {
     let rpc_client = RpcClient::new_with_commitment(
-        dotenv!("RPC_URL").to_string(),
+        env("RPC_URL"),
         CommitmentConfig::confirmed(),
     );
     let tx = rpc_client
@@ -140,7 +139,11 @@ pub async fn run_checks(
         )
         .await?;
     let accounts = parse_accounts(&tx)?;
-    info!("{}: {}", signature, serde_json::to_string_pretty(&accounts).unwrap());
+    info!(
+        "{}: {}",
+        signature,
+        serde_json::to_string_pretty(&accounts).unwrap()
+    );
 
     let (sol_vault, mint) =
         if accounts.coin_mint.to_string() == constants::SOLANA_PROGRAM_ID {
@@ -164,7 +167,7 @@ pub async fn run_checks(
         return Ok((false, checklist));
     }
 
-    let pubsub_client = PubsubClient::new(dotenv!("WS_URL")).await?;
+    let pubsub_client = PubsubClient::new(&env("WS_URL")).await?;
 
     let (mut lp_stream, lp_unsub) = pubsub_client
         .account_subscribe(

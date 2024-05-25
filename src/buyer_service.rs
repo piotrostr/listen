@@ -1,8 +1,7 @@
-use crate::checker::run_checks;
-use crate::constants;
-use crate::{buyer, provider::Provider};
+use crate::{
+    buyer, checker::run_checks, constants, provider::Provider, util::env,
+};
 use actix_web::{web, App, HttpResponse, HttpServer, Responder};
-use dotenv_codegen::dotenv;
 use log::info;
 use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
@@ -20,7 +19,7 @@ pub async fn get_tx_async(
     signature: &str,
 ) -> Result<EncodedConfirmedTransactionWithStatusMeta, Box<dyn std::error::Error>>
 {
-    let rpc_client = RpcClient::new(dotenv!("RPC_URL").to_string());
+    let rpc_client = RpcClient::new(env("RPC_URL"));
     let sig = Signature::from_str(signature)?;
     let tx = rpc_client
         .get_transaction_with_config(
@@ -54,7 +53,7 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
         info!("{} Not OK", token_result.checklist.mint.to_string());
         return HttpResponse::Ok().json(token_result);
     }
-    let wallet = Keypair::read_from_file(dotenv!("FUND_KEYPAIR_PATH"))
+    let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
         .expect("read fund keypair");
     let accounts = &token_result.checklist.accounts;
     let (input_mint, output_mint) =
@@ -71,7 +70,7 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
         // must-have!
         5_000_000,
         &wallet,
-        &Provider::new(dotenv!("RPC_URL").to_string()),
+        &Provider::new(env("RPC_URL").to_string()),
     )
     .await
     {
@@ -85,6 +84,7 @@ async fn handle_new_pair(signature: web::Path<String>) -> impl Responder {
 }
 
 pub async fn run_buyer_service() -> std::io::Result<()> {
+    info!("Running buyer service on 8080");
     HttpServer::new(move || {
         App::new()
             .route("/new_pair/{signature}", web::get().to(handle_new_pair))

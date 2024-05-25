@@ -1,13 +1,12 @@
-use crate::{collector, constants};
+use crate::{collector, constants, util::env};
 use actix_web::{
     error, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
     Responder,
 };
-use dotenv_codegen::dotenv;
 use futures_util::StreamExt;
 use log::{info, warn};
 use solana_client::{
-    nonblocking,
+    nonblocking::pubsub_client::PubsubClient,
     rpc_config::{RpcTransactionLogsConfig, RpcTransactionLogsFilter},
 };
 use solana_sdk::commitment_config::CommitmentConfig;
@@ -15,11 +14,11 @@ use std::sync::Arc;
 
 pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
     tokio::spawn(async move {
+        println!("{}", env("WS_URL"));
         let collector = Arc::new(collector::new().await.expect("collector"));
-        let client =
-            nonblocking::pubsub_client::PubsubClient::new(dotenv!("WS_URL"))
-                .await
-                .expect("pubsub client async");
+        let client = PubsubClient::new(&env("WS_URL"))
+            .await
+            .expect("pubsub client async");
         let (mut notifications, unsub) = client
             .logs_subscribe(
                 RpcTransactionLogsFilter::Mentions(vec![
@@ -33,6 +32,7 @@ pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
             .expect("subscribe to logs");
         info!("Listening for LP events");
         while let Some(log) = notifications.next().await {
+            println!("{:?}", log);
             let collector = Arc::clone(&collector);
             if log.value.err.is_none() {
                 // tx.send(log).await.expect("send log");

@@ -1,3 +1,7 @@
+pub fn env(var: &str) -> String {
+    std::env::var(var).unwrap_or_else(|_| panic!("{} env var not set", var))
+}
+
 pub fn lamports_to_sol(lamports: u64) -> f64 {
     lamports as f64 / 1000000000.0
 }

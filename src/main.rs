@@ -1,4 +1,3 @@
-use dotenv_codegen::dotenv;
 use flexi_logger::{
     colored_default_format, Duplicate, FileSpec, Logger, WriteMode,
 };
@@ -6,6 +5,7 @@ use jito_protos::searcher::{MempoolSubscription, NextScheduledLeaderRequest};
 use jito_searcher_client::get_searcher_client;
 use raydium_library::amm;
 use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
+use util::env;
 
 use clap::Parser;
 use listen::{
@@ -48,8 +48,10 @@ fn log_format(
     )
 }
 
-#[tokio::main(flavor = "multi_thread", worker_threads = 10)]
+#[tokio::main(flavor = "multi_thread", worker_threads = 8)]
 async fn main() -> Result<(), Box<dyn Error>> {
+    dotenv::from_filename(".env").unwrap();
+
     let _logger = Logger::try_with_str("info")?
         .log_to_file(FileSpec::default())
         .format(log_format)
@@ -66,16 +68,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 163.;
     let app = App::parse();
 
-    let auth = Arc::new(
-        Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH")).unwrap(),
-    );
+    let auth =
+        Arc::new(Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap());
     match app.command {
         Command::Checks { signature } => {
             let (ok, checklist) = checker::run_checks(signature).await?;
             println!("ok? {}, {:?}", ok, checklist);
         }
         Command::Blockhash {} => {
-            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL").to_string());
             for _ in 0..3 {
                 let start = std::time::Instant::now();
                 let res = provider.rpc_client.get_latest_blockhash().await?;
@@ -92,7 +93,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             buyer_res?;
         }
         Command::ParsePool { signature } => {
-            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL").to_string());
             let new_pool = tx_parser::parse_new_pool(
                 &provider.get_tx(signature.as_str()).await?,
             )?;
@@ -102,15 +103,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
             buyer_service::run_buyer_service().await?;
         }
         Command::TopHolders { mint } => {
-            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL").to_string());
             let mint = Pubkey::from_str(mint.as_str()).unwrap();
             let (_, ok) = buyer::check_top_holders(&mint, &provider).await?;
             info!("Top holders check passed: {}", ok);
         }
         Command::ListenForSolPooled { amm_pool } => {
-            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL").to_string());
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
-                dotenv!("WS_URL"),
+                env("WS_URL").as_str(),
             )
             .await?;
             buyer::listen_for_sol_pooled(
@@ -121,9 +122,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
         }
         Command::ListenForBurn { amm_pool } => {
-            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL").to_string());
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
-                dotenv!("WS_URL"),
+                env("WS_URL").as_str(),
             )
             .await?;
             buyer::listen_for_burn(
@@ -134,7 +135,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
         }
         Command::TrackPosition { amm_pool, owner } => {
-            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL").to_string());
             let amm_pool = Pubkey::from_str(amm_pool.as_str())
                 .expect("amm pool is a valid pubkey");
 
@@ -204,7 +205,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 "ny".to_string(),
             ];
             let mut searcher_client =
-                get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &auth)
+                get_searcher_client(env("BLOCK_ENGINE_URL").as_str(), &auth)
                     .await
                     .expect("makes searcher client");
             for region in regions {
@@ -218,9 +219,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
         Command::MonitorSlots {} => {
-            Listener::new(dotenv!("WS_URL").to_string()).slot_subscribe()?;
+            Listener::new(env("WS_URL").to_string()).slot_subscribe()?;
             let mut searcher_client =
-                get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &auth)
+                get_searcher_client(env("BLOCK_ENGINE_URL").as_str(), &auth)
                     .await
                     .expect("makes searcher client");
             let _ = searcher_client
@@ -231,7 +232,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::BenchRPC { rpc_url } => rpc::eval_rpc(rpc_url.as_str()),
         Command::PriorityFee {} => {
-            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL").to_string());
             println!(
                 "{:?}",
                 provider
@@ -247,9 +248,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             );
         }
         Command::Price { amm_pool } => {
-            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL").to_string());
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
-                dotenv!("WS_URL"),
+                env("WS_URL").as_str(),
             )
             .await?;
             let amm_pool = Pubkey::from_str(amm_pool.as_str())?;
@@ -278,7 +279,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             dex,
             amm_pool_id,
         } => {
-            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL").to_string());
             let raydium = Raydium::new();
             let jup = Jupiter::new();
             let start = std::time::Instant::now();
@@ -358,7 +359,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             return Ok(());
         }
         Command::Wallet {} => {
-            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             let path = match app.args.keypair_path {
                 Some(path) => path,
                 None => {
@@ -373,7 +374,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             info!("Balance: {} lamports", balance);
         }
         Command::Tx { signature } => {
-            let provider = Provider::new(dotenv!("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL").to_string());
             let tx = provider.get_tx(signature.as_str()).await?;
             info!("Tx: {}", serde_json::to_string_pretty(&tx)?);
             let mint = tx_parser::parse_mint(&tx)?;
@@ -396,7 +397,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             worker_count,
             buffer_size,
         } => {
-            let listener = Listener::new(dotenv!("WS_URL").to_string());
+            let listener = Listener::new(env("WS_URL"));
             let (transactions_received, transactions_processed, registry) =
                 prometheus::setup_metrics();
 
@@ -416,8 +417,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let pool: Vec<_> = (0..worker_count as usize)
                 .map(|_| {
                     let rx = Arc::clone(&rx);
-                    let provider =
-                        Provider::new(dotenv!("RPC_URL").to_string());
+                    let provider = Provider::new(env("RPC_URL").to_string());
                     let transactions_processed = transactions_processed.clone();
                     tokio::spawn(async move {
                         while let Some(log) = rx.lock().await.recv().await {

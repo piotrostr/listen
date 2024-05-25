@@ -1,4 +1,3 @@
-use dotenv_codegen::dotenv;
 use mongodb::{
     bson::{Bson, Document},
     options::ClientOptions,
@@ -6,14 +5,14 @@ use mongodb::{
 };
 use std::error::Error;
 
-use crate::buyer::TokenResult;
+use crate::{buyer::TokenResult, util::env};
 
 pub struct Collector {
     collection: Collection<Document>,
 }
 
 pub async fn new() -> Result<Collector, Box<dyn Error>> {
-    let client_options = ClientOptions::parse(dotenv!("MONGO_URL")).await?;
+    let client_options = ClientOptions::parse(&env("MONGO_URL")).await?;
     let client = Client::with_options(client_options)?;
 
     let db = client.database("db");

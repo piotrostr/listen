@@ -1,12 +1,12 @@
 #![cfg(test)]
 use std::str::FromStr;
 
-use dotenv_codegen::dotenv;
 use solana_sdk::{program_pack::Pack, pubkey::Pubkey};
 use spl_token::state::Mint;
 
 use crate::{
     buyer::check_top_holders, constants, provider::Provider, tx_parser,
+    util::env,
 };
 
 const RPC_URL: &str = "https://api.mainnet-beta.solana.com";
@@ -79,11 +79,9 @@ fn test_parse_mint_acc() {
 async fn test_gets_top_holders() {
     let mint = Pubkey::from_str("D2oKMNHb94DSgvibQxCweZPrbFEhayKBQ5eaPMC4Dvnv")
         .unwrap();
-    let (_, ok) = check_top_holders(
-        &mint,
-        &Provider::new(dotenv!("RPC_URL").to_string()),
-    )
-    .await
-    .unwrap();
+    let (_, ok) =
+        check_top_holders(&mint, &Provider::new(env("RPC_URL").to_string()))
+            .await
+            .unwrap();
     assert!(ok);
 }

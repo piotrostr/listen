@@ -5,8 +5,8 @@ use crate::{
     constants, jito,
     provider::Provider,
     raydium::{self, get_burn_pct},
+    util::env,
 };
-use dotenv_codegen::dotenv;
 use futures_util::StreamExt;
 use jito_searcher_client::get_searcher_client;
 use log::{debug, info, warn};
@@ -61,10 +61,10 @@ pub async fn buy(
     info!("took {:?} to pack", start.elapsed());
 
     let tip = 50000;
-    let auth = Keypair::read_from_file(dotenv!("AUTH_KEYPAIR_PATH"))
+    let auth = Keypair::read_from_file(env("AUTH_KEYPAIR_PATH"))
         .expect("read auth keypair");
     let mut searcher_client =
-        get_searcher_client(dotenv!("BLOCK_ENGINE_URL"), &Arc::new(auth))
+        get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth))
             .await
             .expect("makes searcher client");
 
