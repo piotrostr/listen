@@ -225,7 +225,7 @@ pub fn parse_instructions(
 /// (EncodedTransactionWithStatusMeta in Rust)
 /// solana SDK is trashy I must say..
 pub fn decode_tx(raw_tx: String) -> Result<(), Box<dyn std::error::Error>> {
-    let raw_bytes = base64::prelude::BASE64_STANDARD.decode(&raw_tx)?;
+    let raw_bytes = base64::prelude::BASE64_STANDARD.decode(raw_tx)?;
     let tx: Transaction = bincode::deserialize(&raw_bytes)?;
 
     println!("{:?}", tx);

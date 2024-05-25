@@ -1,20 +1,24 @@
-use crate::{collector, constants, util::env};
+use crate::{
+    buyer_service::ParsedPayload, checker::PoolAccounts, collector, constants,
+    util::env,
+};
 use actix_web::{
     error, get, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
     Responder,
 };
 use futures_util::StreamExt;
-use log::{info, warn};
+use log::{debug, info, warn};
+use serde_json::Value;
 use solana_client::{
     nonblocking::pubsub_client::PubsubClient,
     rpc_config::{RpcTransactionLogsConfig, RpcTransactionLogsFilter},
 };
-use solana_sdk::commitment_config::CommitmentConfig;
-use std::sync::Arc;
+use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
+use std::{str::FromStr, sync::Arc};
 
 pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
+    println!("{}", env("WS_URL"));
     tokio::spawn(async move {
-        println!("{}", env("WS_URL"));
         let collector = Arc::new(collector::new().await.expect("collector"));
         let client = PubsubClient::new(&env("WS_URL"))
             .await
@@ -35,7 +39,6 @@ pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
             println!("{:?}", log);
             let collector = Arc::clone(&collector);
             if log.value.err.is_none() {
-                // tx.send(log).await.expect("send log");
                 tokio::spawn(async move {
                     for _ in 0..3 {
                         info!("passing log {}", log.value.signature);
@@ -94,11 +97,11 @@ pub async fn run_listener_service() -> Result<(), Box<dyn std::error::Error>> {
 }
 
 #[post("/")]
-async fn handle_webhook(
+async fn receive_webhook(
     req: HttpRequest,
     mut payload: web::Payload,
 ) -> Result<HttpResponse, Error> {
-    dbg!(req);
+    debug!("webhook request: {:?}", req);
     info!(
         "received webhook at timestamp (unix) {}",
         chrono::Utc::now().timestamp()
@@ -115,29 +118,130 @@ async fn handle_webhook(
         body.extend_from_slice(&chunk);
     }
 
-    let obj = serde_json::from_slice::<serde_json::Value>(&body)?;
-    info!("{}", serde_json::to_string_pretty(&obj).unwrap());
+    let data = serde_json::from_slice::<Value>(&body)?
+        .as_array()
+        .unwrap()
+        .first()
+        .unwrap()
+        .clone();
 
-    // reqwest::get(format!(
-    //     "http://localhost:8080/signature/{}",
-    //     obj["signature"].as_str().unwrap()
-    // ))
-    // .await
-    // .unwrap();
+    debug!("{}", serde_json::to_string_pretty(&data).unwrap());
+
+    if !data["instructions"].is_array() {
+        return Ok(HttpResponse::BadRequest().body("instructions not array"));
+    }
+
+    tokio::spawn(async move {
+        reqwest::Client::new()
+            .post("http://localhost:8079/handler")
+            .json(&data)
+            .send()
+            .await
+            .expect("pass on");
+    });
+
+    Ok(HttpResponse::Ok().finish())
+}
+
+#[post("/handler")]
+async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
+    let signature = data["signature"].as_str().unwrap().to_string();
+
+    for instruction in data["instructions"].as_array().unwrap() {
+        let accounts = instruction["accounts"].as_array().unwrap();
+        if accounts.len() == 21 {
+            info!("found LP instruction");
+            let amm_pool =
+                Pubkey::from_str(accounts[4].as_str().unwrap()).unwrap();
+            let lp_mint =
+                Pubkey::from_str(accounts[7].as_str().unwrap()).unwrap();
+            let coin_mint =
+                Pubkey::from_str(accounts[8].as_str().unwrap()).unwrap();
+            let pc_mint =
+                Pubkey::from_str(accounts[9].as_str().unwrap()).unwrap();
+            let pool_coin_token_account =
+                Pubkey::from_str(accounts[10].as_str().unwrap()).unwrap();
+            let pool_pc_token_account =
+                Pubkey::from_str(accounts[11].as_str().unwrap()).unwrap();
+            let user_wallet =
+                Pubkey::from_str(accounts[17].as_str().unwrap()).unwrap();
+            let user_token_coin =
+                Pubkey::from_str(accounts[18].as_str().unwrap()).unwrap();
+            let user_token_pc =
+                Pubkey::from_str(accounts[19].as_str().unwrap()).unwrap();
+            let user_lp_token =
+                Pubkey::from_str(accounts[20].as_str().unwrap()).unwrap();
+            let pool_accounts = PoolAccounts {
+                amm_pool,
+                lp_mint,
+                coin_mint,
+                pc_mint,
+                pool_coin_token_account,
+                pool_pc_token_account,
+                user_wallet,
+                user_token_coin,
+                user_token_pc,
+                user_lp_token,
+            };
+            let client = reqwest::Client::new();
+            let parsed_payload = ParsedPayload {
+                signature: signature.clone(),
+                accounts: pool_accounts,
+                slot: data["slot"].as_u64().unwrap(),
+            };
+            let mut backoff = 2;
+            for _ in 0..3 {
+                info!(
+                    "passing {}",
+                    serde_json::to_string_pretty(&parsed_payload).unwrap()
+                );
+                match client
+                    .post("http://localhost:8080/parsed")
+                    .json(&parsed_payload)
+                    .send()
+                    .await
+                {
+                    Ok(response) => {
+                        info!(
+                            "response: {}",
+                            serde_json::to_string_pretty(
+                                &response.json::<Value>().await.unwrap()
+                            )
+                            .unwrap()
+                        );
+                        break;
+                    }
+                    Err(e) => {
+                        warn!("error, backing off: {}", e);
+                        tokio::time::sleep(tokio::time::Duration::from_secs(
+                            backoff,
+                        ))
+                        .await;
+                        backoff *= 2;
+                    }
+                }
+            }
+        }
+    }
 
     // body is loaded, now we can deserialize serde-json
     Ok(HttpResponse::Ok().body("ok"))
 }
 
 #[get("/healthz")]
-async fn healthz() -> impl Responder {
+pub async fn healthz() -> impl Responder {
     HttpResponse::Ok().body("im ok")
 }
 
 pub async fn run_listener_webhook_service() -> std::io::Result<()> {
     info!("Running listener service (webhooks) on 8079");
-    HttpServer::new(|| App::new().service(handle_webhook).service(healthz))
-        .bind(("127.0.0.1", 8079))?
-        .run()
-        .await
+    HttpServer::new(|| {
+        App::new()
+            .service(receive_webhook)
+            .service(handle_webhook)
+            .service(healthz)
+    })
+    .bind(("127.0.0.1", 8079))?
+    .run()
+    .await
 }

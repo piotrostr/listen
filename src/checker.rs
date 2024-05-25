@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use base64::Engine;
 use futures_util::StreamExt;
-use log::info;
+use log::{debug, info};
 use serde::{Deserialize, Serialize};
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
 use solana_client::{
@@ -37,6 +37,17 @@ pub struct Checklist {
         deserialize_with = "string_to_pubkey"
     )]
     pub mint: Pubkey,
+}
+
+impl Checklist {
+    pub fn all_clear(&self) -> bool {
+        !self.is_pump_fun
+            && self.lp_burnt
+            && self.mint_authority_renounced
+            && self.freeze_authority_renounced
+            && !self.timeout
+            && self.sol_pooled >= 6.9
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug, Default, Clone, Copy)]
@@ -144,7 +155,15 @@ pub async fn run_checks(
         signature,
         serde_json::to_string_pretty(&accounts).unwrap()
     );
+    let (ok, checklist) = _run_checks(&rpc_client, accounts, tx.slot).await?;
+    Ok((ok, checklist))
+}
 
+pub async fn _run_checks(
+    rpc_client: &RpcClient,
+    accounts: PoolAccounts,
+    slot: u64,
+) -> Result<(bool, Checklist), Box<dyn std::error::Error>> {
     let (sol_vault, mint) =
         if accounts.coin_mint.to_string() == constants::SOLANA_PROGRAM_ID {
             (accounts.pool_coin_token_account, accounts.pc_mint)
@@ -153,7 +172,7 @@ pub async fn run_checks(
         };
 
     let mut checklist = Checklist {
-        slot: tx.slot,
+        slot,
         accounts,
         mint,
         ..Default::default()
@@ -205,37 +224,64 @@ pub async fn run_checks(
         .await?;
 
     let accounts = &rpc_client
-        .get_multiple_accounts(&[accounts.user_lp_token, mint])
+        .get_multiple_accounts(&[accounts.user_lp_token, mint, sol_vault])
         .await?[..];
-    let account = match accounts[0].clone() {
-        Some(account) => account,
-        None => {
-            return Err("Could not get account user lp account".into());
+    if accounts.iter().all(|x| x.is_some()) {
+        let account = match accounts[0].clone() {
+            Some(account) => account,
+            None => {
+                return Err("Could not get account user lp account".into());
+            }
+        };
+        let lp_account =
+            spl_token::state::Account::unpack(&account.data).unwrap();
+        if lp_account.amount == 0 {
+            checklist.lp_burnt = true;
         }
-    };
-    let lp_account = spl_token::state::Account::unpack(&account.data).unwrap();
-    if lp_account.amount == 0 {
-        checklist.lp_burnt = true;
+
+        // generally, if checks pass might skip subbing to the mint stream, same with lp stream
+        let account = match accounts[1].clone() {
+            Some(account) => account,
+            None => {
+                return Err("Could not get account mint".into());
+            }
+        };
+        let mint_account = Mint::unpack(&account.data).unwrap();
+        if mint_account.mint_authority.is_none() {
+            checklist.mint_authority_renounced = true;
+        }
+        if mint_account.freeze_authority.is_none() {
+            checklist.freeze_authority_renounced = true;
+        }
+        if checklist.all_clear() {
+            return Ok((true, checklist));
+        }
+
+        let account = match accounts[2].clone() {
+            Some(account) => account,
+            None => {
+                return Err("Could not get account sol vault".into());
+            }
+        };
+        let sol_pooled = account.lamports as f64 / 10u64.pow(9) as f64;
+        checklist.sol_pooled = sol_pooled;
+        // this is the only check that can terminate prematurely
+        if sol_pooled < 6.9 {
+            return Ok((false, checklist));
+        }
+    } else {
+        info!("didnt get all accounts, listening")
     }
 
-    // generally, if checks pass might skip subbing to the mint stream, same with lp stream
-    let account = match accounts[1].clone() {
-        Some(account) => account,
-        None => {
-            return Err("Could not get account mint".into());
-        }
-    };
-    let mint_account = Mint::unpack(&account.data).unwrap();
-    if mint_account.mint_authority.is_none() {
-        checklist.mint_authority_renounced = true;
-    }
-    if mint_account.freeze_authority.is_none() {
-        checklist.freeze_authority_renounced = true;
-    }
+    info!(
+        "initial checks, continuing to listen: {}",
+        serde_json::to_string_pretty(&checklist).unwrap()
+    );
 
     let ok = loop {
         tokio::select! {
-            lp_log = lp_stream.next() => {
+            lp_log = lp_stream.next(), if !checklist.lp_burnt => {
+                debug!("lp log received");
                 if let UiAccountData::Binary(data, UiAccountEncoding::Base64) = lp_log.unwrap().value.data {
                     let log_data = base64::prelude::BASE64_STANDARD.decode(data).unwrap();
                     let lp_account = spl_token::state::Account::unpack(&log_data).unwrap();
@@ -246,6 +292,7 @@ pub async fn run_checks(
             }
             // this is the only way to get out of the loop without timeout, intended behaviour
             vault_log = sol_vault_stream.next() => {
+                debug!("vault log received");
                 // the amount of sol is there as lamports straight in the log
                 let vault_log = vault_log.unwrap();
                 let sol_pooled = vault_log.value.lamports as f64 / 10u64.pow(9) as f64;
@@ -255,11 +302,12 @@ pub async fn run_checks(
                 }
                 // this might run for a long time, if no rugpull happens but the
                 // mint authority is not renounced, worth adding a timeout
-                if checklist.mint_authority_renounced && checklist.freeze_authority_renounced && checklist.lp_burnt {
-                   break true;
+                if checklist.all_clear() {
+                    break true;
                 }
             }
-            mint_log = mint_stream.next() => {
+            mint_log = mint_stream.next(), if !checklist.freeze_authority_renounced || !checklist.mint_authority_renounced => {
+                debug!("mint log received");
                 if let UiAccountData::Binary(data, UiAccountEncoding::Base64) = mint_log.unwrap().value.data {
                     let log_data = base64::prelude::BASE64_STANDARD.decode(data).unwrap();
                     let mint_data = Mint::unpack(&log_data).unwrap();
