@@ -20,6 +20,9 @@ pub struct Args {
 
     #[arg(short, long)]
     pub keypair_path: Option<String>,
+
+    #[arg(long, action = clap::ArgAction::SetTrue)]
+    pub tokio_console: Option<bool>,
 }
 
 #[derive(Debug, Parser)]

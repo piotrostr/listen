@@ -59,13 +59,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
         .duplicate_to_stdout(Duplicate::Info)
         .start()?;
 
-    console_subscriber::init();
+    let app = App::parse();
+
+    if app.args.tokio_console.unwrap_or(false) {
+        console_subscriber::init();
+    }
 
     // 30th April, let's see how well this ages lol (was 135.)
     // 13th May, still going strong with the algo, now at 145
     // 16th May 163, I paperhanded 20+ SOL :(
     let sol_price = 163.;
-    let app = App::parse();
 
     let auth =
         Arc::new(Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap());
