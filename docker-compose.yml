@@ -1,8 +1,6 @@
 services:
   listener:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: piotrostr/listen
     ports:
       - "8078:8078"
     volumes:
@@ -12,9 +10,7 @@ services:
       - CHECKER_URL=http://checker:8079
     restart: always
   checker:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: piotrostr/listen
     ports:
       - "8079:8079"
     volumes:
@@ -24,9 +20,7 @@ services:
       - BUYER_URL=http://buyer:8080
     restart: always
   buyer:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: piotrostr/listen
     ports:
       - "8080:8080"
     volumes:
