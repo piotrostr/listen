@@ -1,6 +1,6 @@
 use crate::{
     checker::PoolAccounts,
-    checker_service::ParsedPayload,
+    checker_service::ChecksRequest,
     collector, constants,
     util::{env, healthz},
 };
@@ -153,7 +153,7 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
                 user_lp_token,
             };
             let client = reqwest::Client::new();
-            let parsed_payload = ParsedPayload {
+            let checks_request = ChecksRequest {
                 signature: signature.clone(),
                 accounts: pool_accounts,
                 slot: data["slot"].as_u64().unwrap(),
@@ -163,11 +163,11 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
             for _ in 0..3 {
                 info!(
                     "passing {}",
-                    serde_json::to_string_pretty(&parsed_payload).unwrap()
+                    serde_json::to_string_pretty(&checks_request).unwrap()
                 );
                 match client
                     .post(env("CHECKER_URL") + "/checks")
-                    .json(&parsed_payload)
+                    .json(&checks_request)
                     .send()
                     .await
                 {

@@ -15,7 +15,7 @@ use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 
 #[derive(Deserialize, Serialize)]
-pub struct ParsedPayload {
+pub struct ChecksRequest {
     pub signature: String,
     pub accounts: PoolAccounts,
     pub slot: u64,
@@ -31,21 +31,25 @@ pub struct TokenResult {
 }
 
 #[post("/checks")]
-pub async fn handle_checks(payload: Json<ParsedPayload>) -> Result<HttpResponse, Error> {
-    info!("handling {} ({})", payload.signature, payload.slot);
+pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpResponse, Error> {
+    info!(
+        "handling checks request {}",
+        serde_json::to_string_pretty(&checks_request)?
+    );
     let mut token_result = TokenResult {
-        creation_signature: payload.signature.clone(),
+        creation_signature: checks_request.signature.clone(),
         timestamp_received: chrono::Utc::now().to_rfc3339(),
         ..Default::default()
     };
     let rpc_client = RpcClient::new(env("RPC_URL"));
-    let (ok, checklist) = match _run_checks(&rpc_client, payload.accounts, payload.slot).await {
-        Ok((ok, checklist)) => (ok, checklist),
-        Err(e) => {
-            return Ok(HttpResponse::InternalServerError()
-                .json(json!({ "error": format!("Error running checks: {}", e)})));
-        }
-    };
+    let (ok, checklist) =
+        match _run_checks(&rpc_client, checks_request.accounts, checks_request.slot).await {
+            Ok((ok, checklist)) => (ok, checklist),
+            Err(e) => {
+                return Ok(HttpResponse::InternalServerError()
+                    .json(json!({ "error": format!("Error running checks: {}", e)})));
+            }
+        };
     let output_mint = checklist.mint;
     token_result.checklist = checklist;
     if !ok {
@@ -59,7 +63,14 @@ pub async fn handle_checks(payload: Json<ParsedPayload>) -> Result<HttpResponse,
         token_result.checklist.mint.to_string()
     );
 
-    let amm_pool = payload.accounts.amm_pool;
+    let sol_vault = if checks_request.accounts.coin_mint.to_string() == constants::SOLANA_PROGRAM_ID
+    {
+        checks_request.accounts.pool_coin_token_account
+    } else {
+        checks_request.accounts.pool_pc_token_account
+    };
+
+    let amm_pool = checks_request.accounts.amm_pool;
     let input_mint = Pubkey::from_str(constants::SOLANA_PROGRAM_ID).unwrap();
     tokio::spawn(async move {
         let client = reqwest::Client::new();
@@ -69,7 +80,8 @@ pub async fn handle_checks(payload: Json<ParsedPayload>) -> Result<HttpResponse,
                 amm_pool,
                 input_mint,
                 output_mint,
-                amount: 100_000_000,
+                sol_vault,
+                amount: 50_000_000,
             })
             .send()
             .await

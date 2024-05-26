@@ -1,3 +1,5 @@
+use crate::seller::get_sol_pooled_vault;
+use crate::seller_service::SellRequest;
 use crate::util::healthz;
 use crate::{
     buyer,
@@ -31,6 +33,7 @@ pub struct BuyRequest {
         deserialize_with = "string_to_pubkey"
     )]
     pub output_mint: Pubkey,
+    pub sol_vault: Pubkey,
     pub amount: u64,
 }
 
@@ -41,18 +44,35 @@ async fn handle_buy(buy_request: Json<BuyRequest>) -> Result<HttpResponse, Error
         serde_json::to_string_pretty(&buy_request)?
     );
     let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read fund keypair");
+    let provider = &Provider::new(env("RPC_URL").to_string());
     match buyer::buy(
         &buy_request.amm_pool,
         &buy_request.input_mint,
         &buy_request.output_mint,
         buy_request.amount,
         &wallet,
-        &Provider::new(env("RPC_URL").to_string()),
+        &provider,
     )
     .await
     {
         Ok(_) => {
             info!("OK");
+            let sol_pooled_when_bought =
+                get_sol_pooled_vault(&buy_request.sol_vault, &provider.rpc_client).await;
+            tokio::spawn(async move {
+                reqwest::Client::new()
+                    .post(env("SELLER_URL") + "/sell")
+                    .json(&SellRequest {
+                        amm_pool: buy_request.amm_pool,
+                        input_mint: buy_request.output_mint,
+                        output_mint: buy_request.input_mint,
+                        sol_vault: buy_request.sol_vault,
+                        sol_pooled_when_bought,
+                    })
+                    .send()
+                    .await
+                    .expect("send sell request");
+            });
             Ok(HttpResponse::Ok().json(json!({"status": "OK"})))
         }
         Err(e) => Ok(HttpResponse::InternalServerError().body(format!("{}", e))),

@@ -12,7 +12,7 @@ use listen::{
     jup::Jupiter,
     listener_service, prometheus,
     raydium::{self, Raydium, SwapArgs},
-    rpc, seller, tx_parser, util, BlockAndProgramSubscribable, Listener, Provider,
+    rpc, seller, seller_service, tx_parser, util, BlockAndProgramSubscribable, Listener, Provider,
 };
 use solana_client::{
     nonblocking,
@@ -157,6 +157,20 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 tokio::time::sleep(Duration::from_secs(1)).await;
             }
         }
+        Command::MonitorMempool {} => {
+            let auth =
+                Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).expect("read auth keypair");
+            let mut searcher_client =
+                get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth))
+                    .await
+                    .expect("makes searcher client");
+            let res = searcher_client
+                .subscribe_mempool(MempoolSubscription {
+                    ..Default::default()
+                })
+                .await?;
+            info!("{:?}", res);
+        }
         Command::MonitorLeaders {} => {
             let regions = vec![
                 "frankfurt".to_string(),
@@ -220,6 +234,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::BuyerService {} => {
             buyer_service::run_buyer_service().await?;
+        }
+        Command::SellerService {} => {
+            seller_service::run_seller_service().await?;
         }
         Command::ListenerService { webhook } => {
             let webhook = webhook.unwrap_or(false);

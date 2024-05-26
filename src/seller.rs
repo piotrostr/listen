@@ -67,6 +67,11 @@ pub fn clear() {
     print!("\x1b[2J\x1b[1;1H");
 }
 
+pub async fn get_sol_pooled_vault(vault: &Pubkey, rpc_client: &RpcClient) -> f64 {
+    let sol_pooled = rpc_client.get_account(vault).await.unwrap().lamports;
+    sol_pooled as f64 / 10u64.pow(9) as f64
+}
+
 pub async fn get_sol_pooled(amm_pool: &Pubkey, rpc_client: &RpcClient) -> f64 {
     let amm_info = unpack::<AmmInfo>(
         &rpc_client

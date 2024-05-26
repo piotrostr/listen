@@ -27,6 +27,8 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    MonitorMempool {},
+    SellerService {},
     CheckerService {},
     Checks {
         #[arg(long)]

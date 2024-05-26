@@ -33,3 +33,15 @@ services:
       - ./fund.json:/fund.json
     command: ["listen", "buyer-service"]
     restart: always
+    environment:
+      - SELLER_URL=http://seller:8081
+  seller:
+    image: piotrostr/listen
+    ports:
+      - "8081:8081"
+    volumes:
+      - ./.env:/.env
+      - ./auth.json:/auth.json
+      - ./fund.json:/fund.json
+    command: ["listen", "seller-service"]
+    restart: always
