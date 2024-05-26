@@ -20,7 +20,7 @@ services:
       - BUYER_URL=http://buyer:8080
     restart: always
     deploy:
-      replicas: 3
+      replicas: 4
       mode: replicated
       endpoint_mode: vip
   buyer:
@@ -45,3 +45,7 @@ services:
       - ./fund.json:/fund.json
     command: ["listen", "seller-service"]
     restart: always
+    deploy:
+      replicas: 2
+      mode: replicated
+      endpoint_mode: vip
