@@ -12,12 +12,49 @@ swiss-knife, has a bunch of stuff useful when trading shitcoins on Raydium
 Be careful as the default usage was on mainnet with small txs, be sure to set
 the URLs and signer keypair to testnet
 
+```txt
+Usage: listen [OPTIONS] <COMMAND>
+
+Commands:
+  checker-service
+  checks
+  blockhash
+  listen-for-sol-pooled
+  buyer-service
+  track-position
+  top-holders
+  monitor-leaders
+  monitor-slots
+  price
+  bench-rpc
+  priority-fee
+  tx
+  listen
+  listen-for-burn
+  listener-service
+  snipe
+  wallet
+  parse-pool
+  swap
+  help                   Print this message or the help of the given subcommand(s)
+
+Options:
+  -u, --url <URL>                    [default: https://api.mainnet-beta.solana.com]
+  -w, --ws-url <WS_URL>              [default: wss://api.mainnet-beta.solana.com]
+  -k, --keypair-path <KEYPAIR_PATH>
+      --tokio-console
+  -h, --help                         Print help
+  -V, --version                      Print version
+```
+
 ## Requirements
 
 0. Install Rust
 1. Install `protoc`, `build-essential`, `pkg-config`, `libssl-dev`
-2. Copy over `.env.example` into `.env`, plug your RPCs (otherwise uses solana default public RPCs)
-3. Copy over `auth.json` - JITO authentication keypair and `fund.json` - the keypair with some SOL to fund the endeavour
+2. Copy over `.env.example` into `.env`, plug your RPCs (otherwise uses solana
+   default public RPCs)
+3. Copy over `auth.json` - JITO authentication keypair and `fund.json` - the
+   keypair with some SOL to fund the endeavour
 4. Enable Rust Nightly and `cargo build --release`
 5. Run the `./run-systemd-services.sh` to run the microservices
 
