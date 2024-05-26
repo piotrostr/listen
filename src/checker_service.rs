@@ -19,6 +19,7 @@ pub struct ParsedPayload {
     pub signature: String,
     pub accounts: PoolAccounts,
     pub slot: u64,
+    pub initial_sol_pooled: f64,
 }
 
 #[derive(Debug, Serialize, Default, Deserialize)]
@@ -53,6 +54,11 @@ pub async fn handle_checks(payload: Json<ParsedPayload>) -> Result<HttpResponse,
         return Ok(HttpResponse::Ok().json(token_result));
     }
 
+    info!(
+        "{} OK, sending to buyer",
+        token_result.checklist.mint.to_string()
+    );
+
     let amm_pool = payload.accounts.amm_pool;
     let input_mint = Pubkey::from_str(constants::SOLANA_PROGRAM_ID).unwrap();
     tokio::spawn(async move {
@@ -83,6 +89,7 @@ pub async fn handle_checks(payload: Json<ParsedPayload>) -> Result<HttpResponse,
         }
     });
 
+    token_result.timestamp_finalized = chrono::Utc::now().to_rfc3339();
     Ok(HttpResponse::Ok().json(token_result))
 }
 

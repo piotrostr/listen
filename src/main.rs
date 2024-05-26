@@ -1,4 +1,4 @@
-use flexi_logger::{colored_default_format, Duplicate, FileSpec, Logger, WriteMode};
+use flexi_logger::{colored_detailed_format, Duplicate, Logger, WriteMode};
 use jito_protos::searcher::{MempoolSubscription, NextScheduledLeaderRequest};
 use jito_searcher_client::get_searcher_client;
 use raydium_library::amm;
@@ -27,31 +27,12 @@ use tokio::sync::Mutex;
 
 use log::{error, info};
 
-fn log_format(
-    writer: &mut dyn std::io::Write,
-    now: &mut flexi_logger::DeferredNow,
-    record: &log::Record,
-) -> std::io::Result<()> {
-    writeln!(
-        writer,
-        "{} [{}] {} [{}:{}] {}\n",
-        now.now().format("%Y-%m-%d %H:%M:%S"),
-        record.level(),
-        record.target(),
-        record.file().unwrap_or("<unknown>"),
-        record.line().unwrap_or(0),
-        record.args()
-    )
-}
-
 #[tokio::main(flavor = "multi_thread", worker_threads = 8)]
 async fn main() -> Result<(), Box<dyn Error>> {
     dotenv::from_filename(".env").unwrap();
 
     let _logger = Logger::try_with_str("info")?
-        .log_to_file(FileSpec::default())
-        .format(log_format)
-        .format_for_stdout(colored_default_format)
+        .format(colored_detailed_format)
         .write_mode(WriteMode::Async)
         .duplicate_to_stdout(Duplicate::Info)
         .start()?;

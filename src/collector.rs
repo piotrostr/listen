@@ -37,7 +37,7 @@ impl Collector {
 
 #[cfg(test)]
 mod tests {
-    use crate::buyer::TokenResult;
+    use crate::checker_service::TokenResult;
 
     #[tokio::test]
     async fn test_collector() {

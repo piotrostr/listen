@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use base64::Engine;
 use futures_util::StreamExt;
-use log::{debug, info};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
 use solana_client::{
@@ -255,6 +255,10 @@ pub async fn _run_checks(
                 debug!("lp log received");
                 if let UiAccountData::Binary(data, UiAccountEncoding::Base64) = lp_log.unwrap().value.data {
                     let log_data = base64::prelude::BASE64_STANDARD.decode(data).unwrap();
+                    if log_data.is_empty() {
+                        warn!("empty log data");
+                        continue;
+                    }
                     let lp_account = spl_token::state::Account::unpack(&log_data).unwrap();
                     if lp_account.amount == 0 {
                         checklist.lp_burnt = true;

@@ -157,6 +157,7 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
                 signature: signature.clone(),
                 accounts: pool_accounts,
                 slot: data["slot"].as_u64().unwrap(),
+                initial_sol_pooled: -1.,
             };
             let mut backoff = 2;
             for _ in 0..3 {
