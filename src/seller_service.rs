@@ -55,6 +55,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
     let amount = provider
         .get_spl_balance(&wallet.pubkey(), &sell_request.input_mint)
         .await?;
+    info!("balance: {}", amount);
     let pubsub_client = PubsubClient::new(&env("WS_URL"))
         .await
         .expect("pubsub client async");
