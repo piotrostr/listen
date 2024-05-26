@@ -70,7 +70,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
         let sol_pooled = log.value.lamports as f64 / 10u64.pow(9) as f64;
         info!("sol_pooled: {}", sol_pooled);
         if sol_pooled >= sell_request.sol_pooled_when_bought * 1.8
-            || sol_pooled <= sell_request.sol_pooled_when_bought * 0.7
+            || sol_pooled <= sell_request.sol_pooled_when_bought * 0.75
         {
             info!("selling");
             break;

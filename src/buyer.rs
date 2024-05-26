@@ -66,6 +66,8 @@ pub async fn buy(
 
     info!("{:?}", swap_result);
 
+    drop(searcher_client);
+
     Ok(())
 }
 

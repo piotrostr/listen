@@ -161,10 +161,7 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
             };
             let mut backoff = 2;
             for _ in 0..3 {
-                info!(
-                    "passing {}",
-                    serde_json::to_string_pretty(&checks_request).unwrap()
-                );
+                info!("passing checks request");
                 match client
                     .post(env("CHECKER_URL") + "/checks")
                     .json(&checks_request)
