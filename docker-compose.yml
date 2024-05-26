@@ -1,0 +1,37 @@
+services:
+  listener:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8078:8078"
+    volumes:
+      - ./.env:/.env
+    command: ["listen", "listener-service", "--webhook"]
+    environment:
+      - CHECKER_URL=http://checker:8079
+    restart: always
+  checker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8079:8079"
+    volumes:
+      - ./.env:/.env
+    command: ["listen", "checker-service"]
+    environment:
+      - BUYER_URL=http://buyer:8080
+    restart: always
+  buyer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./.env:/.env
+      - ./auth.json:/auth.json
+      - ./fund.json:/fund.json
+    command: ["listen", "buyer-service"]
+    restart: always

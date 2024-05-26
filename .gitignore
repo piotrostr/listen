@@ -1,3 +1,4 @@
+instance
 .vscode
 *.log
 .env
@@ -8,3 +9,5 @@ flame-graph.html
 flamegraph.svg
 data
 target
+photon.json
+vsq.json
