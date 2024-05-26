@@ -18,7 +18,11 @@ use solana_transaction_status::{
 };
 use spl_token::state::Mint;
 
-use crate::{buyer::check_if_pump_fun, constants, util::env};
+use crate::{
+    buyer::check_if_pump_fun,
+    constants,
+    util::{env, pubkey_to_string, string_to_pubkey},
+};
 
 #[derive(Default, Debug, Serialize, Deserialize)]
 pub struct Checklist {
@@ -100,22 +104,6 @@ pub struct PoolAccounts {
         deserialize_with = "string_to_pubkey"
     )]
     pub user_lp_token: Pubkey,
-}
-
-// Helper functions for serialization and deserialization
-fn pubkey_to_string<S>(pubkey: &Pubkey, serializer: S) -> Result<S::Ok, S::Error>
-where
-    S: serde::Serializer,
-{
-    serializer.serialize_str(&pubkey.to_string())
-}
-
-fn string_to_pubkey<'de, D>(deserializer: D) -> Result<Pubkey, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    let s = String::deserialize(deserializer)?;
-    Pubkey::from_str(&s).map_err(serde::de::Error::custom)
 }
 
 /// run_checks checks if:
@@ -259,14 +247,7 @@ pub async fn _run_checks(
         if sol_pooled < 6.9 {
             return Ok((false, checklist));
         }
-    } else {
-        info!("didnt get all accounts, listening")
     }
-
-    info!(
-        "initial checks, continuing to listen: {}",
-        serde_json::to_string_pretty(&checklist).unwrap()
-    );
 
     let ok = loop {
         tokio::select! {

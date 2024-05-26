@@ -1,5 +1,9 @@
 use crate::util::healthz;
-use crate::{buyer, provider::Provider, util::env};
+use crate::{
+    buyer,
+    provider::Provider,
+    util::{env, pubkey_to_string, string_to_pubkey},
+};
 use actix_web::post;
 use actix_web::web::Json;
 use actix_web::{App, Error, HttpResponse, HttpServer};
@@ -12,8 +16,20 @@ use solana_sdk::signer::EncodableKey;
 
 #[derive(Deserialize, Serialize)]
 pub struct BuyRequest {
+    #[serde(
+        serialize_with = "pubkey_to_string",
+        deserialize_with = "string_to_pubkey"
+    )]
     pub amm_pool: Pubkey,
+    #[serde(
+        serialize_with = "pubkey_to_string",
+        deserialize_with = "string_to_pubkey"
+    )]
     pub input_mint: Pubkey,
+    #[serde(
+        serialize_with = "pubkey_to_string",
+        deserialize_with = "string_to_pubkey"
+    )]
     pub output_mint: Pubkey,
     pub amount: u64,
 }
