@@ -19,6 +19,10 @@ services:
     environment:
       - BUYER_URL=http://buyer:8080
     restart: always
+    deploy:
+      replicas: 3
+      mode: replicated
+      endpoint_mode: vip
   buyer:
     image: piotrostr/listen
     ports:
