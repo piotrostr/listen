@@ -112,7 +112,7 @@ async fn receive_webhook(
 
     tokio::spawn(async move {
         reqwest::Client::new()
-            .post("http://localhost:8078/handler")
+            .post(env("LISTENER_URL") + "/handler")
             .json(&data)
             .send()
             .await
