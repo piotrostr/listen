@@ -81,7 +81,7 @@ pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpRe
                 input_mint,
                 output_mint,
                 sol_vault,
-                amount: 50_000_000,
+                amount: 1_000_000,
             })
             .send()
             .await
