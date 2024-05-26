@@ -36,6 +36,10 @@ pub struct SellRequest {
         deserialize_with = "string_to_pubkey"
     )]
     pub output_mint: Pubkey,
+    #[serde(
+        serialize_with = "pubkey_to_string",
+        deserialize_with = "string_to_pubkey"
+    )]
     pub sol_vault: Pubkey,
     pub sol_pooled_when_bought: f64,
 }
@@ -68,9 +72,15 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
 
     while let Some(log) = stream.next().await {
         let sol_pooled = log.value.lamports as f64 / 10u64.pow(9) as f64;
-        info!("sol_pooled: {}", sol_pooled);
-        if sol_pooled >= sell_request.sol_pooled_when_bought * 1.8
-            || sol_pooled <= sell_request.sol_pooled_when_bought * 0.75
+        info!(
+            "{} sol_pooled: {}",
+            sell_request.input_mint.to_string(),
+            sol_pooled
+        );
+        // this could be more elaborate, also including factors like volume
+        // right now building a simple, hopefully profitable, MVP
+        if sol_pooled >= sell_request.sol_pooled_when_bought * 1.3
+            || sol_pooled <= sell_request.sol_pooled_when_bought * 0.90
         {
             info!("selling");
             break;
