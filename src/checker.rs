@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use base64::Engine;
 use futures_util::StreamExt;
-use log::{debug, info, warn};
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
 use solana_client::{
@@ -252,7 +252,7 @@ pub async fn _run_checks(
     let ok = loop {
         tokio::select! {
             lp_log = lp_stream.next(), if !checklist.lp_burnt => {
-                debug!("lp log received");
+                info!("{} lp log received", &mint);
                 if let UiAccountData::Binary(data, UiAccountEncoding::Base64) = lp_log.unwrap().value.data {
                     let log_data = base64::prelude::BASE64_STANDARD.decode(data).unwrap();
                     if log_data.is_empty() {
@@ -267,7 +267,7 @@ pub async fn _run_checks(
             }
             // this is the only way to get out of the loop without timeout, intended behaviour
             vault_log = sol_vault_stream.next() => {
-                debug!("vault log received");
+                info!("{} vault log received", &mint);
                 // the amount of sol is there as lamports straight in the log
                 let vault_log = vault_log.unwrap();
                 let sol_pooled = vault_log.value.lamports as f64 / 10u64.pow(9) as f64;
@@ -282,7 +282,7 @@ pub async fn _run_checks(
                 }
             }
             mint_log = mint_stream.next(), if !checklist.freeze_authority_renounced || !checklist.mint_authority_renounced => {
-                debug!("mint log received");
+                info!("{} mint log received", &mint);
                 if let UiAccountData::Binary(data, UiAccountEncoding::Base64) = mint_log.unwrap().value.data {
                     let log_data = base64::prelude::BASE64_STANDARD.decode(data).unwrap();
                     let mint_data = Mint::unpack(&log_data).unwrap();
