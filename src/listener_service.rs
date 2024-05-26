@@ -4,9 +4,7 @@ use crate::{
     collector, constants,
     util::{env, healthz},
 };
-use actix_web::{
-    error, post, web, App, Error, HttpRequest, HttpResponse, HttpServer,
-};
+use actix_web::{error, post, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use futures_util::StreamExt;
 use log::{debug, info, warn};
 use serde_json::Value;
@@ -17,8 +15,7 @@ use solana_client::{
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 use std::{str::FromStr, sync::Arc};
 
-pub async fn run_listener_pubsub_service(
-) -> Result<(), Box<dyn std::error::Error>> {
+pub async fn run_listener_pubsub_service() -> Result<(), Box<dyn std::error::Error>> {
     println!("{}", env("WS_URL"));
     tokio::spawn(async move {
         let collector = Arc::new(collector::new().await.expect("collector"));
@@ -27,9 +24,7 @@ pub async fn run_listener_pubsub_service(
             .expect("pubsub client async");
         let (mut notifications, unsub) = client
             .logs_subscribe(
-                RpcTransactionLogsFilter::Mentions(vec![
-                    constants::FEE_PROGRAM_ID.to_string(),
-                ]),
+                RpcTransactionLogsFilter::Mentions(vec![constants::FEE_PROGRAM_ID.to_string()]),
                 RpcTransactionLogsConfig {
                     commitment: Some(CommitmentConfig::processed()),
                 },
@@ -54,37 +49,19 @@ pub async fn run_listener_pubsub_service(
                                 info!("response: {:?}", res);
                                 if res.status().is_server_error() {
                                     warn!("server error");
-                                    tokio::time::sleep(
-                                        tokio::time::Duration::from_secs(5),
-                                    )
-                                    .await;
+                                    tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
                                     continue;
                                 }
-                                let result = res
-                                    .json::<serde_json::Value>()
-                                    .await
-                                    .unwrap();
-                                info!(
-                                    "result: {}",
-                                    serde_json::to_string_pretty(&result)
-                                        .unwrap()
-                                );
-                                let inserted_id = collector
-                                    .insert_generic(result)
-                                    .await
-                                    .expect("insert");
-                                info!(
-                                    "inserted id: {}",
-                                    inserted_id.to_string()
-                                );
+                                let result = res.json::<serde_json::Value>().await.unwrap();
+                                info!("result: {}", serde_json::to_string_pretty(&result).unwrap());
+                                let inserted_id =
+                                    collector.insert_generic(result).await.expect("insert");
+                                info!("inserted id: {}", inserted_id.to_string());
                                 break;
                             }
                             Err(e) => {
                                 warn!("error sending log: {}", e);
-                                tokio::time::sleep(
-                                    tokio::time::Duration::from_secs(5),
-                                )
-                                .await;
+                                tokio::time::sleep(tokio::time::Duration::from_secs(5)).await;
                             }
                         };
                     }
@@ -153,26 +130,16 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
         let accounts = instruction["accounts"].as_array().unwrap();
         if accounts.len() == 21 {
             info!("found LP instruction");
-            let amm_pool =
-                Pubkey::from_str(accounts[4].as_str().unwrap()).unwrap();
-            let lp_mint =
-                Pubkey::from_str(accounts[7].as_str().unwrap()).unwrap();
-            let coin_mint =
-                Pubkey::from_str(accounts[8].as_str().unwrap()).unwrap();
-            let pc_mint =
-                Pubkey::from_str(accounts[9].as_str().unwrap()).unwrap();
-            let pool_coin_token_account =
-                Pubkey::from_str(accounts[10].as_str().unwrap()).unwrap();
-            let pool_pc_token_account =
-                Pubkey::from_str(accounts[11].as_str().unwrap()).unwrap();
-            let user_wallet =
-                Pubkey::from_str(accounts[17].as_str().unwrap()).unwrap();
-            let user_token_coin =
-                Pubkey::from_str(accounts[18].as_str().unwrap()).unwrap();
-            let user_token_pc =
-                Pubkey::from_str(accounts[19].as_str().unwrap()).unwrap();
-            let user_lp_token =
-                Pubkey::from_str(accounts[20].as_str().unwrap()).unwrap();
+            let amm_pool = Pubkey::from_str(accounts[4].as_str().unwrap()).unwrap();
+            let lp_mint = Pubkey::from_str(accounts[7].as_str().unwrap()).unwrap();
+            let coin_mint = Pubkey::from_str(accounts[8].as_str().unwrap()).unwrap();
+            let pc_mint = Pubkey::from_str(accounts[9].as_str().unwrap()).unwrap();
+            let pool_coin_token_account = Pubkey::from_str(accounts[10].as_str().unwrap()).unwrap();
+            let pool_pc_token_account = Pubkey::from_str(accounts[11].as_str().unwrap()).unwrap();
+            let user_wallet = Pubkey::from_str(accounts[17].as_str().unwrap()).unwrap();
+            let user_token_coin = Pubkey::from_str(accounts[18].as_str().unwrap()).unwrap();
+            let user_token_pc = Pubkey::from_str(accounts[19].as_str().unwrap()).unwrap();
+            let user_lp_token = Pubkey::from_str(accounts[20].as_str().unwrap()).unwrap();
             let pool_accounts = PoolAccounts {
                 amm_pool,
                 lp_mint,
@@ -198,7 +165,7 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
                     serde_json::to_string_pretty(&parsed_payload).unwrap()
                 );
                 match client
-                    .post("http://localhost:8079/checks")
+                    .post(env("CHECKER_URL") + "/checks")
                     .json(&parsed_payload)
                     .send()
                     .await
@@ -206,19 +173,14 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
                     Ok(response) => {
                         info!(
                             "response: {}",
-                            serde_json::to_string_pretty(
-                                &response.json::<Value>().await.unwrap()
-                            )
-                            .unwrap()
+                            serde_json::to_string_pretty(&response.json::<Value>().await.unwrap())
+                                .unwrap()
                         );
                         break;
                     }
                     Err(e) => {
                         warn!("error, backing off: {}", e);
-                        tokio::time::sleep(tokio::time::Duration::from_secs(
-                            backoff,
-                        ))
-                        .await;
+                        tokio::time::sleep(tokio::time::Duration::from_secs(backoff)).await;
                         backoff *= 2;
                     }
                 }
@@ -238,7 +200,7 @@ pub async fn run_listener_webhook_service() -> std::io::Result<()> {
             .service(handle_webhook)
             .service(healthz)
     })
-    .bind(("127.0.0.1", 8078))?
+    .bind(("0.0.0.0", 8078))?
     .run()
     .await
 }

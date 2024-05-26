@@ -9,12 +9,9 @@ use solana_client::{
     rpc_request::TokenAccountsFilter,
 };
 use solana_sdk::{
-    commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
-    signature::Signature,
+    commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey, signature::Signature,
 };
-use solana_transaction_status::{
-    EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding,
-};
+use solana_transaction_status::{EncodedConfirmedTransactionWithStatusMeta, UiTransactionEncoding};
 use spl_token_2022::{
     extension::StateWithExtensionsOwned,
     state::{Account, Mint},
@@ -22,10 +19,7 @@ use spl_token_2022::{
 use timed::timed;
 
 pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
-    let rpc_client = RpcClient::new_with_commitment(
-        url.to_string(),
-        CommitmentConfig::confirmed(),
-    );
+    let rpc_client = RpcClient::new_with_commitment(url.to_string(), CommitmentConfig::confirmed());
     info!("{}", url);
 
     Ok(rpc_client)
@@ -46,10 +40,7 @@ impl Provider {
     }
 
     #[timed(duration(printer = "info!"))]
-    pub async fn get_balance(
-        &self,
-        pubkey: &Pubkey,
-    ) -> Result<u64, Box<dyn std::error::Error>> {
+    pub async fn get_balance(&self, pubkey: &Pubkey) -> Result<u64, Box<dyn std::error::Error>> {
         let balance = self.rpc_client.get_balance(pubkey).await?;
         Ok(balance)
     }
@@ -62,18 +53,13 @@ impl Provider {
     ) -> Result<u64, Box<dyn std::error::Error>> {
         let token_accounts = self
             .rpc_client
-            .get_token_accounts_by_owner(
-                pubkey,
-                TokenAccountsFilter::Mint(*mint),
-            )
+            .get_token_accounts_by_owner(pubkey, TokenAccountsFilter::Mint(*mint))
             .await?;
         match token_accounts.first() {
             Some(token_account) => {
                 let acount_info = self
                     .rpc_client
-                    .get_account(&Pubkey::from_str(
-                        token_account.pubkey.as_str(),
-                    )?)
+                    .get_account(&Pubkey::from_str(token_account.pubkey.as_str())?)
                     .await?;
                 let token_account_info = Account::unpack(&acount_info.data)?;
                 debug!("Token account info: {:?}", token_account_info);
@@ -87,10 +73,7 @@ impl Provider {
     pub async fn get_tx(
         &self,
         signature: &str,
-    ) -> Result<
-        EncodedConfirmedTransactionWithStatusMeta,
-        Box<dyn std::error::Error>,
-    > {
+    ) -> Result<EncodedConfirmedTransactionWithStatusMeta, Box<dyn std::error::Error>> {
         let sig = Signature::from_str(signature)?;
         let mut backoff = 100;
         let retries = 5;
@@ -110,9 +93,7 @@ impl Provider {
                 Ok(tx) => return Ok(tx),
                 Err(e) => {
                     debug!("Error getting tx: {:?}", e);
-                    std::thread::sleep(std::time::Duration::from_millis(
-                        backoff,
-                    ));
+                    std::thread::sleep(std::time::Duration::from_millis(backoff));
                     backoff *= 2;
                 }
             }
@@ -177,19 +158,12 @@ impl Provider {
         // recommended approach
         // get the token account mint based on the account too to confirm
         // skipping this check for the time being
-        let state = StateWithExtensionsOwned::<Mint>::unpack(account.data)
-            .expect("unpack mint");
+        let state = StateWithExtensionsOwned::<Mint>::unpack(account.data).expect("unpack mint");
         if state.base.mint_authority.is_some() {
-            return Ok((
-                false,
-                "mint authority has not been renounced".to_string(),
-            ));
+            return Ok((false, "mint authority has not been renounced".to_string()));
         }
         if state.base.freeze_authority.is_some() {
-            return Ok((
-                false,
-                "freeze authority has not been renounced".to_string(),
-            ));
+            return Ok((false, "freeze authority has not been renounced".to_string()));
         }
 
         Ok((true, "ok".to_string()))
@@ -198,8 +172,7 @@ impl Provider {
 
 pub async fn get_tx_async(
     signature: &str,
-) -> Result<EncodedConfirmedTransactionWithStatusMeta, Box<dyn std::error::Error>>
-{
+) -> Result<EncodedConfirmedTransactionWithStatusMeta, Box<dyn std::error::Error>> {
     let rpc_client = RpcClient::new(env("RPC_URL"));
     let sig = Signature::from_str(signature)?;
     let tx = rpc_client

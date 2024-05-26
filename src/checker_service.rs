@@ -30,9 +30,7 @@ pub struct TokenResult {
 }
 
 #[post("/checks")]
-pub async fn handle_checks(
-    payload: Json<ParsedPayload>,
-) -> Result<HttpResponse, Error> {
+pub async fn handle_checks(payload: Json<ParsedPayload>) -> Result<HttpResponse, Error> {
     info!("handling {} ({})", payload.signature, payload.slot);
     let mut token_result = TokenResult {
         creation_signature: payload.signature.clone(),
@@ -40,15 +38,13 @@ pub async fn handle_checks(
         ..Default::default()
     };
     let rpc_client = RpcClient::new(env("RPC_URL"));
-    let (ok, checklist) =
-        match _run_checks(&rpc_client, payload.accounts, payload.slot).await {
-            Ok((ok, checklist)) => (ok, checklist),
-            Err(e) => {
-                return Ok(HttpResponse::InternalServerError().json(
-                    json!({ "error": format!("Error running checks: {}", e)}),
-                ));
-            }
-        };
+    let (ok, checklist) = match _run_checks(&rpc_client, payload.accounts, payload.slot).await {
+        Ok((ok, checklist)) => (ok, checklist),
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError()
+                .json(json!({ "error": format!("Error running checks: {}", e)})));
+        }
+    };
     let output_mint = checklist.mint;
     token_result.checklist = checklist;
     if !ok {
@@ -62,7 +58,7 @@ pub async fn handle_checks(
     tokio::spawn(async move {
         let client = reqwest::Client::new();
         match client
-            .post("http://localhost:8080/buy")
+            .post(env("BUYER_URL") + "/buy")
             .json(&BuyRequest {
                 amm_pool,
                 input_mint,
@@ -93,7 +89,7 @@ pub async fn handle_checks(
 pub async fn run_checker_service() -> std::io::Result<()> {
     info!("Running checker service on 8079");
     HttpServer::new(move || App::new().service(handle_checks).service(healthz))
-        .bind(("127.0.0.1", 8079))?
+        .bind(("0.0.0.0", 8079))?
         .run()
         .await
 }

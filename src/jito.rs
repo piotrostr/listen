@@ -2,9 +2,7 @@ use std::str::FromStr;
 use std::time::Duration;
 
 use jito_protos::searcher::searcher_service_client::SearcherServiceClient;
-use jito_protos::searcher::{
-    NextScheduledLeaderRequest, SubscribeBundleResultsRequest,
-};
+use jito_protos::searcher::{NextScheduledLeaderRequest, SubscribeBundleResultsRequest};
 use jito_searcher_client::send_bundle_with_confirmation;
 use jito_searcher_client::token_authenticator::ClientInterceptor;
 use log::{error, info};
@@ -19,8 +17,7 @@ use tonic::{codegen::InterceptedService, transport::Channel};
 
 use crate::constants;
 
-pub type SearcherClient =
-    SearcherServiceClient<InterceptedService<Channel, ClientInterceptor>>;
+pub type SearcherClient = SearcherServiceClient<InterceptedService<Channel, ClientInterceptor>>;
 
 pub async fn wait_leader(
     searcher_client: &mut SearcherClient,
@@ -28,9 +25,7 @@ pub async fn wait_leader(
     let mut is_leader_slot = false;
     while !is_leader_slot {
         let next_leader = searcher_client
-            .get_next_scheduled_leader(NextScheduledLeaderRequest {
-                regions: vec![],
-            })
+            .get_next_scheduled_leader(NextScheduledLeaderRequest { regions: vec![] })
             .await
             .expect("gets next scheduled leader")
             .into_inner();
@@ -76,13 +71,12 @@ pub async fn send_swap_tx(
         tip,
     ));
 
-    let swap_tx =
-        VersionedTransaction::from(Transaction::new_signed_with_payer(
-            ixs.as_slice(),
-            Some(&payer.pubkey()),
-            &[payer],
-            blockhash,
-        ));
+    let swap_tx = VersionedTransaction::from(Transaction::new_signed_with_payer(
+        ixs.as_slice(),
+        Some(&payer.pubkey()),
+        &[payer],
+        blockhash,
+    ));
 
     send_bundle_with_confirmation(
         &[swap_tx],

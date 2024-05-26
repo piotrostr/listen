@@ -19,15 +19,12 @@ pub struct BuyRequest {
 }
 
 #[post("/buy")]
-async fn handle_buy(
-    buy_request: Json<BuyRequest>,
-) -> Result<HttpResponse, Error> {
+async fn handle_buy(buy_request: Json<BuyRequest>) -> Result<HttpResponse, Error> {
     info!(
         "handling buy req {}",
         serde_json::to_string_pretty(&buy_request)?
     );
-    let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
-        .expect("read fund keypair");
+    let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read fund keypair");
     match buyer::buy(
         &buy_request.amm_pool,
         &buy_request.input_mint,
@@ -42,16 +39,14 @@ async fn handle_buy(
             info!("OK");
             Ok(HttpResponse::Ok().json(json!({"status": "OK"})))
         }
-        Err(e) => {
-            Ok(HttpResponse::InternalServerError().body(format!("{}", e)))
-        }
+        Err(e) => Ok(HttpResponse::InternalServerError().body(format!("{}", e))),
     }
 }
 
 pub async fn run_buyer_service() -> std::io::Result<()> {
     info!("Running buyer service on 8080");
     HttpServer::new(move || App::new().service(handle_buy).service(healthz))
-        .bind(("127.0.0.1", 8080))?
+        .bind(("0.0.0.0", 8080))?
         .run()
         .await
 }
