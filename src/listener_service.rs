@@ -154,11 +154,33 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
                 user_lp_token,
             };
             let client = reqwest::Client::new();
+            let transfers = data["tokenTransfers"].as_array().unwrap();
+            let initial_sol_pooled = transfers
+                .iter()
+                .filter(|transfer| {
+                    transfer["mint"].as_str().unwrap() == constants::SOLANA_PROGRAM_ID
+                })
+                .nth(0)
+                .unwrap()["amount"]
+                .as_f64()
+                .unwrap();
+            let initial_token_pooled = transfers
+                .iter()
+                .filter(|transfer| {
+                    let mint = transfer["mint"].as_str().unwrap();
+                    mint != constants::SOLANA_PROGRAM_ID
+                        && mint != pool_accounts.lp_mint.to_string()
+                })
+                .nth(0)
+                .unwrap()["amount"]
+                .as_f64()
+                .unwrap();
             let checks_request = ChecksRequest {
                 signature: signature.clone(),
                 accounts: pool_accounts,
                 slot: data["slot"].as_u64().unwrap(),
-                initial_sol_pooled: -1.,
+                initial_sol_pooled,
+                initial_token_pooled,
             };
             let mut backoff = 2;
             for _ in 0..3 {

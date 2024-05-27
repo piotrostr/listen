@@ -20,6 +20,7 @@ pub struct ChecksRequest {
     pub accounts: PoolAccounts,
     pub slot: u64,
     pub initial_sol_pooled: f64,
+    pub initial_token_pooled: f64,
 }
 
 #[derive(Debug, Serialize, Default, Deserialize)]
