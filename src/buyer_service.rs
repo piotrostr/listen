@@ -33,6 +33,10 @@ pub struct BuyRequest {
         deserialize_with = "string_to_pubkey"
     )]
     pub output_mint: Pubkey,
+    #[serde(
+        serialize_with = "pubkey_to_string",
+        deserialize_with = "string_to_pubkey"
+    )]
     pub sol_vault: Pubkey,
     pub amount: u64,
 }
