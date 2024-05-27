@@ -160,7 +160,7 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
                 .filter(|transfer| {
                     transfer["mint"].as_str().unwrap() == constants::SOLANA_PROGRAM_ID
                 })
-                .nth(0)
+                .next()
                 .unwrap()["tokenAmount"]
                 .as_f64()
                 .unwrap();
@@ -171,7 +171,7 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
                     mint != constants::SOLANA_PROGRAM_ID
                         && mint != pool_accounts.lp_mint.to_string()
                 })
-                .nth(0)
+                .next()
                 .unwrap()["tokenAmount"]
                 .as_f64()
                 .unwrap();

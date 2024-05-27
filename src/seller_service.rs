@@ -53,11 +53,20 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
     tokio::spawn(async move {
         let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read wallet");
         let provider = Provider::new(env("RPC_URL"));
-        let amount = provider
-            .get_spl_balance(&wallet.pubkey(), &sell_request.input_mint)
+        let token_account = spl_associated_token_account::get_associated_token_address(
+            &wallet.pubkey(),
+            &sell_request.input_mint,
+        );
+        let balance = provider
+            .rpc_client
+            .get_token_account_balance(&token_account)
             .await
-            .expect("get balance");
-        info!("balance: {}", amount);
+            .expect("get ata balance")
+            .amount
+            .parse::<u64>()
+            .expect("balance string to u64");
+        info!("balance: {}", balance);
+        // parse balance into u64
         let pubsub_client = PubsubClient::new(&env("WS_URL"))
             .await
             .expect("make pubsub client");
@@ -73,18 +82,25 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
             .await
             .expect("account_subscribe");
 
+        let tp_sol_pooled = sell_request.sol_pooled_when_bought * 1.4;
+        let sl_sol_pooled = sell_request.sol_pooled_when_bought * 0.8;
+
+        info!(
+            "subscribed to sol_vault, tp: {}, sl: {}",
+            tp_sol_pooled, sl_sol_pooled
+        );
         while let Some(log) = stream.next().await {
             let sol_pooled = log.value.lamports as f64 / 10u64.pow(9) as f64;
             info!(
-                "{} sol_pooled: {}",
+                "{} sol_pooled: {}, tp: {}, sl: {}",
                 sell_request.input_mint.to_string(),
-                sol_pooled
+                sol_pooled,
+                tp_sol_pooled,
+                sl_sol_pooled
             );
             // this could be more elaborate, also including factors like volume
             // right now building a simple, hopefully profitable, MVP
-            if sol_pooled >= sell_request.sol_pooled_when_bought * 1.3
-                || sol_pooled <= sell_request.sol_pooled_when_bought * 0.90
-            {
+            if sol_pooled >= tp_sol_pooled || sol_pooled <= sl_sol_pooled {
                 info!("selling");
                 break;
             }
@@ -94,7 +110,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
             &sell_request.amm_pool,
             &sell_request.input_mint,
             &sell_request.output_mint,
-            amount,
+            balance,
             &wallet,
             &provider,
         )
