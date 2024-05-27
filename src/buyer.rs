@@ -49,6 +49,8 @@ pub async fn buy(
 
     info!("took {:?} to pack", start.elapsed());
 
+    info!("swapping {} {} to {}", amount, input_mint, output_mint);
+
     let tip = 50000;
     let auth = Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).expect("read auth keypair");
     let mut searcher_client = get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth))
