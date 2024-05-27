@@ -50,64 +50,61 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
         "handling sell_request {}",
         serde_json::to_string_pretty(&sell_request)?
     );
-    let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read fund keypair");
-    let provider = Provider::new(env("RPC_URL"));
-    let amount = provider
-        .get_spl_balance(&wallet.pubkey(), &sell_request.input_mint)
-        .await?;
-    info!("balance: {}", amount);
-    let pubsub_client = PubsubClient::new(&env("WS_URL"))
-        .await
-        .expect("pubsub client async");
-    let (mut stream, unsub) = pubsub_client
-        .account_subscribe(
-            &sell_request.sol_vault,
-            Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::processed()),
-                encoding: Some(UiAccountEncoding::Base64),
-                ..Default::default()
-            }),
+    tokio::spawn(async move {
+        let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read wallet");
+        let provider = Provider::new(env("RPC_URL"));
+        let amount = provider
+            .get_spl_balance(&wallet.pubkey(), &sell_request.input_mint)
+            .await
+            .expect("get balance");
+        info!("balance: {}", amount);
+        let pubsub_client = PubsubClient::new(&env("WS_URL"))
+            .await
+            .expect("make pubsub client");
+        let (mut stream, unsub) = pubsub_client
+            .account_subscribe(
+                &sell_request.sol_vault,
+                Some(RpcAccountInfoConfig {
+                    commitment: Some(CommitmentConfig::processed()),
+                    encoding: Some(UiAccountEncoding::Base64),
+                    ..Default::default()
+                }),
+            )
+            .await
+            .expect("account_subscribe");
+
+        while let Some(log) = stream.next().await {
+            let sol_pooled = log.value.lamports as f64 / 10u64.pow(9) as f64;
+            info!(
+                "{} sol_pooled: {}",
+                sell_request.input_mint.to_string(),
+                sol_pooled
+            );
+            // this could be more elaborate, also including factors like volume
+            // right now building a simple, hopefully profitable, MVP
+            if sol_pooled >= sell_request.sol_pooled_when_bought * 1.3
+                || sol_pooled <= sell_request.sol_pooled_when_bought * 0.90
+            {
+                info!("selling");
+                break;
+            }
+        }
+
+        buyer::buy(
+            &sell_request.amm_pool,
+            &sell_request.input_mint,
+            &sell_request.output_mint,
+            amount,
+            &wallet,
+            &provider,
         )
         .await
-        .expect("subscribe to account");
+        .expect("buy");
 
-    while let Some(log) = stream.next().await {
-        let sol_pooled = log.value.lamports as f64 / 10u64.pow(9) as f64;
-        info!(
-            "{} sol_pooled: {}",
-            sell_request.input_mint.to_string(),
-            sol_pooled
-        );
-        // this could be more elaborate, also including factors like volume
-        // right now building a simple, hopefully profitable, MVP
-        if sol_pooled >= sell_request.sol_pooled_when_bought * 1.3
-            || sol_pooled <= sell_request.sol_pooled_when_bought * 0.90
-        {
-            info!("selling");
-            break;
-        }
-    }
+        unsub().await;
+    });
 
-    match buyer::buy(
-        &sell_request.amm_pool,
-        &sell_request.input_mint,
-        &sell_request.output_mint,
-        amount,
-        &wallet,
-        &provider,
-    )
-    .await
-    {
-        Ok(_) => {
-            info!("OK");
-            unsub().await;
-            Ok(HttpResponse::Ok().json(json!({"status": "OK"})))
-        }
-        Err(e) => {
-            unsub().await;
-            Ok(HttpResponse::InternalServerError().body(format!("{}", e)))
-        }
-    }
+    Ok(HttpResponse::Ok().json(json!({"status": "OK, triggered sell"})))
 }
 
 pub async fn run_seller_service() -> std::io::Result<()> {
