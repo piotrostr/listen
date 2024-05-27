@@ -27,6 +27,14 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    Ata {
+        #[arg(long)]
+        mint: String,
+    },
+    SplStream {
+        #[arg(long)]
+        ata: String,
+    },
     MonitorMempool {},
     SellerService {},
     CheckerService {},

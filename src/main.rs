@@ -49,6 +49,22 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 163.;
 
     match app.command {
+        Command::Ata { mint } => {
+            let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read wallet");
+            info!(
+                "ATA: {:?}",
+                spl_associated_token_account::get_associated_token_address(
+                    &wallet.pubkey(),
+                    &Pubkey::from_str(&mint)?
+                )
+            );
+        }
+        Command::SplStream { ata } => {
+            let ata = Pubkey::from_str(&ata)?;
+            let pubsub_client =
+                nonblocking::pubsub_client::PubsubClient::new(env("WS_URL").as_str()).await?;
+            seller_service::get_spl_balance_stream(&pubsub_client, &ata).await?;
+        }
         Command::Checks { signature } => {
             let (ok, checklist) = checker::run_checks(signature).await?;
             println!("ok? {}, {:?}", ok, checklist);
@@ -418,7 +434,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             // Log receiving task
             let log_receiver = tokio::spawn(async move {
                 let transactions_received = transactions_received.clone();
-                while let Ok(log) = recv.recv_timeout(Duration::from_secs(1)) {
+                while let Ok(log) = recv.recv_timeout(Duration::from_secs(10)) {
                     if log.value.err.is_some() {
                         continue; // Skip error logs
                     }

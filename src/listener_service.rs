@@ -157,22 +157,18 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
             let transfers = data["tokenTransfers"].as_array().unwrap();
             let initial_sol_pooled = transfers
                 .iter()
-                .filter(|transfer| {
-                    transfer["mint"].as_str().unwrap() == constants::SOLANA_PROGRAM_ID
-                })
-                .next()
-                .unwrap()["tokenAmount"]
+                .find(|transfer| transfer["mint"].as_str().unwrap() == constants::SOLANA_PROGRAM_ID)
+                .expect("find sol mint")["tokenAmount"]
                 .as_f64()
                 .unwrap();
             let initial_token_pooled = transfers
                 .iter()
-                .filter(|transfer| {
+                .find(|transfer| {
                     let mint = transfer["mint"].as_str().unwrap();
                     mint != constants::SOLANA_PROGRAM_ID
                         && mint != pool_accounts.lp_mint.to_string()
                 })
-                .next()
-                .unwrap()["tokenAmount"]
+                .expect("find token mint")["tokenAmount"]
                 .as_f64()
                 .unwrap();
             let checks_request = ChecksRequest {
