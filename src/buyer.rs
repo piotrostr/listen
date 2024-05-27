@@ -21,7 +21,7 @@ use solana_sdk::{
 };
 use spl_token::state::Mint;
 
-pub async fn buy(
+pub async fn swap(
     amm_pool: &Pubkey,
     input_mint: &Pubkey,
     output_mint: &Pubkey,

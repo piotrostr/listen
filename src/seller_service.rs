@@ -90,7 +90,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
             }
         }
 
-        buyer::buy(
+        buyer::swap(
             &sell_request.amm_pool,
             &sell_request.input_mint,
             &sell_request.output_mint,
