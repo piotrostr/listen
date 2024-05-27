@@ -43,40 +43,36 @@ async fn handle_buy(buy_request: Json<BuyRequest>) -> Result<HttpResponse, Error
         "handling buy req {}",
         serde_json::to_string_pretty(&buy_request)?
     );
-    let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read fund keypair");
-    let provider = &Provider::new(env("RPC_URL").to_string());
-    match buyer::buy(
-        &buy_request.amm_pool,
-        &buy_request.input_mint,
-        &buy_request.output_mint,
-        buy_request.amount,
-        &wallet,
-        provider,
-    )
-    .await
-    {
-        Ok(_) => {
-            info!("OK");
-            let sol_pooled_when_bought =
-                get_sol_pooled_vault(&buy_request.sol_vault, &provider.rpc_client).await;
-            tokio::spawn(async move {
-                reqwest::Client::new()
-                    .post(env("SELLER_URL") + "/sell")
-                    .json(&SellRequest {
-                        amm_pool: buy_request.amm_pool,
-                        input_mint: buy_request.output_mint,
-                        output_mint: buy_request.input_mint,
-                        sol_vault: buy_request.sol_vault,
-                        sol_pooled_when_bought,
-                    })
-                    .send()
-                    .await
-                    .expect("send sell request");
-            });
-            Ok(HttpResponse::Ok().json(json!({"status": "OK"})))
-        }
-        Err(e) => Ok(HttpResponse::InternalServerError().body(format!("{}", e))),
-    }
+    tokio::spawn(async move {
+        let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read fund keypair");
+        let provider = &Provider::new(env("RPC_URL").to_string());
+        buyer::buy(
+            &buy_request.amm_pool,
+            &buy_request.input_mint,
+            &buy_request.output_mint,
+            buy_request.amount,
+            &wallet,
+            provider,
+        )
+        .await
+        .expect("buy");
+        let sol_pooled_when_bought =
+            get_sol_pooled_vault(&buy_request.sol_vault, &provider.rpc_client).await;
+        reqwest::Client::new()
+            .post(env("SELLER_URL") + "/sell")
+            .json(&SellRequest {
+                amm_pool: buy_request.amm_pool,
+                input_mint: buy_request.output_mint,
+                output_mint: buy_request.input_mint,
+                sol_vault: buy_request.sol_vault,
+                sol_pooled_when_bought,
+            })
+            .send()
+            .await
+            .expect("send sell request");
+    });
+
+    Ok(HttpResponse::Ok().json(json!({"status": "OK, trigerred buy"})))
 }
 
 pub async fn run_buyer_service() -> std::io::Result<()> {
