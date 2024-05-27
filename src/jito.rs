@@ -3,8 +3,8 @@ use std::time::Duration;
 
 use jito_protos::searcher::searcher_service_client::SearcherServiceClient;
 use jito_protos::searcher::{NextScheduledLeaderRequest, SubscribeBundleResultsRequest};
-use jito_searcher_client::send_bundle_with_confirmation;
 use jito_searcher_client::token_authenticator::ClientInterceptor;
+use jito_searcher_client::{send_bundle_no_wait, send_bundle_with_confirmation};
 use log::{error, info};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
@@ -85,4 +85,37 @@ pub async fn send_swap_tx(
         &mut bundle_results_subscription,
     )
     .await
+}
+
+#[timed::timed(duration(printer = "info!"))]
+pub async fn send_swap_tx_no_wait(
+    ixs: &mut Vec<Instruction>,
+    tip: u64,
+    payer: &Keypair,
+    searcher_client: &mut SearcherClient,
+    rpc_client: &RpcClient,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let blockhash = rpc_client
+        .get_latest_blockhash()
+        .await
+        .expect("get blockhash");
+
+    ixs.push(transfer(
+        &payer.pubkey(),
+        &Pubkey::from_str(constants::JITO_TIP_PUBKEY)?,
+        tip,
+    ));
+
+    let swap_tx = VersionedTransaction::from(Transaction::new_signed_with_payer(
+        ixs.as_slice(),
+        Some(&payer.pubkey()),
+        &[payer],
+        blockhash,
+    ));
+
+    let res = send_bundle_no_wait(&[swap_tx], searcher_client).await?;
+
+    info!("Bundle sent. UUID: {}", res.into_inner().uuid);
+
+    Ok(())
 }

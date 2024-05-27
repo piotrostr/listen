@@ -55,16 +55,15 @@ pub async fn buy(
         .await
         .expect("makes searcher client");
 
-    let swap_result = jito::send_swap_tx(
+    jito::send_swap_tx_no_wait(
         &mut ixs,
         tip,
         wallet,
         &mut searcher_client,
         &provider.rpc_client,
     )
-    .await;
-
-    info!("{:?}", swap_result);
+    .await
+    .expect("send swap tx (jito)");
 
     drop(searcher_client);
 

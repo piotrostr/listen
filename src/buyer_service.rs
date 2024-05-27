@@ -51,7 +51,7 @@ async fn handle_buy(buy_request: Json<BuyRequest>) -> Result<HttpResponse, Error
         &buy_request.output_mint,
         buy_request.amount,
         &wallet,
-        &provider,
+        provider,
     )
     .await
     {
