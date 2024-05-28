@@ -59,7 +59,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Command::GenerateCustomAddress { prefixes } => {
             let found_flag = Arc::new(AtomicBool::new(false));
             // note that this will only spawn as many workers as the runtime allows
-            let workers: Vec<_> = (0..10)
+            // defaults to num vcpus
+            let workers: Vec<_> = (0..8)
                 .map(|_| {
                     let prefixes = prefixes.clone();
                     let found_flag = Arc::clone(&found_flag);
@@ -393,9 +394,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             info!("Swap: {}", serde_json::to_string_pretty(&swap)?);
 
             let sol_notional = listen::util::lamports_to_sol(swap.quote_amount as u64);
-
             let usd_notional = sol_notional * sol_price;
-
             info!("{} ({} USD)", sol_notional, usd_notional);
 
             return Ok(());
