@@ -35,7 +35,7 @@ pub async fn generate_custom_sol_address(prefixes: Vec<String>, found_flag: Arc<
             break;
         }
         tries += 1;
-        if tries % 10_000 == 0 {
+        if tries % 100_000 == 0 {
             info!("tried {} so far", tries);
         }
     }
