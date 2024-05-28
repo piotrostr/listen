@@ -2,11 +2,17 @@ use flexi_logger::{colored_detailed_format, Duplicate, Logger, WriteMode};
 use jito_protos::searcher::{MempoolSubscription, NextScheduledLeaderRequest};
 use jito_searcher_client::get_searcher_client;
 use raydium_library::amm;
-use std::{error::Error, str::FromStr, sync::Arc, time::Duration};
+use std::{
+    error::Error,
+    str::FromStr,
+    sync::{atomic::AtomicBool, Arc},
+    time::Duration,
+};
 use util::env;
 
 use clap::Parser;
 use listen::{
+    address,
     app::{App, Command},
     buyer, buyer_service, checker, checker_service, constants,
     jup::Jupiter,
@@ -46,9 +52,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // 30th April, let's see how well this ages lol (was 135.)
     // 13th May, still going strong with the algo, now at 145
     // 16th May 163, I paperhanded 20+ SOL :(
+    // 28th May - SOL was for 190ish, dipped and longing now
     let sol_price = 163.;
 
     match app.command {
+        Command::GenerateCustomAddress { prefix } => {
+            let found_flag = Arc::new(AtomicBool::new(false));
+            let workers: Vec<_> = (0..10)
+                .map(|_| {
+                    let prefix = prefix.clone();
+                    let found_flag = Arc::clone(&found_flag);
+                    tokio::spawn(async move {
+                        address::generate_custom_sol_address(&prefix, found_flag).await;
+                    })
+                })
+                .collect();
+            for worker in workers {
+                worker.await?;
+            }
+        }
         Command::Ata { mint } => {
             let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read wallet");
             info!(

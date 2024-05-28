@@ -2,12 +2,9 @@ instance
 .vscode
 *.log
 .env
-auth.json
-fund.json
+*.json
 out.stacks
 flame-graph.html
 flamegraph.svg
 data
 target
-photon.json
-vsq.json

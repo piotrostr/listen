@@ -1,3 +1,4 @@
+pub mod address;
 pub mod app;
 pub mod buyer;
 pub mod buyer_service;

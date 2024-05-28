@@ -27,6 +27,10 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    GenerateCustomAddress {
+        #[arg(long)]
+        prefix: String,
+    },
     Ata {
         #[arg(long)]
         mint: String,
