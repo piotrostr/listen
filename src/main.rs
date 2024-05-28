@@ -56,14 +56,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 163.;
 
     match app.command {
-        Command::GenerateCustomAddress { prefix } => {
+        Command::GenerateCustomAddress { prefixes } => {
             let found_flag = Arc::new(AtomicBool::new(false));
+            // note that this will only spawn as many workers as the runtime allows
             let workers: Vec<_> = (0..10)
                 .map(|_| {
-                    let prefix = prefix.clone();
+                    let prefixes = prefixes.clone();
                     let found_flag = Arc::clone(&found_flag);
                     tokio::spawn(async move {
-                        address::generate_custom_sol_address(&prefix, found_flag).await;
+                        address::generate_custom_sol_address(prefixes, found_flag).await;
                     })
                 })
                 .collect();

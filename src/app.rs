@@ -29,7 +29,7 @@ pub struct Args {
 pub enum Command {
     GenerateCustomAddress {
         #[arg(long)]
-        prefix: String,
+        prefixes: Vec<String>,
     },
     Ata {
         #[arg(long)]
