@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use base64::Engine;
 use futures_util::StreamExt;
-use log::{info, warn};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
 use solana_client::{
@@ -253,7 +253,7 @@ pub async fn _run_checks(
         tokio::select! {
             lp_log = lp_stream.next(), if !checklist.lp_burnt => {
                 let lp_log = lp_log.unwrap();
-                info!("{} {} lp log received", lp_log.context.slot, &mint);
+                debug!("{} {} lp log received", lp_log.context.slot, &mint);
                 if let UiAccountData::Binary(data, UiAccountEncoding::Base64) = lp_log.value.data {
                     let log_data = base64::prelude::BASE64_STANDARD.decode(data).unwrap();
                     if log_data.is_empty() {
@@ -272,7 +272,7 @@ pub async fn _run_checks(
             vault_log = sol_vault_stream.next() => {
                 // the amount of sol is there as lamports straight in the log
                 let vault_log = vault_log.unwrap();
-                info!("{} {} vault log received", vault_log.context.slot, &mint);
+                debug!("{} {} vault log received", vault_log.context.slot, &mint);
                 let sol_pooled = vault_log.value.lamports as f64 / 10u64.pow(9) as f64;
                 checklist.sol_pooled = sol_pooled;
                 if sol_pooled < 6.9 {
@@ -286,7 +286,7 @@ pub async fn _run_checks(
             }
             mint_log = mint_stream.next(), if !checklist.freeze_authority_renounced || !checklist.mint_authority_renounced => {
                 let mint_log = mint_log.unwrap();
-                info!("{} {} mint log received", mint_log.context.slot, &mint);
+                debug!("{} {} mint log received", mint_log.context.slot, &mint);
                 if let UiAccountData::Binary(data, UiAccountEncoding::Base64) = mint_log.value.data {
                     let log_data = base64::prelude::BASE64_STANDARD.decode(data).unwrap();
                     let mint_data = Mint::unpack(&log_data).unwrap();
@@ -299,7 +299,7 @@ pub async fn _run_checks(
                 }
             }
             _ = tokio::time::sleep(tokio::time::Duration::from_secs(900)) => {
-                println!("timeout");
+                info!("timeout");
                 checklist.timeout = true;
                 break false;
             }

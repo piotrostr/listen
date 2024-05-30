@@ -124,8 +124,8 @@ async fn receive_webhook(
 
 #[post("/handler")]
 async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
-    info!("handling webhook {}", serde_json::to_string_pretty(&data)?);
     let signature = data["signature"].as_str().unwrap().to_string();
+    info!("handling webhook {}", signature);
 
     for instruction in data["instructions"].as_array().unwrap() {
         let accounts = instruction["accounts"].as_array().unwrap();

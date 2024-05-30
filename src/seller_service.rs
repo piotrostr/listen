@@ -9,7 +9,7 @@ use actix_web::web::Json;
 use actix_web::{App, Error, HttpResponse, HttpServer};
 use base64::Engine;
 use futures_util::StreamExt;
-use log::{info, warn};
+use log::{debug, info, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
@@ -96,13 +96,13 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
         let tp_sol_pooled = sell_request.sol_pooled_when_bought * 1.4;
         let sl_sol_pooled = sell_request.sol_pooled_when_bought * 0.8;
 
-        info!(
+        debug!(
             "subscribed to sol_vault, tp: {}, sl: {}",
             tp_sol_pooled, sl_sol_pooled
         );
         while let Some(log) = stream.next().await {
             let sol_pooled = log.value.lamports as f64 / 10u64.pow(9) as f64;
-            info!(
+            debug!(
                 "{} sol_pooled: {}, tp: {}, sl: {}",
                 sell_request.input_mint.to_string(),
                 sol_pooled,

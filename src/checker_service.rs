@@ -89,7 +89,7 @@ pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpRe
         {
             Ok(response) => {
                 info!(
-                    "response: {}",
+                    "buyer response: {}",
                     serde_json::to_string_pretty(
                         &response.json::<serde_json::Value>().await.unwrap()
                     )
