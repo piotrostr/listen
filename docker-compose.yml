@@ -49,3 +49,10 @@ services:
       replicas: 2
       mode: replicated
       endpoint_mode: vip
+  fluentd:
+    image: fluent/fluentd
+    ports:
+      - "24224:24224"
+      - "24224:24224/udp"
+    volumes:
+      - ./fluentd.conf:/fluentd/etc/fluentd.conf
