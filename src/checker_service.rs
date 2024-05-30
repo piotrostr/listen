@@ -48,7 +48,7 @@ pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpRe
             Ok((ok, checklist)) => (ok, checklist),
             Err(e) => {
                 return Ok(HttpResponse::InternalServerError()
-                    .json(json!({ "error": format!("Error running checks: {}", e)})));
+                    .json(json!({"error": format!("Error running checks: {}", e)})));
             }
         };
     let output_mint = checklist.mint;

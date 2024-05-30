@@ -50,24 +50,18 @@ pub async fn swap(
     info!("took {:?} to pack", start.elapsed());
 
     info!("swapping {} {} to {}", amount, input_mint, output_mint);
-
-    let tip = 50000;
     let auth = Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).expect("read auth keypair");
-    let mut searcher_client = get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth))
-        .await
-        .expect("makes searcher client");
-
     jito::send_swap_tx_no_wait(
         &mut ixs,
-        tip,
+        50000,
         wallet,
-        &mut searcher_client,
+        &mut get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth))
+            .await
+            .expect("makes searcher client"),
         &provider.rpc_client,
     )
     .await
     .expect("send swap tx (jito)");
-
-    drop(searcher_client);
 
     Ok(())
 }

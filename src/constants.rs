@@ -16,3 +16,7 @@ pub const FEE_PROGRAM_ID: &str = "7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYcHQqtj2G5";
 pub const JITO_TIP_PUBKEY: &str = "Cw8CFyM9FkoMi7K7Crf6HNQqf4uEMzpKw6QNghXLvLkY";
 
 pub const RAYDIUM_AMM_PUBKEY: &str = "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1";
+
+pub fn ruggers() -> Vec<String> {
+    vec!["3jAhNEb1SgTvgXgsXJrB44jK5opHbxr7NbpPjx9aJE4t".to_string()]
+}
