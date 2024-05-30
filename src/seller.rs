@@ -280,7 +280,7 @@ where
 
 pub async fn get_decimals(mint: &Pubkey, rpc_client: &RpcClient) -> u8 {
     let mint_account = rpc_client
-        .get_account(&mint)
+        .get_account(mint)
         .await
         .expect("get mint account");
     let mint_data = Mint::unpack(&mint_account.data).expect("unpack mint data");

@@ -251,7 +251,7 @@ mod tests {
         // some pump fun shitto
         let mint = Pubkey::from_str("2yqz8eJvJu1eiaYz34r9i7YbyTveRRJwPFhRJenp6yed").unwrap();
         let res = super::check_if_pump_fun(&mint).await.unwrap();
-        assert!(res == true);
+        assert!(res);
     }
 
     #[tokio::test]
@@ -259,6 +259,6 @@ mod tests {
         // wifhat
         let mint = Pubkey::from_str("EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm").unwrap();
         let res = super::check_if_pump_fun(&mint).await.unwrap();
-        assert!(res == false);
+        assert!(!res);
     }
 }

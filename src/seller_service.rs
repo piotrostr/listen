@@ -10,7 +10,7 @@ use actix_web::web::Json;
 use actix_web::{App, Error, HttpResponse, HttpServer};
 use base64::Engine;
 use futures_util::StreamExt;
-use log::{debug, info, warn};
+use log::{info, warn};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};

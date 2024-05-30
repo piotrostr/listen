@@ -55,10 +55,10 @@ async fn test_sanity_check() {
     // non-renounced freeze authority
     let mint = Pubkey::from_str("3jGenV1FXBQWKtviJUWXUwXFiA8TNV4QGF2n499HnJmw").unwrap();
     let provider = Provider::new(RPC_URL.to_string());
-    assert!(provider.sanity_check(&mint).await.unwrap().0 == false);
+    assert!(!provider.sanity_check(&mint).await.unwrap().0);
     // michi
     let mint = Pubkey::from_str("5mbK36SZ7J19An8jFochhQS4of8g6BwUjbeCSxBSoWdp").unwrap();
-    assert!(provider.sanity_check(&mint).await.unwrap().0 == true);
+    assert!(provider.sanity_check(&mint).await.unwrap().0);
 }
 
 #[test]
