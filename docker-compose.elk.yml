@@ -18,6 +18,7 @@ services:
       - elk
     ports:
       - "5000:5000"
+      - "5044:5044"
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.5
@@ -40,8 +41,6 @@ services:
       - elk
     depends_on:
       - logstash
-    ports:
-      - "5044:5044"
 
 networks:
   elk:
