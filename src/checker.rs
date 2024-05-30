@@ -162,7 +162,7 @@ pub async fn _run_checks(
     let is_pump_fun = check_if_pump_fun(&mint).await?;
     checklist.is_pump_fun = is_pump_fun;
     if is_pump_fun {
-        return Ok((false, checklist));
+        return Ok((true, checklist));
     }
 
     let pubsub_client = PubsubClient::new(&env("WS_URL")).await?;
