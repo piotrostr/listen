@@ -7,6 +7,8 @@ services:
       - esdata:/usr/share/elasticsearch/data
     networks:
       - elk
+    ports:
+      - "9200:9200"
 
   logstash:
     image: docker.elastic.co/logstash/logstash:7.17.5
@@ -14,6 +16,8 @@ services:
       - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
     networks:
       - elk
+    ports:
+      - "5000:5000"
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.17.5
@@ -23,6 +27,8 @@ services:
       - elk
     ports:
       - "5601:5601"
+    depends_on:
+      - elasticsearch
 
   filebeat:
     image: docker.elastic.co/beats/filebeat:7.17.5
@@ -34,6 +40,8 @@ services:
       - elk
     depends_on:
       - logstash
+    ports:
+      - "5044:5044"
 
 networks:
   elk:
