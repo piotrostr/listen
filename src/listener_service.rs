@@ -2,6 +2,7 @@ use crate::{
     checker::PoolAccounts,
     checker_service::ChecksRequest,
     collector, constants,
+    http_client::HttpClient,
     util::{env, healthz},
 };
 use actix_web::{error, post, web, App, Error, HttpRequest, HttpResponse, HttpServer};
@@ -153,7 +154,6 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
                 user_token_pc,
                 user_lp_token,
             };
-            let client = reqwest::Client::new();
             let transfers = data["tokenTransfers"].as_array().unwrap();
             let initial_sol_pooled = transfers
                 .iter()
@@ -178,30 +178,12 @@ async fn handle_webhook(data: web::Json<Value>) -> Result<HttpResponse, Error> {
                 initial_sol_pooled,
                 initial_token_pooled,
             };
-            let mut backoff = 2;
-            for _ in 0..3 {
-                info!("passing checks request");
-                match client
-                    .post(env("CHECKER_URL") + "/checks")
-                    .json(&checks_request)
-                    .send()
+            tokio::spawn(async move {
+                HttpClient::new()
+                    .checks(&checks_request)
                     .await
-                {
-                    Ok(response) => {
-                        info!(
-                            "response: {}",
-                            serde_json::to_string_pretty(&response.json::<Value>().await.unwrap())
-                                .unwrap()
-                        );
-                        break;
-                    }
-                    Err(e) => {
-                        warn!("error, backing off: {}", e);
-                        tokio::time::sleep(tokio::time::Duration::from_secs(backoff)).await;
-                        backoff *= 2;
-                    }
-                }
-            }
+                    .expect("checks");
+            });
         }
     }
 

@@ -1,3 +1,4 @@
+use crate::http_client::HttpClient;
 use crate::seller::get_sol_pooled_vault;
 use crate::seller_service::SellRequest;
 use crate::util::healthz;
@@ -11,7 +12,7 @@ use actix_web::web::Json;
 use actix_web::{App, Error, HttpResponse, HttpServer};
 use log::info;
 use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
+use serde_json::json;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::EncodableKey;
@@ -62,30 +63,15 @@ async fn handle_buy(buy_request: Json<BuyRequest>) -> Result<HttpResponse, Error
         .expect("buy");
         let sol_pooled_when_bought =
             get_sol_pooled_vault(&buy_request.sol_vault, &provider.rpc_client).await;
-        match reqwest::Client::new()
-            .post(env("SELLER_URL") + "/sell")
-            .json(&SellRequest {
+        HttpClient::new()
+            .sell(&SellRequest {
                 amm_pool: buy_request.amm_pool,
                 input_mint: buy_request.output_mint,
                 output_mint: buy_request.input_mint,
                 sol_vault: buy_request.sol_vault,
                 sol_pooled_when_bought,
             })
-            .send()
             .await
-        {
-            Ok(res) => {
-                info!(
-                    "seller response: {:?}",
-                    serde_json::to_string_pretty(
-                        &res.json::<Value>().await.expect("seller json res")
-                    )
-                );
-            }
-            Err(e) => {
-                info!("seller error: {:?}", e);
-            }
-        }
     });
 
     Ok(HttpResponse::Ok().json(json!({"status": "OK, trigerred buy"})))

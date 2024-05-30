@@ -4,11 +4,12 @@ use crate::{
     buyer_service::BuyRequest,
     checker::{Checklist, PoolAccounts, _run_checks},
     constants,
+    http_client::HttpClient,
     util::{env, healthz},
 };
 use actix_web::web::Json;
 use actix_web::{post, App, Error, HttpResponse, HttpServer, Result};
-use log::{info, warn};
+use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
@@ -74,32 +75,17 @@ pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpRe
     let amm_pool = checks_request.accounts.amm_pool;
     let input_mint = Pubkey::from_str(constants::SOLANA_PROGRAM_ID).unwrap();
     tokio::spawn(async move {
-        let client = reqwest::Client::new();
-        match client
-            .post(env("BUYER_URL") + "/buy")
-            .json(&BuyRequest {
+        let amount = 10_000_000;
+        HttpClient::new()
+            .buy(&BuyRequest {
                 amm_pool,
                 input_mint,
                 output_mint,
                 sol_vault,
-                amount: 1_000_000,
+                amount,
             })
-            .send()
             .await
-        {
-            Ok(response) => {
-                info!(
-                    "buyer response: {}",
-                    serde_json::to_string_pretty(
-                        &response.json::<serde_json::Value>().await.unwrap()
-                    )
-                    .unwrap()
-                );
-            }
-            Err(e) => {
-                warn!("error: {}", e);
-            }
-        }
+            .expect("buy");
     });
 
     token_result.timestamp_finalized = chrono::Utc::now().to_rfc3339();
