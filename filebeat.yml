@@ -10,7 +10,4 @@ setup.kibana:
   host: "kibana:5601"
 
 output.elasticsearch:
-  hosts: ["elasticsearch:9200"]
-
-output.logstash:
-  hosts: ["logstash:5044"]
+  hosts: ["http://elasticsearch:9200"]
