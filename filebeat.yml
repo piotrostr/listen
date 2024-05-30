@@ -1,7 +1,16 @@
-filebeat.inputs:
-  - type: docker
-    containers.ids:
-      - "*"
+filebeat.autodiscover:
+  providers:
+    - type: docker
+      hints.enabled: true
+
+processors:
+  - add_docker_metadata: ~
+
+setup.kibana:
+  host: "kibana:5601"
+
+output.elasticsearch:
+  hosts: ["elasticsearch:9200"]
 
 output.logstash:
-  hosts: ["localhost:5044"]
+  hosts: ["logstash:5044"]
