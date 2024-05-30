@@ -2,33 +2,107 @@ use std::{error::Error, str::FromStr};
 
 use base64::Engine;
 use futures_util::StreamExt;
-use log::{debug, info};
-use raydium_amm::state::AmmInfo;
+use log::{debug, info, warn};
+use raydium_amm::{math::SwapDirection, state::AmmInfo};
 use raydium_library::amm;
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
 use solana_client::{
     nonblocking::{pubsub_client::PubsubClient, rpc_client::RpcClient},
     rpc_config::RpcAccountInfoConfig,
 };
-use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
+use solana_sdk::{commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey};
+use spl_token::state::Mint;
 
 use crate::constants;
+
+#[derive(Debug, Default)]
+pub struct VaultState {
+    pub slot: u64,
+    pub amount: u64,
+    pub decimals: u8,
+}
+
+#[derive(Debug, Default)]
+pub struct Pool {
+    pub token_vault: VaultState,
+    pub sol_vault: VaultState,
+}
+
+impl Pool {
+    pub fn try_price(&self) -> Option<f64> {
+        if self.token_vault.amount == 0
+            || self.sol_vault.amount == 0
+            || self.sol_vault.slot == 0
+            || self.token_vault.slot == 0
+            || self.sol_vault.slot != self.token_vault.slot
+        {
+            return None;
+        }
+        // decimals hard-coded as 6 (most-common), might lead to weird errors,
+        // worth pulling it from chain, same as SOL price, this method is more
+        // for looking, for trading another method should be used that returns the ratio
+        // ratio is all
+        let token_amount =
+            self.token_vault.amount as f64 / 10u64.pow(self.token_vault.decimals as u32) as f64;
+        let sol_amount = self.sol_vault.amount as f64 / 10u64.pow(9) as f64;
+        Some(sol_amount / token_amount * 170.)
+    }
+
+    pub fn calculate_token_amount_out(&self, lamports_in: u64) -> u64 {
+        raydium_amm::math::Calculator::swap_token_amount_base_in(
+            lamports_in.into(),
+            self.token_vault.amount.into(),
+            self.sol_vault.amount.into(),
+            SwapDirection::PC2Coin,
+        )
+        .as_u64()
+    }
+
+    pub fn calculate_sol_amount_out(&self, token_in: u64) -> u64 {
+        // for some reason the decimals are not taken into account in the spl_state
+        println!("token in: {}", token_in);
+        raydium_amm::math::Calculator::swap_token_amount_base_in(
+            token_in
+                // .checked_mul(10u64.pow(self.token_vault.decimals as u32))
+                // .expect("mul by decimals")
+                .into(),
+            self.token_vault.amount.into(),
+            self.sol_vault.amount.into(),
+            SwapDirection::PC2Coin,
+        )
+        .as_u64()
+    }
+}
 
 pub async fn listen_price(
     amm_pool: &Pubkey,
     rpc_client: &RpcClient,
     pubsub_client: &PubsubClient,
-) -> Result<f64, Box<dyn Error>> {
+    token_balance_ui: Option<u64>,
+    tp: Option<f64>,
+    sl: Option<f64>,
+    lamports_spent: Option<u64>,
+) -> Result<bool, Box<dyn Error>> {
     // load amm keys
     let amm_program =
         Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY).expect("amm program");
     let amm_keys = amm::utils::load_amm_keys(rpc_client, &amm_program, amm_pool).await?;
     let coin_mint_is_sol =
         amm_keys.amm_coin_mint == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
+    let (token_vault, sol_vault) = if coin_mint_is_sol {
+        (amm_keys.amm_pc_vault, amm_keys.amm_coin_vault)
+    } else {
+        (amm_keys.amm_coin_vault, amm_keys.amm_pc_vault)
+    };
+    let token_mint = if coin_mint_is_sol {
+        amm_keys.amm_pc_mint
+    } else {
+        amm_keys.amm_coin_mint
+    };
 
-    let (mut stream, unsub) = pubsub_client
+    let (mut token_stream, token_unsub) = pubsub_client
         .account_subscribe(
-            amm_pool,
+            &token_vault,
             Some(RpcAccountInfoConfig {
                 commitment: Some(CommitmentConfig::processed()),
                 encoding: Some(UiAccountEncoding::Base64),
@@ -38,29 +112,120 @@ pub async fn listen_price(
         .await
         .expect("subscribe to account");
 
-    let token_mint = if coin_mint_is_sol {
-        amm_keys.amm_pc_mint
-    } else {
-        amm_keys.amm_coin_mint
-    };
+    let (mut sol_stream, sol_unsub) = pubsub_client
+        .account_subscribe(
+            &sol_vault,
+            Some(RpcAccountInfoConfig {
+                commitment: Some(CommitmentConfig::processed()),
+                encoding: Some(UiAccountEncoding::Base64),
+                ..Default::default()
+            }),
+        )
+        .await
+        .expect("subscribe to account");
 
+    let mut pool = Pool::default();
     info!("listening for price for {}", token_mint.to_string());
-    while let Some(log) = stream.next().await {
-        match log.value.data {
-            UiAccountData::Binary(data, UiAccountEncoding::Base64) => {
-                let _ = unpack::<AmmInfo>(&base64::prelude::BASE64_STANDARD.decode(data).unwrap())
-                    .expect("unpack amm info");
-                // get_sol_pooled(&amm_info, rpc_client).await;
+    pool.token_vault.decimals = get_decimals(&token_mint, rpc_client).await;
+    pool.sol_vault.decimals = 9;
+    info!("tp: {:?}, sl: {:?}", tp, sl);
+    loop {
+        tokio::select! {
+            Some(token_log) = token_stream.next() => {
+                match token_log.value.data {
+                    UiAccountData::Binary(data, UiAccountEncoding::Base64) => {
+                        let log_data = base64::prelude::BASE64_STANDARD.decode(data).unwrap();
+                        if log_data.is_empty() {
+                            warn!("empty log data");
+                            continue;
+                        }
+                        let account = spl_token::state::Account::unpack(&log_data).unwrap();
+                        pool.token_vault.amount = account.amount;
+                        pool.token_vault.slot = token_log.context.slot;
+                        let price = pool.try_price();
+                        if price.is_none() {
+                            continue;
+                        }
+                        if let Some(token_in) = token_balance_ui {
+                            let lamports_out = pool.calculate_sol_amount_out(token_in);
+                            if let Some(lamports_spent) = lamports_spent {
+                                info!(
+                                    "amount out for {} {}, pnl: {}",
+                                    token_in,
+                                    lamports_out as f64 / 10u64.pow(9) as f64,
+                                    lamports_out as f64 / lamports_spent as f64
+                                );
+                            }
+                            if let Some(tp) = tp {
+                                if lamports_out as f64 >= tp {
+                                    info!("tp reached");
+                                    token_unsub().await;
+                                    sol_unsub().await;
+                                    return Ok(true);
+                                }
+                            }
+                            if let Some(sl) = sl {
+                                if lamports_out as f64 <= sl {
+                                    info!("sl reached");
+                                    token_unsub().await;
+                                    sol_unsub().await;
+                                    return Ok(true);
+                                }
+                            }
+                        } else {
+                            info!("{}", price.unwrap());
+                        }
+                    }
+                    _ => {
+                        warn!("unexpected data");
+                    }
+                }
             }
-            _ => {
-                info!("unexpected data format, only base64 for now");
+            Some(sol_log) = sol_stream.next() => {
+                pool.sol_vault.amount = sol_log.value.lamports;
+                pool.sol_vault.slot = sol_log.context.slot;
+                let price = pool.try_price();
+                if price.is_none() {
+                    continue;
+                }
+                if let Some(token_in) = token_balance_ui {
+                    let lamports_out = pool.calculate_sol_amount_out(token_in);
+                    if let Some(lamports_spent) = lamports_spent {
+                        info!(
+                            "amount out for {} {}, pnl: {}",
+                            token_in,
+                            lamports_out as f64 / 10u64.pow(9) as f64,
+                            lamports_out as f64 / lamports_spent as f64
+                        );
+                    }
+                    if let Some(tp) = tp {
+                        if lamports_out as f64 >= tp {
+                            info!("tp reached");
+                            token_unsub().await;
+                            sol_unsub().await;
+                            return Ok(true);
+                        }
+                    }
+                    if let Some(sl) = sl {
+                        if lamports_out as f64 <= sl {
+                            info!("sl reached");
+                            token_unsub().await;
+                            sol_unsub().await;
+                            return Ok(true);
+                        }
+                    }
+                } else {
+                    info!("{}", price.unwrap());
+                }
+            }
+            _ = tokio::time::sleep(tokio::time::Duration::from_secs(1500)) => {
+                warn!("timeout");
+                break;
             }
         }
     }
 
-    unsub().await;
-
-    Ok(0.)
+    Ok(false)
 }
 
 pub fn clear() {
@@ -113,10 +278,35 @@ where
     Some(ret.clone())
 }
 
+pub async fn get_decimals(mint: &Pubkey, rpc_client: &RpcClient) -> u8 {
+    let mint_account = rpc_client
+        .get_account(&mint)
+        .await
+        .expect("get mint account");
+    let mint_data = Mint::unpack(&mint_account.data).expect("unpack mint data");
+    mint_data.decimals
+}
+
 #[cfg(test)]
 mod tests {
 
+    use std::str::FromStr;
+
+    use solana_client::nonblocking::rpc_client::RpcClient;
+    use solana_sdk::pubkey::Pubkey;
+
     use super::{unpack, AmmInfo};
+
+    #[tokio::test]
+    async fn test_get_decimals() {
+        let mint = Pubkey::from_str("6hm9tDfhnhVCBD6Qk8L27WabnbzfUJFs5jQpdLnNVAET").unwrap();
+        let decimals = super::get_decimals(
+            &mint,
+            &RpcClient::new("https://api.mainnet-beta.solana.com".to_string()),
+        )
+        .await;
+        assert!(decimals == 5u8);
+    }
 
     #[test]
     fn test_parse_amm() {

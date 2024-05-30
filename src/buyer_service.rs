@@ -1,5 +1,4 @@
 use crate::http_client::HttpClient;
-use crate::seller::get_sol_pooled_vault;
 use crate::seller_service::SellRequest;
 use crate::util::healthz;
 use crate::{
@@ -34,11 +33,6 @@ pub struct BuyRequest {
         deserialize_with = "string_to_pubkey"
     )]
     pub output_mint: Pubkey,
-    #[serde(
-        serialize_with = "pubkey_to_string",
-        deserialize_with = "string_to_pubkey"
-    )]
-    pub sol_vault: Pubkey,
     pub amount: u64,
 }
 
@@ -48,6 +42,7 @@ async fn handle_buy(buy_request: Json<BuyRequest>) -> Result<HttpResponse, Error
         "handling buy req {}",
         serde_json::to_string_pretty(&buy_request)?
     );
+    let mint = buy_request.output_mint;
     tokio::spawn(async move {
         let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read fund keypair");
         let provider = &Provider::new(env("RPC_URL").to_string());
@@ -61,20 +56,18 @@ async fn handle_buy(buy_request: Json<BuyRequest>) -> Result<HttpResponse, Error
         )
         .await
         .expect("buy");
-        let sol_pooled_when_bought =
-            get_sol_pooled_vault(&buy_request.sol_vault, &provider.rpc_client).await;
         HttpClient::new()
             .sell(&SellRequest {
                 amm_pool: buy_request.amm_pool,
                 input_mint: buy_request.output_mint,
                 output_mint: buy_request.input_mint,
-                sol_vault: buy_request.sol_vault,
-                sol_pooled_when_bought,
+                lamports_spent: buy_request.amount,
             })
             .await
     });
 
-    Ok(HttpResponse::Ok().json(json!({"status": "OK, trigerred buy"})))
+    Ok(HttpResponse::Ok()
+        .json(json!({"status": format!("OK, trigerred buy of {}", mint.to_string())})))
 }
 
 pub async fn run_buyer_service() -> std::io::Result<()> {

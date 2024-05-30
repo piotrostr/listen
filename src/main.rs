@@ -265,9 +265,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let pubsub_client =
                 nonblocking::pubsub_client::PubsubClient::new(env("WS_URL").as_str()).await?;
             let amm_pool = Pubkey::from_str(amm_pool.as_str())?;
-            seller::listen_price(&amm_pool, &provider.rpc_client, &pubsub_client)
-                .await
-                .expect("listen price");
+            seller::listen_price(
+                &amm_pool,
+                &provider.rpc_client,
+                &pubsub_client,
+                None,
+                None,
+                None,
+                None,
+            )
+            .await
+            .expect("listen price");
         }
         Command::CheckerService {} => {
             checker_service::run_checker_service().await?;

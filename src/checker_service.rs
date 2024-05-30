@@ -65,13 +65,6 @@ pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpRe
         token_result.checklist.mint.to_string()
     );
 
-    let sol_vault = if checks_request.accounts.coin_mint.to_string() == constants::SOLANA_PROGRAM_ID
-    {
-        checks_request.accounts.pool_coin_token_account
-    } else {
-        checks_request.accounts.pool_pc_token_account
-    };
-
     let amm_pool = checks_request.accounts.amm_pool;
     let input_mint = Pubkey::from_str(constants::SOLANA_PROGRAM_ID).unwrap();
     tokio::spawn(async move {
@@ -81,7 +74,6 @@ pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpRe
                 amm_pool,
                 input_mint,
                 output_mint,
-                sol_vault,
                 amount,
             })
             .await

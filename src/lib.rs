@@ -13,6 +13,7 @@ pub mod listener;
 pub mod listener_service;
 pub mod prometheus;
 pub mod provider;
+pub mod pump_fun;
 pub mod raydium;
 pub mod rpc;
 pub mod seller;

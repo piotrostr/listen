@@ -1,3 +1,4 @@
+use crate::seller;
 use crate::util::healthz;
 use crate::{
     buyer,
@@ -38,12 +39,7 @@ pub struct SellRequest {
         deserialize_with = "string_to_pubkey"
     )]
     pub output_mint: Pubkey,
-    #[serde(
-        serialize_with = "pubkey_to_string",
-        deserialize_with = "string_to_pubkey"
-    )]
-    pub sol_vault: Pubkey,
-    pub sol_pooled_when_bought: f64,
+    pub lamports_spent: u64,
 }
 
 #[post("/sell")]
@@ -80,41 +76,19 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
             }
         };
         info!("balance: {}", balance);
-        // parse balance into u64
-        let (mut stream, unsub) = pubsub_client
-            .account_subscribe(
-                &sell_request.sol_vault,
-                Some(RpcAccountInfoConfig {
-                    commitment: Some(CommitmentConfig::processed()),
-                    encoding: Some(UiAccountEncoding::Base64),
-                    ..Default::default()
-                }),
-            )
-            .await
-            .expect("account_subscribe");
-
-        let tp_sol_pooled = sell_request.sol_pooled_when_bought * 1.4;
-        let sl_sol_pooled = sell_request.sol_pooled_when_bought * 0.8;
-
-        debug!(
-            "subscribed to sol_vault, tp: {}, sl: {}",
-            tp_sol_pooled, sl_sol_pooled
-        );
-        while let Some(log) = stream.next().await {
-            let sol_pooled = log.value.lamports as f64 / 10u64.pow(9) as f64;
-            debug!(
-                "{} sol_pooled: {}, tp: {}, sl: {}",
-                sell_request.input_mint.to_string(),
-                sol_pooled,
-                tp_sol_pooled,
-                sl_sol_pooled
-            );
-            // this could be more elaborate, also including factors like volume
-            // right now building a simple, hopefully profitable, MVP
-            if sol_pooled >= tp_sol_pooled || sol_pooled <= sl_sol_pooled {
-                info!("selling");
-                break;
-            }
+        let ok = seller::listen_price(
+            &sell_request.amm_pool,
+            &provider.rpc_client,
+            &pubsub_client,
+            Some(balance),
+            Some(sell_request.lamports_spent as f64 * 1.6),
+            Some(sell_request.lamports_spent as f64 * 0.8),
+            Some(sell_request.lamports_spent),
+        )
+        .await
+        .expect("listen price");
+        if !ok {
+            return;
         }
 
         buyer::swap(
@@ -127,8 +101,6 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
         )
         .await
         .expect("buy");
-
-        unsub().await;
     });
 
     Ok(HttpResponse::Ok().json(json!({"status": "OK, triggered sell"})))
