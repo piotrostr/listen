@@ -9,6 +9,13 @@ services:
     environment:
       - CHECKER_URL=http://checker:8079
     restart: always
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: listener
+    depends_on:
+      - fluentd
   checker:
     image: piotrostr/listen
     ports:
@@ -23,6 +30,13 @@ services:
       replicas: 4
       mode: replicated
       endpoint_mode: vip
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: checker
+    depends_on:
+      - fluentd
   buyer:
     image: piotrostr/listen
     ports:
@@ -35,6 +49,13 @@ services:
     restart: always
     environment:
       - SELLER_URL=http://seller:8081
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: buyer
+    depends_on:
+      - fluentd
   seller:
     image: piotrostr/listen
     ports:
@@ -49,8 +70,15 @@ services:
       replicas: 2
       mode: replicated
       endpoint_mode: vip
+    logging:
+      driver: "fluentd"
+      options:
+        fluentd-address: localhost:24224
+        tag: seller
+    depends_on:
+      - fluentd
   fluentd:
-    image: fluent/fluentd
+    image: fluent/fluentd:v1.17.0-1.0
     ports:
       - "24224:24224"
       - "24224:24224/udp"
