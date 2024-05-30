@@ -5,6 +5,8 @@ services:
       - discovery.type=single-node
     ports:
       - "9200:9200"
+    networks:
+      - elk
 
   logstash:
     image: docker.elastic.co/logstash/logstash:7.9.3
@@ -12,6 +14,10 @@ services:
       - ./logstash.conf:/usr/share/logstash/pipeline/logstash.conf
     depends_on:
       - elasticsearch
+    ports:
+      - "5044:5044"
+    networks:
+      - elk
 
   kibana:
     image: docker.elastic.co/kibana/kibana:7.9.3
@@ -19,6 +25,9 @@ services:
       - "5601:5601"
     depends_on:
       - elasticsearch
+    networks:
+      - elk
+
   filebeat:
     image: docker.elastic.co/beats/filebeat:7.9.3
     volumes:
@@ -35,4 +44,10 @@ services:
         read_only: true
     depends_on:
       - logstash
+    networks:
+      - elk
     command: ["filebeat", "-e", "-strict.perms=false"]
+
+networks:
+  elk:
+    driver: bridge
