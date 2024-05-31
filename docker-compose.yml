@@ -16,6 +16,10 @@ services:
         tag: listener
     depends_on:
       - fluentd
+    deploy:
+      replicas: 3
+      mode: replicated
+      endpoint_mode: vip
   checker:
     image: piotrostr/listen
     ports:
@@ -27,7 +31,7 @@ services:
       - BUYER_URL=http://buyer:8080
     restart: always
     deploy:
-      replicas: 4
+      replicas: 5
       mode: replicated
       endpoint_mode: vip
     logging:
@@ -56,6 +60,10 @@ services:
         tag: buyer
     depends_on:
       - fluentd
+    deploy:
+      replicas: 3
+      mode: replicated
+      endpoint_mode: vip
   seller:
     image: piotrostr/listen
     ports:
@@ -67,7 +75,7 @@ services:
     command: ["listen", "seller-service"]
     restart: always
     deploy:
-      replicas: 2
+      replicas: 5
       mode: replicated
       endpoint_mode: vip
     logging:
