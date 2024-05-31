@@ -27,7 +27,6 @@ pub struct Pool {
     pub token_vault: VaultState,
     pub sol_vault: VaultState,
     pub token_mint: Pubkey,
-    pub token_in: u64,
     pub lamports_spent: u64,
     pub tp: f64,
     pub sl: f64,
@@ -83,11 +82,11 @@ impl Pool {
         .as_u64()
     }
 
-    pub fn check_if_target_reached(&mut self) -> bool {
+    pub fn check_if_target_reached(&mut self, token_in: u64) -> bool {
         if self.try_price().is_none() {
             return false;
         }
-        let lamports_out = self.calculate_sol_amount_out(self.token_in);
+        let lamports_out = self.calculate_sol_amount_out(token_in);
         info!(
             "lamports out: {}, initial diff: {}",
             lamports_out, self.diff
@@ -128,7 +127,7 @@ impl Pool {
             return true;
         }
         // trail the trailing stop loss
-        self.tsl = max(lamports_out as f64 - self.diff, self.tsl);
+        // self.tsl = max(lamports_out as f64 - self.diff, self.tsl);
 
         false
     }
@@ -188,8 +187,7 @@ pub async fn listen_price(
     info!("listening for price for {}", token_mint.to_string());
     pool.token_vault.decimals = get_decimals(&token_mint, rpc_client).await;
     pool.sol_vault.decimals = 9;
-    if let Some(token_balance_ui) = token_balance_ui {
-        pool.token_in = token_balance_ui;
+    if token_balance_ui.is_some() {
         pool.token_mint = token_mint;
         pool.lamports_spent = lamports_spent.expect("lamports spent");
         pool.tp = tp.expect("tp");
@@ -216,10 +214,12 @@ pub async fn listen_price(
                                 info!("price: {}", price);
                             }
                         }
-                        if pool.check_if_target_reached() {
-                            token_unsub().await;
-                            sol_unsub().await;
-                            return Ok(true)
+                        if let Some(token_in) = token_balance_ui {
+                            if pool.check_if_target_reached(token_in) {
+                                token_unsub().await;
+                                sol_unsub().await;
+                                return Ok(true)
+                            }
                         }
                     }
                     _ => {
@@ -235,15 +235,17 @@ pub async fn listen_price(
                         info!("price: {}", price);
                     }
                 }
-                if pool.check_if_target_reached() {
-                    token_unsub().await;
-                    sol_unsub().await;
-                    return Ok(true)
+                if let Some(token_in) = token_balance_ui {
+                    if pool.check_if_target_reached(token_in) {
+                        token_unsub().await;
+                        sol_unsub().await;
+                        return Ok(true)
+                    }
                 }
             }
-            _ = tokio::time::sleep(tokio::time::Duration::from_secs(1500)) => {
+            _ = tokio::time::sleep(tokio::time::Duration::from_secs(3000)) => {
                 warn!("timeout");
-                // sell the tokens after 25 minutes
+                // sell the tokens after 50 minutes
                 return Ok(true);
             }
         }
