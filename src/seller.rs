@@ -13,7 +13,7 @@ use solana_client::{
 use solana_sdk::{commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey};
 use spl_token::state::Mint;
 
-use crate::{constants, util::max};
+use crate::{constants};
 
 #[derive(Debug, Default)]
 pub struct VaultState {
@@ -192,7 +192,7 @@ pub async fn listen_price(
         pool.lamports_spent = lamports_spent.expect("lamports spent");
         pool.tp = tp.expect("tp");
         pool.sl = sl.expect("sl");
-        pool.tsl = pool.sl.clone();
+        pool.tsl = pool.sl;
         pool.diff = pool.lamports_spent as f64 - pool.sl;
         info!("tp: {:?}, sl: {:?}", tp, sl);
     }
