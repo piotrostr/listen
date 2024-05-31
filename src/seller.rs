@@ -30,7 +30,12 @@ pub struct Pool {
     pub token_in: u64,
     pub lamports_spent: u64,
     pub tp: f64,
+    // stop loss has to be trailing to enable winners winning and cut losers
+    // still
     pub sl: f64,
+    // diff is how much the price can go up or down before selling
+    // used for calculating the trailing stop loss
+    pub diff: f64,
 }
 
 impl Pool {
@@ -77,20 +82,20 @@ impl Pool {
         .as_u64()
     }
 
-    pub fn check_if_target_reached(&self) -> bool {
+    pub fn check_if_target_reached(&mut self) -> bool {
         if self.try_price().is_none() {
             return false;
         }
         let lamports_out = self.calculate_sol_amount_out(self.token_in);
         info!(
-            "{}: amount out for {} {}, pnl: {}",
+            "{}: tp: {}, sl (trailing): {}, current pnl: {}",
             self.token_mint.to_string(),
-            self.token_in,
-            lamports_out as f64 / 10u64.pow(9) as f64,
+            self.tp,
+            self.sl,
             lamports_out as f64 / self.lamports_spent as f64
         );
         if lamports_out as f64 >= self.tp {
-            debug!(
+            info!(
                 "{}: tp reached at {}",
                 self.token_mint.to_string(),
                 lamports_out as f64 / 10u64.pow(9) as f64
@@ -98,13 +103,15 @@ impl Pool {
             return true;
         }
         if lamports_out as f64 <= self.sl {
-            debug!(
+            info!(
                 "{}: sl reached at {}",
                 self.token_mint.to_string(),
                 lamports_out as f64 / 10u64.pow(9) as f64
             );
             return true;
         }
+        // trail the stop-loss
+        self.sl = lamports_out as f64 - self.diff;
         false
     }
 }
@@ -169,6 +176,7 @@ pub async fn listen_price(
         pool.lamports_spent = lamports_spent.expect("lamports spent");
         pool.tp = tp.expect("tp");
         pool.sl = sl.expect("sl");
+        pool.diff = pool.sl - pool.lamports_spent as f64;
         info!("tp: {:?}, sl: {:?}", tp, sl);
     }
     loop {
