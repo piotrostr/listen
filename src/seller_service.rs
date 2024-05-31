@@ -58,24 +58,41 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
         let pubsub_client = PubsubClient::new(&env("WS_URL"))
             .await
             .expect("make pubsub client");
-        let balance = match provider
-            .rpc_client
-            .get_token_account_balance(&token_account)
-            .await
-        {
-            Ok(balance) => balance
-                .amount
-                .parse::<u64>()
-                .expect("balance string to u64"),
-            Err(e) => {
-                warn!("error getting balance: {}", e);
-                info!("listening on token account {}", token_account.to_string());
-                get_spl_balance_stream(&pubsub_client, &token_account)
-                    .await
-                    .expect("get_spl_balance_stream")
-            }
-        };
+        let mut backoff = 500;
+        let mut balance = 0;
+        for _ in 0..5 {
+            balance = match provider
+                .rpc_client
+                .get_token_account_balance(&token_account)
+                .await
+            {
+                Ok(balance) => balance
+                    .amount
+                    .parse::<u64>()
+                    .expect("balance string to u64"),
+                Err(e) => {
+                    warn!("error getting balance: {}", e);
+                    tokio::time::sleep(tokio::time::Duration::from_millis(backoff)).await;
+                    backoff *= 2;
+                    continue;
+                    // info!("listening on token account {}", token_account.to_string());
+                    // get_spl_balance_stream(&pubsub_client, &token_account)
+                    //     .await
+                    //     .expect("get_spl_balance_stream")
+                }
+            };
+        }
+        if balance == 0 {
+            warn!("could not fetch balance, exiting");
+            return;
+        }
         info!("balance: {}", balance);
+        // TODO generally, those params should be different for pump.fun coins and
+        // the standard coins
+        // --
+        // number one thing now would be to analyze after looking at some charts
+        // rn I think the crucial thing is to get rid of the rugs where someone
+        // even though all checks pass, some holder dumps $XXK and -99.9%s the token
         let ok = seller::listen_price(
             &sell_request.amm_pool,
             &provider.rpc_client,

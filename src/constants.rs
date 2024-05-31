@@ -18,5 +18,8 @@ pub const JITO_TIP_PUBKEY: &str = "Cw8CFyM9FkoMi7K7Crf6HNQqf4uEMzpKw6QNghXLvLkY"
 pub const RAYDIUM_AMM_PUBKEY: &str = "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1";
 
 pub fn ruggers() -> Vec<String> {
-    vec!["3jAhNEb1SgTvgXgsXJrB44jK5opHbxr7NbpPjx9aJE4t".to_string()]
+    vec![
+        "3jAhNEb1SgTvgXgsXJrB44jK5opHbxr7NbpPjx9aJE4t".to_string(),
+        "32A1b5pbYyqgrtcg49UfpuWmTqz9hrQeE2du91A6pxX8".to_string(),
+    ]
 }
