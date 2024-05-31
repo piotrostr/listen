@@ -1,20 +1,25 @@
-use crate::seller;
+use std::str::FromStr;
+
+use crate::http_client::HttpClient;
 use crate::util::healthz;
 use crate::{
     buyer,
     provider::Provider,
     util::{env, pubkey_to_string, string_to_pubkey},
 };
+use crate::{constants, seller};
 use actix_web::post;
 use actix_web::web::Json;
 use actix_web::{App, Error, HttpResponse, HttpServer};
 use base64::Engine;
 use futures_util::StreamExt;
 use log::{info, warn};
+use raydium_library::amm;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
 use solana_client::nonblocking::pubsub_client::PubsubClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcAccountInfoConfig;
 use solana_sdk::commitment_config::CommitmentConfig;
 use solana_sdk::program_pack::Pack;
@@ -117,10 +122,52 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
             &provider,
         )
         .await
-        .expect("buy");
+        .expect("swap");
     });
 
     Ok(HttpResponse::Ok().json(json!({"status": "OK, triggered sell"})))
+}
+
+#[derive(Deserialize, Serialize)]
+pub struct SimpleSellRequest {
+    #[serde(
+        serialize_with = "pubkey_to_string",
+        deserialize_with = "string_to_pubkey"
+    )]
+    pub amm_pool: Pubkey,
+    pub lamports_spent: u64,
+}
+
+#[post("/sell-simple")]
+async fn handle_sell_simple(sell_request: Json<SimpleSellRequest>) -> Result<HttpResponse, Error> {
+    info!(
+        "handling simple_sell_request {}",
+        serde_json::to_string_pretty(&sell_request)?
+    );
+    let rpc_client = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
+    let amm_program = Pubkey::from_str(constants::RAYDIUM_AMM_PUBKEY).unwrap();
+    let amm_keys = amm::utils::load_amm_keys(&rpc_client, &amm_program, &sell_request.amm_pool)
+        .await
+        .expect("amm_keys");
+
+    let (input_mint, output_mint) =
+        if amm_keys.amm_pc_mint.to_string() == constants::SOLANA_PROGRAM_ID {
+            (amm_keys.amm_coin_mint, amm_keys.amm_pc_mint)
+        } else {
+            (amm_keys.amm_pc_mint, amm_keys.amm_coin_mint)
+        };
+
+    HttpClient::new()
+        .sell(&SellRequest {
+            amm_pool: sell_request.amm_pool,
+            input_mint,
+            output_mint,
+            lamports_spent: sell_request.lamports_spent,
+        })
+        .await
+        .expect("sell");
+
+    Ok(HttpResponse::Ok().json(json!({"status": "OK"})))
 }
 
 pub async fn get_spl_balance_stream(
@@ -160,8 +207,13 @@ pub async fn get_spl_balance_stream(
 
 pub async fn run_seller_service() -> std::io::Result<()> {
     info!("Running seller service on 8081");
-    HttpServer::new(move || App::new().service(handle_sell).service(healthz))
-        .bind(("0.0.0.0", 8081))?
-        .run()
-        .await
+    HttpServer::new(move || {
+        App::new()
+            .service(handle_sell)
+            .service(handle_sell_simple)
+            .service(healthz)
+    })
+    .bind(("0.0.0.0", 8081))?
+    .run()
+    .await
 }
