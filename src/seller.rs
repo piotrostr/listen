@@ -26,6 +26,11 @@ pub struct VaultState {
 pub struct Pool {
     pub token_vault: VaultState,
     pub sol_vault: VaultState,
+    pub token_mint: Pubkey,
+    pub token_in: u64,
+    pub lamports_spent: u64,
+    pub tp: f64,
+    pub sl: f64,
 }
 
 impl Pool {
@@ -60,7 +65,6 @@ impl Pool {
 
     pub fn calculate_sol_amount_out(&self, token_in: u64) -> u64 {
         // for some reason the decimals are not taken into account in the spl_state
-        println!("token in: {}", token_in);
         raydium_amm::math::Calculator::swap_token_amount_base_in(
             token_in
                 // .checked_mul(10u64.pow(self.token_vault.decimals as u32))
@@ -71,6 +75,37 @@ impl Pool {
             SwapDirection::PC2Coin,
         )
         .as_u64()
+    }
+
+    pub fn check_if_target_reached(&self) -> bool {
+        if self.try_price().is_none() {
+            return false;
+        }
+        let lamports_out = self.calculate_sol_amount_out(self.token_in);
+        info!(
+            "{}: amount out for {} {}, pnl: {}",
+            self.token_mint.to_string(),
+            self.token_in,
+            lamports_out as f64 / 10u64.pow(9) as f64,
+            lamports_out as f64 / self.lamports_spent as f64
+        );
+        if lamports_out as f64 >= self.tp {
+            debug!(
+                "{}: tp reached at {}",
+                self.token_mint.to_string(),
+                lamports_out as f64 / 10u64.pow(9) as f64
+            );
+            return true;
+        }
+        if lamports_out as f64 <= self.sl {
+            debug!(
+                "{}: sl reached at {}",
+                self.token_mint.to_string(),
+                lamports_out as f64 / 10u64.pow(9) as f64
+            );
+            return true;
+        }
+        false
     }
 }
 
@@ -128,7 +163,14 @@ pub async fn listen_price(
     info!("listening for price for {}", token_mint.to_string());
     pool.token_vault.decimals = get_decimals(&token_mint, rpc_client).await;
     pool.sol_vault.decimals = 9;
-    info!("tp: {:?}, sl: {:?}", tp, sl);
+    if let Some(token_balance_ui) = token_balance_ui {
+        pool.token_in = token_balance_ui;
+        pool.token_mint = token_mint;
+        pool.lamports_spent = lamports_spent.expect("lamports spent");
+        pool.tp = tp.expect("tp");
+        pool.sl = sl.expect("sl");
+        info!("tp: {:?}, sl: {:?}", tp, sl);
+    }
     loop {
         tokio::select! {
             Some(token_log) = token_stream.next() => {
@@ -142,38 +184,15 @@ pub async fn listen_price(
                         let account = spl_token::state::Account::unpack(&log_data).unwrap();
                         pool.token_vault.amount = account.amount;
                         pool.token_vault.slot = token_log.context.slot;
-                        let price = pool.try_price();
-                        if price.is_none() {
-                            continue;
+                        if token_balance_ui.is_none() {
+                            if let Some(price) = pool.try_price() {
+                                info!("price: {}", price);
+                            }
                         }
-                        if let Some(token_in) = token_balance_ui {
-                            let lamports_out = pool.calculate_sol_amount_out(token_in);
-                            if let Some(lamports_spent) = lamports_spent {
-                                info!(
-                                    "amount out for {} {}, pnl: {}",
-                                    token_in,
-                                    lamports_out as f64 / 10u64.pow(9) as f64,
-                                    lamports_out as f64 / lamports_spent as f64
-                                );
-                            }
-                            if let Some(tp) = tp {
-                                if lamports_out as f64 >= tp {
-                                    info!("tp reached");
-                                    token_unsub().await;
-                                    sol_unsub().await;
-                                    return Ok(true);
-                                }
-                            }
-                            if let Some(sl) = sl {
-                                if lamports_out as f64 <= sl {
-                                    info!("sl reached");
-                                    token_unsub().await;
-                                    sol_unsub().await;
-                                    return Ok(true);
-                                }
-                            }
-                        } else {
-                            info!("{}", price.unwrap());
+                        if pool.check_if_target_reached() {
+                            token_unsub().await;
+                            sol_unsub().await;
+                            return Ok(true)
                         }
                     }
                     _ => {
@@ -184,38 +203,15 @@ pub async fn listen_price(
             Some(sol_log) = sol_stream.next() => {
                 pool.sol_vault.amount = sol_log.value.lamports;
                 pool.sol_vault.slot = sol_log.context.slot;
-                let price = pool.try_price();
-                if price.is_none() {
-                    continue;
+                if token_balance_ui.is_none() {
+                    if let Some(price) = pool.try_price() {
+                        info!("price: {}", price);
+                    }
                 }
-                if let Some(token_in) = token_balance_ui {
-                    let lamports_out = pool.calculate_sol_amount_out(token_in);
-                    if let Some(lamports_spent) = lamports_spent {
-                        info!(
-                            "amount out for {} {}, pnl: {}",
-                            token_in,
-                            lamports_out as f64 / 10u64.pow(9) as f64,
-                            lamports_out as f64 / lamports_spent as f64
-                        );
-                    }
-                    if let Some(tp) = tp {
-                        if lamports_out as f64 >= tp {
-                            info!("tp reached");
-                            token_unsub().await;
-                            sol_unsub().await;
-                            return Ok(true);
-                        }
-                    }
-                    if let Some(sl) = sl {
-                        if lamports_out as f64 <= sl {
-                            info!("sl reached");
-                            token_unsub().await;
-                            sol_unsub().await;
-                            return Ok(true);
-                        }
-                    }
-                } else {
-                    info!("{}", price.unwrap());
+                if pool.check_if_target_reached() {
+                    token_unsub().await;
+                    sol_unsub().await;
+                    return Ok(true)
                 }
             }
             _ = tokio::time::sleep(tokio::time::Duration::from_secs(1500)) => {
