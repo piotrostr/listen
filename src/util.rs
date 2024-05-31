@@ -36,3 +36,11 @@ where
     let s = String::deserialize(deserializer)?;
     Pubkey::from_str(&s).map_err(serde::de::Error::custom)
 }
+
+pub fn max(a: f64, b: f64) -> f64 {
+    if a > b {
+        a
+    } else {
+        b
+    }
+}

@@ -13,7 +13,7 @@ use solana_client::{
 use solana_sdk::{commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey};
 use spl_token::state::Mint;
 
-use crate::constants;
+use crate::{constants, util::max};
 
 #[derive(Debug, Default)]
 pub struct VaultState {
@@ -30,9 +30,10 @@ pub struct Pool {
     pub token_in: u64,
     pub lamports_spent: u64,
     pub tp: f64,
+    pub sl: f64,
     // stop loss has to be trailing to enable winners winning and cut losers
     // still
-    pub sl: f64,
+    pub tsl: f64,
     // diff is how much the price can go up or down before selling
     // used for calculating the trailing stop loss
     pub diff: f64,
@@ -88,10 +89,18 @@ impl Pool {
         }
         let lamports_out = self.calculate_sol_amount_out(self.token_in);
         info!(
-            "{}: tp: {}, sl (trailing): {}, current pnl: {}",
+            "lamports out: {}, initial diff: {}",
+            lamports_out, self.diff
+        );
+        if lamports_out == 0 {
+            return false;
+        }
+        info!(
+            "{}: tp: {}, sl: {}, tsl: {}, current pnl: {}",
             self.token_mint.to_string(),
             self.tp,
             self.sl,
+            self.tsl,
             lamports_out as f64 / self.lamports_spent as f64
         );
         if lamports_out as f64 >= self.tp {
@@ -110,8 +119,17 @@ impl Pool {
             );
             return true;
         }
-        // trail the stop-loss
-        self.sl = lamports_out as f64 - self.diff;
+        if lamports_out as f64 <= self.tsl {
+            info!(
+                "{}: tsl reached at {}",
+                self.token_mint.to_string(),
+                lamports_out as f64 / 10u64.pow(9) as f64
+            );
+            return true;
+        }
+        // trail the trailing stop loss
+        self.tsl = max(lamports_out as f64 - self.diff, self.tsl);
+
         false
     }
 }
@@ -176,7 +194,8 @@ pub async fn listen_price(
         pool.lamports_spent = lamports_spent.expect("lamports spent");
         pool.tp = tp.expect("tp");
         pool.sl = sl.expect("sl");
-        pool.diff = pool.sl - pool.lamports_spent as f64;
+        pool.tsl = pool.sl.clone();
+        pool.diff = pool.lamports_spent as f64 - pool.sl;
         info!("tp: {:?}, sl: {:?}", tp, sl);
     }
     loop {
