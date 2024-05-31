@@ -104,7 +104,7 @@ impl Pool {
             lamports_out as f64 / self.lamports_spent as f64
         );
         if lamports_out as f64 >= self.tp {
-            info!(
+            debug!(
                 "{}: tp reached at {}",
                 self.token_mint.to_string(),
                 lamports_out as f64 / 10u64.pow(9) as f64
@@ -112,7 +112,7 @@ impl Pool {
             return true;
         }
         if lamports_out as f64 <= self.sl {
-            info!(
+            debug!(
                 "{}: sl reached at {}",
                 self.token_mint.to_string(),
                 lamports_out as f64 / 10u64.pow(9) as f64
@@ -120,7 +120,7 @@ impl Pool {
             return true;
         }
         if lamports_out as f64 <= self.tsl {
-            info!(
+            debug!(
                 "{}: tsl reached at {}",
                 self.token_mint.to_string(),
                 lamports_out as f64 / 10u64.pow(9) as f64
@@ -243,7 +243,8 @@ pub async fn listen_price(
             }
             _ = tokio::time::sleep(tokio::time::Duration::from_secs(1500)) => {
                 warn!("timeout");
-                break;
+                // sell the tokens after 25 minutes
+                return Ok(true);
             }
         }
     }
