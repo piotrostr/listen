@@ -248,8 +248,6 @@ pub async fn listen_price(
             }
         }
     }
-
-    Ok(false)
 }
 
 pub fn clear() {
