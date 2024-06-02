@@ -17,6 +17,11 @@ pub const JITO_TIP_PUBKEY: &str = "Cw8CFyM9FkoMi7K7Crf6HNQqf4uEMzpKw6QNghXLvLkY"
 
 pub const RAYDIUM_AMM_PUBKEY: &str = "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1";
 
+// TODO
+// another rug method is as in case of Fwnf2vDqbHv6GH4eXQHpYmqSMynHrW2yBz8dXxExE5Kq
+// initial launch with LP burn, mint/freeze revoked but a large instant buy
+// staight aftewards, often from multiple accounts, followed by steady rise
+// and a darth maul afterwards
 pub fn ruggers() -> Vec<String> {
     vec![
         "3jAhNEb1SgTvgXgsXJrB44jK5opHbxr7NbpPjx9aJE4t".to_string(),

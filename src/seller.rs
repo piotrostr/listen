@@ -13,7 +13,7 @@ use solana_client::{
 use solana_sdk::{commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey};
 use spl_token::state::Mint;
 
-use crate::{constants};
+use crate::constants;
 
 #[derive(Debug, Default)]
 pub struct VaultState {
@@ -376,5 +376,14 @@ mod tests {
         assert!(
             amm_info.market_program.to_string() == "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
         );
+    }
+
+    #[test]
+    fn test_get_ata_pump() {
+        let mint = "FowDbZNH9o7x3SKgXEudQu2U1k59XpP7TzHYrrckpump";
+        spl_associated_token_account::get_associated_token_address(
+            wallet_address,
+            token_mint_address,
+        )
     }
 }

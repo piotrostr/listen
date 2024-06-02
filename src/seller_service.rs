@@ -1,3 +1,4 @@
+use std::ops::Div;
 use std::str::FromStr;
 
 use crate::http_client::HttpClient;
@@ -104,7 +105,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
             &pubsub_client,
             Some(balance),
             Some(sell_request.lamports_spent as f64 * 2.0),
-            Some(sell_request.lamports_spent as f64 * 0.5),
+            Some(sell_request.lamports_spent as f64 * 0.1),
             Some(sell_request.lamports_spent),
         )
         .await
@@ -117,7 +118,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
             &sell_request.amm_pool,
             &sell_request.input_mint,
             &sell_request.output_mint,
-            balance,
+            balance.div(2), // sell initial and leave the remainder
             &wallet,
             &provider,
         )
