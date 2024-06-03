@@ -94,7 +94,7 @@ impl Pool {
         if lamports_out == 0 {
             return false;
         }
-        info!(
+        debug!(
             "{}: tp: {}, sl: {}, tsl: {}, current pnl: {}",
             self.token_mint.to_string(),
             self.tp,
@@ -103,7 +103,7 @@ impl Pool {
             lamports_out as f64 / self.lamports_spent as f64
         );
         if lamports_out as f64 >= self.tp {
-            debug!(
+            info!(
                 "{}: tp reached at {}",
                 self.token_mint.to_string(),
                 lamports_out as f64 / 10u64.pow(9) as f64
@@ -111,7 +111,7 @@ impl Pool {
             return true;
         }
         if lamports_out as f64 <= self.sl {
-            debug!(
+            info!(
                 "{}: sl reached at {}",
                 self.token_mint.to_string(),
                 lamports_out as f64 / 10u64.pow(9) as f64
@@ -119,7 +119,7 @@ impl Pool {
             return true;
         }
         if lamports_out as f64 <= self.tsl {
-            debug!(
+            info!(
                 "{}: tsl reached at {}",
                 self.token_mint.to_string(),
                 lamports_out as f64 / 10u64.pow(9) as f64
