@@ -380,10 +380,12 @@ mod tests {
 
     #[test]
     fn test_get_ata_pump() {
-        let mint = "FowDbZNH9o7x3SKgXEudQu2U1k59XpP7TzHYrrckpump";
-        spl_associated_token_account::get_associated_token_address(
-            wallet_address,
-            token_mint_address,
-        )
+        let mint = "FAJVRnNHuwozDi5UL8guMyobveadXDFxeikvN4Hupump".to_string();
+        let expected_addr = "HKh1cnq5b5iuhcEiDNyyGFyw3877hLzUjGCgr4LFjfHC".to_string();
+        let ata = spl_associated_token_account::get_associated_token_address(
+            &Pubkey::from_str("fuckTYubuBRLPm3TnBWfYYkDKnnfJqRtk1L1DpE4uFK").unwrap(),
+            &Pubkey::from_str(&mint).unwrap(),
+        );
+        assert!(ata.to_string() == expected_addr);
     }
 }

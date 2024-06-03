@@ -77,7 +77,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
                     .parse::<u64>()
                     .expect("balance string to u64"),
                 Err(e) => {
-                    warn!("error getting balance: {}", e);
+                    warn!("{} error getting balance: {}", token_account.to_string(), e);
                     tokio::time::sleep(tokio::time::Duration::from_millis(backoff)).await;
                     backoff *= 2;
                     continue;
