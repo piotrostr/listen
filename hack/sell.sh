@@ -1,6 +1,6 @@
 #!/bin/bash
 
-curl localhost:8080/sell-simple \
+curl -X POST localhost:8081/sell-simple \
   -H "Content-Type: application/json" \
   -H "Accept: application/json" \
   -d '{ 

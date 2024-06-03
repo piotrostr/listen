@@ -64,35 +64,15 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
         let pubsub_client = PubsubClient::new(&env("WS_URL"))
             .await
             .expect("make pubsub client");
-        let mut backoff = 500;
-        let mut balance = 0;
-        for _ in 0..5 {
-            balance = match provider
-                .rpc_client
-                .get_token_account_balance(&token_account)
-                .await
-            {
-                Ok(balance) => balance
-                    .amount
-                    .parse::<u64>()
-                    .expect("balance string to u64"),
-                Err(e) => {
-                    warn!("{} error getting balance: {}", token_account.to_string(), e);
-                    tokio::time::sleep(tokio::time::Duration::from_millis(backoff)).await;
-                    backoff *= 2;
-                    continue;
-                    // info!("listening on token account {}", token_account.to_string());
-                    // get_spl_balance_stream(&pubsub_client, &token_account)
-                    //     .await
-                    //     .expect("get_spl_balance_stream")
-                }
-            };
-        }
+        let balance = tokio::select! {
+                balance = get_spl_balance_stream(&pubsub_client, &token_account) => balance.expect("balance stream"),
+                balance = get_spl_balance(&provider, &token_account) => balance.expect("balance rpc"),
+        };
+        info!("balance: {}", balance);
         if balance == 0 {
             warn!("could not fetch balance, exiting");
             return;
         }
-        info!("balance: {}", balance);
         // TODO generally, those params should be different for pump.fun coins and
         // the standard coins
         // --
@@ -146,7 +126,7 @@ async fn handle_sell_simple(sell_request: Json<SimpleSellRequest>) -> Result<Htt
         serde_json::to_string_pretty(&sell_request)?
     );
     let rpc_client = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
-    let amm_program = Pubkey::from_str(constants::RAYDIUM_AMM_PUBKEY).unwrap();
+    let amm_program = Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY).unwrap();
     let amm_keys = amm::utils::load_amm_keys(&rpc_client, &amm_program, &sell_request.amm_pool)
         .await
         .expect("amm_keys");
@@ -217,4 +197,35 @@ pub async fn run_seller_service() -> std::io::Result<()> {
     .bind(("0.0.0.0", 8081))?
     .run()
     .await
+}
+
+pub async fn get_spl_balance(
+    provider: &Provider,
+    token_account: &Pubkey,
+) -> Result<u64, Box<dyn std::error::Error>> {
+    let mut backoff = 500;
+    for _ in 0..5 {
+        match provider
+            .rpc_client
+            .get_token_account_balance(&token_account)
+            .await
+        {
+            Ok(balance) => {
+                if balance.amount == "0" {
+                    continue;
+                }
+                return Ok(balance
+                    .amount
+                    .parse::<u64>()
+                    .expect("balance string to u64"));
+            }
+            Err(e) => {
+                warn!("{} error getting balance: {}", token_account.to_string(), e);
+                tokio::time::sleep(tokio::time::Duration::from_millis(backoff)).await;
+                backoff *= 2;
+                continue;
+            }
+        };
+    }
+    Err(format!("could not fetch balance for {}", token_account.to_string()).into())
 }
