@@ -87,7 +87,7 @@ impl Pool {
             return false;
         }
         let lamports_out = self.calculate_sol_amount_out(token_in);
-        info!(
+        debug!(
             "lamports out: {}, initial diff: {}",
             lamports_out, self.diff
         );
