@@ -206,7 +206,7 @@ pub async fn get_spl_balance(
     token_account: &Pubkey,
 ) -> Result<u64, Box<dyn std::error::Error>> {
     let mut backoff = 1000;
-    for _ in 0..5 {
+    for _ in 0..10 {
         match provider
             .rpc_client
             .get_token_account_balance(token_account)
