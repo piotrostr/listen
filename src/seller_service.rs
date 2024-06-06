@@ -1,4 +1,3 @@
-
 use std::str::FromStr;
 
 use crate::http_client::HttpClient;
@@ -86,8 +85,8 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
                 &provider.rpc_client,
                 &pubsub_client,
                 Some(balance),
-                Some(sell_request.lamports_spent as f64 * 2.0),
-                Some(sell_request.lamports_spent as f64 * 0.1),
+                Some(sell_request.lamports_spent as f64 * 5.0),
+                Some(sell_request.lamports_spent as f64 * 0.7),
                 Some(sell_request.lamports_spent),
             )
             .await
