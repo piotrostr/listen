@@ -234,10 +234,12 @@ pub async fn listen_for_burn(
 }
 
 pub async fn check_if_pump_fun(mint: &Pubkey) -> Result<bool, Box<dyn Error>> {
-    let base = "https://client-api-2-74b1891ee9f9.herokuapp.com/coins/";
-    let url = format!("{}{}", base, mint);
-    let res = reqwest::get(&url).await?;
-    Ok(res.status().is_success())
+    // easier way
+    return Ok(mint.to_string().ends_with("pump"));
+    // let base = "https://client-api-2-74b1891ee9f9.herokuapp.com/coins/";
+    // let url = format!("{}{}", base, mint);
+    // let res = reqwest::get(&url).await?;
+    // Ok(res.status().is_success())
 }
 
 #[cfg(test)]
