@@ -69,9 +69,9 @@ pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpRe
     let input_mint = Pubkey::from_str(constants::SOLANA_PROGRAM_ID).unwrap();
     tokio::spawn(async move {
         let amount = if token_result.checklist.is_pump_fun {
-            100_000_000
-        } else {
             50_000_000
+        } else {
+            5_000_000
         };
         HttpClient::new()
             .buy(&BuyRequest {
