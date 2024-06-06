@@ -1,4 +1,4 @@
-use std::ops::Div;
+
 use std::str::FromStr;
 
 use crate::http_client::HttpClient;
@@ -211,7 +211,7 @@ pub async fn get_spl_balance(
     for _ in 0..5 {
         match provider
             .rpc_client
-            .get_token_account_balance(&token_account)
+            .get_token_account_balance(token_account)
             .await
         {
             Ok(balance) => {
@@ -231,5 +231,5 @@ pub async fn get_spl_balance(
             }
         };
     }
-    Err(format!("could not fetch balance for {}", token_account.to_string()).into())
+    Err(format!("could not fetch balance for {}", token_account).into())
 }
