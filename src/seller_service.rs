@@ -181,7 +181,7 @@ pub async fn get_spl_balance_stream(
                 Err("unexpected data".into())
             }
         },
-        _ = tokio::time::sleep(tokio::time::Duration::from_secs(10)) => {
+        _ = tokio::time::sleep(tokio::time::Duration::from_secs(20)) => {
             warn!("get_spl_balance_stream {}: timeout", token_account.to_string());
             Err("timeout".into())
         },
@@ -205,7 +205,7 @@ pub async fn get_spl_balance(
     provider: &Provider,
     token_account: &Pubkey,
 ) -> Result<u64, Box<dyn std::error::Error>> {
-    let mut backoff = 500;
+    let mut backoff = 1000;
     for _ in 0..5 {
         match provider
             .rpc_client
