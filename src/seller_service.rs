@@ -84,9 +84,9 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
                 &sell_request.amm_pool,
                 &provider.rpc_client,
                 &pubsub_client,
-                Some(balance),
+                Some((balance as f64 * 0.9) as u64),
                 Some(sell_request.lamports_spent as f64 * 1.6),
-                Some(sell_request.lamports_spent as f64 * 0.65),
+                Some(sell_request.lamports_spent as f64 * 0.69),
                 Some(sell_request.lamports_spent),
             )
             .await
