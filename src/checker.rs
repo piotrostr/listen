@@ -163,6 +163,12 @@ pub async fn _run_checks(
     checklist.is_pump_fun = is_pump_fun;
     if is_pump_fun {
         return Ok((true, checklist));
+    } else {
+        // ignoring any other tokens, way too many scams (noise to profit ratio
+        // is too low), even with higher, centralized supply
+        // only profit opp is a fair launch of a larger token, but this happens rarely
+        // current strat is to flip pumps for 30-50% profit
+        return Ok((false, checklist));
     }
 
     let pubsub_client = PubsubClient::new(&env("WS_URL")).await?;

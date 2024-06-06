@@ -71,6 +71,10 @@ async fn handle_buy(buy_request: Json<BuyRequest>) -> Result<HttpResponse, Error
         .json(json!({"status": format!("OK, trigerred buy of {}", mint.to_string())})))
 }
 
+pub struct BalanceContext {
+    pub lamports: u64,
+}
+
 pub async fn run_buyer_service() -> std::io::Result<()> {
     info!("Running buyer service on 8080");
     HttpServer::new(move || App::new().service(handle_buy).service(healthz))

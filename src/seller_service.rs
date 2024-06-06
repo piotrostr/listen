@@ -86,7 +86,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
                 &pubsub_client,
                 Some(balance),
                 Some(sell_request.lamports_spent as f64 * 5.0),
-                Some(sell_request.lamports_spent as f64 * 0.7),
+                Some(sell_request.lamports_spent as f64 * 0.65),
                 Some(sell_request.lamports_spent),
             )
             .await
@@ -118,7 +118,6 @@ pub struct SimpleSellRequest {
         deserialize_with = "string_to_pubkey"
     )]
     pub amm_pool: Pubkey,
-    pub lamports_spent: u64,
 }
 
 #[post("/sell-simple")]
@@ -145,7 +144,7 @@ async fn handle_sell_simple(sell_request: Json<SimpleSellRequest>) -> Result<Htt
             amm_pool: sell_request.amm_pool,
             input_mint,
             output_mint,
-            lamports_spent: sell_request.lamports_spent,
+            lamports_spent: 0u64,
             insta: Some(true),
         })
         .await
