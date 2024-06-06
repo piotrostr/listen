@@ -62,6 +62,7 @@ async fn handle_buy(buy_request: Json<BuyRequest>) -> Result<HttpResponse, Error
                 input_mint: buy_request.output_mint,
                 output_mint: buy_request.input_mint,
                 lamports_spent: buy_request.amount,
+                insta: None,
             })
             .await
     });

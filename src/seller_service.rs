@@ -46,6 +46,7 @@ pub struct SellRequest {
     )]
     pub output_mint: Pubkey,
     pub lamports_spent: u64,
+    pub insta: Option<bool>,
 }
 
 #[post("/sell")]
@@ -79,26 +80,28 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
         // number one thing now would be to analyze after looking at some charts
         // rn I think the crucial thing is to get rid of the rugs where someone
         // even though all checks pass, some holder dumps $XXK and -99.9%s the token
-        let ok = seller::listen_price(
-            &sell_request.amm_pool,
-            &provider.rpc_client,
-            &pubsub_client,
-            Some(balance),
-            Some(sell_request.lamports_spent as f64 * 2.0),
-            Some(sell_request.lamports_spent as f64 * 0.1),
-            Some(sell_request.lamports_spent),
-        )
-        .await
-        .expect("listen price");
-        if !ok {
-            return;
+        if !sell_request.insta.unwrap_or(false) {
+            let ok = seller::listen_price(
+                &sell_request.amm_pool,
+                &provider.rpc_client,
+                &pubsub_client,
+                Some(balance),
+                Some(sell_request.lamports_spent as f64 * 2.0),
+                Some(sell_request.lamports_spent as f64 * 0.1),
+                Some(sell_request.lamports_spent),
+            )
+            .await
+            .expect("listen price");
+            if !ok {
+                return;
+            }
         }
 
         buyer::swap(
             &sell_request.amm_pool,
             &sell_request.input_mint,
             &sell_request.output_mint,
-            balance.div(2), // sell initial and leave the remainder
+            balance, // sell initial and leave the remainder
             &wallet,
             &provider,
         )
@@ -144,6 +147,7 @@ async fn handle_sell_simple(sell_request: Json<SimpleSellRequest>) -> Result<Htt
             input_mint,
             output_mint,
             lamports_spent: sell_request.lamports_spent,
+            insta: Some(true),
         })
         .await
         .expect("sell");
