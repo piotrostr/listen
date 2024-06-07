@@ -38,7 +38,7 @@ pub struct Executor {
 
 impl Executor {
     pub async fn execute(
-        &self,
+        &mut self,
         provider: &Provider,
         pubsub_client: &PubsubClient,
         amm_pool: &Pubkey,
@@ -155,7 +155,8 @@ impl Executor {
             let tp_level = self.tp_levels.get(i).unwrap();
             let tp_amount = self.tp_amounts.get(i).unwrap();
             if lamports_out >= *tp_level as f64 * lamports_in {
-                sell_amount += tp_amount
+                sell_amount += tp_amount;
+                self.tp_reached[i] = true;
             }
         }
         for i in 0..self.sl_levels.len() {
@@ -165,7 +166,8 @@ impl Executor {
             }
             let sl_amount = self.sl_amounts.get(i).unwrap();
             if lamports_out <= *sl_level as f64 * lamports_in {
-                sell_amount += sl_amount
+                sell_amount += sl_amount;
+                self.sl_reached[i] = true;
             }
         }
         sell_amount as u64
