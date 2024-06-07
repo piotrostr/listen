@@ -99,7 +99,10 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
                 sl_reached: vec![false, false],
 
                 tp_levels: vec![1.5, 2.0, 3.0, 5.0, 10.0],
-                tp_amounts: vec![0.4, 0.2, 0.2, 0.2, 0.2].iter().map(|x| *x * balance as f64).collect(),
+                tp_amounts: vec![0.4, 0.2, 0.2, 0.2, 0.2]
+                    .iter()
+                    .map(|x| *x * balance as f64)
+                    .collect(),
                 tp_reached: vec![false, false, false, false, false],
             };
             executor
@@ -213,38 +216,38 @@ pub async fn handle_balance(
 
 pub async fn run_seller_service() -> std::io::Result<()> {
     info!("Running seller service on 8081");
-    let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read wallet");
-    info!(
-        "Subscribing to balance updates for {}",
-        wallet.pubkey().to_string()
-    );
-    let balance_lamports = RpcClient::new(env("RPC_URL"))
-        .get_balance_with_commitment(&wallet.pubkey(), CommitmentConfig::confirmed())
-        .await
-        .expect("get balance")
-        .value;
-    let balance_ctx = Arc::new(BalanceContext {
-        lamports: Arc::new(RwLock::new(balance_lamports)),
-        token_balances: Arc::new(RwLock::new(HashMap::<String, f64>::new())),
-    });
+    // let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read wallet");
+    // info!(
+    //     "Subscribing to balance updates for {}",
+    //     wallet.pubkey().to_string()
+    // );
+    // let balance_lamports = RpcClient::new(env("RPC_URL"))
+    //     .get_balance_with_commitment(&wallet.pubkey(), CommitmentConfig::confirmed())
+    //     .await
+    //     .expect("get balance")
+    //     .value;
 
-    let auth = Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).expect("read auth keypair");
-    let searcher_client = get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth))
-        .await
-        .expect("makes searcher client");
+    // let auth = Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).expect("read auth keypair");
+    // let searcher_client = get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth))
+    //     .await
+    //     .expect("makes searcher client");
 
-    let poll = balance_ctx.clone();
-    tokio::spawn(async move {
-        poll.track_lamports_balance(&wallet.pubkey()).await;
-    });
+    // let balance_ctx = Arc::new(BalanceContext {
+    //     lamports: Arc::new(RwLock::new(balance_lamports)),
+    //     token_balances: Arc::new(RwLock::new(HashMap::<String, f64>::new())),
+    // });
+    // let poll = balance_ctx.clone();
+    // tokio::spawn(async move {
+    //     poll.track_lamports_balance(&wallet.pubkey()).await;
+    // });
     HttpServer::new(move || {
         App::new()
             .service(handle_sell)
             .service(handle_sell_simple)
             .service(handle_balance)
-            .app_data(web::Data::new(balance_ctx.clone()))
-            .app_data(web::Data::new(searcher_client.clone()))
             .service(healthz)
+        // .app_data(web::Data::new(balance_ctx.clone()))
+        // .app_data(web::Data::new(searcher_client.clone()))
     })
     .bind(("0.0.0.0", 8081))?
     .run()
