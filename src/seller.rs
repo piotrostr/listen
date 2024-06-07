@@ -13,7 +13,7 @@ use solana_client::{
 use solana_sdk::{commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey};
 use spl_token::state::Mint;
 
-use crate::constants;
+use crate::{constants, Provider};
 
 #[derive(Debug, Default)]
 pub struct VaultState {
@@ -27,15 +27,6 @@ pub struct Pool {
     pub token_vault: VaultState,
     pub sol_vault: VaultState,
     pub token_mint: Pubkey,
-    pub lamports_spent: u64,
-    pub tp: f64,
-    pub sl: f64,
-    // stop loss has to be trailing to enable winners winning and cut losers
-    // still
-    pub tsl: f64,
-    // diff is how much the price can go up or down before selling
-    // used for calculating the trailing stop loss
-    pub diff: f64,
 }
 
 impl Pool {
@@ -81,66 +72,12 @@ impl Pool {
         )
         .as_u64()
     }
-
-    pub fn check_if_target_reached(&mut self, token_in: u64) -> bool {
-        if self.try_price().is_none() {
-            return false;
-        }
-        let lamports_out = self.calculate_sol_amount_out(token_in);
-        debug!(
-            "lamports out: {}, initial diff: {}",
-            lamports_out, self.diff
-        );
-        if lamports_out == 0 {
-            return false;
-        }
-        debug!(
-            "{}: tp: {}, sl: {}, tsl: {}, current pnl: {}",
-            self.token_mint.to_string(),
-            self.tp,
-            self.sl,
-            self.tsl,
-            lamports_out as f64 / self.lamports_spent as f64
-        );
-        if lamports_out as f64 >= self.tp {
-            info!(
-                "{}: tp reached at {}",
-                self.token_mint.to_string(),
-                lamports_out as f64 / 10u64.pow(9) as f64
-            );
-            return true;
-        }
-        if lamports_out as f64 <= self.sl {
-            info!(
-                "{}: sl reached at {}",
-                self.token_mint.to_string(),
-                lamports_out as f64 / 10u64.pow(9) as f64
-            );
-            return true;
-        }
-        if lamports_out as f64 <= self.tsl {
-            info!(
-                "{}: tsl reached at {}",
-                self.token_mint.to_string(),
-                lamports_out as f64 / 10u64.pow(9) as f64
-            );
-            return true;
-        }
-        // trail the trailing stop loss
-        // self.tsl = max(lamports_out as f64 - self.diff, self.tsl);
-
-        false
-    }
 }
 
 pub async fn listen_price(
     amm_pool: &Pubkey,
     rpc_client: &RpcClient,
     pubsub_client: &PubsubClient,
-    token_balance_ui: Option<u64>,
-    tp: Option<f64>,
-    sl: Option<f64>,
-    lamports_spent: Option<u64>,
 ) -> Result<bool, Box<dyn Error>> {
     // load amm keys
     let amm_program =
@@ -185,17 +122,6 @@ pub async fn listen_price(
 
     let mut pool = Pool::default();
     info!("listening for price for {}", token_mint.to_string());
-    pool.token_vault.decimals = get_decimals(&token_mint, rpc_client).await;
-    pool.sol_vault.decimals = 9;
-    if token_balance_ui.is_some() {
-        pool.token_mint = token_mint;
-        pool.lamports_spent = lamports_spent.expect("lamports spent");
-        pool.tp = tp.expect("tp");
-        pool.sl = sl.expect("sl");
-        pool.tsl = pool.sl;
-        pool.diff = pool.lamports_spent as f64 - pool.sl;
-        info!("tp: {:?}, sl: {:?}", tp, sl);
-    }
     loop {
         tokio::select! {
             Some(token_log) = token_stream.next() => {
@@ -209,17 +135,8 @@ pub async fn listen_price(
                         let account = spl_token::state::Account::unpack(&log_data).unwrap();
                         pool.token_vault.amount = account.amount;
                         pool.token_vault.slot = token_log.context.slot;
-                        if token_balance_ui.is_none() {
-                            if let Some(price) = pool.try_price() {
-                                info!("price: {}", price);
-                            }
-                        }
-                        if let Some(token_in) = token_balance_ui {
-                            if pool.check_if_target_reached(token_in) {
-                                token_unsub().await;
-                                sol_unsub().await;
-                                return Ok(true)
-                            }
+                        if let Some(price) = pool.try_price() {
+                            info!("price: {}", price);
                         }
                     }
                     _ => {
@@ -230,22 +147,14 @@ pub async fn listen_price(
             Some(sol_log) = sol_stream.next() => {
                 pool.sol_vault.amount = sol_log.value.lamports;
                 pool.sol_vault.slot = sol_log.context.slot;
-                if token_balance_ui.is_none() {
-                    if let Some(price) = pool.try_price() {
-                        info!("price: {}", price);
-                    }
-                }
-                if let Some(token_in) = token_balance_ui {
-                    if pool.check_if_target_reached(token_in) {
-                        token_unsub().await;
-                        sol_unsub().await;
-                        return Ok(true)
-                    }
+                if let Some(price) = pool.try_price() {
+                    info!("price: {}", price);
                 }
             }
             _ = tokio::time::sleep(tokio::time::Duration::from_secs(3000)) => {
                 warn!("timeout");
-                // sell the tokens after 50 minutes
+                token_unsub().await;
+                sol_unsub().await;
                 return Ok(true);
             }
         }
@@ -269,7 +178,6 @@ pub async fn get_sol_pooled(amm_pool: &Pubkey, rpc_client: &RpcClient) -> f64 {
             .expect("get amm pool"),
     )
     .expect("unpack");
-    // clear();
     debug!("market {}", amm_info.market.to_string());
     debug!("pc in {}", amm_info.state_data.swap_pc_in_amount);
     debug!("pc out {}", amm_info.state_data.swap_pc_out_amount);
@@ -309,6 +217,72 @@ pub async fn get_decimals(mint: &Pubkey, rpc_client: &RpcClient) -> u8 {
         .expect("get mint account");
     let mint_data = Mint::unpack(&mint_account.data).expect("unpack mint data");
     mint_data.decimals
+}
+
+pub async fn get_spl_balance(
+    provider: &Provider,
+    token_account: &Pubkey,
+) -> Result<u64, Box<dyn std::error::Error>> {
+    let mut backoff = 100;
+    for _ in 0..12 {
+        match provider
+            .rpc_client
+            .get_token_account_balance(token_account)
+            .await
+        {
+            Ok(balance) => {
+                if balance.amount == "0" {
+                    continue;
+                }
+                return Ok(balance
+                    .amount
+                    .parse::<u64>()
+                    .expect("balance string to u64"));
+            }
+            Err(e) => {
+                warn!("{} error getting balance: {}", token_account.to_string(), e);
+                tokio::time::sleep(tokio::time::Duration::from_millis(backoff)).await;
+                backoff *= 2;
+                continue;
+            }
+        };
+    }
+    Err(format!("could not fetch balance for {}", token_account).into())
+}
+
+pub async fn get_spl_balance_stream(
+    pubsub_client: &PubsubClient,
+    token_account: &Pubkey,
+) -> Result<u64, Box<dyn std::error::Error>> {
+    let (mut stream, unsub) = pubsub_client
+        .account_subscribe(
+            token_account,
+            Some(RpcAccountInfoConfig {
+                commitment: Some(CommitmentConfig::processed()),
+                encoding: Some(UiAccountEncoding::Base64),
+                ..Default::default()
+            }),
+        )
+        .await
+        .expect("account_subscribe");
+
+    tokio::select! {
+        log = stream.next() => {
+            if let UiAccountData::Binary(data, UiAccountEncoding::Base64) = log.expect("log").value.data {
+                let log_data = base64::prelude::BASE64_STANDARD.decode(&data).expect("decode spl b64");
+                let spl_account = spl_token::state::Account::unpack(&log_data).expect("unpack spl");
+                unsub().await;
+                Ok(spl_account.amount)
+            } else {
+                warn!("get_spl_balance_stream {}: unexpected data", token_account.to_string());
+                Err("unexpected data".into())
+            }
+        },
+        _ = tokio::time::sleep(tokio::time::Duration::from_secs(20)) => {
+            warn!("get_spl_balance_stream {}: timeout", token_account.to_string());
+            Err("timeout".into())
+        },
+    }
 }
 
 #[cfg(test)]

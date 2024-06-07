@@ -6,6 +6,7 @@ pub mod checker;
 pub mod checker_service;
 pub mod collector;
 pub mod constants;
+pub mod execute;
 pub mod http_client;
 pub mod jito;
 pub mod jup;

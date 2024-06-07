@@ -87,7 +87,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let ata = Pubkey::from_str(&ata)?;
             let pubsub_client =
                 nonblocking::pubsub_client::PubsubClient::new(env("WS_URL").as_str()).await?;
-            seller_service::get_spl_balance_stream(&pubsub_client, &ata).await?;
+            seller::get_spl_balance_stream(&pubsub_client, &ata).await?;
         }
         Command::Checks { signature } => {
             let (ok, checklist) = checker::run_checks(signature).await?;
@@ -265,17 +265,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let pubsub_client =
                 nonblocking::pubsub_client::PubsubClient::new(env("WS_URL").as_str()).await?;
             let amm_pool = Pubkey::from_str(amm_pool.as_str())?;
-            seller::listen_price(
-                &amm_pool,
-                &provider.rpc_client,
-                &pubsub_client,
-                None,
-                None,
-                None,
-                None,
-            )
-            .await
-            .expect("listen price");
+            seller::listen_price(&amm_pool, &provider.rpc_client, &pubsub_client)
+                .await
+                .expect("listen price");
         }
         Command::CheckerService {} => {
             checker_service::run_checker_service().await?;
