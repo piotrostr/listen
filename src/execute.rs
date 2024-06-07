@@ -144,7 +144,7 @@ impl Executor {
         }
     }
 
-    pub fn get_sell_amount(&self, lamports_in: u64, lamports_out: u64) -> u64 {
+    pub fn get_sell_amount(&mut self, lamports_in: u64, lamports_out: u64) -> u64 {
         let mut sell_amount = 0.;
         let lamports_in = lamports_in as f64;
         let lamports_out = lamports_out as f64;

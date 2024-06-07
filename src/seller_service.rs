@@ -10,12 +10,11 @@ use crate::{
     provider::Provider,
     util::{env, pubkey_to_string, string_to_pubkey},
 };
-use crate::{constants, jito, seller};
+use crate::{constants, seller};
 use actix_web::web::{self, Json};
 use actix_web::{get, post};
 use actix_web::{App, Error, HttpResponse, HttpServer};
 use futures_util::StreamExt;
-use jito_searcher_client::get_searcher_client;
 use log::{info, warn};
 use raydium_library::amm;
 use serde::{Deserialize, Serialize};
@@ -88,7 +87,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
             )
             .await
             .expect("amm_keys");
-            let executor = Executor {
+            let mut executor = Executor {
                 amm_keys,
                 funder: wallet,
                 lamports_in: sell_request.lamports_spent,
