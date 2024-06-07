@@ -98,7 +98,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
                 sl_reached: vec![false, false],
 
                 tp_levels: vec![1.5, 2.0, 3.0, 5.0, 10.0],
-                tp_amounts: vec![0.4, 0.2, 0.2, 0.2, 0.2]
+                tp_amounts: vec![0.4, 0.2, 0.2, 0.1, 0.1]
                     .iter()
                     .map(|x| *x * balance as f64)
                     .collect(),
