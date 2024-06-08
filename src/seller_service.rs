@@ -80,13 +80,10 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
             // load amm keys
             let amm_program =
                 Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY).expect("amm program");
-            let amm_keys = amm::utils::load_amm_keys(
-                &provider.rpc_client,
-                &amm_program,
-                &sell_request.amm_pool,
-            )
-            .await
-            .expect("amm_keys");
+            let amm_keys =
+                load_amm_keys(&provider.rpc_client, &amm_program, &sell_request.amm_pool)
+                    .await
+                    .expect("amm_keys");
             let mut executor = Executor {
                 amm_keys,
                 funder: wallet,
@@ -251,4 +248,63 @@ pub async fn run_seller_service() -> std::io::Result<()> {
     .bind(("0.0.0.0", 8081))?
     .run()
     .await
+}
+
+pub async fn load_amm_keys(
+    client: &RpcClient,
+    amm_program: &Pubkey,
+    amm_pool: &Pubkey,
+) -> Result<amm::AmmKeys, Box<dyn std::error::Error>> {
+    let amm = get_account_with_retries::<raydium_amm::state::AmmInfo>(client, &amm_pool)
+        .await
+        .expect("get_account_with_retries")
+        .unwrap();
+    Ok(amm::AmmKeys {
+        amm_pool: *amm_pool,
+        amm_target: amm.target_orders,
+        amm_coin_vault: amm.coin_vault,
+        amm_pc_vault: amm.pc_vault,
+        amm_lp_mint: amm.lp_mint,
+        amm_open_order: amm.open_orders,
+        amm_coin_mint: amm.coin_vault_mint,
+        amm_pc_mint: amm.pc_vault_mint,
+        amm_authority: raydium_amm::processor::Processor::authority_id(
+            amm_program,
+            raydium_amm::processor::AUTHORITY_AMM,
+            amm.nonce as u8,
+        )?,
+        market: amm.market,
+        market_program: amm.market_program,
+        nonce: amm.nonce as u8,
+    })
+}
+
+pub async fn get_account_with_retries<T>(
+    client: &RpcClient,
+    addr: &Pubkey,
+) -> Result<Option<T>, Box<dyn std::error::Error>>
+where
+    T: Clone,
+{
+    let mut backoff = 1;
+    for _ in 0..6 {
+        match client
+            .get_account_with_commitment(addr, CommitmentConfig::confirmed())
+            .await
+        {
+            Ok(res) => {
+                if let Some(account) = res.value {
+                    let account_data = account.data.as_slice();
+                    let ret = unsafe { &*(&account_data[0] as *const u8 as *const T) };
+                    return Ok(Some(ret.clone()));
+                }
+            }
+            Err(e) => {
+                warn!("could not get account: {}", e);
+                tokio::time::sleep(std::time::Duration::from_secs(backoff)).await;
+                backoff *= 2;
+            }
+        }
+    }
+    Err(format!("could not get account {} after 6 retries", addr.to_string()).into())
 }
