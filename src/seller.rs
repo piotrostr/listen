@@ -278,7 +278,7 @@ pub async fn get_spl_balance_stream(
                 Err("unexpected data".into())
             }
         },
-        _ = tokio::time::sleep(tokio::time::Duration::from_secs(20)) => {
+        _ = tokio::time::sleep(tokio::time::Duration::from_secs(60)) => {
             warn!("get_spl_balance_stream {}: timeout", token_account.to_string());
             Err("timeout".into())
         },
