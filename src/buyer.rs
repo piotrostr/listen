@@ -185,7 +185,7 @@ pub async fn listen_for_burn(
         .account_subscribe(
             &lp_mint,
             Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::processed()),
+                commitment: Some(CommitmentConfig::confirmed()),
                 ..Default::default()
             }),
         )

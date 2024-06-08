@@ -27,7 +27,7 @@ pub async fn run_listener_pubsub_service() -> Result<(), Box<dyn std::error::Err
             .logs_subscribe(
                 RpcTransactionLogsFilter::Mentions(vec![constants::FEE_PROGRAM_ID.to_string()]),
                 RpcTransactionLogsConfig {
-                    commitment: Some(CommitmentConfig::processed()),
+                    commitment: Some(CommitmentConfig::confirmed()),
                 },
             )
             .await

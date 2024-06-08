@@ -185,7 +185,7 @@ impl BalanceContext {
             .account_subscribe(
                 funder,
                 Some(RpcAccountInfoConfig {
-                    commitment: Some(CommitmentConfig::processed()),
+                    commitment: Some(CommitmentConfig::confirmed()),
                     encoding: Some(UiAccountEncoding::Base64),
                     ..Default::default()
                 }),

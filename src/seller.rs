@@ -100,7 +100,7 @@ pub async fn listen_price(
         .account_subscribe(
             &token_vault,
             Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::processed()),
+                commitment: Some(CommitmentConfig::confirmed()),
                 encoding: Some(UiAccountEncoding::Base64),
                 ..Default::default()
             }),
@@ -112,7 +112,7 @@ pub async fn listen_price(
         .account_subscribe(
             &sol_vault,
             Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::processed()),
+                commitment: Some(CommitmentConfig::confirmed()),
                 encoding: Some(UiAccountEncoding::Base64),
                 ..Default::default()
             }),
@@ -258,7 +258,7 @@ pub async fn get_spl_balance_stream(
         .account_subscribe(
             token_account,
             Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::processed()),
+                commitment: Some(CommitmentConfig::confirmed()),
                 encoding: Some(UiAccountEncoding::Base64),
                 ..Default::default()
             }),
