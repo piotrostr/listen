@@ -91,8 +91,8 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
                 token_balance: balance,
                 remaining_token_balance: balance,
 
-                sl_levels: vec![0.7, 0.5],
-                sl_amounts_pct: vec![0.5, 0.5],
+                sl_levels: vec![0.6],
+                sl_amounts_pct: vec![0.9],
                 sl_reached: vec![false, false],
 
                 tp_levels: vec![1.5, 2.0, 3.0, 4.0, 5.0, 10.0],
@@ -100,7 +100,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
                     .iter()
                     .map(|x| *x * balance as f64)
                     .collect(),
-                tp_reached: vec![false, false, false, false, false],
+                tp_reached: vec![true, true, true, true, true, true], // no TP, intended
             };
             executor
                 .execute(&provider, &pubsub_client, &sell_request.amm_pool)
