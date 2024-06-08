@@ -22,6 +22,7 @@ use crate::{buyer, constants, jito, seller::Pool, Provider};
 pub struct Executor {
     pub lamports_in: u64,
     pub token_balance: u64,
+    pub remaining_token_balance: u64,
     pub funder: Keypair,
 
     pub amm_keys: amm::AmmKeys,
@@ -32,7 +33,7 @@ pub struct Executor {
     pub tp_reached: Vec<bool>,
 
     pub sl_levels: Vec<f64>,
-    pub sl_amounts: Vec<f64>,
+    pub sl_amounts_pct: Vec<f64>,
     pub sl_reached: Vec<bool>,
 }
 
@@ -108,6 +109,7 @@ impl Executor {
                                         &self.funder,
                                         &provider
                                     ).await.expect("swap");
+                                    self.remaining_token_balance -= sell_amount;
                                 }
                             }
                         }
@@ -131,6 +133,7 @@ impl Executor {
                                 &self.funder,
                                 &provider
                             ).await.expect("swap");
+                            self.remaining_token_balance -= sell_amount;
                         }
                     }
                 }
@@ -164,11 +167,22 @@ impl Executor {
             if *self.sl_reached.get(i).unwrap() {
                 continue;
             }
-            let sl_amount = self.sl_amounts.get(i).unwrap();
+            let sl_amount_pct = self.sl_amounts_pct.get(i).unwrap();
             if lamports_out <= *sl_level as f64 * lamports_in {
-                sell_amount += sl_amount;
+                // leave 1% to avoid overflows
+                sell_amount += *sl_amount_pct * self.remaining_token_balance as f64;
                 self.sl_reached[i] = true;
             }
+        }
+        // ensure that not swapping more than remaining balance (mostly to avoid
+        // overflow issues with rounding to u64 and setting where sl has taken out half of the position)
+        // likely this might need a rework later, subscribing to balance only
+        // kinda-works until implement re-connects are implemented
+        // it is straightforward to listen to price, since updates come on every
+        // slot pretty much, with balance it is a bit long lived and not so many
+        // events, so setting timeout for msg is not a good idea
+        if sell_amount > self.remaining_token_balance as f64 {
+            sell_amount = self.remaining_token_balance as f64;
         }
         sell_amount as u64
     }
