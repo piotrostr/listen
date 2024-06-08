@@ -9,6 +9,7 @@ use spl_token::state::Mint;
 use std::error::Error;
 use timed::timed;
 
+use crate::seller_service::load_amm_keys;
 use crate::{constants, Provider};
 use raydium_library::common;
 use serde_json::json;
@@ -173,7 +174,7 @@ pub async fn make_swap_context(
 ) -> Result<SwapContext, Box<dyn Error>> {
     let amm_program = Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
     // load amm keys
-    let amm_keys = amm::utils::load_amm_keys(&provider.rpc_client, &amm_program, &amm_pool).await?;
+    let amm_keys = load_amm_keys(&provider.rpc_client, &amm_program, &amm_pool).await?;
     // load market keys
     let market_keys = amm::openbook::get_keys_for_market(
         &provider.rpc_client,
