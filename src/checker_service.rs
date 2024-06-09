@@ -44,14 +44,20 @@ pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpRe
         ..Default::default()
     };
     let rpc_client = RpcClient::new(env("RPC_URL"));
-    let (ok, checklist) =
-        match _run_checks(&rpc_client, checks_request.accounts, checks_request.slot).await {
-            Ok((ok, checklist)) => (ok, checklist),
-            Err(e) => {
-                return Ok(HttpResponse::InternalServerError()
-                    .json(json!({"error": format!("Error running checks: {}", e)})));
-            }
-        };
+    let (ok, checklist) = match _run_checks(
+        &rpc_client,
+        checks_request.accounts,
+        checks_request.slot,
+        true,
+    )
+    .await
+    {
+        Ok((ok, checklist)) => (ok, checklist),
+        Err(e) => {
+            return Ok(HttpResponse::InternalServerError()
+                .json(json!({"error": format!("Error running checks: {}", e)})));
+        }
+    };
     let output_mint = checklist.mint;
     token_result.checklist = checklist;
     if !ok {

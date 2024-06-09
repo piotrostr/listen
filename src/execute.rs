@@ -5,18 +5,12 @@ use futures_util::StreamExt;
 use log::{info, warn};
 use raydium_library::amm;
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
-use solana_client::{
-    nonblocking::{
-        pubsub_client::{self, PubsubClient},
-        rpc_client::RpcClient,
-    },
-    rpc_config::RpcAccountInfoConfig,
-};
+use solana_client::{nonblocking::pubsub_client::PubsubClient, rpc_config::RpcAccountInfoConfig};
 use solana_sdk::{
     commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey, signature::Keypair,
 };
 
-use crate::{buyer, constants, jito, seller::Pool, Provider};
+use crate::{buyer, constants, seller::Pool, Provider};
 
 #[derive(Debug)]
 pub struct Executor {

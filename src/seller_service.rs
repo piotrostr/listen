@@ -199,7 +199,9 @@ impl BalanceContext {
         unsub().await;
     }
 
-    pub async fn track_token_balance(&self, mint: &Pubkey, owner: &Pubkey) {}
+    pub async fn track_token_balance(&self, _mint: &Pubkey, _owner: &Pubkey) {
+        // TODO (maybe at some point)
+    }
 }
 
 #[get("/balance")]

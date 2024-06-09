@@ -1,4 +1,4 @@
-use std::{error::Error, str::FromStr, sync::Arc};
+use std::{error::Error, str::FromStr, sync::Arc, thread::sleep, time::Duration};
 
 use crate::{
     constants, jito,
@@ -28,18 +28,39 @@ pub async fn swap(
     amount: u64,
     wallet: &Keypair,
     provider: &Provider,
-) -> Result<(), Box<dyn Error>> {
-    let swap_context = raydium::make_swap_context(
-        provider,
-        *amm_pool,
-        *input_mint,
-        *output_mint,
-        wallet,
-        0,
-        amount,
-    )
-    .await
-    .expect("makes swap context");
+) -> Result<(), Box<dyn Error + Send + Sync>> {
+    let mut retries = 0;
+    let mut backoff = 100u64;
+    let swap_context = loop {
+        match raydium::make_swap_context(
+            provider,
+            *amm_pool,
+            *input_mint,
+            *output_mint,
+            wallet,
+            0,
+            amount,
+        )
+        .await
+        {
+            Ok(swap_context) => {
+                break Some(swap_context);
+            }
+            Err(_) => {
+                warn!("make swap context failed");
+                sleep(Duration::from_millis(backoff));
+                if retries > 6 {
+                    break None;
+                }
+                backoff *= 2;
+                retries += 1;
+            }
+        }
+    };
+    if swap_context.is_none() {
+        return Err("make swap context failed".into());
+    }
+    let swap_context = swap_context.unwrap();
 
     let start = std::time::Instant::now();
     let quick = true;
