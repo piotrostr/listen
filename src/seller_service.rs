@@ -95,12 +95,12 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
                 sl_amounts_pct: vec![0.9],
                 sl_reached: vec![false],
 
-                tp_levels: vec![1.85, 2.5, 3.0, 4.0, 5.0, 10.0],
-                tp_amounts: [0.3, 0.3, 0.1, 0.1, 0.1, 0.1]
+                tp_levels: vec![1.85, 2.5, 5.0, 10.0],
+                tp_amounts: [0.3, 0.3, 0.2, 0.1]
                     .iter()
                     .map(|x| *x * balance as f64)
                     .collect(),
-                tp_reached: vec![false, true, true, true, true, true], // no TP, intended
+                tp_reached: vec![false, false, false, false],
             };
             executor
                 .execute(&provider, &pubsub_client, &sell_request.amm_pool)
