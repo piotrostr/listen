@@ -101,7 +101,7 @@ impl Executor {
                                         &Pubkey::from_str(constants::SOLANA_PROGRAM_ID).unwrap(),
                                         sell_amount,
                                         &self.funder,
-                                        &provider
+                                        provider
                                     ).await.expect("swap");
                                     self.remaining_token_balance -= sell_amount;
                                 }
@@ -125,7 +125,7 @@ impl Executor {
                                 &Pubkey::from_str(constants::SOLANA_PROGRAM_ID).unwrap(),
                                 sell_amount,
                                 &self.funder,
-                                &provider
+                                provider
                             ).await.expect("swap");
                             self.remaining_token_balance -= sell_amount;
                         }
@@ -151,7 +151,7 @@ impl Executor {
             }
             let tp_level = self.tp_levels.get(i).unwrap();
             let tp_amount = self.tp_amounts.get(i).unwrap();
-            if lamports_out >= *tp_level as f64 * lamports_in {
+            if lamports_out >= *tp_level * lamports_in {
                 sell_amount += tp_amount;
                 self.tp_reached[i] = true;
             }
@@ -162,7 +162,7 @@ impl Executor {
                 continue;
             }
             let sl_amount_pct = self.sl_amounts_pct.get(i).unwrap();
-            if lamports_out <= *sl_level as f64 * lamports_in {
+            if lamports_out <= *sl_level * lamports_in {
                 // leave 1% to avoid overflows
                 sell_amount += *sl_amount_pct * self.remaining_token_balance as f64;
                 self.sl_reached[i] = true;

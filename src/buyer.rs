@@ -257,7 +257,7 @@ pub async fn listen_for_burn(
 pub async fn check_if_pump_fun(mint: &Pubkey) -> Result<bool, Box<dyn Error>> {
     // easier way
     if mint.to_string().ends_with("pump") {
-        return Ok(true);
+        Ok(true)
     } else {
         let base = "https://frontend-api.pump.fun/coins/";
         let url = format!("{}{}", base, mint);

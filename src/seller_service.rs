@@ -96,7 +96,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
                 sl_reached: vec![false],
 
                 tp_levels: vec![1.85, 2.5, 3.0, 4.0, 5.0, 10.0],
-                tp_amounts: vec![0.3, 0.3, 0.1, 0.1, 0.1, 0.1]
+                tp_amounts: [0.3, 0.3, 0.1, 0.1, 0.1, 0.1]
                     .iter()
                     .map(|x| *x * balance as f64)
                     .collect(),
@@ -258,7 +258,7 @@ pub async fn load_amm_keys(
     amm_program: &Pubkey,
     amm_pool: &Pubkey,
 ) -> Result<amm::AmmKeys, Box<dyn std::error::Error>> {
-    let amm = get_account_with_retries::<raydium_amm::state::AmmInfo>(client, &amm_pool)
+    let amm = get_account_with_retries::<raydium_amm::state::AmmInfo>(client, amm_pool)
         .await
         .expect("get_account_with_retries")
         .unwrap();
@@ -309,5 +309,5 @@ where
             }
         }
     }
-    Err(format!("could not get account {} after 6 retries", addr.to_string()).into())
+    Err(format!("could not get account {} after 6 retries", addr).into())
 }
