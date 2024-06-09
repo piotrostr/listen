@@ -93,7 +93,7 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
 
                 sl_levels: vec![0.6],
                 sl_amounts_pct: vec![0.9],
-                sl_reached: vec![false, false],
+                sl_reached: vec![false],
 
                 tp_levels: vec![1.5, 2.0, 3.0, 4.0, 5.0, 10.0],
                 tp_amounts: vec![0.3, 0.3, 0.1, 0.1, 0.1, 0.1]
