@@ -32,6 +32,10 @@ pub struct TokenResult {
     pub checklist: Checklist,
 }
 
+// TODO it is worth to go through the pump token history, like whether dev
+// controls a high fraction of supply and whether the dev is a frequent rugger
+// stuff like that can improve win ratio and here every snipe matters especially
+// with larger entry size
 #[post("/checks")]
 pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpResponse, Error> {
     info!(
