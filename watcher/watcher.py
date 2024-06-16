@@ -18,10 +18,19 @@ class Candle(pydantic.BaseModel):
     time: int
 
 
-class GetCandlesResponse(pydantic.BaseModel):
+class GenericResponse(pydantic.BaseModel):
     code: int  # TODO this should be an enum and handled properly
     msg: str
+
+
+class GetCandlesResponse(GenericResponse):
+    code: int
+    msg: str
     data: list[Candle]
+
+
+class GrabTokensInvestedResponse(GenericResponse):
+    data: object
 
 
 class Watcher:
@@ -49,16 +58,9 @@ class Watcher:
         res.raise_for_status()
         return GetCandlesResponse.model_validate(res.json())
 
-    def grab_tokens_invested(self, wallet_address: str) -> object:
-        """grab_tokens_invested returns a JSON object and this is intended, no need for typings
-        just now since it is for pandas analysis
-
-        Args:
-            wallet_address (str): wallet for which to get the tokens
-
-        Returns:
-            object: JSON object, see the gmgn response in chrome network tab to
-            see the schema
+    def grab_tokens_invested(self, wallet_address: str) -> GrabTokensInvestedResponse:
+        """grab_tokens_invested returns a JSON object and this is intended, no
+        need for typings just now since it is for pandas analysis
         """
         url = self.base + self.holdings_path + wallet_address
         res = self.session.get(url, params={
@@ -68,7 +70,7 @@ class Watcher:
             "sellout": "false"
         })
         res.raise_for_status()
-        return res.json()
+        return GrabTokensInvestedResponse.model_validate(res.json())
 
 
 class Timeframe(Enum):
