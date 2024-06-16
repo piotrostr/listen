@@ -4,8 +4,6 @@ from enum import Enum
 import pydantic
 import requests
 
-BOME = "ukHH6c7mMyiWCf1b9pnWe25TSpkDDt3H5pQZgZ74J82"
-
 
 class Chain(Enum):
     SOL = "sol"
@@ -27,8 +25,7 @@ class GetCandlesResponse(pydantic.BaseModel):
 
 
 class Watcher:
-    base = "https://gmgn.ai"
-    clines_route = f"/defi/quotation/v1/tokens/kline"
+    base = "https://gmgn.ai/defi/quotation/v1"
     session: requests.Session
     chain: Chain
 
@@ -36,9 +33,11 @@ class Watcher:
         self.chain = chain
         self.session = requests.Session()
 
+        self.clines_path = f"/tokens/kline/{self.chain.value}/"
+        self.holdings_path = f"/wallet/{self.chain.value}/holdings/"
+
     def get_candles(self, token_address, start, end, timeframe) -> GetCandlesResponse:
-        url = f"{self.base}{
-            self.clines_route}/{self.chain.value}/{token_address}"
+        url = self.base + self.clines_path + token_address
         print(url)
         res = self.session.get(
             url,
@@ -50,8 +49,26 @@ class Watcher:
         res.raise_for_status()
         return GetCandlesResponse.model_validate(res.json())
 
-    def grab_tokens_invested(self):
-        pass
+    def grab_tokens_invested(self, wallet_address: str) -> object:
+        """grab_tokens_invested returns a JSON object and this is intended, no need for typings
+        just now since it is for pandas analysis
+
+        Args:
+            wallet_address (str): wallet for which to get the tokens
+
+        Returns:
+            object: JSON object, see the gmgn response in chrome network tab to
+            see the schema
+        """
+        url = self.base + self.holdings_path + wallet_address
+        res = self.session.get(url, params={
+            "orderby": "last_active_timestamp",
+            "direction": "desc",
+            "showsmall": "true",
+            "sellout": "false"
+        })
+        res.raise_for_status()
+        return res.json()
 
 
 class Timeframe(Enum):
