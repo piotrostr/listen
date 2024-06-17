@@ -123,6 +123,8 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
             .await
             .expect("swap");
         }
+
+        drop(pubsub_client)
     });
 
     Ok(HttpResponse::Ok().json(json!({"status": "OK, triggered sell"})))

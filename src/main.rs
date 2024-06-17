@@ -231,6 +231,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .unwrap();
                 info!("{:?}", res.into_inner());
             }
+
+            drop(searcher_client);
         }
         Command::MonitorSlots {} => {
             Listener::new(env("WS_URL").to_string()).slot_subscribe()?;
