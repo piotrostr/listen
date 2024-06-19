@@ -7,4 +7,4 @@ logging.basicConfig(level=logging.INFO, format=log_format)
 
 if __name__ == "__main__":
     get_or_create_tokens_invested_df()
-    get_or_create_candles_df()
+    get_or_create_candles_df(update=True)

@@ -32,7 +32,7 @@ class Watcher:
         )
         res.raise_for_status()
         # print(res.json())
-        print(res.url)
+        logging.debug(res.url)
         return GetCandlesResponse.model_validate(res.json())
 
     def get_first_1k_candles(

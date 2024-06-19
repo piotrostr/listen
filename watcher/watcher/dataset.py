@@ -1,9 +1,10 @@
 import os
 
 import pandas as pd
+from tqdm import tqdm
 
 from watcher.constants import FUCK_ADDRESS
-from watcher.types import Holding
+from watcher.types import Holding, Timeframe
 from watcher.watcher import Chain, Watcher
 
 TOKENS_INVESTED_PATH = "./tokens_invested_all.csv"
@@ -38,6 +39,10 @@ def get_or_create_candles_df(update=False):
 
     it might make sense to implement retries and hash map (address => bool) done
     as there might be errors/rate limits (non-public API)
+
+    note no promise.all here since the API might have rate-limits, haven't hit a
+    403 with synchronous execution req per req for roughly 0.6-1k unique tokens,
+    each two reqs
     """
     if os.path.exists(CANDLES_PATH) and not update:
         return pd.read_csv(CANDLES_PATH)
@@ -49,14 +54,13 @@ def get_or_create_candles_df(update=False):
     candles = []
 
     # Step 4: Fetch data for each token
-    for timestamp, token_address in zip(timestamps, token_addresses):
-        print(f"Fetching data for token: {token_address}")
-
+    for timestamp, token_address in tqdm(zip(timestamps, token_addresses), total=len(token_addresses)):
         # Fetch time series data for the token
-        candles_response = watcher.get_first_1k_candles(token_address, timestamp, "1m")
+        candles_response = watcher.get_first_1k_candles(token_address, timestamp, Timeframe.ONE_MINUTE)
         time_series_df = pd.DataFrame(
             [vars(candles) for candles in candles_response.data]
         )
+        time_series_df["token_address"] = token_address
         candles.append(time_series_df)
 
     # Step 5: Combine all data into a single DataFrame
