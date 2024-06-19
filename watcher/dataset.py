@@ -43,8 +43,8 @@ def get_or_create_candles_df(update=False):
         return pd.read_csv(CANDLES_PATH)
     watcher = Watcher(chain=Chain.SOL)
     tokens_invested_df = get_or_create_tokens_invested_df()
-    token_addresses = tokens_invested_df['token_address'].tolist()
-    timestamps = tokens_invested_df['last_active_timestamp'].tolist()
+    token_addresses = tokens_invested_df["token_address"].tolist()
+    timestamps = tokens_invested_df["last_active_timestamp"].tolist()
 
     candles = []
 
@@ -53,11 +53,10 @@ def get_or_create_candles_df(update=False):
         print(f"Fetching data for token: {token_address}")
 
         # Fetch time series data for the token
-        candles_response = watcher.get_first_1k_candles(
-            token_address, timestamp, "1m")
-        time_series_df = pd.DataFrame([
-            vars(candles) for candles in candles_response.data
-        ])
+        candles_response = watcher.get_first_1k_candles(token_address, timestamp, "1m")
+        time_series_df = pd.DataFrame(
+            [vars(candles) for candles in candles_response.data]
+        )
         candles.append(time_series_df)
 
     # Step 5: Combine all data into a single DataFrame
@@ -66,7 +65,9 @@ def get_or_create_candles_df(update=False):
     # Step 6: Save the DataFrame to a CSV file
     combined_candles.to_csv(CANDLES_PATH, index=False)
 
-    print(f"Dataset saved to {CANDLES_PATH} with {
-          len(combined_candles)} rows.")
+    print(
+        f"Dataset saved to {CANDLES_PATH} with {
+          len(combined_candles)} rows."
+    )
 
     return combined_candles

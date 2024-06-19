@@ -1,15 +1,10 @@
 import logging
-import os
-from pprint import pprint
 
-import pandas as pd
-
-from watcher.constants import FUCK_ADDRESS
-from watcher.types import Chain, Holding
-from watcher.watcher import Watcher
+from watcher.dataset import get_or_create_candles_df, get_or_create_tokens_invested_df
 
 log_format = "%(asctime)s - %(levelname)s - %(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
 
 if __name__ == "__main__":
-    pass
+    get_or_create_tokens_invested_df()
+    get_or_create_candles_df()

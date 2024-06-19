@@ -3,8 +3,7 @@ import time
 
 import requests
 
-from .types import (Chain, GetCandlesResponse, GrabTokensInvestedResponse,
-                    Timeframe)
+from .types import Chain, GetCandlesResponse, GrabTokensInvestedResponse, Timeframe
 
 
 class Watcher:
@@ -42,8 +41,7 @@ class Watcher:
         # print as human readable
         logging.debug(
             time.strftime(
-                "last active: %Y-%m-%d %H:%M:%S", time.localtime(
-                    last_active_timestamp)
+                "last active: %Y-%m-%d %H:%M:%S", time.localtime(last_active_timestamp)
             )
         )
         candles = self.get_candles(
