@@ -17,7 +17,7 @@ use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
 use std::{str::FromStr, sync::Arc};
 
 pub async fn run_listener_pubsub_service() -> Result<(), Box<dyn std::error::Error>> {
-    println!("{}", env("WS_URL"));
+    info!("{}", env("WS_URL"));
     tokio::spawn(async move {
         let collector = Arc::new(collector::new().await.expect("collector"));
         let client = PubsubClient::new(&env("WS_URL"))
@@ -25,7 +25,9 @@ pub async fn run_listener_pubsub_service() -> Result<(), Box<dyn std::error::Err
             .expect("pubsub client async");
         let (mut notifications, unsub) = client
             .logs_subscribe(
-                RpcTransactionLogsFilter::Mentions(vec![constants::FEE_PROGRAM_ID.to_string()]),
+                RpcTransactionLogsFilter::Mentions(
+                    vec![constants::FEE_PROGRAM_ID.to_string(),
+                ]),
                 RpcTransactionLogsConfig {
                     commitment: Some(CommitmentConfig::confirmed()),
                 },
@@ -34,7 +36,7 @@ pub async fn run_listener_pubsub_service() -> Result<(), Box<dyn std::error::Err
             .expect("subscribe to logs");
         info!("Listening for LP events");
         while let Some(log) = notifications.next().await {
-            println!("{:?}", log);
+            debug!("{:?}", log);
             let collector = Arc::clone(&collector);
             if log.value.err.is_none() {
                 tokio::spawn(async move {

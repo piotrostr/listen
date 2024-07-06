@@ -33,7 +33,7 @@ use tokio::sync::Mutex;
 
 use log::{error, info};
 
-#[tokio::main(flavor = "multi_thread", worker_threads = 8)]
+#[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn Error>> {
     dotenv::from_filename(".env").unwrap();
 
@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let found_flag = Arc::new(AtomicBool::new(false));
             // note that this will only spawn as many workers as the runtime allows
             // defaults to num vcpus
-            let workers: Vec<_> = (0..8)
+            let workers: Vec<_> = (0..10)
                 .map(|_| {
                     let prefixes = prefixes.clone();
                     let found_flag = Arc::clone(&found_flag);

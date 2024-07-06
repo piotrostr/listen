@@ -10,6 +10,7 @@ use log::info;
 use solana_sdk::{signature::Keypair, signer::Signer};
 
 pub async fn generate_custom_sol_address(prefixes: Vec<String>, found_flag: Arc<AtomicBool>) {
+    info!("Starting search for {:?}", prefixes);
     let mut tries = 0;
     while !found_flag.load(Ordering::Relaxed) {
         let keypair = Keypair::new();
