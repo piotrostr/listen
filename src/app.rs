@@ -27,6 +27,7 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    ListenPump {},
     BuyPumpToken {
         #[arg(long)]
         mint: String,

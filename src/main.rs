@@ -50,8 +50,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 163.;
 
     match app.command {
+        Command::ListenPump {  } => {
+            pump::listen_pump().await?;
+        }
         Command::BuyPumpToken { mint } => {
-            pump::buy_pump_token(Pubkey::from_str(&mint)?).await?;
+            // pump::buy_pump_token(Pubkey::from_str(&mint)?).await?;
+            // return unimplemented err
+            return Err("Unimplemented".into());
         }
         Command::GenerateCustomAddress { prefixes } => {
             let found_flag = Arc::new(AtomicBool::new(false));

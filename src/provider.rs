@@ -175,15 +175,27 @@ pub async fn get_tx_async(
 ) -> Result<EncodedConfirmedTransactionWithStatusMeta, Box<dyn std::error::Error>> {
     let rpc_client = RpcClient::new(env("RPC_URL"));
     let sig = Signature::from_str(signature)?;
-    let tx = rpc_client
-        .get_transaction_with_config(
-            &sig,
-            RpcTransactionConfig {
-                encoding: Some(UiTransactionEncoding::JsonParsed),
-                commitment: Some(CommitmentConfig::confirmed()),
-                max_supported_transaction_version: Some(1),
-            },
-        )
-        .await?;
-    Ok(tx)
+    let mut backoff = 100;
+    let retries = 5;
+    for _ in 0..retries {
+        match rpc_client
+            .get_transaction_with_config(
+                &sig,
+                RpcTransactionConfig {
+                    encoding: Some(UiTransactionEncoding::JsonParsed),
+                    commitment: Some(CommitmentConfig::confirmed()),
+                    max_supported_transaction_version: Some(1),
+                },
+            )
+            .await
+        {
+            Ok(tx) => return Ok(tx),
+            Err(e) => {
+                debug!("Error getting tx: {:?}", e);
+                std::thread::sleep(std::time::Duration::from_millis(backoff));
+                backoff *= 2;
+            }
+        }
+    }
+    Err(format!("could not fetch {}", signature).into())
 }
