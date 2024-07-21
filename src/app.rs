@@ -27,6 +27,10 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    BuyPumpToken {
+        #[arg(long)]
+        mint: String,
+    },
     GenerateCustomAddress {
         #[arg(long)]
         prefixes: Vec<String>,

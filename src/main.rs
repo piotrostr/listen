@@ -12,13 +12,7 @@ use util::env;
 
 use clap::Parser;
 use listen::{
-    address,
-    app::{App, Command},
-    buyer, buyer_service, checker, checker_service, constants,
-    jup::Jupiter,
-    listener_service, prometheus,
-    raydium::{self, Raydium, SwapArgs},
-    rpc, seller, seller_service, tx_parser, util, BlockAndProgramSubscribable, Listener, Provider,
+    address, app::{App, Command}, buyer, buyer_service, checker, checker_service, constants, jup::Jupiter, listener_service, prometheus, pump, raydium::{self, Raydium, SwapArgs}, rpc, seller, seller_service, tx_parser, util, BlockAndProgramSubscribable, Listener, Provider
 };
 use solana_client::{
     nonblocking,
@@ -56,6 +50,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 163.;
 
     match app.command {
+        Command::BuyPumpToken { mint } => {
+            pump::buy_pump_token(Pubkey::from_str(&mint)?).await?;
+        }
         Command::GenerateCustomAddress { prefixes } => {
             let found_flag = Arc::new(AtomicBool::new(false));
             // note that this will only spawn as many workers as the runtime allows
