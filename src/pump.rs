@@ -1,9 +1,10 @@
 use std::error::Error;
 use std::str::FromStr;
-use anchor_lang::prelude::borsh::BorshSerialize;
 use base64::Engine;
 use futures_util::StreamExt;
 use log::info;
+
+use borsh::BorshSerialize;
 
 use serde::{Deserialize, Serialize};
 use solana_client::nonblocking::pubsub_client::PubsubClient;
@@ -28,9 +29,11 @@ pub const PUMP_FEE_ADDRESS: &str = "CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM
 pub const PUMP_FUN_PROGRAM: &str = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
 pub const PUMP_FUN_MINT_AUTHORITY: &str = "TSLvdd1pWpHVjahSpsvCXUbgwsL3JAcvokwaKt1eokM";
 pub const EVENT_AUTHORITY: &str = "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1";
+pub const PUMP_BUY_METHOD: [u8; 8] = [0x66, 0x06, 0x3d, 0x12, 0x01, 0xda, 0xeb, 0xea];
 
 #[derive(BorshSerialize)]
 pub struct PumpFunBuyInstructionData {
+    pub method_id: [u8; 8],
     pub token_amount: u64,
     pub lamports: u64,
 }
@@ -116,6 +119,7 @@ pub fn make_pump_swap_ix(owner: Pubkey, pump_accounts: PumpAccounts, token_amoun
     ];
 
     let data = PumpFunBuyInstructionData {
+        method_id: PUMP_BUY_METHOD,
         token_amount,
         lamports,
     };
