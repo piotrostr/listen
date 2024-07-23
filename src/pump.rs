@@ -1,7 +1,7 @@
 use anchor_lang::system_program;
-use base64::Engine;
 use futures_util::StreamExt;
-use log::{error, info};
+use log::{debug, error, info, warn};
+use solana_account_decoder::UiAccountEncoding;
 use std::error::Error;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -12,9 +12,8 @@ use borsh::{BorshDeserialize, BorshSerialize};
 use serde::{Deserialize, Serialize};
 use solana_client::nonblocking::pubsub_client::PubsubClient;
 use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_client::nonce_utils::nonblocking::get_account_with_commitment;
 use solana_client::rpc_config::{
-    RpcTransactionLogsConfig, RpcTransactionLogsFilter,
+    RpcAccountInfoConfig, RpcTransactionLogsConfig, RpcTransactionLogsFilter,
 };
 use solana_sdk::commitment_config::CommitmentConfig;
 use solana_sdk::instruction::{AccountMeta, Instruction};
@@ -70,7 +69,6 @@ impl BondingCurveLayout {
         Self::try_from_slice(data)
     }
 }
-
 pub async fn get_bonding_curve(
     rpc_client: &RpcClient,
     bonding_curve_pubkey: Pubkey,
@@ -82,19 +80,65 @@ pub async fn get_bonding_curve(
     let mut delay = Duration::from_millis(INITIAL_DELAY_MS);
 
     loop {
-        match rpc_client.get_account_data(&bonding_curve_pubkey).await {
-            Ok(bonding_curve_data) => {
-                return Ok(BondingCurveLayout::parse(&bonding_curve_data)?);
+        match rpc_client
+            .get_account_with_config(
+                &bonding_curve_pubkey,
+                RpcAccountInfoConfig {
+                    encoding: Some(UiAccountEncoding::Base64),
+                    commitment: Some(CommitmentConfig::processed()),
+                    data_slice: None,
+                    min_context_slot: None,
+                },
+            )
+            .await
+        {
+            Ok(res) => {
+                if let Some(account) = res.value {
+                    debug!("Raw account data: {:?}", account.data);
+
+                    // Convert Vec<u8> to [u8; 49]
+                    let data: [u8; 49] = account
+                        .data
+                        .try_into()
+                        .map_err(|_| "Invalid data length")?;
+
+                    debug!("Raw bytes: {:?}", data);
+
+                    let layout = BondingCurveLayout {
+                        blob1: u64::from_le_bytes(data[0..8].try_into()?),
+                        virtual_token_reserves: u64::from_le_bytes(
+                            data[8..16].try_into()?,
+                        ),
+                        virtual_sol_reserves: u64::from_le_bytes(
+                            data[16..24].try_into()?,
+                        ),
+                        real_token_reserves: u64::from_le_bytes(
+                            data[24..32].try_into()?,
+                        ),
+                        real_sol_reserves: u64::from_le_bytes(
+                            data[32..40].try_into()?,
+                        ),
+                        blob4: u64::from_le_bytes(data[40..48].try_into()?),
+                        complete: data[48] != 0,
+                    };
+
+                    debug!("Parsed BondingCurveLayout: {:?}", layout);
+                    return Ok(layout);
+                } else {
+                    error!("Account not found");
+                    return Err("Account not found".into());
+                }
             }
             Err(e) => {
                 if retries >= MAX_RETRIES {
+                    error!("Max retries reached. Last error: {}", e);
                     return Err(format!(
                         "Max retries reached. Last error: {}",
                         e
                     )
                     .into());
                 }
-                println!(
+                warn!(
                     "Attempt {} failed: {}. Retrying in {:?}...",
                     retries + 1,
                     e,
@@ -104,7 +148,7 @@ pub async fn get_bonding_curve(
                 retries += 1;
                 delay = Duration::from_millis(
                     INITIAL_DELAY_MS * 2u64.pow(retries),
-                ); // Exponential backoff ^2
+                );
             }
         }
     }
@@ -286,17 +330,17 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
                 PUMP_FUN_MINT_AUTHORITY.to_string()
             ]),
             RpcTransactionLogsConfig {
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
             },
         )
         .await
         .expect("subscribe to logs");
     info!("Listening for PumpFun events");
-    let wallet =
-        Arc::new(Keypair::read_from_file("./fuck.json").expect("read wallet"));
-    let rpc_client = Arc::new(RpcClient::new(
-        "https://api.mainnet-beta.solana.com".to_string(),
-    ));
+    let wallet = Arc::new(
+        Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+            .expect("read wallet"),
+    );
+    let rpc_client = Arc::new(RpcClient::new(env("RPC_URL")));
 
     while let Some(log) = notifications.next().await {
         let sig = log.value.signature;
@@ -352,25 +396,6 @@ pub struct PumpAccounts {
         deserialize_with = "string_to_pubkey"
     )]
     pub metadata: Pubkey,
-}
-
-/// this kinda works but not using since metadata takes some time to populate
-pub async fn fetch_metadata(
-    rpc_client: &RpcClient,
-    metadata: Pubkey,
-) -> Result<(), Box<dyn Error>> {
-    let acc = get_account_with_commitment(
-        rpc_client,
-        &metadata,
-        CommitmentConfig::confirmed(),
-    )
-    .await?;
-    let account_data = base64::prelude::BASE64_STANDARD
-        .decode(acc.data)
-        .expect("decode spl b64");
-    println!("{:?}", account_data);
-
-    Ok(())
 }
 
 pub fn parse_pump_accounts(
