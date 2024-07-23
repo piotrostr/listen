@@ -1,5 +1,6 @@
 use std::error::Error;
 use std::str::FromStr;
+use anchor_lang::prelude::borsh::BorshSerialize;
 use base64::Engine;
 use futures_util::StreamExt;
 use log::info;
@@ -28,7 +29,13 @@ pub const PUMP_FUN_PROGRAM: &str = "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P"
 pub const PUMP_FUN_MINT_AUTHORITY: &str = "TSLvdd1pWpHVjahSpsvCXUbgwsL3JAcvokwaKt1eokM";
 pub const EVENT_AUTHORITY: &str = "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1";
 
-pub async fn buy_pump_token(pump_accounts: PumpAccounts, lamports: u64) -> Result<(), Box<dyn Error>> {
+#[derive(BorshSerialize)]
+pub struct PumpFunBuyInstructionData {
+    pub token_amount: u64,
+    pub lamports: u64,
+}
+
+pub async fn buy_pump_token(pump_accounts: PumpAccounts, token_amount: u64, lamports: u64) -> Result<(), Box<dyn Error>> {
     info!("Buying pump token {}", pump_accounts.mint.to_string());
     let wallet = Keypair::read_from_file("./fuck.json").expect("read wallet");
     let rpc_client = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
@@ -51,7 +58,7 @@ pub async fn buy_pump_token(pump_accounts: PumpAccounts, lamports: u64) -> Resul
     let mut ata_ixs = raydium_library::common::create_ata_token_or_not(&owner, &pump_accounts.mint, &owner);
 
     ixs.append(&mut ata_ixs);
-    ixs.push(make_pump_swap_ix(owner, pump_accounts, 0, lamports)?);
+    ixs.push(make_pump_swap_ix(owner, pump_accounts, token_amount, lamports)?);
 
     let recent_blockhash = rpc_client.get_latest_blockhash().await?;
 
@@ -65,9 +72,15 @@ pub async fn buy_pump_token(pump_accounts: PumpAccounts, lamports: u64) -> Resul
     println!("signed: {}", transaction.is_signed());
 
     // send the tx
-    let signature = rpc_client.send_and_confirm_transaction_with_spinner(&transaction).await?;
-
-    info!("Transaction signature: {}", signature.to_string());
+    let res = rpc_client.send_and_confirm_transaction_with_spinner(&transaction).await;
+    match res {
+        Ok(sig) => {
+            info!("Transaction sent: {}", sig);
+        }
+        Err(e) => {
+            return Err(e.into());
+        }
+    }
 
     Ok(())
 }
@@ -101,16 +114,17 @@ pub fn make_pump_swap_ix(owner: Pubkey, pump_accounts: PumpAccounts, token_amoun
         AccountMeta::new_readonly(Pubkey::from_str(EVENT_AUTHORITY)?, false),
         AccountMeta::new_readonly(Pubkey::from_str(PUMP_FUN_PROGRAM)?, false),
     ];
-    let mut data = Vec::new();
-    data.extend_from_slice(&[0u8; 8]); // Replace with appropriate opcode
-    data.extend_from_slice(&token_amount.to_le_bytes());
-    data.extend_from_slice(&lamports.to_le_bytes());
 
-    Ok(Instruction {
-        program_id: Pubkey::from_str(PUMP_FUN_PROGRAM)?,
+    let data = PumpFunBuyInstructionData {
+        token_amount,
+        lamports,
+    };
+
+    Ok(Instruction::new_with_borsh(
+        Pubkey::from_str(PUMP_FUN_PROGRAM)?,
+        &data,
         accounts,
-        data,
-    })
+    ))
 }
 
 pub async fn listen_pump() -> Result<(), Box<dyn Error>> {
@@ -229,14 +243,17 @@ mod tests {
     #[tokio::test]
     async fn test_buy_pump_token() {
         // 0.01 sol
-        let lamports = 10000000;
+        let lamports = 10302000;
+        // this is less than what you get, but using high slippage, just to test if the param of
+        // tokenAmount is required and cannot be zero
+        let token_amount = 35730927770; 
         let pump_accounts = PumpAccounts {
-            mint: Pubkey::from_str("6kPvKNrLqg23mApAvHzMKWohhVdSrA54HvrpYud8pump").expect("parse mint"),
-            bonding_curve: Pubkey::from_str("6TGz5VAFF6UpSmTSk9327utugSWJCyVeVVFXDtZnMtNp").expect("parse bonding curve"),
-            associated_bonding_curve: Pubkey::from_str("4VwNGUif2ubbPjx4YNHmxEH7L4Yt2QFeo8uVTrVC3F68").expect("parse associated bonding curve"),
-            associated_user: Pubkey::from_str("2wgo94ZaiUNUkFBSKNaKsUgEANgSdex7gRpFKR39DPzw").expect("parse associated user"),
+            mint: Pubkey::from_str("5KEDcNGebCcLptWzknqVmPRNLHfiHA9Mm2djVE26pump").expect("parse mint"),
+            bonding_curve: Pubkey::from_str("Drhj4djqLsPyiA9qK2YmBngteFba8XhhvuQoBToW6pMS").expect("parse bonding curve"),
+            associated_bonding_curve: Pubkey::from_str("7uXq8diH862Dh8NgMHt5Tzsai8SvURhH58rArgxvs7o1").expect("parse associated bonding curve"),
+            associated_user: Pubkey::from_str("Gizxxed4uXCzL7Q8DyALDVoEEDfMkSV7XyUNrPDnPJ9J").expect("parse associated user"),
             metadata: Pubkey::default(), // not required
         };
-        buy_pump_token(pump_accounts, lamports).await.expect("buy pump token");
+        buy_pump_token(pump_accounts, token_amount, lamports).await.expect("buy pump token");
     }
 }
