@@ -76,7 +76,7 @@ pub async fn get_bonding_curve(
     bonding_curve_pubkey: Pubkey,
 ) -> Result<BondingCurveLayout, Box<dyn Error>> {
     const MAX_RETRIES: u32 = 5;
-    const INITIAL_DELAY_MS: u64 = 100;
+    const INITIAL_DELAY_MS: u64 = 200;
 
     let mut retries = 0;
     let mut delay = Duration::from_millis(INITIAL_DELAY_MS);
