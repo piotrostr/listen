@@ -22,7 +22,7 @@ use listen::{
     Listener, Provider,
 };
 use solana_client::{
-    nonblocking,
+    nonblocking::{self, rpc_client::RpcClient},
     rpc_response::{Response, RpcLogsResponse},
 };
 use solana_sdk::{
@@ -57,6 +57,29 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 163.;
 
     match app.command {
+        Command::SweepPump {} => {
+            let keypair = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+                .expect("read wallet");
+            let rpc_client = RpcClient::new(env("RPC_URL").to_string());
+            let pump_tokens = pump::get_tokens_held(&keypair.pubkey()).await?;
+            for pump_token in pump_tokens {
+                let mint = Pubkey::from_str(&pump_token.mint)?;
+                let pump_accounts = pump::mint_to_pump_accounts(&mint).await?;
+                if pump_token.balance > 0 {
+                    info!(
+                        "Selling {} of {}",
+                        pump_token.balance, pump_token.mint
+                    );
+                    pump::sell_pump_token(
+                        &keypair,
+                        &rpc_client,
+                        pump_accounts,
+                        pump_token.balance,
+                    )
+                    .await?;
+                }
+            }
+        }
         Command::SnipePump {} => {
             info!("Pump snipe let's go");
             pump::snipe_pump().await?;

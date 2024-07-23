@@ -27,6 +27,7 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    SweepPump {},
     SnipePump {},
     BuyPumpToken {
         #[arg(long)]

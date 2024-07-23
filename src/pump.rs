@@ -44,11 +44,15 @@ pub const EVENT_AUTHORITY: &str =
     "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1";
 pub const PUMP_BUY_METHOD: [u8; 8] =
     [0x66, 0x06, 0x3d, 0x12, 0x01, 0xda, 0xeb, 0xea];
+pub const PUMP_SELL_METHOD: [u8; 8] =
+    [0x33, 0xe6, 0x85, 0xa4, 0x01, 0x7f, 0x83, 0xad];
 pub const TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
 pub const RENT_PROGRAM: &str = "SysvarRent111111111111111111111111111111111";
+pub const ASSOCIATED_TOKEN_PROGRAM: &str =
+    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
 
 #[derive(BorshSerialize)]
-pub struct PumpFunBuyInstructionData {
+pub struct PumpFunSwapInstructionData {
     pub method_id: [u8; 8],
     pub token_amount: u64,
     pub lamports: u64,
@@ -65,6 +69,18 @@ pub struct BondingCurveLayout {
     pub complete: bool,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PumpTokenData {
+    pub address: String,
+    pub balance: u64,
+    pub image_uri: String,
+    pub market_cap: f64,
+    pub mint: String,
+    pub name: String,
+    pub symbol: String,
+    pub value: f64,
+}
+
 impl BondingCurveLayout {
     pub const LEN: usize = 8 + 8 + 8 + 8 + 8 + 8 + 1;
 
@@ -72,6 +88,47 @@ impl BondingCurveLayout {
         Self::try_from_slice(data)
     }
 }
+
+pub async fn mint_to_pump_accounts(
+    mint: &Pubkey,
+) -> Result<PumpAccounts, Box<dyn Error>> {
+    // Constants
+    const PUMP_FUN_PROGRAM: &str =
+        "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
+
+    // Derive the bonding curve address
+    let (bonding_curve, _) = Pubkey::find_program_address(
+        &[b"bonding-curve", mint.as_ref()],
+        &Pubkey::from_str(PUMP_FUN_PROGRAM)?,
+    );
+
+    // Derive the associated bonding curve address
+    let associated_bonding_curve =
+        spl_associated_token_account::get_associated_token_address(
+            &bonding_curve,
+            mint,
+        );
+
+    Ok(PumpAccounts {
+        mint: *mint,
+        bonding_curve,
+        associated_bonding_curve,
+        dev: Pubkey::default(),
+        metadata: Pubkey::default(),
+    })
+}
+
+pub async fn get_tokens_held(
+    owner: &Pubkey,
+) -> Result<Vec<PumpTokenData>, Box<dyn Error>> {
+    let url = "https://frontend-api.pump.fun/balances/{}?limit=100&offset=0";
+    let url = url.replace("{}", &owner.to_string());
+    Ok(reqwest::get(&url)
+        .await?
+        .json::<Vec<PumpTokenData>>()
+        .await?)
+}
+
 pub async fn get_bonding_curve(
     rpc_client: &RpcClient,
     bonding_curve_pubkey: Pubkey,
@@ -295,6 +352,111 @@ pub async fn buy_pump_token(
     Ok(())
 }
 
+pub async fn sell_pump_token(
+    wallet: &Keypair,
+    rpc_client: &RpcClient,
+    pump_accounts: PumpAccounts,
+    token_amount: u64,
+) -> Result<(), Box<dyn Error>> {
+    let owner = wallet.pubkey();
+
+    let ata = spl_associated_token_account::get_associated_token_address(
+        &owner,
+        &pump_accounts.mint,
+    );
+
+    let mut ixs = vec![];
+    ixs.append(&mut make_compute_budget_ixs(262500, 100000));
+    ixs.push(make_pump_sell_ix(owner, pump_accounts, token_amount, ata)?);
+
+    let recent_blockhash = rpc_client.get_latest_blockhash().await?;
+
+    let transaction =
+        solana_sdk::transaction::Transaction::new_signed_with_payer(
+            &ixs,
+            Some(&owner),
+            &[wallet],
+            recent_blockhash,
+        );
+
+    let res = rpc_client
+        .send_transaction_with_config(
+            &transaction,
+            RpcSendTransactionConfig {
+                skip_preflight: true,
+                min_context_slot: None,
+                preflight_commitment: Some(CommitmentLevel::Processed),
+                max_retries: None,
+                encoding: None,
+            },
+        )
+        .await;
+    match res {
+        Ok(sig) => {
+            info!("Transaction sent: {}", sig);
+        }
+        Err(e) => {
+            return Err(e.into());
+        }
+    }
+
+    Ok(())
+}
+
+/// Interact With Pump.Fun - 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
+/// #1 - Global
+/// #2 - Fee Recipient: Pump.fun Fee Account [Writable]
+/// #3 - Mint
+/// #4 - Bonding Curve [Writable]
+/// #5 - Associated Bonding Curve [Writable]
+/// #6 - Associated Token Account (ATA) [Writable]
+/// #7 - User [Writable Signer Fee-Payer]
+/// #8 - System Program
+/// #9 - Associated Token Program
+/// #10 - Token Program
+/// #11 - Event Authority
+/// #12 - Program: Pump.fun Program
+pub fn make_pump_sell_ix(
+    owner: Pubkey,
+    pump_accounts: PumpAccounts,
+    token_amount: u64,
+    ata: Pubkey,
+) -> Result<Instruction, Box<dyn Error>> {
+    let accounts: [AccountMeta; 12] = [
+        AccountMeta::new_readonly(
+            Pubkey::from_str(PUMP_GLOBAL_ADDRESS)?,
+            false,
+        ),
+        AccountMeta::new(Pubkey::from_str(PUMP_FEE_ADDRESS)?, false),
+        AccountMeta::new_readonly(pump_accounts.mint, false),
+        AccountMeta::new(pump_accounts.bonding_curve, false),
+        AccountMeta::new(pump_accounts.associated_bonding_curve, false),
+        AccountMeta::new(ata, false),
+        AccountMeta::new(owner, true),
+        AccountMeta::new_readonly(system_program::ID, false),
+        AccountMeta::new_readonly(
+            Pubkey::from_str(ASSOCIATED_TOKEN_PROGRAM)?,
+            false,
+        ),
+        AccountMeta::new_readonly(Pubkey::from_str(TOKEN_PROGRAM)?, false),
+        AccountMeta::new_readonly(Pubkey::from_str(EVENT_AUTHORITY)?, false),
+        AccountMeta::new_readonly(Pubkey::from_str(PUMP_FUN_PROGRAM)?, false),
+    ];
+
+    // max slippage, careful if not using frontrun protection
+    let data = PumpFunSwapInstructionData {
+        method_id: PUMP_SELL_METHOD,
+        token_amount,
+        lamports: 0,
+    };
+
+    Ok(Instruction::new_with_borsh(
+        Pubkey::from_str(PUMP_FUN_PROGRAM)?,
+        &data,
+        accounts.to_vec(),
+    ))
+}
+
 /// Interact With Pump.Fun 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
 /// Input Accounts
 /// #1 - Global: 4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf
@@ -334,7 +496,7 @@ pub fn make_pump_swap_ix(
         AccountMeta::new_readonly(Pubkey::from_str(PUMP_FUN_PROGRAM)?, false),
     ];
 
-    let data = PumpFunBuyInstructionData {
+    let data = PumpFunSwapInstructionData {
         method_id: PUMP_BUY_METHOD,
         token_amount,
         lamports,
