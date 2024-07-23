@@ -58,6 +58,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     match app.command {
         Command::SnipePump {} => {
+            info!("Pump snipe let's go");
             pump::snipe_pump().await?;
         }
         Command::BuyPumpToken { mint: _ } => {
