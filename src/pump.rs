@@ -13,9 +13,10 @@ use serde::{Deserialize, Serialize};
 use solana_client::nonblocking::pubsub_client::PubsubClient;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::{
-    RpcAccountInfoConfig, RpcTransactionLogsConfig, RpcTransactionLogsFilter,
+    RpcAccountInfoConfig, RpcSendTransactionConfig, RpcTransactionLogsConfig,
+    RpcTransactionLogsFilter,
 };
-use solana_sdk::commitment_config::CommitmentConfig;
+use solana_sdk::commitment_config::{CommitmentConfig, CommitmentLevel};
 use solana_sdk::instruction::{AccountMeta, Instruction};
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
@@ -43,6 +44,8 @@ pub const EVENT_AUTHORITY: &str =
     "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1";
 pub const PUMP_BUY_METHOD: [u8; 8] =
     [0x66, 0x06, 0x3d, 0x12, 0x01, 0xda, 0xeb, 0xea];
+pub const TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
+pub const RENT_PROGRAM: &str = "SysvarRent111111111111111111111111111111111";
 
 #[derive(BorshSerialize)]
 pub struct PumpFunBuyInstructionData {
@@ -75,7 +78,6 @@ pub async fn get_bonding_curve(
 ) -> Result<BondingCurveLayout, Box<dyn Error>> {
     const MAX_RETRIES: u32 = 5;
     const INITIAL_DELAY_MS: u64 = 200;
-
     let mut retries = 0;
     let mut delay = Duration::from_millis(INITIAL_DELAY_MS);
 
@@ -94,13 +96,12 @@ pub async fn get_bonding_curve(
         {
             Ok(res) => {
                 if let Some(account) = res.value {
-                    debug!("Raw account data: {:?}", account.data);
-
                     // Convert Vec<u8> to [u8; 49]
-                    let data: [u8; 49] = account
-                        .data
-                        .try_into()
-                        .map_err(|_| "Invalid data length")?;
+                    let data_length = account.data.len();
+                    let data: [u8; 49] =
+                        account.data.try_into().map_err(|_| {
+                            format!("Invalid data length: {}", data_length)
+                        })?;
 
                     debug!("Raw bytes: {:?}", data);
 
@@ -125,8 +126,23 @@ pub async fn get_bonding_curve(
                     debug!("Parsed BondingCurveLayout: {:?}", layout);
                     return Ok(layout);
                 } else {
-                    error!("Account not found");
-                    return Err("Account not found".into());
+                    if retries >= MAX_RETRIES {
+                        error!("Max retries reached. Account not found.");
+                        return Err(
+                            "Account not found after max retries".into()
+                        );
+                    }
+                    warn!(
+                        "Attempt {} failed: Account not found. Retrying in {:?}...",
+                        retries + 1,
+                        delay
+                    );
+                    sleep(delay).await;
+                    retries += 1;
+                    delay = Duration::from_millis(
+                        INITIAL_DELAY_MS * 2u64.pow(retries),
+                    );
+                    continue;
                 }
             }
             Err(e) => {
@@ -255,7 +271,18 @@ pub async fn buy_pump_token(
     //     preflight_commitment: None,min_context_slot: None
 
     // }).await;
-    let res = rpc_client.send_transaction(&transaction).await;
+    let res = rpc_client
+        .send_transaction_with_config(
+            &transaction,
+            RpcSendTransactionConfig {
+                skip_preflight: true,
+                min_context_slot: None,
+                preflight_commitment: Some(CommitmentLevel::Processed),
+                max_retries: None,
+                encoding: None,
+            },
+        )
+        .await;
     match res {
         Ok(sig) => {
             info!("Transaction sent: {}", sig);
@@ -301,8 +328,8 @@ pub fn make_pump_swap_ix(
         AccountMeta::new(ata, false),
         AccountMeta::new(owner, true),
         AccountMeta::new_readonly(system_program::ID, false),
-        AccountMeta::new_readonly(spl_token::id(), false),
-        AccountMeta::new_readonly(solana_sdk::sysvar::rent::id(), false),
+        AccountMeta::new_readonly(Pubkey::from_str(TOKEN_PROGRAM)?, false),
+        AccountMeta::new_readonly(Pubkey::from_str(RENT_PROGRAM)?, false),
         AccountMeta::new_readonly(Pubkey::from_str(EVENT_AUTHORITY)?, false),
         AccountMeta::new_readonly(Pubkey::from_str(PUMP_FUN_PROGRAM)?, false),
     ];
