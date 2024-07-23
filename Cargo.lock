@@ -1255,15 +1255,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "borsh"
-version = "1.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dbe5b10e214954177fb1dc9fbd20a1a2608fe99e6c832033bdc7cea287a20d77"
-dependencies = [
- "cfg_aliases",
-]
-
-[[package]]
 name = "borsh-derive"
 version = "0.9.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3545,7 +3536,7 @@ dependencies = [
  "anyhow",
  "base64 0.22.1",
  "bincode",
- "borsh 1.5.0",
+ "borsh 0.10.3",
  "bs58 0.5.1",
  "chrono",
  "clap 4.5.4",
