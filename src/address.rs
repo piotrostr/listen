@@ -9,15 +9,17 @@ use std::{
 use log::info;
 use solana_sdk::{signature::Keypair, signer::Signer};
 
-pub async fn generate_custom_sol_address(prefixes: Vec<String>, found_flag: Arc<AtomicBool>) {
+pub async fn generate_custom_sol_address(
+    prefixes: Vec<String>,
+    found_flag: Arc<AtomicBool>,
+) {
     info!("Starting search for {:?}", prefixes);
     let mut tries = 0;
     while !found_flag.load(Ordering::Relaxed) {
         let keypair = Keypair::new();
-        if let Some(prefix) = prefixes
-            .iter()
-            .find(|prefix| keypair.pubkey().to_string().starts_with(prefix.as_str()))
-        {
+        if let Some(prefix) = prefixes.iter().find(|prefix| {
+            keypair.pubkey().to_string().starts_with(prefix.as_str())
+        }) {
             found_flag.store(true, Ordering::Relaxed);
             info!(
                 "Match found for {}: {}",

@@ -12,7 +12,8 @@ use jupiter_swap_api_client::{
 };
 use log::{error, info};
 use solana_sdk::{
-    pubkey::Pubkey, signature::Keypair, signer::Signer, transaction::VersionedTransaction,
+    pubkey::Pubkey, signature::Keypair, signer::Signer,
+    transaction::VersionedTransaction,
 };
 
 use crate::{constants, raydium::SwapArgs, util, Provider};
@@ -30,7 +31,9 @@ impl Default for Jupiter {
 impl Jupiter {
     pub fn new() -> Jupiter {
         Jupiter {
-            client: JupiterSwapApiClient::new("https://quote-api.jup.ag/v6".to_string()),
+            client: JupiterSwapApiClient::new(
+                "https://quote-api.jup.ag/v6".to_string(),
+            ),
         }
     }
 
@@ -61,7 +64,10 @@ impl Jupiter {
 
     // TODO implement automatic retries 3 times say, no delay, sometimes
     // simulation fails due to low slippage
-    pub async fn swap(&self, swap_args: SwapArgs) -> Result<(), Box<dyn std::error::Error>> {
+    pub async fn swap(
+        &self,
+        swap_args: SwapArgs,
+    ) -> Result<(), Box<dyn std::error::Error>> {
         let SwapArgs {
             input_token_mint: input_mint,
             output_token_mint: output_mint,
@@ -116,7 +122,8 @@ impl Jupiter {
             .await?;
         let raw_tx: VersionedTransaction =
             bincode::deserialize(&swap_response.swap_transaction).unwrap();
-        let signed_tx = VersionedTransaction::try_new(raw_tx.message, &[&signer])?;
+        let signed_tx =
+            VersionedTransaction::try_new(raw_tx.message, &[&signer])?;
 
         info!("Built tx in {:?}", start.elapsed());
         match provider.send_tx(&signed_tx, true).await {

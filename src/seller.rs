@@ -10,7 +10,9 @@ use solana_client::{
     nonblocking::{pubsub_client::PubsubClient, rpc_client::RpcClient},
     rpc_config::RpcAccountInfoConfig,
 };
-use solana_sdk::{commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey};
+use solana_sdk::{
+    commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
+};
 use spl_token::state::Mint;
 
 use crate::{constants, Provider};
@@ -43,8 +45,8 @@ impl Pool {
         // worth pulling it from chain, same as SOL price, this method is more
         // for looking, for trading another method should be used that returns the ratio
         // ratio is all
-        let token_amount =
-            self.token_vault.amount as f64 / 10u64.pow(self.token_vault.decimals as u32) as f64;
+        let token_amount = self.token_vault.amount as f64
+            / 10u64.pow(self.token_vault.decimals as u32) as f64;
         let sol_amount = self.sol_vault.amount as f64 / 10u64.pow(9) as f64;
         Some(sol_amount / token_amount * 170.)
     }
@@ -81,10 +83,12 @@ pub async fn listen_price(
 ) -> Result<bool, Box<dyn Error>> {
     // load amm keys
     let amm_program =
-        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY).expect("amm program");
-    let amm_keys = amm::utils::load_amm_keys(rpc_client, &amm_program, amm_pool).await?;
-    let coin_mint_is_sol =
-        amm_keys.amm_coin_mint == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
+        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)
+            .expect("amm program");
+    let amm_keys =
+        amm::utils::load_amm_keys(rpc_client, &amm_program, amm_pool).await?;
+    let coin_mint_is_sol = amm_keys.amm_coin_mint
+        == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
     let (token_vault, sol_vault) = if coin_mint_is_sol {
         (amm_keys.amm_pc_vault, amm_keys.amm_coin_vault)
     } else {
@@ -165,7 +169,10 @@ pub fn clear() {
     print!("\x1b[2J\x1b[1;1H");
 }
 
-pub async fn get_sol_pooled_vault(vault: &Pubkey, rpc_client: &RpcClient) -> f64 {
+pub async fn get_sol_pooled_vault(
+    vault: &Pubkey,
+    rpc_client: &RpcClient,
+) -> f64 {
     let sol_pooled = rpc_client.get_account(vault).await.unwrap().lamports;
     sol_pooled as f64 / 10u64.pow(9) as f64
 }
@@ -190,7 +197,9 @@ pub async fn get_sol_pooled(amm_pool: &Pubkey, rpc_client: &RpcClient) -> f64 {
 
     let sol_pooled = rpc_client
         .get_token_account_balance(
-            if amm_info.coin_vault_mint.to_string() == constants::SOLANA_PROGRAM_ID {
+            if amm_info.coin_vault_mint.to_string()
+                == constants::SOLANA_PROGRAM_ID
+            {
                 &amm_info.coin_vault
             } else {
                 &amm_info.pc_vault
@@ -215,7 +224,8 @@ pub async fn get_decimals(mint: &Pubkey, rpc_client: &RpcClient) -> u8 {
         .get_account(mint)
         .await
         .expect("get mint account");
-    let mint_data = Mint::unpack(&mint_account.data).expect("unpack mint data");
+    let mint_data =
+        Mint::unpack(&mint_account.data).expect("unpack mint data");
     mint_data.decimals
 }
 
@@ -240,8 +250,15 @@ pub async fn get_spl_balance(
                     .expect("balance string to u64"));
             }
             Err(e) => {
-                warn!("{} error getting balance: {}", token_account.to_string(), e);
-                tokio::time::sleep(tokio::time::Duration::from_millis(backoff)).await;
+                warn!(
+                    "{} error getting balance: {}",
+                    token_account.to_string(),
+                    e
+                );
+                tokio::time::sleep(tokio::time::Duration::from_millis(
+                    backoff,
+                ))
+                .await;
                 backoff *= 2;
                 continue;
             }
@@ -297,7 +314,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_decimals() {
-        let mint = Pubkey::from_str("6hm9tDfhnhVCBD6Qk8L27WabnbzfUJFs5jQpdLnNVAET").unwrap();
+        let mint =
+            Pubkey::from_str("6hm9tDfhnhVCBD6Qk8L27WabnbzfUJFs5jQpdLnNVAET")
+                .unwrap();
         let decimals = super::get_decimals(
             &mint,
             &RpcClient::new("https://api.mainnet-beta.solana.com".to_string()),
@@ -309,55 +328,74 @@ mod tests {
     #[test]
     fn test_parse_amm() {
         let raw_data = vec![
-            6, 0, 0, 0, 0, 0, 0, 0, 254, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0, 0, 0, 0, 3, 0, 0, 0,
-            0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 64, 122, 16, 243, 90, 0, 0, 244, 1, 0, 0, 0, 0, 0, 0, 128, 240,
-            250, 2, 0, 0, 0, 0, 0, 228, 11, 84, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0,
-            0, 0, 0, 0, 202, 154, 59, 0, 0, 0, 0, 0, 228, 11, 84, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0,
-            0, 16, 39, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 16, 39, 0, 0, 0, 0, 0, 0, 12, 0,
-            0, 0, 0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 16, 39, 0, 0, 0,
-            0, 0, 0, 90, 101, 13, 61, 39, 1, 0, 0, 95, 206, 74, 109, 21, 0, 0, 0, 85, 68, 118, 37,
-            114, 21, 0, 0, 21, 2, 178, 255, 7, 89, 2, 0, 159, 166, 242, 101, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 166, 233, 185, 73, 9,
-            228, 142, 3, 0, 0, 0, 0, 0, 0, 0, 0, 212, 72, 45, 251, 67, 10, 33, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 224, 11, 218, 9, 143, 21, 0, 0, 54, 52, 25, 96, 127, 175, 33, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 102, 240, 102, 11, 61, 106, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 120, 63, 224, 87,
-            248, 70, 2, 0, 210, 186, 131, 72, 188, 117, 137, 37, 83, 54, 141, 182, 89, 240, 190,
-            65, 16, 155, 72, 164, 133, 239, 20, 188, 142, 204, 13, 233, 232, 114, 223, 190, 236,
-            83, 200, 41, 49, 116, 148, 39, 108, 82, 195, 123, 202, 5, 98, 83, 21, 3, 218, 188, 24,
-            148, 171, 54, 6, 229, 29, 247, 127, 48, 193, 80, 13, 131, 35, 192, 118, 240, 226, 135,
-            24, 202, 96, 215, 126, 107, 57, 206, 232, 242, 63, 67, 207, 196, 255, 31, 88, 82, 184,
-            252, 27, 148, 162, 147, 6, 155, 136, 87, 254, 171, 129, 132, 251, 104, 127, 99, 70, 24,
-            192, 53, 218, 196, 57, 220, 26, 235, 59, 85, 152, 160, 240, 0, 0, 0, 0, 1, 104, 166,
-            127, 248, 190, 13, 37, 30, 185, 46, 15, 154, 34, 229, 78, 229, 209, 70, 42, 187, 55,
-            69, 155, 90, 163, 68, 21, 203, 153, 183, 74, 128, 31, 183, 164, 72, 200, 185, 198, 154,
-            26, 166, 158, 44, 45, 221, 155, 92, 70, 157, 95, 169, 55, 38, 95, 180, 126, 243, 129,
-            21, 18, 114, 23, 151, 61, 114, 173, 22, 168, 26, 187, 204, 142, 58, 153, 54, 64, 140,
-            32, 82, 75, 48, 235, 38, 159, 107, 111, 64, 146, 120, 196, 151, 137, 214, 115, 6, 13,
-            7, 81, 168, 40, 45, 166, 19, 5, 254, 41, 156, 55, 185, 152, 229, 132, 113, 219, 17, 53,
-            3, 115, 16, 248, 190, 16, 69, 166, 10, 246, 238, 201, 231, 199, 78, 24, 154, 162, 200,
-            203, 71, 89, 101, 110, 68, 233, 71, 239, 121, 89, 102, 184, 220, 54, 44, 170, 16, 48,
-            56, 248, 250, 49, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 229, 182, 43, 101, 203, 59, 189, 166, 245, 104,
-            136, 230, 111, 238, 142, 100, 220, 85, 96, 25, 156, 15, 136, 177, 31, 226, 115, 189, 5,
-            158, 138, 161, 135, 145, 245, 195, 129, 26, 2, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
-            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            6, 0, 0, 0, 0, 0, 0, 0, 254, 0, 0, 0, 0, 0, 0, 0, 7, 0, 0, 0, 0,
+            0, 0, 0, 3, 0, 0, 0, 0, 0, 0, 0, 6, 0, 0, 0, 0, 0, 0, 0, 9, 0, 0,
+            0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            64, 122, 16, 243, 90, 0, 0, 244, 1, 0, 0, 0, 0, 0, 0, 128, 240,
+            250, 2, 0, 0, 0, 0, 0, 228, 11, 84, 2, 0, 0, 0, 1, 0, 0, 0, 0, 0,
+            0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 202, 154, 59, 0, 0, 0, 0, 0, 228,
+            11, 84, 2, 0, 0, 0, 5, 0, 0, 0, 0, 0, 0, 0, 16, 39, 0, 0, 0, 0, 0,
+            0, 25, 0, 0, 0, 0, 0, 0, 0, 16, 39, 0, 0, 0, 0, 0, 0, 12, 0, 0, 0,
+            0, 0, 0, 0, 100, 0, 0, 0, 0, 0, 0, 0, 25, 0, 0, 0, 0, 0, 0, 0, 16,
+            39, 0, 0, 0, 0, 0, 0, 90, 101, 13, 61, 39, 1, 0, 0, 95, 206, 74,
+            109, 21, 0, 0, 0, 85, 68, 118, 37, 114, 21, 0, 0, 21, 2, 178, 255,
+            7, 89, 2, 0, 159, 166, 242, 101, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 166, 233, 185,
+            73, 9, 228, 142, 3, 0, 0, 0, 0, 0, 0, 0, 0, 212, 72, 45, 251, 67,
+            10, 33, 0, 0, 0, 0, 0, 0, 0, 0, 0, 224, 11, 218, 9, 143, 21, 0, 0,
+            54, 52, 25, 96, 127, 175, 33, 0, 0, 0, 0, 0, 0, 0, 0, 0, 102, 240,
+            102, 11, 61, 106, 0, 4, 0, 0, 0, 0, 0, 0, 0, 0, 120, 63, 224, 87,
+            248, 70, 2, 0, 210, 186, 131, 72, 188, 117, 137, 37, 83, 54, 141,
+            182, 89, 240, 190, 65, 16, 155, 72, 164, 133, 239, 20, 188, 142,
+            204, 13, 233, 232, 114, 223, 190, 236, 83, 200, 41, 49, 116, 148,
+            39, 108, 82, 195, 123, 202, 5, 98, 83, 21, 3, 218, 188, 24, 148,
+            171, 54, 6, 229, 29, 247, 127, 48, 193, 80, 13, 131, 35, 192, 118,
+            240, 226, 135, 24, 202, 96, 215, 126, 107, 57, 206, 232, 242, 63,
+            67, 207, 196, 255, 31, 88, 82, 184, 252, 27, 148, 162, 147, 6,
+            155, 136, 87, 254, 171, 129, 132, 251, 104, 127, 99, 70, 24, 192,
+            53, 218, 196, 57, 220, 26, 235, 59, 85, 152, 160, 240, 0, 0, 0, 0,
+            1, 104, 166, 127, 248, 190, 13, 37, 30, 185, 46, 15, 154, 34, 229,
+            78, 229, 209, 70, 42, 187, 55, 69, 155, 90, 163, 68, 21, 203, 153,
+            183, 74, 128, 31, 183, 164, 72, 200, 185, 198, 154, 26, 166, 158,
+            44, 45, 221, 155, 92, 70, 157, 95, 169, 55, 38, 95, 180, 126, 243,
+            129, 21, 18, 114, 23, 151, 61, 114, 173, 22, 168, 26, 187, 204,
+            142, 58, 153, 54, 64, 140, 32, 82, 75, 48, 235, 38, 159, 107, 111,
+            64, 146, 120, 196, 151, 137, 214, 115, 6, 13, 7, 81, 168, 40, 45,
+            166, 19, 5, 254, 41, 156, 55, 185, 152, 229, 132, 113, 219, 17,
+            53, 3, 115, 16, 248, 190, 16, 69, 166, 10, 246, 238, 201, 231,
+            199, 78, 24, 154, 162, 200, 203, 71, 89, 101, 110, 68, 233, 71,
+            239, 121, 89, 102, 184, 220, 54, 44, 170, 16, 48, 56, 248, 250,
+            49, 27, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
+            0, 229, 182, 43, 101, 203, 59, 189, 166, 245, 104, 136, 230, 111,
+            238, 142, 100, 220, 85, 96, 25, 156, 15, 136, 177, 31, 226, 115,
+            189, 5, 158, 138, 161, 135, 145, 245, 195, 129, 26, 2, 0, 0, 0, 0,
+            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0,
         ];
         let amm_info = unpack::<AmmInfo>(&raw_data).unwrap();
-        assert!(amm_info.lp_mint.to_string() == "83WevmL2JzaEvDmuJUFMxcFNnHqP4xonfvAzKmsPWjwu");
-        assert!(amm_info.open_orders.to_string() == "38p42yoKFWgxw2LCbB96wAKa2LwAxiBArY3fc3eA9yWv");
         assert!(
-            amm_info.market_program.to_string() == "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
+            amm_info.lp_mint.to_string()
+                == "83WevmL2JzaEvDmuJUFMxcFNnHqP4xonfvAzKmsPWjwu"
+        );
+        assert!(
+            amm_info.open_orders.to_string()
+                == "38p42yoKFWgxw2LCbB96wAKa2LwAxiBArY3fc3eA9yWv"
+        );
+        assert!(
+            amm_info.market_program.to_string()
+                == "srmqPvymJeFKQ4zGQed1GFppgkRHL9kaELCbyksJtPX"
         );
     }
 
     #[test]
     fn test_get_ata_pump() {
         let mint = "FAJVRnNHuwozDi5UL8guMyobveadXDFxeikvN4Hupump".to_string();
-        let expected_addr = "HKh1cnq5b5iuhcEiDNyyGFyw3877hLzUjGCgr4LFjfHC".to_string();
+        let expected_addr =
+            "HKh1cnq5b5iuhcEiDNyyGFyw3877hLzUjGCgr4LFjfHC".to_string();
         let ata = spl_associated_token_account::get_associated_token_address(
-            &Pubkey::from_str("fuckTYubuBRLPm3TnBWfYYkDKnnfJqRtk1L1DpE4uFK").unwrap(),
+            &Pubkey::from_str("fuckTYubuBRLPm3TnBWfYYkDKnnfJqRtk1L1DpE4uFK")
+                .unwrap(),
             &Pubkey::from_str(&mint).unwrap(),
         );
         assert!(ata.to_string() == expected_addr);

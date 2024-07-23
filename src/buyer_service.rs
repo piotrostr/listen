@@ -37,14 +37,17 @@ pub struct BuyRequest {
 }
 
 #[post("/buy")]
-async fn handle_buy(buy_request: Json<BuyRequest>) -> Result<HttpResponse, Error> {
+async fn handle_buy(
+    buy_request: Json<BuyRequest>,
+) -> Result<HttpResponse, Error> {
     info!(
         "handling buy req {}",
         serde_json::to_string_pretty(&buy_request)?
     );
     let mint = buy_request.output_mint;
     tokio::spawn(async move {
-        let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read fund keypair");
+        let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+            .expect("read fund keypair");
         let provider = &Provider::new(env("RPC_URL").to_string());
         buyer::swap(
             &buy_request.amm_pool,

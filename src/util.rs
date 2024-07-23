@@ -21,7 +21,10 @@ pub async fn healthz() -> impl Responder {
 }
 
 /// Helper function for pubkey serialize
-pub fn pubkey_to_string<S>(pubkey: &Pubkey, serializer: S) -> Result<S::Ok, S::Error>
+pub fn pubkey_to_string<S>(
+    pubkey: &Pubkey,
+    serializer: S,
+) -> Result<S::Ok, S::Error>
 where
     S: serde::Serializer,
 {

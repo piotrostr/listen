@@ -19,9 +19,10 @@ pub fn eval_rpc(rpc_url: &str) {
     let rpc_client = RpcClient::new(rpc_url);
     info!("{}", rpc_client.get_latest_blockhash().unwrap());
     let lamports = 10000u64;
-    let wallet =
-        Keypair::read_from_file(std::env::var("HOME").unwrap() + "/.config/solana/id.json")
-            .unwrap();
+    let wallet = Keypair::read_from_file(
+        std::env::var("HOME").unwrap() + "/.config/solana/id.json",
+    )
+    .unwrap();
     info!("signer: {}", wallet.pubkey());
     let price = 25_000;
     let max_units = 500_000;
@@ -29,7 +30,8 @@ pub fn eval_rpc(rpc_url: &str) {
     ixs.append(&mut make_compute_budget_ixs(price, max_units));
     ixs.push(solana_sdk::system_instruction::transfer(
         &wallet.pubkey(),
-        &Pubkey::from_str("9SDTi7rzsCt1Y1QDY4n6NvFHn33tcYoVYfoEuXR7dQEM").unwrap(),
+        &Pubkey::from_str("9SDTi7rzsCt1Y1QDY4n6NvFHn33tcYoVYfoEuXR7dQEM")
+            .unwrap(),
         lamports,
     ));
     let transaction = Transaction::new_signed_with_payer(
@@ -45,7 +47,9 @@ pub fn eval_rpc(rpc_url: &str) {
         .send_transaction_with_config(
             &transaction,
             RpcSendTransactionConfig {
-                encoding: Some(solana_transaction_status::UiTransactionEncoding::Base58),
+                encoding: Some(
+                    solana_transaction_status::UiTransactionEncoding::Base58,
+                ),
                 skip_preflight: true,
                 preflight_commitment: Some(CommitmentLevel::Processed),
                 max_retries: Some(0),
@@ -58,7 +62,11 @@ pub fn eval_rpc(rpc_url: &str) {
     wait_tx(&rpc_client, &signature, slot);
 }
 
-pub fn wait_tx(rpc_client: &RpcClient, signature: &Signature, slot_submitted: u64) {
+pub fn wait_tx(
+    rpc_client: &RpcClient,
+    signature: &Signature,
+    slot_submitted: u64,
+) {
     loop {
         match rpc_client.get_transaction_with_config(
             signature,

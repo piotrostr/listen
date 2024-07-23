@@ -22,13 +22,19 @@ pub async fn new() -> Result<Collector, Box<dyn Error>> {
 }
 
 impl Collector {
-    pub async fn insert(&self, token_result: TokenResult) -> Result<Bson, Box<dyn Error>> {
+    pub async fn insert(
+        &self,
+        token_result: TokenResult,
+    ) -> Result<Bson, Box<dyn Error>> {
         let doc = mongodb::bson::to_document(&token_result)?;
         let res = self.collection.insert_one(doc, None).await?;
         Ok(res.inserted_id)
     }
 
-    pub async fn insert_generic(&self, doc: serde_json::Value) -> Result<Bson, Box<dyn Error>> {
+    pub async fn insert_generic(
+        &self,
+        doc: serde_json::Value,
+    ) -> Result<Bson, Box<dyn Error>> {
         let doc = mongodb::bson::to_document(&doc)?;
         let res = self.collection.insert_one(doc, None).await?;
         Ok(res.inserted_id)

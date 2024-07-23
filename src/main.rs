@@ -12,7 +12,14 @@ use util::env;
 
 use clap::Parser;
 use listen::{
-    address, app::{App, Command}, buyer, buyer_service, checker, checker_service, constants, jup::Jupiter, listener_service, prometheus, pump, raydium::{self, Raydium, SwapArgs}, rpc, seller, seller_service, tx_parser, util, BlockAndProgramSubscribable, Listener, Provider
+    address,
+    app::{App, Command},
+    buyer, buyer_service, checker, checker_service, constants,
+    jup::Jupiter,
+    listener_service, prometheus, pump,
+    raydium::{self, Raydium, SwapArgs},
+    rpc, seller, seller_service, tx_parser, util, BlockAndProgramSubscribable,
+    Listener, Provider,
 };
 use solana_client::{
     nonblocking,
@@ -50,10 +57,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 163.;
 
     match app.command {
-        Command::ListenPump {  } => {
-            pump::listen_pump().await?;
+        Command::SnipePump {} => {
+            pump::snipe_pump().await?;
         }
-        Command::BuyPumpToken { mint } => {
+        Command::BuyPumpToken { mint: _ } => {
             // pump::buy_pump_token(Pubkey::from_str(&mint)?).await?;
             // return unimplemented err
             return Err("Unimplemented".into());
@@ -67,7 +74,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     let prefixes = prefixes.clone();
                     let found_flag = Arc::clone(&found_flag);
                     tokio::spawn(async move {
-                        address::generate_custom_sol_address(prefixes, found_flag).await;
+                        address::generate_custom_sol_address(
+                            prefixes, found_flag,
+                        )
+                        .await;
                     })
                 })
                 .collect();
@@ -76,7 +86,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
         }
         Command::Ata { mint } => {
-            let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read wallet");
+            let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+                .expect("read wallet");
             info!(
                 "ATA: {:?}",
                 spl_associated_token_account::get_associated_token_address(
@@ -87,8 +98,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::SplStream { ata } => {
             let ata = Pubkey::from_str(&ata)?;
-            let pubsub_client =
-                nonblocking::pubsub_client::PubsubClient::new(env("WS_URL").as_str()).await?;
+            let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
+                env("WS_URL").as_str(),
+            )
+            .await?;
             seller::get_spl_balance_stream(&pubsub_client, &ata).await?;
         }
         Command::Checks { signature } => {
@@ -116,7 +129,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::ParsePool { signature } => {
             let provider = Provider::new(env("RPC_URL").to_string());
-            let new_pool = tx_parser::parse_new_pool(&provider.get_tx(signature.as_str()).await?)?;
+            let new_pool = tx_parser::parse_new_pool(
+                &provider.get_tx(signature.as_str()).await?,
+            )?;
             println!("{:?}", new_pool);
         }
         Command::TopHolders { mint } => {
@@ -127,8 +142,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::ListenForSolPooled { amm_pool } => {
             let provider = Provider::new(env("RPC_URL").to_string());
-            let pubsub_client =
-                nonblocking::pubsub_client::PubsubClient::new(env("WS_URL").as_str()).await?;
+            let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
+                env("WS_URL").as_str(),
+            )
+            .await?;
             buyer::listen_for_sol_pooled(
                 &Pubkey::from_str(amm_pool.as_str())?,
                 &provider.rpc_client,
@@ -138,8 +155,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::ListenForBurn { amm_pool } => {
             let provider = Provider::new(env("RPC_URL").to_string());
-            let pubsub_client =
-                nonblocking::pubsub_client::PubsubClient::new(env("WS_URL").as_str()).await?;
+            let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
+                env("WS_URL").as_str(),
+            )
+            .await?;
             buyer::listen_for_burn(
                 &Pubkey::from_str(amm_pool.as_str())?,
                 &provider.rpc_client,
@@ -149,12 +168,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::TrackPosition { amm_pool, owner } => {
             let provider = Provider::new(env("RPC_URL").to_string());
-            let amm_pool = Pubkey::from_str(amm_pool.as_str()).expect("amm pool is a valid pubkey");
+            let amm_pool = Pubkey::from_str(amm_pool.as_str())
+                .expect("amm pool is a valid pubkey");
 
-            let amm_program = Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+            let amm_program =
+                Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
             // load amm keys
-            let amm_keys =
-                amm::utils::load_amm_keys(&provider.rpc_client, &amm_program, &amm_pool).await?;
+            let amm_keys = amm::utils::load_amm_keys(
+                &provider.rpc_client,
+                &amm_program,
+                &amm_pool,
+            )
+            .await?;
             info!("{:?}", amm_keys);
             // load market keys
             let market_keys = amm::openbook::get_keys_for_market(
@@ -164,14 +189,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             )
             .await?;
             info!("{:?}", market_keys);
-            if market_keys.coin_mint.to_string() != constants::SOLANA_PROGRAM_ID
-                && market_keys.pc_mint.to_string() != constants::SOLANA_PROGRAM_ID
+            if market_keys.coin_mint.to_string()
+                != constants::SOLANA_PROGRAM_ID
+                && market_keys.pc_mint.to_string()
+                    != constants::SOLANA_PROGRAM_ID
             {
                 error!("pool is not against solana");
                 return Ok(());
             }
-            let coin_mint_is_sol =
-                market_keys.coin_mint.to_string() == constants::SOLANA_PROGRAM_ID;
+            let coin_mint_is_sol = market_keys.coin_mint.to_string()
+                == constants::SOLANA_PROGRAM_ID;
             let owner_balance = provider
                 .get_spl_balance(
                     &Pubkey::from_str(owner.as_str()).unwrap(),
@@ -194,14 +221,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 )
                 .await?;
 
-                raydium::calc_result_to_financials(coin_mint_is_sol, result, owner_balance);
+                raydium::calc_result_to_financials(
+                    coin_mint_is_sol,
+                    result,
+                    owner_balance,
+                );
 
                 tokio::time::sleep(Duration::from_secs(1)).await;
             }
         }
         Command::MonitorMempool {} => {
-            let auth =
-                Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).expect("read auth keypair");
+            let auth = Keypair::read_from_file(env("AUTH_KEYPAIR_PATH"))
+                .expect("read auth keypair");
             let mut searcher_client =
                 get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth))
                     .await
@@ -220,10 +251,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 "tokyo".to_string(),
                 "ny".to_string(),
             ];
-            let auth = Arc::new(Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap());
-            let mut searcher_client = get_searcher_client(env("BLOCK_ENGINE_URL").as_str(), &auth)
-                .await
-                .expect("makes searcher client");
+            let auth = Arc::new(
+                Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap(),
+            );
+            let mut searcher_client =
+                get_searcher_client(env("BLOCK_ENGINE_URL").as_str(), &auth)
+                    .await
+                    .expect("makes searcher client");
             for region in regions {
                 let res = searcher_client
                     .get_next_scheduled_leader(NextScheduledLeaderRequest {
@@ -238,10 +272,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::MonitorSlots {} => {
             Listener::new(env("WS_URL").to_string()).slot_subscribe()?;
-            let auth = Arc::new(Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap());
-            let mut searcher_client = get_searcher_client(env("BLOCK_ENGINE_URL").as_str(), &auth)
-                .await
-                .expect("makes searcher client");
+            let auth = Arc::new(
+                Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap(),
+            );
+            let mut searcher_client =
+                get_searcher_client(env("BLOCK_ENGINE_URL").as_str(), &auth)
+                    .await
+                    .expect("makes searcher client");
             let _ = searcher_client
                 .subscribe_mempool(MempoolSubscription {
                     ..Default::default()
@@ -256,9 +293,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 provider
                     .rpc_client
                     .get_recent_prioritization_fees(
-                        vec![
-                            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY).unwrap()
-                        ]
+                        vec![Pubkey::from_str(
+                            constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
+                        )
+                        .unwrap()]
                         .as_slice()
                     )
                     .await
@@ -266,12 +304,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::Price { amm_pool } => {
             let provider = Provider::new(env("RPC_URL").to_string());
-            let pubsub_client =
-                nonblocking::pubsub_client::PubsubClient::new(env("WS_URL").as_str()).await?;
+            let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
+                env("WS_URL").as_str(),
+            )
+            .await?;
             let amm_pool = Pubkey::from_str(amm_pool.as_str())?;
-            seller::listen_price(&amm_pool, &provider.rpc_client, &pubsub_client)
-                .await
-                .expect("listen price");
+            seller::listen_price(
+                &amm_pool,
+                &provider.rpc_client,
+                &pubsub_client,
+            )
+            .await
+            .expect("listen price");
         }
         Command::CheckerService {} => {
             checker_service::run_checker_service().await?;
@@ -311,13 +355,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             let path = match app.args.keypair_path {
                 Some(path) => path,
-                None => std::env::var("HOME").expect("HOME is set") + "/.config/solana/id.json",
+                None => {
+                    std::env::var("HOME").expect("HOME is set")
+                        + "/.config/solana/id.json"
+                }
             };
             if dex.unwrap_or("".to_string()) == "raydium" {
                 // TODO check out solend also
-                let amm_pool_id = Pubkey::from_str(amm_pool_id.unwrap().as_str())?;
+                let amm_pool_id =
+                    Pubkey::from_str(amm_pool_id.unwrap().as_str())?;
                 let input_token_mint = Pubkey::from_str(input_mint.as_str())?;
-                let output_token_mint = Pubkey::from_str(output_mint.as_str())?;
+                let output_token_mint =
+                    Pubkey::from_str(output_mint.as_str())?;
                 let slippage_bps = slippage.unwrap_or(800) as u64; // 8%
                 let wallet = Keypair::read_from_file(path)?;
                 info!("Wallet: {}", wallet.pubkey());
@@ -378,7 +427,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let provider = Provider::new(env("RPC_URL"));
             let path = match app.args.keypair_path {
                 Some(path) => path,
-                None => std::env::var("HOME").expect("HOME is set") + "/.config/solana/id.json",
+                None => {
+                    std::env::var("HOME").expect("HOME is set")
+                        + "/.config/solana/id.json"
+                }
             };
             let keypair = Keypair::read_from_file(&path)?;
 
@@ -397,7 +449,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let swap = tx_parser::parse_swap(&tx)?;
             info!("Swap: {}", serde_json::to_string_pretty(&swap)?);
 
-            let sol_notional = listen::util::lamports_to_sol(swap.quote_amount as u64);
+            let sol_notional =
+                listen::util::lamports_to_sol(swap.quote_amount as u64);
             let usd_notional = sol_notional * sol_price;
             info!("{} ({} USD)", sol_notional, usd_notional);
 
@@ -418,8 +471,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             let (mut subs, recv) = listener.logs_subscribe()?; // Subscribe to logs
 
-            let (tx, rx) =
-                tokio::sync::mpsc::channel::<Response<RpcLogsResponse>>(buffer_size as usize);
+            let (tx, rx) = tokio::sync::mpsc::channel::<
+                Response<RpcLogsResponse>,
+            >(buffer_size as usize);
             let rx = Arc::new(Mutex::new(rx));
 
             // Worker tasks, increase in prod to way more, talking min 30-50
@@ -427,11 +481,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 .map(|_| {
                     let rx = Arc::clone(&rx);
                     let provider = Provider::new(env("RPC_URL").to_string());
-                    let transactions_processed = transactions_processed.clone();
+                    let transactions_processed =
+                        transactions_processed.clone();
                     tokio::spawn(async move {
                         while let Some(log) = rx.lock().await.recv().await {
                             let tx = {
-                                match provider.get_tx(&log.value.signature).await {
+                                match provider
+                                    .get_tx(&log.value.signature)
+                                    .await
+                                {
                                     Ok(tx) => tx,
                                     Err(e) => {
                                         info!(
@@ -442,7 +500,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                                     }
                                 }
                             };
-                            let lamports = tx_parser::parse_notional(&tx).ok().unwrap();
+                            let lamports =
+                                tx_parser::parse_notional(&tx).ok().unwrap();
                             let sol_notional = util::lamports_to_sol(lamports);
                             transactions_processed.inc();
                             if sol_notional < 10. {
@@ -460,7 +519,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             // Log receiving task
             let log_receiver = tokio::spawn(async move {
                 let transactions_received = transactions_received.clone();
-                while let Ok(log) = recv.recv_timeout(Duration::from_secs(10)) {
+                while let Ok(log) = recv.recv_timeout(Duration::from_secs(10))
+                {
                     if log.value.err.is_some() {
                         continue; // Skip error logs
                     }

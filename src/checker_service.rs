@@ -37,7 +37,9 @@ pub struct TokenResult {
 // stuff like that can improve win ratio and here every snipe matters especially
 // with larger entry size
 #[post("/checks")]
-pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpResponse, Error> {
+pub async fn handle_checks(
+    checks_request: Json<ChecksRequest>,
+) -> Result<HttpResponse, Error> {
     info!(
         "handling checks request {}",
         serde_json::to_string_pretty(&checks_request)?
@@ -58,8 +60,9 @@ pub async fn handle_checks(checks_request: Json<ChecksRequest>) -> Result<HttpRe
     {
         Ok((ok, checklist)) => (ok, checklist),
         Err(e) => {
-            return Ok(HttpResponse::InternalServerError()
-                .json(json!({"error": format!("Error running checks: {}", e)})));
+            return Ok(HttpResponse::InternalServerError().json(
+                json!({"error": format!("Error running checks: {}", e)}),
+            ));
         }
     };
     let output_mint = checklist.mint;

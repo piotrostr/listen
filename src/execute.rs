@@ -5,9 +5,12 @@ use futures_util::StreamExt;
 use log::{info, warn};
 use raydium_library::amm;
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
-use solana_client::{nonblocking::pubsub_client::PubsubClient, rpc_config::RpcAccountInfoConfig};
+use solana_client::{
+    nonblocking::pubsub_client::PubsubClient, rpc_config::RpcAccountInfoConfig,
+};
 use solana_sdk::{
-    commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey, signature::Keypair,
+    commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
+    signature::Keypair,
 };
 
 use crate::{buyer, constants, seller::Pool, Provider};
@@ -39,7 +42,8 @@ impl Executor {
         amm_pool: &Pubkey,
     ) -> Result<bool, Box<dyn std::error::Error>> {
         let coin_mint_is_sol = self.amm_keys.amm_coin_mint
-            == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
+            == Pubkey::from_str(constants::SOLANA_PROGRAM_ID)
+                .expect("sol mint");
         let (token_vault, sol_vault) = if coin_mint_is_sol {
             (self.amm_keys.amm_pc_vault, self.amm_keys.amm_coin_vault)
         } else {
@@ -141,7 +145,11 @@ impl Executor {
         }
     }
 
-    pub fn get_sell_amount(&mut self, lamports_in: u64, lamports_out: u64) -> u64 {
+    pub fn get_sell_amount(
+        &mut self,
+        lamports_in: u64,
+        lamports_out: u64,
+    ) -> u64 {
         let mut sell_amount = 0.;
         let lamports_in = lamports_in as f64;
         let lamports_out = lamports_out as f64;
@@ -164,7 +172,8 @@ impl Executor {
             let sl_amount_pct = self.sl_amounts_pct.get(i).unwrap();
             if lamports_out <= *sl_level * lamports_in {
                 // leave 1% to avoid overflows
-                sell_amount += *sl_amount_pct * self.remaining_token_balance as f64;
+                sell_amount +=
+                    *sl_amount_pct * self.remaining_token_balance as f64;
                 self.sl_reached[i] = true;
             }
         }

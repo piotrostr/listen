@@ -22,7 +22,10 @@ use solana_client::rpc_filter::RpcFilterType;
 use solana_sdk::instruction::Instruction;
 use solana_sdk::program_pack::Pack;
 use solana_sdk::transaction::VersionedTransaction;
-use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer, transaction::Transaction};
+use solana_sdk::{
+    pubkey::Pubkey, signature::Keypair, signer::Signer,
+    transaction::Transaction,
+};
 
 pub struct Raydium {}
 
@@ -61,15 +64,20 @@ pub async fn get_calc_result(
     rpc_client: &RpcClient,
     amm_pool: &Pubkey,
 ) -> Result<(amm::CalculateResult, MarketPubkeys, AmmKeys), Box<dyn Error>> {
-    let amm_program = Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+    let amm_program =
+        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
 
     // load amm keys
-    let amm_keys = amm::utils::load_amm_keys(rpc_client, &amm_program, amm_pool).await?;
+    let amm_keys =
+        amm::utils::load_amm_keys(rpc_client, &amm_program, amm_pool).await?;
     debug!("amm keys: {:?}", amm_keys);
     // load market keys
-    let market_keys =
-        amm::openbook::get_keys_for_market(rpc_client, &amm_keys.market_program, &amm_keys.market)
-            .await?;
+    let market_keys = amm::openbook::get_keys_for_market(
+        rpc_client,
+        &amm_keys.market_program,
+        &amm_keys.market,
+    )
+    .await?;
     debug!("market keys: {:?}", market_keys);
 
     let result = raydium_library::amm::calculate_pool_vault_amounts(
@@ -86,7 +94,10 @@ pub async fn get_calc_result(
     Ok((result, market_keys, amm_keys))
 }
 
-pub fn get_burn_pct(mint_data: Mint, result: amm::CalculateResult) -> Result<f64, Box<dyn Error>> {
+pub fn get_burn_pct(
+    mint_data: Mint,
+    result: amm::CalculateResult,
+) -> Result<f64, Box<dyn Error>> {
     // Calculate divisor for token decimals
     let base = 10u64;
     let divisor = base.pow(mint_data.decimals as u32);
@@ -123,7 +134,8 @@ pub fn calc_result_to_financials(
     if coin_mint_is_sol {
         let sol_amount = result.pool_coin_vault_amount as f64 / 1e9;
         let usd_amount = sol_amount * sol_price;
-        let price = result.pool_coin_vault_amount as f64 / result.pool_pc_vault_amount as f64;
+        let price = result.pool_coin_vault_amount as f64
+            / result.pool_pc_vault_amount as f64;
         let owner_balance_sol = owner_balance as f64 * price / 1e9;
         debug!(
             "{}",
@@ -143,7 +155,8 @@ pub fn calc_result_to_financials(
     } else {
         let sol_amount = result.pool_pc_vault_amount as f64 / 1e9;
         let usd_amount = sol_amount * sol_price;
-        let price = result.pool_pc_vault_amount as f64 / result.pool_coin_vault_amount as f64;
+        let price = result.pool_pc_vault_amount as f64
+            / result.pool_coin_vault_amount as f64;
         let owner_balance_sol = owner_balance as f64 * price / 1e9;
         debug!(
             "{}",
@@ -172,9 +185,11 @@ pub async fn make_swap_context(
     slippage: u64,
     amount: u64,
 ) -> Result<SwapContext, Box<dyn Error>> {
-    let amm_program = Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+    let amm_program =
+        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
     // load amm keys
-    let amm_keys = load_amm_keys(&provider.rpc_client, &amm_program, &amm_pool).await?;
+    let amm_keys =
+        load_amm_keys(&provider.rpc_client, &amm_program, &amm_pool).await?;
     // load market keys
     let market_keys = amm::openbook::get_keys_for_market(
         &provider.rpc_client,
@@ -240,7 +255,8 @@ pub async fn make_swap_ixs(
         )
         .await?;
         self::calc_result_to_financials(
-            swap_context.market_keys.coin_mint.to_string() == constants::SOLANA_PROGRAM_ID,
+            swap_context.market_keys.coin_mint.to_string()
+                == constants::SOLANA_PROGRAM_ID,
             result,
             0,
         );
@@ -249,8 +265,10 @@ pub async fn make_swap_ixs(
             // TODO make this configurable, 7k (50 sol) is a bare threshold
             return Err("Pool is small, aborting swap".into());
         }
-        let direction = if swap_context.input_token_mint == swap_context.amm_keys.amm_coin_mint
-            && swap_context.output_token_mint == swap_context.amm_keys.amm_pc_mint
+        let direction = if swap_context.input_token_mint
+            == swap_context.amm_keys.amm_coin_mint
+            && swap_context.output_token_mint
+                == swap_context.amm_keys.amm_pc_mint
         {
             amm::utils::SwapDirection::Coin2PC
         } else {
@@ -273,7 +291,8 @@ pub async fn make_swap_ixs(
             .get_account(&swap_context.output_token_mint)
             .await?;
         let mint_data = Mint::unpack(&mint_account.data)?;
-        let burn_pct = self::get_burn_pct(mint_data, result).expect("get burn pct");
+        let burn_pct =
+            self::get_burn_pct(mint_data, result).expect("get burn pct");
 
         info!(
             "{}",
@@ -391,7 +410,10 @@ impl Raydium {
         // need to fetch amm pool by input/output first, not critical but useful
     }
 
-    pub async fn swap(&self, swap_args: SwapArgs) -> Result<(), Box<dyn Error>> {
+    pub async fn swap(
+        &self,
+        swap_args: SwapArgs,
+    ) -> Result<(), Box<dyn Error>> {
         let SwapArgs {
             amm_pool,
             input_token_mint,
@@ -412,7 +434,9 @@ impl Raydium {
             amount,
         )
         .await?;
-        let ixs = self::make_swap_ixs(&provider, &wallet, &swap_context, false).await?;
+        let ixs =
+            self::make_swap_ixs(&provider, &wallet, &swap_context, false)
+                .await?;
         info!(
             "{}",
             serde_json::to_string_pretty(&json!({
@@ -464,20 +488,27 @@ pub async fn handle_token_account(
     if (*mint).to_string() == constants::SOLANA_PROGRAM_ID {
         let rent = provider
             .rpc_client
-            .get_minimum_balance_for_rent_exemption(spl_token::state::Account::LEN)
+            .get_minimum_balance_for_rent_exemption(
+                spl_token::state::Account::LEN,
+            )
             .await?;
         let lamports = rent + amount;
         let seed = &Keypair::new().pubkey().to_string()[0..32];
         let token = generate_pub_key(owner, seed);
-        let mut init_ixs = create_init_token(&token, seed, mint, owner, funding, lamports);
+        let mut init_ixs =
+            create_init_token(&token, seed, mint, owner, funding, lamports);
         let mut close_ixs = common::close_account(&token, owner, owner);
         // swap.signers.push(token);
         swap.pre_swap_instructions.append(&mut init_ixs);
         swap.post_swap_instructions.append(&mut close_ixs);
         Ok(token)
     } else {
-        let token = &spl_associated_token_account::get_associated_token_address(owner, mint);
-        let mut ata_ixs = common::create_ata_token_or_not(funding, mint, owner);
+        let token =
+            &spl_associated_token_account::get_associated_token_address(
+                owner, mint,
+            );
+        let mut ata_ixs =
+            common::create_ata_token_or_not(funding, mint, owner);
         swap.pre_swap_instructions.append(&mut ata_ixs);
         Ok(*token)
     }
@@ -501,7 +532,13 @@ pub fn create_init_token(
             spl_token::state::Account::LEN as u64,
             &spl_token::id(),
         ),
-        spl_token::instruction::initialize_account(&spl_token::id(), token, mint, owner).unwrap(),
+        spl_token::instruction::initialize_account(
+            &spl_token::id(),
+            token,
+            mint,
+            owner,
+        )
+        .unwrap(),
     ]
 }
 
@@ -509,7 +546,10 @@ pub fn generate_pub_key(from: &Pubkey, seed: &str) -> Pubkey {
     Pubkey::create_with_seed(from, seed, &spl_token::id()).unwrap()
 }
 
-pub fn make_compute_budget_ixs(price: u64, max_units: u32) -> Vec<Instruction> {
+pub fn make_compute_budget_ixs(
+    price: u64,
+    max_units: u32,
+) -> Vec<Instruction> {
     vec![
         solana_sdk::compute_budget::ComputeBudgetInstruction::set_compute_unit_price(price),
         solana_sdk::compute_budget::ComputeBudgetInstruction::set_compute_unit_limit(max_units),

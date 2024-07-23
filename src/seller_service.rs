@@ -51,18 +51,22 @@ pub struct SellRequest {
 }
 
 #[post("/sell")]
-async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Error> {
+async fn handle_sell(
+    sell_request: Json<SellRequest>,
+) -> Result<HttpResponse, Error> {
     info!(
         "handling sell_request {}",
         serde_json::to_string_pretty(&sell_request)?
     );
     actix_rt::spawn(async move {
-        let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).expect("read wallet");
+        let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+            .expect("read wallet");
         let provider = Provider::new(env("RPC_URL"));
-        let token_account = spl_associated_token_account::get_associated_token_address(
-            &wallet.pubkey(),
-            &sell_request.input_mint,
-        );
+        let token_account =
+            spl_associated_token_account::get_associated_token_address(
+                &wallet.pubkey(),
+                &sell_request.input_mint,
+            );
         let pubsub_client = PubsubClient::new(&env("WS_URL"))
             .await
             .expect("make pubsub client");
@@ -79,11 +83,15 @@ async fn handle_sell(sell_request: Json<SellRequest>) -> Result<HttpResponse, Er
         if !sell_request.insta.unwrap_or(false) {
             // load amm keys
             let amm_program =
-                Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY).expect("amm program");
-            let amm_keys =
-                load_amm_keys(&provider.rpc_client, &amm_program, &sell_request.amm_pool)
-                    .await
-                    .expect("amm_keys");
+                Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)
+                    .expect("amm program");
+            let amm_keys = load_amm_keys(
+                &provider.rpc_client,
+                &amm_program,
+                &sell_request.amm_pool,
+            )
+            .await
+            .expect("amm_keys");
             let mut executor = Executor {
                 amm_keys,
                 funder: wallet,
@@ -140,16 +148,24 @@ pub struct SimpleSellRequest {
 }
 
 #[post("/sell-simple")]
-async fn handle_sell_simple(sell_request: Json<SimpleSellRequest>) -> Result<HttpResponse, Error> {
+async fn handle_sell_simple(
+    sell_request: Json<SimpleSellRequest>,
+) -> Result<HttpResponse, Error> {
     info!(
         "handling simple_sell_request {}",
         serde_json::to_string_pretty(&sell_request)?
     );
-    let rpc_client = RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
-    let amm_program = Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY).unwrap();
-    let amm_keys = amm::utils::load_amm_keys(&rpc_client, &amm_program, &sell_request.amm_pool)
-        .await
-        .expect("amm_keys");
+    let rpc_client =
+        RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
+    let amm_program =
+        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY).unwrap();
+    let amm_keys = amm::utils::load_amm_keys(
+        &rpc_client,
+        &amm_program,
+        &sell_request.amm_pool,
+    )
+    .await
+    .expect("amm_keys");
 
     let (input_mint, output_mint) =
         if amm_keys.amm_pc_mint.to_string() == constants::SOLANA_PROGRAM_ID {
@@ -260,10 +276,12 @@ pub async fn load_amm_keys(
     amm_program: &Pubkey,
     amm_pool: &Pubkey,
 ) -> Result<amm::AmmKeys, Box<dyn std::error::Error>> {
-    let amm = get_account_with_retries::<raydium_amm::state::AmmInfo>(client, amm_pool)
-        .await
-        .expect("get_account_with_retries")
-        .unwrap();
+    let amm = get_account_with_retries::<raydium_amm::state::AmmInfo>(
+        client, amm_pool,
+    )
+    .await
+    .expect("get_account_with_retries")
+    .unwrap();
     Ok(amm::AmmKeys {
         amm_pool: *amm_pool,
         amm_target: amm.target_orders,
@@ -300,13 +318,16 @@ where
             Ok(res) => {
                 if let Some(account) = res.value {
                     let account_data = account.data.as_slice();
-                    let ret = unsafe { &*(&account_data[0] as *const u8 as *const T) };
+                    let ret = unsafe {
+                        &*(&account_data[0] as *const u8 as *const T)
+                    };
                     return Ok(Some(ret.clone()));
                 }
             }
             Err(e) => {
                 warn!("could not get account: {}", e);
-                tokio::time::sleep(std::time::Duration::from_secs(backoff)).await;
+                tokio::time::sleep(std::time::Duration::from_secs(backoff))
+                    .await;
                 backoff *= 2;
             }
         }

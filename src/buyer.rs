@@ -1,4 +1,6 @@
-use std::{error::Error, str::FromStr, sync::Arc, thread::sleep, time::Duration};
+use std::{
+    error::Error, str::FromStr, sync::Arc, thread::sleep, time::Duration,
+};
 
 use crate::{
     constants, jito,
@@ -16,8 +18,8 @@ use solana_client::{
     rpc_config::RpcAccountInfoConfig,
 };
 use solana_sdk::{
-    commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey, signature::Keypair,
-    signer::EncodableKey,
+    commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
+    signature::Keypair, signer::EncodableKey,
 };
 use spl_token::state::Mint;
 
@@ -64,17 +66,20 @@ pub async fn swap(
 
     let start = std::time::Instant::now();
     let quick = true;
-    let mut ixs = raydium::make_swap_ixs(provider, wallet, &swap_context, quick)
-        .await
-        .expect("make swap ixs");
+    let mut ixs =
+        raydium::make_swap_ixs(provider, wallet, &swap_context, quick)
+            .await
+            .expect("make swap ixs");
 
     info!("took {:?} to pack", start.elapsed());
 
     info!("swapping {} {} to {}", amount, input_mint, output_mint);
-    let auth = Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).expect("read auth keypair");
-    let mut searcher_client = get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth))
-        .await
-        .expect("makes searcher client");
+    let auth = Keypair::read_from_file(env("AUTH_KEYPAIR_PATH"))
+        .expect("read auth keypair");
+    let mut searcher_client =
+        get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth))
+            .await
+            .expect("makes searcher client");
     jito::send_swap_tx_no_wait(
         &mut ixs,
         50000,
@@ -94,7 +99,8 @@ pub async fn check_top_holders(
     mint: &Pubkey,
     provider: &Provider,
 ) -> Result<(f64, bool), Box<dyn Error>> {
-    let top_holders = provider.rpc_client.get_token_largest_accounts(mint).await?;
+    let top_holders =
+        provider.rpc_client.get_token_largest_accounts(mint).await?;
     let up_to_ten = 10.min(top_holders.len());
     let top_holders = top_holders[0..up_to_ten].to_vec();
     let top_holders_len = top_holders.len();
@@ -117,7 +123,9 @@ pub async fn check_top_holders(
                     CommitmentConfig::confirmed(),
                 )
                 .await?;
-            if account_info.value.unwrap().owner == constants::RAYDIUM_AUTHORITY_V4_PUBKEY {
+            if account_info.value.unwrap().owner
+                == constants::RAYDIUM_AUTHORITY_V4_PUBKEY
+            {
                 raydium_holding = holder.amount.ui_amount.unwrap();
                 got_raydium = true;
             }
@@ -168,15 +176,18 @@ pub async fn listen_for_sol_pooled(
 
     info!("listening for sol pooled for pool {}", amm_pool.to_string());
     if stream.next().await.is_some() {
-        let (result, _, amm_keys) = raydium::get_calc_result(rpc_client, amm_pool).await?;
+        let (result, _, amm_keys) =
+            raydium::get_calc_result(rpc_client, amm_pool).await?;
         let coin_mint_is_sol = amm_keys.amm_coin_mint
-            == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
+            == Pubkey::from_str(constants::SOLANA_PROGRAM_ID)
+                .expect("sol mint");
         let token_mint = if coin_mint_is_sol {
             amm_keys.amm_pc_mint
         } else {
             amm_keys.amm_coin_mint
         };
-        let sol_pooled = raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
+        let sol_pooled =
+            raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
         if sol_pooled >= 30. {
             info!("{} sol pooled: {}", token_mint, sol_pooled);
             return Ok((sol_pooled, true));
@@ -199,11 +210,13 @@ pub async fn listen_for_burn(
 ) -> Result<(f64, bool), Box<dyn Error>> {
     // load amm keys
     let amm_program =
-        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY).expect("amm program");
-    let amm_keys = amm::utils::load_amm_keys(rpc_client, &amm_program, amm_pool).await?;
+        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)
+            .expect("amm program");
+    let amm_keys =
+        amm::utils::load_amm_keys(rpc_client, &amm_program, amm_pool).await?;
     let lp_mint = amm_keys.amm_lp_mint;
-    let coin_mint_is_sol =
-        amm_keys.amm_coin_mint == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
+    let coin_mint_is_sol = amm_keys.amm_coin_mint
+        == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
 
     let (mut stream, unsub) = pubsub_client
         .account_subscribe(
@@ -227,14 +240,20 @@ pub async fn listen_for_burn(
         debug!("log: {:?}", log);
         if let UiAccountData::LegacyBinary(data) = log.value.data {
             let mint_data =
-                Mint::unpack(bs58::decode(data).into_vec()?.as_slice()).expect("unpack mint data");
+                Mint::unpack(bs58::decode(data).into_vec()?.as_slice())
+                    .expect("unpack mint data");
             debug!("mint data: {:?}", mint_data);
 
-            let (result, _, _) = raydium::get_calc_result(rpc_client, amm_pool).await?;
+            let (result, _, _) =
+                raydium::get_calc_result(rpc_client, amm_pool).await?;
 
             // check if any sol pooled before checking burn_pct for correct res
             // rug-pulled tokens have LP supply of 0
-            let sol_pooled = raydium::calc_result_to_financials(coin_mint_is_sol, result, 0);
+            let sol_pooled = raydium::calc_result_to_financials(
+                coin_mint_is_sol,
+                result,
+                0,
+            );
             if sol_pooled < 1. {
                 warn!("{} rug pull, sol pooled: {}", token_mint, sol_pooled);
                 return Ok((-1., false));
@@ -278,7 +297,9 @@ mod tests {
     #[tokio::test]
     async fn test_check_if_pump_fun_works_for_pump_fun() {
         // some pump fun shitto
-        let mint = Pubkey::from_str("2yqz8eJvJu1eiaYz34r9i7YbyTveRRJwPFhRJenp6yed").unwrap();
+        let mint =
+            Pubkey::from_str("2yqz8eJvJu1eiaYz34r9i7YbyTveRRJwPFhRJenp6yed")
+                .unwrap();
         let res = super::check_if_pump_fun(&mint).await.unwrap();
         assert!(res);
     }
@@ -286,7 +307,9 @@ mod tests {
     #[tokio::test]
     async fn test_check_if_pump_fun_works_for_not_pump_fun() {
         // wifhat
-        let mint = Pubkey::from_str("EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm").unwrap();
+        let mint =
+            Pubkey::from_str("EKpQGSJtjMFqKZ9KQanSqYXRcF8fBopzLHYxdM65zcjm")
+                .unwrap();
         let res = super::check_if_pump_fun(&mint).await.unwrap();
         assert!(!res);
     }

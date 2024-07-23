@@ -10,11 +10,13 @@ use solana_client::{
     rpc_config::{RpcAccountInfoConfig, RpcTransactionConfig},
 };
 use solana_sdk::{
-    commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey, signature::Signature,
+    commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
+    signature::Signature,
 };
 use solana_transaction_status::{
-    EncodedConfirmedTransactionWithStatusMeta, EncodedTransaction, UiInstruction, UiMessage,
-    UiParsedInstruction, UiParsedMessage, UiPartiallyDecodedInstruction, UiTransactionEncoding,
+    EncodedConfirmedTransactionWithStatusMeta, EncodedTransaction,
+    UiInstruction, UiMessage, UiParsedInstruction, UiParsedMessage,
+    UiPartiallyDecodedInstruction, UiTransactionEncoding,
 };
 use spl_token::state::Mint;
 
@@ -118,7 +120,10 @@ pub struct PoolAccounts {
 pub async fn run_checks(
     signature: String,
 ) -> Result<(bool, Checklist), Box<dyn std::error::Error>> {
-    let rpc_client = RpcClient::new_with_commitment(env("RPC_URL"), CommitmentConfig::confirmed());
+    let rpc_client = RpcClient::new_with_commitment(
+        env("RPC_URL"),
+        CommitmentConfig::confirmed(),
+    );
     let tx = rpc_client
         .get_transaction_with_config(
             &Signature::from_str(&signature)?,
@@ -135,7 +140,8 @@ pub async fn run_checks(
         signature,
         serde_json::to_string_pretty(&accounts).unwrap()
     );
-    let (ok, checklist) = _run_checks(&rpc_client, accounts, tx.slot, true).await?;
+    let (ok, checklist) =
+        _run_checks(&rpc_client, accounts, tx.slot, true).await?;
     Ok((ok, checklist))
 }
 
@@ -145,11 +151,12 @@ pub async fn _run_checks(
     slot: u64,
     ignore_non_pump_funs: bool,
 ) -> Result<(bool, Checklist), Box<dyn std::error::Error>> {
-    let (sol_vault, mint) = if accounts.coin_mint.to_string() == constants::SOLANA_PROGRAM_ID {
-        (accounts.pool_coin_token_account, accounts.pc_mint)
-    } else {
-        (accounts.pool_pc_token_account, accounts.coin_mint)
-    };
+    let (sol_vault, mint) =
+        if accounts.coin_mint.to_string() == constants::SOLANA_PROGRAM_ID {
+            (accounts.pool_coin_token_account, accounts.pc_mint)
+        } else {
+            (accounts.pool_pc_token_account, accounts.coin_mint)
+        };
 
     let mut checklist = Checklist {
         slot,
@@ -220,7 +227,8 @@ pub async fn _run_checks(
                 return Err("Could not get account user lp account".into());
             }
         };
-        let lp_account = spl_token::state::Account::unpack(&account.data).unwrap();
+        let lp_account =
+            spl_token::state::Account::unpack(&account.data).unwrap();
         if lp_account.amount == 0 {
             checklist.lp_burnt = true;
         }
@@ -333,28 +341,38 @@ pub fn parse_accounts(
         }) = &ui_tx.message
         {
             for ix in instructions.iter() {
-                if let UiInstruction::Parsed(UiParsedInstruction::PartiallyDecoded(
-                    UiPartiallyDecodedInstruction {
-                        accounts,
-                        program_id,
-                        data: _,
-                        stack_height: _,
-                    },
-                )) = ix
+                if let UiInstruction::Parsed(
+                    UiParsedInstruction::PartiallyDecoded(
+                        UiPartiallyDecodedInstruction {
+                            accounts,
+                            program_id,
+                            data: _,
+                            stack_height: _,
+                        },
+                    ),
+                ) = ix
                 {
                     if accounts.len() == 21
-                        && program_id == constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
+                        && program_id
+                            == constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
                     {
                         let amm_pool = Pubkey::from_str(&accounts[4]).unwrap();
                         let lp_mint = Pubkey::from_str(&accounts[7]).unwrap();
-                        let coin_mint = Pubkey::from_str(&accounts[8]).unwrap();
+                        let coin_mint =
+                            Pubkey::from_str(&accounts[8]).unwrap();
                         let pc_mint = Pubkey::from_str(&accounts[9]).unwrap();
-                        let pool_coin_token_account = Pubkey::from_str(&accounts[10]).unwrap();
-                        let pool_pc_token_account = Pubkey::from_str(&accounts[11]).unwrap();
-                        let user_wallet = Pubkey::from_str(&accounts[17]).unwrap();
-                        let user_token_coin = Pubkey::from_str(&accounts[18]).unwrap();
-                        let user_token_pc = Pubkey::from_str(&accounts[19]).unwrap();
-                        let user_lp_token = Pubkey::from_str(&accounts[20]).unwrap();
+                        let pool_coin_token_account =
+                            Pubkey::from_str(&accounts[10]).unwrap();
+                        let pool_pc_token_account =
+                            Pubkey::from_str(&accounts[11]).unwrap();
+                        let user_wallet =
+                            Pubkey::from_str(&accounts[17]).unwrap();
+                        let user_token_coin =
+                            Pubkey::from_str(&accounts[18]).unwrap();
+                        let user_token_pc =
+                            Pubkey::from_str(&accounts[19]).unwrap();
+                        let user_lp_token =
+                            Pubkey::from_str(&accounts[20]).unwrap();
 
                         return Ok(PoolAccounts {
                             amm_pool,
@@ -389,6 +407,9 @@ mod tests {
     #[test]
     fn test_unpack_mint() {
         let data = "1111Dk7tnoddMvATwtoKYbhf9c51kPxy4Siv5Ubb93zssnpGt5j2ELBnz1TT5a7jGAeKE9zEsoFAY5kByXAhfi8EYHCg3ChYCmZ6rnyNYPxQrK".to_string();
-        let _ = super::Mint::unpack(bs58::decode(data).into_vec().unwrap().as_slice()).unwrap();
+        let _ = super::Mint::unpack(
+            bs58::decode(data).into_vec().unwrap().as_slice(),
+        )
+        .unwrap();
     }
 }
