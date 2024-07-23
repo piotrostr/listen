@@ -5,14 +5,14 @@ use log::info;
 use std::error::Error;
 use std::str::FromStr;
 
-use borsh::BorshSerialize;
+use borsh::{BorshSerialize, BorshDeserialize};
 
 use serde::{Deserialize, Serialize};
 use solana_client::nonblocking::pubsub_client::PubsubClient;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::nonce_utils::nonblocking::get_account_with_commitment;
 use solana_client::rpc_config::{
-    RpcTransactionLogsConfig, RpcTransactionLogsFilter,
+    RpcSendTransactionConfig, RpcTransactionLogsConfig, RpcTransactionLogsFilter
 };
 use solana_sdk::commitment_config::CommitmentConfig;
 use solana_sdk::instruction::{AccountMeta, Instruction};
@@ -21,7 +21,7 @@ use solana_sdk::signature::Keypair;
 use solana_sdk::signer::{EncodableKey, Signer};
 use solana_transaction_status::{
     EncodedConfirmedTransactionWithStatusMeta, EncodedTransaction, UiMessage,
-    UiParsedMessage,
+    UiParsedMessage, UiTransactionEncoding,
 };
 
 use crate::get_tx_async;
@@ -50,23 +50,84 @@ pub struct PumpFunBuyInstructionData {
     pub lamports: u64,
 }
 
-pub async fn get_token_amount(
+#[derive(BorshSerialize, BorshDeserialize, Debug, Clone)]
+pub struct BondingCurveLayout {
+    pub blob1: u64,
+    pub virtual_token_reserves: u64,
+    pub virtual_sol_reserves: u64,
+    pub real_token_reserves: u64,
+    pub real_sol_reserves: u64,
+    pub blob4: u64,
+    pub complete: bool,
+}
+
+impl BondingCurveLayout {
+    pub const LEN: usize = 8 + 8 + 8 + 8 + 8 + 8 + 1;
+
+    pub fn parse(data: &[u8]) -> Result<Self, std::io::Error> {
+        Self::try_from_slice(data)
+    }
+}
+
+pub async fn get_bonding_curve(
     rpc_client: &RpcClient,
-    pump_accounts: PumpAccounts,
+    bonding_curve_pubkey: Pubkey,
+) -> Result<BondingCurveLayout, Box<dyn Error>> {
+    let bonding_curve_data = rpc_client
+        .get_account_data(&bonding_curve_pubkey)
+        .await?;
+
+    Ok(BondingCurveLayout::parse(&bonding_curve_data)?)
+}
+
+pub fn get_token_amount(
+    bonding_curve: &BondingCurveLayout,
     lamports: u64,
-) -> Result<u64, Box<dyn Error>> {
-    Ok(())
+) -> Result<u64, Box<dyn std::error::Error>> {
+    let virtual_sol_reserves = bonding_curve.virtual_sol_reserves as u128;
+    let virtual_token_reserves = bonding_curve.virtual_token_reserves as u128;
+    let amount_in = lamports as u128;
+
+    // Calculate reserves_product carefully to avoid overflow
+    let reserves_product = virtual_sol_reserves
+        .checked_mul(virtual_token_reserves)
+        .ok_or("Overflow in reserves product calculation")?;
+
+    let new_virtual_sol_reserve = virtual_sol_reserves
+        .checked_add(amount_in)
+        .ok_or("Overflow in new virtual SOL reserve calculation")?;
+
+    let new_virtual_token_reserve = reserves_product
+        .checked_div(new_virtual_sol_reserve)
+        .ok_or("Division by zero or overflow in new virtual token reserve calculation")?
+        .checked_add(1)
+        .ok_or("Overflow in new virtual token reserve calculation")?;
+
+    let amount_out = virtual_token_reserves
+        .checked_sub(new_virtual_token_reserve)
+        .ok_or("Underflow in amount out calculation")?;
+
+    let final_amount_out = std::cmp::min(amount_out, bonding_curve.real_token_reserves as u128);
+
+    Ok(final_amount_out as u64)
 }
 
 pub async fn buy_pump_token(
     pump_accounts: PumpAccounts,
-    token_amount: u64,
     lamports: u64,
 ) -> Result<(), Box<dyn Error>> {
     let wallet = Keypair::read_from_file("./fuck.json").expect("read wallet");
     let rpc_client =
         RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
     let owner = wallet.pubkey();
+
+    let bonding_curve = get_bonding_curve(&rpc_client, pump_accounts.bonding_curve).await?;
+    let token_amount = get_token_amount(&bonding_curve, lamports)?;
+
+    // apply slippage in a stupid manner
+    let token_amount = (token_amount as f64 * 0.9) as u64;
+
+    info!("buying {}", token_amount);
 
     let mut ixs = vec![];
     ixs.append(&mut make_compute_budget_ixs(262500, 100000));
@@ -112,7 +173,13 @@ pub async fn buy_pump_token(
         );
 
     // send the tx
-    let res = rpc_client.send_transaction(&transaction).await;
+    let res = rpc_client.send_and_confirm_transaction_with_spinner_and_config(&transaction, CommitmentConfig::confirmed(), RpcSendTransactionConfig {
+        encoding: Some(UiTransactionEncoding::Base64),
+    skip_preflight: true, 
+        max_retries: None,
+        preflight_commitment: None,min_context_slot: None
+
+    }).await;
     match res {
         Ok(sig) => {
             info!("Transaction sent: {}", sig);
@@ -201,7 +268,7 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
 
         tokio::spawn(async move {
             // buy with 0.005 sol
-            let _ = buy_pump_token(accounts, 0, 5_000_000).await;
+            let _ = buy_pump_token(accounts, 5_000_000).await;
         });
     }
     unsub().await;
@@ -324,11 +391,9 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_buy_pump_token() {
-        // 0.001 sol, 100% slippage
-        let lamports = 1000000;
-        let token_amount = 0;
+        // 0.0069 sol, 100% slippage
+        let lamports = 6900000;
         let pump_accounts = PumpAccounts {
             mint: Pubkey::from_str(
                 "5KEDcNGebCcLptWzknqVmPRNLHfiHA9Mm2djVE26pump",
@@ -348,8 +413,77 @@ mod tests {
             .expect("parse associated user"),
             metadata: Pubkey::default(), // not required
         };
-        buy_pump_token(pump_accounts, token_amount, lamports)
+        buy_pump_token(pump_accounts, lamports)
             .await
             .expect("buy pump token");
+    }
+
+    #[tokio::test]
+    async fn test_get_bonding_curve_incomplete() {
+        let rpc_client=
+            RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
+        let bonding_curve_pubkey = Pubkey::from_str(
+            "Drhj4djqLsPyiA9qK2YmBngteFba8XhhvuQoBToW6pMS", // some shitter
+        )
+        .expect("parse bonding curve");
+
+        let bonding_curve =
+            get_bonding_curve(&rpc_client, bonding_curve_pubkey)
+                .await
+                .expect("get bonding curve");
+
+        println!("{:?}", bonding_curve);
+
+        assert!(!bonding_curve.complete);
+        assert_ne!(bonding_curve.virtual_token_reserves, 0);
+        assert_ne!(bonding_curve.virtual_sol_reserves, 0);
+        assert_ne!(bonding_curve.real_token_reserves, 0);
+    }
+
+    #[tokio::test]
+    async fn test_get_bonding_curve_complete() {
+        let rpc_client=
+            RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
+        let bonding_curve_pubkey = Pubkey::from_str(
+            "EB5tQ64HwNjaEoKKYAPkZqndwbULX249EuWSnkjfvR3y", // michi
+        )
+        .expect("parse bonding curve");
+
+        let bonding_curve =
+            get_bonding_curve(&rpc_client, bonding_curve_pubkey)
+                .await
+                .expect("get bonding curve");
+
+        println!("{:?}", bonding_curve);
+
+        assert!(bonding_curve.complete);
+        assert_eq!(bonding_curve.virtual_token_reserves, 0);
+        assert_eq!(bonding_curve.virtual_sol_reserves, 0);
+        assert_eq!(bonding_curve.real_token_reserves, 0);
+    }
+
+    #[tokio::test]
+    async fn test_get_token_amount() {
+        // captured from prod
+        let bonding_curve = BondingCurveLayout { 
+            blob1: 6966180631402821399, 
+            virtual_token_reserves: 1072964268463317, 
+            virtual_sol_reserves: 30000999057, 
+            real_token_reserves: 793064268463317, 
+            real_sol_reserves: 999057, 
+            blob4: 1000000000000000, 
+            complete: false
+        };
+        let lamports = 500000;
+        let expected_token_amount = 17852389307u64;
+        let token_amount =
+            get_token_amount(&bonding_curve, lamports).expect("get token amount");
+        // allow 10% less or more
+        // 0.9 * expected < actual < 1.1 * expected
+        let low_thresh = 0.9 * expected_token_amount as f64;
+        let high_thresh = 1.1 * expected_token_amount as f64;
+        let token_amount = token_amount as f64;
+        assert!(token_amount >= low_thresh);
+        assert!(token_amount <= high_thresh);
     }
 }
