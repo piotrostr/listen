@@ -32,7 +32,7 @@ pub async fn run_listener_pubsub_service(
                     constants::FEE_PROGRAM_ID.to_string(),
                 ]),
                 RpcTransactionLogsConfig {
-                    commitment: Some(CommitmentConfig::confirmed()),
+                    commitment: Some(CommitmentConfig::processed()),
                 },
             )
             .await

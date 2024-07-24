@@ -50,7 +50,7 @@ impl Listener {
             self.ws_url.as_str(),
             RpcTransactionLogsFilter::Mentions(vec![pubkey.to_string()]),
             RpcTransactionLogsConfig {
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
             },
         )?;
         Ok((subs, receiver))
@@ -64,7 +64,7 @@ impl Listener {
             self.ws_url.as_str(),
             RpcTransactionLogsFilter::Mentions(vec![amm_pool.to_string()]),
             RpcTransactionLogsConfig {
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
             },
         )?;
         Ok((subs, receiver))
@@ -76,7 +76,7 @@ impl Listener {
         let raydium_pubkey =
             Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
         let config = RpcTransactionLogsConfig {
-            commitment: Some(CommitmentConfig::confirmed()),
+            commitment: Some(CommitmentConfig::processed()),
         };
         let filter = RpcTransactionLogsFilter::Mentions(vec![
             raydium_pubkey.to_string()
@@ -148,7 +148,7 @@ impl BlockAndProgramSubscribable for Listener {
             account_config: RpcAccountInfoConfig {
                 encoding: Some(UiAccountEncoding::JsonParsed),
                 data_slice: None,
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
                 min_context_slot: None,
             },
             ..RpcProgramAccountsConfig::default()

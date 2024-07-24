@@ -59,7 +59,7 @@ impl Executor {
             .account_subscribe(
                 &token_vault,
                 Some(RpcAccountInfoConfig {
-                    commitment: Some(CommitmentConfig::confirmed()),
+                    commitment: Some(CommitmentConfig::processed()),
                     encoding: Some(UiAccountEncoding::Base64),
                     ..Default::default()
                 }),
@@ -71,7 +71,7 @@ impl Executor {
             .account_subscribe(
                 &sol_vault,
                 Some(RpcAccountInfoConfig {
-                    commitment: Some(CommitmentConfig::confirmed()),
+                    commitment: Some(CommitmentConfig::processed()),
                     encoding: Some(UiAccountEncoding::Base64),
                     ..Default::default()
                 }),

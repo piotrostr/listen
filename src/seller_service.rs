@@ -203,7 +203,7 @@ impl BalanceContext {
             .account_subscribe(
                 funder,
                 Some(RpcAccountInfoConfig {
-                    commitment: Some(CommitmentConfig::confirmed()),
+                    commitment: Some(CommitmentConfig::processed()),
                     encoding: Some(UiAccountEncoding::Base64),
                     ..Default::default()
                 }),
@@ -239,7 +239,7 @@ pub async fn run_seller_service() -> std::io::Result<()> {
     //     wallet.pubkey().to_string()
     // );
     // let balance_lamports = RpcClient::new(env("RPC_URL"))
-    //     .get_balance_with_commitment(&wallet.pubkey(), CommitmentConfig::confirmed())
+    //     .get_balance_with_commitment(&wallet.pubkey(), CommitmentConfig::processed())
     //     .await
     //     .expect("get balance")
     //     .value;
@@ -312,7 +312,7 @@ where
     let mut backoff = 1;
     for _ in 0..6 {
         match client
-            .get_account_with_commitment(addr, CommitmentConfig::confirmed())
+            .get_account_with_commitment(addr, CommitmentConfig::processed())
             .await
         {
             Ok(res) => {

@@ -392,7 +392,7 @@ impl Raydium {
                     account_config: RpcAccountInfoConfig {
                         encoding: Some(UiAccountEncoding::Base64),
                         commitment: Some(
-                            solana_sdk::commitment_config::CommitmentConfig::confirmed(),
+                            solana_sdk::commitment_config::CommitmentConfig::processed(),
                         ),
                         data_slice: None,
                         min_context_slot: None,

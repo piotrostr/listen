@@ -122,14 +122,14 @@ pub async fn run_checks(
 ) -> Result<(bool, Checklist), Box<dyn std::error::Error>> {
     let rpc_client = RpcClient::new_with_commitment(
         env("RPC_URL"),
-        CommitmentConfig::confirmed(),
+        CommitmentConfig::processed(),
     );
     let tx = rpc_client
         .get_transaction_with_config(
             &Signature::from_str(&signature)?,
             RpcTransactionConfig {
                 encoding: Some(UiTransactionEncoding::JsonParsed),
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
                 max_supported_transaction_version: Some(1),
             },
         )
@@ -186,7 +186,7 @@ pub async fn _run_checks(
         .account_subscribe(
             &accounts.user_lp_token,
             Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
                 encoding: Some(UiAccountEncoding::Base64),
                 ..Default::default()
             }),
@@ -197,7 +197,7 @@ pub async fn _run_checks(
         .account_subscribe(
             &sol_vault,
             Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
                 ..Default::default()
             }),
         )
@@ -210,7 +210,7 @@ pub async fn _run_checks(
         .account_subscribe(
             &mint,
             Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
                 encoding: Some(UiAccountEncoding::Base64),
                 ..Default::default()
             }),

@@ -24,7 +24,7 @@ use timed::timed;
 pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
     let rpc_client = RpcClient::new_with_commitment(
         url.to_string(),
-        CommitmentConfig::confirmed(),
+        CommitmentConfig::processed(),
     );
     info!("{}", url);
 
@@ -101,7 +101,7 @@ impl Provider {
                     &sig,
                     RpcTransactionConfig {
                         encoding: Some(UiTransactionEncoding::JsonParsed),
-                        commitment: Some(CommitmentConfig::confirmed()),
+                        commitment: Some(CommitmentConfig::processed()),
                         max_supported_transaction_version: Some(1),
                     },
                 )
@@ -152,7 +152,7 @@ impl Provider {
             .rpc_client
             .send_and_confirm_transaction_with_spinner_and_config(
                 tx,
-                CommitmentConfig::confirmed(),
+                CommitmentConfig::processed(),
                 RpcSendTransactionConfig {
                     skip_preflight,
                     ..RpcSendTransactionConfig::default()
@@ -212,7 +212,7 @@ pub async fn get_tx_async_with_client(
                 &sig,
                 RpcTransactionConfig {
                     encoding: Some(UiTransactionEncoding::JsonParsed),
-                    commitment: Some(CommitmentConfig::confirmed()),
+                    commitment: Some(CommitmentConfig::processed()),
                     max_supported_transaction_version: Some(1),
                 },
             )
@@ -245,7 +245,7 @@ pub async fn get_tx_async(
                 &sig,
                 RpcTransactionConfig {
                     encoding: Some(UiTransactionEncoding::JsonParsed),
-                    commitment: Some(CommitmentConfig::confirmed()),
+                    commitment: Some(CommitmentConfig::processed()),
                     max_supported_transaction_version: Some(1),
                 },
             )

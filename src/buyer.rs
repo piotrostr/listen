@@ -120,7 +120,7 @@ pub async fn check_top_holders(
                 .rpc_client
                 .get_token_account_with_commitment(
                     &Pubkey::from_str(holder.address.as_str())?,
-                    CommitmentConfig::confirmed(),
+                    CommitmentConfig::processed(),
                 )
                 .await?;
             if account_info.value.unwrap().owner
@@ -167,7 +167,7 @@ pub async fn listen_for_sol_pooled(
         .account_subscribe(
             amm_pool,
             Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
                 ..Default::default()
             }),
         )
@@ -222,7 +222,7 @@ pub async fn listen_for_burn(
         .account_subscribe(
             &lp_mint,
             Some(RpcAccountInfoConfig {
-                commitment: Some(CommitmentConfig::confirmed()),
+                commitment: Some(CommitmentConfig::processed()),
                 ..Default::default()
             }),
         )
