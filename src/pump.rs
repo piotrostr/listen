@@ -1,10 +1,13 @@
 use anchor_lang::system_program;
 use futures_util::StreamExt;
+use jito_searcher_client::get_searcher_client;
 use log::{debug, error, info, warn};
 use solana_account_decoder::UiAccountEncoding;
+use solana_sdk::transaction::Transaction;
 use std::error::Error;
 use std::str::FromStr;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use tokio::time::{sleep, Duration};
 
 use borsh::{BorshDeserialize, BorshSerialize};
@@ -26,9 +29,10 @@ use solana_transaction_status::{
     UiParsedMessage,
 };
 
+use crate::get_tx_async_with_client;
+use crate::jito::{send_swap_tx_no_wait, SearcherClient};
 use crate::raydium::make_compute_budget_ixs;
 use crate::util::{env, pubkey_to_string, string_to_pubkey};
-use crate::{/*get_tx_async,*/ get_tx_async_with_client};
 
 pub const BLOXROUTE_ADDRESS: &str =
     "HWEoBxYs7ssKuudEjzjmpfJVX7Dvi7wescFsVx2L5yoY";
@@ -265,6 +269,7 @@ pub async fn buy_pump_token(
     rpc_client: &RpcClient,
     pump_accounts: PumpAccounts,
     lamports: u64,
+    searcher_client: &mut Arc<Mutex<SearcherClient>>,
 ) -> Result<(), Box<dyn Error>> {
     let owner = wallet.pubkey();
 
@@ -310,44 +315,64 @@ pub async fn buy_pump_token(
         ata,
     )?);
 
-    let recent_blockhash = rpc_client.get_latest_blockhash().await?;
+    // send transaction with jito
+    // 0.0001 sol tip
+    let tip = 100000;
+    let mut searcher_client = searcher_client.lock().await;
+    send_swap_tx_no_wait(
+        &mut ixs,
+        tip,
+        wallet,
+        &mut searcher_client,
+        rpc_client,
+    )
+    .await?;
 
-    let transaction =
-        solana_sdk::transaction::Transaction::new_signed_with_payer(
-            &ixs,
-            Some(&owner),
-            &[wallet],
-            recent_blockhash,
-        );
+    // TODO make this configurable rather than commented out
+    // let transaction =
+    //     VersionedTransaction::from(Transaction::new_signed_with_payer(
+    //         &ixs,
+    //         Some(&owner),
+    //         &[wallet],
+    //         rpc_client.get_latest_blockhash().await?,
+    //     ));
 
-    // send the tx
-    // let res = rpc_client.send_and_confirm_transaction_with_spinner_and_config(&transaction, CommitmentConfig::confirmed(), RpcSendTransactionConfig {
-    //     encoding: Some(UiTransactionEncoding::Base64),
-    // skip_preflight: true,
-    //     max_retries: None,
-    //     preflight_commitment: None,min_context_slot: None
-
-    // }).await;
-    let res = rpc_client
-        .send_transaction_with_config(
-            &transaction,
-            RpcSendTransactionConfig {
-                skip_preflight: true,
-                min_context_slot: None,
-                preflight_commitment: Some(CommitmentLevel::Processed),
-                max_retries: None,
-                encoding: None,
-            },
-        )
-        .await;
-    match res {
-        Ok(sig) => {
-            info!("Transaction sent: {}", sig);
-        }
-        Err(e) => {
-            return Err(e.into());
-        }
-    }
+    // send the tx with spinner
+    // let res = rpc_client
+    //     .send_and_confirm_transaction_with_spinner_and_config(
+    //         &transaction,
+    //         CommitmentConfig::processed(),
+    //         RpcSendTransactionConfig {
+    //             encoding: Some(UiTransactionEncoding::Base64),
+    //             skip_preflight: true,
+    //             max_retries: None,
+    //             preflight_commitment: None,
+    //             min_context_slot: None,
+    //         },
+    //     )
+    //     .await;
+    //
+    // send the transaction without spinner
+    // let res = rpc_client
+    //     .send_transaction_with_config(
+    //         &transaction,
+    //         RpcSendTransactionConfig {
+    //             skip_preflight: true,
+    //             min_context_slot: None,
+    //             preflight_commitment: Some(CommitmentLevel::Processed),
+    //             max_retries: None,
+    //             encoding: None,
+    //         },
+    //     )
+    //     .await;
+    // match res {
+    //     Ok(sig) => {
+    //         info!("Transaction sent: {}", sig);
+    //     }
+    //     Err(e) => {
+    //         return Err(e.into());
+    //     }
+    // }
 
     Ok(())
 }
@@ -371,13 +396,12 @@ pub async fn sell_pump_token(
 
     let recent_blockhash = rpc_client.get_latest_blockhash().await?;
 
-    let transaction =
-        solana_sdk::transaction::Transaction::new_signed_with_payer(
-            &ixs,
-            Some(&owner),
-            &[wallet],
-            recent_blockhash,
-        );
+    let transaction = Transaction::new_signed_with_payer(
+        &ixs,
+        Some(&owner),
+        &[wallet],
+        recent_blockhash,
+    );
 
     let res = rpc_client
         .send_transaction_with_config(
@@ -510,6 +534,20 @@ pub fn make_pump_swap_ix(
 }
 
 pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
+    let wallet = Arc::new(
+        Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+            .expect("read wallet"),
+    );
+    let rpc_client = Arc::new(RpcClient::new(env("RPC_URL")));
+    let auth =
+        Arc::new(Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap());
+
+    let searcher_client = Arc::new(Mutex::new(
+        get_searcher_client(env("BLOCK_ENGINE_URL").as_str(), &auth)
+            .await
+            .expect("makes searcher client"),
+    ));
+
     let client = PubsubClient::new(&env("WS_URL"))
         .await
         .expect("pubsub client async");
@@ -524,14 +562,9 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
         )
         .await
         .expect("subscribe to logs");
-    info!("Listening for PumpFun events");
-    let wallet = Arc::new(
-        Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
-            .expect("read wallet"),
-    );
-    let rpc_client = Arc::new(RpcClient::new(env("RPC_URL")));
 
-    while let Some(log) = notifications.next().await {
+    info!("Listening for PumpFun events");
+    if let Some(log) = notifications.next().await {
         let sig = log.value.signature;
         let tx = get_tx_async_with_client(&rpc_client, &sig).await?;
         let accounts = parse_pump_accounts(tx)?;
@@ -539,6 +572,7 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
 
         let wallet_clone = Arc::clone(&wallet);
         let rpc_client_clone = Arc::clone(&rpc_client);
+        let mut searcher_client = Arc::clone(&searcher_client);
 
         tokio::spawn(async move {
             // buy with 0.005 sol
@@ -547,6 +581,7 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
                 &rpc_client_clone,
                 accounts,
                 5_000_000,
+                &mut searcher_client,
             )
             .await;
             if let Err(e) = result {
@@ -656,8 +691,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_buy_pump_token() {
-        // 0.0069 sol, 100% slippage
-        let lamports = 6900000;
+        dotenv::from_filename(".env").unwrap();
+        // 0.00069 sol
+        let lamports = 690000;
         let pump_accounts = PumpAccounts {
             mint: Pubkey::from_str(
                 "5KEDcNGebCcLptWzknqVmPRNLHfiHA9Mm2djVE26pump",
@@ -681,9 +717,23 @@ mod tests {
             Keypair::read_from_file("./fuck.json").expect("read wallet");
         let rpc_client =
             RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
-        buy_pump_token(&wallet, &rpc_client, pump_accounts, lamports)
-            .await
-            .expect("buy pump token");
+        let auth = Arc::new(
+            Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap(),
+        );
+        let mut searcher_client = Arc::new(Mutex::new(
+            get_searcher_client(env("BLOCK_ENGINE_URL").as_str(), &auth)
+                .await
+                .expect("makes searcher client"),
+        ));
+        buy_pump_token(
+            &wallet,
+            &rpc_client,
+            pump_accounts,
+            lamports,
+            &mut searcher_client,
+        )
+        .await
+        .expect("buy pump token");
     }
 
     #[tokio::test]

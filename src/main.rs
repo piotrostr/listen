@@ -54,6 +54,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // 13th May, still going strong with the algo, now at 145
     // 16th May 163, I paperhanded 20+ SOL :(
     // 28th May - SOL was for 190ish, dipped and longing now
+    // 23rd July - SOL was for 120ish for a bit,
+    // I was shorting and lost money, SOL is for 180 now :/
     let sol_price = 163.;
 
     match app.command {
@@ -65,6 +67,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             for pump_token in pump_tokens {
                 let mint = Pubkey::from_str(&pump_token.mint)?;
                 let pump_accounts = pump::mint_to_pump_accounts(&mint).await?;
+                // TODO here cannot trust the pump balance since it is lagging
+                // behind the actual balance
+                // if the balance is 0 but pump shows otherwise, it will cost gas for the reverted
+                // tx, should rather poll RPC to see if the balance is indeed non-zero
                 if pump_token.balance > 0 {
                     info!(
                         "Selling {} of {}",
