@@ -71,7 +71,7 @@ pub fn wait_tx(
         match rpc_client.get_transaction_with_config(
             signature,
             RpcTransactionConfig {
-                commitment: Some(CommitmentConfig::processed()),
+                commitment: Some(CommitmentConfig::confirmed()),
                 max_supported_transaction_version: None,
                 ..Default::default()
             },

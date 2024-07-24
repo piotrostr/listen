@@ -4,6 +4,7 @@ use jito_searcher_client::get_searcher_client;
 use log::{debug, error, info, warn};
 use solana_account_decoder::UiAccountEncoding;
 use solana_sdk::transaction::Transaction;
+use std::collections::HashMap;
 use std::error::Error;
 use std::str::FromStr;
 use std::sync::Arc;
@@ -564,23 +565,41 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
         .expect("subscribe to logs");
 
     info!("Listening for PumpFun events");
-    if let Some(log) = notifications.next().await {
+    let mut cache = HashMap::<String, bool>::new();
+    while let Some(log) = notifications.next().await {
         let sig = log.value.signature;
-        let tx = get_tx_async_with_client(&rpc_client, &sig).await?;
+        let tx = match get_tx_async_with_client(&rpc_client, &sig).await {
+            Ok(tx) => tx,
+            Err(e) => {
+                error!("Error getting tx: {:?}", e);
+                continue;
+            }
+        };
+        let slot = tx.slot;
         let accounts = parse_pump_accounts(tx)?;
-        info!("PumpFun accounts: {:?}", accounts);
+        info!(
+            "PumpFun shitter: {} (slot: {})",
+            accounts.mint.to_string(),
+            slot
+        );
+        let mint = accounts.mint.to_string();
+        if cache.contains_key(&mint) {
+            info!("Already bought {} shitter", mint);
+            continue;
+        }
+        cache.insert(mint, true);
 
         let wallet_clone = Arc::clone(&wallet);
         let rpc_client_clone = Arc::clone(&rpc_client);
         let mut searcher_client = Arc::clone(&searcher_client);
 
         tokio::spawn(async move {
-            // buy with 0.005 sol
+            // buy with 0.001 sol
             let result = buy_pump_token(
                 &wallet_clone,
                 &rpc_client_clone,
                 accounts,
-                5_000_000,
+                1_000_000,
                 &mut searcher_client,
             )
             .await;

@@ -129,7 +129,7 @@ pub async fn run_checks(
             &Signature::from_str(&signature)?,
             RpcTransactionConfig {
                 encoding: Some(UiTransactionEncoding::JsonParsed),
-                commitment: Some(CommitmentConfig::processed()),
+                commitment: Some(CommitmentConfig::confirmed()),
                 max_supported_transaction_version: Some(1),
             },
         )

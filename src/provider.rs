@@ -1,7 +1,7 @@
 use crate::{constants, types, util::env};
 use std::str::FromStr;
 
-use log::{debug, info};
+use log::{debug, info, warn};
 use solana_client::{
     nonblocking::rpc_client::RpcClient,
     rpc_client::SerializableTransaction,
@@ -101,7 +101,7 @@ impl Provider {
                     &sig,
                     RpcTransactionConfig {
                         encoding: Some(UiTransactionEncoding::JsonParsed),
-                        commitment: Some(CommitmentConfig::processed()),
+                        commitment: Some(CommitmentConfig::confirmed()),
                         max_supported_transaction_version: Some(1),
                     },
                 )
@@ -212,7 +212,7 @@ pub async fn get_tx_async_with_client(
                 &sig,
                 RpcTransactionConfig {
                     encoding: Some(UiTransactionEncoding::JsonParsed),
-                    commitment: Some(CommitmentConfig::processed()),
+                    commitment: Some(CommitmentConfig::confirmed()),
                     max_supported_transaction_version: Some(1),
                 },
             )
@@ -220,7 +220,7 @@ pub async fn get_tx_async_with_client(
         {
             Ok(tx) => return Ok(tx),
             Err(e) => {
-                debug!("Error getting tx: {:?}", e);
+                warn!("Error getting tx: {:?}", e);
                 std::thread::sleep(std::time::Duration::from_millis(backoff));
                 backoff *= 2;
             }
@@ -245,7 +245,7 @@ pub async fn get_tx_async(
                 &sig,
                 RpcTransactionConfig {
                     encoding: Some(UiTransactionEncoding::JsonParsed),
-                    commitment: Some(CommitmentConfig::processed()),
+                    commitment: Some(CommitmentConfig::confirmed()),
                     max_supported_transaction_version: Some(1),
                 },
             )
