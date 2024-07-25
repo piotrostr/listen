@@ -67,22 +67,31 @@ async fn main() -> Result<(), Box<dyn Error>> {
             for pump_token in pump_tokens {
                 let mint = Pubkey::from_str(&pump_token.mint)?;
                 let pump_accounts = pump::mint_to_pump_accounts(&mint).await?;
-                // TODO here cannot trust the pump balance since it is lagging
-                // behind the actual balance
-                // if the balance is 0 but pump shows otherwise, it will cost gas for the reverted
-                // tx, should rather poll RPC to see if the balance is indeed non-zero
                 if pump_token.balance > 0 {
-                    info!(
-                        "Selling {} of {}",
-                        pump_token.balance, pump_token.mint
+                    // double-check balance of ata in order not to send a
+                    // transaction bound to revert
+                    let ata = spl_associated_token_account::get_associated_token_address(
+                        &keypair.pubkey(),
+                        &mint,
                     );
-                    pump::sell_pump_token(
-                        &keypair,
-                        &rpc_client,
-                        pump_accounts,
-                        pump_token.balance,
-                    )
-                    .await?;
+                    let actual_balance = rpc_client
+                        .get_token_account_balance(&ata)
+                        .await?
+                        .amount
+                        .parse::<u64>()?;
+                    if actual_balance > 0 {
+                        info!(
+                            "Selling {} of {}",
+                            actual_balance, pump_token.mint
+                        );
+                        pump::sell_pump_token(
+                            &keypair,
+                            &rpc_client,
+                            pump_accounts,
+                            pump_token.balance,
+                        )
+                        .await?;
+                    }
                 }
             }
         }

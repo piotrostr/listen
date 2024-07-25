@@ -199,13 +199,13 @@ impl Provider {
 pub async fn get_tx_async_with_client(
     rpc_client: &RpcClient,
     signature: &str,
+    retries: u32,
 ) -> Result<
     EncodedConfirmedTransactionWithStatusMeta,
     Box<dyn std::error::Error>,
 > {
     let sig = Signature::from_str(signature)?;
     let mut backoff = 100;
-    let retries = 5;
     for _ in 0..retries {
         match rpc_client
             .get_transaction_with_config(

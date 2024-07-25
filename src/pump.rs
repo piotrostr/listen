@@ -568,10 +568,11 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
     let mut cache = HashMap::<String, bool>::new();
     while let Some(log) = notifications.next().await {
         let sig = log.value.signature;
-        let tx = match get_tx_async_with_client(&rpc_client, &sig).await {
+        // max 1 retry, otherwise too slow
+        let tx = match get_tx_async_with_client(&rpc_client, &sig, 1).await {
             Ok(tx) => tx,
-            Err(e) => {
-                error!("Error getting tx: {:?}", e);
+            Err(_) => {
+                warn!("did not get tx in time");
                 continue;
             }
         };
