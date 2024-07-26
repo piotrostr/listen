@@ -104,38 +104,44 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .expect("makes searcher client"),
             ));
 
-            pump::buy_pump_token(
-                &keypair,
-                &rpc_client,
-                pump_accounts,
-                lamports,
-                &mut searcher_client,
-            )
-            .await?;
+            loop {
+                pump::buy_pump_token(
+                    &keypair,
+                    &rpc_client,
+                    pump_accounts,
+                    lamports,
+                    &mut searcher_client,
+                )
+                .await?;
 
-            tokio::time::sleep(Duration::from_secs(10)).await;
+                tokio::time::sleep(Duration::from_secs(10)).await;
 
-            let ata =
-                spl_associated_token_account::get_associated_token_address(
-                    &keypair.pubkey(),
-                    &Pubkey::from_str(&mint)?,
-                );
+                let ata =
+                    spl_associated_token_account::get_associated_token_address(
+                        &keypair.pubkey(),
+                        &Pubkey::from_str(&mint)?,
+                    );
 
-            info!("ATA: {:?}", ata);
+                info!("ATA: {:?}", ata);
 
-            let actual_balance = rpc_client
-                .get_token_account_balance(&ata)
-                .await?
-                .amount
-                .parse::<u64>()?;
+                let actual_balance = rpc_client
+                    .get_token_account_balance(&ata)
+                    .await?
+                    .amount
+                    .parse::<u64>()?;
 
-            pump::sell_pump_token(
-                &keypair,
-                &rpc_client,
-                pump_accounts,
-                actual_balance,
-            )
-            .await?;
+                info!("actual balance: {}", actual_balance);
+
+                pump::sell_pump_token(
+                    &keypair,
+                    &rpc_client,
+                    pump_accounts,
+                    actual_balance,
+                )
+                .await?;
+
+                tokio::time::sleep(Duration::from_secs(10)).await;
+            }
         }
         Command::SweepPump {} => {
             let keypair = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
