@@ -59,6 +59,84 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 163.;
 
     match app.command {
+        Command::SellPump { mint } => {
+            let keypair =
+                Keypair::read_from_file("wtf.json").expect("read wallet");
+            let rpc_client = RpcClient::new(env("RPC_URL").to_string());
+            let ata =
+                spl_associated_token_account::get_associated_token_address(
+                    &keypair.pubkey(),
+                    &Pubkey::from_str(&mint)?,
+                );
+
+            let actual_balance = rpc_client
+                .get_token_account_balance(&ata)
+                .await?
+                .amount
+                .parse::<u64>()?;
+
+            let pump_accounts =
+                pump::mint_to_pump_accounts(&Pubkey::from_str(&mint)?).await?;
+
+            pump::sell_pump_token(
+                &keypair,
+                &rpc_client,
+                pump_accounts,
+                actual_balance,
+            )
+            .await?;
+        }
+        Command::BumpPump { mint } => {
+            let keypair =
+                Keypair::read_from_file("wtf.json").expect("read wallet");
+            let rpc_client = RpcClient::new(env("RPC_URL").to_string());
+            // every 10 seconds, buy the token and then sell the token
+            // 0.21 worth of SOL buys and sells
+            let lamports = 260_000_000;
+            let pump_accounts =
+                pump::mint_to_pump_accounts(&Pubkey::from_str(&mint)?).await?;
+            let auth = Arc::new(
+                Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap(),
+            );
+            let mut searcher_client = Arc::new(Mutex::new(
+                get_searcher_client(env("BLOCK_ENGINE_URL").as_str(), &auth)
+                    .await
+                    .expect("makes searcher client"),
+            ));
+
+            pump::buy_pump_token(
+                &keypair,
+                &rpc_client,
+                pump_accounts,
+                lamports,
+                &mut searcher_client,
+            )
+            .await?;
+
+            tokio::time::sleep(Duration::from_secs(10)).await;
+
+            let ata =
+                spl_associated_token_account::get_associated_token_address(
+                    &keypair.pubkey(),
+                    &Pubkey::from_str(&mint)?,
+                );
+
+            info!("ATA: {:?}", ata);
+
+            let actual_balance = rpc_client
+                .get_token_account_balance(&ata)
+                .await?
+                .amount
+                .parse::<u64>()?;
+
+            pump::sell_pump_token(
+                &keypair,
+                &rpc_client,
+                pump_accounts,
+                actual_balance,
+            )
+            .await?;
+        }
         Command::SweepPump {} => {
             let keypair = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
                 .expect("read wallet");

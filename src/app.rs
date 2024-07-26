@@ -27,6 +27,14 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    SellPump {
+        #[arg(long)]
+        mint: String,
+    },
+    BumpPump {
+        #[arg(long)]
+        mint: String,
+    },
     SweepPump {},
     SnipePump {},
     BuyPumpToken {

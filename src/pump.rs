@@ -613,7 +613,7 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
     Ok(())
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone, Copy)]
 pub struct PumpAccounts {
     #[serde(
         serialize_with = "pubkey_to_string",
