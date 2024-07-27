@@ -16,7 +16,7 @@ use listen::{
     app::{App, Command},
     buyer, buyer_service, checker, checker_service, constants,
     jup::Jupiter,
-    listener_service, prometheus, pump,
+    listener_service, prometheus, pump, pump_service,
     raydium::{self, Raydium, SwapArgs},
     rpc, seller, seller_service, tx_parser, util, BlockAndProgramSubscribable,
     Listener, Provider,
@@ -59,6 +59,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 163.;
 
     match app.command {
+        Command::PumpService {} => {
+            pump_service::run_pump_service().await?;
+        }
         Command::GrabMetadata { mint } => {
             pump::fetch_metadata(&Pubkey::from_str(&mint)?).await?;
         }

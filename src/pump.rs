@@ -38,7 +38,7 @@ use crate::constants::JITO_TIP_PUBKEY;
 use crate::get_tx_async_with_client;
 use crate::jito::{send_swap_tx_no_wait, SearcherClient};
 use crate::raydium::make_compute_budget_ixs;
-use crate::util::{env, pubkey_to_string, string_to_pubkey};
+use crate::util::{env, pubkey_to_string, string_to_pubkey, string_to_u64};
 
 pub const BLOXROUTE_ADDRESS: &str =
     "HWEoBxYs7ssKuudEjzjmpfJVX7Dvi7wescFsVx2L5yoY";
@@ -243,11 +243,13 @@ pub async fn get_bonding_curve(
 }
 
 pub fn get_token_amount(
-    bonding_curve: &BondingCurveLayout,
+    virtual_sol_reserves: u64,
+    virtual_token_reserves: u64,
+    real_token_reserves: u64,
     lamports: u64,
 ) -> Result<u64, Box<dyn std::error::Error>> {
-    let virtual_sol_reserves = bonding_curve.virtual_sol_reserves as u128;
-    let virtual_token_reserves = bonding_curve.virtual_token_reserves as u128;
+    let virtual_sol_reserves = virtual_sol_reserves as u128;
+    let virtual_token_reserves = virtual_token_reserves as u128;
     let amount_in = lamports as u128;
 
     // Calculate reserves_product carefully to avoid overflow
@@ -270,9 +272,72 @@ pub fn get_token_amount(
         .ok_or("Underflow in amount out calculation")?;
 
     let final_amount_out =
-        std::cmp::min(amount_out, bonding_curve.real_token_reserves as u128);
+        std::cmp::min(amount_out, real_token_reserves as u128);
 
     Ok(final_amount_out as u64)
+}
+
+#[derive(Debug, Clone, Deserialize, Serialize)]
+pub struct PumpBuyRequest {
+    #[serde(
+        serialize_with = "pubkey_to_string",
+        deserialize_with = "string_to_pubkey"
+    )]
+    pub mint: Pubkey,
+    #[serde(
+        serialize_with = "pubkey_to_string",
+        deserialize_with = "string_to_pubkey"
+    )]
+    pub bonding_curve: Pubkey,
+    #[serde(
+        serialize_with = "pubkey_to_string",
+        deserialize_with = "string_to_pubkey"
+    )]
+    pub associated_bonding_curve: Pubkey,
+    #[serde(deserialize_with = "string_to_u64")]
+    pub virtual_token_reserves: u64,
+    #[serde(deserialize_with = "string_to_u64")]
+    pub virtual_sol_reserves: u64,
+    #[serde(deserialize_with = "string_to_u64")]
+    pub real_token_reserves: u64,
+    #[serde(deserialize_with = "string_to_u64")]
+    pub real_sol_reserves: u64,
+}
+
+pub async fn instabuy_pump_token(
+    wallet: &Keypair,
+    lamports: u64,
+    searcher_client: &mut Arc<Mutex<SearcherClient>>,
+    pump_buy_request: PumpBuyRequest,
+) -> Result<(), Box<dyn Error>> {
+    let owner = wallet.pubkey();
+    // apply slippage in a stupid manner
+    let token_amount = get_token_amount(
+        pump_buy_request.virtual_sol_reserves,
+        pump_buy_request.virtual_token_reserves,
+        pump_buy_request.real_token_reserves,
+        lamports,
+    )?;
+    let token_amount = (token_amount as f64 * 0.9) as u64;
+    let mut ixs = _make_buy_ixs(
+        owner,
+        pump_buy_request.mint,
+        pump_buy_request.bonding_curve,
+        pump_buy_request.associated_bonding_curve,
+        token_amount,
+        lamports,
+    )?;
+    let tip = 100000;
+    let mut searcher_client = searcher_client.lock().await;
+    send_swap_tx_no_wait(
+        &mut ixs,
+        tip,
+        wallet,
+        &mut searcher_client,
+        &RpcClient::new(env("RPC_URL")),
+    )
+    .await?;
+    Ok(())
 }
 
 pub async fn buy_pump_token(
@@ -287,33 +352,26 @@ pub async fn buy_pump_token(
 
     let bonding_curve =
         get_bonding_curve(rpc_client, pump_accounts.bonding_curve).await?;
-    let token_amount = get_token_amount(&bonding_curve, lamports)?;
+    let token_amount = get_token_amount(
+        bonding_curve.virtual_sol_reserves,
+        bonding_curve.virtual_token_reserves,
+        bonding_curve.real_token_reserves,
+        lamports,
+    )?;
 
     // apply slippage in a stupid manner
     let token_amount = (token_amount as f64 * 0.9) as u64;
 
     info!("buying {}", token_amount);
 
-    let mut ixs = vec![];
-    ixs.append(&mut make_compute_budget_ixs(262500, 100000));
-    let ata = spl_associated_token_account::get_associated_token_address(
-        &owner,
-        &pump_accounts.mint,
-    );
-    let mut ata_ixs = raydium_library::common::create_ata_token_or_not(
-        &owner,
-        &pump_accounts.mint,
-        &owner,
-    );
-
-    ixs.append(&mut ata_ixs);
-    ixs.push(make_pump_swap_ix(
+    let mut ixs = _make_buy_ixs(
         owner,
-        pump_accounts,
+        pump_accounts.mint,
+        pump_accounts.bonding_curve,
+        pump_accounts.associated_bonding_curve,
         token_amount,
         lamports,
-        ata,
-    )?);
+    )?;
 
     // send transaction with jito
     // 0.0001 sol tip
@@ -329,33 +387,7 @@ pub async fn buy_pump_token(
         )
         .await?;
     } else {
-        let transaction =
-            VersionedTransaction::from(Transaction::new_signed_with_payer(
-                &ixs,
-                Some(&owner),
-                &[wallet],
-                rpc_client.get_latest_blockhash().await?,
-            ));
-        let res = rpc_client
-            .send_transaction_with_config(
-                &transaction,
-                RpcSendTransactionConfig {
-                    skip_preflight: true,
-                    min_context_slot: None,
-                    preflight_commitment: Some(CommitmentLevel::Processed),
-                    max_retries: None,
-                    encoding: None,
-                },
-            )
-            .await;
-        match res {
-            Ok(sig) => {
-                info!("Transaction sent: {}", sig);
-            }
-            Err(e) => {
-                return Err(e.into());
-            }
-        }
+        _send_tx_standard(ixs, wallet, rpc_client, owner).await?;
     }
 
     // send the tx with spinner
@@ -374,6 +406,75 @@ pub async fn buy_pump_token(
     //     .await;
     //
     // send the transaction without spinner
+
+    Ok(())
+}
+
+fn _make_buy_ixs(
+    owner: Pubkey,
+    mint: Pubkey,
+    bonding_curve: Pubkey,
+    associated_bonding_curve: Pubkey,
+    token_amount: u64,
+    lamports: u64,
+) -> Result<Vec<Instruction>, Box<dyn Error>> {
+    let mut ixs = vec![];
+    ixs.append(&mut make_compute_budget_ixs(262500, 100000));
+    let ata = spl_associated_token_account::get_associated_token_address(
+        &owner, &mint,
+    );
+    let mut ata_ixs = raydium_library::common::create_ata_token_or_not(
+        &owner, &mint, &owner,
+    );
+
+    ixs.append(&mut ata_ixs);
+    ixs.push(make_pump_swap_ix(
+        owner,
+        mint,
+        bonding_curve,
+        associated_bonding_curve,
+        token_amount,
+        lamports,
+        ata,
+    )?);
+
+    Ok(ixs)
+}
+
+async fn _send_tx_standard(
+    ixs: Vec<Instruction>,
+    wallet: &Keypair,
+    rpc_client: &RpcClient,
+    owner: Pubkey,
+) -> Result<(), Box<dyn Error>> {
+    let transaction =
+        VersionedTransaction::from(Transaction::new_signed_with_payer(
+            &ixs,
+            Some(&owner),
+            &[wallet],
+            rpc_client.get_latest_blockhash().await?,
+        ));
+    let res = rpc_client
+        .send_transaction_with_config(
+            &transaction,
+            RpcSendTransactionConfig {
+                skip_preflight: true,
+                min_context_slot: None,
+                preflight_commitment: Some(CommitmentLevel::Processed),
+                max_retries: None,
+                encoding: None,
+            },
+        )
+        .await;
+
+    match res {
+        Ok(sig) => {
+            info!("Transaction sent: {}", sig);
+        }
+        Err(e) => {
+            return Err(e.into());
+        }
+    }
 
     Ok(())
 }
@@ -498,7 +599,9 @@ pub fn make_pump_sell_ix(
 /// #12 - Program: Pump.fun Program 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
 pub fn make_pump_swap_ix(
     owner: Pubkey,
-    pump_accounts: PumpAccounts,
+    mint: Pubkey,
+    bonding_curve: Pubkey,
+    associated_bonding_curve: Pubkey,
     token_amount: u64,
     lamports: u64,
     ata: Pubkey,
@@ -509,9 +612,9 @@ pub fn make_pump_swap_ix(
             false,
         ),
         AccountMeta::new(Pubkey::from_str(PUMP_FEE_ADDRESS)?, false),
-        AccountMeta::new_readonly(pump_accounts.mint, false),
-        AccountMeta::new(pump_accounts.bonding_curve, false),
-        AccountMeta::new(pump_accounts.associated_bonding_curve, false),
+        AccountMeta::new_readonly(mint, false),
+        AccountMeta::new(bonding_curve, false),
+        AccountMeta::new(associated_bonding_curve, false),
         AccountMeta::new(ata, false),
         AccountMeta::new(owner, true),
         AccountMeta::new_readonly(system_program::ID, false),
@@ -819,7 +922,12 @@ pub async fn send_pump_bump(
     let pump_accounts = mint_to_pump_accounts(mint).await?;
     let bonding_curve =
         get_bonding_curve(rpc_client, pump_accounts.bonding_curve).await?;
-    let token_amount = get_token_amount(&bonding_curve, lamports)?;
+    let token_amount = get_token_amount(
+        bonding_curve.virtual_sol_reserves,
+        bonding_curve.virtual_token_reserves,
+        bonding_curve.real_token_reserves,
+        lamports,
+    )?;
     let token_amount = (token_amount as f64 * 0.9) as u64;
 
     let ata = spl_associated_token_account::get_associated_token_address(
@@ -849,7 +957,9 @@ pub async fn send_pump_bump(
 
     ixs.push(make_pump_swap_ix(
         owner,
-        pump_accounts,
+        pump_accounts.mint,
+        pump_accounts.bonding_curve,
+        pump_accounts.associated_bonding_curve,
         token_amount,
         lamports,
         ata,
@@ -1092,8 +1202,13 @@ mod tests {
         };
         let lamports = 500000;
         let expected_token_amount = 17852389307u64;
-        let token_amount = get_token_amount(&bonding_curve, lamports)
-            .expect("get token amount");
+        let token_amount = get_token_amount(
+            bonding_curve.virtual_sol_reserves,
+            bonding_curve.virtual_token_reserves,
+            bonding_curve.real_token_reserves,
+            lamports,
+        )
+        .expect("get token amount");
         // allow 10% less or more
         // 0.9 * expected < actual < 1.1 * expected
         let low_thresh = 0.9 * expected_token_amount as f64;

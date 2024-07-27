@@ -47,3 +47,11 @@ pub fn max(a: f64, b: f64) -> f64 {
         b
     }
 }
+
+pub fn string_to_u64<'de, D>(deserializer: D) -> Result<u64, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    let s: String = Deserialize::deserialize(deserializer)?;
+    s.parse().map_err(serde::de::Error::custom)
+}

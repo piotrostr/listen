@@ -1,13 +1,19 @@
 import { TradeCreatedSchema } from "./trade";
 import { NewCoinCreatedSchema } from "./new-coin";
 
-enum MessageType {
+export enum MessageType {
   TRADE_CREATED = `42["tradeCreated"`,
   COIN_CREATED = `42["newCoinCreated"`,
 }
 
-interface PumpBuyRequest {
+export interface PumpBuyRequest {
   mint: string;
+  bonding_curve: string;
+  associated_bonding_curve: string;
+  virtual_token_reserves: string;
+  virtual_sol_reserves: string;
+  real_token_reserves: string;
+  real_sol_reserves: string;
 }
 
 async function main() {
@@ -49,6 +55,22 @@ async function main() {
       console.log({
         mint: coin.mint,
         at: new Date(coin.created_timestamp).toLocaleString(),
+      });
+      const pumpBuyRequest: PumpBuyRequest = {
+        mint: coin.mint,
+        bonding_curve: coin.bonding_curve,
+        associated_bonding_curve: coin.associated_bonding_curve,
+        virtual_token_reserves: String(coin.virtual_token_reserves),
+        virtual_sol_reserves: String(coin.virtual_sol_reserves),
+        real_token_reserves: String(coin.real_token_reserves),
+        real_sol_reserves: String(coin.real_sol_reserves),
+      };
+      fetch("http://localhost:6969/pump-buy", {
+        headers: {
+          "Content-Type": "application/json",
+        },
+        method: "POST",
+        body: JSON.stringify(pumpBuyRequest),
       });
     } else {
       console.log(data);
