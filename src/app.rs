@@ -39,7 +39,10 @@ pub enum Command {
         #[arg(long)]
         mint: String,
     },
-    SweepPump {},
+    SweepPump {
+        #[arg(long)]
+        wallet_path: String,
+    },
     SnipePump {},
     BuyPumpToken {
         #[arg(long)]

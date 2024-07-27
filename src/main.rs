@@ -60,7 +60,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     match app.command {
         Command::GrabMetadata { mint } => {
-            return Err("Unimplemented".into());
+            pump::fetch_metadata(&Pubkey::from_str(&mint)?).await?;
         }
         Command::SellPump { mint } => {
             let keypair =
@@ -147,9 +147,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 tokio::time::sleep(Duration::from_secs(10)).await;
             }
         }
-        Command::SweepPump {} => {
-            let keypair = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
-                .expect("read wallet");
+        Command::SweepPump { wallet_path } => {
+            let keypair =
+                Keypair::read_from_file(wallet_path).expect("read wallet");
+            info!("Wallet: {}", keypair.pubkey());
             let rpc_client = RpcClient::new(env("RPC_URL").to_string());
             let pump_tokens = pump::get_tokens_held(&keypair.pubkey()).await?;
             for pump_token in pump_tokens {

@@ -590,11 +590,24 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
             info!("Already bought {} shitter", mint);
             continue;
         }
-        cache.insert(mint, true);
+        cache.insert(mint.clone(), true);
 
-        let metadata = fetch_metadata(&accounts.mint).await?;
-
-        continue;
+        // sanity check if all fields are populated
+        let metadata = fetch_metadata(&accounts.mint)
+            .await
+            .expect("fetch_metadata");
+        if metadata.website.is_none() {
+            warn!("No website for {}", mint);
+            continue;
+        }
+        if metadata.twitter.is_none() {
+            warn!("No twitter for {}", mint);
+            continue;
+        }
+        if metadata.telegram.is_none() {
+            warn!("No telegram for {}", mint);
+            continue;
+        }
 
         let wallet_clone = Arc::clone(&wallet);
         let rpc_client_clone = Arc::clone(&rpc_client);
@@ -660,7 +673,7 @@ pub fn parse_pump_accounts(
             address_table_lookups: _,
         }) = &tx.message
         {
-            info!("Account keys: {:?}", account_keys);
+            debug!("Account keys: {:?}", account_keys);
             if account_keys.len() >= 5 {
                 let dev = account_keys[0].pubkey.parse()?;
                 let mint = account_keys[1].pubkey.parse()?;
@@ -741,10 +754,13 @@ pub async fn fetch_metadata(
 ) -> Result<IPFSMetadata, Box<dyn Error>> {
     let url = format!("https://frontend-api.pump.fun/coins/{}", mint);
     let res = reqwest::get(&url).await?;
+    info!("res: {:?}", res);
     let data = res.json::<PumpTokenInfo>().await?;
 
     let metadata_res = reqwest::get(&data.metadata_uri).await?;
     let metadata = metadata_res.json::<IPFSMetadata>().await?;
+
+    info!("Metadata: {}", serde_json::to_string_pretty(&metadata)?);
 
     Ok(metadata)
 }
