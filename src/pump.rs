@@ -1,9 +1,8 @@
 use anchor_lang::system_program;
 use futures_util::StreamExt;
-use jito_protos::block_engine::SubscribeBundlesRequest;
 use jito_protos::searcher::SubscribeBundleResultsRequest;
 use jito_searcher_client::{
-    get_searcher_client, send_bundle_no_wait, send_bundle_with_confirmation,
+    get_searcher_client, send_bundle_with_confirmation,
 };
 use log::{debug, error, info, warn};
 use solana_account_decoder::UiAccountEncoding;
@@ -797,11 +796,15 @@ async fn fetch_metadata_inner(
     Ok(data)
 }
 
-async fn send_pump_bump(
+/// send_pump_bump is idempotent, if the ata does not exist it will make a buy
+/// and sell to create it, otherwise it sends a simple buy and sell ixs
+/// transaction
+pub async fn send_pump_bump(
     wallet: &Keypair,
     rpc_client: &RpcClient,
     mint: &Pubkey,
     searcher_client: &mut Arc<Mutex<SearcherClient>>,
+    wait_for_confirmation: bool,
 ) -> Result<(), Box<dyn Error>> {
     let lamports = 22_800_000;
     let owner = wallet.pubkey();
@@ -811,20 +814,30 @@ async fn send_pump_bump(
     let token_amount = get_token_amount(&bonding_curve, lamports)?;
     let token_amount = (token_amount as f64 * 0.9) as u64;
 
-    let mut ixs = vec![];
-    ixs.append(&mut make_compute_budget_ixs(262500, 10000));
-
     let ata = spl_associated_token_account::get_associated_token_address(
         &owner,
         &pump_accounts.mint,
     );
 
-    let mut ata_ixs = raydium_library::common::create_ata_token_or_not(
-        &owner,
-        &pump_accounts.mint,
-        &owner,
-    );
-    ixs.append(&mut ata_ixs);
+    if rpc_client.get_account(&ata).await.is_err() {
+        warn!("ata does not exist, creating it through buy and sell");
+        buy_pump_token(
+            wallet,
+            rpc_client,
+            pump_accounts,
+            lamports,
+            searcher_client,
+            false,
+        )
+        .await?;
+
+        sell_pump_token(wallet, rpc_client, pump_accounts, token_amount)
+            .await?;
+        return Ok(());
+    }
+
+    let mut ixs = vec![];
+    // ixs.append(&mut make_compute_budget_ixs(262500, 10000));
 
     ixs.push(make_pump_swap_ix(
         owner,
@@ -834,49 +847,45 @@ async fn send_pump_bump(
         ata,
     )?);
 
-    let tip = 100000;
-    ixs.push(transfer(
-        &wallet.pubkey(),
-        &Pubkey::from_str(JITO_TIP_PUBKEY)?,
-        tip,
-    ));
-
-    let buy_transaction =
-        VersionedTransaction::from(Transaction::new_signed_with_payer(
-            &ixs,
-            Some(&owner),
-            &[wallet],
-            rpc_client.get_latest_blockhash().await?,
-        ));
-
-    let mut ixs = vec![];
-    ixs.append(&mut make_compute_budget_ixs(262500, 10000));
-
     ixs.push(make_pump_sell_ix(owner, pump_accounts, token_amount, ata)?);
 
-    let recent_blockhash = rpc_client.get_latest_blockhash().await?;
+    // 0.00005 sol
+    let tip = 50_000;
+    ixs.push(transfer(&owner, &Pubkey::from_str(JITO_TIP_PUBKEY)?, tip));
 
-    let sell_transaction =
-        VersionedTransaction::from(Transaction::new_signed_with_payer(
-            &ixs,
-            Some(&owner),
-            &[wallet],
-            recent_blockhash,
-        ));
+    let tx = VersionedTransaction::from(Transaction::new_signed_with_payer(
+        &ixs,
+        Some(&owner),
+        &[wallet],
+        rpc_client.get_latest_blockhash().await?,
+    ));
 
     let mut searcher_client = searcher_client.lock().await;
-    let mut bundle_results_subscription = searcher_client
-        .subscribe_bundle_results(SubscribeBundleResultsRequest {})
-        .await
-        .expect("subscribe to bundle results")
-        .into_inner();
-    send_bundle_with_confirmation(
-        &[buy_transaction, sell_transaction],
-        &rpc_client,
-        &mut searcher_client,
-        &mut bundle_results_subscription,
-    )
-    .await?;
+
+    if wait_for_confirmation {
+        let mut bundle_results_subscription = searcher_client
+            .subscribe_bundle_results(SubscribeBundleResultsRequest {})
+            .await
+            .expect("subscribe to bundle results")
+            .into_inner();
+
+        send_bundle_with_confirmation(
+            &[tx],
+            rpc_client,
+            &mut searcher_client,
+            &mut bundle_results_subscription,
+        )
+        .await?;
+    } else {
+        send_swap_tx_no_wait(
+            &mut ixs,
+            tip,
+            wallet,
+            &mut searcher_client,
+            rpc_client,
+        )
+        .await?;
+    }
 
     Ok(())
 }
@@ -886,7 +895,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_bump_pump() {
+    async fn test_pump_bump() {
         dotenv::from_filename(".env").unwrap();
         let wallet =
             Keypair::read_from_file("./wtf.json").expect("read wallet");
@@ -903,10 +912,16 @@ mod tests {
                 .await
                 .expect("makes searcher client"),
         ));
-        send_pump_bump(&wallet, &rpc_client, &mint, &mut searcher_client)
-            .await
-            .expect("send_pump_bump");
-        assert!(false);
+
+        send_pump_bump(
+            &wallet,
+            &rpc_client,
+            &mint,
+            &mut searcher_client,
+            true,
+        )
+        .await
+        .expect("send_pump_bump");
     }
 
     #[tokio::test]

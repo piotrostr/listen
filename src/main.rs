@@ -32,7 +32,7 @@ use solana_sdk::{
 };
 use tokio::sync::Mutex;
 
-use log::{error, info};
+use log::{error, info, warn};
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn Error>> {
@@ -93,11 +93,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let keypair =
                 Keypair::read_from_file("wtf.json").expect("read wallet");
             let rpc_client = RpcClient::new(env("RPC_URL").to_string());
-            // every 10 seconds, buy the token and then sell the token
-            // 0.021 worth of SOL buys and sells
-            let lamports = 23_000_000;
-            let pump_accounts =
-                pump::mint_to_pump_accounts(&Pubkey::from_str(&mint)?).await?;
             let auth = Arc::new(
                 Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap(),
             );
@@ -106,44 +101,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .await
                     .expect("makes searcher client"),
             ));
-
             loop {
-                let ata =
-                    spl_associated_token_account::get_associated_token_address(
-                        &keypair.pubkey(),
-                        &Pubkey::from_str(&mint)?,
-                    );
-
-                let actual_balance = rpc_client
-                    .get_token_account_balance(&ata)
-                    .await?
-                    .amount
-                    .parse::<u64>()?;
-
-                info!("actual balance: {}", actual_balance);
-
-                pump::sell_pump_token(
+                match pump::send_pump_bump(
                     &keypair,
                     &rpc_client,
-                    pump_accounts,
-                    actual_balance,
+                    &Pubkey::from_str(&mint)?,
+                    &mut searcher_client,
+                    true,
                 )
-                .await?;
+                .await
+                {
+                    Ok(_) => {
+                        info!("Bump success");
+                    }
+                    Err(e) => {
+                        warn!("Bump failed: {}", e);
+                    }
+                };
 
-                // send 2 txs at once
-                for _ in 0..2 {
-                    pump::buy_pump_token(
-                        &keypair,
-                        &rpc_client,
-                        pump_accounts,
-                        lamports,
-                        &mut searcher_client,
-                        false, // dont use_jito
-                    )
-                    .await?;
-                }
-
-                tokio::time::sleep(Duration::from_secs(5)).await;
+                tokio::time::sleep(Duration::from_secs(6)).await;
             }
         }
         Command::SweepPump { wallet_path } => {
