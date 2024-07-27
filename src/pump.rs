@@ -287,18 +287,6 @@ pub async fn buy_pump_token(
 
     let mut ixs = vec![];
     ixs.append(&mut make_compute_budget_ixs(262500, 100000));
-    // bloxroute might be required, it is used by pump but not sure if crucial
-    // they are probably an enterprise user and that is why they are using it
-    // jito is probably fine, but jito rust sucks coz of their searcher_client
-    // lolz
-    //
-    // 0.003 sol
-    // let tip = 3000000;
-    // ixs.push(solana_sdk::system_instruction::transfer(
-    //     &owner,
-    //     &Pubkey::from_str(BLOXROUTE_ADDRESS)?,
-    //     tip,
-    // ));
     let ata = spl_associated_token_account::get_associated_token_address(
         &owner,
         &pump_accounts.mint,
