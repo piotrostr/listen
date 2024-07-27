@@ -27,6 +27,10 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    GrabMetadata {
+        #[arg(long)]
+        mint: String,
+    },
     SellPump {
         #[arg(long)]
         mint: String,

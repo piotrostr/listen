@@ -3,7 +3,7 @@ use futures_util::StreamExt;
 use jito_searcher_client::get_searcher_client;
 use log::{debug, error, info, warn};
 use solana_account_decoder::UiAccountEncoding;
-use solana_sdk::transaction::Transaction;
+use solana_sdk::transaction::{Transaction, VersionedTransaction};
 use std::collections::HashMap;
 use std::error::Error;
 use std::str::FromStr;
@@ -271,6 +271,7 @@ pub async fn buy_pump_token(
     pump_accounts: PumpAccounts,
     lamports: u64,
     searcher_client: &mut Arc<Mutex<SearcherClient>>,
+    use_jito: bool,
 ) -> Result<(), Box<dyn Error>> {
     let owner = wallet.pubkey();
 
@@ -318,25 +319,46 @@ pub async fn buy_pump_token(
 
     // send transaction with jito
     // 0.0001 sol tip
-    let tip = 100000;
-    let mut searcher_client = searcher_client.lock().await;
-    send_swap_tx_no_wait(
-        &mut ixs,
-        tip,
-        wallet,
-        &mut searcher_client,
-        rpc_client,
-    )
-    .await?;
-
-    // TODO make this configurable rather than commented out
-    // let transaction =
-    //     VersionedTransaction::from(Transaction::new_signed_with_payer(
-    //         &ixs,
-    //         Some(&owner),
-    //         &[wallet],
-    //         rpc_client.get_latest_blockhash().await?,
-    //     ));
+    if use_jito {
+        let tip = 100000;
+        let mut searcher_client = searcher_client.lock().await;
+        send_swap_tx_no_wait(
+            &mut ixs,
+            tip,
+            wallet,
+            &mut searcher_client,
+            rpc_client,
+        )
+        .await?;
+    } else {
+        let transaction =
+            VersionedTransaction::from(Transaction::new_signed_with_payer(
+                &ixs,
+                Some(&owner),
+                &[wallet],
+                rpc_client.get_latest_blockhash().await?,
+            ));
+        let res = rpc_client
+            .send_transaction_with_config(
+                &transaction,
+                RpcSendTransactionConfig {
+                    skip_preflight: true,
+                    min_context_slot: None,
+                    preflight_commitment: Some(CommitmentLevel::Processed),
+                    max_retries: None,
+                    encoding: None,
+                },
+            )
+            .await;
+        match res {
+            Ok(sig) => {
+                info!("Transaction sent: {}", sig);
+            }
+            Err(e) => {
+                return Err(e.into());
+            }
+        }
+    }
 
     // send the tx with spinner
     // let res = rpc_client
@@ -354,26 +376,6 @@ pub async fn buy_pump_token(
     //     .await;
     //
     // send the transaction without spinner
-    // let res = rpc_client
-    //     .send_transaction_with_config(
-    //         &transaction,
-    //         RpcSendTransactionConfig {
-    //             skip_preflight: true,
-    //             min_context_slot: None,
-    //             preflight_commitment: Some(CommitmentLevel::Processed),
-    //             max_retries: None,
-    //             encoding: None,
-    //         },
-    //     )
-    //     .await;
-    // match res {
-    //     Ok(sig) => {
-    //         info!("Transaction sent: {}", sig);
-    //     }
-    //     Err(e) => {
-    //         return Err(e.into());
-    //     }
-    // }
 
     Ok(())
 }
@@ -569,7 +571,7 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
     while let Some(log) = notifications.next().await {
         let sig = log.value.signature;
         // max 1 retry, otherwise too slow
-        let tx = match get_tx_async_with_client(&rpc_client, &sig, 1).await {
+        let tx = match get_tx_async_with_client(&rpc_client, &sig, 5).await {
             Ok(tx) => tx,
             Err(_) => {
                 warn!("did not get tx in time");
@@ -590,6 +592,8 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
         }
         cache.insert(mint, true);
 
+        continue;
+
         let wallet_clone = Arc::clone(&wallet);
         let rpc_client_clone = Arc::clone(&rpc_client);
         let mut searcher_client = Arc::clone(&searcher_client);
@@ -602,6 +606,7 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
                 accounts,
                 1_000_000,
                 &mut searcher_client,
+                true, // use_jito
             )
             .await;
             if let Err(e) = result {
@@ -653,6 +658,7 @@ pub fn parse_pump_accounts(
             address_table_lookups: _,
         }) = &tx.message
         {
+            info!("Account keys: {:?}", account_keys);
             if account_keys.len() >= 5 {
                 let dev = account_keys[0].pubkey.parse()?;
                 let mint = account_keys[1].pubkey.parse()?;
@@ -679,9 +685,70 @@ pub fn parse_pump_accounts(
     }
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct PumpTokenInfo {
+    pub associated_bonding_curve: String,
+    pub bonding_curve: String,
+    pub complete: bool,
+    pub created_timestamp: i64,
+    pub creator: String,
+    pub description: String,
+    pub image_uri: String,
+    pub inverted: bool,
+    pub is_currently_live: bool,
+    pub king_of_the_hill_timestamp: i64,
+    pub last_reply: i64,
+    pub market_cap: f64,
+    pub market_id: String,
+    pub metadata_uri: String,
+    pub mint: String,
+    pub name: String,
+    pub nsfw: bool,
+    pub profile_image: Option<String>,
+    pub raydium_pool: String,
+    pub reply_count: i32,
+    pub show_name: bool,
+    pub symbol: String,
+    pub telegram: Option<String>,
+    pub total_supply: i64,
+    pub twitter: Option<String>,
+    pub usd_market_cap: f64,
+    pub username: Option<String>,
+    pub virtual_sol_reserves: i64,
+    pub virtual_token_reserves: i64,
+    pub website: Option<String>,
+}
+
+pub async fn fetch_metadata(
+    mint: &Pubkey,
+) -> Result<PumpTokenInfo, Box<dyn Error>> {
+    let url = format!("https://frontend-api.pump.fun/coins/{}", mint);
+    let res = reqwest::get(&url).await?;
+    let data = res.json::<PumpTokenInfo>().await?;
+
+    let metadata_res = reqwest::get(&data.metadata_uri).await?;
+    let metadata = metadata_res.json::<serde_json::Value>().await?;
+    println!("{}", serde_json::to_string_pretty(&metadata).unwrap());
+
+    Ok(data)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn test_fetch_metadata() {
+        let data = fetch_metadata(
+            &Pubkey::from_str("5mbK36SZ7J19An8jFochhQS4of8g6BwUjbeCSxBSoWdp") // michi
+                .expect("parse mint"),
+        )
+        .await
+        .expect("fetch_metadata");
+
+        println!("{}", serde_json::to_string_pretty(&data).unwrap());
+        panic!();
+    }
 
     #[test]
     fn test_parse_pump_accounts() {
@@ -751,6 +818,7 @@ mod tests {
             pump_accounts,
             lamports,
             &mut searcher_client,
+            true,
         )
         .await
         .expect("buy pump token");

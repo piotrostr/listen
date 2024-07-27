@@ -212,7 +212,7 @@ pub async fn get_tx_async_with_client(
                 &sig,
                 RpcTransactionConfig {
                     encoding: Some(UiTransactionEncoding::JsonParsed),
-                    commitment: Some(CommitmentConfig::confirmed()),
+                    commitment: Some(CommitmentConfig::processed()),
                     max_supported_transaction_version: Some(1),
                 },
             )

@@ -59,6 +59,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 163.;
 
     match app.command {
+        Command::GrabMetadata { mint } => {
+            return Err("Unimplemented".into());
+        }
         Command::SellPump { mint } => {
             let keypair =
                 Keypair::read_from_file("wtf.json").expect("read wallet");
@@ -91,8 +94,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 Keypair::read_from_file("wtf.json").expect("read wallet");
             let rpc_client = RpcClient::new(env("RPC_URL").to_string());
             // every 10 seconds, buy the token and then sell the token
-            // 0.21 worth of SOL buys and sells
-            let lamports = 260_000_000;
+            // 0.02 worth of SOL buys and sells
+            let lamports = 26_000_000;
             let pump_accounts =
                 pump::mint_to_pump_accounts(&Pubkey::from_str(&mint)?).await?;
             let auth = Arc::new(
@@ -111,10 +114,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     pump_accounts,
                     lamports,
                     &mut searcher_client,
+                    false, // dont use_jito
                 )
                 .await?;
 
-                tokio::time::sleep(Duration::from_secs(10)).await;
+                tokio::time::sleep(Duration::from_secs(1)).await;
 
                 let ata =
                     spl_associated_token_account::get_associated_token_address(
