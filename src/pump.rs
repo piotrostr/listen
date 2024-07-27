@@ -1,9 +1,13 @@
 use anchor_lang::system_program;
 use futures_util::StreamExt;
-use jito_searcher_client::get_searcher_client;
+use jito_protos::block_engine::SubscribeBundlesRequest;
+use jito_protos::searcher::SubscribeBundleResultsRequest;
+use jito_searcher_client::{
+    get_searcher_client, send_bundle_no_wait, send_bundle_with_confirmation,
+};
 use log::{debug, error, info, warn};
-use serde_json::Value;
 use solana_account_decoder::UiAccountEncoding;
+use solana_sdk::system_instruction::transfer;
 use solana_sdk::transaction::{Transaction, VersionedTransaction};
 use std::collections::HashMap;
 use std::error::Error;
@@ -31,6 +35,7 @@ use solana_transaction_status::{
     UiParsedMessage,
 };
 
+use crate::constants::JITO_TIP_PUBKEY;
 use crate::get_tx_async_with_client;
 use crate::jito::{send_swap_tx_no_wait, SearcherClient};
 use crate::raydium::make_compute_budget_ixs;
@@ -792,9 +797,117 @@ async fn fetch_metadata_inner(
     Ok(data)
 }
 
+async fn send_pump_bump(
+    wallet: &Keypair,
+    rpc_client: &RpcClient,
+    mint: &Pubkey,
+    searcher_client: &mut Arc<Mutex<SearcherClient>>,
+) -> Result<(), Box<dyn Error>> {
+    let lamports = 22_800_000;
+    let owner = wallet.pubkey();
+    let pump_accounts = mint_to_pump_accounts(mint).await?;
+    let bonding_curve =
+        get_bonding_curve(rpc_client, pump_accounts.bonding_curve).await?;
+    let token_amount = get_token_amount(&bonding_curve, lamports)?;
+    let token_amount = (token_amount as f64 * 0.9) as u64;
+
+    let mut ixs = vec![];
+    ixs.append(&mut make_compute_budget_ixs(262500, 10000));
+
+    let ata = spl_associated_token_account::get_associated_token_address(
+        &owner,
+        &pump_accounts.mint,
+    );
+
+    let mut ata_ixs = raydium_library::common::create_ata_token_or_not(
+        &owner,
+        &pump_accounts.mint,
+        &owner,
+    );
+    ixs.append(&mut ata_ixs);
+
+    ixs.push(make_pump_swap_ix(
+        owner,
+        pump_accounts,
+        token_amount,
+        lamports,
+        ata,
+    )?);
+
+    let tip = 100000;
+    ixs.push(transfer(
+        &wallet.pubkey(),
+        &Pubkey::from_str(JITO_TIP_PUBKEY)?,
+        tip,
+    ));
+
+    let buy_transaction =
+        VersionedTransaction::from(Transaction::new_signed_with_payer(
+            &ixs,
+            Some(&owner),
+            &[wallet],
+            rpc_client.get_latest_blockhash().await?,
+        ));
+
+    let mut ixs = vec![];
+    ixs.append(&mut make_compute_budget_ixs(262500, 10000));
+
+    ixs.push(make_pump_sell_ix(owner, pump_accounts, token_amount, ata)?);
+
+    let recent_blockhash = rpc_client.get_latest_blockhash().await?;
+
+    let sell_transaction =
+        VersionedTransaction::from(Transaction::new_signed_with_payer(
+            &ixs,
+            Some(&owner),
+            &[wallet],
+            recent_blockhash,
+        ));
+
+    let mut searcher_client = searcher_client.lock().await;
+    let mut bundle_results_subscription = searcher_client
+        .subscribe_bundle_results(SubscribeBundleResultsRequest {})
+        .await
+        .expect("subscribe to bundle results")
+        .into_inner();
+    send_bundle_with_confirmation(
+        &[buy_transaction, sell_transaction],
+        &rpc_client,
+        &mut searcher_client,
+        &mut bundle_results_subscription,
+    )
+    .await?;
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn test_bump_pump() {
+        dotenv::from_filename(".env").unwrap();
+        let wallet =
+            Keypair::read_from_file("./wtf.json").expect("read wallet");
+        let rpc_client =
+            RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
+        let mint =
+            Pubkey::from_str("8ALbiQ2aWD4V63bx6s5qtf21LA4r9uBaY2THbg9epump")
+                .unwrap();
+        let auth = Arc::new(
+            Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap(),
+        );
+        let mut searcher_client = Arc::new(Mutex::new(
+            get_searcher_client(env("BLOCK_ENGINE_URL").as_str(), &auth)
+                .await
+                .expect("makes searcher client"),
+        ));
+        send_pump_bump(&wallet, &rpc_client, &mint, &mut searcher_client)
+            .await
+            .expect("send_pump_bump");
+        assert!(false);
+    }
 
     #[tokio::test]
     async fn test_fetch_metadata() {
