@@ -2,6 +2,7 @@ use anchor_lang::system_program;
 use futures_util::StreamExt;
 use jito_searcher_client::get_searcher_client;
 use log::{debug, error, info, warn};
+use serde_json::Value;
 use solana_account_decoder::UiAccountEncoding;
 use solana_sdk::transaction::{Transaction, VersionedTransaction};
 use std::collections::HashMap;
@@ -609,6 +610,15 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
             continue;
         }
 
+        // ensure that someone is not passing in the same link for all of the socials
+        let website = metadata.website.unwrap();
+        let twitter = metadata.twitter.unwrap();
+        let telegram = metadata.telegram.unwrap();
+        if website == twitter || website == telegram || twitter == telegram {
+            warn!("Same link for all socials for {}", mint);
+            continue;
+        }
+
         let wallet_clone = Arc::clone(&wallet);
         let rpc_client_clone = Arc::clone(&rpc_client);
         let mut searcher_client = Arc::clone(&searcher_client);
@@ -751,18 +761,47 @@ pub struct IPFSMetadata {
 
 pub async fn fetch_metadata(
     mint: &Pubkey,
-) -> Result<IPFSMetadata, Box<dyn Error>> {
+) -> Result<PumpTokenInfo, Box<dyn Error>> {
+    const MAX_RETRIES: u32 = 3;
+    const INITIAL_DELAY_MS: u64 = 100;
+
+    let mut retry_count = 0;
+    let mut delay_ms = INITIAL_DELAY_MS;
+
+    loop {
+        match fetch_metadata_inner(mint).await {
+            Ok(metadata) => {
+                info!("Metadata fetched successfully");
+                return Ok(metadata);
+            }
+            Err(e) => {
+                if retry_count >= MAX_RETRIES {
+                    info!("Failed to fetch metadata after all retries");
+                    return Err(e);
+                }
+                info!(
+                    "Retry attempt {} failed: {:?}. Retrying in {} ms...",
+                    retry_count + 1,
+                    e,
+                    delay_ms
+                );
+                tokio::time::sleep(Duration::from_millis(delay_ms)).await;
+                retry_count += 1;
+                delay_ms *= 2; // Exponential backoff
+            }
+        }
+    }
+}
+
+async fn fetch_metadata_inner(
+    mint: &Pubkey,
+) -> Result<PumpTokenInfo, Box<dyn Error>> {
     let url = format!("https://frontend-api.pump.fun/coins/{}", mint);
+    info!("Fetching metadata from: {}", url);
     let res = reqwest::get(&url).await?;
     info!("res: {:?}", res);
     let data = res.json::<PumpTokenInfo>().await?;
-
-    let metadata_res = reqwest::get(&data.metadata_uri).await?;
-    let metadata = metadata_res.json::<IPFSMetadata>().await?;
-
-    info!("Metadata: {}", serde_json::to_string_pretty(&metadata)?);
-
-    Ok(metadata)
+    Ok(data)
 }
 
 #[cfg(test)]
@@ -781,10 +820,8 @@ mod tests {
         assert_eq!(metadata.name, "🗿".to_string());
         assert_eq!(metadata.symbol, "🗿".to_string());
         assert_eq!(
-            metadata.image, "https://cf-ipfs.com/ipfs/QmXn5xkUMxNQ5c5Sfct8rFTq9jNi6jsSHm1yLY2nQyeSke".to_string()
+            metadata.image_uri, "https://cf-ipfs.com/ipfs/QmXn5xkUMxNQ5c5Sfct8rFTq9jNi6jsSHm1yLY2nQyeSke".to_string()
         );
-        assert_eq!(metadata.show_name, Some(true));
-        assert_eq!(metadata.created_on, Some("https://pump.fun".to_string()));
         assert_eq!(
             metadata.twitter,
             Some("https://x.com/thefirstgigasol".to_string())
