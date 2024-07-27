@@ -43,7 +43,10 @@ pub enum Command {
         #[arg(long)]
         wallet_path: String,
     },
-    SnipePump {},
+    SnipePump {
+        #[arg(long, action = clap::ArgAction::SetTrue)]
+        only_listen: Option<bool>,
+    },
     BuyPumpToken {
         #[arg(long)]
         mint: String,

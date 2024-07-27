@@ -99,6 +99,11 @@ impl BondingCurveLayout {
     }
 }
 
+pub fn get_local_timestamp() -> chrono::DateTime<chrono::Local> {
+    let utc_now = chrono::Utc::now();
+    utc_now.with_timezone(&chrono::Local)
+}
+
 pub async fn mint_to_pump_accounts(
     mint: &Pubkey,
 ) -> Result<PumpAccounts, Box<dyn Error>> {
@@ -529,7 +534,7 @@ pub fn make_pump_swap_ix(
     ))
 }
 
-pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
+pub async fn snipe_pump(only_listen: bool) -> Result<(), Box<dyn Error>> {
     let wallet = Arc::new(
         Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
             .expect("read wallet"),
@@ -576,8 +581,11 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
         info!(
             "PumpFun shitter: {} (slot: {})",
             accounts.mint.to_string(),
-            slot
+            slot,
         );
+        if only_listen {
+            continue;
+        }
         let mint = accounts.mint.to_string();
         if cache.contains_key(&mint) {
             info!("Already bought {} shitter", mint);

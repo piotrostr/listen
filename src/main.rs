@@ -159,9 +159,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
             }
         }
-        Command::SnipePump {} => {
+        Command::SnipePump { only_listen } => {
             info!("Pump snipe let's go");
-            pump::snipe_pump().await?;
+            pump::snipe_pump(only_listen.unwrap_or(false)).await?;
         }
         Command::BuyPumpToken { mint: _ } => {
             // pump::buy_pump_token(Pubkey::from_str(&mint)?).await?;
