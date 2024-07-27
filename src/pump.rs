@@ -592,6 +592,8 @@ pub async fn snipe_pump() -> Result<(), Box<dyn Error>> {
         }
         cache.insert(mint, true);
 
+        let metadata = fetch_metadata(&accounts.mint).await?;
+
         continue;
 
         let wallet_clone = Arc::clone(&wallet);
@@ -719,18 +721,32 @@ pub struct PumpTokenInfo {
     pub website: Option<String>,
 }
 
+#[derive(Serialize, Deserialize, Debug)]
+pub struct IPFSMetadata {
+    pub name: String,
+    pub symbol: String,
+    pub description: String,
+    pub image: String,
+    #[serde(rename = "showName")]
+    pub show_name: Option<bool>,
+    #[serde(rename = "createdOn")]
+    pub created_on: Option<String>,
+    pub twitter: Option<String>,
+    pub telegram: Option<String>,
+    pub website: Option<String>,
+}
+
 pub async fn fetch_metadata(
     mint: &Pubkey,
-) -> Result<PumpTokenInfo, Box<dyn Error>> {
+) -> Result<IPFSMetadata, Box<dyn Error>> {
     let url = format!("https://frontend-api.pump.fun/coins/{}", mint);
     let res = reqwest::get(&url).await?;
     let data = res.json::<PumpTokenInfo>().await?;
 
     let metadata_res = reqwest::get(&data.metadata_uri).await?;
-    let metadata = metadata_res.json::<serde_json::Value>().await?;
-    println!("{}", serde_json::to_string_pretty(&metadata).unwrap());
+    let metadata = metadata_res.json::<IPFSMetadata>().await?;
 
-    Ok(data)
+    Ok(metadata)
 }
 
 #[cfg(test)]
@@ -739,15 +755,32 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_metadata() {
-        let data = fetch_metadata(
-            &Pubkey::from_str("5mbK36SZ7J19An8jFochhQS4of8g6BwUjbeCSxBSoWdp") // michi
+        let metadata = fetch_metadata(
+            &Pubkey::from_str("4cRkQ2dntpusYag6Zmvco8T78WxK9Jqh1eEZJox8pump")
                 .expect("parse mint"),
         )
         .await
         .expect("fetch_metadata");
 
-        println!("{}", serde_json::to_string_pretty(&data).unwrap());
-        panic!();
+        assert_eq!(metadata.name, "🗿".to_string());
+        assert_eq!(metadata.symbol, "🗿".to_string());
+        assert_eq!(
+            metadata.image, "https://cf-ipfs.com/ipfs/QmXn5xkUMxNQ5c5Sfct8rFTq9jNi6jsSHm1yLY2nQyeSke".to_string()
+        );
+        assert_eq!(metadata.show_name, Some(true));
+        assert_eq!(metadata.created_on, Some("https://pump.fun".to_string()));
+        assert_eq!(
+            metadata.twitter,
+            Some("https://x.com/thefirstgigasol".to_string())
+        );
+        assert_eq!(
+            metadata.telegram,
+            Some("https://t.me/+keptGgOKxN45YWRl".to_string())
+        );
+        assert_eq!(
+            metadata.website,
+            Some("https://thefirstgiga.com/".to_string())
+        );
     }
 
     #[test]
