@@ -14,7 +14,7 @@ dialoguer = "0.11.0"
 flamer = "0.5.0"
 jupiter-swap-api-client = "0.1.0"
 prometheus = "0.13.3"
-reqwest = { version = "0.12.4", features = ["json"] }
+reqwest = { version = "0.12.4", features = ["json", "stream"] }
 serde = "1.0.199"
 serde_json = "1.0.116"
 serde_with = "3.8.1"
@@ -61,3 +61,4 @@ console-subscriber = "0.2.0"
 flame = "0.2.2"
 actix-rt = "2.9.0"
 borsh = "0.10.3"
+indicatif = "0.17"
