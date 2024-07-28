@@ -26,7 +26,6 @@ pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
         url.to_string(),
         CommitmentConfig::processed(),
     );
-    info!("{}", url);
 
     Ok(rpc_client)
 }
@@ -141,22 +140,23 @@ impl Provider {
         Ok(data)
     }
 
+    #[deprecated]
     #[timed(duration(printer = "info!"))]
     pub async fn send_tx(
         &self,
         tx: &impl SerializableTransaction,
-        skip_preflight: bool,
+        _skip_preflight: bool,
     ) -> Result<String, Box<dyn std::error::Error>> {
         let start = std::time::Instant::now();
         match self
             .rpc_client
-            .send_and_confirm_transaction_with_spinner_and_config(
+            .send_transaction(
                 tx,
-                CommitmentConfig::processed(),
-                RpcSendTransactionConfig {
-                    skip_preflight,
-                    ..RpcSendTransactionConfig::default()
-                },
+                // CommitmentConfig::processed(),
+                // RpcSendTransactionConfig {
+                //     skip_preflight,
+                //     ..RpcSendTransactionConfig::default()
+                // },
             )
             .await
         {

@@ -1,17 +1,29 @@
+use std::collections::HashMap;
 use std::str::FromStr;
 
-use log::{debug, error, info};
+use log::{debug, error, info, warn};
 use raydium_library::amm;
 use raydium_library::amm::AmmKeys;
 use raydium_library::amm::MarketPubkeys;
+use serde_json::Value;
+use solana_account_decoder::parse_account_data::ParsedAccount;
+use solana_account_decoder::UiAccountData;
 use solana_client::nonblocking::rpc_client::RpcClient;
+use solana_client::rpc_request::TokenAccountsFilter;
+use solana_client::rpc_response::RpcKeyedAccount;
+use solana_sdk::signer::EncodableKey;
+use spl_token::instruction::burn;
 use spl_token::state::Mint;
 use std::error::Error;
 use timed::timed;
 
 use crate::seller_service::load_amm_keys;
+use crate::util::env;
 use crate::{constants, Provider};
+use futures_util::StreamExt;
+use indicatif::{ProgressBar, ProgressStyle};
 use raydium_library::common;
+use reqwest::Client;
 use serde_json::json;
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::rpc_config::RpcAccountInfoConfig;
@@ -26,6 +38,180 @@ use solana_sdk::{
     pubkey::Pubkey, signature::Keypair, signer::Signer,
     transaction::Transaction,
 };
+use std::fs::File;
+use std::io::Write;
+use std::path::Path;
+use std::sync::Arc;
+
+#[derive(Debug, Default)]
+pub struct Holding {
+    pub mint: Pubkey,
+    pub ata: Pubkey,
+    pub amount: u64,
+}
+
+fn parse_holding(ata: RpcKeyedAccount) -> Result<Holding, Box<dyn Error>> {
+    if let UiAccountData::Json(ParsedAccount {
+        program: _,
+        parsed,
+        space: _,
+    }) = ata.account.data
+    {
+        let amount = parsed["info"]["tokenAmount"]["amount"]
+            .as_str()
+            .expect("amount")
+            .parse::<u64>()?;
+        let mint =
+            Pubkey::from_str(parsed["info"]["mint"].as_str().expect("mint"))?;
+        let ata = Pubkey::from_str(&ata.pubkey)?;
+        Ok(Holding { mint, ata, amount })
+    } else {
+        Err("failed to parse holding".into())
+    }
+}
+
+/// sweep_raydium is a bit iffy in terms of creating the objects on every swap,
+/// but it works and does not require refactoring the existing raydium code
+/// it works just fine for a few hundred swaps to perform as part of sweep,
+/// but it makes sense to refactor a bit for large scale operations
+pub async fn sweep_raydium(
+    rpc_client: &RpcClient,
+    wallet_path: String,
+) -> Result<(), Box<dyn Error>> {
+    let owner = Keypair::read_from_file(&wallet_path)?.pubkey();
+    let atas = rpc_client
+        .get_token_accounts_by_owner(
+            &owner,
+            TokenAccountsFilter::ProgramId(spl_token::id()),
+        )
+        .await?;
+    info!("found {} token accounts", atas.len());
+    let holdings = atas
+        .iter()
+        .map(|ata| parse_holding(ata.clone()).expect("parse holding"))
+        .filter(|holding| holding.amount > 0)
+        .collect::<Vec<Holding>>();
+    let holdings_set = holdings
+        .iter()
+        .map(|h| h.mint.to_string())
+        .collect::<std::collections::HashSet<String>>();
+
+    download_raydium_json(false).await?;
+
+    info!("opening raydium.json and parsing the pools (might take a while)");
+    let raw_pools: Value =
+        serde_json::from_str(&std::fs::read_to_string("raydium.json")?)?;
+    let pools = raw_pools["unOfficial"].as_array().unwrap();
+    info!("parsed raydium.json, found {} pools", pools.len());
+    let mut pools_map = HashMap::new();
+    let mut quote_or_base_map = HashMap::new();
+    for pool in pools {
+        let base_mint = pool["baseMint"].as_str().unwrap();
+        if holdings_set.contains(base_mint) {
+            pools_map.insert(base_mint.to_string(), pool);
+            quote_or_base_map.insert(base_mint.to_string(), "base");
+        }
+        let quote_mint = pool["quoteMint"].as_str().unwrap();
+        if holdings_set.contains(quote_mint) {
+            pools_map.insert(quote_mint.to_string(), pool);
+            quote_or_base_map.insert(quote_mint.to_string(), "quote");
+        }
+    }
+
+    info!(
+        "got {} relevant pools, total of {} holdings (ideally shoul equal)",
+        pools_map.len(),
+        holdings.len()
+    );
+
+    for holding in holdings {
+        // if let Some(matching_pool) = pools_map.get(&holding.mint.to_string()) {
+        // let sol_pubkey = Pubkey::from_str(constants::SOLANA_PROGRAM_ID)?;
+        // let (input_token_mint, output_token_mint) =
+        //     if quote_or_base_map[&holding.mint.to_string()] == "base" {
+        //         (holding.mint, sol_pubkey)
+        //     } else {
+        //         (sol_pubkey, holding.mint)
+        //     };
+        // match Raydium::new()
+        //     .swap(SwapArgs {
+        //         amount: holding.amount,
+        //         wallet: Keypair::read_from_file(&wallet_path)?,
+        //         amm_pool: Pubkey::from_str(
+        //             matching_pool["id"].as_str().unwrap(),
+        //         )?,
+        //         slippage: 1,
+        //         provider: Provider::new(env("RPC_URL")),
+        //         confirmed: true,
+        //         input_token_mint,
+        //         output_token_mint,
+        //         no_sanity: true,
+        //     })
+        //     .await
+        // {
+        //     Ok(_) => {}
+        //     Err(e) => {
+        //         warn!("swap failed: {}", e);
+        // // burn the token instead
+        info!("{} burning token instead", holding.mint);
+        let tx = Transaction::new_signed_with_payer(
+            &[burn(
+                &spl_token::id(),
+                &holding.ata,
+                &holding.mint,
+                &owner,
+                &[&owner],
+                holding.amount,
+            )?],
+            Some(&owner),
+            &[&Keypair::read_from_file(&wallet_path)?],
+            rpc_client.get_latest_blockhash().await?,
+        );
+        rpc_client.send_transaction(&tx).await?;
+        //     }
+        // };
+        // } else {
+        //     info!("no pool found for holding: {}", holding.mint);
+        // }
+    }
+
+    Ok(())
+}
+
+pub async fn download_raydium_json(
+    update: bool,
+) -> Result<(), Box<dyn Error>> {
+    if Path::new("raydium.json").exists() && !update {
+        warn!("raydium.json already exists. Skipping download.");
+        return Ok(());
+    }
+
+    let url = "https://api.raydium.io/v2/sdk/liquidity/mainnet.json";
+    let client = Client::new();
+    let res = client.get(url).send().await?;
+    let total_size = res.content_length().unwrap_or(0);
+
+    let pb = ProgressBar::new(total_size);
+    pb.set_style(ProgressStyle::default_bar()
+        .template("{spinner:.green} [{elapsed_precise}] [{bar:40.cyan/blue}] {bytes}/{total_bytes} ({eta})")
+        .unwrap()
+        .progress_chars("#>-"));
+
+    let mut file = File::create("raydium.json")?;
+    let mut downloaded: u64 = 0;
+    let mut stream = res.bytes_stream();
+
+    while let Some(item) = stream.next().await {
+        let chunk = item?;
+        file.write_all(&chunk)?;
+        let new = std::cmp::min(downloaded + (chunk.len() as u64), total_size);
+        downloaded = new;
+        pb.set_position(new);
+    }
+
+    pb.finish_with_message("Download completed");
+    Ok(())
+}
 
 pub struct Raydium {}
 
@@ -38,6 +224,8 @@ pub struct SwapArgs {
     pub wallet: Keypair,
     pub provider: Provider,
     pub confirmed: bool,
+    /// no_sanity: skip sanity checks
+    pub no_sanity: bool,
 }
 
 pub struct Swap {
@@ -261,10 +449,10 @@ pub async fn make_swap_ixs(
             0,
         );
         let sol_amount = result.pool_coin_vault_amount as f64 / 1e9;
-        if sol_amount < 50. {
-            // TODO make this configurable, 7k (50 sol) is a bare threshold
-            return Err("Pool is small, aborting swap".into());
-        }
+        // if sol_amount < 50. {
+        //     // TODO make this configurable, 7k (50 sol) is a bare threshold
+        //     return Err("Pool is small, aborting swap".into());
+        // }
         let direction = if swap_context.input_token_mint
             == swap_context.amm_keys.amm_coin_mint
             && swap_context.output_token_mint
@@ -423,6 +611,7 @@ impl Raydium {
             wallet,
             provider,
             confirmed,
+            no_sanity,
         } = swap_args;
         let swap_context = self::make_swap_context(
             &provider,
@@ -435,7 +624,7 @@ impl Raydium {
         )
         .await?;
         let ixs =
-            self::make_swap_ixs(&provider, &wallet, &swap_context, false)
+            self::make_swap_ixs(&provider, &wallet, &swap_context, no_sanity)
                 .await?;
         info!(
             "{}",

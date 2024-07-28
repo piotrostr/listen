@@ -17,7 +17,7 @@ use listen::{
     ata, buyer, buyer_service, checker, checker_service, constants,
     jup::Jupiter,
     listener_service, prometheus,
-    pump::{self},
+    pump::{self, TOKEN_PROGRAM},
     pump_service,
     raydium::{self, Raydium, SwapArgs},
     rpc, seller, seller_service, tx_parser, util, BlockAndProgramSubscribable,
@@ -25,6 +25,7 @@ use listen::{
 };
 use solana_client::{
     nonblocking::{self, rpc_client::RpcClient},
+    rpc_request::TokenAccountsFilter,
     rpc_response::{Response, RpcLogsResponse},
 };
 use solana_sdk::{
@@ -61,6 +62,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 183.;
 
     match app.command {
+        Command::DownloadRaydiumJson { update } => {
+            raydium::download_raydium_json(update.unwrap_or(false)).await?;
+        }
+        // sweep raydium burns all of the tokens,
+        // dont use it unless you know what you're doing
+        Command::SweepRaydium { wallet_path: _ } => {
+            // let rpc_client = RpcClient::new(env("RPC_URL").to_string());
+            // raydium::sweep_raydium(&rpc_client, wallet_path).await?;
+            return Err("Unimplemented (danger zone)".into());
+        }
         Command::CloseTokenAccounts { wallet_path } => {
             let keypair =
                 Keypair::read_from_file(wallet_path).expect("read wallet");
@@ -507,6 +518,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         wallet,
                         provider,
                         confirmed: yes.unwrap_or(false),
+                        no_sanity: true,
                     })
                     .await?;
                 return Ok(());
@@ -522,6 +534,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     provider,
                     confirmed: yes.unwrap_or(false),
                     slippage: slippage.unwrap_or(800) as u64,
+                    no_sanity: true,
                 })
                 .await?;
             } else {

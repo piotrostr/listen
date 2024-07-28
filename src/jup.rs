@@ -58,6 +58,7 @@ impl Jupiter {
             confirmed,
             slippage: slippage as u64,
             amm_pool: Pubkey::default(), // unused
+            no_sanity: false,            // unused
         })
         .await
     }
@@ -77,6 +78,7 @@ impl Jupiter {
             confirmed,
             slippage,
             amm_pool: _,
+            no_sanity: _,
         } = swap_args;
         let start = std::time::Instant::now();
         if !confirmed {

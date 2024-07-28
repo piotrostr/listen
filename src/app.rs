@@ -27,6 +27,14 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    DownloadRaydiumJson {
+        #[arg(long, action = clap::ArgAction::SetTrue)]
+        update: Option<bool>,
+    },
+    SweepRaydium {
+        #[arg(long)]
+        wallet_path: String,
+    },
     CloseTokenAccounts {
         #[arg(long)]
         wallet_path: String,
