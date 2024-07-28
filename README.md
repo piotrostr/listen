@@ -2,20 +2,40 @@
 
 Listen to new large transactions on Raydium V4
 
-Swap using Jupiter V6 API or directly with Raydium (crucial for new listings)
+Swap using Pump.fun, Jupiter V6 API or directly with Raydium (crucial for new
+listings)
 
-Monitor prices real-time, multiple subscription ways and providers (PubSub, webhooks..)
+Monitor prices real-time, multiple subscription ways and providers (PubSub,
+webhooks..)
 
 This tool has accidentally evolved to something of a sort of a Solana
-swiss-knife, has a bunch of stuff useful when trading shitcoins on Raydium
+swiss-knife, has a bunch of stuff useful when trading shitcoins on Raydium and
+Pump.fun and some utilities like generating a custom wallet pubkey, mine is
+`fuckTY...` :D
 
-Be careful as the default usage was on mainnet with small txs, be sure to set
-the URLs and signer keypair to testnet
+There are some methods for sniping both platforms, 'sweeping' all of the bought
+tokens (selling hundreds of bought tokens), closing all of the associated token
+accounts (if you snipe ~500 tokens you can close those accounts later and
+retrieve like 1 sol), check out the functionalities in the outline below
 
 ```txt
+$ listen
 Usage: listen [OPTIONS] <COMMAND>
 
 Commands:
+  close-token-accounts
+  pump-service
+  grab-metadata
+  sell-pump
+  bump-pump
+  sweep-pump
+  snipe-pump
+  buy-pump-token
+  generate-custom-address
+  ata
+  spl-stream
+  monitor-mempool
+  seller-service
   checker-service
   checks
   blockhash
@@ -36,16 +56,20 @@ Commands:
   wallet
   parse-pool
   swap
-  help                   Print this message or the help of the given subcommand(s)
+  help                 Print this message or the help of the given subcommand(s)
 
 Options:
-  -u, --url <URL>                    [default: https://api.mainnet-beta.solana.com]
-  -w, --ws-url <WS_URL>              [default: wss://api.mainnet-beta.solana.com]
+  -u, --url <URL>                 [default: https://api.mainnet-beta.solana.com]
+  -w, --ws-url <WS_URL>           [default: wss://api.mainnet-beta.solana.com]
   -k, --keypair-path <KEYPAIR_PATH>
       --tokio-console
-  -h, --help                         Print help
-  -V, --version                      Print version
+  -h, --help                      Print help
+  -V, --version                   Print version
 ```
+
+Be careful as the default usage was on mainnet with small txs, be sure to set
+the URLs and signer keypair to testnet, read the code too so that you don't
+mess anything up
 
 ## Requirements
 
