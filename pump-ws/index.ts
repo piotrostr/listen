@@ -16,6 +16,12 @@ export interface PumpBuyRequest {
   real_sol_reserves: string;
 }
 
+// TODO:
+// 1. see if can shave off the 250ms on getting the latest blockhash,
+// consider using a static searcher_client reused throughout threads
+// 2. implement a website + telegram + x checks to filter out the scam
+// 3. there might be some tokens in the rust version that trigger a notification
+// but it is not strictly the create event, something to verify
 async function main() {
   let pumpUrl =
     "wss://frontend-api.pump.fun/socket.io/?EIO=4&transport=websocket";
@@ -32,21 +38,21 @@ async function main() {
       ws.send("3");
       console.log("Heartbeat sent");
     } else if (data.startsWith(MessageType.TRADE_CREATED)) {
-      return;
-      let jsonParsable = data
-        .replace(`42["tradeCreated",`, "")
-        .replace("]", "");
-      let trade = TradeCreatedSchema.parse(JSON.parse(jsonParsable));
-      console.log({
-        signature: trade.signature,
-        sol_amount: trade.sol_amount,
-        token_amount: trade.token_amount,
-        is_buy: trade.is_buy,
-        timestamp: trade.timestamp,
-        name: trade.name,
-        symbol: trade.symbol,
-        usd_market_cap: trade.usd_market_cap,
-      });
+      // dont do anything, we dont care about trades for now
+      // let jsonParsable = data
+      //   .replace(`42["tradeCreated",`, "")
+      //   .replace("]", "");
+      // let trade = TradeCreatedSchema.parse(JSON.parse(jsonParsable));
+      // console.log({
+      //   signature: trade.signature,
+      //   sol_amount: trade.sol_amount,
+      //   token_amount: trade.token_amount,
+      //   is_buy: trade.is_buy,
+      //   timestamp: trade.timestamp,
+      //   name: trade.name,
+      //   symbol: trade.symbol,
+      //   usd_market_cap: trade.usd_market_cap,
+      // });
     } else if (data.startsWith(MessageType.COIN_CREATED)) {
       let jsonParsable = data
         .replace(`42["newCoinCreated",`, "")
@@ -55,6 +61,7 @@ async function main() {
       console.log({
         mint: coin.mint,
         at: new Date(coin.created_timestamp).toLocaleString(),
+        current: new Date().toLocaleString(),
       });
       const pumpBuyRequest: PumpBuyRequest = {
         mint: coin.mint,
