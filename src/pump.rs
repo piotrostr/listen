@@ -329,6 +329,7 @@ pub async fn instabuy_pump_token(
     )?;
     let tip = 100000;
     let mut searcher_client = searcher_client.lock().await;
+    // TODO here see the results, some bundles failing, might be sth wrong
     send_swap_tx_no_wait(
         &mut ixs,
         tip,

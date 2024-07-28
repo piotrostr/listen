@@ -27,6 +27,10 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    CloseTokenAccounts {
+        #[arg(long)]
+        wallet_path: String,
+    },
     PumpService {},
     GrabMetadata {
         #[arg(long)]

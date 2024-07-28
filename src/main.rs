@@ -14,9 +14,11 @@ use clap::Parser;
 use listen::{
     address,
     app::{App, Command},
-    buyer, buyer_service, checker, checker_service, constants,
+    ata, buyer, buyer_service, checker, checker_service, constants,
     jup::Jupiter,
-    listener_service, prometheus, pump, pump_service,
+    listener_service, prometheus,
+    pump::{self},
+    pump_service,
     raydium::{self, Raydium, SwapArgs},
     rpc, seller, seller_service, tx_parser, util, BlockAndProgramSubscribable,
     Listener, Provider,
@@ -56,9 +58,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // 28th May - SOL was for 190ish, dipped and longing now
     // 23rd July - SOL was for 120ish for a bit,
     // I was shorting and lost money, SOL is for 180 now :/
-    let sol_price = 163.;
+    let sol_price = 183.;
 
     match app.command {
+        Command::CloseTokenAccounts { wallet_path } => {
+            let keypair =
+                Keypair::read_from_file(wallet_path).expect("read wallet");
+            info!("Wallet: {}", keypair.pubkey());
+            let rpc_client =
+                Arc::new(RpcClient::new(env("RPC_URL").to_string()));
+            ata::close_all_atas(rpc_client, &keypair).await?;
+        }
         Command::PumpService {} => {
             pump_service::run_pump_service().await?;
         }
