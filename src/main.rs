@@ -17,7 +17,7 @@ use listen::{
     ata, buyer, buyer_service, checker, checker_service, constants,
     jup::Jupiter,
     listener_service, prometheus,
-    pump::{self, TOKEN_PROGRAM},
+    pump::{self},
     pump_service,
     raydium::{self, Raydium, SwapArgs},
     rpc, seller, seller_service, tx_parser, util, BlockAndProgramSubscribable,
@@ -25,7 +25,6 @@ use listen::{
 };
 use solana_client::{
     nonblocking::{self, rpc_client::RpcClient},
-    rpc_request::TokenAccountsFilter,
     rpc_response::{Response, RpcLogsResponse},
 };
 use solana_sdk::{

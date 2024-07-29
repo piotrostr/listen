@@ -3,10 +3,8 @@ use std::str::FromStr;
 
 use log::{debug, info, warn};
 use solana_client::{
-    nonblocking::rpc_client::RpcClient,
-    rpc_client::SerializableTransaction,
-    rpc_config::{RpcSendTransactionConfig, RpcTransactionConfig},
-    rpc_request::TokenAccountsFilter,
+    nonblocking::rpc_client::RpcClient, rpc_client::SerializableTransaction,
+    rpc_config::RpcTransactionConfig, rpc_request::TokenAccountsFilter,
 };
 use solana_sdk::{
     commitment_config::CommitmentConfig, program_pack::Pack, pubkey::Pubkey,
@@ -140,7 +138,6 @@ impl Provider {
         Ok(data)
     }
 
-    #[deprecated]
     #[timed(duration(printer = "info!"))]
     pub async fn send_tx(
         &self,

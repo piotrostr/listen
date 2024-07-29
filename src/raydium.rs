@@ -18,7 +18,6 @@ use std::error::Error;
 use timed::timed;
 
 use crate::seller_service::load_amm_keys;
-use crate::util::env;
 use crate::{constants, Provider};
 use futures_util::StreamExt;
 use indicatif::{ProgressBar, ProgressStyle};
@@ -41,7 +40,6 @@ use solana_sdk::{
 use std::fs::File;
 use std::io::Write;
 use std::path::Path;
-use std::sync::Arc;
 
 #[derive(Debug, Default)]
 pub struct Holding {
@@ -448,7 +446,7 @@ pub async fn make_swap_ixs(
             result,
             0,
         );
-        let sol_amount = result.pool_coin_vault_amount as f64 / 1e9;
+        // let sol_amount = result.pool_coin_vault_amount as f64 / 1e9;
         // if sol_amount < 50. {
         //     // TODO make this configurable, 7k (50 sol) is a bare threshold
         //     return Err("Pool is small, aborting swap".into());
