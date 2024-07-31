@@ -487,7 +487,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 }
             };
             if dex.unwrap_or("".to_string()) == "raydium" {
-                // TODO check out solend also
                 let amm_pool_id =
                     Pubkey::from_str(amm_pool_id.unwrap().as_str())?;
                 let input_token_mint = Pubkey::from_str(input_mint.as_str())?;

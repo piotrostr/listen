@@ -282,9 +282,6 @@ pub async fn _run_checks(
                     };
                 }
             }
-            // this is the only way to get out of the loop without timeout, intended behaviour
-            // TODO check here the amount of sol pooled now vs the initial, if 10x'd already might
-            // be reasonable to skip
             vault_log = sol_vault_stream.next() => {
                 // the amount of sol is there as lamports straight in the log
                 let vault_log = vault_log.unwrap();

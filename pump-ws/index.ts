@@ -16,12 +16,6 @@ export interface PumpBuyRequest {
   real_sol_reserves: string;
 }
 
-// TODO:
-// 1. see if can shave off the 250ms on getting the latest blockhash,
-// consider using a static searcher_client reused throughout threads
-// 2. implement a website + telegram + x checks to filter out the scam
-// 3. there might be some tokens in the rust version that trigger a notification
-// but it is not strictly the create event, something to verify
 async function main() {
   let pumpUrl =
     "wss://frontend-api.pump.fun/socket.io/?EIO=4&transport=websocket";

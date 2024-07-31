@@ -63,8 +63,6 @@ impl Jupiter {
         .await
     }
 
-    // TODO implement automatic retries 3 times say, no delay, sometimes
-    // simulation fails due to low slippage
     pub async fn swap(
         &self,
         swap_args: SwapArgs,
