@@ -9,6 +9,7 @@ use serde_json::Value;
 use solana_account_decoder::parse_account_data::ParsedAccount;
 use solana_account_decoder::UiAccountData;
 use solana_client::nonblocking::rpc_client::RpcClient;
+use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_client::rpc_request::TokenAccountsFilter;
 use solana_client::rpc_response::RpcKeyedAccount;
 use solana_sdk::signer::EncodableKey;
@@ -151,6 +152,7 @@ pub async fn sweep_raydium(
         //     Err(e) => {
         //         warn!("swap failed: {}", e);
         // // burn the token instead
+        let frozenlist = vec!["BEhY5iV6NNGcYnM3miZWAc5jau7Z37foQyQ3BdnyAAGn"];
         info!("{} burning token instead", holding.mint);
         let tx = Transaction::new_signed_with_payer(
             &[burn(
@@ -165,7 +167,26 @@ pub async fn sweep_raydium(
             &[&Keypair::read_from_file(&wallet_path)?],
             rpc_client.get_latest_blockhash().await?,
         );
-        rpc_client.send_transaction(&tx).await?;
+        match rpc_client
+            .send_transaction_with_config(
+                &tx,
+                RpcSendTransactionConfig {
+                    encoding: None,
+                    skip_preflight: true,
+                    preflight_commitment: None,
+                    max_retries: None,
+                    min_context_slot: None,
+                },
+            )
+            .await
+        {
+            Ok(signature) => {
+                info!("burn transaction: {}", signature);
+            }
+            Err(e) => {
+                warn!("burn transaction failed: {}", e)
+            }
+        };
         //     }
         // };
         // } else {

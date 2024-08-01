@@ -66,10 +66,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         // sweep raydium burns all of the tokens,
         // dont use it unless you know what you're doing
-        Command::SweepRaydium { wallet_path: _ } => {
-            // let rpc_client = RpcClient::new(env("RPC_URL").to_string());
-            // raydium::sweep_raydium(&rpc_client, wallet_path).await?;
-            return Err("Unimplemented (danger zone)".into());
+        Command::SweepRaydium { wallet_path } => {
+            let rpc_client = RpcClient::new(env("RPC_URL").to_string());
+            raydium::sweep_raydium(&rpc_client, wallet_path).await?;
+            // return Err("Unimplemented (danger zone)".into());
         }
         Command::CloseTokenAccounts { wallet_path } => {
             let keypair =
