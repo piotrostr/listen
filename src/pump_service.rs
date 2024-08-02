@@ -4,6 +4,8 @@ use crate::pump::{self, PumpBuyRequest};
 use crate::util::{env, healthz};
 use actix_web::web::Data;
 use actix_web::{get, post, web::Json, App, Error, HttpResponse, HttpServer};
+use futures_util::StreamExt;
+use jito_protos::searcher::SubscribeBundleResultsRequest;
 use jito_searcher_client::{get_searcher_client, send_bundle_no_wait};
 use log::{debug, error, info};
 use serde_json::json;
@@ -75,7 +77,7 @@ pub async fn handle_pump_buy(
         pump_buy_request.real_token_reserves,
         lamports,
     )?;
-    let token_amount = (token_amount as f64 * 0.9) as u64;
+    let token_amount = (token_amount as f64 * 0.7) as u64;
     let wallet = state.wallet.lock().await;
     let mut searcher_client = state.searcher_client.lock().await;
     let latest_blockhash = state.latest_blockhash.lock().await;
@@ -99,9 +101,12 @@ pub async fn handle_pump_buy(
             &[&*wallet],
             *latest_blockhash,
         ));
+    let start = std::time::Instant::now();
     let res = send_bundle_no_wait(&[swap_tx], &mut searcher_client)
         .await
         .expect("send bundle no wait");
+    let elapsed = start.elapsed();
+    info!("Bundle sent in {:?}", elapsed);
     info!("Bundle sent. UUID: {}", res.into_inner().uuid);
     Ok(HttpResponse::Ok().json(json!({
     "status": format!(
@@ -123,6 +128,17 @@ pub async fn run_pump_service() -> std::io::Result<()> {
             .await
             .expect("makes searcher client"),
     ));
+
+    // keep a stream for bundle results
+    // TODO hopefully this doesn't deadlock
+    let mut bundle_results_stream = searcher_client
+        .lock()
+        .await
+        .subscribe_bundle_results(SubscribeBundleResultsRequest {})
+        .await
+        .expect("subscribe bundle results")
+        .into_inner();
+
     let app_state = Data::new(AppState {
         wallet,
         searcher_client,
@@ -135,6 +151,13 @@ pub async fn run_pump_service() -> std::io::Result<()> {
         rpc_client.clone(),
         app_state.latest_blockhash.clone(),
     ));
+
+    // poll for bundle results
+    tokio::spawn(async move {
+        while let Some(res) = bundle_results_stream.next().await {
+            info!("Received bundle result: {:?}", res);
+        }
+    });
 
     info!("Running pump service on 6969");
     HttpServer::new(move || {

@@ -73,6 +73,8 @@ async function main() {
         method: "POST",
         body: JSON.stringify(pumpBuyRequest),
       });
+      // close after a buy (testing)
+      // ws.close();
     } else {
       console.log(data);
     }

@@ -61,6 +61,27 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 183.;
 
     match app.command {
+        Command::BundleStatus { bundle } => {
+            let client = reqwest::Client::new();
+            let url = "https://mainnet.block-engine.jito.wtf/api/v1/bundles";
+
+            let payload = serde_json::json!({
+                "jsonrpc": "2.0",
+                "id": 1,
+                "method": "getBundleStatuses",
+                "params": [[bundle]]
+            });
+
+            let response = client
+                .post(url)
+                .header("Content-Type", "application/json")
+                .json(&payload)
+                .send()
+                .await?;
+
+            let result: serde_json::Value = response.json().await?;
+            println!("{}", serde_json::to_string_pretty(&result)?);
+        }
         Command::DownloadRaydiumJson { update } => {
             raydium::download_raydium_json(update.unwrap_or(false)).await?;
         }

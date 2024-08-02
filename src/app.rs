@@ -27,6 +27,10 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    BundleStatus {
+        #[arg(long)]
+        bundle: String,
+    },
     DownloadRaydiumJson {
         #[arg(long, action = clap::ArgAction::SetTrue)]
         update: Option<bool>,
