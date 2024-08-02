@@ -411,7 +411,7 @@ pub async fn buy_pump_token(
     Ok(())
 }
 
-fn _make_buy_ixs(
+pub fn _make_buy_ixs(
     owner: Pubkey,
     mint: Pubkey,
     bonding_curve: Pubkey,
