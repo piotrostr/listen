@@ -92,4 +92,4 @@ def last_50_candles(timeframe: Timeframe) -> tuple[int, int]:
     last_50_candles actually returns 51, but it's OK
     """
     now = time.time()
-    return timeframe.in_seconds() * 50, now
+    return timeframe.in_seconds() * 50, int(now)

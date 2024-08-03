@@ -54,9 +54,13 @@ def get_or_create_candles_df(update=False):
     candles = []
 
     # Step 4: Fetch data for each token
-    for timestamp, token_address in tqdm(zip(timestamps, token_addresses), total=len(token_addresses)):
+    for timestamp, token_address in tqdm(
+        zip(timestamps, token_addresses), total=len(token_addresses)
+    ):
         # Fetch time series data for the token
-        candles_response = watcher.get_first_1k_candles(token_address, timestamp, Timeframe.ONE_MINUTE)
+        candles_response = watcher.get_first_1k_candles(
+            token_address, timestamp, Timeframe.ONE_MINUTE
+        )
         time_series_df = pd.DataFrame(
             [vars(candles) for candles in candles_response.data]
         )
@@ -69,9 +73,6 @@ def get_or_create_candles_df(update=False):
     # Step 6: Save the DataFrame to a CSV file
     combined_candles.to_csv(CANDLES_PATH, index=False)
 
-    print(
-        f"Dataset saved to {CANDLES_PATH} with {
-          len(combined_candles)} rows."
-    )
+    print(f"Dataset saved to {CANDLES_PATH} with {len(combined_candles)} rows.")
 
     return combined_candles

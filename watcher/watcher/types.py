@@ -74,7 +74,6 @@ class Holding(BaseModel):
     history_bought_cost: float
     price_change_5m: float
     price_change_1h: float
-    price_change_6h: float
     price_change_24h: float
     is_following: bool
     is_show_alert: bool
