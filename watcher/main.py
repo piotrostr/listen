@@ -5,6 +5,11 @@ from watcher.dataset import get_or_create_candles_df, get_or_create_tokens_inves
 log_format = "%(asctime)s - %(levelname)s - %(message)s"
 logging.basicConfig(level=logging.INFO, format=log_format)
 
-if __name__ == "__main__":
+
+def make_data():
     get_or_create_tokens_invested_df()
-    # get_or_create_candles_df(update=True)
+    get_or_create_candles_df(update=True)
+
+
+if __name__ == "__main__":
+    pass

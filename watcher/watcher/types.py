@@ -72,9 +72,9 @@ class Holding(BaseModel):
     last_active_timestamp: int
     history_sold_income: float
     history_bought_cost: float
-    price_change_5m: float
-    price_change_1h: float
-    price_change_24h: float
+    price_change_5m: Optional[float]
+    price_change_1h: Optional[float]
+    price_change_24h: Optional[float]
     is_following: bool
     is_show_alert: bool
     is_honeypot: Optional[bool]
