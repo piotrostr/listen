@@ -29,12 +29,22 @@
 
 prompts:
 
-- my first question would be what would be the best way to detect the dip, on the chart, it is a period when the price has corrected, sometimes between -50% to -90% from the top and the volume has relaxed, then a slow reaccumulation happens and volume starts increasing gradually, this is the moment i want to spot
+- my first question would be what would be the best way to detect the dip, on
+  the chart, it is a period when the price has corrected, sometimes between -50%
+  to -90% from the top and the volume has relaxed, then a slow reaccumulation
+  happens and volume starts increasing gradually, this is the moment i want to
+  spot
 
 ## Starters
 
-- will try fibonacci retracement of 0.782 here, since the data source is the
-  crucial part
+- need an established data stream, i thought about using raw solana pubsub
+  client, since most trading APIs work in form of scraping
 
-- a mock socket that could stream the trading data for each of the blocks could
-  be nice, retrieving first 2 hours of transactions not so much
+  - this is complex, since to backtest the strategy either need to collect
+    a lot of fresh data and aggregate or **mock socket**: figure out a way to get historical first
+    100-200 candles from raydium and make into a stream that can be backtested
+
+- will try fibonacci retracement of 0.782 here, since the data source is the
+  crucial part and the data has to come first regardless of the algo to be used
+
+  the symbols
