@@ -18,7 +18,11 @@ pub async fn generate_custom_sol_address(
     while !found_flag.load(Ordering::Relaxed) {
         let keypair = Keypair::new();
         if let Some(prefix) = prefixes.iter().find(|prefix| {
-            keypair.pubkey().to_string().starts_with(prefix.as_str())
+            keypair
+                .pubkey()
+                .to_string()
+                .to_lowercase()
+                .starts_with(prefix.as_str())
         }) {
             found_flag.store(true, Ordering::Relaxed);
             info!(

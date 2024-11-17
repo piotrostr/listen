@@ -76,7 +76,7 @@ impl Listener {
         let raydium_pubkey =
             Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
         let config = RpcTransactionLogsConfig {
-            commitment: Some(CommitmentConfig::processed()),
+            commitment: Some(CommitmentConfig::confirmed()),
         };
         let filter = RpcTransactionLogsFilter::Mentions(vec![
             raydium_pubkey.to_string()

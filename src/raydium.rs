@@ -287,7 +287,7 @@ pub async fn get_calc_result(
     .await?;
     debug!("market keys: {:?}", market_keys);
 
-    let result = raydium_library::amm::calculate_pool_vault_amounts(
+    let result = amm::calculate_pool_vault_amounts(
         rpc_client,
         &amm_program,
         amm_pool,

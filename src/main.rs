@@ -38,13 +38,14 @@ use log::{error, info, warn};
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn Error>> {
-    dotenv::from_filename(".env").unwrap();
+    dotenv::dotenv().ok();
 
-    let _logger = Logger::try_with_str("info")?
-        .format(colored_detailed_format)
-        .write_mode(WriteMode::Async)
-        .duplicate_to_stdout(Duplicate::Info)
-        .start()?;
+    let _logger =
+        Logger::try_with_str(std::option_env!("RUST_LOG").unwrap_or("info"))?
+            .format(colored_detailed_format)
+            .write_mode(WriteMode::Async)
+            .duplicate_to_stdout(Duplicate::Info)
+            .start()?;
 
     let app = App::parse();
 
@@ -397,6 +398,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 "amsterdam".to_string(),
                 "tokyo".to_string(),
                 "ny".to_string(),
+                "slc".to_string(),
             ];
             let auth = Arc::new(
                 Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap(),
@@ -408,11 +410,17 @@ async fn main() -> Result<(), Box<dyn Error>> {
             for region in regions {
                 let res = searcher_client
                     .get_next_scheduled_leader(NextScheduledLeaderRequest {
-                        regions: vec![region],
+                        regions: vec![region.clone()],
                     })
                     .await
                     .unwrap();
-                info!("{:?}", res.into_inner());
+                let res = res.into_inner();
+                println!(
+                    "{}: at {} (in {} slots)",
+                    res.next_leader_region,
+                    res.next_leader_slot,
+                    res.next_leader_slot - res.current_slot
+                );
             }
 
             drop(searcher_client);
@@ -608,88 +616,101 @@ async fn main() -> Result<(), Box<dyn Error>> {
             worker_count,
             buffer_size,
         } => {
-            let listener = Listener::new(env("WS_URL"));
-            let (transactions_received, transactions_processed, registry) =
-                prometheus::setup_metrics();
+            run_listener(worker_count as usize, buffer_size as usize).await?;
+            return Ok(());
+        }
+    }
+    Ok(())
+}
 
-            // Start the metrics server
-            let metrics_server = tokio::spawn(async move {
-                prometheus::run_metrics_server(registry).await;
-            });
+pub async fn run_listener(
+    worker_count: usize,
+    buffer_size: usize,
+) -> Result<(), Box<dyn Error>> {
+    // let blocklist = vec![];
+    let listener = Listener::new(env("WS_URL"));
+    let (
+        transactions_received,
+        transactions_processed,
+        requests_sent,
+        registry,
+    ) = prometheus::setup_metrics();
 
-            let (mut subs, recv) = listener.logs_subscribe()?; // Subscribe to logs
+    // Start the metrics server
+    let metrics_server = tokio::spawn(async move {
+        prometheus::run_metrics_server(registry).await;
+    });
 
-            let (tx, rx) = tokio::sync::mpsc::channel::<
-                Response<RpcLogsResponse>,
-            >(buffer_size as usize);
-            let rx = Arc::new(Mutex::new(rx));
+    let (mut subs, recv) = listener.logs_subscribe()?; // Subscribe to logs
 
-            // Worker tasks, increase in prod to way more, talking min 30-50
-            let pool: Vec<_> = (0..worker_count as usize)
-                .map(|_| {
-                    let rx = Arc::clone(&rx);
-                    let provider = Provider::new(env("RPC_URL").to_string());
-                    let transactions_processed =
-                        transactions_processed.clone();
-                    tokio::spawn(async move {
-                        while let Some(log) = rx.lock().await.recv().await {
-                            let tx = {
-                                match provider
-                                    .get_tx(&log.value.signature)
-                                    .await
-                                {
-                                    Ok(tx) => tx,
-                                    Err(e) => {
-                                        info!(
-                                            "Failed to get tx: {}; sig: {}",
-                                            e, log.value.signature
-                                        );
-                                        continue;
-                                    }
-                                }
-                            };
-                            let lamports =
-                                tx_parser::parse_notional(&tx).ok().unwrap();
-                            let sol_notional = util::lamports_to_sol(lamports);
-                            transactions_processed.inc();
-                            if sol_notional < 10. {
+    let (tx, rx) =
+        tokio::sync::mpsc::channel::<Response<RpcLogsResponse>>(buffer_size);
+    let rx = Arc::new(Mutex::new(rx));
+
+    // Worker tasks, increase in prod to way more, talking min 30-50
+    let pool: Vec<_> = (0..worker_count)
+        .map(|_| {
+            let rx = Arc::clone(&rx);
+            let provider = Provider::new(env("RPC_URL").to_string());
+            let transactions_processed = transactions_processed.clone();
+            let requests_sent = requests_sent.clone();
+            tokio::spawn(async move {
+                let mut interval =
+                    tokio::time::interval(Duration::from_millis(100)); // 10 requests per second
+                while let Some(log) = rx.lock().await.recv().await {
+                    interval.tick().await; // Rate limiting
+                    let tx = {
+                        match provider.get_tx(&log.value.signature).await {
+                            Ok(tx) => tx,
+                            Err(e) => {
+                                info!(
+                                    "Failed to get tx: {}; sig: {}",
+                                    e, log.value.signature
+                                );
                                 continue;
                             }
-                            info!(
-                                "https://solana.fm/tx/{}: {} SOL",
-                                &log.value.signature, sol_notional,
-                            );
                         }
-                    })
-                })
-                .collect();
-
-            // Log receiving task
-            let log_receiver = tokio::spawn(async move {
-                let transactions_received = transactions_received.clone();
-                while let Ok(log) = recv.recv_timeout(Duration::from_secs(10))
-                {
-                    if log.value.err.is_some() {
-                        continue; // Skip error logs
+                    };
+                    requests_sent.inc();
+                    let lamports =
+                        tx_parser::parse_notional(&tx).ok().unwrap();
+                    let sol_notional = util::lamports_to_sol(lamports);
+                    transactions_processed.inc();
+                    if sol_notional < 10. {
+                        continue;
                     }
-                    match tx.send(log.clone()).await {
-                        Err(e) => error!("Failed to send log: {}", e),
-                        Ok(_) => {
-                            transactions_received.inc();
-                        }
-                    }
+                    info!(
+                        "https://solscan.io/tx/{}: {} SOL",
+                        &log.value.signature, sol_notional,
+                    );
                 }
-                drop(tx);
-                subs.shutdown().unwrap(); // Shutdown subscription on exit
-            });
+            })
+        })
+        .collect();
 
-            // Await all tasks
-            log_receiver.await?;
-            metrics_server.await?;
-            for worker in pool {
-                worker.await?;
+    // Log receiving task
+    let log_receiver = tokio::spawn(async move {
+        let transactions_received = transactions_received.clone();
+        while let Ok(log) = recv.recv_timeout(Duration::from_secs(10)) {
+            if log.value.err.is_some() {
+                continue; // Skip error logs
+            }
+            match tx.send(log.clone()).await {
+                Err(e) => error!("Failed to send log: {}", e),
+                Ok(_) => {
+                    transactions_received.inc();
+                }
             }
         }
+        drop(tx);
+        subs.shutdown().unwrap(); // Shutdown subscription on exit
+    });
+
+    // Await all tasks
+    log_receiver.await?;
+    metrics_server.await?;
+    for worker in pool {
+        worker.await?;
     }
 
     Ok(())

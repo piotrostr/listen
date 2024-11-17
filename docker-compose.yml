@@ -9,13 +9,6 @@ services:
     environment:
       - CHECKER_URL=http://checker:8079
     restart: always
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: localhost:24224
-        tag: listener
-    depends_on:
-      - fluentd
     deploy:
       replicas: 3
       mode: replicated
@@ -34,13 +27,6 @@ services:
       replicas: 5
       mode: replicated
       endpoint_mode: vip
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: localhost:24224
-        tag: checker
-    depends_on:
-      - fluentd
   buyer:
     image: piotrostr/listen
     ports:
@@ -53,13 +39,6 @@ services:
     restart: always
     environment:
       - SELLER_URL=http://seller:8081
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: localhost:24224
-        tag: buyer
-    depends_on:
-      - fluentd
     deploy:
       replicas: 3
       mode: replicated
@@ -78,17 +57,16 @@ services:
       replicas: 5
       mode: replicated
       endpoint_mode: vip
-    logging:
-      driver: "fluentd"
-      options:
-        fluentd-address: localhost:24224
-        tag: seller
-    depends_on:
-      - fluentd
-  fluentd:
-    image: fluent/fluentd:v1.17.0-1.0
+  prometheus:
+    image: prom/prometheus
     ports:
-      - "24224:24224"
-      - "24224:24224/udp"
+      - "9090:9090"
+      - "3030:3030"
     volumes:
-      - ./fluentd.conf:/fluentd/etc/fluentd.conf
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+    deploy:
+      replicas: 1
+      mode: replicated
+      endpoint_mode: vip

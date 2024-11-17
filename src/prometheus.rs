@@ -5,8 +5,10 @@ use warp::Filter;
 
 static TRANSACTIONS_RECEIVED: &str = "transactions_received";
 static TRANSACTIONS_PROCESSED: &str = "transactions_processed";
+static REQUESTS_SENT: &str = "requests_sent";
 
-pub fn setup_metrics() -> (Arc<IntCounter>, Arc<IntCounter>, Registry) {
+pub fn setup_metrics(
+) -> (Arc<IntCounter>, Arc<IntCounter>, Arc<IntCounter>, Registry) {
     let registry = Registry::new();
     let transactions_received = IntCounter::new(
         TRANSACTIONS_RECEIVED,
@@ -19,16 +21,24 @@ pub fn setup_metrics() -> (Arc<IntCounter>, Arc<IntCounter>, Registry) {
     )
     .unwrap();
 
+    let requests_sent = IntCounter::new(
+        REQUESTS_SENT,
+        "Total number of requests sent to the server",
+    )
+    .unwrap();
+
     registry
         .register(Box::new(transactions_received.clone()))
         .unwrap();
     registry
         .register(Box::new(transactions_processed.clone()))
         .unwrap();
+    registry.register(Box::new(requests_sent.clone())).unwrap();
 
     (
         Arc::new(transactions_received),
         Arc::new(transactions_processed),
+        Arc::new(requests_sent),
         registry,
     )
 }
