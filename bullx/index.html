@@ -1,0 +1,72 @@
+<!doctype html>
+<html>
+  <head>
+    <title>Candlestick Chart</title>
+    <script src="https://unpkg.com/lightweight-charts/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+      .chart-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 100vh;
+        margin: 0;
+        padding: 20px;
+      }
+    </style>
+  </head>
+  <body style="margin: 0">
+    <div class="chart-container">
+      <div id="chart"></div>
+    </div>
+
+    <script>
+      // Create chart
+      const chart = LightweightCharts.createChart(
+        document.getElementById("chart"),
+        {
+          width: 1200, // increased width
+          height: 800, // increased height
+          layout: {
+            backgroundColor: "#ffffff",
+            textColor: "#333",
+          },
+          grid: {
+            vertLines: {
+              color: "#f0f0f0",
+            },
+            horzLines: {
+              color: "#f0f0f0",
+            },
+          },
+          timeScale: {
+            timeVisible: true,
+          },
+        },
+      );
+
+      // Create candlestick series
+      const candlestickSeries = chart.addCandlestickSeries();
+
+      // Fetch and process data
+      fetch("candles.json")
+        .then((response) => response.json())
+        .then((data) => {
+          // Convert data to required format
+          const chartData = data.t.map((timestamp, index) => ({
+            time: timestamp / 1000, // Convert milliseconds to seconds
+            open: data.o[index],
+            high: data.h[index],
+            low: data.l[index],
+            close: data.c[index],
+          }));
+
+          // Set the data
+          candlestickSeries.setData(chartData);
+
+          // Fit content
+          chart.timeScale().fitContent();
+        })
+        .catch((error) => console.error("Error loading data:", error));
+    </script>
+  </body>
+</html>
