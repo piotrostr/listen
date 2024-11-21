@@ -1,3 +1,5 @@
+import dotenv
+import os
 from typing import List
 from pydantic import BaseModel
 from datetime import datetime
@@ -79,7 +81,12 @@ class BullXClient:
 
 # Usage example:
 if __name__ == "__main__":
-    AUTH_TOKEN = "eyJhbGciOiJSUzI1NiIsImtpZCI6IjkyODg2OGRjNDRlYTZhOThjODhiMzkzZDM2NDQ1MTM2NWViYjMwZDgiLCJ0eXAiOiJKV1QifQ.eyJsb2dpblZhbGlkVGlsbCI6IjIwMjUtMDItMDFUMjA6NTI6MDAuNTIyWiIsImlzcyI6Imh0dHBzOi8vc2VjdXJldG9rZW4uZ29vZ2xlLmNvbS9ic2ctdjIiLCJhdWQiOiJic2ctdjIiLCJhdXRoX3RpbWUiOjE3MzA2NjcxMjEsInVzZXJfaWQiOiIweGI1NjQ4N2VhOWRkNGEwNjE2OTc5YWY0ZjZhZTEwZjRkZDAyZTRkOTYiLCJzdWIiOiIweGI1NjQ4N2VhOWRkNGEwNjE2OTc5YWY0ZjZhZTEwZjRkZDAyZTRkOTYiLCJpYXQiOjE3MzIyMTU5MzUsImV4cCI6MTczMjIxOTUzNSwiZmlyZWJhc2UiOnsiaWRlbnRpdGllcyI6e30sInNpZ25faW5fcHJvdmlkZXIiOiJjdXN0b20ifX0.gSG-52ghczyRQ_oRzSJcrtmbkxJWldRGikPYQVFjusClSPEJa0jP1Hfz1mKePPPx-t4eer7FVmbt9gDN0fpsDFBqhWop-Ce4c2NOzFiaKnTVMxhvxUWLS2wVKzmmKtF9mTTJRBH27hKzoTX42jiIvlo8oezGa8EzL0A640o0GBlXCzTKn8VVCgofSo4zLY8FwKMs9Xpkud1KyjXNgLfMG0k0yUJHIEuGKdsDTQTYL6ewhmguCloVD4AzUkYWD9PLr3pYt3FX0FebuJQFyYr3KhxdoP4bcLBhHQvfwLwGACtVL0HAa2OlNq6d8rmdmNGZf4HQ0YyO0lgb7qz9i8yX0w"
+    dotenv.load_dotenv()
+
+    AUTH_TOKEN = os.environ.get("AUTH_TOKEN")
+    if not AUTH_TOKEN:
+        raise ValueError("Please set the AUTH_TOKEN environment variable")
+
     FROM = 1731801600
     TO = 1732146799
 
