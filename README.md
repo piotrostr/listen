@@ -16,55 +16,6 @@ tokens (selling hundreds of bought tokens), closing all of the associated token
 accounts (if you snipe ~500 tokens you can close those accounts later and
 retrieve like 1 sol), check out the functionalities in the outline below
 
-```txt
-$ listen
-Usage: listen [OPTIONS] <COMMAND>
-
-Commands:
-  close-token-accounts
-  pump-service
-  grab-metadata
-  sell-pump
-  bump-pump
-  sweep-pump
-  snipe-pump
-  buy-pump-token
-  generate-custom-address
-  ata
-  spl-stream
-  monitor-mempool
-  seller-service
-  checker-service
-  checks
-  blockhash
-  listen-for-sol-pooled
-  buyer-service
-  track-position
-  top-holders
-  monitor-leaders
-  monitor-slots
-  price
-  bench-rpc
-  priority-fee
-  tx
-  listen
-  listen-for-burn
-  listener-service
-  snipe
-  wallet
-  parse-pool
-  swap
-  help                 Print this message or the help of the given subcommand(s)
-
-Options:
-  -u, --url <URL>                 [default: https://api.mainnet-beta.solana.com]
-  -w, --ws-url <WS_URL>           [default: wss://api.mainnet-beta.solana.com]
-  -k, --keypair-path <KEYPAIR_PATH>
-      --tokio-console
-  -h, --help                      Print help
-  -V, --version                   Print version
-```
-
 Be careful as the default usage was on mainnet with small txs, be sure to set
 the URLs and signer keypair to testnet, read the code too so that you don't
 mess anything up
