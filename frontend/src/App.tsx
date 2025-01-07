@@ -11,7 +11,7 @@ const App = () => {
             alt="listen"
             className="w-32 h-32 mx-auto mb-12"
           />
-          <h1 className="text-6xl font-bold mb-6">listen</h1>
+          <h1 className="text-6xl font-bold mb-6">listen-rs</h1>
           <p className="text-xl text-gray-300">
             blazingly fast actions for AI agents in Rust
           </p>
