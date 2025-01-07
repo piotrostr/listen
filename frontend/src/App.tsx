@@ -1,3 +1,6 @@
+import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
+import { gruvboxDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+
 const App = () => {
   return (
     <div className="relative min-h-screen bg-black text-white">
@@ -117,21 +120,109 @@ const App = () => {
           </div>
         </div>
 
-        {/* Installation */}
         <div className="mt-20 bg-gray-800/50 rounded-xl p-8">
           <h2 className="text-2xl font-bold mb-4">Quick Start</h2>
-          <br />
+          <div className="mb-4">
+            While $ARC provides the base infrastructure for interacting with AI
+            Agents, it lacks the logic for performing on-chain actions. This
+            library provides this functionality in asynchronous Rust, allowing
+            for high-performance and reliable execution.
+            <br />
+            <br />
+            With listen-rs, you can easily pipe blockchain interactions into
+            your agent
+          </div>
           <h3 className="text-xl font-bold mb-4">Installation</h3>
           <pre className="bg-black/50 p-4 rounded-lg overflow-x-auto text-sm mb-3">
-            <code className="text-gray-300">
+            <SyntaxHighlighter
+              language="bash"
+              style={{
+                ...gruvboxDark,
+                'pre[class*="language-"]': {
+                  ...gruvboxDark['pre[class*="language-"'],
+                  background: "transparent",
+                },
+              }}
+            >
               {`sudo apt install protoc build-essential pkg-config libssl-dev
 git clone https://github.com/piotrostr/listen && cd listen
 cp .env.example .env  # swap the example values with your RPCs
 cargo build --release
 `}
-            </code>
+            </SyntaxHighlighter>
           </pre>
-          <h3 className="text-xl font-bold mb-4">Usage</h3>
+          <br />
+          <h3 className="text-xl font-bold mb-4">
+            Example (top holders check)
+          </h3>
+          <pre className="bg-black/50 p-4 rounded-lg overflow-x-auto text-sm mb-3">
+            <SyntaxHighlighter
+              language="rust"
+              style={{
+                ...gruvboxDark,
+                'pre[class*="language-"]': {
+                  ...gruvboxDark['pre[class*="language-"]'],
+                  background: "transparent",
+                },
+              }}
+            >
+              {`// import the check_top_holders from \`listen\` lib
+use listen::buyer::check_top_holders;
+// import the rig framework Tool trait
+use rig::{completion::ToolDefinition, tool::Tool};
+
+#[derive(Deserialize, Serialize)]
+pub struct TopHolders;
+impl Tool for TopHolders {
+	async fn call(
+		&self,
+		args: Self::Args,
+	) -> Result<Self::Output, Self::Error> {
+		let mint = Pubkey::from_str(&args.mint)
+			.map_err(|e| TopHoldersError::InvalidMint(e.to_string()))?;
+
+		// Create a channel
+		let (tx, mut rx) = mpsc::channel(1);
+
+		// Spawn a task to handle the RPC calls
+		tokio::spawn(async move {
+			let provider = Provider::new(env("RPC_URL"));
+			let result = check_top_holders(&mint, &provider, true).await;
+			let _ = tx.send(result).await;
+		});
+
+		// Wait for the result
+		let result = rx
+			.recv()
+			.await
+			.ok_or_else(|| {
+					TopHoldersError::CheckFailed("Channel closed".to_string())
+			})?
+			.map_err(|e| TopHoldersError::CheckFailed(e.to_string()))?;
+
+		let (percentage, is_concentrated, details) = result;
+
+		Ok(TopHoldersOutput {
+			percentage,
+			is_concentrated,
+			details,
+		})
+	}
+}
+`}
+            </SyntaxHighlighter>
+          </pre>
+          <div className="mb-4 text-sm ">
+            full code:{" "}
+            <a
+              href="https://github.com/piotrostr/listen/blob/main/src/agent.rs"
+              className="text-blue-400 hover:underline"
+            >
+              src/agent.rs
+            </a>
+          </div>
+          <br />
+          <h3 className="text-xl font-bold mb-4">All available actions</h3>
           <pre className="bg-black/50 p-4 rounded-lg overflow-x-auto text-sm">
             <code className="text-gray-300">
               {`$ listen
