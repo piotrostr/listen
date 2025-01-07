@@ -281,10 +281,11 @@ pub async fn check_if_pump_fun(mint: &Pubkey) -> Result<bool, Box<dyn Error>> {
     if mint.to_string().ends_with("pump") {
         Ok(true)
     } else {
-        let base = "https://frontend-api.pump.fun/coins/";
-        let url = format!("{}{}", base, mint);
-        let res = reqwest::get(&url).await?;
-        Ok(res.status().is_success())
+        // let base = "https://frontend-api.pump.fun/coins/";
+        // let url = format!("{}{}", base, mint);
+        // let res = reqwest::get(&url).await?;
+        // Ok(res.status().is_success())
+        Ok(false)
     }
 }
 

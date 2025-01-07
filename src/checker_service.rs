@@ -80,7 +80,8 @@ pub async fn handle_checks(
         let amount = if token_result.checklist.is_pump_fun {
             50_000_000
         } else {
-            5_000_000
+            // pass on non-pumps
+            return;
         };
         HttpClient::new()
             .buy(&BuyRequest {

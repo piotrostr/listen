@@ -1,9 +1,5 @@
 use std::str::FromStr;
 
-// vim notes
-// - re-enable github copilot some way, defo some possible workaround
-//   - might redelete cache?
-// - add <return> to complete
 use jupiter_swap_api_client::{
     quote::{QuoteRequest, SwapMode},
     swap::SwapRequest,
