@@ -95,42 +95,81 @@ pub async fn swap(
     Ok(())
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum TopHoldersCheckError {
+    #[error("RPC error: {0}")]
+    RpcError(String),
+    #[error("Parse error: {0}")]
+    ParseError(String),
+    #[error("Invalid account: {0}")]
+    InvalidAccount(String),
+}
+
 pub async fn check_top_holders(
     mint: &Pubkey,
     provider: &Provider,
-) -> Result<(f64, bool), Box<dyn Error>> {
-    let top_holders =
-        provider.rpc_client.get_token_largest_accounts(mint).await?;
+    string_output: bool,
+) -> Result<(f64, bool, String), TopHoldersCheckError> {
+    let rpc_client = &provider.rpc_client;
+    let top_holders = rpc_client
+        .get_token_largest_accounts(mint)
+        .await
+        .map_err(|e| TopHoldersCheckError::RpcError(e.to_string()))?;
+
     let up_to_ten = 10.min(top_holders.len());
     let top_holders = top_holders[0..up_to_ten].to_vec();
     let top_holders_len = top_holders.len();
-    let total_supply = provider
-        .rpc_client
+
+    let total_supply = rpc_client
         .get_token_supply(mint)
-        .await?
+        .await
+        .map_err(|e| TopHoldersCheckError::RpcError(e.to_string()))?
         .ui_amount
-        .unwrap();
+        .ok_or_else(|| {
+            TopHoldersCheckError::InvalidAccount("No ui_amount".to_string())
+        })?;
+
     let mut total = 0f64;
     let mut got_raydium = false;
     let mut raydium_holding = 0f64;
+
+    let res = top_holders.clone();
+
     for holder in top_holders {
         debug!("holder: {:?}, balance: {:?}", holder.address, holder.amount);
         if !got_raydium {
-            let account_info = provider
-                .rpc_client
+            let account_info = rpc_client
                 .get_token_account_with_commitment(
-                    &Pubkey::from_str(holder.address.as_str())?,
+                    &Pubkey::from_str(holder.address.as_str()).map_err(
+                        |e| TopHoldersCheckError::ParseError(e.to_string()),
+                    )?,
                     CommitmentConfig::processed(),
                 )
-                .await?;
-            if account_info.value.unwrap().owner
+                .await
+                .map_err(|e| TopHoldersCheckError::RpcError(e.to_string()))?;
+
+            if account_info
+                .value
+                .ok_or_else(|| {
+                    TopHoldersCheckError::InvalidAccount(
+                        "No account info".to_string(),
+                    )
+                })?
+                .owner
                 == constants::RAYDIUM_AUTHORITY_V4_PUBKEY
             {
-                raydium_holding = holder.amount.ui_amount.unwrap();
+                raydium_holding =
+                    holder.amount.ui_amount.ok_or_else(|| {
+                        TopHoldersCheckError::InvalidAccount(
+                            "No ui_amount".to_string(),
+                        )
+                    })?;
                 got_raydium = true;
             }
         }
-        total += holder.amount.ui_amount.unwrap();
+        total += holder.amount.ui_amount.ok_or_else(|| {
+            TopHoldersCheckError::InvalidAccount("No ui_amount".to_string())
+        })?;
     }
 
     total -= raydium_holding;
@@ -152,10 +191,27 @@ pub async fn check_top_holders(
             total_supply,
             top_10_holders
         );
-        return Ok((top_10_holders, false));
+        return Ok((top_10_holders, false, "".to_string()));
     }
 
-    Ok((top_10_holders, true))
+    if string_output {
+        return Ok((
+            top_10_holders,
+            true,
+            res.iter()
+                .map(|holder| {
+                    format!(
+                        "{}: {}",
+                        holder.address,
+                        holder.amount.ui_amount.unwrap()
+                    )
+                })
+                .collect::<Vec<String>>()
+                .join(", "),
+        ));
+    }
+
+    Ok((top_10_holders, true, "".to_string()))
 }
 
 pub async fn listen_for_sol_pooled(

@@ -152,7 +152,7 @@ pub async fn sweep_raydium(
         //     Err(e) => {
         //         warn!("swap failed: {}", e);
         // // burn the token instead
-        let _frozenlist = vec!["BEhY5iV6NNGcYnM3miZWAc5jau7Z37foQyQ3BdnyAAGn"];
+        let _frozenlist = ["BEhY5iV6NNGcYnM3miZWAc5jau7Z37foQyQ3BdnyAAGn"];
         info!("{} burning token instead", holding.mint);
         let tx = Transaction::new_signed_with_payer(
             &[burn(

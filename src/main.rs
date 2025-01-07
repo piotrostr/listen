@@ -12,7 +12,7 @@ use util::env;
 
 use clap::Parser;
 use listen::{
-    address,
+    address, agent,
     app::{App, Command},
     ata, buyer, buyer_service, checker, checker_service, constants,
     jup::Jupiter,
@@ -58,10 +58,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     // 16th May 163, I paperhanded 20+ SOL :(
     // 28th May - SOL was for 190ish, dipped and longing now
     // 23rd July - SOL was for 120ish for a bit,
-    // I was shorting and lost money, SOL is for 180 now :/
-    let sol_price = 183.;
+    // 7th Jan - SOL is 200+
+    let sol_price = 210.;
 
     match app.command {
+        Command::ArcAgent {} => {
+            agent::make_agent().await.expect("make agent");
+        }
         Command::BundleStatus { bundle } => {
             let client = reqwest::Client::new();
             let url = "https://mainnet.block-engine.jito.wtf/api/v1/bundles";
@@ -285,7 +288,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Command::TopHolders { mint } => {
             let provider = Provider::new(env("RPC_URL").to_string());
             let mint = Pubkey::from_str(mint.as_str()).unwrap();
-            let (_, ok) = buyer::check_top_holders(&mint, &provider).await?;
+            let (_, ok, _) =
+                buyer::check_top_holders(&mint, &provider, false).await?;
             info!("Top holders check passed: {}", ok);
         }
         Command::ListenForSolPooled { amm_pool } => {

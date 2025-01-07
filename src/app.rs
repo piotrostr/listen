@@ -27,6 +27,7 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    ArcAgent {},
     BundleStatus {
         #[arg(long)]
         bundle: String,
