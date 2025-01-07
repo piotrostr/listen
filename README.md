@@ -1,5 +1,8 @@
 # listen
 
+Empower your Solana AI Agents built with [$ARC rig framework](https://github.com/0xPlaygrounds/rig) with on-chain actions
+<img width="1232" alt="example" src="https://github.com/user-attachments/assets/40250e4e-7e03-45c5-9718-c86d0b9537ff" />
+
 Listen to new large transactions on Raydium V4, swap using Pump.fun, Jupiter V6 API or directly with Raydium (crucial for new
 listings)
 
@@ -8,8 +11,8 @@ webhooks..)
 
 This tool has accidentally evolved to something of a sort of a Solana
 swiss-knife, has a bunch of stuff useful when trading shitcoins on Raydium and
-Pump.fun and some utilities like generating a custom wallet pubkey, mine is
-`fuckTY...`
+Pump.fun and some utilities like generating a custom wallet pubkey, checking holder 
+distribution, whether the token is mintable or has burnt liquidity..
 
 There are some methods for sniping both platforms, 'sweeping' all of the bought
 tokens (selling hundreds of bought tokens), closing all of the associated token
