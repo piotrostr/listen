@@ -16,7 +16,7 @@ const App = () => {
           />
           <h1 className="text-6xl font-bold mb-6">listen-rs</h1>
           <p className="text-xl text-gray-300">
-            blazingly fast actions for AI agents in Rust
+            blazingly fast actions for $arc AI agents in Rust
           </p>
           <div className="mt-5 flex flex-row justify-center items-center space-x-4">
             <a href="https://github.com/piotrostr/listen">
@@ -123,7 +123,7 @@ const App = () => {
         <div className="mt-20 bg-gray-800/50 rounded-xl p-8">
           <h2 className="text-2xl font-bold mb-4">Quick Start</h2>
           <div className="mb-4">
-            While $ARC provides the base infrastructure for interacting with AI
+            While $arc provides the base infrastructure for interacting with AI
             Agents, it lacks the logic for performing on-chain actions. This
             library provides this functionality in asynchronous Rust, allowing
             for high-performance and reliable execution.
