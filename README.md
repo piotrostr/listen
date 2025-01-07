@@ -1,8 +1,6 @@
 # listen
 
-Listen to new large transactions on Raydium V4
-
-Swap using Pump.fun, Jupiter V6 API or directly with Raydium (crucial for new
+Listen to new large transactions on Raydium V4, swap using Pump.fun, Jupiter V6 API or directly with Raydium (crucial for new
 listings)
 
 Monitor prices real-time, multiple subscription ways and providers (PubSub,
@@ -11,7 +9,7 @@ webhooks..)
 This tool has accidentally evolved to something of a sort of a Solana
 swiss-knife, has a bunch of stuff useful when trading shitcoins on Raydium and
 Pump.fun and some utilities like generating a custom wallet pubkey, mine is
-`fuckTY...` :D
+`fuckTY...`
 
 There are some methods for sniping both platforms, 'sweeping' all of the bought
 tokens (selling hundreds of bought tokens), closing all of the associated token
