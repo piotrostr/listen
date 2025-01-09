@@ -1,9 +1,74 @@
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
-import { gruvboxDark } from "react-syntax-highlighter/dist/esm/styles/prism";
+import { vscDarkPlus } from "react-syntax-highlighter/dist/esm/styles/prism";
+
+const Header = () => {
+  return (
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur border-b border-gray-800">
+      <div className="max-w-6xl mx-auto px-4">
+        <div className="flex justify-between items-center h-16">
+          {/* Left side */}
+          <div className="flex items-center space-x-4">
+            <button className="md:hidden p-2" aria-label="Toggle navigation">
+              <svg
+                width="24"
+                height="24"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                className="w-6 h-6"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeWidth="2"
+                  d="M4 6h16M4 12h16M4 18h16"
+                />
+              </svg>
+            </button>
+
+            <a href="/" className="flex items-center space-x-2">
+              <img src="/listen.svg" alt="Logo" className="w-8 h-8" />
+              <span className="font-bold text-xl">listen-rs</span>
+            </a>
+          </div>
+
+          {/* Right side */}
+          <div className="flex items-center space-x-4">
+            <div className="hidden md:flex items-center space-x-4">
+              <a
+                href="https://docs.listen-rs.com"
+                className="text-gray-300 hover:text-white"
+              >
+                Documentation
+              </a>
+            </div>
+            <a
+              href="https://github.com/piotrostr/listen"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="text-gray-300 hover:text-white flex items-center"
+            >
+              GitHub
+              <svg
+                width="12"
+                height="12"
+                viewBox="0 0 24 24"
+                className="ml-1"
+                fill="currentColor"
+              >
+                <path d="M21 13v10h-21v-19h12v2h-10v15h17v-8h2zm3-12h-10.988l4.035 4-6.977 7.07 2.828 2.828 6.977-7.07 4.125 4.172v-11z" />
+              </svg>
+            </a>
+          </div>
+        </div>
+      </div>
+    </nav>
+  );
+};
 
 const App = () => {
   return (
     <div className="relative min-h-screen bg-black text-white">
+      <Header />
       <div className="fixed inset-0 w-screen h-screen bg-[url('/bg.webp')] bg-cover bg-center opacity-10" />
 
       <div className="relative z-10 max-w-6xl mx-auto px-4 py-20">
@@ -36,9 +101,9 @@ const App = () => {
             <SyntaxHighlighter
               language="bash"
               style={{
-                ...gruvboxDark,
+                ...vscDarkPlus,
                 'pre[class*="language-"]': {
-                  ...gruvboxDark['pre[class*="language-"]'],
+                  ...vscDarkPlus['pre[class*="language-"]'],
                   background: "transparent",
                 },
               }}
