@@ -107,7 +107,7 @@ pub async fn make_agent(
 
     let holders_response = agent
         .prompt(
-            "Check top holders for mint address 9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump, using the `top_holders` tool", 
+            "Check top holders for mint address GJAFwWjJ3vnTsrQVabjBVK2TYB1YtRCQXRDfDgUnpump, using the `top_holders` tool", 
         )
         .await?;
 
