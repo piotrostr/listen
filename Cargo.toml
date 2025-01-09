@@ -2,6 +2,9 @@
 name = "listen"
 version = "0.1.0"
 edition = "2021"
+license = "MIT"
+description = "solana actions for AI agents"
+documentation = "docs.listen-rs.com"
 
 [dependencies]
 anyhow = "1.0.53"
@@ -27,13 +30,13 @@ spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
 tokio = { version = "1.37.0", features = ["full"] }
 tokio-test = "0.4.4"
 warp = "0.3.7"
-raydium-library = { git = "https://github.com/piotrostr/raydium-library" }
+raydium-library = { git = "https://github.com/piotrostr/raydium-library", version = "0.3.0" }
 spl-associated-token-account = { version = "2.2.0", features = [
   "no-entrypoint",
 ] }
 raydium_amm = { git = "https://github.com/piotrostr/raydium-amm", default-features = false, features = [
   "client",
-] }
+], version = "0.3.0" }
 log = "0.4.21"
 env_logger = "0.11.3"
 chrono = "0.4.38"
