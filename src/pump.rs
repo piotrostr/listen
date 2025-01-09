@@ -104,6 +104,9 @@ pub fn get_local_timestamp() -> chrono::DateTime<chrono::Local> {
     utc_now.with_timezone(&chrono::Local)
 }
 
+/// mint_to_pump_accounts goes from the token mint pubkey to the accounts
+/// required for sending swap transactions, namely the bonding curve and
+/// associated bonding curve accounts
 pub async fn mint_to_pump_accounts(
     mint: &Pubkey,
 ) -> Result<PumpAccounts, Box<dyn Error>> {
