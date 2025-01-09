@@ -1,7 +1,7 @@
 //! # Listen
 //!
-//! Set of tools for all blockchain interactions for algorithmic meme coin trading in Rust with
-//! support for AI agents
+//! Set of tools for blockchain interactions for algorithmic meme coin trading in Rust with
+//! support for AI agents.
 //!
 //! ## Installation
 //!
@@ -15,8 +15,8 @@
 //! ## Example (top holders check)
 //!
 //! The example uses the `check_top_holders` function from the `listen` lib to check the top
-//! holders in combination with the `rig` framework from [arc](arc.fun) to create a simple CLI AI
-//! Agent
+//! holders in combination with the `rig` framework from [arc](https://arc.fun) to create a simple
+//! AI Agent callable from CLI.
 //!
 //! ```rust
 //! // import the check_top_holders from \`listen\` lib
