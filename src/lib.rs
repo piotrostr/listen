@@ -9,50 +9,11 @@
 //!
 //! ## Installation
 //!
-//! ```bash
+//! ```sh
 //! sudo apt install protoc build-essential pkg-config libssl-dev
 //! git clone https://github.com/piotrostr/listen && cd listen
 //! cp .env.example .env  # swap the example values with your RPCs
 //! cargo build --release
-//! ```
-//!
-//! ## Environment Variables
-//!
-//! - First section are the Jito parameters, which provide the fastest transaction execution and
-//!   submitting transaction bundles
-//!
-//! - The `AUTH_KEYPAIR_PATH` is a path to `solana-keygen` generated keypair, which has to be
-//!   pre-approved by Jito for using the gRPC HTTP/2.0 client with best latency
-//!
-//! - The `FUND_KEYPAIR_PATH` is the wallet path, to be used as a "fund wallet" that executes
-//!   transactions
-//!
-//! - The last section is only required for running the library `snipe` module, which spawns
-//!   4 micro-services responsible for listening on new listings, pipeline of subscribe for new
-//!   listings, send to checker for verification, if checks are OK, send to buyer for purchase;
-//!   lastly seller service manages the sl/tp; The sniper is super fast, executes transactions in
-//!   1-5 blocks from token creation; Example of a wallet managed by this algorithm can be found
-//!   here: [FASTykZyyjVfhutuRzMMYbFbFacQpRnMzDguhWfWadbi](https://solscan.io/address/FASTykZyyjVfhutuRzMMYbFbFacQpRnMzDguhWfWadbi)
-//!
-//! ```txt
-//! BLOCK_ENGINE_URL=https://frankfurt.mainnet.block-engine.jito.wtf
-//! SHRED_RECEIVER_ADDR=145.40.93.84:1002
-//! RELAYER_URL=http://frankfurt.mainnet.relayer.jito.wtf:8100
-//!
-//! AUTH_KEYPAIR_PATH=auth.json
-//! FUND_KEYPAIR_PATH=fund.json
-//!
-//! WS_URL=wss://api.mainnet-beta.solana.com
-//! RPC_URL=https://api.mainnet-beta.solana.com
-//!
-//! MONGO_URL="mongodb+srv://<username>:<password>@cluster0.ifvf463.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
-//!
-//! LISTENER_URL=http://localhost:8078
-//! CHECKER_URL=http://localhost:8079
-//! BUYER_URL=http://localhost:8080
-//! SELLER_URL=http:/localhost:8081
-//!
-//! OPENAI_API_KEY=sk-<your-openai-api-key>
 //! ```
 //!
 //! ## Example (top holders check)
@@ -144,6 +105,46 @@
 //! Full Code: [src/agent.rs](https://github.com/piotrostr/listen/blob/main/src/agent.rs)
 //!
 //! You can run this example with `cargo run --release arc-agent`.
+//!
+//! ## Environment Variables
+//!
+//! - First section are the Jito parameters, which provide the fastest transaction execution and
+//!   submitting transaction bundles
+//!
+//! - The `AUTH_KEYPAIR_PATH` is a path to `solana-keygen` generated keypair, which has to be
+//!   pre-approved by Jito for using the gRPC HTTP/2.0 client with best latency
+//!
+//! - The `FUND_KEYPAIR_PATH` is the wallet path, to be used as a "fund wallet" that executes
+//!   transactions
+//!
+//! - The last section is only required for running the library `snipe` module, which spawns
+//!   4 micro-services responsible for listening on new listings, pipeline of subscribe for new
+//!   listings, send to checker for verification, if checks are OK, send to buyer for purchase;
+//!   lastly seller service manages the sl/tp; The sniper is super fast, executes transactions in
+//!   1-5 blocks from token creation; Example of a wallet managed by this algorithm can be found
+//!   here: [FASTykZyyjVfhutuRzMMYbFbFacQpRnMzDguhWfWadbi](https://solscan.io/address/FASTykZyyjVfhutuRzMMYbFbFacQpRnMzDguhWfWadbi)
+//!
+//! ```txt
+//! BLOCK_ENGINE_URL=https://frankfurt.mainnet.block-engine.jito.wtf
+//! SHRED_RECEIVER_ADDR=145.40.93.84:1002
+//! RELAYER_URL=http://frankfurt.mainnet.relayer.jito.wtf:8100
+//!
+//! AUTH_KEYPAIR_PATH=auth.json
+//! FUND_KEYPAIR_PATH=fund.json
+//!
+//! WS_URL=wss://api.mainnet-beta.solana.com
+//! RPC_URL=https://api.mainnet-beta.solana.com
+//!
+//! MONGO_URL="mongodb+srv://<username>:<password>@cluster0.ifvf463.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0"
+//!
+//! LISTENER_URL=http://localhost:8078
+//! CHECKER_URL=http://localhost:8079
+//! BUYER_URL=http://localhost:8080
+//! SELLER_URL=http:/localhost:8081
+//!
+//! OPENAI_API_KEY=sk-<your-openai-api-key>
+//! ```
+//!
 //!
 //! ## All Actions
 //!
