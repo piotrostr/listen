@@ -1,130 +1,106 @@
-# listen
-
-Empower your Solana AI Agents built with [$ARC rig framework](https://github.com/0xPlaygrounds/rig) with on-chain actions
+<p align="center">
 <img width="1232" alt="example" src="https://github.com/user-attachments/assets/40250e4e-7e03-45c5-9718-c86d0b9537ff" />
+<br>
+<a href="https://docs.listen-rs/"><img src="https://img.shields.io/badge/docs-API Reference-blue.svg" /></a> &nbsp;
+<a href="https://github.com/piotrostr/listen"><img src="https://img.shields.io/github/stars/piotrostr/listen?style=social" /></a>
+</p>
 
-Listen to new large transactions on Raydium V4, swap using Pump.fun, Jupiter V6 API or directly with Raydium (crucial for new
-listings)
+## Intro
 
-Monitor prices real-time, multiple subscription ways and providers (PubSub,
-webhooks..)
+Listen is a Solana toolkit for building AI Agents with on-chain actions using the [$ARC rig framework](https://github.com/0xPlaygrounds/rig). It provides functionality for:
 
-This tool has accidentally evolved to something of a sort of a Solana
-swiss-knife, has a bunch of stuff useful when trading shitcoins on Raydium and
-Pump.fun and some utilities like generating a custom wallet pubkey, checking holder 
-distribution, whether the token is mintable or has burnt liquidity..
+- Monitoring large transactions on Raydium V4
+- Real-time price monitoring with multiple subscription methods
+- Various utilities for Solana token trading and management
 
-There are some methods for sniping both platforms, 'sweeping' all of the bought
-tokens (selling hundreds of bought tokens), closing all of the associated token
-accounts (if you snipe ~500 tokens you can close those accounts later and
-retrieve like 1 sol), check out the functionalities in the outline below
+## Features
 
-Be careful as the default usage was on mainnet with small txs, be sure to set
-the URLs and signer keypair to testnet, read the code too so that you don't
-mess anything up
+- 🔍 Real-time transaction monitoring
+- 💱 Multi-DEX swap execution (Pump.fun, Jupiter V6 API or Raydium)
+- 🚀 Blazingly fast transactions thanks to Jito MEV bundles
+- 📊 Price tracking and metrics
+- 🧰 Token management utilities
+- 📈 Performance monitoring with Prometheus integration
+
+For complete rundown, see the CLI output of `cargo run` or the [docs](https://docs.listen-rs.com/).
 
 ## Requirements
 
-0. Install Rust
-1. Install `protoc`, `build-essential`, `pkg-config`, `libssl-dev`
-2. Copy over `.env.example` into `.env`, plug your RPCs (otherwise uses solana
-   default public RPCs)
-3. Copy over `auth.json` - JITO authentication keypair and `fund.json` - the
-   keypair with some SOL to fund the endeavour
-4. Enable Rust Nightly and `cargo build --release`
-5. Run the `./run-systemd-services.sh` to run the microservices
+1. **System Dependencies**
 
-## Usage
+   - Rust (with nightly toolchain)
+   - `protoc`
+   - `build-essential`
+   - `pkg-config`
+   - `libssl-dev`
 
-### Listening on new swaps
+2. **Configuration**
+   - Copy `.env.example` to `.env`
+   - Set up `auth.json` for JITO authentication (optional, gRPC HTTP/2.0 searcher client)
+   - Populate `fund.json`
 
-Requires env var of `RPC_URL` with some quota, set the size of buffer for new
-transactions and the worker count that process incoming transactions
+Both keypairs are in `solana-keygen` format, array of 64 bytes, 32 bytes private key and 32 bytes public key.
 
-Listening is over `wss://api.mainnet-beta.solana.com/`, fetching transactions
-uses the url set in `RPC_URL`
+## Quick Start
 
-```sh
+```bash
+# Install dependencies
+sudo apt install protoc build-essential pkg-config libssl-dev
+
+# Build
+cargo build --release
+
+# Run services
+./run-systemd-services.sh
+```
+
+## Usage Examples
+
+### Transaction Monitoring
+
+```bash
 cargo run -- listen \
   --worker-count [COUNT] \
   --buffer-size [SIZE]
 ```
 
-Should yield output as
+### Token Swapping
 
-```txt
-Metrics server running on 3030
-
-Connecting to logs for 675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8
-
-Connecting to blocks through [RPC_URL]
-Latest blockhash: BS8s86pQf45V9skwmzWz4GsYyZs6A8gsNWy4i9piV786
-Signer: DmFqB5LdQspumdvtHRi4PHKTZENHMw2xRMmSXP6aSkfj
-
-https://solana.fm/tx/3Gvmx...: 10.730849095 SOL
-https://solana.fm/tx/4aGoJ...: 77.293938152 SOL
-https://solana.fm/tx/j7TD...: 77.681362228 SOL
-```
-
-Automatically, it will send metrics to `localhost:3030/metrics`; to see the
-transactions received and processed in Prometheus, run
-
-```sh
-prometheus --config=prometheus.yml
-```
-
-This will start a server on `localhost:3030/metrics` that contains metrics
-(`transactions_received` and `transactions_processed`)
-
-In Grafana it looks like this:
-<img
-width="910"
-alt="image"
-src="https://github.com/piotrostr/listen/assets/63755291/95668158-9f7d-4cd2-be84-7c2b893d3f5c">
-
-### Swapping
-
-The account used to sign the transaction is by default the
-`~/.config/solana/id.json`, but it is possible to specify the path using
-`--keypair-path [PATH]`, the account has to be generated or imported using
-`solana-keygen` executable that ships with remaining the Solana SDK
-
-Slippage can also be adjusted using `--slippage [BPS]`, e.g. `--slippage 50`
-for 0.5% slippage, default is 50, dynamic slippage and retries is in the prod
-roadmap
-
-```sh
+```bash
 cargo run -- swap \
   --input-mint sol \
   --output-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
   --amount 10000000
 ```
 
-Amount is in lamports (or SPL-Token decimals), leave blank to automatically
-swap the entire balance of the input mint
+## Metrics and Monitoring
 
-There is an optional parameter `-y` or `--yes` which skips the confirmation on
-the user side
+Listen includes built-in metrics exposed at `localhost:3030/metrics`. To visualize:
 
-#### Swap profiling
+1. Start Prometheus:
 
-There is a utility for profiling a single swap using `DTrace` and
-`stackcollapse.pl` ([Repository](https://github.com/brendangregg/FlameGraph)),
-replace your home directory (mine is `/Users/piotrostr`) to point to the right
-`id.json` keypair
+```bash
+prometheus --config=prometheus.yml
+```
 
-```sh
+2. Access metrics at `localhost:3030/metrics`
+
+## Advanced Usage
+
+### Swap Profiling
+
+Profile swap performance using DTrace:
+
+```bash
 ./hack/profile-swap.sh
 ```
 
-The `stackcollapse.pl` can be installed through
+## Warning
 
-```
-gh repo clone brendangregg/FlameGraph && \
-  sudo cp FlameGraph/stackcollapse.pl /usr/local/bin && \
-  sudo cp FlameGraph/flamegraph.pl /usr/local/bin
-```
+> [!WARNING]
+> Default configuration is set for mainnet with small transactions. Ensure proper configuration for testnet usage and carefully review code before execution.
 
-yielding
-
-<img width="1210" alt="image" src="https://github.com/piotrostr/listen/assets/63755291/699405b7-adf0-448b-89c1-ba71152dc72b">
+<p align="center">
+<br>
+Made with ❤️  by piotrostr
+</p>
