@@ -1,4 +1,4 @@
-use std::{error::Error, str::FromStr};
+use std::error::Error;
 
 use base64::Engine;
 use futures_util::StreamExt;
@@ -82,13 +82,11 @@ pub async fn listen_price(
     pubsub_client: &PubsubClient,
 ) -> Result<bool, Box<dyn Error>> {
     // load amm keys
-    let amm_program =
-        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)
-            .expect("amm program");
+    let amm_program = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
     let amm_keys =
         amm::utils::load_amm_keys(rpc_client, &amm_program, amm_pool).await?;
-    let coin_mint_is_sol = amm_keys.amm_coin_mint
-        == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
+    let coin_mint_is_sol =
+        amm_keys.amm_coin_mint.eq(&constants::SOLANA_PROGRAM_ID);
     let (token_vault, sol_vault) = if coin_mint_is_sol {
         (amm_keys.amm_pc_vault, amm_keys.amm_coin_vault)
     } else {
@@ -197,9 +195,7 @@ pub async fn get_sol_pooled(amm_pool: &Pubkey, rpc_client: &RpcClient) -> f64 {
 
     let sol_pooled = rpc_client
         .get_token_account_balance(
-            if amm_info.coin_vault_mint.to_string()
-                == constants::SOLANA_PROGRAM_ID
-            {
+            if amm_info.coin_vault_mint.eq(&constants::SOLANA_PROGRAM_ID) {
                 &amm_info.coin_vault
             } else {
                 &amm_info.pc_vault

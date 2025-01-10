@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use crate::{
     buyer_service::BuyRequest,
     checker::{Checklist, PoolAccounts, _run_checks},
@@ -13,7 +11,6 @@ use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::pubkey::Pubkey;
 
 #[derive(Deserialize, Serialize)]
 pub struct ChecksRequest {
@@ -75,7 +72,7 @@ pub async fn handle_checks(
     );
 
     let amm_pool = checks_request.accounts.amm_pool;
-    let input_mint = Pubkey::from_str(constants::SOLANA_PROGRAM_ID).unwrap();
+    let input_mint = constants::SOLANA_PROGRAM_ID;
     tokio::spawn(async move {
         let amount = if token_result.checklist.is_pump_fun {
             50_000_000

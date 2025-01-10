@@ -23,7 +23,7 @@ pub async fn close_all_atas(
     let atas = rpc_client
         .get_token_accounts_by_owner(
             &keypair.pubkey(),
-            TokenAccountsFilter::ProgramId(Pubkey::from_str(TOKEN_PROGRAM)?),
+            TokenAccountsFilter::ProgramId(TOKEN_PROGRAM),
         )
         .await?;
     info!("Total ATAs: {}", atas.len());
@@ -44,7 +44,7 @@ pub async fn close_all_atas(
                 let rpc_client = Arc::new(RpcClient::new(env("RPC_URL")));
                 let tx = Transaction::new_signed_with_payer(
                     &[close_account(
-                        &Pubkey::from_str(TOKEN_PROGRAM)?,
+                        &TOKEN_PROGRAM,
                         &Pubkey::from_str(&ata.pubkey)?,
                         &owner,
                         &owner,

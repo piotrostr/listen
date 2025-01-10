@@ -11,12 +11,10 @@ use log::{debug, error, info};
 use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::hash::Hash;
-use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::{EncodableKey, Signer};
 use solana_sdk::system_instruction::transfer;
 use solana_sdk::transaction::{Transaction, VersionedTransaction};
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::Mutex;
@@ -89,11 +87,7 @@ pub async fn handle_pump_buy(
         token_amount,
         lamports,
     )?;
-    ixs.push(transfer(
-        &wallet.pubkey(),
-        &Pubkey::from_str(JITO_TIP_PUBKEY).expect("parse tip pubkey"),
-        tip,
-    ));
+    ixs.push(transfer(&wallet.pubkey(), &JITO_TIP_PUBKEY, tip));
     let swap_tx =
         VersionedTransaction::from(Transaction::new_signed_with_payer(
             ixs.as_slice(),

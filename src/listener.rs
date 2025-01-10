@@ -12,7 +12,7 @@ use solana_client::{
     },
 };
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
-use std::{str::FromStr, time::Duration};
+use std::time::Duration;
 
 pub struct Listener {
     ws_url: String,
@@ -73,8 +73,7 @@ impl Listener {
     pub fn logs_subscribe(
         &self,
     ) -> Result<LogsSubscription, Box<dyn std::error::Error>> {
-        let raydium_pubkey =
-            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+        let raydium_pubkey = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
         let config = RpcTransactionLogsConfig {
             commitment: Some(CommitmentConfig::confirmed()),
         };
@@ -116,8 +115,7 @@ impl BlockAndProgramSubscribable for Listener {
         Ok(())
     }
     fn block_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let raydium_pubkey =
-            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+        let raydium_pubkey = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
 
         let filter = RpcBlockSubscribeFilter::MentionsAccountOrProgram(
             raydium_pubkey.to_string(),
@@ -142,8 +140,7 @@ impl BlockAndProgramSubscribable for Listener {
     }
 
     fn program_subscribe(&self) -> Result<(), Box<dyn std::error::Error>> {
-        let raydium_pubkey =
-            Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+        let raydium_pubkey = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
         let config = RpcProgramAccountsConfig {
             account_config: RpcAccountInfoConfig {
                 encoding: Some(UiAccountEncoding::JsonParsed),

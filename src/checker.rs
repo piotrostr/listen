@@ -152,7 +152,7 @@ pub async fn _run_checks(
     ignore_non_pump_funs: bool,
 ) -> Result<(bool, Checklist), Box<dyn std::error::Error>> {
     let (sol_vault, mint) =
-        if accounts.coin_mint.to_string() == constants::SOLANA_PROGRAM_ID {
+        if accounts.coin_mint.eq(&constants::SOLANA_PROGRAM_ID) {
             (accounts.pool_coin_token_account, accounts.pc_mint)
         } else {
             (accounts.pool_pc_token_account, accounts.coin_mint)
@@ -351,7 +351,8 @@ pub fn parse_accounts(
                 {
                     if accounts.len() == 21
                         && program_id
-                            == constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
+                            == &constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
+                                .to_string()
                     {
                         let amm_pool = Pubkey::from_str(&accounts[4]).unwrap();
                         let lp_mint = Pubkey::from_str(&accounts[7]).unwrap();

@@ -115,6 +115,7 @@ pub fn parse_new_pool(
                     if parsed_ix.parsed["type"] == "assign"
                         && parsed_ix.parsed["info"]["owner"]
                             == constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
+                                .to_string()
                         && pool_info.amm_pool_id == Pubkey::default()
                     {
                         pool_info.amm_pool_id = Pubkey::from_str(
@@ -128,13 +129,13 @@ pub fn parse_new_pool(
                     if parsed_ix.parsed["type"] == "initializeAccount"
                         && parsed_ix.parsed["info"]["owner"]
                             == constants::RAYDIUM_AUTHORITY_V4_PUBKEY
+                                .to_string()
                     {
                         let mint =
                             parsed_ix.parsed["info"]["mint"].as_str().unwrap();
-                        if mint == constants::SOLANA_PROGRAM_ID {
+                        if mint == constants::SOLANA_PROGRAM_ID.to_string() {
                             pool_info.input_mint =
-                                Pubkey::from_str(constants::SOLANA_PROGRAM_ID)
-                                    .unwrap();
+                                constants::SOLANA_PROGRAM_ID;
                         } else {
                             pool_info.output_mint =
                                 Pubkey::from_str(mint).unwrap();
@@ -183,6 +184,7 @@ pub fn parse_swap(
                             // if the authority is raydium, it is the shitcoin, otherwise SOL
                             if parsed_ix.parsed["info"]["authority"]
                                 == constants::RAYDIUM_AUTHORITY_V4_PUBKEY
+                                    .to_string()
                             {
                                 // shitcoin == base quote, like POOP/SOL
                                 swap.base_mint = self::parse_mint(tx)?;

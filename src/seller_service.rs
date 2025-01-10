@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::str::FromStr;
 use std::sync::Arc;
 
 use crate::execute::Executor;
@@ -82,9 +81,7 @@ async fn handle_sell(
         // even though all checks pass, some holder dumps $XXK and -99.9%s the token
         if !sell_request.insta.unwrap_or(false) {
             // load amm keys
-            let amm_program =
-                Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)
-                    .expect("amm program");
+            let amm_program = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
             let amm_keys = load_amm_keys(
                 &provider.rpc_client,
                 &amm_program,
@@ -157,8 +154,7 @@ async fn handle_sell_simple(
     );
     let rpc_client =
         RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
-    let amm_program =
-        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY).unwrap();
+    let amm_program = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
     let amm_keys = amm::utils::load_amm_keys(
         &rpc_client,
         &amm_program,
@@ -168,7 +164,7 @@ async fn handle_sell_simple(
     .expect("amm_keys");
 
     let (input_mint, output_mint) =
-        if amm_keys.amm_pc_mint.to_string() == constants::SOLANA_PROGRAM_ID {
+        if amm_keys.amm_pc_mint.eq(&constants::SOLANA_PROGRAM_ID) {
             (amm_keys.amm_coin_mint, amm_keys.amm_pc_mint)
         } else {
             (amm_keys.amm_pc_mint, amm_keys.amm_coin_mint)

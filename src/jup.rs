@@ -79,7 +79,7 @@ impl Jupiter {
             info!(
                 "Initializing swap of {} of {} for {} by {}, slippage: {}%",
                 {
-                    if input_mint.to_string() == constants::SOLANA_PROGRAM_ID {
+                    if input_mint.eq(&constants::SOLANA_PROGRAM_ID) {
                         util::lamports_to_sol(amount)
                     } else {
                         amount as f64

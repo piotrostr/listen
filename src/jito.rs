@@ -1,4 +1,3 @@
-use std::str::FromStr;
 use std::time::Duration;
 
 use jito_protos::searcher::searcher_service_client::SearcherServiceClient;
@@ -11,7 +10,6 @@ use jito_searcher_client::{
 };
 use log::{error, info};
 use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use solana_sdk::system_instruction::transfer;
@@ -75,11 +73,7 @@ pub async fn send_swap_tx(
         .expect("get blockhash");
 
     // push tip ix
-    ixs.push(transfer(
-        &payer.pubkey(),
-        &Pubkey::from_str(constants::JITO_TIP_PUBKEY)?,
-        tip,
-    ));
+    ixs.push(transfer(&payer.pubkey(), &constants::JITO_TIP_PUBKEY, tip));
 
     let swap_tx =
         VersionedTransaction::from(Transaction::new_signed_with_payer(
@@ -111,11 +105,7 @@ pub async fn send_swap_tx_no_wait(
         .await
         .expect("get blockhash");
 
-    ixs.push(transfer(
-        &payer.pubkey(),
-        &Pubkey::from_str(constants::JITO_TIP_PUBKEY)?,
-        tip,
-    ));
+    ixs.push(transfer(&payer.pubkey(), &constants::JITO_TIP_PUBKEY, tip));
 
     let swap_tx =
         VersionedTransaction::from(Transaction::new_signed_with_payer(

@@ -194,7 +194,7 @@ async fn handle_webhook(
                 .iter()
                 .find(|transfer| {
                     transfer["mint"].as_str().unwrap()
-                        == constants::SOLANA_PROGRAM_ID
+                        == constants::SOLANA_PROGRAM_ID.to_string()
                 })
                 .expect("find sol mint")["tokenAmount"]
                 .as_f64()
@@ -203,7 +203,7 @@ async fn handle_webhook(
                 .iter()
                 .find(|transfer| {
                     let mint = transfer["mint"].as_str().unwrap();
-                    mint != constants::SOLANA_PROGRAM_ID
+                    mint != constants::SOLANA_PROGRAM_ID.to_string()
                         && mint != pool_accounts.lp_mint.to_string()
                 })
                 .expect("find token mint")["tokenAmount"]

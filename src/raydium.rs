@@ -271,8 +271,7 @@ pub async fn get_calc_result(
     rpc_client: &RpcClient,
     amm_pool: &Pubkey,
 ) -> Result<(amm::CalculateResult, MarketPubkeys, AmmKeys), Box<dyn Error>> {
-    let amm_program =
-        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+    let amm_program = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
 
     // load amm keys
     let amm_keys =
@@ -392,8 +391,7 @@ pub async fn make_swap_context(
     slippage: u64,
     amount: u64,
 ) -> Result<SwapContext, Box<dyn Error>> {
-    let amm_program =
-        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+    let amm_program = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
     // load amm keys
     let amm_keys =
         load_amm_keys(&provider.rpc_client, &amm_program, &amm_pool).await?;
@@ -463,7 +461,7 @@ pub async fn make_swap_ixs(
         .await?;
         self::calc_result_to_financials(
             swap_context.market_keys.coin_mint.to_string()
-                == constants::SOLANA_PROGRAM_ID,
+                == constants::SOLANA_PROGRAM_ID.to_string(),
             result,
             0,
         );
@@ -566,7 +564,7 @@ impl Default for Raydium {
 }
 
 impl Raydium {
-    pub fn new() -> Self {
+    pub const fn new() -> Self {
         Raydium {}
     }
 
@@ -584,7 +582,7 @@ impl Raydium {
         let _accounts = provider
             .rpc_client
             .get_program_accounts_with_config(
-                &Pubkey::from_str(constants::OPENBOOK_PROGRAM_ID).unwrap(),
+                &constants::OPENBOOK_PROGRAM_ID,
                 RpcProgramAccountsConfig {
                     filters: Some(vec![
                         RpcFilterType::Memcmp(Memcmp::new(
@@ -693,7 +691,7 @@ pub async fn handle_token_account(
     funding: &Pubkey,
 ) -> Result<Pubkey, Box<dyn Error>> {
     // two cases - an account is a token account or a native account (WSOL)
-    if (*mint).to_string() == constants::SOLANA_PROGRAM_ID {
+    if mint.eq(&constants::SOLANA_PROGRAM_ID) {
         let rent = provider
             .rpc_client
             .get_minimum_balance_for_rent_exemption(
