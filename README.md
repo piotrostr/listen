@@ -20,7 +20,7 @@ Listen is a Solana Swiss-Knife toolkit for algorithmic trading
 
 And more!
 
-It works plug'n'play with [$ARC rig
+It works plug'n'play with [$arc rig
 framework](https://github.com/0xPlaygrounds/rig) framework allowing AI Agents
 interact with the Solana blockchain, see example:
 [src/agent.rs](https://github.com/piotrostr/listen/blob/main/src/agent.rs) and
