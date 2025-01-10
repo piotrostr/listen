@@ -3,7 +3,7 @@
 //! Solana Swiss-Knife
 //!
 //! Supports all blockchain interactions required for algorithmic meme coin trading in Rust, with
-//! a dedicated `snipe` rmodule for insta-buys and AI Agent integration
+//! a dedicated `snipe` module for insta-buys and AI Agent integration
 //!
 //! Pump.fun specific version
 //!
