@@ -8,9 +8,9 @@
 <a href=""><img src="https://img.shields.io/badge/built_with-Rust-dca282.svg?logo=rust" /></a>
 </p>
 
-## Intro
-
-`listen` is a Solana Swiss-Knife toolkit for algorithmic trading
+<p align="center">
+<code>listen</code> is a Solana Swiss-Knife toolkit for algorithmic trading
+</p>
 
 ## Features
 
