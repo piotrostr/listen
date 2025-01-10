@@ -32,6 +32,8 @@ the output [image](https://github.com/piotrostr/listen/blob/main/example.png).
 For complete rundown of features, check out the CLI output of `cargo run` or the
 [documentation](https://docs.listen-rs.com/).
 
+This repository contains some miscellanous tools for grabbing data from bullx/gmgn.ai/pump.fun unofficial APIs, in `bullx`, `watcher`, `pump-ts` and an analysis module, all which might be useful, though the core of the library is located in the `src` directory.
+
 ## Requirements
 
 1. **System Dependencies**
