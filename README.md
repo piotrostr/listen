@@ -1,17 +1,14 @@
 <p align="center">
-<img width="1232" alt="example" src="https://github.com/user-attachments/assets/40250e4e-7e03-45c5-9718-c86d0b9537ff" />
 <br>
-<a href="https://docs.listen-rs/"><img src="https://img.shields.io/badge/docs-API Reference-blue.svg" /></a> &nbsp;
+<a href="https://docs.listen-rs.com/"><img src="https://img.shields.io/badge/docs-API-blue.svg" /></a> &nbsp;
 <a href="https://github.com/piotrostr/listen"><img src="https://img.shields.io/github/stars/piotrostr/listen?style=social" /></a>
 </p>
 
 ## Intro
 
-Listen is a Solana toolkit for building AI Agents with on-chain actions using the [$ARC rig framework](https://github.com/0xPlaygrounds/rig). It provides functionality for:
+Listen is a Solana Swiss-Knife toolkit for algorithmic trading
 
-- Monitoring large transactions on Raydium V4
-- Real-time price monitoring with multiple subscription methods
-- Various utilities for Solana token trading and management
+with on-chain actions using the [$ARC rig framework](https://github.com/0xPlaygrounds/rig). It provides functionality for:
 
 ## Features
 
@@ -22,7 +19,16 @@ Listen is a Solana toolkit for building AI Agents with on-chain actions using th
 - 🧰 Token management utilities
 - 📈 Performance monitoring with Prometheus integration
 
-For complete rundown, see the CLI output of `cargo run` or the [docs](https://docs.listen-rs.com/).
+And more!
+
+It works plug'n'play with [$ARC rig
+framework](https://github.com/0xPlaygrounds/rig) framework allowing AI Agents
+interact with the Solana blockchain, see example:
+[src/agent.rs](https://github.com/piotrostr/listen/blob/main/src/agent.rs) and
+the output [image](https://github.com/piotrostr/listen/blob/main/example.png).
+
+For complete rundown, check out the CLI output of `cargo run` or the
+[documentation](https://docs.listen-rs.com/).
 
 ## Requirements
 
@@ -39,7 +45,8 @@ For complete rundown, see the CLI output of `cargo run` or the [docs](https://do
    - Set up `auth.json` for JITO authentication (optional, gRPC HTTP/2.0 searcher client)
    - Populate `fund.json`
 
-Both keypairs are in `solana-keygen` format, array of 64 bytes, 32 bytes private key and 32 bytes public key.
+Both keypairs are in `solana-keygen` format, array of 64 bytes, 32 bytes
+private key and 32 bytes public key.
 
 ## Quick Start
 
@@ -85,22 +92,34 @@ prometheus --config=prometheus.yml
 
 2. Access metrics at `localhost:3030/metrics`
 
+Grafana should show something like this
+
+<img
+width="910"
+alt="image"
+src="https://github.com/piotrostr/listen/assets/63755291/95668158-9f7d-4cd2-be84-7c2b893d3f5c">
+
 ## Advanced Usage
 
 ### Swap Profiling
 
-Profile swap performance using DTrace:
+The `stackcollapse.pl` can be installed through
+
+```sh
+gh repo clone brendangregg/FlameGraph && \
+  sudo cp FlameGraph/stackcollapse.pl /usr/local/bin && \
+  sudo cp FlameGraph/flamegraph.pl /usr/local/bin
+```
+
+Profile swap performance using DTrace to produce a flamegraph:
 
 ```bash
 ./hack/profile-swap.sh
 ```
 
+<img width="1210" alt="image" src="https://github.com/piotrostr/listen/assets/63755291/699405b7-adf0-448b-89c1-ba71152dc72b">
+
 ## Warning
 
 > [!WARNING]
 > Default configuration is set for mainnet with small transactions. Ensure proper configuration for testnet usage and carefully review code before execution.
-
-<p align="center">
-<br>
-Made with ❤️  by piotrostr
-</p>
