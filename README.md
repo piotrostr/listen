@@ -2,6 +2,7 @@
 <br>
 <a href="https://docs.listen-rs.com/"><img src="https://img.shields.io/badge/docs-API-blue.svg" /></a> &nbsp;
 <a href="https://github.com/piotrostr/listen"><img src="https://img.shields.io/github/stars/piotrostr/listen?style=social" /></a>
+<a href=""><img src="https://img.shields.io/badge/built_with-Rust-dca282.svg?logo=rust" /></a>
 </p>
 
 ## Intro
@@ -27,7 +28,7 @@ interact with the Solana blockchain, see example:
 [src/agent.rs](https://github.com/piotrostr/listen/blob/main/src/agent.rs) and
 the output [image](https://github.com/piotrostr/listen/blob/main/example.png).
 
-For complete rundown, check out the CLI output of `cargo run` or the
+For complete rundown of features, check out the CLI output of `cargo run` or the
 [documentation](https://docs.listen-rs.com/).
 
 ## Requirements
