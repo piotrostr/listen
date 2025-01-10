@@ -12,7 +12,7 @@ use solana_client::{
     },
 };
 use solana_sdk::{commitment_config::CommitmentConfig, pubkey::Pubkey};
-use std::{str::FromStr, time::Duration};
+use std::time::Duration;
 
 pub struct Listener {
     ws_url: String,
