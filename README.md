@@ -9,8 +9,6 @@
 
 Listen is a Solana Swiss-Knife toolkit for algorithmic trading
 
-with on-chain actions using the [$ARC rig framework](https://github.com/0xPlaygrounds/rig). It provides functionality for:
-
 ## Features
 
 - 🔍 Real-time transaction monitoring
