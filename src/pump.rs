@@ -26,9 +26,9 @@ use solana_client::rpc_config::{
 };
 use solana_sdk::commitment_config::{CommitmentConfig, CommitmentLevel};
 use solana_sdk::instruction::{AccountMeta, Instruction};
-use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::{EncodableKey, Signer};
+use solana_sdk::{pubkey, pubkey::Pubkey};
 use solana_transaction_status::{
     EncodedConfirmedTransactionWithStatusMeta, EncodedTransaction, UiMessage,
     UiParsedMessage,
@@ -40,26 +40,26 @@ use crate::jito::{send_swap_tx_no_wait, SearcherClient};
 use crate::raydium::make_compute_budget_ixs;
 use crate::util::{env, pubkey_to_string, string_to_pubkey, string_to_u64};
 
-pub const BLOXROUTE_ADDRESS: &str =
-    "HWEoBxYs7ssKuudEjzjmpfJVX7Dvi7wescFsVx2L5yoY";
-pub const PUMP_GLOBAL_ADDRESS: &str =
-    "4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf";
-pub const PUMP_FEE_ADDRESS: &str =
-    "CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM";
-pub const PUMP_FUN_PROGRAM: &str =
-    "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P";
-pub const PUMP_FUN_MINT_AUTHORITY: &str =
-    "TSLvdd1pWpHVjahSpsvCXUbgwsL3JAcvokwaKt1eokM";
-pub const EVENT_AUTHORITY: &str =
-    "Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1";
+pub const PUMP_GLOBAL_ADDRESS: Pubkey =
+    pubkey!("4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf");
+pub const PUMP_FEE_ADDRESS: Pubkey =
+    pubkey!("CebN5WGQ4jvEPvsVU4EoHEpgzq1VV7AbicfhtW4xC9iM");
+pub const PUMP_FUN_PROGRAM: Pubkey =
+    pubkey!("6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P");
+pub const PUMP_FUN_MINT_AUTHORITY: Pubkey =
+    pubkey!("TSLvdd1pWpHVjahSpsvCXUbgwsL3JAcvokwaKt1eokM");
+pub const EVENT_AUTHORITY: Pubkey =
+    pubkey!("Ce6TQqeHC9p8KetsN6JsjHK7UTZk7nasjjnr7XxXp9F1");
 pub const PUMP_BUY_METHOD: [u8; 8] =
     [0x66, 0x06, 0x3d, 0x12, 0x01, 0xda, 0xeb, 0xea];
 pub const PUMP_SELL_METHOD: [u8; 8] =
     [0x33, 0xe6, 0x85, 0xa4, 0x01, 0x7f, 0x83, 0xad];
-pub const TOKEN_PROGRAM: &str = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA";
-pub const RENT_PROGRAM: &str = "SysvarRent111111111111111111111111111111111";
-pub const ASSOCIATED_TOKEN_PROGRAM: &str =
-    "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL";
+pub const TOKEN_PROGRAM: Pubkey =
+    pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
+pub const RENT_PROGRAM: Pubkey =
+    pubkey!("SysvarRent111111111111111111111111111111111");
+pub const ASSOCIATED_TOKEN_PROGRAM: Pubkey =
+    pubkey!("ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL");
 
 #[derive(BorshSerialize)]
 pub struct PumpFunSwapInstructionData {
@@ -553,24 +553,18 @@ pub fn make_pump_sell_ix(
     ata: Pubkey,
 ) -> Result<Instruction, Box<dyn Error>> {
     let accounts: [AccountMeta; 12] = [
-        AccountMeta::new_readonly(
-            Pubkey::from_str(PUMP_GLOBAL_ADDRESS)?,
-            false,
-        ),
-        AccountMeta::new(Pubkey::from_str(PUMP_FEE_ADDRESS)?, false),
+        AccountMeta::new_readonly(PUMP_GLOBAL_ADDRESS, false),
+        AccountMeta::new(PUMP_FEE_ADDRESS, false),
         AccountMeta::new_readonly(pump_accounts.mint, false),
         AccountMeta::new(pump_accounts.bonding_curve, false),
         AccountMeta::new(pump_accounts.associated_bonding_curve, false),
         AccountMeta::new(ata, false),
         AccountMeta::new(owner, true),
         AccountMeta::new_readonly(system_program::ID, false),
-        AccountMeta::new_readonly(
-            Pubkey::from_str(ASSOCIATED_TOKEN_PROGRAM)?,
-            false,
-        ),
-        AccountMeta::new_readonly(Pubkey::from_str(TOKEN_PROGRAM)?, false),
-        AccountMeta::new_readonly(Pubkey::from_str(EVENT_AUTHORITY)?, false),
-        AccountMeta::new_readonly(Pubkey::from_str(PUMP_FUN_PROGRAM)?, false),
+        AccountMeta::new_readonly(ASSOCIATED_TOKEN_PROGRAM, false),
+        AccountMeta::new_readonly(TOKEN_PROGRAM, false),
+        AccountMeta::new_readonly(EVENT_AUTHORITY, false),
+        AccountMeta::new_readonly(PUMP_FUN_PROGRAM, false),
     ];
 
     // max slippage, careful if not using frontrun protection
@@ -581,7 +575,7 @@ pub fn make_pump_sell_ix(
     };
 
     Ok(Instruction::new_with_borsh(
-        Pubkey::from_str(PUMP_FUN_PROGRAM)?,
+        PUMP_FUN_PROGRAM,
         &data,
         accounts.to_vec(),
     ))
@@ -611,21 +605,18 @@ pub fn make_pump_swap_ix(
     ata: Pubkey,
 ) -> Result<Instruction, Box<dyn Error>> {
     let accounts: [AccountMeta; 12] = [
-        AccountMeta::new_readonly(
-            Pubkey::from_str(PUMP_GLOBAL_ADDRESS)?,
-            false,
-        ),
-        AccountMeta::new(Pubkey::from_str(PUMP_FEE_ADDRESS)?, false),
+        AccountMeta::new_readonly(PUMP_GLOBAL_ADDRESS, false),
+        AccountMeta::new(PUMP_FEE_ADDRESS, false),
         AccountMeta::new_readonly(mint, false),
         AccountMeta::new(bonding_curve, false),
         AccountMeta::new(associated_bonding_curve, false),
         AccountMeta::new(ata, false),
         AccountMeta::new(owner, true),
         AccountMeta::new_readonly(system_program::ID, false),
-        AccountMeta::new_readonly(Pubkey::from_str(TOKEN_PROGRAM)?, false),
-        AccountMeta::new_readonly(Pubkey::from_str(RENT_PROGRAM)?, false),
-        AccountMeta::new_readonly(Pubkey::from_str(EVENT_AUTHORITY)?, false),
-        AccountMeta::new_readonly(Pubkey::from_str(PUMP_FUN_PROGRAM)?, false),
+        AccountMeta::new_readonly(TOKEN_PROGRAM, false),
+        AccountMeta::new_readonly(RENT_PROGRAM, false),
+        AccountMeta::new_readonly(EVENT_AUTHORITY, false),
+        AccountMeta::new_readonly(PUMP_FUN_PROGRAM, false),
     ];
 
     let data = PumpFunSwapInstructionData {
@@ -635,7 +626,7 @@ pub fn make_pump_swap_ix(
     };
 
     Ok(Instruction::new_with_borsh(
-        Pubkey::from_str(PUMP_FUN_PROGRAM)?,
+        PUMP_FUN_PROGRAM,
         &data,
         accounts.to_vec(),
     ))
@@ -973,7 +964,7 @@ pub async fn send_pump_bump(
 
     // 0.00005 sol
     let tip = 50_000;
-    ixs.push(transfer(&owner, &Pubkey::from_str(JITO_TIP_PUBKEY)?, tip));
+    ixs.push(transfer(&owner, &JITO_TIP_PUBKEY, tip));
 
     let tx = VersionedTransaction::from(Transaction::new_signed_with_payer(
         &ixs,

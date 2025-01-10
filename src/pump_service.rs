@@ -89,11 +89,7 @@ pub async fn handle_pump_buy(
         token_amount,
         lamports,
     )?;
-    ixs.push(transfer(
-        &wallet.pubkey(),
-        &Pubkey::from_str(JITO_TIP_PUBKEY).expect("parse tip pubkey"),
-        tip,
-    ));
+    ixs.push(transfer(&wallet.pubkey(), &JITO_TIP_PUBKEY, tip));
     let swap_tx =
         VersionedTransaction::from(Transaction::new_signed_with_payer(
             ixs.as_slice(),

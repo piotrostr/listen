@@ -41,9 +41,10 @@ impl Executor {
         pubsub_client: &PubsubClient,
         amm_pool: &Pubkey,
     ) -> Result<bool, Box<dyn std::error::Error>> {
-        let coin_mint_is_sol = self.amm_keys.amm_coin_mint
-            == Pubkey::from_str(constants::SOLANA_PROGRAM_ID)
-                .expect("sol mint");
+        let coin_mint_is_sol = self
+            .amm_keys
+            .amm_coin_mint
+            .eq(&constants::SOLANA_PROGRAM_ID);
         let (token_vault, sol_vault) = if coin_mint_is_sol {
             (self.amm_keys.amm_pc_vault, self.amm_keys.amm_coin_vault)
         } else {
@@ -102,7 +103,7 @@ impl Executor {
                                     buyer::swap(
                                         amm_pool,
                                         &token_mint,
-                                        &Pubkey::from_str(constants::SOLANA_PROGRAM_ID).unwrap(),
+                                        &constants::SOLANA_PROGRAM_ID,
                                         sell_amount,
                                         &self.funder,
                                         provider
@@ -126,7 +127,7 @@ impl Executor {
                             buyer::swap(
                                 amm_pool,
                                 &token_mint,
-                                &Pubkey::from_str(constants::SOLANA_PROGRAM_ID).unwrap(),
+                                &constants::SOLANA_PROGRAM_ID,
                                 sell_amount,
                                 &self.funder,
                                 provider

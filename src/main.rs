@@ -92,7 +92,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         // sweep raydium burns all of the tokens,
         // dont use it unless you know what you're doing
         Command::SweepRaydium { wallet_path } => {
-            let rpc_client = RpcClient::new(env("RPC_URL").to_string());
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             raydium::sweep_raydium(&rpc_client, wallet_path).await?;
             // return Err("Unimplemented (danger zone)".into());
         }
@@ -100,8 +100,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let keypair =
                 Keypair::read_from_file(wallet_path).expect("read wallet");
             info!("Wallet: {}", keypair.pubkey());
-            let rpc_client =
-                Arc::new(RpcClient::new(env("RPC_URL").to_string()));
+            let rpc_client = Arc::new(RpcClient::new(env("RPC_URL")));
             ata::close_all_atas(rpc_client, &keypair).await?;
         }
         Command::PumpService {} => {
@@ -113,7 +112,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Command::SellPump { mint } => {
             let keypair =
                 Keypair::read_from_file("wtf.json").expect("read wallet");
-            let rpc_client = RpcClient::new(env("RPC_URL").to_string());
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let ata =
                 spl_associated_token_account::get_associated_token_address(
                     &keypair.pubkey(),
@@ -140,7 +139,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
         Command::BumpPump { mint } => {
             let keypair =
                 Keypair::read_from_file("wtf.json").expect("read wallet");
-            let rpc_client = RpcClient::new(env("RPC_URL").to_string());
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let auth = Arc::new(
                 Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap(),
             );
@@ -174,7 +173,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let keypair =
                 Keypair::read_from_file(wallet_path).expect("read wallet");
             info!("Wallet: {}", keypair.pubkey());
-            let rpc_client = RpcClient::new(env("RPC_URL").to_string());
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let pump_tokens = pump::get_tokens_held(&keypair.pubkey()).await?;
             for pump_token in pump_tokens {
                 let mint = Pubkey::from_str(&pump_token.mint)?;
@@ -260,7 +259,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             println!("ok? {}, {:?}", ok, checklist);
         }
         Command::Blockhash {} => {
-            let provider = Provider::new(env("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             for _ in 0..3 {
                 let start = std::time::Instant::now();
                 let res = provider.rpc_client.get_latest_blockhash().await?;
@@ -279,21 +278,21 @@ async fn main() -> Result<(), Box<dyn Error>> {
             results.2?;
         }
         Command::ParsePool { signature } => {
-            let provider = Provider::new(env("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             let new_pool = tx_parser::parse_new_pool(
                 &provider.get_tx(signature.as_str()).await?,
             )?;
             println!("{:?}", new_pool);
         }
         Command::TopHolders { mint } => {
-            let provider = Provider::new(env("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             let mint = Pubkey::from_str(mint.as_str()).unwrap();
             let (_, ok, _) =
                 buyer::check_top_holders(&mint, &provider, false).await?;
             info!("Top holders check passed: {}", ok);
         }
         Command::ListenForSolPooled { amm_pool } => {
-            let provider = Provider::new(env("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
                 env("WS_URL").as_str(),
             )
@@ -306,7 +305,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
         }
         Command::ListenForBurn { amm_pool } => {
-            let provider = Provider::new(env("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
                 env("WS_URL").as_str(),
             )
@@ -319,12 +318,11 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
         }
         Command::TrackPosition { amm_pool, owner } => {
-            let provider = Provider::new(env("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             let amm_pool = Pubkey::from_str(amm_pool.as_str())
                 .expect("amm pool is a valid pubkey");
 
-            let amm_program =
-                Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)?;
+            let amm_program = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
             // load amm keys
             let amm_keys = amm::utils::load_amm_keys(
                 &provider.rpc_client,
@@ -342,15 +340,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
             info!("{:?}", market_keys);
             if market_keys.coin_mint.to_string()
-                != constants::SOLANA_PROGRAM_ID
+                != constants::SOLANA_PROGRAM_ID.to_string()
                 && market_keys.pc_mint.to_string()
-                    != constants::SOLANA_PROGRAM_ID
+                    != constants::SOLANA_PROGRAM_ID.to_string()
             {
                 error!("pool is not against solana");
                 return Ok(());
             }
             let coin_mint_is_sol = market_keys.coin_mint.to_string()
-                == constants::SOLANA_PROGRAM_ID;
+                == constants::SOLANA_PROGRAM_ID.to_string();
             let owner_balance = provider
                 .get_spl_balance(
                     &Pubkey::from_str(owner.as_str()).unwrap(),
@@ -390,9 +388,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .await
                     .expect("makes searcher client");
             let res = searcher_client
-                .subscribe_mempool(MempoolSubscription {
-                    ..Default::default()
-                })
+                .subscribe_mempool(MempoolSubscription::default())
                 .await?;
             info!("{:?}", res);
         }
@@ -439,30 +435,25 @@ async fn main() -> Result<(), Box<dyn Error>> {
                     .await
                     .expect("makes searcher client");
             let _ = searcher_client
-                .subscribe_mempool(MempoolSubscription {
-                    ..Default::default()
-                })
+                .subscribe_mempool(MempoolSubscription::default())
                 .await;
         }
         Command::BenchRPC { rpc_url } => rpc::eval_rpc(rpc_url.as_str()),
         Command::PriorityFee {} => {
-            let provider = Provider::new(env("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             println!(
                 "{:?}",
                 provider
                     .rpc_client
                     .get_recent_prioritization_fees(
-                        vec![Pubkey::from_str(
-                            constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY
-                        )
-                        .unwrap()]
-                        .as_slice()
+                        vec![constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY]
+                            .as_slice()
                     )
                     .await
             );
         }
         Command::Price { amm_pool } => {
-            let provider = Provider::new(env("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
                 env("WS_URL").as_str(),
             )
@@ -502,7 +493,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             dex,
             amm_pool_id,
         } => {
-            let provider = Provider::new(env("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             let raydium = Raydium::new();
             let jup = Jupiter::new();
             let start = std::time::Instant::now();
@@ -519,7 +510,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         + "/.config/solana/id.json"
                 }
             };
-            if dex.unwrap_or("".to_string()) == "raydium" {
+            if dex.unwrap_or_else(|| "".to_string()) == "raydium" {
                 let amm_pool_id =
                     Pubkey::from_str(amm_pool_id.unwrap().as_str())?;
                 let input_token_mint = Pubkey::from_str(input_mint.as_str())?;
@@ -599,7 +590,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             info!("Balance: {} lamports", balance);
         }
         Command::Tx { signature } => {
-            let provider = Provider::new(env("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             let tx = provider.get_tx(signature.as_str()).await?;
             info!("Tx: {}", serde_json::to_string_pretty(&tx)?);
             let mint = tx_parser::parse_mint(&tx)?;
@@ -655,7 +646,7 @@ pub async fn run_listener(
     let pool: Vec<_> = (0..worker_count)
         .map(|_| {
             let rx = Arc::clone(&rx);
-            let provider = Provider::new(env("RPC_URL").to_string());
+            let provider = Provider::new(env("RPC_URL"));
             let transactions_processed = transactions_processed.clone();
             let requests_sent = requests_sent.clone();
             tokio::spawn(async move {

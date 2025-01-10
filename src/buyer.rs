@@ -156,7 +156,7 @@ pub async fn check_top_holders(
                     )
                 })?
                 .owner
-                == constants::RAYDIUM_AUTHORITY_V4_PUBKEY
+                == constants::RAYDIUM_AUTHORITY_V4_PUBKEY.to_string()
             {
                 raydium_holding =
                     holder.amount.ui_amount.ok_or_else(|| {
@@ -234,9 +234,8 @@ pub async fn listen_for_sol_pooled(
     if stream.next().await.is_some() {
         let (result, _, amm_keys) =
             raydium::get_calc_result(rpc_client, amm_pool).await?;
-        let coin_mint_is_sol = amm_keys.amm_coin_mint
-            == Pubkey::from_str(constants::SOLANA_PROGRAM_ID)
-                .expect("sol mint");
+        let coin_mint_is_sol =
+            amm_keys.amm_coin_mint.eq(&constants::SOLANA_PROGRAM_ID);
         let token_mint = if coin_mint_is_sol {
             amm_keys.amm_pc_mint
         } else {
@@ -265,14 +264,12 @@ pub async fn listen_for_burn(
     pubsub_client: &PubsubClient,
 ) -> Result<(f64, bool), Box<dyn Error>> {
     // load amm keys
-    let amm_program =
-        Pubkey::from_str(constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY)
-            .expect("amm program");
+    let amm_program = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
     let amm_keys =
         amm::utils::load_amm_keys(rpc_client, &amm_program, amm_pool).await?;
     let lp_mint = amm_keys.amm_lp_mint;
-    let coin_mint_is_sol = amm_keys.amm_coin_mint
-        == Pubkey::from_str(constants::SOLANA_PROGRAM_ID).expect("sol mint");
+    let coin_mint_is_sol =
+        amm_keys.amm_coin_mint.eq(&constants::SOLANA_PROGRAM_ID);
 
     let (mut stream, unsub) = pubsub_client
         .account_subscribe(

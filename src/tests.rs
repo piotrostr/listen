@@ -84,7 +84,7 @@ async fn test_gets_top_holders() {
         Pubkey::from_str("D2oKMNHb94DSgvibQxCweZPrbFEhayKBQ5eaPMC4Dvnv")
             .unwrap();
     let (_, ok) =
-        check_top_holders(&mint, &Provider::new(env("RPC_URL").to_string()))
+        check_top_holders(&mint, &Provider::new(env("RPC_URL")))
             .await
             .unwrap();
     assert!(ok);
