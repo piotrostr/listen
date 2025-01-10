@@ -51,7 +51,6 @@ pub async fn generate_custom_sol_address(
 #[cfg(test)]
 mod tests {
 
-    // toil alert, remove tmp.json after manual check
     #[test]
     fn test_write_bytes() {
         let contents = [255u8; 64];
@@ -60,5 +59,9 @@ mod tests {
             serde_json::to_string(&Vec::from(&contents)).unwrap(),
         )
         .unwrap();
+
+        if std::fs::metadata("tmp.json").is_ok() {
+            std::fs::remove_file("tmp.json").unwrap();
+        }
     }
 }
