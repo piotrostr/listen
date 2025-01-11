@@ -213,6 +213,7 @@ pub mod jito;
 pub mod jup;
 pub mod listener;
 pub mod listener_service;
+pub mod meteora;
 pub mod orca;
 pub mod prometheus;
 pub mod provider;

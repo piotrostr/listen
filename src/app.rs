@@ -141,8 +141,13 @@ pub enum Command {
         #[arg(long)]
         signature: String,
     },
+    /// Swap command for executing token swaps
+    /// 
+    /// Supported DEXes:
+    /// - "raydium": Raydium DEX
+    /// - "meteora": Meteora DEX (DLMM)
+    /// - "jupiter": Jupiter Aggregator
     Swap {
-        #[arg(long)]
         input_mint: String,
         #[arg(long)]
         output_mint: String,
@@ -154,8 +159,7 @@ pub enum Command {
         dex: Option<String>,
         #[arg(long)]
         amm_pool_id: Option<String>,
-
-        #[clap(short, long, action = clap::ArgAction::SetTrue)]
+        #[arg(long)]
         yes: Option<bool>,
     },
 }

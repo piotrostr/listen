@@ -15,7 +15,11 @@
 ## Features
 
 - 🔍 Real-time transaction monitoring
-- 💱 Multi-DEX swap execution (Pump.fun, Jupiter V6 API or Raydium)
+- 💱 Multi-DEX swap execution:
+  - Pump.fun
+  - Jupiter V6 API
+  - Raydium
+  - Meteora (DLMM)
 - 🚀 Blazingly fast transactions thanks to Jito MEV bundles
 - 📊 Price tracking and metrics
 - 🧰 Token management utilities
@@ -78,11 +82,39 @@ cargo run -- listen \
 ### Token Swapping
 
 ```bash
+# Swap using Raydium
 cargo run -- swap \
   --input-mint sol \
   --output-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
-  --amount 10000000
+  --amount 10000000 \
+  --dex raydium
+
+# Swap using Meteora
+cargo run -- swap \
+  --input-mint sol \
+  --output-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
+  --amount 10000000 \
+  --dex meteora
+
+# Swap using Jupiter
+cargo run -- swap \
+  --input-mint sol \
+  --output-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
+  --amount 10000000 \
+  --dex jupiter
+
+# Swap using Pump.fun
+cargo run -- swap \
+  --input-mint sol \
+  --output-mint EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v \
+  --amount 10000000 \
+  --dex pump
 ```
+
+Common options:
+- `--slippage`: Maximum allowed slippage in basis points (e.g., 100 = 1%)
+- `--yes`: Skip confirmation prompt
+- `--amm-pool-id`: Specify AMM pool ID (required for Raydium)
 
 > [!WARNING]
 > Default configuration is set for mainnet with small transactions. Ensure proper configuration for testnet usage and carefully review code before execution.
@@ -125,4 +157,8 @@ Profile swap performance using DTrace to produce a flamegraph:
 ```
 
 <img width="1210" alt="image" src="https://github.com/piotrostr/listen/assets/63755291/699405b7-adf0-448b-89c1-ba71152dc72b">
+
+## License
+
+MIT License - see [LICENSE](LICENSE) for details
 
