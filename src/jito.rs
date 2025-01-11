@@ -9,6 +9,7 @@ use jito_searcher_client::{
     send_bundle_no_wait, send_bundle_with_confirmation,
 };
 use log::{error, info};
+use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
@@ -16,6 +17,9 @@ use solana_sdk::system_instruction::transfer;
 use solana_sdk::transaction::Transaction;
 use solana_sdk::{
     instruction::Instruction, transaction::VersionedTransaction,
+};
+use solana_transaction_status::{
+    Encodable, EncodedTransaction, UiTransactionEncoding,
 };
 use tonic::{codegen::InterceptedService, transport::Channel};
 
@@ -120,4 +124,74 @@ pub async fn send_swap_tx_no_wait(
     info!("Bundle sent. UUID: {}", res.into_inner().uuid);
 
     Ok(())
+}
+
+#[timed::timed(duration(printer = "info!"))]
+pub async fn send_jito_tx(
+    tx: Transaction,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+
+    let encoded_tx = match tx.encode(UiTransactionEncoding::Binary) {
+        EncodedTransaction::LegacyBinary(b) => b,
+        _ => return Err("Failed to encode transaction".into()),
+    };
+
+    let res = client
+        .post("https://mainnet.block-engine.jito.wtf/api/v1/transactions")
+        .header("content-type", "application/json")
+        .json(&json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "sendTransaction",
+            "params": [encoded_tx]
+        }))
+        .send()
+        .await
+        .expect("send tx");
+
+    let out = res.json::<serde_json::Value>().await?;
+
+    info!(
+        "{}",
+        out["result"].as_str().unwrap_or(out.to_string().as_str())
+    );
+    Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use solana_client::nonblocking::rpc_client::RpcClient;
+    use solana_sdk::{
+        message::Message,
+        signature::Keypair,
+        signer::{EncodableKey, Signer},
+        system_instruction,
+        transaction::Transaction,
+    };
+
+    use crate::util::env;
+
+    #[tokio::test]
+    async fn test_send_jito_tx() {
+        let rpc_client = RpcClient::new(env("RPC_URL"));
+
+        let keypair = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+            .expect("Failed to read keypair");
+        let instruction = system_instruction::transfer(
+            &keypair.pubkey(),
+            &keypair.pubkey(),
+            1_000_000, // lamports (0.001 SOL)
+        );
+
+        let recent_blockhash = rpc_client
+            .get_latest_blockhash()
+            .await
+            .expect("Failed to get recent blockhash");
+
+        let message = Message::new(&[instruction], Some(&keypair.pubkey()));
+        let tx = Transaction::new(&[&keypair], message, recent_blockhash);
+
+        super::send_jito_tx(tx).await.unwrap();
+    }
 }

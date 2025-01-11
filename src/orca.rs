@@ -95,7 +95,7 @@ mod tests {
 
         assert_eq!(whirlpool.fee_rate, 3000);
         assert_eq!(whirlpool.protocol_fee_rate, 1300);
-        assert_eq!(whirlpool.token_mint_a.to_string(), SOLANA_PROGRAM_ID);
+        assert_eq!(whirlpool.token_mint_a, SOLANA_PROGRAM_ID);
         assert_eq!(
             whirlpool.token_mint_b.to_string(),
             "CTJf74cTo3cw8acFP1YXF3QpsQUUBGBjh2k2e8xsZ6UL" // $neiro

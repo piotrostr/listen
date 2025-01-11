@@ -110,8 +110,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             pump::fetch_metadata(&Pubkey::from_str(&mint)?).await?;
         }
         Command::SellPump { mint } => {
-            let keypair =
-                Keypair::read_from_file("wtf.json").expect("read wallet");
+            let keypair = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+                .expect("read wallet");
             let rpc_client = RpcClient::new(env("RPC_URL"));
             let ata =
                 spl_associated_token_account::get_associated_token_address(
@@ -137,8 +137,8 @@ async fn main() -> Result<(), Box<dyn Error>> {
             .await?;
         }
         Command::BumpPump { mint } => {
-            let keypair =
-                Keypair::read_from_file("wtf.json").expect("read wallet");
+            let keypair = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+                .expect("read wallet");
             let rpc_client = RpcClient::new(env("RPC_URL"));
             let auth = Arc::new(
                 Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")).unwrap(),
@@ -495,7 +495,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         } => {
             let provider = Provider::new(env("RPC_URL"));
             let raydium = Raydium::new();
-            let jup = Jupiter::new();
             let start = std::time::Instant::now();
             if input_mint == "sol" {
                 input_mint = constants::SOLANA_PROGRAM_ID.to_string();
@@ -547,28 +546,14 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             let keypair = Keypair::read_from_file(&path)?;
             if let Some(amount) = amount {
-                jup.swap(SwapArgs {
-                    amm_pool: Pubkey::default(),
-                    input_token_mint: Pubkey::from_str(&input_mint)?,
-                    output_token_mint: Pubkey::from_str(&output_mint)?,
-                    amount: amount as u64,
-                    wallet: keypair,
-                    provider,
-                    confirmed: yes.unwrap_or(false),
-                    slippage: slippage.unwrap_or(800) as u64,
-                    no_sanity: true,
-                })
-                .await?;
-            } else {
-                jup.swap_entire_balance(
-                    input_mint,
-                    output_mint,
-                    keypair,
-                    provider,
-                    yes.unwrap_or(false),
-                    slippage.unwrap_or(50),
+                let quote = Jupiter::fetch_quote(
+                    &input_mint,
+                    &output_mint,
+                    amount as u64,
+                    slippage.unwrap_or(75),
                 )
                 .await?;
+                Jupiter::swap(quote, &keypair).await?;
             }
             let duration = start.elapsed();
             info!("Time elapsed: {:?}", duration);

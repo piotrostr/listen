@@ -66,3 +66,8 @@ borsh = "0.10.3"
 indicatif = "0.17"
 rig-core = "0.6.0"
 thiserror = "2.0.9"
+fastwebsockets = { version = "0.8.0", features = ["upgrade"] }
+hyper = { version = "1.4.1", features = ["full"] }
+tokio-native-tls = "0.3.1"
+hyper-util = "0.1.7"
+http-body-util = "0.1.2"
