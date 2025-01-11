@@ -52,7 +52,7 @@ borsh = "0.10.3"
 indicatif = "0.17"
 rig-core = "0.6.0"
 thiserror = "2.0.9"
-commons = { git = "https://github.com/bginsber/dlmm-sdk.git", package = "commons", version = "0.3.0", branch = "update-tokio" }
+commons = { git = "https://github.com/MeteoraAg/dlmm-sdk.git", package = "commons", version = "0.3.0" }
 timed = "0.2.1"
 jito-searcher-client = { git = "https://github.com/piotrostr/searcher-examples", version = "0.1.0" }
 jito-protos = { git = "https://github.com/piotrostr/searcher-examples", version = "0.1.0" }

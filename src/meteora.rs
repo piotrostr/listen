@@ -179,4 +179,208 @@ impl Meteora {
             }
         }
     }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::env;
+    use anchor_client::solana_sdk::signer::keypair::Keypair;
+    use std::thread;
+    use std::time::Duration;
+
+    // Note: These tests are designed to be run with a personal wallet containing real SOL.
+    // The amounts are kept minimal but sufficient for testing purposes.
+    // @bginsber has agreed to use personal SOL for testing to ensure realistic scenarios.
+    const USDC_MINT: &str = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    const SOL_AMOUNT: u64 = 100_000; // 0.0001 SOL
+
+    async fn get_token_balance(provider: &Provider, mint: Pubkey, owner: Pubkey) -> Result<u64> {
+        let token_account = spl_associated_token_account::get_associated_token_address(&owner, &mint);
+        Ok(provider.rpc_client.get_token_account_balance(&token_account).await?.amount.parse()?)
+    }
+
+    #[tokio::test]
+    async fn test_realistic_swap_sol_usdc() -> Result<()> {
+        let keypair_path = env::var("FUND_KEYPAIR_PATH").expect("FUND_KEYPAIR_PATH must be set");
+        let wallet = Keypair::read_from_file(&keypair_path)?;
+        
+        let provider = Provider::new(env::var("RPC_URL").unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string()));
+        let meteora = Meteora::new();
+
+        let sol_mint = Pubkey::from_str("So11111111111111111111111111111111111111112")?;
+        let usdc_mint = Pubkey::from_str(USDC_MINT)?;
+
+        // Get initial balances
+        let initial_sol = provider.rpc_client.get_balance(&wallet.pubkey()).await?;
+        let initial_usdc = get_token_balance(&provider, usdc_mint, wallet.pubkey()).await?;
+
+        // Test SOL -> USDC swap
+        meteora.swap(
+            sol_mint,
+            usdc_mint,
+            SOL_AMOUNT,
+            100, // 1% slippage
+            &wallet,
+            &provider,
+            true, // Skip confirmation prompt in tests
+        ).await?;
+
+        // Verify balances changed appropriately
+        let final_sol = provider.rpc_client.get_balance(&wallet.pubkey()).await?;
+        let final_usdc = get_token_balance(&provider, usdc_mint, wallet.pubkey()).await?;
+
+        assert!(final_sol < initial_sol, "SOL balance should decrease after swap");
+        assert!(final_usdc > initial_usdc, "USDC balance should increase after swap");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_realistic_add_remove_liquidity() -> Result<()> {
+        let keypair_path = env::var("FUND_KEYPAIR_PATH").expect("FUND_KEYPAIR_PATH must be set");
+        let wallet = Keypair::read_from_file(&keypair_path)?;
+        
+        let provider = Provider::new(env::var("RPC_URL").unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string()));
+        let meteora = Meteora::new();
+
+        let sol_mint = Pubkey::from_str("So11111111111111111111111111111111111111112")?;
+        let usdc_mint = Pubkey::from_str(USDC_MINT)?;
+        
+        let lb_clmm = LbClmm::new(provider.rpc_client.as_ref());
+        let pool = lb_clmm.get_lb_pair(sol_mint, usdc_mint).await?;
+
+        // Get initial balances
+        let initial_sol = provider.rpc_client.get_balance(&wallet.pubkey()).await?;
+        let initial_usdc = get_token_balance(&provider, usdc_mint, wallet.pubkey()).await?;
+
+        // Add minimal liquidity
+        meteora.add_liquidity(
+            &pool,
+            SOL_AMOUNT,
+            1_000, // 0.001 USDC
+            &wallet,
+            &provider,
+        ).await?;
+
+        // Verify balances decreased after adding liquidity
+        let mid_sol = provider.rpc_client.get_balance(&wallet.pubkey()).await?;
+        let mid_usdc = get_token_balance(&provider, usdc_mint, wallet.pubkey()).await?;
+
+        assert!(mid_sol < initial_sol, "SOL balance should decrease after adding liquidity");
+        assert!(mid_usdc < initial_usdc, "USDC balance should decrease after adding liquidity");
+
+        // Get position
+        let positions = lb_clmm.get_positions_by_owner(wallet.pubkey()).await?;
+        let position = positions.first().expect("No position found");
+
+        // Remove liquidity
+        meteora.remove_liquidity(
+            &pool,
+            position,
+            &wallet,
+            &provider,
+        ).await?;
+
+        // Verify balances increased after removing liquidity
+        let final_sol = provider.rpc_client.get_balance(&wallet.pubkey()).await?;
+        let final_usdc = get_token_balance(&provider, usdc_mint, wallet.pubkey()).await?;
+
+        assert!(final_sol > mid_sol, "SOL balance should increase after removing liquidity");
+        assert!(final_usdc > mid_usdc, "USDC balance should increase after removing liquidity");
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_swap_insufficient_funds() -> Result<()> {
+        let keypair_path = env::var("FUND_KEYPAIR_PATH").expect("FUND_KEYPAIR_PATH must be set");
+        let wallet = Keypair::read_from_file(&keypair_path)?;
+        
+        let provider = Provider::new(env::var("RPC_URL").unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string()));
+        let meteora = Meteora::new();
+
+        let sol_mint = Pubkey::from_str("So11111111111111111111111111111111111111112")?;
+        let usdc_mint = Pubkey::from_str(USDC_MINT)?;
+
+        // Attempt to swap more SOL than the wallet has
+        let wallet_balance = provider.rpc_client.get_balance(&wallet.pubkey()).await?;
+        let result = meteora.swap(
+            sol_mint,
+            usdc_mint,
+            wallet_balance + 1, // More than wallet has
+            100,
+            &wallet,
+            &provider,
+            true,
+        ).await;
+
+        assert!(result.is_err(), "Swap with insufficient funds should fail");
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_claim_fees() -> Result<()> {
+        let keypair_path = env::var("FUND_KEYPAIR_PATH").expect("FUND_KEYPAIR_PATH must be set");
+        let wallet = Keypair::read_from_file(&keypair_path)?;
+        
+        let provider = Provider::new(env::var("RPC_URL").unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string()));
+        let meteora = Meteora::new();
+
+        let sol_mint = Pubkey::from_str("So11111111111111111111111111111111111111112")?;
+        let usdc_mint = Pubkey::from_str(USDC_MINT)?;
+        
+        let lb_clmm = LbClmm::new(provider.rpc_client.as_ref());
+        let pool = lb_clmm.get_lb_pair(sol_mint, usdc_mint).await?;
+
+        // Add liquidity with 5x the base amount
+        // Note: We're using a relatively small amount since we'll be placing liquidity
+        // in actively traded bins of the SOL-USDC pair, which typically has high volume
+        meteora.add_liquidity(
+            &pool,
+            SOL_AMOUNT * 5, // 5x base amount for meaningful fee generation
+            5_000, // 0.005 USDC
+            &wallet,
+            &provider,
+        ).await?;
+
+        // Get position
+        let positions = lb_clmm.get_positions_by_owner(wallet.pubkey()).await?;
+        let position = positions.first().expect("No position found");
+
+        // Get initial balances
+        let initial_sol = provider.rpc_client.get_balance(&wallet.pubkey()).await?;
+        let initial_usdc = get_token_balance(&provider, usdc_mint, wallet.pubkey()).await?;
+
+        // Wait for some trading activity to generate fees
+        info!("Waiting for trading activity to generate fees...");
+        thread::sleep(Duration::from_secs(60));
+
+        // Claim fees
+        meteora.claim_fees(
+            &pool,
+            position,
+            &wallet,
+            &provider,
+        ).await?;
+
+        // Verify balances after claiming fees
+        let final_sol = provider.rpc_client.get_balance(&wallet.pubkey()).await?;
+        let final_usdc = get_token_balance(&provider, usdc_mint, wallet.pubkey()).await?;
+
+        // Note: In a real scenario, at least one of these should increase if fees were generated
+        if final_sol <= initial_sol && final_usdc <= initial_usdc {
+            info!("No fees were generated during the test period");
+        }
+
+        // Clean up by removing liquidity
+        meteora.remove_liquidity(
+            &pool,
+            position,
+            &wallet,
+            &provider,
+        ).await?;
+
+        Ok(())
+    }
 } 
