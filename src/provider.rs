@@ -123,11 +123,11 @@ impl Provider {
         mint: &str,
     ) -> Result<types::PriceResponse, Box<dyn std::error::Error>> {
         let url = format!(
-            "https://price.jup.ag/v4/price?ids={}&vsToken={}",
+            "https://api.jup.ag/price/v2?ids={},{}",
             mint,
             constants::SOLANA_PROGRAM_ID,
         );
-        debug!("Getting pricing from: {:?}", url);
+        println!("Getting pricing from: {:?}", url);
         let client = reqwest::Client::new();
         let res = client
             .get(url)
@@ -165,6 +165,10 @@ impl Provider {
         }
     }
 
+    /// sanity_check is for mint_authority and freeze_authority, for non
+    /// pump.fun tokens is crucial, mint authority enables minting any amount of
+    /// the token and freeze authority can renounce the ability to trade the
+    /// token for a given address
     #[timed(duration(printer = "info!"))]
     pub async fn sanity_check(
         &self,

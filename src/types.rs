@@ -1,4 +1,5 @@
 use serde::Deserialize;
+use serde_with::{serde_as, DisplayFromStr};
 use std::collections::HashMap;
 
 #[serde_with::skip_serializing_none]
@@ -9,13 +10,11 @@ pub struct PriceResponse {
     pub time_taken: f64,
 }
 
+#[serde_as]
 #[serde_with::skip_serializing_none]
 #[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
 pub struct PriceData {
     pub id: String,
-    pub mint_symbol: String,
-    pub vs_token: String,
-    pub vs_token_symbol: String,
+    #[serde_as(as = "DisplayFromStr")]
     pub price: f64,
 }

@@ -137,10 +137,8 @@ pub async fn send_jito_tx(
         _ => return Err("Failed to encode transaction".into()),
     };
 
-    // amsterdam can be ny, tokio, frankfurt, slc
-    // pick the closest region
     let res = client
-        .post("https://amsterdam.mainnet.block-engine.jito.wtf/api/v1/transactions")
+        .post("https://mainnet.block-engine.jito.wtf/api/v1/transactions")
         .header("content-type", "application/json")
         .json(&json!({
             "jsonrpc": "2.0",
@@ -159,4 +157,41 @@ pub async fn send_jito_tx(
         out["result"].as_str().unwrap_or(out.to_string().as_str())
     );
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use solana_client::nonblocking::rpc_client::RpcClient;
+    use solana_sdk::{
+        message::Message,
+        signature::Keypair,
+        signer::{EncodableKey, Signer},
+        system_instruction,
+        transaction::Transaction,
+    };
+
+    use crate::util::env;
+
+    #[tokio::test]
+    async fn test_send_jito_tx() {
+        let rpc_client = RpcClient::new(env("RPC_URL"));
+
+        let keypair = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+            .expect("Failed to read keypair");
+        let instruction = system_instruction::transfer(
+            &keypair.pubkey(),
+            &keypair.pubkey(),
+            1_000_000, // lamports (0.001 SOL)
+        );
+
+        let recent_blockhash = rpc_client
+            .get_latest_blockhash()
+            .await
+            .expect("Failed to get recent blockhash");
+
+        let message = Message::new(&[instruction], Some(&keypair.pubkey()));
+        let tx = Transaction::new(&[&keypair], message, recent_blockhash);
+
+        super::send_jito_tx(tx).await.unwrap();
+    }
 }

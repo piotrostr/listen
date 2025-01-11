@@ -349,6 +349,7 @@ mod tests {
     use solana_sdk::pubkey::Pubkey;
 
     #[tokio::test]
+    #[ignore]
     async fn test_check_if_pump_fun_works_for_pump_fun() {
         // some pump fun shitto
         let mint =

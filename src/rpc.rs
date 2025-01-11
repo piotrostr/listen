@@ -1,3 +1,4 @@
+use crate::raydium::make_compute_budget_ixs;
 use log::info;
 use solana_client::{
     rpc_client::RpcClient,
@@ -5,14 +6,10 @@ use solana_client::{
 };
 use solana_sdk::{
     commitment_config::{CommitmentConfig, CommitmentLevel},
-    pubkey::Pubkey,
     signature::{Keypair, Signature},
     signer::{EncodableKey, Signer},
     transaction::Transaction,
 };
-use std::str::FromStr;
-
-use crate::raydium::make_compute_budget_ixs;
 
 pub fn eval_rpc(rpc_url: &str) {
     info!("Evaluating RPC: {}", rpc_url);
@@ -30,8 +27,7 @@ pub fn eval_rpc(rpc_url: &str) {
     ixs.append(&mut make_compute_budget_ixs(price, max_units));
     ixs.push(solana_sdk::system_instruction::transfer(
         &wallet.pubkey(),
-        &Pubkey::from_str("9SDTi7rzsCt1Y1QDY4n6NvFHn33tcYoVYfoEuXR7dQEM")
-            .unwrap(),
+        &wallet.pubkey(),
         lamports,
     ));
     let transaction = Transaction::new_signed_with_payer(

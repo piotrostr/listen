@@ -306,6 +306,8 @@ mod tests {
     use solana_client::nonblocking::rpc_client::RpcClient;
     use solana_sdk::pubkey::Pubkey;
 
+    use crate::util::env;
+
     use super::{unpack, AmmInfo};
 
     #[tokio::test]
@@ -313,11 +315,8 @@ mod tests {
         let mint =
             Pubkey::from_str("6hm9tDfhnhVCBD6Qk8L27WabnbzfUJFs5jQpdLnNVAET")
                 .unwrap();
-        let decimals = super::get_decimals(
-            &mint,
-            &RpcClient::new("https://api.mainnet-beta.solana.com".to_string()),
-        )
-        .await;
+        let decimals =
+            super::get_decimals(&mint, &RpcClient::new(env("RPC_URL"))).await;
         assert!(decimals == 5u8);
     }
 

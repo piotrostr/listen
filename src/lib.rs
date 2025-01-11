@@ -225,6 +225,7 @@ pub mod seller_service;
 pub mod tx_parser;
 pub mod types;
 pub mod util;
+pub mod ws;
 
 mod tests;
 

@@ -9,20 +9,16 @@ use crate::{
     util::env,
 };
 
-const RPC_URL: &str = "https://api.mainnet-beta.solana.com";
-
 #[test]
-#[ignore = "This test requires a live network connection"]
 fn test_get_pricing() {
-    let provider = crate::provider::Provider::new(RPC_URL.to_string());
-    let mint = "Fv17uvL3nsD4tBJaowdKz9SUsKFoxeZdcTuGTaKgyYQU";
+    let provider = crate::provider::Provider::new(env("RPC_URL"));
+    let mint = "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump";
 
     let pricing = tokio_test::block_on(provider.get_pricing(mint)).unwrap();
     assert!(pricing.data[mint].price > 0., "Price not found");
 }
 
 #[test]
-#[ignore = "not used atm"]
 fn test_parse_notional() {
     let tx =
         serde_json::from_reader(std::fs::File::open("mock/tx.json").unwrap())
@@ -32,13 +28,11 @@ fn test_parse_notional() {
 }
 
 #[tokio::test]
-#[ignore = "This test requires a live network connection"]
 async fn test_parse_new_pool() {
     let new_pool_tx_signature: &str =
         "2nkbEdznrqqoXyxcrYML8evHtAKcNTurBBXGWACS6cxJDHYGosgVdy66gaqHzgtRWWH13bzMF4kovSEQUVYdDPku";
-    let provider = Provider::new(RPC_URL.to_string());
+    let provider = crate::provider::Provider::new(env("RPC_URL"));
     let tx = provider.get_tx(new_pool_tx_signature).await.unwrap();
-    println!("{}", serde_json::to_string_pretty(&tx).unwrap());
     let new_pool_info = tx_parser::parse_new_pool(&tx).unwrap();
     assert_eq!(
         new_pool_info.amm_pool_id.to_string(),
@@ -61,7 +55,7 @@ async fn test_sanity_check() {
     let mint =
         Pubkey::from_str("3jGenV1FXBQWKtviJUWXUwXFiA8TNV4QGF2n499HnJmw")
             .unwrap();
-    let provider = Provider::new(RPC_URL.to_string());
+    let provider = crate::provider::Provider::new(env("RPC_URL"));
     assert!(!provider.sanity_check(&mint).await.unwrap().0);
     // michi
     let mint =
@@ -78,13 +72,12 @@ fn test_parse_mint_acc() {
 }
 
 #[tokio::test]
-#[ignore = "requires a live network connection"]
 async fn test_gets_top_holders() {
     let mint =
         Pubkey::from_str("D2oKMNHb94DSgvibQxCweZPrbFEhayKBQ5eaPMC4Dvnv")
             .unwrap();
-    let (_, ok) =
-        check_top_holders(&mint, &Provider::new(env("RPC_URL")))
+    let (_, ok, _) =
+        check_top_holders(&mint, &Provider::new(env("RPC_URL")), false)
             .await
             .unwrap();
     assert!(ok);
