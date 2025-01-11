@@ -9,6 +9,7 @@ use jito_searcher_client::{
     send_bundle_no_wait, send_bundle_with_confirmation,
 };
 use log::{error, info};
+use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
@@ -16,6 +17,9 @@ use solana_sdk::system_instruction::transfer;
 use solana_sdk::transaction::Transaction;
 use solana_sdk::{
     instruction::Instruction, transaction::VersionedTransaction,
+};
+use solana_transaction_status::{
+    Encodable, EncodedTransaction, UiTransactionEncoding,
 };
 use tonic::{codegen::InterceptedService, transport::Channel};
 
@@ -119,5 +123,40 @@ pub async fn send_swap_tx_no_wait(
 
     info!("Bundle sent. UUID: {}", res.into_inner().uuid);
 
+    Ok(())
+}
+
+#[timed::timed(duration(printer = "info!"))]
+pub async fn send_jito_tx(
+    tx: Transaction,
+) -> Result<(), Box<dyn std::error::Error>> {
+    let client = reqwest::Client::new();
+
+    let encoded_tx = match tx.encode(UiTransactionEncoding::Binary) {
+        EncodedTransaction::LegacyBinary(b) => b,
+        _ => return Err("Failed to encode transaction".into()),
+    };
+
+    // amsterdam can be ny, tokio, frankfurt, slc
+    // pick the closest region
+    let res = client
+        .post("https://amsterdam.mainnet.block-engine.jito.wtf/api/v1/transactions")
+        .header("content-type", "application/json")
+        .json(&json!({
+            "jsonrpc": "2.0",
+            "id": 1,
+            "method": "sendTransaction",
+            "params": [encoded_tx]
+        }))
+        .send()
+        .await
+        .expect("send tx");
+
+    let out = res.json::<serde_json::Value>().await?;
+
+    info!(
+        "{}",
+        out["result"].as_str().unwrap_or(out.to_string().as_str())
+    );
     Ok(())
 }
