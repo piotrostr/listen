@@ -1008,7 +1008,6 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    #[ignore]
     async fn test_pump_bump() {
         dotenv::from_filename(".env").unwrap();
         let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
@@ -1093,7 +1092,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_buy_pump_token() {
         dotenv::from_filename(".env").unwrap();
         // 0.00069 sol

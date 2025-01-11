@@ -330,7 +330,7 @@ pub async fn listen_for_burn(
 }
 
 pub async fn check_if_pump_fun(mint: &Pubkey) -> Result<bool, Box<dyn Error>> {
-    // easier way
+    // easier way, also skips bundled tokens without the derived "pump" suffix
     if mint.to_string().ends_with("pump") {
         Ok(true)
     } else {
@@ -349,11 +349,10 @@ mod tests {
     use solana_sdk::pubkey::Pubkey;
 
     #[tokio::test]
-    #[ignore]
     async fn test_check_if_pump_fun_works_for_pump_fun() {
         // some pump fun shitto
         let mint =
-            Pubkey::from_str("2yqz8eJvJu1eiaYz34r9i7YbyTveRRJwPFhRJenp6yed")
+            Pubkey::from_str("FAJVRnNHuwozDi5UL8guMyobveadXDFxeikvN4Hupump")
                 .unwrap();
         let res = super::check_if_pump_fun(&mint).await.unwrap();
         assert!(res);

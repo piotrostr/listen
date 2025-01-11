@@ -46,7 +46,7 @@ mod tests {
     use crate::checker_service::TokenResult;
 
     #[tokio::test]
-    #[ignore]
+    #[ignore = "integration test"]
     async fn test_collector() {
         let collector = super::new().await.unwrap();
         let token_result = TokenResult::default();

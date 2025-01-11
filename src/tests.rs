@@ -49,7 +49,6 @@ async fn test_parse_new_pool() {
 }
 
 #[tokio::test]
-#[ignore = "This test requires a live network connection"]
 async fn test_sanity_check() {
     // non-renounced freeze authority
     let mint =
