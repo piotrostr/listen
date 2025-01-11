@@ -1,4 +1,5 @@
 use solana_sdk::{pubkey, pubkey::Pubkey};
+use std::str::FromStr;
 
 
 pub const SOLANA_PROGRAM_ID: Pubkey = pubkey!("So11111111111111111111111111111111111111112");
@@ -18,6 +19,9 @@ pub const FEE_PROGRAM_ID: Pubkey = pubkey!("7YttLkHDoNj9wyDur5pM1ejNaAvT9X4eqaYc
 pub const JITO_TIP_PUBKEY: Pubkey = pubkey!("Cw8CFyM9FkoMi7K7Crf6HNQqf4uEMzpKw6QNghXLvLkY");
 
 pub const RAYDIUM_AMM_PUBKEY: Pubkey = pubkey!("5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1"); // TODO: dublicate of RAYDIUM_AUTHORITY_V4_PUBKEY
+
+// Meteora program ID
+pub const METEORA_PROGRAM_ID: Pubkey = pubkey!("LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo");
 
 // TODO
 // another rug method is as in case of Fwnf2vDqbHv6GH4eXQHpYmqSMynHrW2yBz8dXxExE5Kq
