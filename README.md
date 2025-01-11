@@ -11,6 +11,9 @@
 <p align="center">
 <code>listen</code> is a Solana Swiss-Knife toolkit for algorithmic trading
 </p>
+<p align="center">
+<strong>CA: </strong><code>Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump</code>
+</p>
 
 ## Features
 
