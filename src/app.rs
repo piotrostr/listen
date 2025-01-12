@@ -27,6 +27,10 @@ pub struct Args {
 
 #[derive(Debug, Parser)]
 pub enum Command {
+    ListenService {
+        #[arg(long, default_value_t = 8080)]
+        port: u16,
+    },
     ArcAgent {},
     BundleStatus {
         #[arg(long)]

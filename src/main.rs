@@ -20,8 +20,9 @@ use listen::{
     pump::{self},
     pump_service,
     raydium::{self, Raydium, SwapArgs},
-    rpc, seller, seller_service, tx_parser, util, BlockAndProgramSubscribable,
-    Listener, Provider,
+    rpc, seller, seller_service,
+    service::run_listen_service,
+    tx_parser, util, BlockAndProgramSubscribable, Listener, Provider,
 };
 use solana_client::{
     nonblocking::{self, rpc_client::RpcClient},
@@ -62,6 +63,9 @@ async fn main() -> Result<(), Box<dyn Error>> {
     let sol_price = 210.;
 
     match app.command {
+        Command::ListenService { port: _port } => {
+            run_listen_service().await?;
+        }
         Command::ArcAgent {} => {
             agent::make_agent().await.expect("make agent");
         }

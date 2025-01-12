@@ -63,6 +63,6 @@ impl ListenService {
 // Main entry point
 pub async fn run_listen_service() -> std::io::Result<()> {
     let service =
-        ListenService::new(8080).expect("Failed to create listen service");
+        ListenService::new(6969).expect("Failed to create listen service");
     service.start().await
 }
