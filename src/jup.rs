@@ -165,7 +165,7 @@ impl Jupiter {
     pub async fn swap(
         quote_response: QuoteResponse,
         signer: &Keypair,
-    ) -> Result<(), Box<dyn std::error::Error>> {
+    ) -> Result<String, Box<dyn std::error::Error>> {
         let swap_request = SwapRequest {
             user_public_key: signer.pubkey().to_string(),
             wrap_and_unwrap_sol: true,
@@ -233,9 +233,9 @@ impl Jupiter {
             Transaction::new_with_payer(&instructions, Some(&signer.pubkey()));
         tx.sign(&[signer], recent_blockhash);
 
-        send_jito_tx(tx).await?;
+        let result = send_jito_tx(tx).await?;
 
-        Ok(())
+        Ok(result)
     }
 
     fn convert_instruction_data(

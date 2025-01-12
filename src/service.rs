@@ -1,6 +1,6 @@
 use crate::blockhash::update_latest_blockhash;
 use crate::handlers::{
-    handle_balance, handle_buy, handle_pump_buy, handle_pump_sell, handle_sell,
+    handle_balance, handle_pump_buy, handle_pump_sell, handle_swap,
 };
 use crate::state::ServiceState;
 use crate::util::{env, healthz};
@@ -48,16 +48,10 @@ impl ListenService {
         HttpServer::new(move || {
             App::new()
                 .app_data(Data::new(state.clone()))
-                // Buy endpoints
-                .service(handle_buy)
-                // Sell endpoints
-                .service(handle_sell)
+                .service(handle_swap)
                 .service(handle_balance)
-                // Pump endpoints
                 .service(handle_pump_buy)
                 .service(handle_pump_sell)
-                // Check endpoints
-                // Health check
                 .service(healthz)
         })
         .bind(("0.0.0.0", self.port))?
