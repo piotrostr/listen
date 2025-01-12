@@ -417,7 +417,7 @@ pub async fn make_swap_ixs(
     // this step adds some latency, could be pre-calculated while waiting for the JITO leader
     let other_amount_threshold = if !quick {
         let result = raydium_library::amm::calculate_pool_vault_amounts(
-            &rpc_client,
+            rpc_client,
             &swap_context.amm_program,
             &swap_context.amm_pool,
             &swap_context.amm_keys,

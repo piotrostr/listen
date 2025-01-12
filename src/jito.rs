@@ -9,6 +9,7 @@ use jito_searcher_client::{
     send_bundle_no_wait, send_bundle_with_confirmation,
 };
 use log::{error, info};
+use serde::Deserialize;
 use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::signature::Keypair;
@@ -126,10 +127,17 @@ pub async fn send_swap_tx_no_wait(
     Ok(())
 }
 
+#[derive(Debug, Deserialize)]
+pub struct JitoResponse {
+    pub jsonrpc: String,
+    pub result: String,
+    pub id: i64,
+}
+
 #[timed::timed(duration(printer = "info!"))]
 pub async fn send_jito_tx(
     tx: Transaction,
-) -> Result<(), Box<dyn std::error::Error>> {
+) -> Result<String, Box<dyn std::error::Error>> {
     let client = reqwest::Client::new();
 
     let encoded_tx = match tx.encode(UiTransactionEncoding::Binary) {
@@ -150,13 +158,11 @@ pub async fn send_jito_tx(
         .await
         .expect("send tx");
 
-    let out = res.json::<serde_json::Value>().await?;
+    let jito_response = res.json::<JitoResponse>().await?;
 
-    info!(
-        "{}",
-        out["result"].as_str().unwrap_or(out.to_string().as_str())
-    );
-    Ok(())
+    info!("sent jito tx: {}", jito_response.result);
+
+    Ok(jito_response.result)
 }
 
 #[cfg(test)]
@@ -174,6 +180,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_send_jito_tx() {
+        dotenv::dotenv().ok();
         let rpc_client = RpcClient::new(env("RPC_URL"));
 
         let keypair = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
