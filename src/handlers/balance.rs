@@ -8,7 +8,6 @@ use actix_web::{
 };
 use log::info;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use solana_sdk::pubkey::Pubkey;
 
 #[derive(Debug, Deserialize)]
@@ -54,7 +53,7 @@ pub async fn handle_balance(
 ) -> Result<HttpResponse, Error> {
     let balance = Provider::get_balance(&state.rpc_client, &request.pubkey)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(BalanceResponse {
         pubkey: request.pubkey,
@@ -74,7 +73,7 @@ pub async fn handle_token_balance(
         &request.mint,
     )
     .await
-    .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+    .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(TokenBalanceResponse {
         pubkey: request.pubkey,
@@ -87,11 +86,10 @@ pub async fn handle_token_balance(
 #[timed::timed(duration(printer = "info!"))]
 pub async fn handle_pricing(
     request: Json<PricingRequest>,
-    state: Data<ServiceState>,
 ) -> Result<HttpResponse, Error> {
     let price_data = Provider::get_pricing(&request.mint)
         .await
-        .map_err(|e| actix_web::error::ErrorInternalServerError(e))?;
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(price_data))
 }

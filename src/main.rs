@@ -349,16 +349,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             }
             let coin_mint_is_sol = market_keys.coin_mint.to_string()
                 == constants::SOLANA_PROGRAM_ID.to_string();
-            let owner_balance = provider
-                .get_spl_balance(
-                    &Pubkey::from_str(owner.as_str()).unwrap(),
-                    if coin_mint_is_sol {
-                        &market_keys.pc_mint
-                    } else {
-                        &market_keys.coin_mint
-                    },
-                )
-                .await?;
+            let owner_balance = Provider::get_spl_balance(
+                &rpc_client,
+                &Pubkey::from_str(owner.as_str()).unwrap(),
+                if coin_mint_is_sol {
+                    &market_keys.pc_mint
+                } else {
+                    &market_keys.coin_mint
+                },
+            )
+            .await?;
 
             loop {
                 let result = amm::calculate_pool_vault_amounts(
