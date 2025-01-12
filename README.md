@@ -1,5 +1,5 @@
 <p align="center">
-<img src="frontend/public/listen.svg" width="25%" />
+<img src="frontend/public/listen-more.png" width="25%" />
 <br />
 </p>
 <p align="center">
