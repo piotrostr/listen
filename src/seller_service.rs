@@ -6,7 +6,6 @@ use crate::http_client::HttpClient;
 use crate::util::healthz;
 use crate::{
     buyer,
-    provider::Provider,
     util::{env, pubkey_to_string, string_to_pubkey},
 };
 use crate::{constants, seller};
@@ -60,7 +59,7 @@ async fn handle_sell(
     actix_rt::spawn(async move {
         let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
             .expect("read wallet");
-        let provider = Provider::new(env("RPC_URL"));
+        let rpc_client = RpcClient::new(env("RPC_URL"));
         let token_account =
             spl_associated_token_account::get_associated_token_address(
                 &wallet.pubkey(),
@@ -71,7 +70,7 @@ async fn handle_sell(
             .expect("make pubsub client");
         let balance = tokio::select! {
                 balance = seller::get_spl_balance_stream(&pubsub_client, &token_account) => balance.expect("balance stream"),
-                balance = seller::get_spl_balance(&provider, &token_account) => balance.expect("balance rpc"),
+                balance = seller::get_spl_balance(&rpc_client, &token_account) => balance.expect("balance rpc"),
         };
         // TODO generally, those params should be different for pump.fun coins and
         // the standard coins
@@ -83,7 +82,7 @@ async fn handle_sell(
             // load amm keys
             let amm_program = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
             let amm_keys = load_amm_keys(
-                &provider.rpc_client,
+                &rpc_client,
                 &amm_program,
                 &sell_request.amm_pool,
             )
@@ -108,7 +107,7 @@ async fn handle_sell(
                 tp_reached: vec![true, true, true, true, true],
             };
             executor
-                .execute(&provider, &pubsub_client, &sell_request.amm_pool)
+                .execute(&rpc_client, &pubsub_client, &sell_request.amm_pool)
                 .await
                 .expect("execute");
         } else {
@@ -123,7 +122,7 @@ async fn handle_sell(
                 &sell_request.output_mint,
                 balance, // sell initial and leave the remainder
                 &wallet,
-                &provider,
+                &rpc_client,
             )
             .await
             .expect("swap");

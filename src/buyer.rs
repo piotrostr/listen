@@ -4,7 +4,6 @@ use std::{
 
 use crate::{
     constants, jito,
-    provider::Provider,
     raydium::{self, get_burn_pct},
     util::env,
 };
@@ -29,13 +28,13 @@ pub async fn swap(
     output_mint: &Pubkey,
     amount: u64,
     wallet: &Keypair,
-    provider: &Provider,
+    rpc_client: &RpcClient,
 ) -> Result<(), Box<dyn Error + Send + Sync>> {
     let mut retries = 0;
     let mut backoff = 100u64;
     let swap_context = loop {
         match raydium::make_swap_context(
-            provider,
+            rpc_client,
             *amm_pool,
             *input_mint,
             *output_mint,
@@ -67,7 +66,7 @@ pub async fn swap(
     let start = std::time::Instant::now();
     let quick = true;
     let mut ixs =
-        raydium::make_swap_ixs(provider, wallet, &swap_context, quick)
+        raydium::make_swap_ixs(rpc_client, wallet, &swap_context, quick)
             .await
             .expect("make swap ixs");
 
@@ -85,7 +84,7 @@ pub async fn swap(
         50000,
         wallet,
         &mut searcher_client,
-        &provider.rpc_client,
+        rpc_client,
     )
     .await
     .expect("send swap tx (jito)");
@@ -107,10 +106,9 @@ pub enum TopHoldersCheckError {
 
 pub async fn check_top_holders(
     mint: &Pubkey,
-    provider: &Provider,
+    rpc_client: &RpcClient,
     string_output: bool,
 ) -> Result<(f64, bool, String), TopHoldersCheckError> {
-    let rpc_client = &provider.rpc_client;
     let top_holders = rpc_client
         .get_token_largest_accounts(mint)
         .await

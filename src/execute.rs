@@ -3,6 +3,7 @@ use futures_util::StreamExt;
 use log::{info, warn};
 use raydium_library::amm;
 use solana_account_decoder::{UiAccountData, UiAccountEncoding};
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::{
     nonblocking::pubsub_client::PubsubClient, rpc_config::RpcAccountInfoConfig,
 };
@@ -11,7 +12,7 @@ use solana_sdk::{
     signature::Keypair,
 };
 
-use crate::{buyer, constants, seller::Pool, Provider};
+use crate::{buyer, constants, seller::Pool};
 
 #[derive(Debug)]
 pub struct Executor {
@@ -35,7 +36,7 @@ pub struct Executor {
 impl Executor {
     pub async fn execute(
         &mut self,
-        provider: &Provider,
+        rpc_client: &RpcClient,
         pubsub_client: &PubsubClient,
         amm_pool: &Pubkey,
     ) -> Result<bool, Box<dyn std::error::Error>> {
@@ -104,7 +105,7 @@ impl Executor {
                                         &constants::SOLANA_PROGRAM_ID,
                                         sell_amount,
                                         &self.funder,
-                                        provider
+                                        rpc_client
                                     ).await.expect("swap");
                                     self.remaining_token_balance -= sell_amount;
                                 }
@@ -128,7 +129,7 @@ impl Executor {
                                 &constants::SOLANA_PROGRAM_ID,
                                 sell_amount,
                                 &self.funder,
-                                provider
+                                rpc_client
                             ).await.expect("swap");
                             self.remaining_token_balance -= sell_amount;
                         }
