@@ -191,7 +191,10 @@ const App = () => {
           />
           
           <motion.div className="mb-6">
-            <AnimatedTitle text="listen-rs" />
+            <AnimatedTitle 
+              text="listen-rs"
+              className="text-6xl md:text-7xl font-bold" 
+            />
           </motion.div>
 
           <motion.p 
