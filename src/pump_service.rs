@@ -1,3 +1,4 @@
+use crate::blockhash::update_latest_blockhash;
 use crate::constants::JITO_TIP_PUBKEY;
 use crate::jito::SearcherClient;
 use crate::pump::{self, PumpBuyRequest};
@@ -7,7 +8,7 @@ use actix_web::{get, post, web::Json, App, Error, HttpResponse, HttpServer};
 use futures_util::StreamExt;
 use jito_protos::searcher::SubscribeBundleResultsRequest;
 use jito_searcher_client::{get_searcher_client, send_bundle_no_wait};
-use log::{debug, error, info};
+use log::info;
 use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::hash::Hash;
@@ -16,31 +17,9 @@ use solana_sdk::signer::{EncodableKey, Signer};
 use solana_sdk::system_instruction::transfer;
 use solana_sdk::transaction::{Transaction, VersionedTransaction};
 use std::sync::Arc;
-use std::time::Duration;
 use tokio::sync::Mutex;
-use tokio::time::interval;
 
-async fn update_latest_blockhash(
-    rpc_client: Arc<RpcClient>,
-    latest_blockhash: Arc<Mutex<Hash>>,
-) {
-    let mut interval = interval(Duration::from_secs(2));
-    loop {
-        interval.tick().await;
-        match rpc_client.get_latest_blockhash().await {
-            Ok(new_blockhash) => {
-                let mut blockhash = latest_blockhash.lock().await;
-                *blockhash = new_blockhash;
-                debug!("Updated latest blockhash: {}", new_blockhash);
-            }
-            Err(e) => {
-                error!("Failed to get latest blockhash: {}", e);
-            }
-        }
-    }
-}
-
-pub struct AppState {
+pub struct PumpAppState {
     pub wallet: Arc<Mutex<Keypair>>,
     pub searcher_client: Arc<Mutex<SearcherClient>>,
     pub latest_blockhash: Arc<Mutex<Hash>>,
@@ -48,7 +27,7 @@ pub struct AppState {
 
 #[get("/blockhash")]
 #[timed::timed(duration(printer = "info!"))]
-pub async fn get_blockhash(state: Data<AppState>) -> HttpResponse {
+pub async fn get_blockhash(state: Data<PumpAppState>) -> HttpResponse {
     let blockhash = state.latest_blockhash.lock().await;
     HttpResponse::Ok().json(json!({
         "blockhash": blockhash.to_string()
@@ -59,7 +38,7 @@ pub async fn get_blockhash(state: Data<AppState>) -> HttpResponse {
 #[timed::timed(duration(printer = "info!"))]
 pub async fn handle_pump_buy(
     pump_buy_request: Json<PumpBuyRequest>,
-    state: Data<AppState>,
+    state: Data<PumpAppState>,
 ) -> Result<HttpResponse, Error> {
     info!(
         "handling pump buy req {}",
@@ -133,7 +112,7 @@ pub async fn run_pump_service() -> std::io::Result<()> {
         .expect("subscribe bundle results")
         .into_inner();
 
-    let app_state = Data::new(AppState {
+    let app_state = Data::new(PumpAppState {
         wallet,
         searcher_client,
         latest_blockhash: Arc::new(Mutex::new(Hash::default())),

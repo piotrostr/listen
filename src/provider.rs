@@ -31,34 +31,25 @@ pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
 // Provider provides the data, contains both RPC client that can
 // communicate over the REST interface and utilities like getting
 // the pricing data from Jupiter
-pub struct Provider {
-    pub rpc_client: RpcClient,
-}
+pub struct Provider {}
 
 impl Provider {
-    pub fn new(rpc_url: String) -> Provider {
-        Provider {
-            rpc_client: get_client(rpc_url.as_str()).unwrap(),
-        }
-    }
-
     #[timed(duration(printer = "info!"))]
     pub async fn get_balance(
-        &self,
+        rpc_client: &RpcClient,
         pubkey: &Pubkey,
     ) -> Result<u64, Box<dyn std::error::Error>> {
-        let balance = self.rpc_client.get_balance(pubkey).await?;
+        let balance = rpc_client.get_balance(pubkey).await?;
         Ok(balance)
     }
 
     #[timed(duration(printer = "info!"))]
     pub async fn get_spl_balance(
-        &self,
+        rpc_client: &RpcClient,
         pubkey: &Pubkey,
         mint: &Pubkey,
     ) -> Result<u64, Box<dyn std::error::Error>> {
-        let token_accounts = self
-            .rpc_client
+        let token_accounts = rpc_client
             .get_token_accounts_by_owner(
                 pubkey,
                 TokenAccountsFilter::Mint(*mint),
@@ -66,8 +57,7 @@ impl Provider {
             .await?;
         match token_accounts.first() {
             Some(token_account) => {
-                let acount_info = self
-                    .rpc_client
+                let acount_info = rpc_client
                     .get_account(&Pubkey::from_str(
                         token_account.pubkey.as_str(),
                     )?)
@@ -80,9 +70,9 @@ impl Provider {
         }
     }
 
-    #[timed(duration(printer = "println!"))]
+    #[timed(duration(printer = "info!"))]
     pub async fn get_tx(
-        &self,
+        rpc_client: &RpcClient,
         signature: &str,
     ) -> Result<
         EncodedConfirmedTransactionWithStatusMeta,
@@ -92,8 +82,7 @@ impl Provider {
         let mut backoff = 100;
         let retries = 5;
         for _ in 0..retries {
-            match self
-                .rpc_client
+            match rpc_client
                 .get_transaction_with_config(
                     &sig,
                     RpcTransactionConfig {
@@ -119,7 +108,6 @@ impl Provider {
 
     #[timed(duration(printer = "info!"))]
     pub async fn get_pricing(
-        &self,
         mint: &str,
     ) -> Result<types::PriceResponse, Box<dyn std::error::Error>> {
         let url = format!(
@@ -140,13 +128,12 @@ impl Provider {
 
     #[timed(duration(printer = "info!"))]
     pub async fn send_tx(
-        &self,
+        rpc_client: &RpcClient,
         tx: &impl SerializableTransaction,
         _skip_preflight: bool,
     ) -> Result<String, Box<dyn std::error::Error>> {
         let start = std::time::Instant::now();
-        match self
-            .rpc_client
+        match rpc_client
             .send_transaction(
                 tx,
                 // CommitmentConfig::processed(),
@@ -171,10 +158,10 @@ impl Provider {
     /// token for a given address
     #[timed(duration(printer = "info!"))]
     pub async fn sanity_check(
-        &self,
+        rpc_client: &RpcClient,
         mint: &Pubkey,
     ) -> Result<(bool, String), Box<dyn std::error::Error>> {
-        let account = self.rpc_client.get_account(mint).await?;
+        let account = rpc_client.get_account(mint).await?;
         // recommended approach
         // get the token account mint based on the account too to confirm
         // skipping this check for the time being

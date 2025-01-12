@@ -3,7 +3,6 @@ use crate::seller_service::SellRequest;
 use crate::util::healthz;
 use crate::{
     buyer,
-    provider::Provider,
     util::{env, pubkey_to_string, string_to_pubkey},
 };
 use actix_web::post;
@@ -12,6 +11,7 @@ use actix_web::{App, Error, HttpResponse, HttpServer};
 use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::EncodableKey;
@@ -48,14 +48,14 @@ async fn handle_buy(
     tokio::spawn(async move {
         let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
             .expect("read fund keypair");
-        let provider = &Provider::new(env("RPC_URL").to_string());
+        let rpc_client = RpcClient::new(env("RPC_URL"));
         buyer::swap(
             &buy_request.amm_pool,
             &buy_request.input_mint,
             &buy_request.output_mint,
             buy_request.amount,
             &wallet,
-            provider,
+            &rpc_client,
         )
         .await
         .expect("buy");

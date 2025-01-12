@@ -43,8 +43,8 @@
 //!
 //!         // Spawn a task to handle the RPC calls
 //!         tokio::spawn(async move {
-//!             let provider = Provider::new(env("RPC_URL"));
-//!             let result = check_top_holders(&mint, &provider, true).await;
+//!             let rpc_client = RpcClient::new(env("RPC_URL"));
+//!             let result = check_top_holders(&mint, &rpc_client, true).await;
 //!             let _ = tx.send(result).await;
 //!         });
 //!
@@ -201,6 +201,7 @@ pub mod address;
 pub mod agent;
 pub mod app;
 pub mod ata;
+pub mod blockhash;
 pub mod buyer;
 pub mod buyer_service;
 pub mod checker;
@@ -208,6 +209,7 @@ pub mod checker_service;
 pub mod collector;
 pub mod constants;
 pub mod execute;
+pub mod handlers;
 pub mod http_client;
 pub mod jito;
 pub mod jup;
@@ -222,6 +224,8 @@ pub mod raydium;
 pub mod rpc;
 pub mod seller;
 pub mod seller_service;
+pub mod service;
+pub mod state;
 pub mod tx_parser;
 pub mod types;
 pub mod util;

@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use std::str::FromStr;
 
-use log::{debug, error, info, warn};
+use log::{debug, info, warn};
 use raydium_library::amm;
 use raydium_library::amm::AmmKeys;
 use raydium_library::amm::MarketPubkeys;
@@ -18,6 +18,7 @@ use spl_token::state::Mint;
 use std::error::Error;
 use timed::timed;
 
+use crate::jito::send_jito_tx;
 use crate::seller_service::load_amm_keys;
 use crate::{constants, Provider};
 use futures_util::StreamExt;
@@ -33,7 +34,6 @@ use solana_client::rpc_filter::MemcmpEncodedBytes;
 use solana_client::rpc_filter::RpcFilterType;
 use solana_sdk::instruction::Instruction;
 use solana_sdk::program_pack::Pack;
-use solana_sdk::transaction::VersionedTransaction;
 use solana_sdk::{
     pubkey::Pubkey, signature::Keypair, signer::Signer,
     transaction::Transaction,
@@ -124,34 +124,6 @@ pub async fn sweep_raydium(
     );
 
     for holding in holdings {
-        // if let Some(matching_pool) = pools_map.get(&holding.mint.to_string()) {
-        // let sol_pubkey = Pubkey::from_str(constants::SOLANA_PROGRAM_ID)?;
-        // let (input_token_mint, output_token_mint) =
-        //     if quote_or_base_map[&holding.mint.to_string()] == "base" {
-        //         (holding.mint, sol_pubkey)
-        //     } else {
-        //         (sol_pubkey, holding.mint)
-        //     };
-        // match Raydium::new()
-        //     .swap(SwapArgs {
-        //         amount: holding.amount,
-        //         wallet: Keypair::read_from_file(&wallet_path)?,
-        //         amm_pool: Pubkey::from_str(
-        //             matching_pool["id"].as_str().unwrap(),
-        //         )?,
-        //         slippage: 1,
-        //         provider: Provider::new(env("RPC_URL")),
-        //         confirmed: true,
-        //         input_token_mint,
-        //         output_token_mint,
-        //         no_sanity: true,
-        //     })
-        //     .await
-        // {
-        //     Ok(_) => {}
-        //     Err(e) => {
-        //         warn!("swap failed: {}", e);
-        // // burn the token instead
         let _frozenlist = ["BEhY5iV6NNGcYnM3miZWAc5jau7Z37foQyQ3BdnyAAGn"];
         info!("{} burning token instead", holding.mint);
         let tx = Transaction::new_signed_with_payer(
@@ -187,11 +159,6 @@ pub async fn sweep_raydium(
                 warn!("burn transaction failed: {}", e)
             }
         };
-        //     }
-        // };
-        // } else {
-        //     info!("no pool found for holding: {}", holding.mint);
-        // }
     }
 
     Ok(())
@@ -241,7 +208,7 @@ pub struct SwapArgs {
     pub amount: u64,
     pub slippage: u64,
     pub wallet: Keypair,
-    pub provider: Provider,
+    pub rpc_client: RpcClient,
     pub confirmed: bool,
     /// no_sanity: skip sanity checks
     pub no_sanity: bool,
@@ -383,7 +350,7 @@ pub fn calc_result_to_financials(
 }
 
 pub async fn make_swap_context(
-    provider: &Provider,
+    rpc_client: &RpcClient,
     amm_pool: Pubkey,
     input_token_mint: Pubkey,
     output_token_mint: Pubkey,
@@ -393,11 +360,10 @@ pub async fn make_swap_context(
 ) -> Result<SwapContext, Box<dyn Error>> {
     let amm_program = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
     // load amm keys
-    let amm_keys =
-        load_amm_keys(&provider.rpc_client, &amm_program, &amm_pool).await?;
+    let amm_keys = load_amm_keys(rpc_client, &amm_program, &amm_pool).await?;
     // load market keys
     let market_keys = amm::openbook::get_keys_for_market(
-        &provider.rpc_client,
+        rpc_client,
         &amm_keys.market_program,
         &amm_keys.market,
     )
@@ -408,7 +374,7 @@ pub async fn make_swap_context(
     };
     let user_source = handle_token_account(
         &mut swap,
-        provider,
+        rpc_client,
         &input_token_mint,
         amount,
         &wallet.pubkey(),
@@ -417,7 +383,7 @@ pub async fn make_swap_context(
     .await?;
     let user_destination = handle_token_account(
         &mut swap,
-        provider,
+        rpc_client,
         &output_token_mint,
         0,
         &wallet.pubkey(),
@@ -442,7 +408,7 @@ pub async fn make_swap_context(
 
 #[timed(duration(printer = "info!"))]
 pub async fn make_swap_ixs(
-    provider: &Provider,
+    rpc_client: &RpcClient,
     wallet: &Keypair,
     swap_context: &SwapContext,
     quick: bool,
@@ -451,7 +417,7 @@ pub async fn make_swap_ixs(
     // this step adds some latency, could be pre-calculated while waiting for the JITO leader
     let other_amount_threshold = if !quick {
         let result = raydium_library::amm::calculate_pool_vault_amounts(
-            &provider.rpc_client,
+            &rpc_client,
             &swap_context.amm_program,
             &swap_context.amm_pool,
             &swap_context.amm_keys,
@@ -491,8 +457,7 @@ pub async fn make_swap_ixs(
         )
         .unwrap_or(0);
 
-        let mint_account = provider
-            .rpc_client
+        let mint_account = rpc_client
             .get_account(&swap_context.output_token_mint)
             .await?;
         let mint_data = Mint::unpack(&mint_account.data)?;
@@ -571,7 +536,7 @@ impl Raydium {
     #[deprecated = "slow and not production required"]
     pub async fn get_amm_pool_id(
         &self,
-        provider: &Provider,
+        rpc_client: &RpcClient,
         input_mint: &Pubkey,
         output_mint: &Pubkey,
     ) -> Pubkey {
@@ -579,8 +544,8 @@ impl Raydium {
         const INPUT_MINT_OFFSET: usize = 53;
         const OUTPUT_MINT_OFFSET: usize = 85;
 
-        let _accounts = provider
-            .rpc_client
+        let _accounts =
+            rpc_client
             .get_program_accounts_with_config(
                 &constants::OPENBOOK_PROGRAM_ID,
                 RpcProgramAccountsConfig {
@@ -626,12 +591,12 @@ impl Raydium {
             amount,
             slippage,
             wallet,
-            provider,
+            rpc_client,
             confirmed,
             no_sanity,
         } = swap_args;
         let swap_context = self::make_swap_context(
-            &provider,
+            &rpc_client,
             amm_pool,
             input_token_mint,
             output_token_mint,
@@ -640,9 +605,13 @@ impl Raydium {
             amount,
         )
         .await?;
-        let ixs =
-            self::make_swap_ixs(&provider, &wallet, &swap_context, no_sanity)
-                .await?;
+        let ixs = self::make_swap_ixs(
+            &rpc_client,
+            &wallet,
+            &swap_context,
+            no_sanity,
+        )
+        .await?;
         info!(
             "{}",
             serde_json::to_string_pretty(&json!({
@@ -664,27 +633,18 @@ impl Raydium {
             ixs.as_slice(),
             Some(&wallet.pubkey()),
             &[&wallet],
-            provider.rpc_client.get_latest_blockhash().await?,
+            rpc_client.get_latest_blockhash().await?,
         );
-        let tx = VersionedTransaction::from(tx);
-        let sim_res = provider.rpc_client.simulate_transaction(&tx).await?;
+        let sim_res = rpc_client.simulate_transaction(&tx).await?;
         info!("Simulation: {}", serde_json::to_string_pretty(&sim_res)?);
-        match provider.send_tx(&tx, true).await {
-            Ok(signature) => {
-                info!("Transaction {} successful", signature);
-                return Ok(());
-            }
-            Err(e) => {
-                error!("Transaction failed: {}", e);
-            }
-        };
+        send_jito_tx(tx).await?;
         Ok(())
     }
 }
 
 pub async fn handle_token_account(
     swap: &mut Swap,
-    provider: &Provider,
+    rpc_client: &RpcClient,
     mint: &Pubkey,
     amount: u64,
     owner: &Pubkey,
@@ -692,8 +652,7 @@ pub async fn handle_token_account(
 ) -> Result<Pubkey, Box<dyn Error>> {
     // two cases - an account is a token account or a native account (WSOL)
     if mint.eq(&constants::SOLANA_PROGRAM_ID) {
-        let rent = provider
-            .rpc_client
+        let rent = rpc_client
             .get_minimum_balance_for_rent_exemption(
                 spl_token::state::Account::LEN,
             )

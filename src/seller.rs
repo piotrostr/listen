@@ -15,7 +15,7 @@ use solana_sdk::{
 };
 use spl_token::state::Mint;
 
-use crate::{constants, Provider};
+use crate::constants;
 
 #[derive(Debug, Default)]
 pub struct VaultState {
@@ -226,16 +226,12 @@ pub async fn get_decimals(mint: &Pubkey, rpc_client: &RpcClient) -> u8 {
 }
 
 pub async fn get_spl_balance(
-    provider: &Provider,
+    rpc_client: &RpcClient,
     token_account: &Pubkey,
 ) -> Result<u64, Box<dyn std::error::Error>> {
     let mut backoff = 100;
     for _ in 0..12 {
-        match provider
-            .rpc_client
-            .get_token_account_balance(token_account)
-            .await
-        {
+        match rpc_client.get_token_account_balance(token_account).await {
             Ok(balance) => {
                 if balance.amount == "0" {
                     continue;

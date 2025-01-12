@@ -3,13 +3,13 @@ use rig::providers::openai;
 use rig::{completion::ToolDefinition, tool::Tool};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use std::str::FromStr;
 use tokio::sync::mpsc;
 
 use crate::buyer::check_top_holders;
 use crate::util::env;
-use crate::Provider;
 
 #[derive(Debug, thiserror::Error)]
 pub enum TopHoldersError {
@@ -70,8 +70,8 @@ impl Tool for TopHolders {
 
         // Spawn a task to handle the RPC calls
         tokio::spawn(async move {
-            let provider = Provider::new(env("RPC_URL"));
-            let result = check_top_holders(&mint, &provider, true).await;
+            let rpc_client = RpcClient::new(env("RPC_URL"));
+            let result = check_top_holders(&mint, &rpc_client, true).await;
             let _ = tx.send(result).await;
         });
 

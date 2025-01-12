@@ -259,10 +259,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
             println!("ok? {}, {:?}", ok, checklist);
         }
         Command::Blockhash {} => {
-            let provider = Provider::new(env("RPC_URL"));
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             for _ in 0..3 {
                 let start = std::time::Instant::now();
-                let res = provider.rpc_client.get_latest_blockhash().await?;
+                let res = rpc_client.get_latest_blockhash().await?;
                 println!("{:?}", res);
                 println!("Time elapsed: {:?}", start.elapsed());
             }
@@ -278,54 +278,54 @@ async fn main() -> Result<(), Box<dyn Error>> {
             results.2?;
         }
         Command::ParsePool { signature } => {
-            let provider = Provider::new(env("RPC_URL"));
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let new_pool = tx_parser::parse_new_pool(
-                &provider.get_tx(signature.as_str()).await?,
+                &Provider::get_tx(&rpc_client, signature.as_str()).await?,
             )?;
             println!("{:?}", new_pool);
         }
         Command::TopHolders { mint } => {
-            let provider = Provider::new(env("RPC_URL"));
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let mint = Pubkey::from_str(mint.as_str()).unwrap();
             let (_, ok, _) =
-                buyer::check_top_holders(&mint, &provider, false).await?;
+                buyer::check_top_holders(&mint, &rpc_client, false).await?;
             info!("Top holders check passed: {}", ok);
         }
         Command::ListenForSolPooled { amm_pool } => {
-            let provider = Provider::new(env("RPC_URL"));
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
                 env("WS_URL").as_str(),
             )
             .await?;
             buyer::listen_for_sol_pooled(
                 &Pubkey::from_str(amm_pool.as_str())?,
-                &provider.rpc_client,
+                &rpc_client,
                 &pubsub_client,
             )
             .await?;
         }
         Command::ListenForBurn { amm_pool } => {
-            let provider = Provider::new(env("RPC_URL"));
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
                 env("WS_URL").as_str(),
             )
             .await?;
             buyer::listen_for_burn(
                 &Pubkey::from_str(amm_pool.as_str())?,
-                &provider.rpc_client,
+                &rpc_client,
                 &pubsub_client,
             )
             .await?;
         }
         Command::TrackPosition { amm_pool, owner } => {
-            let provider = Provider::new(env("RPC_URL"));
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let amm_pool = Pubkey::from_str(amm_pool.as_str())
                 .expect("amm pool is a valid pubkey");
 
             let amm_program = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
             // load amm keys
             let amm_keys = amm::utils::load_amm_keys(
-                &provider.rpc_client,
+                &rpc_client,
                 &amm_program,
                 &amm_pool,
             )
@@ -333,7 +333,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             info!("{:?}", amm_keys);
             // load market keys
             let market_keys = amm::openbook::get_keys_for_market(
-                &provider.rpc_client,
+                &rpc_client,
                 &amm_keys.market_program,
                 &amm_keys.market,
             )
@@ -362,7 +362,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
             loop {
                 let result = amm::calculate_pool_vault_amounts(
-                    &provider.rpc_client,
+                    &rpc_client,
                     &amm_program,
                     &amm_pool,
                     &amm_keys,
@@ -440,11 +440,10 @@ async fn main() -> Result<(), Box<dyn Error>> {
         }
         Command::BenchRPC { rpc_url } => rpc::eval_rpc(rpc_url.as_str()),
         Command::PriorityFee {} => {
-            let provider = Provider::new(env("RPC_URL"));
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             println!(
                 "{:?}",
-                provider
-                    .rpc_client
+                rpc_client
                     .get_recent_prioritization_fees(
                         vec![constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY]
                             .as_slice()
@@ -453,19 +452,15 @@ async fn main() -> Result<(), Box<dyn Error>> {
             );
         }
         Command::Price { amm_pool } => {
-            let provider = Provider::new(env("RPC_URL"));
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let pubsub_client = nonblocking::pubsub_client::PubsubClient::new(
                 env("WS_URL").as_str(),
             )
             .await?;
             let amm_pool = Pubkey::from_str(amm_pool.as_str())?;
-            seller::listen_price(
-                &amm_pool,
-                &provider.rpc_client,
-                &pubsub_client,
-            )
-            .await
-            .expect("listen price");
+            seller::listen_price(&amm_pool, &rpc_client, &pubsub_client)
+                .await
+                .expect("listen price");
         }
         Command::CheckerService {} => {
             checker_service::run_checker_service().await?;
@@ -493,7 +488,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             dex,
             amm_pool_id,
         } => {
-            let provider = Provider::new(env("RPC_URL"));
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let raydium = Raydium::new();
             let start = std::time::Instant::now();
             if input_mint == "sol" {
@@ -520,14 +515,18 @@ async fn main() -> Result<(), Box<dyn Error>> {
                 info!("Wallet: {}", wallet.pubkey());
                 info!(
                     "Balance (lamports): {}",
-                    provider.get_balance(&wallet.pubkey()).await?
+                    Provider::get_balance(&rpc_client, &wallet.pubkey())
+                        .await?
                 );
                 let amount_specified = if amount.is_some() {
                     amount.unwrap() as u64
                 } else {
-                    provider
-                        .get_spl_balance(&wallet.pubkey(), &input_token_mint)
-                        .await?
+                    Provider::get_spl_balance(
+                        &rpc_client,
+                        &wallet.pubkey(),
+                        &input_token_mint,
+                    )
+                    .await?
                 };
                 raydium
                     .swap(SwapArgs {
@@ -537,7 +536,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
                         amount: amount_specified,
                         slippage: slippage_bps,
                         wallet,
-                        provider,
+                        rpc_client,
                         confirmed: yes.unwrap_or(false),
                         no_sanity: true,
                     })
@@ -560,7 +559,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
             return Ok(());
         }
         Command::Wallet {} => {
-            let provider = Provider::new(env("RPC_URL"));
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let path = match app.args.keypair_path {
                 Some(path) => path,
                 None => {
@@ -571,15 +570,16 @@ async fn main() -> Result<(), Box<dyn Error>> {
             let keypair = Keypair::read_from_file(&path)?;
 
             info!("Pubkey: {}", keypair.pubkey());
-            let balance = provider.get_balance(&keypair.pubkey()).await?;
+            let balance =
+                Provider::get_balance(&rpc_client, &keypair.pubkey()).await?;
             info!("Balance: {} lamports", balance);
         }
         Command::Tx { signature } => {
-            let provider = Provider::new(env("RPC_URL"));
-            let tx = provider.get_tx(signature.as_str()).await?;
+            let rpc_client = RpcClient::new(env("RPC_URL"));
+            let tx = Provider::get_tx(&rpc_client, signature.as_str()).await?;
             info!("Tx: {}", serde_json::to_string_pretty(&tx)?);
             let mint = tx_parser::parse_mint(&tx)?;
-            let pricing = provider.get_pricing(&mint).await?;
+            let pricing = Provider::get_pricing(&mint).await?;
             info!("Pricing: {:?}", pricing);
 
             let swap = tx_parser::parse_swap(&tx)?;
@@ -631,7 +631,7 @@ pub async fn run_listener(
     let pool: Vec<_> = (0..worker_count)
         .map(|_| {
             let rx = Arc::clone(&rx);
-            let provider = Provider::new(env("RPC_URL"));
+            let rpc_client = RpcClient::new(env("RPC_URL"));
             let transactions_processed = transactions_processed.clone();
             let requests_sent = requests_sent.clone();
             tokio::spawn(async move {
@@ -640,7 +640,12 @@ pub async fn run_listener(
                 while let Some(log) = rx.lock().await.recv().await {
                     interval.tick().await; // Rate limiting
                     let tx = {
-                        match provider.get_tx(&log.value.signature).await {
+                        match Provider::get_tx(
+                            &rpc_client,
+                            &log.value.signature,
+                        )
+                        .await
+                        {
                             Ok(tx) => tx,
                             Err(e) => {
                                 info!(
