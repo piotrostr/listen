@@ -84,9 +84,12 @@ const AnimatedTitle = ({ text }) => {
             color: "#60A5FA",
             transition: { type: "spring", stiffness: 500 }
           }}
-          style={{ display: "inline-block" }}
+          style={{ 
+            display: "inline-block",
+            marginLeft: char === " " ? "0.25em" : "0" 
+          }}
         >
-          {char}
+          {char === " " ? "\u00A0" : char}
         </motion.span>
       ))}
     </motion.div>
