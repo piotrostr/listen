@@ -68,31 +68,35 @@ const FeatureCard = ({ title, features, index }) => {
   );
 };
 
-const AnimatedTitle = ({ text }) => {
+const AnimatedTitle = ({ text, className = "" }) => {
+  // Split text into words
+  const words = text.split(" ");
+  
   return (
-    <motion.div 
-      className="relative inline-block"
-      whileHover={{ scale: 1.05 }}
-      transition={{ type: "spring", stiffness: 400, damping: 10 }}
-    >
-      {text.split("").map((char, index) => (
-        <motion.span
-          key={index}
-          className="inline-block"
-          whileHover={{ 
-            y: -5,
-            color: "#60A5FA",
-            transition: { type: "spring", stiffness: 500 }
-          }}
-          style={{ 
-            display: "inline-block",
-            marginLeft: char === " " ? "0.25em" : "0" 
-          }}
+    <div className={`flex flex-wrap justify-center gap-x-2 ${className}`}>
+      {words.map((word, wordIndex) => (
+        <motion.div
+          key={wordIndex}
+          className="inline-flex"
+          whileHover={{ scale: 1.05 }}
+          transition={{ type: "spring", stiffness: 400, damping: 10 }}
         >
-          {char === " " ? "\u00A0" : char}
-        </motion.span>
+          {word.split("").map((char, charIndex) => (
+            <motion.span
+              key={`${wordIndex}-${charIndex}`}
+              className="inline-block"
+              whileHover={{ 
+                y: -5,
+                color: "#60A5FA",
+                transition: { type: "spring", stiffness: 500 }
+              }}
+            >
+              {char}
+            </motion.span>
+          ))}
+        </motion.div>
       ))}
-    </motion.div>
+    </div>
   );
 };
 
