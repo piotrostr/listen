@@ -13,3 +13,5 @@ flamegraph.svg
 data
 target
 .vercel
+node_modules
+
