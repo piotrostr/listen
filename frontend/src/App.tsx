@@ -105,61 +105,61 @@ const App = () => {
     {
       title: "Token Analysis & Checks",
       features: [
-        "Comprehensive holder analysis with detailed metrics",
-        "Advanced ownership concentration verification",
-        "Secure mint authority validation system",
-        "In-depth program authority scanning",
-        "Complete metadata validation framework"
+        "Comprehensive holder analysis",
+        "Ownership concentration checks",
+        "Mint authority verification",
+        "Program authority analysis",
+        "Metadata validation"
       ]
     },
     {
       title: "Real-time Monitoring",
       features: [
-        "High-performance transaction tracking system",
-        "Flexible worker thread configuration",
-        "Optimized buffer size management",
-        "Advanced Prometheus metrics support",
-        "Reliable WebSocket subscription handling"
+        "Transaction tracking",
+        "Configurable worker threads",
+        "Adjustable buffer sizes",
+        "Prometheus metrics integration",
+        "WebSocket subscription handling"
       ]
     },
     {
       title: "Advanced Swapping",
       features: [
-        "Efficient multi-platform swap execution",
-        "Seamless Pump.fun integration",
-        "Enhanced Jupiter V6 API support",
-        "Direct Raydium interaction layer",
-        "Flexible slippage configuration options"
+        "Multi-platform swap execution",
+        "Support for Pump.fun",
+        "Jupiter V6 API integration",
+        "Direct Raydium interaction",
+        "Custom slippage settings"
       ]
     },
     {
       title: "Price Tracking",
       features: [
-        "Precision real-time price monitoring",
-        "Scalable PubSub subscription system",
-        "Custom webhook integration support",
-        "Advanced price alert configuration",
-        "Comprehensive historical data tracking"
+        "Real-time price monitoring",
+        "PubSub subscription system",
+        "Webhook integration",
+        "Price alert configuration",
+        "Historical data tracking"
       ]
     },
     {
       title: "Token Management",
       features: [
-        "Secure custom wallet generation",
-        "Efficient batch token account handling",
-        "Automated token sweeping system",
-        "Optimized ATA Sweeps processing",
-        "Smart balance consolidation tools"
+        "Custom wallet generation",
+        "Batch token account closing",
+        "Token sweeping functionality",
+        "ATA Sweeps",
+        "Balance consolidation"
       ]
     },
     {
       title: "Performance Tools",
       features: [
-        "Detailed transaction profiling system",
-        "Comprehensive RPC benchmarking suite",
-        "Dynamic priority fee calculation",
-        "Advanced memory usage analytics",
-        "Real-time latency monitoring system"
+        "Transaction profiling",
+        "RPC benchmarking",
+        "Real-time priority fee",
+        "Memory usage tracking",
+        "Latency monitoring"
       ]
     }
   ];
