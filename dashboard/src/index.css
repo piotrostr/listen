@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@font-face {
+  font-family: "SF Mono Nerd Font";
+  src: url("/sf-mono.otf") format("opentype");
+  font-weight: 400;
+  font-style: normal;
+}
+
+html,
+body,
+code {
+  font-family: "SF Mono Nerd Font", monospace;
+}
+
+.cs-message__content {
+  background-color: #f3f4f6 !important;
+}
+
+.cs-message--outgoing .cs-message__content {
+  background-color: #3b82f6 !important;
+  color: white !important;
+}
+
+.cs-chat-container .cs-message-input {
+  border-top: 1px solid #e5e7eb;
+}
