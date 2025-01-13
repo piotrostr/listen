@@ -4,7 +4,33 @@ on:
   push:
   pull_request:
 
+# Cancel in-progress workflows on branches, expect main.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ !contains(github.ref, 'main')}}
+
+# TODO: Consider using composite actions to setup code duplication for each job
+# https://docs.github.com/en/actions/sharing-automations/creating-actions/creating-a-composite-action
 jobs:
+  lint:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out
+      uses: actions/checkout@v4
+    - name: Set up cargo cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }} 
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v3
+    - name: Lint
+      run: cargo clippy
   build:
     runs-on: ubuntu-latest
     steps:
@@ -22,11 +48,26 @@ jobs:
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }} 
     - name: Install Protoc
       uses: arduino/setup-protoc@v3
-    # TODO: Run lint, build, and tests in parallel to save time
-    - name: Lint
-      run: cargo clippy
     - name: Build
       run: cargo build
-    # Uncomment when tests are stable
-    # - name: Run tests
-    #   run: cargo test --lib
+  
+  # Uncomment when tests are stable
+  # test:
+  #   runs-on: ubuntu-latest
+  #   steps:
+  #   - name: Check out
+  #     uses: actions/checkout@v4
+  #   - name: Set up cargo cache
+  #     uses: actions/cache@v4
+  #     with:
+  #       path: |
+  #         ~/.cargo/bin/
+  #         ~/.cargo/registry/index/
+  #         ~/.cargo/registry/cache/
+  #         ~/.cargo/git/db/
+  #         target/
+  #       key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }} 
+  #   - name: Install Protoc
+  #     uses: arduino/setup-protoc@v3
+  #   - name: Run tests
+  #     run: cargo test --lib
