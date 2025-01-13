@@ -20,7 +20,7 @@ impl ListenService {
     pub fn new(port: u16) -> Result<Self, Box<dyn std::error::Error>> {
         let wallet = Arc::new(Mutex::new(
             Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
-                .expect("read fund keypair"),
+                .map_err(|_| "read fund keypair")?,
         ));
 
         let rpc_client = Arc::new(RpcClient::new(env("RPC_URL")));
@@ -62,7 +62,11 @@ impl ListenService {
 
 // Main entry point
 pub async fn run_listen_service() -> std::io::Result<()> {
-    let service =
-        ListenService::new(6969).expect("Failed to create listen service");
+    let service = ListenService::new(6969).map_err(|_| {
+        std::io::Error::new(
+            std::io::ErrorKind::NetworkUnreachable,
+            "Failed to create listen service",
+        )
+    })?;
     service.start().await
 }

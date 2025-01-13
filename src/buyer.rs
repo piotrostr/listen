@@ -58,28 +58,32 @@ pub async fn swap(
             }
         }
     };
-    if swap_context.is_none() {
+    let Some(swap_context) = swap_context else {
         return Err("make swap context failed".into());
-    }
-    let swap_context = swap_context.unwrap();
+    };
 
     let start = std::time::Instant::now();
     let quick = true;
-    let mut ixs =
-        raydium::make_swap_ixs(rpc_client, wallet, &swap_context, quick)
-            .await
-            .expect("make swap ixs");
+    let Ok(mut ixs) =
+        raydium::make_swap_ixs(rpc_client, wallet, &swap_context, quick).await
+    else {
+        return Err("make swap ixs".into());
+    };
 
     info!("took {:?} to pack", start.elapsed());
 
     info!("swapping {} {} to {}", amount, input_mint, output_mint);
-    let auth = Keypair::read_from_file(env("AUTH_KEYPAIR_PATH"))
-        .expect("read auth keypair");
-    let mut searcher_client =
-        get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth))
-            .await
-            .expect("makes searcher client");
-    jito::send_swap_tx_no_wait(
+    let Ok(auth) = Keypair::read_from_file(env("AUTH_KEYPAIR_PATH")) else {
+        return Err("read auth kp".into());
+    };
+
+    let Ok(mut searcher_client) =
+        get_searcher_client(&env("BLOCK_ENGINE_URL"), &Arc::new(auth)).await
+    else {
+        return Err("makes searcher client".into());
+    };
+
+    if let Err(e) = jito::send_swap_tx_no_wait(
         &mut ixs,
         50000,
         wallet,
@@ -87,7 +91,9 @@ pub async fn swap(
         rpc_client,
     )
     .await
-    .expect("send swap tx (jito)");
+    {
+        return Err(format!("send swap tx (jito) {}", e).into());
+    }
 
     drop(searcher_client);
 
@@ -217,7 +223,7 @@ pub async fn listen_for_sol_pooled(
     rpc_client: &RpcClient,
     pubsub_client: &PubsubClient,
 ) -> Result<(f64, bool), Box<dyn Error>> {
-    let (mut stream, unsub) = pubsub_client
+    let Ok((mut stream, unsub)) = pubsub_client
         .account_subscribe(
             amm_pool,
             Some(RpcAccountInfoConfig {
@@ -226,7 +232,9 @@ pub async fn listen_for_sol_pooled(
             }),
         )
         .await
-        .expect("subscribe to account");
+    else {
+        return Err("subscribe to account".into());
+    };
 
     info!("listening for sol pooled for pool {}", amm_pool.to_string());
     if stream.next().await.is_some() {
@@ -269,7 +277,7 @@ pub async fn listen_for_burn(
     let coin_mint_is_sol =
         amm_keys.amm_coin_mint.eq(&constants::SOLANA_PROGRAM_ID);
 
-    let (mut stream, unsub) = pubsub_client
+    let Ok((mut stream, unsub)) = pubsub_client
         .account_subscribe(
             &lp_mint,
             Some(RpcAccountInfoConfig {
@@ -278,7 +286,9 @@ pub async fn listen_for_burn(
             }),
         )
         .await
-        .expect("subscribe to account");
+    else {
+        return Err("subscribe to account".into());
+    };
 
     let token_mint = if coin_mint_is_sol {
         amm_keys.amm_pc_mint
@@ -290,9 +300,11 @@ pub async fn listen_for_burn(
     while let Some(log) = stream.next().await {
         debug!("log: {:?}", log);
         if let UiAccountData::LegacyBinary(data) = log.value.data {
-            let mint_data =
+            let Ok(mint_data) =
                 Mint::unpack(bs58::decode(data).into_vec()?.as_slice())
-                    .expect("unpack mint data");
+            else {
+                return Err("unpack mint data".into());
+            };
             debug!("mint data: {:?}", mint_data);
 
             let (result, _, _) =
@@ -310,7 +322,9 @@ pub async fn listen_for_burn(
                 return Ok((-1., false));
             }
 
-            let burn_pct = get_burn_pct(mint_data, result).expect("burn_pct");
+            let Ok(burn_pct) = get_burn_pct(mint_data, result) else {
+                return Err("get burn pct".into());
+            };
             if burn_pct > 90. {
                 info!("burn pct: {}", burn_pct);
                 if sol_pooled < 50. {

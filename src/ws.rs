@@ -37,8 +37,7 @@ pub async fn _connect_to_websocket(
     let stream = TcpStream::connect(format!("{}:443", host)).await?;
 
     // Convert the TCP stream to a TLS stream
-    let tls_connector =
-        tokio_native_tls::native_tls::TlsConnector::new().unwrap();
+    let tls_connector = tokio_native_tls::native_tls::TlsConnector::new()?;
     let tls_connector = tokio_native_tls::TlsConnector::from(tls_connector);
     let tls_stream = tls_connector.connect(&host, stream).await?;
 

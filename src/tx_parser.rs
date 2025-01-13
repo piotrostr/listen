@@ -34,7 +34,7 @@ pub fn parse_mint(
                         // TODO this might panic, might be handled more gracefully
                         let mint = ix.parsed["info"]["mint"]
                             .as_str()
-                            .unwrap()
+                            .ok_or("Failed to get string")?
                             .to_string();
                         return Ok(mint);
                     }
@@ -87,7 +87,7 @@ pub fn parse_notional(
         let max_sol = std::iter::zip(&meta.pre_balances, &meta.post_balances)
             .map(|(a, b)| (*a as f64 - *b as f64) as u64)
             .max()
-            .unwrap();
+            .ok_or("Failed to get max")?;
         return Ok(max_sol);
     }
     Err("could not parse notional".into())
@@ -121,9 +121,8 @@ pub fn parse_new_pool(
                         pool_info.amm_pool_id = Pubkey::from_str(
                             parsed_ix.parsed["info"]["account"]
                                 .as_str()
-                                .unwrap(),
-                        )
-                        .unwrap();
+                                .ok_or("Failed to get string")?,
+                        )?;
                     }
 
                     if parsed_ix.parsed["type"] == "initializeAccount"
@@ -131,14 +130,14 @@ pub fn parse_new_pool(
                             == constants::RAYDIUM_AUTHORITY_V4_PUBKEY
                                 .to_string()
                     {
-                        let mint =
-                            parsed_ix.parsed["info"]["mint"].as_str().unwrap();
+                        let mint = parsed_ix.parsed["info"]["mint"]
+                            .as_str()
+                            .ok_or("Failed to get string")?;
                         if mint == constants::SOLANA_PROGRAM_ID.to_string() {
                             pool_info.input_mint =
                                 constants::SOLANA_PROGRAM_ID;
                         } else {
-                            pool_info.output_mint =
-                                Pubkey::from_str(mint).unwrap();
+                            pool_info.output_mint = Pubkey::from_str(mint)?;
                         }
                     }
 
@@ -146,8 +145,7 @@ pub fn parse_new_pool(
                         if let Some(owner) =
                             parsed_ix.parsed["info"]["source"].as_str()
                         {
-                            pool_info.creator =
-                                Pubkey::from_str(owner).unwrap();
+                            pool_info.creator = Pubkey::from_str(owner)?;
                         }
                     }
                 }
@@ -178,9 +176,8 @@ pub fn parse_swap(
                         {
                             let amount = parsed_ix.parsed["info"]["amount"]
                                 .as_str()
-                                .unwrap()
-                                .parse::<f64>()
-                                .unwrap();
+                                .ok_or("Failed to get string")?
+                                .parse::<f64>()?;
                             // if the authority is raydium, it is the shitcoin, otherwise SOL
                             if parsed_ix.parsed["info"]["authority"]
                                 == constants::RAYDIUM_AUTHORITY_V4_PUBKEY

@@ -13,7 +13,7 @@ use actix_web::web::{self, Json};
 use actix_web::{get, post};
 use actix_web::{App, Error, HttpResponse, HttpServer};
 use futures_util::StreamExt;
-use log::{info, warn};
+use log::{error, info, warn};
 use raydium_library::amm;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
@@ -57,20 +57,27 @@ async fn handle_sell(
         serde_json::to_string_pretty(&sell_request)?
     );
     actix_rt::spawn(async move {
-        let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
-            .expect("read wallet");
+        let Ok(wallet) = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+        else {
+            error!("Failed to read wallet");
+            return;
+        };
         let rpc_client = RpcClient::new(env("RPC_URL"));
         let token_account =
             spl_associated_token_account::get_associated_token_address(
                 &wallet.pubkey(),
                 &sell_request.input_mint,
             );
-        let pubsub_client = PubsubClient::new(&env("WS_URL"))
-            .await
-            .expect("make pubsub client");
-        let balance = tokio::select! {
-                balance = seller::get_spl_balance_stream(&pubsub_client, &token_account) => balance.expect("balance stream"),
-                balance = seller::get_spl_balance(&rpc_client, &token_account) => balance.expect("balance rpc"),
+        let Ok(pubsub_client) = PubsubClient::new(&env("WS_URL")).await else {
+            error!("could not make pubsub client, exiting");
+            return;
+        };
+        let Ok(balance) = tokio::select! (
+                   balance = seller::get_spl_balance_stream(&pubsub_client, &token_account) => balance,
+                   balance = seller::get_spl_balance(&rpc_client, &token_account) => balance,
+        ) else {
+            error!("could not fetch balance, exiting");
+            return;
         };
         // TODO generally, those params should be different for pump.fun coins and
         // the standard coins
@@ -81,13 +88,20 @@ async fn handle_sell(
         if !sell_request.insta.unwrap_or(false) {
             // load amm keys
             let amm_program = constants::RAYDIUM_LIQUIDITY_POOL_V4_PUBKEY;
-            let amm_keys = load_amm_keys(
+            let amm_keys = match load_amm_keys(
                 &rpc_client,
                 &amm_program,
                 &sell_request.amm_pool,
             )
             .await
-            .expect("amm_keys");
+            {
+                Ok(amm_keys) => amm_keys,
+                Err(e) => {
+                    error!("could not load amm keys: {}", e);
+                    return;
+                }
+            };
+
             let mut executor = Executor {
                 amm_keys,
                 funder: wallet,
@@ -106,17 +120,20 @@ async fn handle_sell(
                     .collect(),
                 tp_reached: vec![true, true, true, true, true],
             };
-            executor
+            if let Err(e) = executor
                 .execute(&rpc_client, &pubsub_client, &sell_request.amm_pool)
                 .await
-                .expect("execute");
+            {
+                error!("could not execute: {}", e);
+                return;
+            };
         } else {
             info!("balance: {}", balance);
             if balance == 0 {
                 warn!("could not fetch balance, exiting");
                 return;
             }
-            buyer::swap(
+            if let Err(e) = buyer::swap(
                 &sell_request.amm_pool,
                 &sell_request.input_mint,
                 &sell_request.output_mint,
@@ -125,7 +142,10 @@ async fn handle_sell(
                 &rpc_client,
             )
             .await
-            .expect("swap");
+            {
+                error!("could not swap: {}", e);
+                return;
+            };
         }
 
         drop(pubsub_client)
@@ -160,7 +180,13 @@ async fn handle_sell_simple(
         &sell_request.amm_pool,
     )
     .await
-    .expect("amm_keys");
+    .map_err(|e| {
+        error!("could not load amm keys: {}", e);
+        actix_web::error::ErrorInternalServerError(format!(
+            "could not load amm keys: {}",
+            e
+        ))
+    })?;
 
     let (input_mint, output_mint) =
         if amm_keys.amm_pc_mint.eq(&constants::SOLANA_PROGRAM_ID) {
@@ -178,7 +204,13 @@ async fn handle_sell_simple(
             insta: Some(true),
         })
         .await
-        .expect("sell");
+        .map_err(|e| {
+            error!("could not sell: {}", e);
+            actix_web::error::ErrorInternalServerError(format!(
+                "could not sell: {}",
+                e
+            ))
+        })?;
 
     Ok(HttpResponse::Ok().json(json!({"status": "OK"})))
 }
@@ -191,10 +223,12 @@ pub struct BalanceContext {
 
 impl BalanceContext {
     pub async fn track_lamports_balance(&self, funder: &Pubkey) {
-        let pubsub_client = PubsubClient::new(&env("WS_URL"))
-            .await
-            .expect("make pubsub client");
-        let (mut stream, unsub) = pubsub_client
+        let Ok(pubsub_client) = PubsubClient::new(&env("WS_URL")).await else {
+            error!("could not make pubsub client, exiting");
+            return;
+        };
+
+        let Ok((mut stream, unsub)) = pubsub_client
             .account_subscribe(
                 funder,
                 Some(RpcAccountInfoConfig {
@@ -204,10 +238,13 @@ impl BalanceContext {
                 }),
             )
             .await
-            .expect("account_subscribe");
+        else {
+            error!("could not subscribe to account, exiting");
+            return;
+        };
         while let Some(log) = stream.next().await {
             *self.lamports.write().await = log.value.lamports;
-            println!("{:?}", self.lamports.read().await);
+            info!("{:?}", self.lamports.read().await);
         }
         unsub().await;
     }
@@ -275,8 +312,9 @@ pub async fn load_amm_keys(
         client, amm_pool,
     )
     .await
-    .expect("get_account_with_retries")
-    .unwrap();
+    .map_err(|_| "Failed to get account")?
+    .ok_or_else(|| "Account not found")?;
+
     Ok(amm::AmmKeys {
         amm_pool: *amm_pool,
         amm_target: amm.target_orders,
