@@ -121,7 +121,7 @@ pub struct PriceResponse {
     responses((status = 200, body = PriceResponse)),
     request_body = PriceRequest,
     description = "Get the price of a token",
-    tag = "price"
+    tag = "token"
 )]
 #[post("/price")]
 #[timed::timed(duration(printer = "info!"))]
@@ -147,9 +147,15 @@ pub struct HoldingsResponse {
     pub holdings: Vec<Holding>,
 }
 
+#[utoipa::path(
+    get, 
+    path = "/holdings", 
+    responses((status = 200, body = HoldingsResponse)),
+    tag = "balance"
+)]
 #[get("/holdings")]
 #[timed::timed(duration(printer = "info!"))]
-pub async fn get_holdings(state: Data<ServiceState>) -> Result<HttpResponse, Error> {
+pub async fn handle_get_holdings(state: Data<ServiceState>) -> Result<HttpResponse, Error> {
     let holdings = Provider::get_holdings(
         &state.rpc_client, 
         &state.wallet.lock().await.pubkey()
