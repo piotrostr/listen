@@ -1,6 +1,8 @@
+use crate::api_docs::ApiDocs;
 use crate::blockhash::update_latest_blockhash;
 use crate::handlers::{
     handle_balance, handle_pump_buy, handle_pump_sell, handle_swap,
+    handle_token_balance,
 };
 use crate::state::ServiceState;
 use crate::util::{env, healthz};
@@ -10,6 +12,8 @@ use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::{hash::Hash, signature::Keypair, signer::EncodableKey};
 use std::sync::Arc;
 use tokio::sync::Mutex;
+use utoipa::OpenApi;
+use utoipa_swagger_ui::SwaggerUi;
 
 pub struct ListenService {
     port: u16,
@@ -52,7 +56,12 @@ impl ListenService {
                 .service(handle_balance)
                 .service(handle_pump_buy)
                 .service(handle_pump_sell)
+                .service(handle_token_balance)
                 .service(healthz)
+                .service(
+                    SwaggerUi::new("/swagger-ui/{_:.*}")
+                        .url("/api-docs/openapi.json", ApiDocs::openapi()),
+                )
         })
         .bind(("0.0.0.0", self.port))?
         .run()

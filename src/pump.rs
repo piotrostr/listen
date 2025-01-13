@@ -316,7 +316,6 @@ pub async fn instabuy_pump_token(
     pump_buy_request: PumpBuyRequest,
 ) -> Result<(), Box<dyn Error>> {
     let owner = wallet.pubkey();
-    // apply slippage in a stupid manner
     let token_amount = get_token_amount(
         pump_buy_request.virtual_sol_reserves,
         pump_buy_request.virtual_token_reserves,

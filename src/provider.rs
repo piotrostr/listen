@@ -1,4 +1,8 @@
-use crate::{constants, types, util::env};
+use crate::{
+    raydium::{parse_holding, Holding},
+    types,
+    util::env,
+};
 use std::str::FromStr;
 
 use log::{debug, info, warn};
@@ -34,6 +38,27 @@ pub fn get_client(url: &str) -> Result<RpcClient, Box<dyn std::error::Error>> {
 pub struct Provider {}
 
 impl Provider {
+    #[timed(duration(printer = "info!"))]
+    pub async fn get_holdings(
+        rpc_client: &RpcClient,
+        owner: &Pubkey,
+    ) -> Result<Vec<Holding>, Box<dyn std::error::Error>> {
+        let atas = rpc_client
+            .get_token_accounts_by_owner(
+                owner,
+                TokenAccountsFilter::ProgramId(spl_token::id()),
+            )
+            .await?;
+        info!("found {} token accounts", atas.len());
+        let holdings = atas
+            .iter()
+            .map(|ata| parse_holding(ata.clone()).expect("parse holding"))
+            .filter(|holding| holding.amount > 0)
+            .collect::<Vec<Holding>>();
+
+        Ok(holdings)
+    }
+
     #[timed(duration(printer = "info!"))]
     pub async fn get_balance(
         rpc_client: &RpcClient,
@@ -110,12 +135,7 @@ impl Provider {
     pub async fn get_pricing(
         mint: &str,
     ) -> Result<types::PriceResponse, Box<dyn std::error::Error>> {
-        let url = format!(
-            "https://api.jup.ag/price/v2?ids={},{}",
-            mint,
-            constants::SOLANA_PROGRAM_ID,
-        );
-        println!("Getting pricing from: {:?}", url);
+        let url = format!("https://api.jup.ag/price/v2?ids={}", mint);
         let client = reqwest::Client::new();
         let res = client
             .get(url)

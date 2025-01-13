@@ -1,10 +1,11 @@
+use std::str::FromStr;
+
 use crate::jito::send_jito_tx;
 use crate::pump::{
     _make_buy_ixs, get_bonding_curve, get_token_amount, make_pump_sell_ix,
     mint_to_pump_accounts,
 };
 use crate::state::ServiceState;
-use crate::util::{pubkey_to_string, string_to_pubkey};
 use actix_web::{
     post,
     web::{Data, Json},
@@ -16,14 +17,11 @@ use serde_json::json;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
+use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct PumpBuyRequest {
-    #[serde(
-        serialize_with = "pubkey_to_string",
-        deserialize_with = "string_to_pubkey"
-    )]
-    mint: Pubkey,
+    mint: String,
 
     /// sol_amount denoted in lamports
     sol_amount: u64,
@@ -32,13 +30,9 @@ pub struct PumpBuyRequest {
     slippage: u16,
 }
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct PumpSellRequest {
-    #[serde(
-        serialize_with = "pubkey_to_string",
-        deserialize_with = "string_to_pubkey"
-    )]
-    mint: Pubkey,
+    mint: String,
 
     /// token_amount to sell
     token_amount: u64,
@@ -47,6 +41,13 @@ pub struct PumpSellRequest {
     slippage: u16,
 }
 
+#[utoipa::path(
+    post, 
+    path = "/pump-buy",
+    request_body = PumpBuyRequest,
+    responses((status = 200)),
+    tag = "pump-swap"
+)]
 #[post("/pump-buy")]
 #[timed::timed(duration(printer = "info!"))]
 pub async fn handle_pump_buy(
@@ -54,7 +55,9 @@ pub async fn handle_pump_buy(
     state: Data<ServiceState>,
 ) -> Result<HttpResponse, Error> {
     let pump_buy_request = pump_buy_request.into_inner();
-    let pump_accounts = mint_to_pump_accounts(&pump_buy_request.mint)
+    let mint = Pubkey::from_str(&pump_buy_request.mint)
+        .map_err(actix_web::error::ErrorBadRequest)?;
+    let pump_accounts = mint_to_pump_accounts(&mint)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
 
@@ -102,6 +105,13 @@ pub async fn handle_pump_buy(
     })))
 }
 
+#[utoipa::path(
+    post, 
+    path = "/pump-sell", 
+    request_body = PumpSellRequest, 
+    responses((status = 200, description = "Pump sell transaction successful")),
+    tag = "pump-swap"
+)]
 #[post("/pump-sell")]
 #[timed::timed(duration(printer = "info!"))]
 pub async fn handle_pump_sell(
@@ -109,7 +119,9 @@ pub async fn handle_pump_sell(
     state: Data<ServiceState>,
 ) -> Result<HttpResponse, Error> {
     let pump_sell_request = pump_sell_request.into_inner();
-    let pump_accounts = mint_to_pump_accounts(&pump_sell_request.mint)
+    let mint = Pubkey::from_str(&pump_sell_request.mint)
+        .map_err(actix_web::error::ErrorBadRequest)?;
+    let pump_accounts = mint_to_pump_accounts(&mint)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
 
