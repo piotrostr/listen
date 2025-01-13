@@ -1,95 +1,160 @@
-use crate::state::ServiceState;
-use crate::util::{pubkey_to_string, string_to_pubkey};
+use std::str::FromStr;
+
+use crate::{raydium::Holding, state::ServiceState};
 use crate::Provider;
 use actix_web::{
-    post,
+    post, get,
     web::{Data, Json},
     Error, HttpResponse,
 };
 use log::info;
 use serde::{Deserialize, Serialize};
-use solana_sdk::pubkey::Pubkey;
+use solana_sdk::{pubkey::Pubkey, signer::Signer};
+use utoipa::ToSchema;
 
-#[derive(Debug, Deserialize)]
+#[derive(Debug, Deserialize, ToSchema)]
 pub struct BalanceRequest {
-    #[serde(deserialize_with = "string_to_pubkey")]
-    pubkey: Pubkey,
+    pubkey: String,
 }
 
-#[derive(Debug, Deserialize)]
-pub struct TokenBalanceRequest {
-    #[serde(deserialize_with = "string_to_pubkey")]
-    pubkey: Pubkey,
-    #[serde(deserialize_with = "string_to_pubkey")]
-    mint: Pubkey,
-}
-
-#[derive(Debug, Deserialize)]
-pub struct PricingRequest {
-    mint: String,
-}
-
-#[derive(Debug, Serialize)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct BalanceResponse {
-    #[serde(serialize_with = "pubkey_to_string")]
-    pubkey: Pubkey,
+    pubkey: String,
     balance: u64,
 }
 
-#[derive(Debug, Serialize)]
-pub struct TokenBalanceResponse {
-    #[serde(serialize_with = "pubkey_to_string")]
-    pubkey: Pubkey,
-    #[serde(serialize_with = "pubkey_to_string")]
-    mint: Pubkey,
-    balance: u64,
-}
-
+#[utoipa::path(
+    post, 
+    path = "/balance",
+    responses((status = 200, body = BalanceResponse)),
+    tag = "balance"
+)]
 #[post("/balance")]
 #[timed::timed(duration(printer = "info!"))]
 pub async fn handle_balance(
     request: Json<BalanceRequest>,
     state: Data<ServiceState>,
 ) -> Result<HttpResponse, Error> {
-    let balance = Provider::get_balance(&state.rpc_client, &request.pubkey)
+    let pubkey = Pubkey::from_str(&request.pubkey)
+        .map_err(actix_web::error::ErrorBadRequest)?;
+    let balance = Provider::get_balance(&state.rpc_client, &pubkey)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(BalanceResponse {
-        pubkey: request.pubkey,
+        pubkey: pubkey.to_string(),
         balance,
     }))
 }
 
+#[utoipa::path(
+    get, 
+    path = "/pubkey",
+    responses((status = 200, body = String)),
+    tag = "balance"
+)]
+#[get("/pubkey")]
+pub async fn handle_get_pubkey(
+    state: Data<ServiceState>,
+) -> Result<HttpResponse, Error> {
+    let pubkey = state.wallet.lock().await.pubkey();
+    Ok(HttpResponse::Ok().json(pubkey.to_string()))
+}
+
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct TokenBalanceRequest {
+    pubkey: String,
+    mint: String,
+}
+
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct TokenBalanceResponse {
+    pubkey: String,
+    mint: String,
+    balance: u64,
+}
+
+#[utoipa::path(
+    post, 
+    path = "/token_balance", 
+    responses((status = 200, body = TokenBalanceResponse)),
+    tag = "balance"
+)]
 #[post("/token_balance")]
 #[timed::timed(duration(printer = "info!"))]
 pub async fn handle_token_balance(
     request: Json<TokenBalanceRequest>,
     state: Data<ServiceState>,
 ) -> Result<HttpResponse, Error> {
-    let balance = Provider::get_spl_balance(
-        &state.rpc_client,
-        &request.pubkey,
-        &request.mint,
-    )
-    .await
-    .map_err(actix_web::error::ErrorInternalServerError)?;
+    let pubkey = Pubkey::from_str(&request.pubkey)
+        .map_err(actix_web::error::ErrorBadRequest)?;
+    let mint = Pubkey::from_str(&request.mint)
+        .map_err(actix_web::error::ErrorBadRequest)?;
+    let balance = Provider::get_spl_balance(&state.rpc_client, &pubkey, &mint)
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
 
     Ok(HttpResponse::Ok().json(TokenBalanceResponse {
-        pubkey: request.pubkey,
-        mint: request.mint,
+        pubkey: pubkey.to_string(),
+        mint: mint.to_string(),
         balance,
     }))
 }
 
-#[post("/pricing")]
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct PriceRequest {
+    mint: String,
+}
+
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PriceResponse {
+    mint: String,
+    price: f64,
+}
+
+#[utoipa::path(
+    post, 
+    path = "/price", 
+    responses((status = 200, body = PriceResponse)),
+    request_body = PriceRequest,
+    description = "Get the price of a token",
+    tag = "price"
+)]
+#[post("/price")]
 #[timed::timed(duration(printer = "info!"))]
 pub async fn handle_pricing(
-    request: Json<PricingRequest>,
+    request: Json<PriceRequest>,
 ) -> Result<HttpResponse, Error> {
     let price_data = Provider::get_pricing(&request.mint)
         .await
         .map_err(actix_web::error::ErrorInternalServerError)?;
 
-    Ok(HttpResponse::Ok().json(price_data))
+    if let Some(price) = price_data.data.get(&request.mint) {
+        return Ok(HttpResponse::Ok().json(PriceResponse {
+            mint: request.mint.clone(),
+            price: price.price,
+        }));
+    }; 
+
+    Ok(HttpResponse::NotFound().finish())
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct HoldingsResponse {
+    pub holdings: Vec<Holding>,
+}
+
+#[get("/holdings")]
+#[timed::timed(duration(printer = "info!"))]
+pub async fn get_holdings(state: Data<ServiceState>) -> Result<HttpResponse, Error> {
+    let holdings = Provider::get_holdings(
+        &state.rpc_client, 
+        &state.wallet.lock().await.pubkey()
+    )
+        .await
+        .map_err(actix_web::error::ErrorInternalServerError)?;
+    Ok(HttpResponse::Ok().json(HoldingsResponse { holdings}))
 }

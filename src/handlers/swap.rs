@@ -1,6 +1,5 @@
 use crate::jup::Jupiter;
 use crate::state::ServiceState;
-use crate::util::{pubkey_to_string, string_to_pubkey};
 use actix_web::{
     post,
     web::{Data, Json},
@@ -9,28 +8,28 @@ use actix_web::{
 use log::info;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use solana_sdk::pubkey::Pubkey;
+use utoipa::ToSchema;
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Deserialize, Serialize, ToSchema)]
 pub struct SwapRequest {
-    #[serde(
-        serialize_with = "pubkey_to_string",
-        deserialize_with = "string_to_pubkey"
-    )]
-    input_mint: Pubkey,
-
-    #[serde(
-        serialize_with = "pubkey_to_string",
-        deserialize_with = "string_to_pubkey"
-    )]
-    output_mint: Pubkey,
-
+    input_mint: String,
+    output_mint: String,
     amount: u64,
-
     /// slippage in bps
     slippage: u16,
 }
 
+#[utoipa::path(
+    post,
+    path = "/swap",
+    request_body = SwapRequest,
+    responses(
+        (status = 200, description = "Swap transaction successful"),
+        (status = 400, description = "Invalid swap parameters"),
+        (status = 500, description = "Swap transaction failed")
+    ),
+    tag = "swap"
+)]
 #[post("/swap")]
 #[timed::timed(duration(printer = "info!"))]
 pub async fn handle_swap(
@@ -39,8 +38,8 @@ pub async fn handle_swap(
 ) -> Result<HttpResponse, Error> {
     let swap_request = swap_request.into_inner();
     let quote = Jupiter::fetch_quote(
-        &swap_request.input_mint.to_string(),
-        &swap_request.output_mint.to_string(),
+        &swap_request.input_mint,
+        &swap_request.output_mint,
         swap_request.amount,
         swap_request.slippage,
     )

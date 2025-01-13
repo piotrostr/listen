@@ -199,6 +199,7 @@
 
 pub mod address;
 pub mod agent;
+pub mod api_docs;
 pub mod app;
 pub mod ata;
 pub mod blockhash;

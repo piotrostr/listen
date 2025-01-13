@@ -5,6 +5,7 @@ use log::{debug, info, warn};
 use raydium_library::amm;
 use raydium_library::amm::AmmKeys;
 use raydium_library::amm::MarketPubkeys;
+use serde::Serialize;
 use serde_json::Value;
 use solana_account_decoder::parse_account_data::ParsedAccount;
 use solana_account_decoder::UiAccountData;
@@ -17,6 +18,7 @@ use spl_token::instruction::burn;
 use spl_token::state::Mint;
 use std::error::Error;
 use timed::timed;
+use utoipa::ToSchema;
 
 use crate::jito::send_jito_tx;
 use crate::seller_service::load_amm_keys;
@@ -42,14 +44,14 @@ use std::fs::File;
 use std::io::Write;
 use std::path::Path;
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Clone, Serialize, ToSchema)]
 pub struct Holding {
-    pub mint: Pubkey,
-    pub ata: Pubkey,
+    pub mint: String,
+    pub ata: String,
     pub amount: u64,
 }
 
-fn parse_holding(ata: RpcKeyedAccount) -> Result<Holding, Box<dyn Error>> {
+pub fn parse_holding(ata: RpcKeyedAccount) -> Result<Holding, Box<dyn Error>> {
     if let UiAccountData::Json(ParsedAccount {
         program: _,
         parsed,
@@ -63,7 +65,11 @@ fn parse_holding(ata: RpcKeyedAccount) -> Result<Holding, Box<dyn Error>> {
         let mint =
             Pubkey::from_str(parsed["info"]["mint"].as_str().expect("mint"))?;
         let ata = Pubkey::from_str(&ata.pubkey)?;
-        Ok(Holding { mint, ata, amount })
+        Ok(Holding {
+            mint: mint.to_string(),
+            ata: ata.to_string(),
+            amount,
+        })
     } else {
         Err("failed to parse holding".into())
     }
@@ -129,8 +135,8 @@ pub async fn sweep_raydium(
         let tx = Transaction::new_signed_with_payer(
             &[burn(
                 &spl_token::id(),
-                &holding.ata,
-                &holding.mint,
+                &Pubkey::from_str(&holding.ata)?,
+                &Pubkey::from_str(&holding.mint)?,
                 &owner,
                 &[&owner],
                 holding.amount,

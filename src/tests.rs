@@ -15,6 +15,7 @@ fn test_get_pricing() {
     let mint = "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump";
 
     let pricing = tokio_test::block_on(Provider::get_pricing(mint)).unwrap();
+    println!("{:?}", pricing);
     assert!(pricing.data[mint].price > 0., "Price not found");
 }
 
