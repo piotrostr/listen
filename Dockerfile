@@ -1,4 +1,4 @@
-FROM rust:1.70 as builder
+FROM rust:1.79 AS builder
 
 RUN apt-get update && apt-get install -y \
     build-essential \
@@ -9,35 +9,40 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Install latest protoc
-RUN PROTOC_VERSION=$(curl -s https://api.github.com/repos/protocolbuffers/protobuf/releases/latest | grep -oP '"tag_name": "\K(.*)(?=")') && \
-    PROTOC_VERSION=${PROTOC_VERSION#v} && \
+RUN PROTOC_VERSION="29.2" && \
     curl -LO "https://github.com/protocolbuffers/protobuf/releases/download/v${PROTOC_VERSION}/protoc-${PROTOC_VERSION}-linux-x86_64.zip" && \
     unzip "protoc-${PROTOC_VERSION}-linux-x86_64.zip" -d /usr/local && \
     rm "protoc-${PROTOC_VERSION}-linux-x86_64.zip"
 
-# Copy manifests and build only the dependencies to cache them
-RUN USER=root cargo new --bin listen
+
 WORKDIR /listen
-COPY ./Cargo.toml ./Cargo.toml
-COPY ./Cargo.lock ./Cargo.lock
 
-RUN cargo update
-RUN cargo build --release
-RUN rm src/*.rs
+# Copy only the files needed for dependency resolution
+COPY Cargo.toml Cargo.lock ./
 
-# Copy over source
-COPY ./src ./src
+# Create a dummy main.rs to build dependencies
+RUN mkdir src && \
+    echo "fn main() {}" > src/main.rs
 
-# Build for release
-RUN rm ./target/release/deps/listen*
-RUN cargo build --release
+# Build dependencies - this will be cached if dependencies don't change
+RUN cargo build --release --locked
 
-FROM debian:bullseye-slim as runner
+# Remove the dummy source
+RUN rm -rf src
+
+# Copy the actual source code
+COPY src ./src
+
+# Build the application
+RUN touch src/main.rs && \
+    cargo build --release --locked
+
+FROM debian:bookworm-slim AS runner
 
 RUN apt-get update && apt-get install -y \
     ca-certificates \
     openssl \
-    libssl-dev \
+    libssl3 \
     && rm -rf /var/lib/apt/lists/*
 
 COPY --from=builder /listen/target/release/listen .

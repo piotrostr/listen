@@ -1,0 +1,11 @@
+services:
+  listen-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - 6969:6969
+    volumes:
+      - ./.env:/.env
+      - ./fuck.json:/fuck.json # keypair that FUND_KEYPAIR_PATH points to
+    command: ["./listen", "listen-service"]
