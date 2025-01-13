@@ -1,0 +1,30 @@
+name: Rust CI
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out
+      uses: actions/checkout@v4
+    - name: Set up cargo cache
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }} 
+    # Github Runners already have Rust installed
+    - name: Lint
+      run: cargo clippy
+    - name: Build
+      run: cargo build
+    # Uncomment when tests are stable
+    # - name: Run tests
+    #   run: cargo test --lib
