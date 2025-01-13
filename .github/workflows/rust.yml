@@ -20,7 +20,9 @@ jobs:
           ~/.cargo/git/db/
           target/
         key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }} 
-    # Github Runners already have Rust installed
+    - name: Install Protoc
+      uses: arduino/setup-protoc@v3
+    # TODO: Run lint, build, and tests in parallel to save time
     - name: Lint
       run: cargo clippy
     - name: Build
