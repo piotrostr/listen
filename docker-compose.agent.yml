@@ -9,3 +9,6 @@ services:
       - ./.env:/.env
       - ./fuck.json:/fuck.json # keypair that FUND_KEYPAIR_PATH points to
     command: ["./listen", "listen-service"]
+
+  # here, include an agent container alongside
+  # ...
