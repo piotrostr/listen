@@ -108,7 +108,12 @@ pub async fn listen_price(
             }),
         )
         .await
-        .expect("subscribe to account");
+        .map_err(|e| {
+            Box::<dyn Error>::from(format!(
+                "Failed to subscribe to token account: {}",
+                e
+            ))
+        })?;
 
     let (mut sol_stream, sol_unsub) = pubsub_client
         .account_subscribe(
@@ -120,7 +125,12 @@ pub async fn listen_price(
             }),
         )
         .await
-        .expect("subscribe to account");
+        .map_err(|e| {
+            Box::<dyn Error>::from(format!(
+                "Failed to subscribe to SOL account: {}",
+                e
+            ))
+        })?;
 
     let mut pool = Pool::default();
     info!("listening for price for {}", token_mint.to_string());
@@ -129,12 +139,18 @@ pub async fn listen_price(
             Some(token_log) = token_stream.next() => {
                 match token_log.value.data {
                     UiAccountData::Binary(data, UiAccountEncoding::Base64) => {
-                        let log_data = base64::prelude::BASE64_STANDARD.decode(data).unwrap();
+                        let Ok(log_data) = base64::prelude::BASE64_STANDARD.decode(data) else {
+                            warn!("decode token b64");
+                            continue;
+                        };
                         if log_data.is_empty() {
                             warn!("empty log data");
                             continue;
                         }
-                        let account = spl_token::state::Account::unpack(&log_data).unwrap();
+                        let Ok(account) = spl_token::state::Account::unpack(&log_data) else {
+                            warn!("unpack token account");
+                            continue;
+                        };
                         pool.token_vault.amount = account.amount;
                         pool.token_vault.slot = token_log.context.slot;
                         if let Some(price) = pool.try_price() {
@@ -236,10 +252,10 @@ pub async fn get_spl_balance(
                 if balance.amount == "0" {
                     continue;
                 }
-                return Ok(balance
-                    .amount
-                    .parse::<u64>()
-                    .expect("balance string to u64"));
+                return match balance.amount.parse::<u64>() {
+                    Ok(parsed_balance) => Ok(parsed_balance),
+                    Err(e) => Err(Box::new(e)),
+                };
             }
             Err(e) => {
                 warn!(
@@ -263,7 +279,7 @@ pub async fn get_spl_balance_stream(
     pubsub_client: &PubsubClient,
     token_account: &Pubkey,
 ) -> Result<u64, Box<dyn std::error::Error>> {
-    let (mut stream, unsub) = pubsub_client
+    let Ok((mut stream, unsub)) = pubsub_client
         .account_subscribe(
             token_account,
             Some(RpcAccountInfoConfig {
@@ -273,13 +289,25 @@ pub async fn get_spl_balance_stream(
             }),
         )
         .await
-        .expect("account_subscribe");
+    else {
+        warn!(
+            "get_spl_balance_stream {}: subscribe",
+            token_account.to_string()
+        );
+        return Err("subscribe".into());
+    };
 
     tokio::select! {
         log = stream.next() => {
             if let UiAccountData::Binary(data, UiAccountEncoding::Base64) = log.expect("log").value.data {
-                let log_data = base64::prelude::BASE64_STANDARD.decode(&data).expect("decode spl b64");
-                let spl_account = spl_token::state::Account::unpack(&log_data).expect("unpack spl");
+                let Ok(log_data) = base64::prelude::BASE64_STANDARD.decode(&data) else {
+                    warn!("decode spl b64");
+                    return Err("decode spl b64".into());
+                };
+                let Ok(spl_account) = spl_token::state::Account::unpack(&log_data) else {
+                    warn!("unpack spl account");
+                    return Err("unpack spl account".into());
+                };
                 unsub().await;
                 Ok(spl_account.amount)
             } else {

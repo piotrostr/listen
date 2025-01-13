@@ -8,7 +8,7 @@ use crate::{
 use actix_web::post;
 use actix_web::web::Json;
 use actix_web::{App, Error, HttpResponse, HttpServer};
-use log::info;
+use log::{error, info};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
@@ -46,10 +46,13 @@ async fn handle_buy(
     );
     let mint = buy_request.output_mint;
     tokio::spawn(async move {
-        let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
-            .expect("read fund keypair");
+        let Ok(wallet) = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
+        else {
+            error!("Failed to read wallet");
+            return;
+        };
         let rpc_client = RpcClient::new(env("RPC_URL"));
-        buyer::swap(
+        if let Err(e) = buyer::swap(
             &buy_request.amm_pool,
             &buy_request.input_mint,
             &buy_request.output_mint,
@@ -58,8 +61,12 @@ async fn handle_buy(
             &rpc_client,
         )
         .await
-        .expect("buy");
-        HttpClient::new()
+        {
+            error!("could not swap {e}, exiting");
+            return;
+        };
+
+        if let Err(e) = HttpClient::new()
             .sell(&SellRequest {
                 amm_pool: buy_request.amm_pool,
                 input_mint: buy_request.output_mint,
@@ -68,6 +75,9 @@ async fn handle_buy(
                 insta: None,
             })
             .await
+        {
+            error!("could not sell {e}, exiting");
+        }
     });
 
     Ok(HttpResponse::Ok()
