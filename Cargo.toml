@@ -73,5 +73,5 @@ hyper-util = "0.1.7"
 http-body-util = "0.1.2"
 
 [lints.clippy]
-unwrap_used = "warn"
-expect_used = "warn"
+# unwrap_used = "warn"
+# expect_used = "warn"

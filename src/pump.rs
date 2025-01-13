@@ -141,7 +141,7 @@ pub async fn get_tokens_held(
 ) -> Result<Vec<PumpTokenData>, Box<dyn Error>> {
     let url = format!(
         "https://frontend-api.pump.fun/balances/{}?limit=100&offset=0",
-        owner.to_string()
+        owner
     );
     Ok(reqwest::get(&url)
         .await?

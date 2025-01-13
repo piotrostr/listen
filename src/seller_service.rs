@@ -313,7 +313,7 @@ pub async fn load_amm_keys(
     )
     .await
     .map_err(|_| "Failed to get account")?
-    .ok_or_else(|| "Account not found")?;
+    .ok_or("Account not found")?;
 
     Ok(amm::AmmKeys {
         amm_pool: *amm_pool,
