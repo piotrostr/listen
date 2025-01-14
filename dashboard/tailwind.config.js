@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        "sf-mono": ["SF Mono", "monospace"],
+        mono: ["SF Mono", "monospace"],
       },
       animation: {
         blob: "blob 7s infinite",
@@ -27,5 +27,5 @@ export default {
       },
     },
   },
-  plugins: [],
+  plugins: [require("tailwind-scrollbar")],
 };

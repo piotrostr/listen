@@ -15,15 +15,51 @@ code {
   font-family: "SF Mono Nerd Font", monospace;
 }
 
-.cs-message__content {
-  background-color: #f3f4f6 !important;
+.animation-delay-2000 {
+  animation-delay: 2s;
 }
 
-.cs-message--outgoing .cs-message__content {
-  background-color: #3b82f6 !important;
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animation-delay-6000 {
+  animation-delay: 6s;
+}
+
+.cs-message-input__content-editor-wrapper {
+  background: transparent !important;
+}
+
+.cs-message-input__content-editor {
+  background: transparent !important;
   color: white !important;
+  font-family: "SF Mono Nerd Font", monospace !important;
+}
+
+.cs-message__content {
+  background: transparent !important;
+  padding: 0 !important;
+}
+
+.cs-message-list {
+  background: transparent !important;
 }
 
 .cs-chat-container .cs-message-input {
-  border-top: 1px solid #e5e7eb;
+  background: transparent !important;
+  border-top: 1px solid rgba(139, 92, 246, 0.3) !important;
+}
+
+.cs-message .cs-message__content-wrapper {
+  background: none !important;
+}
+
+.cs-typing-indicator {
+  background: transparent !important;
+  color: #9ca3af !important;
+}
+
+.cs-typing-indicator__text {
+  color: #9ca3af !important;
 }
