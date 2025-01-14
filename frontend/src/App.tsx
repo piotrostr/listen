@@ -12,9 +12,9 @@ const App = () => {
         {/* Hero */}
         <div className="text-center mb-20 mt-10">
           <img
-            src="/listen.svg"
+            src="/listen-more.png"
             alt="listen"
-            className="w-32 h-32 mx-auto mb-12"
+            className="w-48 h-48 mx-auto mb-12 rounded shadow-lg"
           />
           <h1 className="text-6xl font-bold mb-6">listen-rs</h1>
           <p className="text-xl text-gray-300">
