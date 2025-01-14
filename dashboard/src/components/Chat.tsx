@@ -39,7 +39,6 @@ export function Chat() {
 
   return (
     <div className="flex flex-col gap-4 h-[70vh] w-full max-w-4xl mx-auto px-4 font-mono">
-      {/* Chat Container */}
       <div className="flex-1">
         <MainContainer className="h-full border-2 border-purple-500/30 rounded-lg overflow-hidden bg-black/40 backdrop-blur-sm">
           <ChatContainer className="px-2">
@@ -54,15 +53,17 @@ export function Chat() {
                 ) : null
               }
             >
-              {messages.map((msg) => (
-                <Message
-                  key={msg.id}
-                  model={{
-                    message: msg.message,
-                    direction: msg.direction,
-                    position: "single",
-                  }}
-                  className={`
+              {messages.map(
+                (msg) =>
+                  msg.message && (
+                    <Message
+                      key={msg.id}
+                      model={{
+                        message: msg.message,
+                        direction: msg.direction,
+                        position: "single",
+                      }}
+                      className={`
                     ${
                       msg.direction === "incoming"
                         ? "bg-blue-900/20 text-blue-300"
@@ -76,14 +77,14 @@ export function Chat() {
                         : "border-purple-500"
                     }
                   `}
-                />
-              ))}
+                    />
+                  ),
+              )}
             </MessageList>
           </ChatContainer>
         </MainContainer>
       </div>
 
-      {/* Terminal Input Display */}
       <div className="h-12 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3">
         <span className="text-white whitespace-pre">{inputMessage}</span>
         <span className="w-2 h-5 bg-white terminal-blink ml-[1px]" />

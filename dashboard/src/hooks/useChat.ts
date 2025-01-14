@@ -16,7 +16,7 @@ export function useChat() {
 
   const anthropic = new Anthropic({
     apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-    dangerouslyAllowBrowser: true, // TODO this has to be removed in prod
+    dangerouslyAllowBrowser: true,
   });
 
   const sendMessage = useCallback(
@@ -33,7 +33,6 @@ export function useChat() {
       setMessages((prev) => [...prev, userChatMessage]);
 
       try {
-        // Convert chat history to Anthropic's format with proper typing
         const messageHistory: Anthropic.MessageParam[] = messages.map(
           (msg) => ({
             role:
@@ -44,7 +43,18 @@ export function useChat() {
           }),
         );
 
-        const response = await anthropic.messages.create({
+        // Create a temporary message for streaming
+        const assistantMessageId = crypto.randomUUID();
+        const assistantMessage: ChatMessage = {
+          id: assistantMessageId,
+          message: "",
+          direction: "incoming",
+          timestamp: new Date(),
+        };
+
+        setMessages((prev) => [...prev, assistantMessage]);
+
+        const stream = anthropic.messages.stream({
           model: "claude-3-opus-20240229",
           max_tokens: 1024,
           messages: [
@@ -56,17 +66,21 @@ export function useChat() {
           ],
         });
 
-        const assistantMessage: ChatMessage = {
-          id: crypto.randomUUID(),
-          message:
-            response.content[0].type === "text"
-              ? response.content[0].text
-              : "Received non-text response",
-          direction: "incoming",
-          timestamp: new Date(),
-        };
-
-        setMessages((prev) => [...prev, assistantMessage]);
+        stream.on("text", (text) => {
+          setMessages((prev) => {
+            const updatedMessages = [...prev];
+            const assistantMessageIndex = updatedMessages.findIndex(
+              (msg) => msg.id === assistantMessageId,
+            );
+            if (assistantMessageIndex !== -1) {
+              updatedMessages[assistantMessageIndex] = {
+                ...updatedMessages[assistantMessageIndex],
+                message: updatedMessages[assistantMessageIndex].message + text,
+              };
+            }
+            return updatedMessages;
+          });
+        });
       } catch (error) {
         console.error("Error sending message:", error);
       } finally {
@@ -76,36 +90,9 @@ export function useChat() {
     [messages, anthropic.messages],
   );
 
-  // Optional: Add a function to clear chat history
-  const clearChat = useCallback(() => {
-    setMessages([]);
-  }, []);
-
-  // Optional: Add a function to save chat history to localStorage
-  const saveChat = useCallback(() => {
-    localStorage.setItem("chatHistory", JSON.stringify(messages));
-  }, [messages]);
-
-  // Optional: Add a function to load chat history from localStorage
-  const loadChat = useCallback(() => {
-    const savedChat = localStorage.getItem("chatHistory");
-    if (savedChat) {
-      const parsedChat = JSON.parse(savedChat) as ChatMessage[];
-      // Convert string dates back to Date objects
-      const chatWithDates = parsedChat.map((msg) => ({
-        ...msg,
-        timestamp: new Date(msg.timestamp),
-      }));
-      setMessages(chatWithDates);
-    }
-  }, []);
-
   return {
     messages,
     isLoading,
     sendMessage,
-    clearChat,
-    saveChat,
-    loadChat,
   };
 }
