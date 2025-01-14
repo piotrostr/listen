@@ -47,10 +47,15 @@ pub async fn handle_balance(
     }))
 }
 
+#[derive(Debug, Serialize, ToSchema)]
+pub struct PubkeyResponse {
+    pubkey: String,
+}
+
 #[utoipa::path(
     get, 
     path = "/pubkey",
-    responses((status = 200, body = String)),
+    responses((status = 200, body = PubkeyResponse)),
     tag = "balance"
 )]
 #[get("/pubkey")]
@@ -58,7 +63,9 @@ pub async fn handle_get_pubkey(
     state: Data<ServiceState>,
 ) -> Result<HttpResponse, Error> {
     let pubkey = state.wallet.lock().await.pubkey();
-    Ok(HttpResponse::Ok().json(pubkey.to_string()))
+    Ok(HttpResponse::Ok().json(PubkeyResponse {
+        pubkey: pubkey.to_string(),
+    }))
 }
 
 

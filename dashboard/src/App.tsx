@@ -3,7 +3,19 @@ import { Chat } from "./components/Chat";
 import { Header } from "./components/Header";
 import { Portfolio } from "./components/Portfolio";
 
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+const queryClient = new QueryClient();
+
 function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <Contents />
+    </QueryClientProvider>
+  );
+}
+
+function Contents() {
   return (
     <div className="relative min-h-screen text-white">
       <Background />

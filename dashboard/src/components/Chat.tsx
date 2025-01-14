@@ -39,11 +39,11 @@ export function Chat() {
 
   return (
     <div className="flex flex-col gap-4 h-[70vh] w-full max-w-4xl mx-auto px-4 font-mono">
-      <div className="flex-1">
+      <div className="flex-1 overflow-hidden">
         <MainContainer className="h-full border-2 border-purple-500/30 rounded-lg overflow-hidden bg-black/40 backdrop-blur-sm">
-          <ChatContainer className="px-2">
+          <ChatContainer className="h-full">
             <MessageList
-              className="py-4 scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent"
+              className="h-full overflow-y-auto py-4 scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent"
               typingIndicator={
                 isLoading ? (
                   <TypingIndicator

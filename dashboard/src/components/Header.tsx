@@ -1,7 +1,11 @@
+import { useSolBalance } from "../hooks/useSolBalance";
+
 export const Header = () => {
+  const { data: balance } = useSolBalance();
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur border-b border-purple-500/30">
-      <div className="max-w-6xl mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Left side */}
           <div className="flex items-center space-x-4">
@@ -14,7 +18,20 @@ export const Header = () => {
           </div>
 
           {/* Right side */}
-          <div className="flex items-center space-x-4 flex">
+          <div className="flex items-center space-x-4">
+            {/* SOL Balance */}
+            <div className="flex items-center gap-2 mr-4">
+              <img
+                src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
+                alt="SOL"
+                className="w-6 h-6 rounded-full"
+              />
+              <span className="text-sm text-gray-300">
+                {balance?.toFixed(2) || "0.00"}
+              </span>
+            </div>
+
+            {/* Documentation Link */}
             <div className="items-center space-x-4">
               <a
                 href="https://docs.listen-rs.com"
@@ -32,6 +49,8 @@ export const Header = () => {
                 </svg>
               </a>
             </div>
+
+            {/* GitHub Link */}
             <a
               href="https://github.com/piotrostr/listen"
               target="_blank"
