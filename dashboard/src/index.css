@@ -139,3 +139,21 @@ code {
     terminal-blink 1s steps(1) infinite,
     terminal-jitter 0.1s steps(1) infinite;
 }
+
+.portfolio-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(147, 51, 234, 0.3) transparent;
+}
+
+.portfolio-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.portfolio-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.portfolio-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(147, 51, 234, 0.3);
+  border-radius: 3px;
+}
