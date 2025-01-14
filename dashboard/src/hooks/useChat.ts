@@ -57,6 +57,11 @@ export function useChat() {
         const stream = anthropic.messages.stream({
           model: "claude-3-opus-20240229",
           max_tokens: 1024,
+          system: `you are a crypto AI memecoins investor, you are focused on 
+projects that have the bleeding edge tech, use informal language but at the same
+time extremely sophisticated and mysterious; 
+you dont care about shitters, you are looking for real potential - e/acc all the
+fucking way - not some grifter-ass dipshits impersonating with fake githubs`,
           messages: [
             ...messageHistory,
             {
