@@ -1,11 +1,12 @@
 use crate::api_docs::ApiDocs;
 use crate::blockhash::update_latest_blockhash;
 use crate::handlers::{
-    handle_balance, handle_pump_buy, handle_pump_sell, handle_swap,
-    handle_token_balance,
+    handle_balance, handle_get_holdings, handle_get_pubkey, handle_pump_buy,
+    handle_pump_sell, handle_swap, handle_token_balance,
 };
 use crate::state::ServiceState;
 use crate::util::{env, healthz};
+use actix_cors::Cors;
 use actix_web::{web::Data, App, HttpServer};
 use log::info;
 use solana_client::nonblocking::rpc_client::RpcClient;
@@ -19,7 +20,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 pub struct ListenService {
     port: u16,
-    state: Arc<ServiceState>,
+    state: Data<ServiceState>,
 }
 
 pub fn load_keypair_from_b58_env() -> Result<Keypair, Box<dyn Error>> {
@@ -40,7 +41,7 @@ impl ListenService {
 
         let rpc_client = Arc::new(RpcClient::new(env("RPC_URL")));
 
-        let state = Arc::new(ServiceState {
+        let state = Data::new(ServiceState {
             wallet,
             rpc_client,
             latest_blockhash: Arc::new(Mutex::new(Hash::default())),
@@ -61,9 +62,17 @@ impl ListenService {
         info!("Running unified listen service on port {}", self.port);
 
         HttpServer::new(move || {
+            let cors = Cors::default()
+                .allow_any_origin() // Allow all origins
+                .allow_any_method() // Allow all methods
+                .allow_any_header() // Allow all headers
+                .max_age(3600); // Set prefligh
             App::new()
-                .app_data(Data::new(state.clone()))
+                .wrap(cors)
+                .app_data(state.clone())
                 .service(handle_swap)
+                .service(handle_get_pubkey)
+                .service(handle_get_holdings)
                 .service(handle_balance)
                 .service(handle_pump_buy)
                 .service(handle_pump_sell)
@@ -82,10 +91,10 @@ impl ListenService {
 
 // Main entry point
 pub async fn run_listen_service() -> std::io::Result<()> {
-    let service = ListenService::new(6969).map_err(|_| {
+    let service = ListenService::new(6969).map_err(|e| {
         std::io::Error::new(
-            std::io::ErrorKind::NetworkUnreachable,
-            "Failed to create listen service",
+            std::io::ErrorKind::Other,
+            format!("Failed to create listen service: {}", e),
         )
     })?;
     service.start().await
