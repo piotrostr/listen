@@ -47,4 +47,4 @@ RUN apt-get update && apt-get install -y \
 
 COPY --from=builder /listen/target/release/listen .
 
-CMD ["./listen"]
+CMD ["./listen", "listen-service"]
