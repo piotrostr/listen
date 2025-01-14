@@ -47,7 +47,7 @@ export function Portfolio() {
                     />
                     <div>
                       <h3 className="font-bold">{asset.name}</h3>
-                      <p className="text-sm text-gray-400">{asset.symbol}</p>
+                      <p className="text-sm text-gray-400">${asset.symbol}</p>
                     </div>
                   </div>
                   <div className="text-right">
