@@ -1,6 +1,6 @@
 export const Header = () => {
   return (
-    <nav className="fixed top-0 left-0 right-0 z-50 bg-gray-900/80 backdrop-blur border-b border-gray-800">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur border-b border-purple-500/30">
       <div className="max-w-6xl mx-auto px-4">
         <div className="flex justify-between items-center h-16">
           {/* Left side */}
