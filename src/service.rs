@@ -9,7 +9,9 @@ use crate::util::{env, healthz};
 use actix_web::{web::Data, App, HttpServer};
 use log::info;
 use solana_client::nonblocking::rpc_client::RpcClient;
+use solana_sdk::signer::Signer;
 use solana_sdk::{hash::Hash, signature::Keypair, signer::EncodableKey};
+use std::error::Error;
 use std::sync::Arc;
 use tokio::sync::Mutex;
 use utoipa::OpenApi;
@@ -20,12 +22,21 @@ pub struct ListenService {
     state: Arc<ServiceState>,
 }
 
+pub fn load_keypair_from_b58_env() -> Result<Keypair, Box<dyn Error>> {
+    let b58_keypair = env("FUND_KEYPAIR_BS58");
+    Ok(Keypair::from_base58_string(&b58_keypair))
+}
+
+pub fn load_keypair_from_file_env() -> Result<Keypair, Box<dyn Error>> {
+    let path = env("FUND_KEYPAIR_PATH");
+    Keypair::read_from_file(&path)
+}
+
 impl ListenService {
-    pub fn new(port: u16) -> Result<Self, Box<dyn std::error::Error>> {
-        let wallet = Arc::new(Mutex::new(
-            Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
-                .map_err(|_| "read fund keypair")?,
-        ));
+    pub fn new(port: u16) -> Result<Self, Box<dyn Error>> {
+        let keypair = load_keypair_from_b58_env().expect("read keypair");
+        info!("Wallet address: {}", keypair.pubkey().to_string());
+        let wallet = Arc::new(Mutex::new(keypair));
 
         let rpc_client = Arc::new(RpcClient::new(env("RPC_URL")));
 
