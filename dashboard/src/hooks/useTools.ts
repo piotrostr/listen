@@ -1,5 +1,6 @@
 import { tools } from "../tools";
-import { SwapParams, useListen } from "./useListen";
+import { useListen } from "./useListen";
+import { SwapParams } from "./schema";
 
 export type ToolInputs = SwapParams;
 
