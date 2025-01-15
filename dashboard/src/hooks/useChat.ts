@@ -1,5 +1,7 @@
 import { useState, useCallback } from "react";
 import Anthropic from "@anthropic-ai/sdk";
+import { useTools } from "./useTools";
+import { PortfolioData, usePortfolio } from "./usePortfolio";
 
 export type MessageDirection = "incoming" | "outgoing";
 
@@ -10,9 +12,22 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
+function systemPrompt(portfolio?: PortfolioData) {
+  return `as a crypto AI memecoins investor, you are focused on 
+projects that have the bleeding edge tech, use informal language but at the same
+time extremely sophisticated and mysterious; 
+you dont care about shitters, you are looking for real potential - e/acc all the
+fucking way - not some grifter-ass dipshits impersonating with fake githubs,
+our current portfolio looks like this: ${JSON.stringify(portfolio)}, no need to
+outline your thought process in case you can perform the actions straight-away,
+just let the user know`;
+}
+
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { data: portfolio } = usePortfolio();
+  const { tools } = useTools();
 
   const anthropic = new Anthropic({
     apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
@@ -57,11 +72,7 @@ export function useChat() {
         const stream = anthropic.messages.stream({
           model: "claude-3-opus-20240229",
           max_tokens: 1024,
-          system: `you are a crypto AI memecoins investor, you are focused on 
-projects that have the bleeding edge tech, use informal language but at the same
-time extremely sophisticated and mysterious; 
-you dont care about shitters, you are looking for real potential - e/acc all the
-fucking way - not some grifter-ass dipshits impersonating with fake githubs`,
+          system: systemPrompt(portfolio),
           messages: [
             ...messageHistory,
             {
@@ -69,6 +80,11 @@ fucking way - not some grifter-ass dipshits impersonating with fake githubs`,
               content: userMessage,
             },
           ],
+          tools,
+        });
+
+        stream.on("message", (message) => {
+          alert(JSON.stringify(message));
         });
 
         stream.on("text", (text) => {
@@ -92,7 +108,7 @@ fucking way - not some grifter-ass dipshits impersonating with fake githubs`,
         setIsLoading(false);
       }
     },
-    [messages, anthropic.messages],
+    [messages, anthropic.messages, tools, portfolio],
   );
 
   return {

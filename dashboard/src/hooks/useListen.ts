@@ -1,156 +1,117 @@
-import { useCallback } from "react";
-
-export interface BalanceResponse {
-  balance: number;
-  pubkey: string;
-}
-
-export interface Holding {
-  mint: string;
-  ata: string;
-  amount: number;
-}
-
-export interface HoldingsResponse {
-  holdings: Array<Holding>;
-}
-
-export interface PriceResponse {
-  mint: string;
-  price: number;
-}
-
-export interface PumpBuyParams {
-  mint: string;
-  sol_amount: number;
-  slippage: number;
-}
-
-export interface PumpSellParams {
-  mint: string;
-  token_amount: number;
-  slippage: number;
-}
-
-export interface SwapParams {
-  input_mint: string;
-  output_mint: string;
-  amount: number;
-  slippage: number;
-}
-
-export interface TokenBalanceParams {
-  pubkey: string;
-  mint: string;
-}
-
-export interface TokenBalanceResponse {
-  balance: number;
-  mint: string;
-  pubkey: string;
-}
-
-export interface PubkeyResponse {
-  pubkey: string;
-}
+import {
+  BalanceResponse,
+  HoldingsResponse,
+  PriceResponse,
+  PubkeyResponse,
+  SwapResponse,
+  PumpBuyParams,
+  PumpSellParams,
+  SwapParams,
+  TokenBalanceParams,
+  TokenBalanceResponse,
+  BalanceResponseSchema,
+  HoldingsResponseSchema,
+  PriceResponseSchema,
+  PubkeyResponseSchema,
+  SwapResponseSchema,
+  PumpBuyParamsSchema,
+  PumpSellParamsSchema,
+  SwapParamsSchema,
+  TokenBalanceParamsSchema,
+  TokenBalanceResponseSchema,
+} from "./schema";
 
 export interface UseListenActions {
   balance: (pubkey: string) => Promise<BalanceResponse>;
   getHoldings: () => Promise<HoldingsResponse>;
   getPrice: (mint: string) => Promise<PriceResponse>;
   getPubkey: () => Promise<PubkeyResponse>;
-  pumpBuy: (params: PumpBuyParams) => Promise<void>;
-  pumpSell: (params: PumpSellParams) => Promise<void>;
-  swap: (params: SwapParams) => Promise<void>;
+  pumpBuy: (params: PumpBuyParams) => Promise<SwapResponse>;
+  pumpSell: (params: PumpSellParams) => Promise<SwapResponse>;
+  swap: (params: SwapParams) => Promise<SwapResponse>;
   tokenBalance: (params: TokenBalanceParams) => Promise<TokenBalanceResponse>;
 }
 
-// TODO some try catches here would be nice
-
 export function useListen(): UseListenActions {
-  const API_BASE = "http://localhost:6969"; // Adjust this to your API endpoint
+  const API_BASE = "http://localhost:6969";
 
-  const balance = useCallback(async (pubkey: string) => {
+  const balance = async (pubkey: string): Promise<BalanceResponse> => {
     const response = await fetch(`${API_BASE}/balance`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ pubkey }),
     });
-    return response.json();
-  }, []);
+    const data = await response.json();
+    return BalanceResponseSchema.parse(data);
+  };
 
-  const getHoldings = useCallback(async () => {
+  const getHoldings = async (): Promise<HoldingsResponse> => {
     const response = await fetch(`${API_BASE}/holdings`);
-    return response.json();
-  }, []);
+    const data = await response.json();
+    return HoldingsResponseSchema.parse(data);
+  };
 
-  const getPrice = useCallback(async (mint: string) => {
+  const getPrice = async (mint: string): Promise<PriceResponse> => {
     const response = await fetch(`${API_BASE}/price`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ mint }),
     });
-    return response.json();
-  }, []);
+    const data = await response.json();
+    return PriceResponseSchema.parse(data);
+  };
 
-  const getPubkey = useCallback(async () => {
+  const getPubkey = async (): Promise<PubkeyResponse> => {
     const response = await fetch(`${API_BASE}/pubkey`);
-    return await response.json();
-  }, []);
+    const data = await response.json();
+    return PubkeyResponseSchema.parse(data);
+  };
 
-  const pumpBuy = useCallback(
-    async (params: { mint: string; sol_amount: number; slippage: number }) => {
-      await fetch(`${API_BASE}/pump-buy`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
-      });
-    },
-    [],
-  );
+  const pumpBuy = async (params: PumpBuyParams): Promise<SwapResponse> => {
+    PumpBuyParamsSchema.parse(params);
+    const response = await fetch(`${API_BASE}/pump-buy`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    const data = await response.json();
+    return SwapResponseSchema.parse(data);
+  };
 
-  const pumpSell = useCallback(
-    async (params: {
-      mint: string;
-      token_amount: number;
-      slippage: number;
-    }) => {
-      await fetch(`${API_BASE}/pump-sell`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
-      });
-    },
-    [],
-  );
+  const pumpSell = async (params: PumpSellParams): Promise<SwapResponse> => {
+    PumpSellParamsSchema.parse(params);
+    const response = await fetch(`${API_BASE}/pump-sell`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    const data = await response.json();
+    return SwapResponseSchema.parse(data);
+  };
 
-  const swap = useCallback(
-    async (params: {
-      input_mint: string;
-      output_mint: string;
-      amount: number;
-      slippage: number;
-    }) => {
-      await fetch(`${API_BASE}/swap`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
-      });
-    },
-    [],
-  );
+  const swap = async (params: SwapParams): Promise<SwapResponse> => {
+    SwapParamsSchema.parse(params);
+    const response = await fetch(`${API_BASE}/swap`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    const data = await response.json();
+    return SwapResponseSchema.parse(data);
+  };
 
-  const tokenBalance = useCallback(
-    async (params: { pubkey: string; mint: string }) => {
-      const response = await fetch(`${API_BASE}/token_balance`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(params),
-      });
-      return response.json();
-    },
-    [],
-  );
+  const tokenBalance = async (
+    params: TokenBalanceParams,
+  ): Promise<TokenBalanceResponse> => {
+    TokenBalanceParamsSchema.parse(params);
+    const response = await fetch(`${API_BASE}/token_balance`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(params),
+    });
+    const data = await response.json();
+    return TokenBalanceResponseSchema.parse(data);
+  };
 
   return {
     balance,
