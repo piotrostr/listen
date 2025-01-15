@@ -7,6 +7,7 @@ use crate::handlers::{
 use crate::state::ServiceState;
 use crate::util::{env, healthz};
 use actix_cors::Cors;
+use actix_web::{get, HttpResponse, Responder};
 use actix_web::{web::Data, App, HttpServer};
 use log::info;
 use solana_client::nonblocking::rpc_client::RpcClient;
@@ -17,6 +18,13 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
+
+#[get("/")]
+async fn redirect_to_swagger() -> impl Responder {
+    HttpResponse::Found()
+        .append_header(("Location", "/swagger-ui/"))
+        .finish()
+}
 
 pub struct ListenService {
     port: u16,
@@ -78,6 +86,7 @@ impl ListenService {
                 .service(handle_pump_sell)
                 .service(handle_token_balance)
                 .service(healthz)
+                .service(redirect_to_swagger)
                 .service(
                     SwaggerUi::new("/swagger-ui/{_:.*}")
                         .url("/api-docs/openapi.json", ApiDocs::openapi()),
