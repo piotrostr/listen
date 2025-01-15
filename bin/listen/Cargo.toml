@@ -1,0 +1,19 @@
+[package]
+name = "listen"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+documentation.workspace = true
+description.workspace = true
+
+[dependencies]
+clap.workspace = true
+flexi_logger.workspace = true
+jito-protos.workspace = true
+tokio.workspace = true
+log.workspace = true
+# raydium-library.workspace = true
+solana-client.workspace = true
+solana-sdk.workspace = true
+
+listen-searcher-client.workspace = true

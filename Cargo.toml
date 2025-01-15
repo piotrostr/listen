@@ -1,4 +1,22 @@
-[package]
+[workspace]
+resolver = "2"
+members = [
+  "bin/listen",
+  "crates/buyer",
+  "crates/engine",
+  "crates/jito",
+  "crates/jito-protos",
+  "crates/metrics",
+  "crates/orca",
+  "crates/pump-fun",
+  "crates/raydium",
+  "crates/searcher-client",
+  "crates/seller",
+  "crates/util",
+]
+default-members = ["bin/listen"]
+
+[workspace.package]
 name = "listen"
 version = "0.1.0"
 edition = "2021"
@@ -6,12 +24,13 @@ license = "MIT"
 description = "solana actions for AI agents"
 documentation = "docs.listen-rs.com"
 
-[dependencies]
+[workspace.dependencies]
 utoipa = { version = "5", features = ["actix_extras"] }
 utoipa-actix-web = "0.1"
 utoipa-swagger-ui = { version = "8.1.1", features = ["actix-web"] }
 anyhow = "1.0.53"
 bincode = "1.3.3"
+bytes = "1.4.0"
 anchor-lang = "=0.29.0"
 anchor-client = "=0.29.0"
 clap = { version = "4.5.4", features = ["derive"] }
@@ -24,16 +43,18 @@ reqwest = { version = "0.12.4", features = ["json", "stream"] }
 serde = "1.0.199"
 serde_json = "1.0.116"
 serde_with = "3.8.1"
-solana-account-decoder = "<1.17.0"
-solana-client = "<1.17.0"
-solana-sdk = "<1.17.0"
-solana-transaction-status = "<1.17.0"
+solana-account-decoder = "2.0.3"
+solana-client = "2.0.3"
+solana-sdk = "2.0.3"
+solana-perf = "2.0.3"
+solana-metrics = "2.0.3"
+solana-transaction-status = "2.0.3"
 spl-token-2022 = { version = "0.9.0", features = ["no-entrypoint"] }
 spl-token = { version = "4.0.0", features = ["no-entrypoint"] }
 tokio = { version = "1.37.0", features = ["full"] }
 tokio-test = "0.4.4"
 warp = "0.3.7"
-raydium-library = { git = "https://github.com/piotrostr/raydium-library", version = "0.3.0" }
+# raydium-library = { git = "https://github.com/piotrostr/raydium-library", version = "0.3.0" }
 spl-associated-token-account = { version = "2.2.0", features = [
   "no-entrypoint",
 ] }
@@ -44,13 +65,15 @@ log = "0.4.21"
 env_logger = "0.11.3"
 chrono = "0.4.38"
 dotenv = "0.15.0"
-jito-searcher-client = { git = "https://github.com/piotrostr/searcher-examples", version = "0.1.0" }
-jito-protos = { git = "https://github.com/piotrostr/searcher-examples", version = "0.1.0" }
+# jito-protos = { git = "https://github.com/piotrostr/searcher-examples", version = "0.1.0" }
+prost = "0.12"
+prost-types = "0.12"
 tonic = { version = "0.10", features = [
   "tls",
   "tls-roots",
   "tls-webpki-roots",
 ] }
+tonic-build = "0.10.0"
 timed = "0.2.1"
 ctrlc = "3.4.4"
 flexi_logger = { version = "0.28.0", features = ["async"] }
@@ -75,6 +98,18 @@ tokio-native-tls = "0.3.1"
 hyper-util = "0.1.7"
 http-body-util = "0.1.2"
 
-[lints.clippy]
-# unwrap_used = "warn"
-# expect_used = "warn"
+jito-protos = { path = "crates/jito-protos" }
+listen-buyer = { path = "crates/buyer" }
+listen-engine = { path = "crates/engine" }
+listen-jito = { path = "crates/jito" }
+listen-metrics = { path = "crates/metrics" }
+listen-orca = { path = "crates/orca" }
+listen-pump-fun = { path = "crates/pump-fun" }
+listen-raydium = { path = "crates/raydium" }
+listen-searcher-client = { path = "crates/searcher-client" }
+listen-seller = { path = "crates/seller" }
+listen-util = { path = "crates/util" }
+
+[workspace.lints]
+# clippy.unwrap_used = "warn"
+# clippy.expect_used = "warn"

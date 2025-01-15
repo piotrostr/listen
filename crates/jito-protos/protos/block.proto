@@ -1,0 +1,15 @@
+syntax = "proto3";
+
+package block;
+import "shared.proto";
+
+// Condensed block helpful for getting data around efficiently internal to our system.
+message CondensedBlock {
+  shared.Header header = 1;
+  string previous_blockhash = 2;
+  string blockhash = 3;
+  uint64 parent_slot = 4;
+  repeated bytes versioned_transactions = 5;
+  uint64 slot = 6;
+  string commitment = 7;
+}

@@ -1,0 +1,9 @@
+[package]
+name = "listen-orca"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+documentation.workspace = true
+description.workspace = true
+
+[dependencies]

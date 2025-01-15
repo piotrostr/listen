@@ -1,0 +1,130 @@
+syntax = "proto3";
+
+package searcher;
+
+import "bundle.proto";
+import "packet.proto";
+
+import "google/protobuf/timestamp.proto";
+
+message SlotList {
+  repeated uint64 slots = 1;
+}
+
+message ConnectedLeadersResponse {
+  // Mapping of validator pubkey to leader slots for the current epoch.
+  map<string /* validator pubkey */ , SlotList> connected_validators = 1;
+}
+
+message SendBundleRequest {
+  bundle.Bundle bundle = 1;
+}
+
+message SendBundleResponse {
+  // server uuid for the bundle
+  string uuid = 1;
+}
+
+message ProgramSubscriptionV0 {
+  // Base58 encoded program id that transactions mention
+  repeated string programs = 1;
+}
+
+message WriteLockedAccountSubscriptionV0 {
+  // Base58 encoded account pubkey that transactions mention
+  repeated string accounts = 1;
+}
+
+message MempoolSubscription {
+  // Filter by program id or account pubkey
+  oneof msg {
+    ProgramSubscriptionV0 program_v0_sub = 1;
+    WriteLockedAccountSubscriptionV0 wla_v0_sub = 2;
+    /// field numbers upto (and incl) 9 are reserved
+  }
+
+  // Filters transactions to originate from specified regions.
+  // Defaults to the currently connected region.
+  repeated string regions = 10;
+}
+
+message PendingTxNotification {
+  // server-side timestamp the transactions were generated at (for debugging/profiling purposes)
+  google.protobuf.Timestamp server_side_ts = 1;
+  // expiration time of the packet
+  google.protobuf.Timestamp expiration_time = 2;
+  // list of pending transactions
+  repeated packet.Packet transactions = 3;
+}
+
+message NextScheduledLeaderRequest {
+  // Defaults to the currently connected region if no region provided.
+  repeated string regions = 1;
+}
+
+message NextScheduledLeaderResponse {
+  // the current slot the backend is on
+  uint64 current_slot = 1;
+
+  // the slot of the next leader
+  uint64 next_leader_slot = 2;
+  // the identity pubkey (base58) of the next leader
+  string next_leader_identity = 3;
+  // the block engine region of the next leader
+  string next_leader_region = 4;
+}
+
+message ConnectedLeadersRequest {}
+
+message ConnectedLeadersRegionedRequest {
+  // Defaults to the currently connected region if no region provided.
+  repeated string regions = 1;
+}
+message ConnectedLeadersRegionedResponse {
+  map<string /* region */ , ConnectedLeadersResponse> connected_validators = 1;
+}
+
+
+message GetTipAccountsRequest {}
+
+message GetTipAccountsResponse {
+  repeated string accounts = 1;
+}
+
+message SubscribeBundleResultsRequest {}
+
+message GetRegionsRequest {}
+message GetRegionsResponse {
+  // The region the client is currently connected to
+  string current_region = 1;
+
+  // Regions that are online and ready for connections
+  // All regions: https://jito-labs.gitbook.io/mev/systems/connecting/mainnet
+  repeated string available_regions = 2;
+}
+
+service SearcherService {
+  // Searchers can invoke this endpoint to subscribe to their respective bundle results.
+  // A success result would indicate the bundle won its state auction and was submitted to the validator.
+  rpc SubscribeBundleResults (SubscribeBundleResultsRequest) returns (stream bundle.BundleResult) {}
+
+  // Subscribe to mempool transactions based on a few filters
+  rpc SubscribeMempool (MempoolSubscription) returns (stream PendingTxNotification) {}
+
+  rpc SendBundle (SendBundleRequest) returns (SendBundleResponse) {}
+
+  // Returns the next scheduled leader connected to the block engine.
+  rpc GetNextScheduledLeader (NextScheduledLeaderRequest) returns (NextScheduledLeaderResponse) {}
+
+  // Returns leader slots for connected jito validators during the current epoch. Only returns data for this region.
+  rpc GetConnectedLeaders (ConnectedLeadersRequest) returns (ConnectedLeadersResponse) {}
+
+  // Returns leader slots for connected jito validators during the current epoch.
+  rpc GetConnectedLeadersRegioned (ConnectedLeadersRegionedRequest) returns (ConnectedLeadersRegionedResponse) {}
+
+  // Returns the tip accounts searchers shall transfer funds to for the leader to claim.
+  rpc GetTipAccounts (GetTipAccountsRequest) returns (GetTipAccountsResponse) {}
+
+  // Returns region the client is directly connected to, along with all available regions
+  rpc GetRegions (GetRegionsRequest) returns (GetRegionsResponse) {}
+}

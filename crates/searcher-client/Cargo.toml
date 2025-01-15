@@ -1,0 +1,20 @@
+[package]
+name = "listen-searcher-client"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+documentation.workspace = true
+description.workspace = true
+
+[dependencies]
+futures-util.workspace = true
+jito-protos.workspace = true
+log.workspace = true
+prost-types.workspace = true
+solana-client.workspace = true
+solana-metrics.workspace = true
+solana-sdk.workspace = true
+solana-transaction-status.workspace = true
+thiserror.workspace = true
+tokio.workspace = true
+tonic.workspace = true
