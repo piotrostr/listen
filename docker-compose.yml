@@ -1,72 +1,16 @@
 services:
-  listener:
-    image: piotrostr/listen
+  listen-service:
+    build:
+      context: .
+      dockerfile: Dockerfile
     ports:
-      - "8078:8078"
+      - 6969:6969
     volumes:
       - ./.env:/.env
-    command: ["listen", "listener-service", "--webhook"]
-    environment:
-      - CHECKER_URL=http://checker:8079
-    restart: always
-    deploy:
-      replicas: 3
-      mode: replicated
-      endpoint_mode: vip
-  checker:
-    image: piotrostr/listen
+    command: ["./listen", "listen-service"]
+
+  listen-dashboard:
+    build:
+      context: ./dashboard
     ports:
-      - "8079:8079"
-    volumes:
-      - ./.env:/.env
-    command: ["listen", "checker-service"]
-    environment:
-      - BUYER_URL=http://buyer:8080
-    restart: always
-    deploy:
-      replicas: 5
-      mode: replicated
-      endpoint_mode: vip
-  buyer:
-    image: piotrostr/listen
-    ports:
-      - "8080:8080"
-    volumes:
-      - ./.env:/.env
-      - ./auth.json:/auth.json
-      - ./fund.json:/fund.json
-    command: ["listen", "buyer-service"]
-    restart: always
-    environment:
-      - SELLER_URL=http://seller:8081
-    deploy:
-      replicas: 3
-      mode: replicated
-      endpoint_mode: vip
-  seller:
-    image: piotrostr/listen
-    ports:
-      - "8081:8081"
-    volumes:
-      - ./.env:/.env
-      - ./auth.json:/auth.json
-      - ./fund.json:/fund.json
-    command: ["listen", "seller-service"]
-    restart: always
-    deploy:
-      replicas: 5
-      mode: replicated
-      endpoint_mode: vip
-  prometheus:
-    image: prom/prometheus
-    ports:
-      - "9090:9090"
-      - "3030:3030"
-    volumes:
-      - ./prometheus.yml:/etc/prometheus/prometheus.yml
-    command:
-      - "--config.file=/etc/prometheus/prometheus.yml"
-    deploy:
-      replicas: 1
-      mode: replicated
-      endpoint_mode: vip
+      - 4173:4173
