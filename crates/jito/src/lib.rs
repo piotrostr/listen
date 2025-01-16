@@ -4,9 +4,9 @@ use jito_protos::searcher::searcher_service_client::SearcherServiceClient;
 use jito_protos::searcher::{
     NextScheduledLeaderRequest, SubscribeBundleResultsRequest,
 };
-use jito_searcher_client::token_authenticator::ClientInterceptor;
-use jito_searcher_client::{
+use listen_searcher_client::{
     send_bundle_no_wait, send_bundle_with_confirmation,
+    token_authenticator::ClientInterceptor,
 };
 use listen_util::constants::JITO_TIP_PUBKEY;
 use log::{error, info};

@@ -1,5 +1,8 @@
 use solana_sdk::{pubkey, pubkey::Pubkey};
 
+pub const SYSTEM_PROGRAM_ID: Pubkey =
+    pubkey!("11111111111111111111111111111111");
+
 pub const SOLANA_PROGRAM_ID: Pubkey =
     pubkey!("So11111111111111111111111111111111111111112");
 

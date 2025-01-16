@@ -9,16 +9,22 @@ description.workspace = true
 [dependencies]
 anchor-lang.workspace = true
 borsh.workspace = true
+chrono.workspace = true
+dotenv.workspace = true
 futures-util.workspace = true
 jito-protos.workspace = true
 log.workspace = true
 serde.workspace = true
+serde_json.workspace = true
 tokio.workspace = true
+reqwest.workspace = true
 solana-account-decoder.workspace = true
 solana-client.workspace = true
 solana-sdk.workspace = true
 solana-transaction-status.workspace = true
 spl-associated-token-account.workspace = true
 
+listen-jito.workspace = true
+listen-raydium.workspace = true
 listen-searcher-client.workspace = true
 listen-util.workspace = true

@@ -7,3 +7,18 @@ documentation.workspace = true
 description.workspace = true
 
 [dependencies]
+actix-web.workspace = true
+futures-util.workspace = true
+log.workspace = true
+tokio.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+solana-account-decoder.workspace = true
+solana-client.workspace = true
+solana-sdk.workspace = true
+spl-token.workspace = true
+
+listen-engine.workspace = true
+listen-raydium.workspace = true
+listen-searcher-client.workspace = true
+listen-util.workspace = true

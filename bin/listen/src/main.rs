@@ -1,6 +1,6 @@
 use flexi_logger::{colored_detailed_format, Duplicate, Logger, WriteMode};
 use jito_protos::searcher::{MempoolSubscription, NextScheduledLeaderRequest};
-use jito_searcher_client::get_searcher_client;
+use listen_searcher_client::get_searcher_client;
 // use raydium_library::amm;
 use std::{
     error::Error,

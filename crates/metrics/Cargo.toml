@@ -7,3 +7,6 @@ documentation.workspace = true
 description.workspace = true
 
 [dependencies]
+log.workspace = true
+prometheus.workspace = true
+warp.workspace = true

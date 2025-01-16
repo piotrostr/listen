@@ -8,11 +8,13 @@ description.workspace = true
 
 [dependencies]
 clap.workspace = true
+dotenv.workspace = true
 flexi_logger.workspace = true
 jito-protos.workspace = true
 tokio.workspace = true
 log.workspace = true
-# raydium-library.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 solana-client.workspace = true
 solana-sdk.workspace = true
 

@@ -7,3 +7,21 @@ documentation.workspace = true
 description.workspace = true
 
 [dependencies]
+anyhow.workspace = true
+arrayref.workspace = true
+base64.workspace = true
+bincode.workspace = true
+bytemuck.workspace = true
+serde.workspace = true
+serde_json.workspace = true
+log.workspace = true
+uint.workspace = true
+thiserror.workspace = true
+safe-transmute.workspace = true
+num-derive.workspace = true
+num-traits.workspace = true
+solana-sdk.workspace = true
+solana-client.workspace = true
+solana-transaction-status.workspace = true
+spl-associated-token-account.workspace = true
+spl-token.workspace = true
