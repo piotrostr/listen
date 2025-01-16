@@ -1,5 +1,0 @@
-pandas
-plotly
-pydantic
-requests
-tqdm
