@@ -98,8 +98,10 @@ tokio-native-tls = "0.3.1"
 hyper-util = "0.1.7"
 http-body-util = "0.1.2"
 uint = "0.10.0"
-safe-transmute = "0.10.0"
+enumflags2 = "0.6.4"
+safe-transmute = "0.11.3"
 num-derive = "0.3.0"
+num_enum = "0.5.7"
 num-traits = "0.2.12"
 
 jito-protos = { path = "crates/jito-protos" }

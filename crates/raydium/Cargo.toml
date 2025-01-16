@@ -7,6 +7,7 @@ documentation.workspace = true
 description.workspace = true
 
 [dependencies]
+anchor-lang.workspace = true
 anyhow.workspace = true
 arrayref.workspace = true
 base64.workspace = true
@@ -18,6 +19,8 @@ log.workspace = true
 uint.workspace = true
 thiserror.workspace = true
 safe-transmute.workspace = true
+enumflags2.workspace = true
+num_enum.workspace = true
 num-derive.workspace = true
 num-traits.workspace = true
 solana-sdk.workspace = true

@@ -4,6 +4,7 @@ use crate::serum_dex::state::ToAlignedBytes;
 use crate::{program::error::AmmError, program::math::Calculator};
 use arrayref::{array_mut_ref, array_ref, array_refs, mut_array_refs};
 use bytemuck::{from_bytes, from_bytes_mut, Pod, Zeroable};
+use safe_transmute::TriviallyTransmutable;
 use serde::{Deserialize, Serialize};
 use solana_sdk::{
     account_info::AccountInfo,

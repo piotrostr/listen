@@ -7,7 +7,7 @@ use common::rpc;
 use raydium_amm::math::{CheckedCeilDiv, U128};
 use safe_transmute::{to_bytes::transmute_to_bytes, transmute_one_pedantic};
 use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_program::{account_info::IntoAccountInfo, program_pack::Pack};
+use solana_sdk::{account_info::IntoAccountInfo, program_pack::Pack};
 use solana_sdk::{
     commitment_config::CommitmentConfig, message::Message, pubkey::Pubkey,
     transaction::Transaction,
