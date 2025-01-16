@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { HoldingsResponse } from "./useListen";
+import { HoldingsResponse } from "./schema";
 
 export type PortfolioItem = {
   address: string;
