@@ -32,9 +32,9 @@ the output [image](https://github.com/piotrostr/listen/blob/main/example.png).
 For complete rundown of features, check out the CLI output of `cargo run` or the
 [documentation](https://docs.listen-rs.com/).
 
-To play around with listen-rs, you can use the UI
-
 ## Quickstart
+
+To play around with listen-rs, you can use the UI
 
 Fill in the `.env.example` and `./dashboard/.env.example`, copy over to `.env` and `./dashboard/.env.example`, then
 
