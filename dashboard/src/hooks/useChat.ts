@@ -1,6 +1,6 @@
 import { useState, useCallback } from "react";
 import Anthropic from "@anthropic-ai/sdk";
-import { ToolInputs, useTools } from "./useTools";
+import { ToolInputs, ToolOutput, useTools } from "./useTools";
 import { PortfolioData, usePortfolio } from "./usePortfolio";
 
 export type MessageDirection = "incoming" | "outgoing";
@@ -28,6 +28,7 @@ export function useChat() {
   const [isLoading, setIsLoading] = useState(false);
   const { data: portfolio } = usePortfolio();
   const { tools, handleToolUse } = useTools();
+  const [toolOutput, setToolOutput] = useState<ToolOutput | null>(null);
 
   const anthropic = new Anthropic({
     apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
@@ -55,26 +56,32 @@ export function useChat() {
   );
 
   const handleToolExecution = useCallback(
-    async (
-      assistantMessageId: string,
-      toolName: string,
-      toolInputs: ToolInputs,
-    ) => {
+    async (toolName: string, toolInputs: ToolInputs) => {
+      // Set initial loading state
+      setToolOutput({
+        id: crypto.randomUUID(),
+        type: toolName as ToolOutput["type"],
+        status: "loading",
+        data: undefined,
+      });
+
       try {
-        const result = await handleToolUse(toolName, toolInputs);
-        updateAssistantMessage(
-          assistantMessageId,
-          `\nTool Execution Result: ${JSON.stringify(result)}\n`,
-        );
+        const output = await handleToolUse(toolName, toolInputs);
+
+        // Update with success result
+        setToolOutput(output);
       } catch (error) {
         console.error(`Tool execution error:`, JSON.stringify(error));
-        updateAssistantMessage(
-          assistantMessageId,
-          `\nTool Execution Error: ${JSON.stringify(error)}\n`,
-        );
+
+        // Update with error state
+        setToolOutput({
+          id: crypto.randomUUID(),
+          type: toolName as ToolOutput["type"],
+          status: "error",
+        });
       }
     },
-    [handleToolUse, updateAssistantMessage],
+    [handleToolUse],
   );
 
   const sendMessage = useCallback(
@@ -125,11 +132,7 @@ export function useChat() {
           if (message.content) {
             for (const content of message.content) {
               if (content.type === "tool_use") {
-                await handleToolExecution(
-                  assistantMessageId,
-                  content.name,
-                  content.input,
-                );
+                await handleToolExecution(content.name, content.input);
               }
             }
           }
@@ -154,5 +157,6 @@ export function useChat() {
     messages,
     isLoading,
     sendMessage,
+    toolOutput,
   };
 }

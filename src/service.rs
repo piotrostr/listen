@@ -7,6 +7,7 @@ use crate::handlers::{
 use crate::state::ServiceState;
 use crate::util::{env, healthz};
 use actix_cors::Cors;
+use actix_web::middleware::Logger;
 use actix_web::{get, HttpResponse, Responder};
 use actix_web::{web::Data, App, HttpServer};
 use log::info;
@@ -77,6 +78,9 @@ impl ListenService {
                 .max_age(3600); // Set prefligh
             App::new()
                 .wrap(cors)
+                .wrap(Logger::new(
+                    "%{r}a \"%r\" %s %b \"%{Referer}i\" \"%{User-Agent}i\" %T",
+                ))
                 .app_data(state.clone())
                 .service(handle_swap)
                 .service(handle_get_pubkey)
