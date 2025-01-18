@@ -153,7 +153,7 @@ impl Jupiter {
         slippage: u16,
     ) -> Result<QuoteResponse, Box<dyn std::error::Error>> {
         let url = format!(
-            "https://quote-api.jup.ag/v6/quote?inputMint={}&outputMint={}&amount={}&slippageBps={}",
+            "https://quote-api.jup.ag/v6/quote?inputMint={}&outputMint={}&amount={}&slippageBps={}&onlyDirectRoutes=true", // TODO remove the onlyDirectRoutes query param after fixing jito issue
             input_mint, output_mint, amount, slippage
         );
 

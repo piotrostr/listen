@@ -17,20 +17,6 @@ pub struct Actions {
     pub client: Client,
 }
 
-pub fn new(private_key: String, rpc_url: Option<String>) -> Actions {
-    let keypair = Keypair::from_base58_string(&private_key);
-    let rpc_client = RpcClient::new(
-        rpc_url.unwrap_or("https://api.mainnet-beta.solana.com/".to_string()),
-    );
-    let client = Client::new();
-
-    Actions {
-        keypair,
-        rpc_client,
-        client,
-    }
-}
-
 // TODO
 // * macro that takes the docstring to create tool description, method signature to create tool
 // * params and return type/error type, possible also just as a #[tool::description] macro
@@ -39,6 +25,17 @@ pub fn new(private_key: String, rpc_url: Option<String>) -> Actions {
 // txs
 
 impl Actions {
+    pub fn new(private_key: String, rpc_url: String) -> Self {
+        let keypair = Keypair::from_base58_string(&private_key);
+        let rpc_client = RpcClient::new(rpc_url);
+        let client = Client::new();
+
+        Self {
+            keypair,
+            rpc_client,
+            client,
+        }
+    }
     pub async fn trade(
         &self,
         input_mint: String,

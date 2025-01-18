@@ -2,29 +2,29 @@
 ///
 /// Blazingly fast actions for AI Agents with a simple API.
 ///
-/// ## Example
+/// ## Quick Start
 ///
 /// ```rust
-/// use listen::{actions::Actions, constants::WSOL, util::sol_to_lamports};
+/// use listen::{actions::Actions, util::env, constants::WSOL};
+/// use solana_sdk::native_token::sol_to_lamports;
 ///
 /// #[tokio::main]
 /// async fn main() {
-///    let private_key = "YOUR_PRIVATE_AS_BASE58_STRING".to_string();
-///    let rpc_url = "https://api.mainnet-beta.solana.com/".to_string();
-///    let actions = Actions::new(private_key, rpc_url).await;
+///    dotenv::dotenv().ok();
+///    let actions = Actions::new(env("PRIVATE_KEY"), env("RPC_URL"));
 ///
 ///    let balance = actions.get_balance().await.unwrap();
 ///    println!("Balance: {}", balance);
 ///
-///    let mint = "6p6xgHyF7AeE6TZkSmFsko444wqoP15icUSqi2jfGiPN".to_string();
-///    let price = actions.fetch_token_price(mint).await.unwrap();
+///    let mint = "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump".to_string();
+///    let price = actions.fetch_token_price(mint.clone()).await.unwrap();
 ///    println!("Price: {}", price);
 ///
-///    // Trade 1 WSOL for the given mint
+///    // Trade 0.01 SOL for $Fartcoin
 ///    let slippage_bps = 100;
 ///    let tx_id = actions.trade(
 ///        WSOL.to_string(),
-///        sol_to_lamports(1),
+///        sol_to_lamports(0.01),
 ///        mint,
 ///        slippage_bps
 ///    ).await.unwrap();
