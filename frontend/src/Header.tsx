@@ -10,7 +10,7 @@ export const Header = () => {
               alt="Logo"
               className="w-8 h-8 rounded"
             />
-            <span className="font-bold text-xl">listen-rs</span>
+            <span className="font-bold text-xl">listen</span>
           </div>
 
           {/* Right side */}
