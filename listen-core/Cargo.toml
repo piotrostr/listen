@@ -1,9 +1,9 @@
 [package]
-name = "listen"
+name = "listen-core"
 version = "0.2.0"
 edition = "2021"
 license = "MIT"
-description = "solana actions for AI agents"
+description = "Blockchain actions for AI agents"
 documentation = "https://docs.listen-rs.com"
 
 [dependencies]
