@@ -17,9 +17,11 @@ pub struct Actions {
     pub client: Client,
 }
 
-pub fn new(private_key: String, rpc_url: String) -> Actions {
+pub fn new(private_key: String, rpc_url: Option<String>) -> Actions {
     let keypair = Keypair::from_base58_string(&private_key);
-    let rpc_client = RpcClient::new(rpc_url);
+    let rpc_client = RpcClient::new(
+        rpc_url.unwrap_or("https://api.mainnet-beta.solana.com/".to_string()),
+    );
     let client = Client::new();
 
     Actions {
