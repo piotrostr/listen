@@ -430,12 +430,12 @@ pub async fn sell_pump_token(
 
 /// Interact With Pump.Fun - 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
 /// #1 - Global
-/// #2 - Fee Recipient: Pump.fun Fee Account [Writable]
+/// #2 - Fee Recipient: Pump.fun Fee Account (Writable)
 /// #3 - Mint
-/// #4 - Bonding Curve [Writable]
-/// #5 - Associated Bonding Curve [Writable]
-/// #6 - Associated Token Account (ATA) [Writable]
-/// #7 - User [Writable Signer Fee-Payer]
+/// #4 - Bonding Curve (Writable)
+/// #5 - Associated Bonding Curve (Writable)
+/// #6 - Associated Token Account (ATA) (Writable)
+/// #7 - User (Writable Signer Fee-Payer)
 /// #8 - System Program
 /// #9 - Associated Token Program
 /// #10 - Token Program
@@ -485,12 +485,12 @@ pub fn make_pump_sell_ix(
 /// Interact With Pump.Fun 6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P
 /// Input Accounts
 /// #1 - Global: 4wTV1YmiEkRvAtNtsSGPtUrqRYQMe5SKy2uB4Jjaxnjf
-/// #2 - Fee Recipient: Pump.fun Fee Account [Writable]
+/// #2 - Fee Recipient: Pump.fun Fee Account (Writable)
 /// #3 - Mint
-/// #4 - Bonding Curve [Writable]
-/// #5 - Associated Bonding Curve [Writable]
-/// #6 - Associated User Account [Writable] (ATA)
-/// #7 - User - owner, sender [Writable, Signer, Fee Payer]
+/// #4 - Bonding Curve (Writable)
+/// #5 - Associated Bonding Curve (Writable)
+/// #6 - Associated User Account (Writable) (ATA)
+/// #7 - User - owner, sender (Writable, Signer, Fee Payer)
 /// #8 - System Program (11111111111111111111111111111111)
 /// #9 - Token Program (TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA)
 /// #10 - Rent (SysvarRent111111111111111111111111111111111)

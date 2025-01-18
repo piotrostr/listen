@@ -97,7 +97,7 @@ impl Actions {
     }
 
     /// get_token_balance returns the amount as String and the decimals as u8
-    /// in order to convert to UI amount: amount / 1e<decimals>
+    /// in order to convert to UI amount: amount / 10^decimals
     pub async fn get_token_balance(
         &self,
         mint: String,
