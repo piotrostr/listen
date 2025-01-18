@@ -1,14 +1,12 @@
-pub fn add(left: u64, right: u64) -> u64 {
-    left + right
-}
+pub mod agent;
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn it_works() {
-        let result = add(2, 2);
-        assert_eq!(result, 4);
-    }
-}
+pub mod balance;
+pub mod constants;
+pub mod deploy_token;
+pub mod jito;
+pub mod jup;
+pub mod price;
+pub mod pump;
+pub mod trade;
+pub mod transfer;
+pub mod util;
