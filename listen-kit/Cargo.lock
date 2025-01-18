@@ -2293,7 +2293,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d26c52dbd32dccf2d10cac7725f8eae5296885fb5703b261f7d0a0739ec807ab"
 
 [[package]]
-name = "listen-core"
+name = "listen-kit"
 version = "0.2.0"
 dependencies = [
  "base64 0.22.1",
