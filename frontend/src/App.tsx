@@ -44,7 +44,7 @@ const App = () => {
                 },
               }}
             >
-              {`cargo add --git https://github.com/piotrostr/listen listen`}
+              {`cargo add listen-kit`}
             </SyntaxHighlighter>
           </div>
         </div>
