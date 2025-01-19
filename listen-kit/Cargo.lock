@@ -2296,6 +2296,7 @@ checksum = "d26c52dbd32dccf2d10cac7725f8eae5296885fb5703b261f7d0a0739ec807ab"
 name = "listen-kit"
 version = "0.2.0"
 dependencies = [
+ "anyhow",
  "base64 0.22.1",
  "bincode",
  "borsh 1.5.4",
@@ -2304,6 +2305,8 @@ dependencies = [
  "env_logger",
  "hex",
  "log",
+ "proc-macro2",
+ "quote",
  "rand 0.8.5",
  "reqwest 0.12.12",
  "serde",
@@ -2315,6 +2318,7 @@ dependencies = [
  "solana-transaction-status",
  "spl-associated-token-account 6.0.0",
  "spl-token 7.0.0",
+ "syn 1.0.109",
  "timed",
  "tokio",
 ]

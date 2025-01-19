@@ -1,3 +1,4 @@
+use anyhow::Result;
 use reqwest::Client;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
@@ -42,7 +43,7 @@ impl Actions {
         input_amount: u64,
         output_mint: String,
         slippage_bps: u16,
-    ) -> Result<String, Box<dyn Error>> {
+    ) -> Result<String> {
         trade(
             input_mint,
             input_amount,
@@ -57,7 +58,7 @@ impl Actions {
         &self,
         to: String,
         amount: u64,
-    ) -> Result<String, Box<dyn Error>> {
+    ) -> Result<String> {
         transfer_sol(
             Pubkey::from_str(&to)?,
             amount,
@@ -74,7 +75,7 @@ impl Actions {
         to: String,
         amount: u64,
         mint: String,
-    ) -> Result<String, Box<dyn Error>> {
+    ) -> Result<String> {
         transfer_spl(
             Pubkey::from_str(&to)?,
             amount,
@@ -89,7 +90,7 @@ impl Actions {
         self.keypair.pubkey().to_string()
     }
 
-    pub async fn get_balance(&self) -> Result<u64, Box<dyn Error>> {
+    pub async fn get_balance(&self) -> Result<u64> {
         let balance =
             self.rpc_client.get_balance(&self.keypair.pubkey()).await?;
         Ok(balance)
@@ -100,7 +101,7 @@ impl Actions {
     pub async fn get_token_balance(
         &self,
         mint: String,
-    ) -> Result<(String, u8), Box<dyn Error>> {
+    ) -> Result<(String, u8)> {
         let mint = Pubkey::from_str(&mint)?;
         let ata = spl_associated_token_account::get_associated_token_address(
             &self.keypair.pubkey(),
@@ -113,7 +114,7 @@ impl Actions {
     pub async fn deploy_token(
         &self,
         deploy_token_params: DeployTokenParams,
-    ) -> Result<String, Box<dyn Error>> {
+    ) -> Result<String> {
         deploy_token(deploy_token_params, &self.keypair, &self.rpc_client)
             .await
     }
@@ -125,32 +126,28 @@ impl Actions {
         fetch_token_price(mint, &self.client).await
     }
 
-    pub async fn buy_pump_token() -> Result<String, Box<dyn Error>> {
+    pub async fn buy_pump_token() -> Result<String> {
         unimplemented!()
     }
 
-    pub async fn sell_pump_token() -> Result<String, Box<dyn Error>> {
+    pub async fn sell_pump_token() -> Result<String> {
         unimplemented!()
     }
 
-    pub async fn fetch_metadata(&self) -> Result<String, Box<dyn Error>> {
+    pub async fn fetch_metadata(&self) -> Result<String> {
         unimplemented!()
     }
 
     /// research_token returns aggregated data from any link from metadata
-    pub async fn research_token(&self) -> Result<String, Box<dyn Error>> {
+    pub async fn research_token(&self) -> Result<String> {
         unimplemented!()
     }
 
-    pub async fn get_token_data_by_ticker(
-        &self,
-    ) -> Result<String, Box<dyn Error>> {
+    pub async fn get_token_data_by_ticker(&self) -> Result<String> {
         unimplemented!()
     }
 
-    pub async fn get_token_data_by_pubkey(
-        &self,
-    ) -> Result<String, Box<dyn Error>> {
+    pub async fn get_token_data_by_pubkey(&self) -> Result<String> {
         unimplemented!()
     }
 }

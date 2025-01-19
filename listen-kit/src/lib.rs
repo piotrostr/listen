@@ -7,6 +7,7 @@ pub mod jito;
 pub mod jup;
 pub mod price;
 pub mod pump;
+pub mod tool;
 pub mod trade;
 pub mod transfer;
 pub mod util;
