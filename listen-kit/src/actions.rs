@@ -4,7 +4,6 @@ use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
-use std::error::Error;
 use std::str::FromStr;
 
 use crate::deploy_token::{deploy_token, DeployTokenParams};
@@ -19,12 +18,8 @@ pub struct Actions {
 }
 
 // TODO
-// * macro that takes the docstring to create tool description, method signature to create tool
-// * params and return type/error type, possible also just as a #[tool::description] macro
-// * include native arc integration as core dep
 // * add a potential flag to simulate before sending txs, return tx simulation, useful for larger
 // txs
-
 impl Actions {
     pub fn new(private_key: String, rpc_url: String) -> Self {
         let keypair = Keypair::from_base58_string(&private_key);
@@ -119,10 +114,7 @@ impl Actions {
             .await
     }
 
-    pub async fn fetch_token_price(
-        &self,
-        mint: String,
-    ) -> Result<f64, Box<dyn Error>> {
+    pub async fn fetch_token_price(&self, mint: String) -> Result<f64> {
         fetch_token_price(mint, &self.client).await
     }
 

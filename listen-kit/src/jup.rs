@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use anyhow::{anyhow, Result};
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
@@ -151,7 +152,7 @@ impl Jupiter {
         output_mint: &str,
         amount: u64,
         slippage: u16,
-    ) -> Result<QuoteResponse, Box<dyn std::error::Error>> {
+    ) -> Result<QuoteResponse> {
         let url = format!(
             "https://quote-api.jup.ag/v6/quote?inputMint={}&outputMint={}&amount={}&slippageBps={}&onlyDirectRoutes=true", // TODO remove the onlyDirectRoutes query param after fixing jito issue
             input_mint, output_mint, amount, slippage
@@ -165,7 +166,7 @@ impl Jupiter {
     pub async fn swap(
         quote_response: QuoteResponse,
         signer: &Keypair,
-    ) -> Result<String, Box<dyn std::error::Error>> {
+    ) -> Result<String> {
         let swap_request = SwapRequest {
             user_public_key: signer.pubkey().to_string(),
             wrap_and_unwrap_sol: true,
@@ -191,7 +192,7 @@ impl Jupiter {
             .await?;
         if !raw_res.status().is_success() {
             let error = raw_res.text().await?;
-            return Err(error.into());
+            return Err(anyhow!(error));
         }
         let response = raw_res.json::<SwapInstructionsResponse>().await?;
 
@@ -240,8 +241,7 @@ impl Jupiter {
 
     fn convert_instruction_data(
         ix_data: InstructionData,
-    ) -> Result<solana_sdk::instruction::Instruction, Box<dyn std::error::Error>>
-    {
+    ) -> Result<solana_sdk::instruction::Instruction> {
         let program_id = Pubkey::from_str(&ix_data.program_id)?;
 
         let accounts = ix_data
@@ -254,7 +254,7 @@ impl Jupiter {
                     is_writable: acc.is_writable,
                 })
             })
-            .collect::<Result<Vec<_>, Box<dyn std::error::Error>>>()?;
+            .collect::<Result<Vec<_>>>()?;
 
         let data = BASE64_STANDARD.decode(ix_data.data)?;
 

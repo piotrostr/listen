@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use chrono::Local;
 use dotenv::dotenv;
 use env_logger::Builder;
@@ -145,9 +146,9 @@ pub async fn verify_transaction(
     }
 }
 
-pub fn parse_pubkey(s: &str) -> Result<Pubkey, Box<dyn Error>> {
+pub fn parse_pubkey(s: &str) -> Result<Pubkey> {
     match Pubkey::from_str(s) {
         Ok(pubkey) => Ok(pubkey),
-        Err(e) => return Err(Box::new(e)),
+        Err(e) => Err(anyhow!(e)),
     }
 }

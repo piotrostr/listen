@@ -1,5 +1,6 @@
 use crate::jito::{get_jito_tip_pubkey, send_jito_tx};
 use crate::util::apply_fee;
+use anyhow::{anyhow, Result};
 use log::{debug, error, info, warn};
 use solana_account_decoder::UiAccountEncoding;
 use solana_client::rpc_config::{
@@ -8,7 +9,6 @@ use solana_client::rpc_config::{
 use solana_sdk::hash::Hash;
 use solana_sdk::system_instruction::transfer;
 use solana_sdk::transaction::{Transaction, VersionedTransaction};
-use std::error::Error;
 
 use std::str::FromStr;
 use tokio::time::{sleep, Duration};
@@ -78,7 +78,7 @@ impl BondingCurveLayout {
 pub async fn get_slot_created(
     rpc_client: &RpcClient,
     mint: &Pubkey,
-) -> Result<u64, Box<dyn std::error::Error>> {
+) -> Result<u64> {
     let token_transactions =
         rpc_client.get_signatures_for_address(mint).await?;
 
@@ -127,7 +127,7 @@ pub fn mint_to_pump_accounts(mint: &Pubkey) -> PumpAccounts {
 pub async fn get_bonding_curve(
     rpc_client: &RpcClient,
     bonding_curve_pubkey: Pubkey,
-) -> Result<BondingCurveLayout, Box<dyn Error>> {
+) -> Result<BondingCurveLayout> {
     const MAX_RETRIES: u32 = 5;
     const INITIAL_DELAY_MS: u64 = 200;
     let mut retries = 0;
@@ -152,7 +152,7 @@ pub async fn get_bonding_curve(
                     let data_length = account.data.len();
                     let data: [u8; 49] =
                         account.data.try_into().map_err(|_| {
-                            format!("Invalid data length: {}", data_length)
+                            anyhow!("Invalid data length: {}", data_length)
                         })?;
 
                     debug!("Raw bytes: {:?}", data);
@@ -180,9 +180,9 @@ pub async fn get_bonding_curve(
                 } else {
                     if retries >= MAX_RETRIES {
                         error!("Max retries reached. Account not found.");
-                        return Err(
-                            "Account not found after max retries".into()
-                        );
+                        return Err(anyhow!(
+                            "Account not found after max retries"
+                        ));
                     }
                     warn!(
                         "Attempt {} failed: Account not found. Retrying in {:?}...",
@@ -200,11 +200,10 @@ pub async fn get_bonding_curve(
             Err(e) => {
                 if retries >= MAX_RETRIES {
                     error!("Max retries reached. Last error: {}", e);
-                    return Err(format!(
+                    return Err(anyhow!(
                         "Max retries reached. Last error: {}",
                         e
-                    )
-                    .into());
+                    ));
                 }
                 warn!(
                     "Attempt {} failed: {}. Retrying in {:?}...",
@@ -227,7 +226,7 @@ pub fn get_pump_token_amount(
     virtual_token_reserves: u64,
     real_token_reserves: Option<u64>,
     lamports: u64,
-) -> Result<u64, Box<dyn std::error::Error>> {
+) -> Result<u64> {
     let virtual_sol_reserves = virtual_sol_reserves as u128;
     let virtual_token_reserves = virtual_token_reserves as u128;
     let amount_in = lamports as u128;
@@ -235,21 +234,24 @@ pub fn get_pump_token_amount(
     // Calculate reserves_product carefully to avoid overflow
     let reserves_product = virtual_sol_reserves
         .checked_mul(virtual_token_reserves)
-        .ok_or("Overflow in reserves product calculation")?;
+        .ok_or("Overflow in reserves product calculation")
+        .map_err(|e| anyhow!(e))?;
 
     let new_virtual_sol_reserve = virtual_sol_reserves
         .checked_add(amount_in)
-        .ok_or("Overflow in new virtual SOL reserve calculation")?;
+        .ok_or("Overflow in new virtual SOL reserve calculation")
+        .map_err(|e| anyhow!(e))?;
 
     let new_virtual_token_reserve = reserves_product
         .checked_div(new_virtual_sol_reserve)
-        .ok_or("Division by zero or overflow in new virtual token reserve calculation")?
+        .ok_or("Division by zero or overflow in new virtual token reserve calculation").map_err(|e| anyhow!(e))?
         .checked_add(1)
-        .ok_or("Overflow in new virtual token reserve calculation")?;
+        .ok_or("Overflow in new virtual token reserve calculation").map_err(|e| anyhow!(e))?;
 
     let amount_out = virtual_token_reserves
         .checked_sub(new_virtual_token_reserve)
-        .ok_or("Underflow in amount out calculation")?;
+        .ok_or("Underflow in amount out calculation")
+        .map_err(|e| anyhow!(e))?;
 
     let final_amount_out =
         if let Some(real_token_reserves) = real_token_reserves {
@@ -295,7 +297,7 @@ pub async fn buy_pump_token(
     token_amount: u64,
     lamports: u64,
     tip: u64,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<()> {
     let owner = wallet.pubkey();
 
     info!("{} buying {} {}", owner, token_amount, pump_accounts.mint);
@@ -330,7 +332,7 @@ pub fn _make_buy_ixs(
     associated_bonding_curve: Pubkey,
     token_amount: u64,
     lamports: u64,
-) -> Result<Vec<Instruction>, Box<dyn Error>> {
+) -> Result<Vec<Instruction>> {
     let mut ixs = vec![];
     let ata = spl_associated_token_account::get_associated_token_address(
         &owner, &mint,
@@ -362,7 +364,7 @@ async fn _send_tx_standard(
     wallet: &Keypair,
     rpc_client: &RpcClient,
     owner: Pubkey,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<()> {
     let transaction =
         VersionedTransaction::from(Transaction::new_signed_with_payer(
             &ixs,
@@ -401,7 +403,7 @@ pub async fn sell_pump_token(
     latest_blockhash: Hash,
     pump_accounts: PumpAccounts,
     token_amount: u64,
-) -> Result<(), Box<dyn Error>> {
+) -> Result<()> {
     let owner = wallet.pubkey();
 
     let ata = spl_associated_token_account::get_associated_token_address(
@@ -446,7 +448,7 @@ pub fn make_pump_sell_ix(
     pump_accounts: PumpAccounts,
     token_amount: u64,
     ata: Pubkey,
-) -> Result<Instruction, Box<dyn Error>> {
+) -> Result<Instruction> {
     let accounts: [AccountMeta; 12] = [
         AccountMeta::new_readonly(
             Pubkey::from_str(PUMP_GLOBAL_ADDRESS)?,
@@ -504,7 +506,7 @@ pub fn make_pump_swap_ix(
     token_amount: u64,
     lamports: u64,
     ata: Pubkey,
-) -> Result<Instruction, Box<dyn Error>> {
+) -> Result<Instruction> {
     let accounts: [AccountMeta; 12] = [
         AccountMeta::new_readonly(
             Pubkey::from_str(PUMP_GLOBAL_ADDRESS)?,
@@ -567,7 +569,7 @@ pub struct PumpAccounts {
 
 pub fn parse_pump_accounts(
     tx: EncodedConfirmedTransactionWithStatusMeta,
-) -> Result<PumpAccounts, Box<dyn Error>> {
+) -> Result<PumpAccounts> {
     if let EncodedTransaction::Json(tx) = &tx.transaction.transaction {
         if let UiMessage::Parsed(UiParsedMessage {
             account_keys,
@@ -593,13 +595,13 @@ pub fn parse_pump_accounts(
                     metadata,
                 })
             } else {
-                Err("Not enough account keys".into())
+                Err(anyhow!("Not enough account keys"))
             }
         } else {
-            Err("Not a parsed transaction".into())
+            Err(anyhow!("Not a parsed transaction"))
         }
     } else {
-        Err("Not a JSON transaction".into())
+        Err(anyhow!("Not a JSON transaction"))
     }
 }
 
@@ -652,9 +654,7 @@ pub struct IPFSMetadata {
     pub website: Option<String>,
 }
 
-pub async fn fetch_metadata(
-    mint: &Pubkey,
-) -> Result<PumpTokenInfo, Box<dyn Error>> {
+pub async fn fetch_metadata(mint: &Pubkey) -> Result<PumpTokenInfo> {
     const MAX_RETRIES: u32 = 3;
     const INITIAL_DELAY_MS: u64 = 100;
 
@@ -686,9 +686,7 @@ pub async fn fetch_metadata(
     }
 }
 
-async fn fetch_metadata_inner(
-    mint: &Pubkey,
-) -> Result<PumpTokenInfo, Box<dyn Error>> {
+async fn fetch_metadata_inner(mint: &Pubkey) -> Result<PumpTokenInfo> {
     let url = format!("https://frontend-api.pump.fun/coins/{}", mint);
     info!("Fetching metadata from: {}", url);
     let res = reqwest::get(&url).await?;

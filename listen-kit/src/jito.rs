@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use log::info;
 use rand::rngs::ThreadRng;
 use rand::thread_rng;
@@ -21,14 +22,12 @@ pub struct JitoResponse {
 
 // TODO support versioned transactions (jup 3+ multi-hops)
 #[timed::timed(duration(printer = "info!"))]
-pub async fn send_jito_tx(
-    tx: Transaction,
-) -> Result<String, Box<dyn std::error::Error>> {
+pub async fn send_jito_tx(tx: Transaction) -> Result<String> {
     let client = reqwest::Client::new();
 
     let encoded_tx = match tx.encode(UiTransactionEncoding::Binary) {
         EncodedTransaction::LegacyBinary(b) => b,
-        _ => return Err("Failed to encode transaction".into()),
+        _ => return Err(anyhow!("Failed to encode transaction")),
     };
 
     let res = client

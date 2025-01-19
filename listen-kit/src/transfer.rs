@@ -1,9 +1,9 @@
+use anyhow::Result;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
-use std::error::Error;
 
 use crate::jito::send_jito_tx;
 
@@ -12,7 +12,7 @@ pub async fn transfer_sol(
     amount: u64,
     keypair: &Keypair,
     rpc_client: &RpcClient,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<String> {
     let from = keypair.pubkey();
     let tx = Transaction::new_signed_with_payer(
         &[solana_sdk::system_instruction::transfer(&from, &to, amount)],
@@ -31,7 +31,7 @@ pub async fn transfer_spl(
     mint: Pubkey,
     keypair: &Keypair,
     rpc_client: &RpcClient,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<String> {
     let from = keypair.pubkey();
     let from_ata = spl_associated_token_account::get_associated_token_address(
         &from, &mint,

@@ -1,3 +1,4 @@
+use anyhow::Result;
 use borsh::{BorshDeserialize, BorshSerialize};
 use log::debug;
 use rand::Rng;
@@ -12,7 +13,6 @@ use solana_sdk::{
     system_instruction::transfer,
     transaction::Transaction,
 };
-use std::error::Error;
 use std::str::FromStr;
 
 use crate::{
@@ -50,7 +50,7 @@ pub async fn deploy_token(
     params: DeployTokenParams,
     keypair: &Keypair,
     rpc_client: &RpcClient,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<String> {
     let res = launch(
         &IPFSMetaForm {
             name: params.name.clone(),
@@ -134,7 +134,7 @@ impl PumpCreateTokenIx {
 pub async fn push_image_to_ipfs(
     client: &Client,
     image: Vec<u8>,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<String> {
     let form = reqwest::multipart::Form::new()
         .part("file", reqwest::multipart::Part::bytes(image));
 
@@ -152,7 +152,7 @@ pub async fn push_image_to_ipfs(
 pub async fn push_meta_onto_ipfs(
     client: &Client,
     ipfs_meta: &IPFSMetaForm,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<String> {
     let data = serde_json::to_vec(ipfs_meta)?;
     let form = reqwest::multipart::Form::new()
         .part("file", reqwest::multipart::Part::bytes(data));
@@ -172,7 +172,7 @@ pub async fn push_meta_to_pump_ipfs(
     client: &Client,
     ipfs_meta: &IPFSMetaForm,
     image: Vec<u8>,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<String> {
     let form = reqwest::multipart::Form::new()
         .text("name", ipfs_meta.name.clone())
         .text("symbol", ipfs_meta.symbol.clone())
@@ -247,7 +247,7 @@ impl PoolState {
 pub async fn fetch_pool_state(
     rpc_client: &RpcClient,
     mint: &Pubkey,
-) -> Result<PoolState, Box<dyn Error>> {
+) -> Result<PoolState> {
     let (bonding_curve, associated_bonding_curve) = get_bc_and_abc(*mint);
     let layout = get_bonding_curve(rpc_client, bonding_curve).await?;
     #[cfg(test)]
@@ -262,7 +262,7 @@ pub async fn fetch_pool_state(
     ))
 }
 
-pub async fn load_image(image_path: &str) -> Result<Vec<u8>, Box<dyn Error>> {
+pub async fn load_image(image_path: &str) -> Result<Vec<u8>> {
     if image_path.starts_with("http") {
         let client = Client::new();
         let res = client.get(image_path).send().await?.bytes().await?;
@@ -278,7 +278,7 @@ pub async fn launch(
     signer: &Keypair,
     dev_buy: Option<u64>, // lamports
     rpc_client: &RpcClient,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<String> {
     let mut ixs = vec![];
 
     // Add compute budget instructions
