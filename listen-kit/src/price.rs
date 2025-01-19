@@ -1,8 +1,8 @@
+use anyhow::Result;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 use serde_with::{serde_as, DisplayFromStr};
 use std::collections::HashMap;
-use std::error::Error;
 
 #[serde_with::skip_serializing_none]
 #[derive(Serialize, Deserialize, Debug)]
@@ -21,10 +21,7 @@ pub struct PriceData {
     pub price: f64,
 }
 
-pub async fn fetch_token_price(
-    mint: String,
-    client: &Client,
-) -> Result<f64, Box<dyn Error>> {
+pub async fn fetch_token_price(mint: String, client: &Client) -> Result<f64> {
     let url = format!("https://api.jup.ag/price/v2?ids={}", mint);
     let res = client
         .get(url)

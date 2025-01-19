@@ -1,6 +1,6 @@
 use crate::jup::Jupiter;
+use anyhow::Result;
 use solana_sdk::signature::Keypair;
-use std::error::Error;
 
 pub async fn trade(
     input_mint: String,
@@ -8,7 +8,7 @@ pub async fn trade(
     output_mint: String,
     slippage_bps: u16,
     keypair: &Keypair,
-) -> Result<String, Box<dyn Error>> {
+) -> Result<String> {
     let quote = Jupiter::fetch_quote(
         &input_mint,
         &output_mint,
