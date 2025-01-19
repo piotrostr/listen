@@ -20,7 +20,6 @@ pub struct Actions {
 // TODO
 // * add a potential flag to simulate before sending txs, return tx simulation, useful for larger
 // txs
-
 impl Actions {
     pub fn new(private_key: String, rpc_url: String) -> Self {
         let keypair = Keypair::from_base58_string(&private_key);
