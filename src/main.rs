@@ -54,12 +54,6 @@ async fn main() -> Result<(), Box<dyn Error>> {
         console_subscriber::init();
     }
 
-    // 30th April, let's see how well this ages lol (was 135.)
-    // 13th May, still going strong with the algo, now at 145
-    // 16th May 163, I paperhanded 20+ SOL :(
-    // 28th May - SOL was for 190ish, dipped and longing now
-    // 23rd July - SOL was for 120ish for a bit,
-    // 7th Jan - SOL is 200+
     let sol_price = 210.;
 
     match app.command {
