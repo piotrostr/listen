@@ -3,6 +3,7 @@ pub mod balance;
 pub mod constants;
 pub mod data;
 pub mod deploy_token;
+pub mod dexscreener;
 pub mod jito;
 pub mod jup;
 pub mod price;
