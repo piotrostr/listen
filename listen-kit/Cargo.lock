@@ -3283,6 +3283,8 @@ dependencies = [
 [[package]]
 name = "rig-tool-macro"
 version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "003120897577a52c29371de128a6491e194bf195f9bcdfc2d8608fcc4026ff4f"
 dependencies = [
  "anyhow",
  "proc-macro2",

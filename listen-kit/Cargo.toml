@@ -34,5 +34,5 @@ syn = { version = "1.0", features = ["full"] }
 anyhow = "1.0.95"
 rig-core = "0.6.1"
 once_cell = "1.20.2"
-rig-tool-macro = { path = "../../rig-tool-macro" }
+rig-tool-macro = "0.2.0"
 thiserror = "2.0.11"
