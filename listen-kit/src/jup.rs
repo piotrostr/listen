@@ -9,6 +9,7 @@ use solana_sdk::transaction::Transaction;
 use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer};
 
 use crate::jito::send_jito_tx;
+use crate::util::env;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PlatformFee {
@@ -191,13 +192,19 @@ impl Jupiter {
             .send()
             .await?;
         if !raw_res.status().is_success() {
-            let error = raw_res.text().await?;
+            let error = raw_res.text().await.map_err(|e| anyhow!(e))?;
             return Err(anyhow!(error));
         }
-        let response = raw_res.json::<SwapInstructionsResponse>().await?;
-
-        let rpc_client = RpcClient::new(std::env::var("RPC_URL")?);
-        let recent_blockhash = rpc_client.get_latest_blockhash().await?;
+        let response = raw_res
+            .json::<SwapInstructionsResponse>()
+            .await
+            .map_err(|e| anyhow!(e))?;
+        // TODO use global rpc_client
+        let rpc_client = RpcClient::new(env("RPC_URL"));
+        let recent_blockhash = rpc_client
+            .get_latest_blockhash()
+            .await
+            .map_err(|e| anyhow!(e))?;
 
         let mut instructions = Vec::new();
 

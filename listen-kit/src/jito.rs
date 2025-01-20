@@ -43,7 +43,9 @@ pub async fn send_jito_tx(tx: Transaction) -> Result<String> {
         .await
         .expect("send tx");
 
-    let jito_response = res.json::<JitoResponse>().await?;
+    let jito_response = res.json::<JitoResponse>().await.map_err(|e| {
+        anyhow!("Failed to parse jito response: {}", e.to_string())
+    })?;
 
     Ok(jito_response.result)
 }

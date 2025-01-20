@@ -1,5 +1,5 @@
 use crate::jup::Jupiter;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use solana_sdk::signature::Keypair;
 
 pub async fn trade(
@@ -15,9 +15,12 @@ pub async fn trade(
         input_amount,
         slippage_bps,
     )
-    .await?;
+    .await
+    .map_err(|e| anyhow!("Failed to fetch quote: {}", e.to_string()))?;
 
-    let result = Jupiter::swap(quote, keypair).await?;
+    let result = Jupiter::swap(quote, keypair)
+        .await
+        .map_err(|e| anyhow!("Failed to swap: {}", e.to_string()))?;
 
     Ok(result)
 }

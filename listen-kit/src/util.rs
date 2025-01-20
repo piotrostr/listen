@@ -13,9 +13,10 @@ use solana_sdk::compute_budget::ComputeBudgetInstruction;
 use solana_sdk::instruction::Instruction;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
-use std::error::Error;
+use std::future::Future;
 use std::io::Write;
 use std::str::FromStr;
+use tokio::sync::mpsc;
 
 pub fn env(var: &str) -> String {
     std::env::var(var).unwrap_or_else(|_| panic!("{} env var not set", var))
@@ -66,7 +67,7 @@ pub struct Holding {
     pub amount: u64,
 }
 
-pub fn parse_holding(ata: RpcKeyedAccount) -> Result<Holding, Box<dyn Error>> {
+pub fn parse_holding(ata: RpcKeyedAccount) -> Result<Holding> {
     if let UiAccountData::Json(ParsedAccount {
         program: _,
         parsed,
@@ -82,11 +83,11 @@ pub fn parse_holding(ata: RpcKeyedAccount) -> Result<Holding, Box<dyn Error>> {
         let ata = Pubkey::from_str(&ata.pubkey)?;
         Ok(Holding { mint, ata, amount })
     } else {
-        Err("failed to parse holding".into())
+        Err(anyhow!("failed to parse holding"))
     }
 }
 
-pub fn init_logger() -> Result<(), Box<dyn Error>> {
+pub fn init_logger() -> Result<()> {
     let logs_level = match std::env::var("RUST_LOG") {
         Ok(level) => {
             LevelFilter::from_str(&level).unwrap_or(LevelFilter::Info)
@@ -151,4 +152,20 @@ pub fn parse_pubkey(s: &str) -> Result<Pubkey> {
         Ok(pubkey) => Ok(pubkey),
         Err(e) => Err(anyhow!(e)),
     }
+}
+
+pub async fn wrap_unsafe<F, Fut, T>(f: F) -> Result<T>
+where
+    F: FnOnce() -> Fut + Send + 'static,
+    Fut: Future<Output = Result<T>> + Send + 'static,
+    T: Send + 'static,
+{
+    let (tx, mut rx) = mpsc::channel(1);
+
+    tokio::spawn(async move {
+        let result = f().await;
+        let _ = tx.send(result).await;
+    });
+
+    rx.recv().await.ok_or_else(|| anyhow!("Channel closed"))?
 }
