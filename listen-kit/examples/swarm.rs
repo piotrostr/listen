@@ -4,7 +4,7 @@ use listen_kit::util::wrap_unsafe;
 use rig::agent::Agent;
 use rig::cli_chatbot::cli_chatbot;
 use rig::completion::Prompt;
-use rig::providers::openai::CompletionModel;
+use rig::providers::anthropic::completion::CompletionModel;
 use rig_tool_macro::tool;
 use std::sync::Arc;
 use tokio::sync::OnceCell;
