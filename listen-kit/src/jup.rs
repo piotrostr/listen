@@ -4,12 +4,11 @@ use anyhow::{anyhow, Result};
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
-use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::transaction::Transaction;
 use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer};
 
-use crate::jito::send_jito_tx;
-use crate::util::env;
+use crate::blockhash::BLOCKHASH_CACHE;
+use crate::transaction::send_tx;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PlatformFee {
@@ -199,12 +198,7 @@ impl Jupiter {
             .json::<SwapInstructionsResponse>()
             .await
             .map_err(|e| anyhow!(e))?;
-        // TODO use global rpc_client
-        let rpc_client = RpcClient::new(env("RPC_URL"));
-        let recent_blockhash = rpc_client
-            .get_latest_blockhash()
-            .await
-            .map_err(|e| anyhow!(e))?;
+        let recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await;
 
         let mut instructions = Vec::new();
 
@@ -241,7 +235,7 @@ impl Jupiter {
             Transaction::new_with_payer(&instructions, Some(&signer.pubkey()));
         tx.sign(&[signer], recent_blockhash);
 
-        let result = send_jito_tx(tx).await?;
+        let result = send_tx(tx).await?;
 
         Ok(result)
     }

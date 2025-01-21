@@ -62,13 +62,8 @@ pub async fn trade(
 pub async fn transfer_sol(to: String, amount: u64) -> Result<String> {
     let keypair = KEYPAIR.read().await;
     wrap_unsafe(move || async move {
-        crate::transfer::transfer_sol(
-            Pubkey::from_str(&to)?,
-            amount,
-            &keypair,
-            &create_rpc(),
-        )
-        .await
+        crate::transfer::transfer_sol(Pubkey::from_str(&to)?, amount, &keypair)
+            .await
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))
@@ -164,7 +159,6 @@ pub async fn deploy_token(
                 description,
             },
             &keypair,
-            &create_rpc(),
         )
         .await
     })
@@ -205,13 +199,7 @@ pub async fn sell_pump_token(
 ) -> Result<String> {
     let keypair = KEYPAIR.read().await;
     wrap_unsafe(move || async move {
-        crate::trade_pump::sell_pump_fun(
-            mint,
-            token_amount,
-            &create_rpc(),
-            &keypair,
-        )
-        .await
+        crate::trade_pump::sell_pump_fun(mint, token_amount, &keypair).await
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))
