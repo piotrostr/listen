@@ -1,8 +1,9 @@
-use crate::jito::send_jito_tx;
+use crate::blockhash::BLOCKHASH_CACHE;
 use crate::pump::{
     _make_buy_ixs, get_bonding_curve, get_pump_token_amount,
     make_pump_sell_ix, mint_to_pump_accounts,
 };
+use crate::transaction::send_tx;
 use anyhow::Result;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
@@ -46,7 +47,7 @@ pub async fn buy_pump_fun(
         sol_amount,
     )?;
 
-    let latest_blockhash = rpc_client.get_latest_blockhash().await?;
+    let latest_blockhash = BLOCKHASH_CACHE.get_blockhash().await;
 
     let tx = Transaction::new_signed_with_payer(
         buy_ixs.as_slice(),
@@ -55,14 +56,13 @@ pub async fn buy_pump_fun(
         latest_blockhash,
     );
 
-    let result = send_jito_tx(tx).await?;
+    let result = send_tx(tx).await?;
     Ok(result)
 }
 
 pub async fn sell_pump_fun(
     mint: String,
     token_amount: u64,
-    rpc_client: &RpcClient,
     keypair: &Keypair,
 ) -> Result<String> {
     let mint = Pubkey::from_str(&mint)?;
@@ -77,7 +77,7 @@ pub async fn sell_pump_fun(
 
     let ix = make_pump_sell_ix(owner, pump_accounts, token_amount, ata)?;
 
-    let latest_blockhash = rpc_client.get_latest_blockhash().await?;
+    let latest_blockhash = BLOCKHASH_CACHE.get_blockhash().await;
 
     let tx = Transaction::new_signed_with_payer(
         [ix].as_slice(),
@@ -86,7 +86,7 @@ pub async fn sell_pump_fun(
         latest_blockhash,
     );
 
-    let result = send_jito_tx(tx).await?;
+    let result = send_tx(tx).await?;
     Ok(result)
 }
 
@@ -104,7 +104,7 @@ mod tests {
         buy_pump_fun(
             "76VCegXJdjqHXBdQyeVV3Swt3JgXrBoQpXcvRQsYpump".to_string(),
             sol_to_lamports(0.0001),
-            200,
+            500,
             &rpc_client,
             &keypair,
         )
@@ -115,11 +115,9 @@ mod tests {
     #[tokio::test]
     async fn test_sell_pump_fun() {
         let keypair = load_keypair_for_tests();
-        let rpc_client = make_rpc_client();
         sell_pump_fun(
             "76VCegXJdjqHXBdQyeVV3Swt3JgXrBoQpXcvRQsYpump".to_string(),
             (1. * 1e6) as u64,
-            &rpc_client,
             &keypair,
         )
         .await

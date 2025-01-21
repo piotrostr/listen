@@ -14,6 +14,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::balance::Holding;
+use crate::dexscreener::PairInfo;
 use crate::util::wrap_unsafe;
 
 static KEYPAIR: Lazy<Arc<RwLock<Keypair>>> =
@@ -61,13 +62,8 @@ pub async fn trade(
 pub async fn transfer_sol(to: String, amount: u64) -> Result<String> {
     let keypair = KEYPAIR.read().await;
     wrap_unsafe(move || async move {
-        crate::transfer::transfer_sol(
-            Pubkey::from_str(&to)?,
-            amount,
-            &keypair,
-            &create_rpc(),
-        )
-        .await
+        crate::transfer::transfer_sol(Pubkey::from_str(&to)?, amount, &keypair)
+            .await
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))
@@ -163,7 +159,6 @@ pub async fn deploy_token(
                 description,
             },
             &keypair,
-            &create_rpc(),
         )
         .await
     })
@@ -204,13 +199,7 @@ pub async fn sell_pump_token(
 ) -> Result<String> {
     let keypair = KEYPAIR.read().await;
     wrap_unsafe(move || async move {
-        crate::trade_pump::sell_pump_fun(
-            mint,
-            token_amount,
-            &create_rpc(),
-            &keypair,
-        )
-        .await
+        crate::trade_pump::sell_pump_fun(mint, token_amount, &keypair).await
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))
@@ -228,4 +217,9 @@ pub async fn portfolio() -> Result<Vec<Holding>> {
     .map_err(|e| anyhow!("{:#?}", e))?;
 
     Ok(holdings)
+}
+
+#[tool]
+pub async fn fetch_pair_info(ticker: String) -> Result<PairInfo> {
+    crate::data::ticker_to_mint(ticker).await
 }

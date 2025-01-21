@@ -5,22 +5,23 @@ use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
 
-use crate::jito::send_jito_tx;
+use crate::blockhash::BLOCKHASH_CACHE;
+use crate::transaction::send_tx;
 
 pub async fn transfer_sol(
     to: Pubkey,
     amount: u64,
     keypair: &Keypair,
-    rpc_client: &RpcClient,
 ) -> Result<String> {
     let from = keypair.pubkey();
+    let recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await;
     let tx = Transaction::new_signed_with_payer(
         &[solana_sdk::system_instruction::transfer(&from, &to, amount)],
         None,
         &[&keypair],
-        rpc_client.get_latest_blockhash().await?,
+        recent_blockhash,
     );
-    let res = send_jito_tx(tx).await?;
+    let res = send_tx(tx).await?;
 
     Ok(res)
 }
@@ -66,10 +67,10 @@ pub async fn transfer_spl(
         &instructions,
         Some(&from),
         &[keypair],
-        rpc_client.get_latest_blockhash().await?,
+        BLOCKHASH_CACHE.get_blockhash().await,
     );
 
-    let res = send_jito_tx(tx).await?;
+    let res = send_tx(tx).await?;
 
     Ok(res)
 }
@@ -86,11 +87,10 @@ mod tests {
     #[tokio::test]
     async fn test_transfer_sol() {
         let keypair = load_keypair_for_tests();
-        let rpc_client = make_rpc_client();
         let to = keypair.pubkey();
         let amount = sol_to_lamports(0.0001);
-        let result = transfer_sol(to, amount, &keypair, &rpc_client).await;
-        assert!(result.is_ok());
+        let result = transfer_sol(to, amount, &keypair).await;
+        assert!(result.is_ok(), "{:?}", result);
     }
 
     #[tokio::test]
@@ -99,9 +99,9 @@ mod tests {
         let rpc_client = make_rpc_client();
         let to = keypair.pubkey();
         let mint = pubkey!("Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump");
-        let amount = (1. * 1e6) as u64;
+        let amount = (10. * 1e6) as u64;
         let result =
             transfer_spl(to, amount, mint, &keypair, &rpc_client).await;
-        assert!(result.is_ok());
+        assert!(result.is_ok(), "{:?}", result);
     }
 }

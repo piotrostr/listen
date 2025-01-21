@@ -16,13 +16,14 @@ use solana_sdk::{
 use std::str::FromStr;
 
 use crate::{
+    blockhash::BLOCKHASH_CACHE,
     constants::{
         ASSOCIATED_TOKEN_PROGRAM, EVENT_AUTHORITY, PUMP_FUN_MINT_AUTHORITY,
         PUMP_FUN_PROGRAM, PUMP_GLOBAL_ADDRESS, RENT_PROGRAM,
         SYSTEM_PROGRAM_ID, TOKEN_PROGRAM,
     },
-    jito::{get_jito_tip_pubkey, send_jito_tx},
     pump::{get_bonding_curve, get_pump_token_amount, BondingCurveLayout},
+    transaction::{get_jito_tip_pubkey, send_tx},
     util::apply_fee,
 };
 use crate::{pump::_make_buy_ixs, util::make_compute_budget_ixs};
@@ -49,7 +50,6 @@ pub struct DeployTokenParams {
 pub async fn deploy_token(
     params: DeployTokenParams,
     keypair: &Keypair,
-    rpc_client: &RpcClient,
 ) -> Result<String> {
     let res = launch(
         &IPFSMetaForm {
@@ -64,7 +64,6 @@ pub async fn deploy_token(
         params.image_url,
         keypair,
         params.dev_buy,
-        rpc_client,
     )
     .await?;
 
@@ -277,7 +276,6 @@ pub async fn launch(
     image_path: Option<String>,
     signer: &Keypair,
     dev_buy: Option<u64>, // lamports
-    rpc_client: &RpcClient,
 ) -> Result<String> {
     let mut ixs = vec![];
 
@@ -332,15 +330,14 @@ pub async fn launch(
     // static tip of 50000 lamports for the launch
     ixs.push(transfer(&signer.pubkey(), &get_jito_tip_pubkey(), 50000));
 
-    let latest_blockhash = rpc_client.get_latest_blockhash().await?;
     let create_tx = Transaction::new_signed_with_payer(
         &ixs,
         Some(&signer.pubkey()),
         &[signer, &mint_signer],
-        latest_blockhash,
+        BLOCKHASH_CACHE.get_blockhash().await,
     );
 
-    let res = send_jito_tx(create_tx).await?;
+    let res = send_tx(create_tx).await?;
 
     Ok(res)
 }
@@ -473,9 +470,7 @@ mod launcher_tests {
     use solana_sdk::signer::EncodableKey;
 
     use super::*;
-    use crate::util::{
-        env, init_logger, load_keypair_for_tests, make_rpc_client,
-    };
+    use crate::util::{env, init_logger, load_keypair_for_tests};
 
     #[tokio::test]
     #[ignore]
@@ -492,9 +487,7 @@ mod launcher_tests {
             website: None,
             dev_buy: None,
         };
-        let res = deploy_token(params, &keypair, &make_rpc_client())
-            .await
-            .unwrap();
+        let res = deploy_token(params, &keypair).await.unwrap();
         println!("tx id: {}", res);
     }
 
@@ -519,7 +512,6 @@ mod launcher_tests {
             None,
             &signer,
             Some(50000),
-            &make_rpc_client(),
         )
         .await
         .unwrap();
@@ -546,7 +538,6 @@ mod launcher_tests {
             None,
             &signer,
             None,
-            &make_rpc_client(),
         )
         .await
         .unwrap();

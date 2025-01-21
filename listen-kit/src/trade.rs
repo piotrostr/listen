@@ -38,7 +38,7 @@ mod tests {
         let keypair = load_keypair_for_tests();
         let result = trade(
             constants::WSOL.to_string(),
-            sol_to_lamports(0.0001),
+            sol_to_lamports(0.001),
             "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump".to_string(),
             100,
             &keypair,

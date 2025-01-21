@@ -1,4 +1,5 @@
-use crate::jito::{get_jito_tip_pubkey, send_jito_tx};
+use crate::blockhash::BLOCKHASH_CACHE;
+use crate::transaction::{get_jito_tip_pubkey, send_tx};
 use crate::util::apply_fee;
 use anyhow::{anyhow, Result};
 use log::{debug, error, info, warn};
@@ -320,7 +321,7 @@ pub async fn buy_pump_token(
         latest_blockhash,
     );
 
-    send_jito_tx(tx).await?;
+    send_tx(tx).await?;
 
     Ok(())
 }
@@ -370,7 +371,7 @@ async fn _send_tx_standard(
             &ixs,
             Some(&owner),
             &[wallet],
-            rpc_client.get_latest_blockhash().await?,
+            BLOCKHASH_CACHE.get_blockhash().await,
         ));
     let res = rpc_client
         .send_transaction_with_config(
@@ -425,7 +426,7 @@ pub async fn sell_pump_token(
         latest_blockhash,
     );
 
-    send_jito_tx(tx).await?;
+    send_tx(tx).await?;
 
     Ok(())
 }
@@ -785,15 +786,10 @@ mod tests {
         };
         let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
             .expect("read wallet");
-        let rpc_client =
-            RpcClient::new("https://api.mainnet-beta.solana.com".to_string());
         let tip = 50_000;
         buy_pump_token(
             &wallet,
-            rpc_client
-                .get_latest_blockhash()
-                .await
-                .expect("get blockhash"),
+            BLOCKHASH_CACHE.get_blockhash().await,
             pump_accounts,
             100_000,
             lamports,

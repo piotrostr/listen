@@ -2329,13 +2329,14 @@ dependencies = [
  "dotenv",
  "env_logger",
  "hex",
+ "lazy_static",
  "log",
  "once_cell",
  "proc-macro2",
  "quote",
  "rand 0.8.5",
  "reqwest 0.12.12",
- "rig-core",
+ "rig-core 0.6.1 (git+https://github.com/0xPlaygrounds/rig?branch=main)",
  "rig-tool-macro",
  "serde",
  "serde_json",
@@ -2350,6 +2351,8 @@ dependencies = [
  "thiserror 2.0.11",
  "timed",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -3281,6 +3284,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "rig-core"
+version = "0.6.1"
+source = "git+https://github.com/0xPlaygrounds/rig?branch=main#a9377fe5e83f55d5d7f0df485749fb92b27d297c"
+dependencies = [
+ "futures",
+ "glob",
+ "ordered-float",
+ "reqwest 0.11.27",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
 name = "rig-tool-macro"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3289,7 +3308,7 @@ dependencies = [
  "anyhow",
  "proc-macro2",
  "quote",
- "rig-core",
+ "rig-core 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde",
  "serde_json",
  "syn 1.0.109",

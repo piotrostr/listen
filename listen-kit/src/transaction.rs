@@ -5,6 +5,8 @@ use rand::thread_rng;
 use rand::Rng;
 use serde::Deserialize;
 use serde_json::json;
+use solana_client::nonblocking::rpc_client::RpcClient;
+use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::transaction::Transaction;
 use solana_transaction_status::{
@@ -12,6 +14,8 @@ use solana_transaction_status::{
 };
 use std::cell::RefCell;
 use std::str::FromStr;
+
+use crate::util::env;
 
 #[derive(Debug, Deserialize)]
 pub struct JitoResponse {
@@ -48,6 +52,37 @@ pub async fn send_jito_tx(tx: Transaction) -> Result<String> {
     })?;
 
     Ok(jito_response.result)
+}
+
+pub async fn send_tx_fallback(tx: Transaction) -> Result<String> {
+    let rpc_client = RpcClient::new(env("RPC_URL"));
+
+    let signature = rpc_client
+        .send_transaction_with_config(
+            &tx,
+            RpcSendTransactionConfig {
+                max_retries: Some(3),
+                skip_preflight: true,
+                ..RpcSendTransactionConfig::default()
+            },
+        )
+        .await
+        .map_err(|e| {
+            anyhow!("Failed to send transaction: {}", e.to_string())
+        })?;
+
+    Ok(signature.to_string())
+}
+
+pub async fn send_tx(tx: Transaction) -> Result<String> {
+    let signature = send_jito_tx(tx.clone()).await;
+    match signature {
+        Ok(signature) => Ok(signature),
+        Err(e) => {
+            info!("Failed to send tx via jito: {}", e.to_string());
+            send_tx_fallback(tx).await
+        }
+    }
 }
 
 thread_local! {
