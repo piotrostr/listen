@@ -14,6 +14,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::balance::Holding;
+use crate::dexscreener::PairInfo;
 use crate::util::wrap_unsafe;
 
 static KEYPAIR: Lazy<Arc<RwLock<Keypair>>> =
@@ -228,4 +229,9 @@ pub async fn portfolio() -> Result<Vec<Holding>> {
     .map_err(|e| anyhow!("{:#?}", e))?;
 
     Ok(holdings)
+}
+
+#[tool]
+pub async fn fetch_pair_info(ticker: String) -> Result<PairInfo> {
+    crate::data::ticker_to_mint(ticker).await
 }
