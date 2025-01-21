@@ -1,3 +1,4 @@
+FAST.json
 product.md
 raydium.json
 *.csv
@@ -7,10 +8,12 @@ instance
 .vscode
 *.log
 .env
-*.json
 out.stacks
 flame-graph.html
 flamegraph.svg
 data
 target
 .vercel
+fuck.json
+ai.json
+auth.json
