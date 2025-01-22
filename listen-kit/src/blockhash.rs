@@ -1,6 +1,6 @@
 use crate::util::env;
 use lazy_static::lazy_static;
-use solana_client::rpc_client::RpcClient;
+use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::hash::Hash;
 use std::sync::Arc;
 use std::time::Duration;
@@ -28,7 +28,7 @@ impl BlockhashCache {
 
         tokio::spawn(async move {
             loop {
-                match client.get_latest_blockhash() {
+                match client.get_latest_blockhash().await {
                     Ok(new_blockhash) => {
                         let mut hash_writer = blockhash.write().await;
                         *hash_writer = new_blockhash;
