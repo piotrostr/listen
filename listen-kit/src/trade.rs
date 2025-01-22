@@ -39,11 +39,12 @@ mod tests {
         let result = trade(
             constants::WSOL.to_string(),
             sol_to_lamports(0.001),
-            "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump".to_string(),
+            "FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P".to_string(),
             100,
             &keypair,
         )
         .await;
+        println!("{:?}", result);
 
         assert!(result.is_ok());
     }

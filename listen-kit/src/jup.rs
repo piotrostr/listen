@@ -154,7 +154,7 @@ impl Jupiter {
         slippage: u16,
     ) -> Result<QuoteResponse> {
         let url = format!(
-            "https://quote-api.jup.ag/v6/quote?inputMint={}&outputMint={}&amount={}&slippageBps={}&onlyDirectRoutes=true", // TODO remove the onlyDirectRoutes query param after fixing jito issue
+            "https://quote-api.jup.ag/v6/quote?inputMint={}&outputMint={}&amount={}&slippageBps={}&asLegacyTransaction=true",
             input_mint, output_mint, amount, slippage
         );
 
@@ -175,7 +175,7 @@ impl Jupiter {
             tracking_account: None,
             compute_unit_price_micro_lamports: None,
             prioritization_fee_lamports: None,
-            as_legacy_transaction: false,
+            as_legacy_transaction: true,
             use_token_ledger: false,
             destination_token_account: None,
             dynamic_compute_unit_limit: true,

@@ -75,6 +75,15 @@ pub async fn send_tx_fallback(tx: Transaction) -> Result<String> {
 }
 
 pub async fn send_tx(tx: Transaction) -> Result<String> {
+    if std::env::var("SKIP_SIMULATION").is_err() {
+        let simres = RpcClient::new(env("RPC_URL"))
+            .simulate_transaction(&tx)
+            .await?;
+        if simres.value.err.is_some() {
+            return Err(anyhow!("Transaction simulation failed"));
+        }
+    }
+
     let signature = send_jito_tx(tx.clone()).await;
     match signature {
         Ok(signature) => Ok(signature),
