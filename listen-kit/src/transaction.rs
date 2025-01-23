@@ -1,5 +1,4 @@
 use anyhow::{anyhow, Result};
-use log::info;
 use rand::rngs::ThreadRng;
 use rand::thread_rng;
 use rand::Rng;
@@ -7,6 +6,7 @@ use serde::Deserialize;
 use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
+use solana_client::rpc_config::RpcSimulateTransactionConfig;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::transaction::Transaction;
 use solana_transaction_status::{
@@ -14,6 +14,7 @@ use solana_transaction_status::{
 };
 use std::cell::RefCell;
 use std::str::FromStr;
+use tracing::info;
 
 use crate::util::env;
 
@@ -71,20 +72,34 @@ pub async fn send_tx_fallback(tx: Transaction) -> Result<String> {
             anyhow!("Failed to send transaction: {}", e.to_string())
         })?;
 
+    info!("Sent tx via rpc: {}", signature);
+
     Ok(signature.to_string())
 }
 
 pub async fn send_tx(tx: Transaction) -> Result<String> {
     if std::env::var("SKIP_SIMULATION").is_err() {
         let simres = RpcClient::new(env("RPC_URL"))
-            .simulate_transaction(&tx)
+            .simulate_transaction_with_config(
+                &tx,
+                RpcSimulateTransactionConfig {
+                    replace_recent_blockhash: true,
+                    ..RpcSimulateTransactionConfig::default()
+                },
+            )
             .await?;
         if simres.value.err.is_some() {
-            return Err(anyhow!("Transaction simulation failed"));
+            return Err(anyhow!(
+                "Transaction simulation failed: {:?}",
+                simres
+            ));
         }
     }
 
     let signature = send_jito_tx(tx.clone()).await;
+    if let Ok(signature) = &signature {
+        info!("Sent tx via jito: {}", signature);
+    }
     match signature {
         Ok(signature) => Ok(signature),
         Err(e) => {

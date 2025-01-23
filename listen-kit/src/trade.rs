@@ -40,7 +40,7 @@ mod tests {
             constants::WSOL.to_string(),
             sol_to_lamports(0.001),
             "FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P".to_string(),
-            100,
+            300,
             &keypair,
         )
         .await;

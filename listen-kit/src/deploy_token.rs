@@ -334,7 +334,7 @@ pub async fn launch(
         &ixs,
         Some(&signer.pubkey()),
         &[signer, &mint_signer],
-        BLOCKHASH_CACHE.get_blockhash().await,
+        BLOCKHASH_CACHE.get_blockhash().await?,
     );
 
     let res = send_tx(create_tx).await?;

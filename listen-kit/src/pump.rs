@@ -371,7 +371,7 @@ async fn _send_tx_standard(
             &ixs,
             Some(&owner),
             &[wallet],
-            BLOCKHASH_CACHE.get_blockhash().await,
+            BLOCKHASH_CACHE.get_blockhash().await?,
         ));
     let res = rpc_client
         .send_transaction_with_config(
@@ -657,7 +657,7 @@ pub struct IPFSMetadata {
 
 pub async fn fetch_metadata(mint: &Pubkey) -> Result<PumpTokenInfo> {
     const MAX_RETRIES: u32 = 3;
-    const INITIAL_DELAY_MS: u64 = 100;
+    const INITIAL_DELAY_MS: u64 = 200;
 
     let mut retry_count = 0;
     let mut delay_ms = INITIAL_DELAY_MS;
@@ -689,11 +689,9 @@ pub async fn fetch_metadata(mint: &Pubkey) -> Result<PumpTokenInfo> {
 
 async fn fetch_metadata_inner(mint: &Pubkey) -> Result<PumpTokenInfo> {
     let url = format!("https://frontend-api.pump.fun/coins/{}", mint);
-    info!("Fetching metadata from: {}", url);
     let res = reqwest::get(&url).await?;
-    info!("res: {:?}", res);
-    let data = res.json::<PumpTokenInfo>().await?;
-    Ok(data)
+    let data = res.json::<serde_json::Value>().await?;
+    Ok(serde_json::from_value(data)?)
 }
 
 #[cfg(test)]
@@ -705,6 +703,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[ignore]
     async fn test_fetch_metadata() {
         let metadata = fetch_metadata(
             &Pubkey::from_str("4cRkQ2dntpusYag6Zmvco8T78WxK9Jqh1eEZJox8pump")
@@ -789,7 +788,7 @@ mod tests {
         let tip = 50_000;
         buy_pump_token(
             &wallet,
-            BLOCKHASH_CACHE.get_blockhash().await,
+            BLOCKHASH_CACHE.get_blockhash().await.unwrap(),
             pump_accounts,
             100_000,
             lamports,

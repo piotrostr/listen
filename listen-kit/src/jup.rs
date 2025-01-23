@@ -198,7 +198,7 @@ impl Jupiter {
             .json::<SwapInstructionsResponse>()
             .await
             .map_err(|e| anyhow!(e))?;
-        let recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await;
+        let recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
 
         let mut instructions = Vec::new();
 

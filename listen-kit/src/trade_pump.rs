@@ -47,7 +47,7 @@ pub async fn buy_pump_fun(
         sol_amount,
     )?;
 
-    let latest_blockhash = BLOCKHASH_CACHE.get_blockhash().await;
+    let latest_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
 
     let tx = Transaction::new_signed_with_payer(
         buy_ixs.as_slice(),
@@ -77,7 +77,7 @@ pub async fn sell_pump_fun(
 
     let ix = make_pump_sell_ix(owner, pump_accounts, token_amount, ata)?;
 
-    let latest_blockhash = BLOCKHASH_CACHE.get_blockhash().await;
+    let latest_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
 
     let tx = Transaction::new_signed_with_payer(
         [ix].as_slice(),

@@ -14,7 +14,7 @@ pub async fn transfer_sol(
     keypair: &Keypair,
 ) -> Result<String> {
     let from = keypair.pubkey();
-    let recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await;
+    let recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
     let tx = Transaction::new_signed_with_payer(
         &[solana_sdk::system_instruction::transfer(&from, &to, amount)],
         None,
@@ -67,7 +67,7 @@ pub async fn transfer_spl(
         &instructions,
         Some(&from),
         &[keypair],
-        BLOCKHASH_CACHE.get_blockhash().await,
+        BLOCKHASH_CACHE.get_blockhash().await?,
     );
 
     let res = send_tx(tx).await?;
