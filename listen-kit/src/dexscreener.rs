@@ -83,4 +83,15 @@ mod tests {
         let response = search_ticker("BONK".to_string()).await.unwrap();
         assert_eq!(response.schema_version, "1.0.0");
     }
+
+    #[tokio::test]
+    async fn test_search_by_mint() {
+        let response = search_ticker(
+            "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump".to_string(),
+        )
+        .await
+        .unwrap();
+        println!("{:?}", response);
+        assert_eq!(response.schema_version, "1.0.0");
+    }
 }

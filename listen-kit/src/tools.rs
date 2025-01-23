@@ -220,6 +220,11 @@ pub async fn portfolio() -> Result<Vec<Holding>> {
 }
 
 #[tool]
-pub async fn fetch_pair_info(ticker: String) -> Result<PairInfo> {
-    crate::data::ticker_to_mint(ticker).await
+pub async fn fetch_pair_info(mint_or_symbol: String) -> Result<PairInfo> {
+    crate::data::fetch_pair_info(mint_or_symbol).await
+}
+
+#[tool]
+pub async fn scan(mint: String) -> Result<String> {
+    crate::scan::scan(mint).await
 }

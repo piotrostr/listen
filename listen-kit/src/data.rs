@@ -2,8 +2,8 @@ use anyhow::Result;
 
 use crate::dexscreener::{search_ticker, PairInfo};
 
-pub async fn ticker_to_mint(ticker: String) -> Result<PairInfo> {
-    let res = search_ticker(ticker.clone()).await?;
+pub async fn fetch_pair_info(mint_or_symbol: String) -> Result<PairInfo> {
+    let res = search_ticker(mint_or_symbol.clone()).await?;
 
     let mut matching_pairs: Vec<&PairInfo> = res
         .pairs
@@ -23,6 +23,6 @@ pub async fn ticker_to_mint(ticker: String) -> Result<PairInfo> {
         .first()
         .map(|pair| (*pair).clone()) // Dereference and clone the PairInfo
         .ok_or_else(|| {
-            anyhow::anyhow!("No matching pairs found for ticker {}", ticker)
+            anyhow::anyhow!("No matching pairs found for {}", mint_or_symbol)
         })
 }
