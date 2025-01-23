@@ -1,3 +1,6 @@
+#![cfg(feature = "http")]
+pub mod http;
+
 pub mod agent;
 pub mod balance;
 pub mod blockhash;
