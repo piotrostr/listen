@@ -1,7 +1,7 @@
 use anyhow::Result;
 use listen_kit::tools::{initialize, Portfolio};
 use listen_kit::util::env;
-use rig::completion::Prompt;
+use rig::streaming::{stream_to_stdout, StreamingPrompt};
 
 #[tokio::main]
 async fn main() -> Result<()> {
@@ -9,17 +9,18 @@ async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
     initialize(env("PRIVATE_KEY")).await;
 
-    let agent = rig::providers::openai::Client::from_env()
-        .agent(rig::providers::openai::GPT_4_TURBO)
-        .preamble("you are a portfolio checker")
+    let agent = rig::providers::anthropic::Client::from_env()
+        .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
+        .preamble("you are a portfolio checker, if you do wanna call a tool, outline the reasoning why that tool")
         .max_tokens(1024)
         .tool(Portfolio)
         .build();
 
-    println!(
-        "{}",
-        agent.prompt("whats the portfolio looking like").await?
-    );
+    let mut stream = agent
+        .stream_prompt("whats the portfolio looking like?")
+        .await?;
+
+    stream_to_stdout(agent, &mut stream).await?;
 
     Ok(())
 }
