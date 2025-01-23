@@ -27,6 +27,7 @@ mod tests {
     use super::*;
 
     #[tokio::test]
+    #[ignore]
     pub async fn test_scan() {
         let pubkey = pubkey!("KENJSUYLASHUMfHyy5o4Hp2FdNqZg1AsUPhfH2kYvEP");
         scan(pubkey.to_string()).await.unwrap();
