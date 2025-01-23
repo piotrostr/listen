@@ -13,7 +13,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::balance::Holding;
+use crate::data::PortfolioItem;
 use crate::dexscreener::PairInfo;
 use crate::util::wrap_unsafe;
 
@@ -206,7 +206,7 @@ pub async fn sell_pump_token(
 }
 
 #[tool]
-pub async fn portfolio() -> Result<Vec<Holding>> {
+pub async fn portfolio() -> Result<Vec<PortfolioItem>> {
     let keypair = KEYPAIR.read().await;
     let holdings = wrap_unsafe(move || async move {
         crate::balance::get_holdings(&create_rpc(), &keypair.pubkey())
@@ -216,7 +216,7 @@ pub async fn portfolio() -> Result<Vec<Holding>> {
     .await
     .map_err(|e| anyhow!("{:#?}", e))?;
 
-    Ok(holdings)
+    crate::data::holdings_to_portfolio(holdings).await
 }
 
 #[tool]
