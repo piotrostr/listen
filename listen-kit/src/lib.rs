@@ -1,20 +1,10 @@
-#![cfg(feature = "http")]
+#[cfg(feature = "http")]
 pub mod http;
 
+#[cfg(feature = "solana")]
+pub mod solana;
+
+#[cfg(feature = "evm")]
+pub mod evm;
+
 pub mod agent;
-pub mod balance;
-pub mod blockhash;
-pub mod constants;
-pub mod data;
-pub mod deploy_token;
-pub mod dexscreener;
-pub mod jup;
-pub mod price;
-pub mod pump;
-pub mod scan;
-pub mod tools;
-pub mod trade;
-pub mod trade_pump;
-pub mod transaction;
-pub mod transfer;
-pub mod util;

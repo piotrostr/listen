@@ -7,8 +7,7 @@ use serde::{Deserialize, Serialize};
 use solana_sdk::transaction::Transaction;
 use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer};
 
-use crate::blockhash::BLOCKHASH_CACHE;
-use crate::transaction::send_tx;
+use crate::solana::{blockhash::BLOCKHASH_CACHE, transaction::send_tx};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PlatformFee {

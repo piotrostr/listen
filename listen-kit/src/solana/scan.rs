@@ -3,7 +3,7 @@ use std::str::FromStr;
 use anyhow::{anyhow, Result};
 use solana_sdk::pubkey::Pubkey;
 
-use crate::pump::fetch_metadata;
+use crate::solana::pump::fetch_metadata;
 
 pub async fn scan(mint: String) -> Result<String> {
     let pubkey = match Pubkey::from_str(&mint) {

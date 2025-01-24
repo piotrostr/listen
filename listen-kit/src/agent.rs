@@ -2,12 +2,14 @@ use anyhow::Result;
 use rig::agent::{Agent, AgentBuilder};
 use rig::providers::anthropic::completion::CompletionModel;
 
-use crate::tools::{
-    initialize, BuyPumpToken, DeployToken, FetchPairInfo, FetchTokenPrice,
-    GetBalance, GetTokenBalance, Portfolio, Scan, SellPumpToken, Trade,
-    TransferSol, TransferToken, WalletAddress,
+use crate::solana::{
+    tools::{
+        initialize, BuyPumpToken, DeployToken, FetchPairInfo, FetchTokenPrice,
+        GetBalance, GetTokenBalance, Portfolio, Scan, SellPumpToken, Trade,
+        TransferSol, TransferToken, WalletAddress,
+    },
+    util::env,
 };
-use crate::util::env;
 
 pub fn claude_agent() -> AgentBuilder<CompletionModel> {
     dotenv::dotenv().ok();

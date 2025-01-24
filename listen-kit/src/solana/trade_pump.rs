@@ -1,9 +1,11 @@
-use crate::blockhash::BLOCKHASH_CACHE;
-use crate::pump::{
-    _make_buy_ixs, get_bonding_curve, get_pump_token_amount,
-    make_pump_sell_ix, mint_to_pump_accounts,
+use crate::solana::{
+    blockhash::BLOCKHASH_CACHE,
+    pump::{
+        _make_buy_ixs, get_bonding_curve, get_pump_token_amount,
+        make_pump_sell_ix, mint_to_pump_accounts,
+    },
+    transaction::send_tx,
 };
-use crate::transaction::send_tx;
 use anyhow::Result;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
@@ -95,7 +97,7 @@ mod tests {
     use solana_sdk::native_token::sol_to_lamports;
 
     use super::*;
-    use crate::util::{load_keypair_for_tests, make_rpc_client};
+    use crate::solana::util::{load_keypair_for_tests, make_rpc_client};
 
     #[tokio::test]
     async fn test_buy_pump_fun() {
