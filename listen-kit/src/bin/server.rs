@@ -1,5 +1,7 @@
+#[cfg(feature = "http")]
 use listen_kit::http::server::run_server;
 
+#[cfg(feature = "http")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     use listen_kit::agent::create_trader_agent;
