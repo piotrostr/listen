@@ -1,6 +1,6 @@
 use anyhow::{anyhow, Result};
 use listen_kit::agent::{create_data_agent, create_trader_agent};
-use listen_kit::util::wrap_unsafe;
+use listen_kit::solana::util::wrap_unsafe;
 use rig::agent::Agent;
 use rig::cli_chatbot::cli_chatbot;
 use rig::completion::Prompt;

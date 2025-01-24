@@ -16,7 +16,7 @@ use std::cell::RefCell;
 use std::str::FromStr;
 use tracing::info;
 
-use crate::util::env;
+use crate::solana::util::env;
 
 #[derive(Debug, Deserialize)]
 pub struct JitoResponse {

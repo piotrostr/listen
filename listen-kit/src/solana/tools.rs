@@ -1,3 +1,6 @@
+//! This module wraps all of the Solana functionality into rig-compatible tools
+//! using the `#[tool]` macro. This allows the functions to be consumed by LLMs
+//! as function calls
 #![allow(non_upper_case_globals)]
 
 use anyhow::{anyhow, Result};
@@ -13,9 +16,9 @@ use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
-use crate::data::PortfolioItem;
-use crate::dexscreener::PairInfo;
-use crate::util::wrap_unsafe;
+use crate::solana::{
+    data::PortfolioItem, dexscreener::PairInfo, util::wrap_unsafe,
+};
 
 static KEYPAIR: Lazy<Arc<RwLock<Keypair>>> =
     Lazy::new(|| Arc::new(RwLock::new(Keypair::new())));
@@ -45,7 +48,7 @@ pub async fn trade(
 ) -> Result<String> {
     let keypair = KEYPAIR.read().await;
     wrap_unsafe(move || async move {
-        crate::trade::trade(
+        crate::solana::trade::trade(
             input_mint,
             sol_to_lamports(input_amount),
             output_mint,
@@ -62,8 +65,12 @@ pub async fn trade(
 pub async fn transfer_sol(to: String, amount: u64) -> Result<String> {
     let keypair = KEYPAIR.read().await;
     wrap_unsafe(move || async move {
-        crate::transfer::transfer_sol(Pubkey::from_str(&to)?, amount, &keypair)
-            .await
+        crate::solana::transfer::transfer_sol(
+            Pubkey::from_str(&to)?,
+            amount,
+            &keypair,
+        )
+        .await
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))
@@ -79,7 +86,7 @@ pub async fn transfer_token(
 ) -> Result<String> {
     let keypair = KEYPAIR.read().await;
     wrap_unsafe(move || async move {
-        crate::transfer::transfer_spl(
+        crate::solana::transfer::transfer_spl(
             Pubkey::from_str(&to)?,
             amount,
             Pubkey::from_str(&mint)?,
@@ -147,8 +154,8 @@ pub async fn deploy_token(
 ) -> Result<String> {
     let keypair = KEYPAIR.read().await;
     wrap_unsafe(move || async move {
-        crate::deploy_token::deploy_token(
-            crate::deploy_token::DeployTokenParams {
+        crate::solana::deploy_token::deploy_token(
+            crate::solana::deploy_token::DeployTokenParams {
                 name,
                 symbol,
                 twitter: Some(twitter),
@@ -168,7 +175,7 @@ pub async fn deploy_token(
 
 #[tool]
 pub async fn fetch_token_price(mint: String) -> Result<f64> {
-    crate::price::fetch_token_price(mint, &Client::new()).await
+    crate::solana::price::fetch_token_price(mint, &Client::new()).await
 }
 
 #[tool]
@@ -179,7 +186,7 @@ pub async fn buy_pump_token(
 ) -> Result<String> {
     let keypair = KEYPAIR.read().await;
     wrap_unsafe(move || async move {
-        crate::trade_pump::buy_pump_fun(
+        crate::solana::trade_pump::buy_pump_fun(
             mint,
             sol_to_lamports(sol_amount),
             slippage_bps,
@@ -199,7 +206,8 @@ pub async fn sell_pump_token(
 ) -> Result<String> {
     let keypair = KEYPAIR.read().await;
     wrap_unsafe(move || async move {
-        crate::trade_pump::sell_pump_fun(mint, token_amount, &keypair).await
+        crate::solana::trade_pump::sell_pump_fun(mint, token_amount, &keypair)
+            .await
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))
@@ -209,22 +217,22 @@ pub async fn sell_pump_token(
 pub async fn portfolio() -> Result<Vec<PortfolioItem>> {
     let keypair = KEYPAIR.read().await;
     let holdings = wrap_unsafe(move || async move {
-        crate::balance::get_holdings(&create_rpc(), &keypair.pubkey())
+        crate::solana::balance::get_holdings(&create_rpc(), &keypair.pubkey())
             .await
             .map_err(|e| anyhow!("{:#?}", e))
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))?;
 
-    crate::data::holdings_to_portfolio(holdings).await
+    crate::solana::data::holdings_to_portfolio(holdings).await
 }
 
 #[tool]
 pub async fn fetch_pair_info(mint_or_symbol: String) -> Result<PairInfo> {
-    crate::data::fetch_pair_info(mint_or_symbol).await
+    crate::solana::data::fetch_pair_info(mint_or_symbol).await
 }
 
 #[tool]
 pub async fn scan(mint: String) -> Result<String> {
-    crate::scan::scan(mint).await
+    crate::solana::scan::scan(mint).await
 }

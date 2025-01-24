@@ -1,4 +1,4 @@
-use crate::jup::Jupiter;
+use crate::solana::jup::Jupiter;
 use anyhow::{anyhow, Result};
 use solana_sdk::signature::Keypair;
 
@@ -27,8 +27,7 @@ pub async fn trade(
 
 #[cfg(test)]
 mod tests {
-    use crate::constants;
-    use crate::util::load_keypair_for_tests;
+    use crate::solana::{constants, util::load_keypair_for_tests};
 
     use super::*;
     use solana_sdk::native_token::sol_to_lamports;

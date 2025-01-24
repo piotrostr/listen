@@ -15,18 +15,19 @@ use solana_sdk::{
 };
 use std::str::FromStr;
 
-use crate::{
+use crate::solana::{
     blockhash::BLOCKHASH_CACHE,
     constants::{
         ASSOCIATED_TOKEN_PROGRAM, EVENT_AUTHORITY, PUMP_FUN_MINT_AUTHORITY,
         PUMP_FUN_PROGRAM, PUMP_GLOBAL_ADDRESS, RENT_PROGRAM,
         SYSTEM_PROGRAM_ID, TOKEN_PROGRAM,
     },
+    pump::_make_buy_ixs,
     pump::{get_bonding_curve, get_pump_token_amount, BondingCurveLayout},
     transaction::{get_jito_tip_pubkey, send_tx},
     util::apply_fee,
+    util::make_compute_budget_ixs,
 };
-use crate::{pump::_make_buy_ixs, util::make_compute_budget_ixs};
 
 pub const MPL_TOKEN_METADATA: &str =
     "metaqbxxUerdq28cj1RbAWkYQm3ybzjb6a8bt518x1s";
@@ -470,7 +471,7 @@ mod launcher_tests {
     use solana_sdk::signer::EncodableKey;
 
     use super::*;
-    use crate::util::{env, init_logger, load_keypair_for_tests};
+    use crate::solana::util::{env, init_logger, load_keypair_for_tests};
 
     #[tokio::test]
     #[ignore]

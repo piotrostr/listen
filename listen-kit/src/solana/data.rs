@@ -3,8 +3,8 @@ use futures::future::join_all;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-use crate::balance::Holding;
-use crate::dexscreener::{search_ticker, PairInfo};
+use crate::solana::balance::Holding;
+use crate::solana::dexscreener::{search_ticker, PairInfo};
 
 pub async fn fetch_pair_info(mint_or_symbol: String) -> Result<PairInfo> {
     let res = search_ticker(mint_or_symbol.clone()).await?;
@@ -134,8 +134,8 @@ mod tests {
     use solana_sdk::signer::Signer;
 
     use super::*;
-    use crate::balance::get_holdings;
-    use crate::util::{load_keypair_for_tests, make_rpc_client};
+    use crate::solana::balance::get_holdings;
+    use crate::solana::util::{load_keypair_for_tests, make_rpc_client};
 
     #[tokio::test]
     async fn test_holdings_to_portfolio() {

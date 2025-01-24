@@ -1,6 +1,6 @@
 use anyhow::Result;
-use listen_kit::tools::{initialize, Portfolio};
-use listen_kit::util::env;
+use listen_kit::solana::tools::{initialize, Portfolio};
+use listen_kit::solana::util::env;
 use rig::streaming::{stream_to_stdout, StreamingPrompt};
 
 #[tokio::main]

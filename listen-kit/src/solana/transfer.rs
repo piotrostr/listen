@@ -5,8 +5,7 @@ use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
 
-use crate::blockhash::BLOCKHASH_CACHE;
-use crate::transaction::send_tx;
+use crate::solana::{blockhash::BLOCKHASH_CACHE, transaction::send_tx};
 
 pub async fn transfer_sol(
     to: Pubkey,
@@ -82,7 +81,7 @@ mod tests {
     use solana_sdk::signer::Signer;
 
     use super::*;
-    use crate::util::{load_keypair_for_tests, make_rpc_client};
+    use crate::solana::util::{load_keypair_for_tests, make_rpc_client};
 
     #[tokio::test]
     async fn test_transfer_sol() {
