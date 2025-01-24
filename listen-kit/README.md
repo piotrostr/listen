@@ -11,7 +11,7 @@ use solana_sdk::native_token::sol_to_lamports;
 #[tokio::main]
 async fn main() {
    dotenv::dotenv().ok();
-   let actions = Actions::new(env("PRIVATE_KEY"), env("RPC_URL"));
+   let actions = Actions::new(env("SOLANA_PRIVATE_KEY"), env("RPC_URL"));
 
    let balance = actions.get_balance().await.unwrap();
    println!("Balance: {}", balance);

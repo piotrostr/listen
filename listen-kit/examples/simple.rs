@@ -7,7 +7,7 @@ use rig::streaming::{stream_to_stdout, StreamingPrompt};
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
     tracing_subscriber::fmt::init();
-    initialize(env("PRIVATE_KEY")).await;
+    initialize(env("SOLANA_PRIVATE_KEY")).await;
 
     let agent = rig::providers::anthropic::Client::from_env()
         .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)

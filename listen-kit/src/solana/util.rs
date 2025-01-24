@@ -118,7 +118,7 @@ pub fn apply_fee(amount: u64) -> u64 {
 
 pub fn load_keypair_for_tests() -> Keypair {
     dotenv().ok();
-    Keypair::from_base58_string(&env("PRIVATE_KEY"))
+    Keypair::from_base58_string(&env("SOLANA_PRIVATE_KEY"))
 }
 
 pub fn make_rpc_client() -> RpcClient {
