@@ -123,7 +123,7 @@ pub fn load_keypair_for_tests() -> Keypair {
 
 pub fn make_rpc_client() -> RpcClient {
     dotenv().ok();
-    let rpc_url = env("RPC_URL");
+    let rpc_url = env("SOLANA_RPC_URL");
     RpcClient::new(rpc_url)
 }
 

@@ -76,7 +76,7 @@ impl BlockhashCache {
 
 lazy_static! {
     pub static ref BLOCKHASH_CACHE: BlockhashCache =
-        BlockhashCache::new(&env("RPC_URL"));
+        BlockhashCache::new(&env("SOLANA_RPC_URL"));
 }
 
 #[cfg(test)]

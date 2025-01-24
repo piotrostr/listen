@@ -1,13 +1,18 @@
-use anyhow::Result;
-use futures::StreamExt;
-use listen_kit::agent::create_trader_agent;
-use rig::agent::Agent;
-use rig::completion::Message;
-use rig::providers::anthropic::completion::CompletionModel;
-use rig::streaming::{StreamingChat, StreamingChoice};
-use std::io::Write;
+#[cfg(feature = "solana")]
+use {
+    anyhow::Result,
+    futures::StreamExt,
+    listen_kit::agent::create_trader_agent,
+    rig::agent::Agent,
+    rig::completion::Message,
+    rig::providers::anthropic::completion::CompletionModel,
+    rig::streaming::{StreamingChat, StreamingChoice},
+    std::io::Write,
+};
 
+#[cfg(feature = "solana")]
 const MAX_RETRIES: usize = 3;
+#[cfg(feature = "solana")]
 const CONTINUE_PROMPT: &str = "
 Based on the previous tool results:
 1. Do you need any additional information?
@@ -16,23 +21,27 @@ Based on the previous tool results:
 this is just a preamble, user won't see this message, it is for your reasoning
 ";
 
+#[cfg(feature = "solana")]
 #[derive(Default)]
-struct ReasoningState {
+pub struct ReasoningState {
     tool_calls: Vec<String>,
     intermediate_results: Vec<String>,
     final_response: Option<String>,
 }
 
+#[cfg(feature = "solana")]
 #[derive(Default)]
 struct FormattedResponse {
     final_answer: String,
     tool_calls: Vec<String>,
 }
 
+#[cfg(feature = "solana")]
 struct AgentWrapper {
-    agent: Agent<CompletionModel>,
+    pub agent: Agent<CompletionModel>,
 }
 
+#[cfg(feature = "solana")]
 impl AgentWrapper {
     fn new(agent: Agent<CompletionModel>) -> Self {
         Self { agent }
@@ -188,6 +197,7 @@ impl AgentWrapper {
     }
 }
 
+#[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
@@ -197,4 +207,9 @@ async fn main() -> Result<()> {
     wrapped_agent.chat_loop().await?;
 
     Ok(())
+}
+
+#[cfg(not(feature = "solana"))]
+fn main() {
+    println!("enable the 'solana' feature to run this example.");
 }

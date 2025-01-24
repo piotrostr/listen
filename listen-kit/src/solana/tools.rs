@@ -23,9 +23,9 @@ use crate::solana::{
 static KEYPAIR: Lazy<Arc<RwLock<Keypair>>> =
     Lazy::new(|| Arc::new(RwLock::new(Keypair::new())));
 
-static RPC_URL: Lazy<String> = Lazy::new(|| {
+static SOLANA_RPC_URL: Lazy<String> = Lazy::new(|| {
     dotenv::dotenv().ok();
-    std::env::var("RPC_URL")
+    std::env::var("SOLANA_RPC_URL")
         .unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string())
 });
 
@@ -36,7 +36,7 @@ pub async fn initialize(private_key: String) {
 }
 
 fn create_rpc() -> RpcClient {
-    RpcClient::new(RPC_URL.to_string())
+    RpcClient::new(SOLANA_RPC_URL.to_string())
 }
 
 #[tool]
