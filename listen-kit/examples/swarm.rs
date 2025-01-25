@@ -1,19 +1,25 @@
-use anyhow::{anyhow, Result};
-use listen_kit::agent::{create_data_agent, create_trader_agent};
-use listen_kit::solana::util::wrap_unsafe;
-use rig::agent::Agent;
-use rig::cli_chatbot::cli_chatbot;
-use rig::completion::Prompt;
-use rig::providers::anthropic::completion::CompletionModel;
-use rig_tool_macro::tool;
-use std::sync::Arc;
-use tokio::sync::OnceCell;
+#[cfg(feature = "solana")]
+use {
+    anyhow::{anyhow, Result},
+    listen_kit::agent::{create_data_agent, create_trader_agent},
+    listen_kit::solana::util::wrap_unsafe,
+    rig::agent::Agent,
+    rig::cli_chatbot::cli_chatbot,
+    rig::completion::Prompt,
+    rig::providers::anthropic::completion::CompletionModel,
+    rig_tool_macro::tool,
+    std::sync::Arc,
+    tokio::sync::OnceCell,
+};
 
+#[cfg(feature = "solana")]
 static DATA_AGENT: OnceCell<Arc<Agent<CompletionModel>>> =
     OnceCell::const_new();
+#[cfg(feature = "solana")]
 static TRADER_AGENT: OnceCell<Arc<Agent<CompletionModel>>> =
     OnceCell::const_new();
 
+#[cfg(feature = "solana")]
 async fn get_data_agent() -> &'static Arc<Agent<CompletionModel>> {
     DATA_AGENT
         .get_or_init(|| async {
@@ -26,6 +32,7 @@ async fn get_data_agent() -> &'static Arc<Agent<CompletionModel>> {
         .await
 }
 
+#[cfg(feature = "solana")]
 async fn get_trader_agent() -> &'static Arc<Agent<CompletionModel>> {
     TRADER_AGENT
         .get_or_init(|| async {
@@ -38,6 +45,7 @@ async fn get_trader_agent() -> &'static Arc<Agent<CompletionModel>> {
         .await
 }
 
+#[cfg(feature = "solana")]
 #[tool]
 async fn data_action(prompt: String) -> Result<String> {
     let agent = get_data_agent().await;
@@ -47,6 +55,7 @@ async fn data_action(prompt: String) -> Result<String> {
     .await
 }
 
+#[cfg(feature = "solana")]
 #[tool]
 async fn trade_action(prompt: String) -> Result<String> {
     let agent = get_trader_agent().await;
@@ -56,6 +65,7 @@ async fn trade_action(prompt: String) -> Result<String> {
     .await
 }
 
+#[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt::init();
@@ -69,4 +79,9 @@ async fn main() -> Result<()> {
     cli_chatbot(leader).await?;
 
     Ok(())
+}
+
+#[cfg(not(feature = "solana"))]
+fn main() {
+    println!("enable the 'solana' feature to run this example");
 }

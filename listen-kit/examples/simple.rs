@@ -1,13 +1,17 @@
-use anyhow::Result;
-use listen_kit::solana::tools::{initialize, Portfolio};
-use listen_kit::solana::util::env;
-use rig::streaming::{stream_to_stdout, StreamingPrompt};
+#[cfg(feature = "solana")]
+use {
+    anyhow::Result,
+    listen_kit::solana::tools::{initialize, Portfolio},
+    listen_kit::solana::util::env,
+    rig::streaming::{stream_to_stdout, StreamingPrompt},
+};
 
+#[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
     dotenv::dotenv().ok();
     tracing_subscriber::fmt::init();
-    initialize(env("PRIVATE_KEY")).await;
+    initialize(env("SOLANA_PRIVATE_KEY")).await;
 
     let agent = rig::providers::anthropic::Client::from_env()
         .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
@@ -23,4 +27,9 @@ async fn main() -> Result<()> {
     stream_to_stdout(agent, &mut stream).await?;
 
     Ok(())
+}
+
+#[cfg(not(feature = "solana"))]
+fn main() {
+    println!("enable the solana feature to run this example");
 }

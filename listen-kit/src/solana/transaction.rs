@@ -56,7 +56,7 @@ pub async fn send_jito_tx(tx: Transaction) -> Result<String> {
 }
 
 pub async fn send_tx_fallback(tx: Transaction) -> Result<String> {
-    let rpc_client = RpcClient::new(env("RPC_URL"));
+    let rpc_client = RpcClient::new(env("SOLANA_RPC_URL"));
 
     let signature = rpc_client
         .send_transaction_with_config(
@@ -79,7 +79,7 @@ pub async fn send_tx_fallback(tx: Transaction) -> Result<String> {
 
 pub async fn send_tx(tx: Transaction) -> Result<String> {
     if std::env::var("SKIP_SIMULATION").is_err() {
-        let simres = RpcClient::new(env("RPC_URL"))
+        let simres = RpcClient::new(env("SOLANA_RPC_URL"))
             .simulate_transaction_with_config(
                 &tx,
                 RpcSimulateTransactionConfig {
