@@ -1,4 +1,4 @@
-use alloy::network::{EthereumWallet, TransactionBuilder};
+use alloy::network::TransactionBuilder;
 use alloy::primitives::{Address, U256};
 use alloy::providers::Provider;
 use alloy::rpc::types::TransactionRequest;
@@ -7,6 +7,8 @@ use alloy::sol;
 use anyhow::{Context, Result};
 
 use crate::evm::util::EvmProvider;
+
+use super::transaction::send_transaction;
 
 sol! {
     #[sol(rpc)]
@@ -35,40 +37,19 @@ pub async fn transfer_eth(
         .with_value(amount)
         .with_gas_price(gas_price);
 
-    // Estimate gas
-    let gas_limit = provider
-        .estimate_gas(&request)
-        .await
-        .context("Failed to estimate gas")?;
-
-    // Build the transaction with estimated gas
-    let tx = request
-        .with_gas_limit(gas_limit)
-        .with_chain_id(provider.get_chain_id().await?)
-        .with_nonce(provider.get_transaction_count(from).await?)
-        .build(&EthereumWallet::from(signer))
-        .await?;
-
-    // Send transaction and wait for receipt
-    let tx_hash = provider
-        .send_tx_envelope(tx)
-        .await
-        .context("Failed to send transaction")?
-        .watch()
-        .await
-        .context("Failed to get transaction receipt")?;
-
-    Ok(tx_hash.to_string())
+    send_transaction(request, provider, signer).await
 }
 
 pub async fn transfer_erc20(
-    provider: &EvmProvider,
+    from: Address,
     token_address: Address,
     to: Address,
     amount: U256,
+    provider: &EvmProvider,
+    signer: PrivateKeySigner,
 ) -> Result<String> {
     // Create contract instance
-    let contract = IERC20::new(token_address, provider);
+    let call = IERC20::transferCall { to, amount };
 
     // Get the current gas price
     let gas_price = provider
@@ -76,18 +57,13 @@ pub async fn transfer_erc20(
         .await
         .context("Failed to get gas price")?;
 
-    // Build and send the transfer transaction
-    let tx_hash = contract
-        .transfer(to, amount)
-        .gas_price(gas_price)
-        .send()
-        .await
-        .context("Failed to send transaction")?
-        .watch()
-        .await
-        .context("Failed to get transaction receipt")?;
+    let request = TransactionRequest::default()
+        .with_from(from)
+        .with_to(token_address)
+        .with_call(&call)
+        .with_gas_price(gas_price);
 
-    Ok(tx_hash.to_string())
+    send_transaction(request, provider, signer).await
 }
 
 #[cfg(test)]
@@ -109,16 +85,17 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_transfer_erc20() {
         let provider = make_provider().unwrap();
         let signer = make_signer().unwrap();
+        let from = signer.address();
         let to = signer.address();
         // USDC token address on ARB mainnet
         let token = address!("0xaf88d065e77c8cc2239327c5edb3a432268e5831");
         let amount = U256::from(1000000); // 1 USDC (6 decimals)
 
-        let result = transfer_erc20(&provider, token, to, amount).await;
+        let result =
+            transfer_erc20(from, token, to, amount, &provider, signer).await;
         assert!(result.is_ok(), "Transfer failed: {:?}", result);
     }
 }
