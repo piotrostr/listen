@@ -10,14 +10,14 @@ use anyhow::{anyhow, Result};
 pub type EvmProvider = RootProvider<Http<Client>>;
 
 pub fn make_provider() -> Result<EvmProvider> {
-    dotenv::dotenv().ok(); // FIXME move to main
+    dotenv::dotenv().ok(); // TODO move to main
     let rpc_url = env("ETHEREUM_RPC_URL");
     println!("Connecting to {}", rpc_url);
     Ok(ProviderBuilder::new().on_http(rpc_url.parse()?))
 }
 
 pub fn make_signer() -> Result<PrivateKeySigner> {
-    dotenv::dotenv().ok(); // FIXME move to main
+    dotenv::dotenv().ok(); // TODO move to main
     Ok(PrivateKeySigner::from_str(&env("ETHEREUM_PRIVATE_KEY"))?)
 }
 

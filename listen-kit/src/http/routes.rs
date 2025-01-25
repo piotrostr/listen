@@ -1,13 +1,13 @@
-use actix_web::{get, post, web, Responder};
+use super::middleware::verify_auth;
+use super::state::AppState;
+use actix_web::error::ErrorInternalServerError;
+use actix_web::{get, post, web, Error, HttpRequest, HttpResponse, Responder};
 use actix_web_lab::sse;
 use futures_util::StreamExt;
-use rig::agent::Agent;
 use rig::completion::Message;
-use rig::providers::anthropic::completion::CompletionModel;
 use rig::streaming::{StreamingChat, StreamingChoice};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Deserialize)]
@@ -24,23 +24,30 @@ pub enum StreamResponse {
     Error(String),
 }
 
-pub struct AppState {
-    agent: Arc<Agent<CompletionModel>>,
-}
-
-impl AppState {
-    pub fn new(agent: Agent<CompletionModel>) -> Self {
-        Self {
-            agent: Arc::new(agent),
-        }
-    }
+#[derive(Serialize)]
+pub enum ServerError {
+    WalletError,
+    PrivyError,
 }
 
 #[post("/stream")]
 async fn stream(
+    req: HttpRequest,
     state: web::Data<AppState>,
     request: web::Json<ChatRequest>,
 ) -> impl Responder {
+    let _user_session = match verify_auth(&req).await {
+        Ok(s) => s,
+        Err(_) => {
+            let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
+            let error_event = sse::Event::Data(sse::Data::new(
+                serde_json::to_string("Error: unauthorized").unwrap(),
+            ));
+            let _ = tx.send(error_event).await;
+            return sse::Sse::from_infallible_receiver(rx);
+        }
+    };
+
     let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(32);
     let agent = state.agent.clone();
     let prompt = request.prompt.clone();
@@ -99,10 +106,69 @@ async fn stream(
         .with_retry_duration(Duration::from_secs(10))
 }
 
-#[get("/health")]
-async fn health_check() -> impl Responder {
-    web::Json(json!({
+#[get("/healthz")]
+async fn healthz() -> Result<HttpResponse, Error> {
+    Ok(HttpResponse::Ok().json(json!({
         "status": "ok",
         "timestamp": chrono::Utc::now().to_rfc3339()
-    }))
+    })))
+}
+
+#[get("/auth")]
+async fn auth(req: HttpRequest) -> Result<HttpResponse, Error> {
+    let user_session = match verify_auth(&req).await {
+        Ok(session) => session,
+        Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
+    };
+
+    Ok(HttpResponse::Ok().json(json!({
+        "status": "ok",
+        "wallet_address": user_session.wallet_address,
+    })))
+}
+
+// this is just to check whether transaction signing through privy works it
+// will get remove in the
+// future and the logic incorporated in the tools as opt-in
+#[get("/test_tx")]
+async fn test_tx(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let user_session = match verify_auth(&req).await {
+        Ok(session) => session,
+        Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
+    };
+    use solana_client::nonblocking::rpc_client::RpcClient;
+    use solana_sdk::message::Message;
+    use solana_sdk::pubkey;
+    use solana_sdk::pubkey::Pubkey;
+    use solana_sdk::system_instruction::transfer;
+    use solana_sdk::transaction::Transaction;
+    use std::str::FromStr;
+
+    let user = Pubkey::from_str(user_session.wallet_address.as_str()).unwrap();
+    let tx = Transaction::new_unsigned(Message::new_with_blockhash(
+        &[transfer(
+            &user,
+            &pubkey!("aiamaErRMjbeNmf2b8BMZWFR3ofxrnZEf2mLKp935fM"),
+            100000,
+        )],
+        Some(&user),
+        &RpcClient::new("https://api.mainnet-beta.solana.com".to_string())
+            .get_latest_blockhash()
+            .await
+            .unwrap(),
+    ));
+
+    let signature = state
+        .wallet_manager
+        .sign_and_send_transaction(&user_session, tx)
+        .await
+        .map_err(|e| ErrorInternalServerError(e.to_string()))?;
+
+    Ok(HttpResponse::Ok().json(json!({
+        "status": "ok",
+        "signature": signature,
+    })))
 }

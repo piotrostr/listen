@@ -4,9 +4,11 @@ use actix_web::{web, App, HttpServer};
 use rig::agent::Agent;
 use rig::providers::anthropic::completion::CompletionModel;
 
-use crate::http::routes::{stream, AppState};
+use super::routes::{auth, healthz, stream, test_tx};
+use super::state::AppState;
 
 pub async fn run_server(agent: Agent<CompletionModel>) -> std::io::Result<()> {
+    dotenv::dotenv().ok();
     let state = web::Data::new(AppState::new(agent));
 
     HttpServer::new(move || {
@@ -15,7 +17,13 @@ pub async fn run_server(agent: Agent<CompletionModel>) -> std::io::Result<()> {
             .wrap(Compress::default())
             .wrap(Cors::permissive())
             .app_data(state.clone())
-            .service(stream)
+            .service(healthz)
+            .service(
+                web::scope("/v1")
+                    .service(stream)
+                    .service(auth)
+                    .service(test_tx),
+            )
     })
     .bind("127.0.0.1:8080")?
     .run()
