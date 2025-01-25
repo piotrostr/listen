@@ -132,7 +132,6 @@ impl WalletManager<RedisKVStore> {
         session: &UserSession,
         transaction: Transaction,
     ) -> Result<String> {
-        println!("{:#?}", transaction);
         let request = SignAndSendTransactionRequest {
             method: "signAndSendTransaction".to_string(),
             caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".to_string(),
@@ -141,8 +140,6 @@ impl WalletManager<RedisKVStore> {
                 encoding: "base64".to_string(),
             },
         };
-
-        println!("{}", serde_json::to_string(&request)?);
 
         let response = self
             .http_client
