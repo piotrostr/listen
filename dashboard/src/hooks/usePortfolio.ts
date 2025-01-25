@@ -91,7 +91,9 @@ export const usePortfolio = () => {
   // Use React Query to handle the data fetching
   return useQuery<PortfolioData, Error>({
     queryKey: ["portfolio"],
-    queryFn: fetchPortfolioData,
+    queryFn: () => {
+      return [];
+    }, // fetchPortfolioData,
     refetchInterval: 30000, // Refetch every 60 seconds
     staleTime: 30000, // Consider data stale after 60 seconds
   });
