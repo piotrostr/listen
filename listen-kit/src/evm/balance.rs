@@ -8,6 +8,7 @@ pub async fn balance(
     provider: &EvmProvider,
     signer: &PrivateKeySigner,
 ) -> Result<String> {
+    println!("Getting balance for {}", signer.address());
     let balance = provider.get_balance(signer.address()).await?;
     Ok(balance.to_string())
 }
