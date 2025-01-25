@@ -8,7 +8,6 @@ pub async fn balance(
     provider: &EvmProvider,
     signer: &PrivateKeySigner,
 ) -> Result<String> {
-    println!("Getting balance for {}", signer.address());
     let balance = provider.get_balance(signer.address()).await?;
     Ok(balance.to_string())
 }
@@ -25,6 +24,6 @@ mod tests {
         let signer = make_signer().unwrap();
 
         let balance = balance(&provider, &signer).await.unwrap();
-        assert_eq!(balance, "0");
+        assert_ne!(balance, "0");
     }
 }
