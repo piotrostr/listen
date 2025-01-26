@@ -91,7 +91,7 @@ mod tests {
         )
         .await
         .unwrap();
-        println!("{:?}", response);
+        tracing::debug!(?response, "search_by_mint");
         assert_eq!(response.schema_version, "1.0.0");
     }
 }

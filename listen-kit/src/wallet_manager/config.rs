@@ -27,7 +27,6 @@ mod tests {
     #[test]
     #[ignore]
     fn test_privy_config_from_env() {
-        dotenv::dotenv().ok();
         PrivyConfig::from_env().unwrap();
     }
 }

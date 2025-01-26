@@ -433,7 +433,6 @@ pub fn _make_create_token_ix(
 }
 
 fn get_ipfs_client() -> Client {
-    // dotenv::dotenv().ok();
     // the ipfs creds are not required if pushing onto pump ipfs
     // let project_id =
     //     std::env::var("INFURA_PROJECT").expect("INFURA_PROJECT must be set");
@@ -489,13 +488,12 @@ mod launcher_tests {
             dev_buy: None,
         };
         let res = deploy_token(params, &keypair).await.unwrap();
-        println!("tx id: {}", res);
+        tracing::info!(?res, "deploy_token");
     }
 
     #[tokio::test]
     #[ignore]
     async fn test_launch_with_buy() {
-        dotenv::dotenv().ok();
         std::env::set_var("RUST_LOG", "debug");
         init_logger().ok();
         let signer =
@@ -521,7 +519,6 @@ mod launcher_tests {
     #[tokio::test]
     #[ignore]
     async fn test_launch() {
-        dotenv::dotenv().ok();
         std::env::set_var("RUST_LOG", "debug");
         init_logger().ok();
         let signer =

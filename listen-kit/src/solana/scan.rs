@@ -15,7 +15,7 @@ pub async fn scan(mint: String) -> Result<String> {
     // let _raw_response = vec![];
     if let Some(twitter) = metadata.twitter {
         let res = reqwest::get(twitter).await?.text().await?;
-        println!("{:#?}", res);
+        tracing::debug!(?res, "scan:twitter");
     }
     unimplemented!();
 }

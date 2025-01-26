@@ -737,7 +737,7 @@ mod tests {
         let tx: EncodedConfirmedTransactionWithStatusMeta =
             serde_json::from_str(&sample_tx).expect("parse tx");
         let accounts = parse_pump_accounts(tx).expect("parse accounts");
-        println!("{:?}", accounts);
+        tracing::debug!(?accounts, "parsed_accounts");
         assert!(
             accounts.mint.to_string()
                 == "6kPvKNrLqg23mApAvHzMKWohhVdSrA54HvrpYud8pump"
@@ -759,7 +759,6 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn test_buy_pump_token() {
-        dotenv::from_filename(".env").unwrap();
         // 0.00069 sol
         let lamports = 690000;
         let pump_accounts = PumpAccounts {

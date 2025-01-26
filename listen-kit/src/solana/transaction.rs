@@ -72,7 +72,7 @@ pub async fn send_tx_fallback(tx: Transaction) -> Result<String> {
             anyhow!("Failed to send transaction: {}", e.to_string())
         })?;
 
-    info!("Sent tx via rpc: {}", signature);
+    tracing::info!(?signature, "send_tx_fallback");
 
     Ok(signature.to_string())
 }
@@ -98,12 +98,13 @@ pub async fn send_tx(tx: Transaction) -> Result<String> {
 
     let signature = send_jito_tx(tx.clone()).await;
     if let Ok(signature) = &signature {
-        info!("Sent tx via jito: {}", signature);
+        tracing::info!(?signature, "send_jito_tx");
     }
     match signature {
         Ok(signature) => Ok(signature),
         Err(e) => {
-            info!("Failed to send tx via jito: {}", e.to_string());
+            let msg = e.to_string();
+            tracing::warn!(?msg, "send_jito_tx");
             send_tx_fallback(tx).await
         }
     }

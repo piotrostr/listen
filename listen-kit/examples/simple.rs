@@ -9,8 +9,6 @@ use {
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
-    dotenv::dotenv().ok();
-    tracing_subscriber::fmt::init();
     initialize(env("SOLANA_PRIVATE_KEY")).await;
 
     let agent = rig::providers::anthropic::Client::from_env()

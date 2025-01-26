@@ -24,7 +24,6 @@ static KEYPAIR: Lazy<Arc<RwLock<Keypair>>> =
     Lazy::new(|| Arc::new(RwLock::new(Keypair::new())));
 
 static SOLANA_RPC_URL: Lazy<String> = Lazy::new(|| {
-    dotenv::dotenv().ok();
     std::env::var("SOLANA_RPC_URL")
         .unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string())
 });

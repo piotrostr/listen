@@ -1,12 +1,16 @@
 use crate::solana::util::env;
 use anyhow::{anyhow, Result};
-use lazy_static::lazy_static;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::commitment_config::CommitmentConfig;
 use solana_sdk::hash::Hash;
 use std::sync::Arc;
 use std::time::Duration;
 use tokio::sync::RwLock;
+
+use once_cell::sync::Lazy;
+
+pub static BLOCKHASH_CACHE: Lazy<BlockhashCache> =
+    Lazy::new(|| BlockhashCache::new(&env("SOLANA_RPC_URL")));
 
 pub struct BlockhashCache {
     blockhash: Arc<RwLock<Hash>>,
@@ -42,7 +46,7 @@ impl BlockhashCache {
                         drop(hash_writer);
                     }
                     Err(err) => {
-                        eprintln!("Failed to fetch blockhash: {}", err);
+                        tracing::error!("Failed to fetch blockhash: {}", err);
                     }
                 }
 
@@ -72,11 +76,6 @@ impl BlockhashCache {
             }
         }
     }
-}
-
-lazy_static! {
-    pub static ref BLOCKHASH_CACHE: BlockhashCache =
-        BlockhashCache::new(&env("SOLANA_RPC_URL"));
 }
 
 #[cfg(test)]

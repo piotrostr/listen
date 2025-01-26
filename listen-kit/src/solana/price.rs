@@ -29,7 +29,7 @@ pub async fn fetch_token_price(mint: String, client: &Client) -> Result<f64> {
         .send()
         .await?;
     let data = res.json::<PriceResponse>().await?;
-    println!("{:?}", data);
+    tracing::debug!(?data, "fetch_token_price");
     Ok(data.data.get(&mint).unwrap().price)
 }
 
@@ -44,7 +44,7 @@ mod tests {
             &reqwest::Client::new(),
         )
         .await;
-        println!("{:?}", res);
+        tracing::debug!(?res, "test_fetch_token_price");
         assert!(res.is_ok());
     }
 }

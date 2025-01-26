@@ -200,7 +200,6 @@ impl AgentWrapper {
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt::init();
     let trader_agent = create_trader_agent().await?;
     let wrapped_agent = AgentWrapper::new(trader_agent);
 

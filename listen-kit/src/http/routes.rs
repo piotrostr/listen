@@ -75,15 +75,22 @@ async fn stream(
                     StreamResponse::Message(text)
                 }
                 Ok(StreamingChoice::ToolCall(name, _, params)) => {
+                    tracing::debug!(tool = name, parameters = ?params, "Tool call");
                     match agent.tools.call(&name, params.to_string()).await {
-                        Ok(result) => StreamResponse::ToolCall {
-                            name: name.to_string(),
-                            result: result.to_string(),
-                        },
-                        Err(e) => StreamResponse::Error(format!(
-                            "Tool call failed: {}",
-                            e
-                        )),
+                        Ok(result) => {
+                            tracing::debug!(tool = name, result = ?result, "Tool call result");
+                            StreamResponse::ToolCall {
+                                name: name.to_string(),
+                                result: result.to_string(),
+                            }
+                        }
+                        Err(e) => {
+                            tracing::error!(tool = name, error = ?e, "Tool call error");
+                            StreamResponse::Error(format!(
+                                "Tool call failed: {}",
+                                e
+                            ))
+                        }
                     }
                 }
                 Err(e) => StreamResponse::Error(e.to_string()),

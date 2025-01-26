@@ -8,7 +8,6 @@ use super::routes::{auth, healthz, stream, test_tx};
 use super::state::AppState;
 
 pub async fn run_server(agent: Agent<CompletionModel>) -> std::io::Result<()> {
-    dotenv::dotenv().ok();
     let state = web::Data::new(AppState::new(agent));
 
     HttpServer::new(move || {

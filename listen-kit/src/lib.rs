@@ -10,3 +10,9 @@ pub mod evm;
 pub mod agent;
 
 pub mod wallet_manager;
+
+#[ctor::ctor]
+fn init() {
+    dotenv::dotenv().ok();
+    tracing_subscriber::fmt().init();
+}

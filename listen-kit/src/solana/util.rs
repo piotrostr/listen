@@ -1,6 +1,5 @@
 use anyhow::{anyhow, Result};
 use chrono::Local;
-use dotenv::dotenv;
 use env_logger::Builder;
 use log::LevelFilter;
 use serde::Deserialize;
@@ -117,12 +116,10 @@ pub fn apply_fee(amount: u64) -> u64 {
 }
 
 pub fn load_keypair_for_tests() -> Keypair {
-    dotenv().ok();
     Keypair::from_base58_string(&env("SOLANA_PRIVATE_KEY"))
 }
 
 pub fn make_rpc_client() -> RpcClient {
-    dotenv().ok();
     let rpc_url = env("SOLANA_RPC_URL");
     RpcClient::new(rpc_url)
 }

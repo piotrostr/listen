@@ -68,7 +68,6 @@ async fn trade_action(prompt: String) -> Result<String> {
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt::init();
     let leader = rig::providers::openai::Client::from_env()
         .agent(rig::providers::openai::GPT_4O)
         .preamble("you are a swarm leader, you have a data agent to redirect all of the user prompts that require looking for data and trader agent to perform any trading actions, use your swarm accordingly")
