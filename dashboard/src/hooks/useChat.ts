@@ -1,21 +1,22 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useState, useCallback } from "react";
-// import { usePortfolio } from "./usePortfolio";
-// import { introPrompt } from "./prompts";
+import { z } from "zod";
 
 export type MessageDirection = "incoming" | "outgoing";
 
-export interface ChatMessage {
+export interface Message {
   id: string;
   message: string;
   direction: MessageDirection;
   timestamp: Date;
 }
 
-export interface ToolOutput {
-  name: string;
-  result: string;
-}
+const ToolOutputSchema = z.object({
+  name: z.string(),
+  result: z.string(),
+});
+
+export type ToolOutput = z.infer<typeof ToolOutputSchema>;
 
 export interface StreamResponse {
   type: "Message" | "ToolCall" | "Error";
@@ -23,11 +24,9 @@ export interface StreamResponse {
 }
 
 export function useChat() {
-  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  // const { data: portfolio } = usePortfolio();
   const { getAccessToken } = usePrivy();
-  const [toolOutput, setToolOutput] = useState<ToolOutput | null>(null);
 
   const updateAssistantMessage = useCallback(
     (assistantMessageId: string, newContent: string) => {
@@ -53,7 +52,7 @@ export function useChat() {
     async (userMessage: string) => {
       setIsLoading(true);
 
-      const userChatMessage: ChatMessage = {
+      const userChatMessage: Message = {
         id: crypto.randomUUID(),
         message: userMessage,
         direction: "outgoing",
@@ -79,12 +78,11 @@ export function useChat() {
           },
         ]);
 
-        // Send the initial request
         const body = JSON.stringify({
           prompt: userMessage,
           chat_history: messageHistory.filter((msg) => msg.content !== ""),
         });
-        console.log("body", body);
+
         const response = await fetch("http://localhost:8080/v1/stream", {
           method: "POST",
           headers: {
@@ -108,7 +106,6 @@ export function useChat() {
           if (done) break;
 
           const chunk = decoder.decode(value);
-          console.log(chunk);
           const lines = chunk.split("\n");
 
           for (const line of lines) {
@@ -124,11 +121,31 @@ export function useChat() {
                       data.content as string,
                     );
                     break;
-                  case "ToolCall":
-                    setToolOutput(data.content as ToolOutput); // TODO zod
+                  case "ToolCall": {
+                    const toolOutput = ToolOutputSchema.parse(data.content);
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        id: crypto.randomUUID(),
+                        message: `Tool ${toolOutput.name}: ${toolOutput.result}`,
+                        direction: "incoming",
+                        timestamp: new Date(),
+                      },
+                    ]);
                     break;
+                  }
                   case "Error":
                     console.error("Stream error:", data.content);
+                    // Optionally add error as a message
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        id: crypto.randomUUID(),
+                        message: `Error: ${data.content}`,
+                        direction: "incoming",
+                        timestamp: new Date(),
+                      },
+                    ]);
                     break;
                 }
               } catch (e) {
@@ -139,6 +156,16 @@ export function useChat() {
         }
       } catch (error) {
         console.error("Error sending message:", error);
+        // Add error message to chat
+        setMessages((prev) => [
+          ...prev,
+          {
+            id: crypto.randomUUID(),
+            message: `An error occurred: ${error instanceof Error ? error.message : "Unknown error"}`,
+            direction: "incoming",
+            timestamp: new Date(),
+          },
+        ]);
       } finally {
         setIsLoading(false);
       }
@@ -151,6 +178,5 @@ export function useChat() {
     isLoading,
     sendMessage,
     setMessages,
-    toolOutput,
   };
 }

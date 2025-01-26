@@ -10,7 +10,6 @@
     "preview": "vite preview"
   },
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.33.1",
     "@privy-io/react-auth": "^2.0.8",
     "@solana/spl-token": "^0.4.9",
     "@solana/web3.js": "^1.98.0",
