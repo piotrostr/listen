@@ -1,7 +1,7 @@
+import { usePrivy } from "@privy-io/react-auth";
 import { useState, useCallback } from "react";
-import Anthropic from "@anthropic-ai/sdk";
-import { usePortfolio } from "./usePortfolio";
-import { PortfolioData } from "./types";
+// import { usePortfolio } from "./usePortfolio";
+// import { introPrompt } from "./prompts";
 
 export type MessageDirection = "incoming" | "outgoing";
 
@@ -12,29 +12,22 @@ export interface ChatMessage {
   timestamp: Date;
 }
 
-function systemPrompt(portfolio?: PortfolioData) {
-  return `as a crypto AI memecoins investor, you are focused on
-projects that have the bleeding edge tech, use informal language but at the same
-time extremely sophisticated and mysterious;
-you dont care about shitters, you are looking for real potential - e/acc all the
-fucking way - not some grifter-ass dipshits impersonating with fake githubs,
-our current portfolio looks like this: ${JSON.stringify(portfolio)}
+export interface ToolOutput {
+  name: string;
+  result: string;
+}
 
-before you execute any larger swaps, anything over 0.5 solana or roughly 100 usd,
-confirm with the user the exact amount you are going to run through, as well as the
-token mint with https://solscan.io/account/{<insert token address>} so they validate
-`;
+export interface StreamResponse {
+  type: "Message" | "ToolCall" | "Error";
+  content: string | ToolOutput;
 }
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { data: portfolio } = usePortfolio();
-
-  const anthropic = new Anthropic({
-    apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
-    dangerouslyAllowBrowser: true,
-  });
+  // const { data: portfolio } = usePortfolio();
+  const { getAccessToken } = usePrivy();
+  const [toolOutput, setToolOutput] = useState<ToolOutput | null>(null);
 
   const updateAssistantMessage = useCallback(
     (assistantMessageId: string, newContent: string) => {
@@ -70,12 +63,10 @@ export function useChat() {
       setMessages((prev) => [...prev, userChatMessage]);
 
       try {
-        const messageHistory: Anthropic.MessageParam[] = messages.map(
-          (msg) => ({
-            role: msg.direction === "outgoing" ? "user" : "assistant",
-            content: msg.message,
-          }),
-        );
+        const messageHistory = messages.map((msg) => ({
+          role: msg.direction === "outgoing" ? "user" : "assistant",
+          content: msg.message,
+        }));
 
         const assistantMessageId = crypto.randomUUID();
         setMessages((prev) => [
@@ -88,38 +79,78 @@ export function useChat() {
           },
         ]);
 
-        const stream = anthropic.messages.stream({
-          model: "claude-3-5-sonnet-latest",
-          max_tokens: 1024,
-          system: systemPrompt(portfolio),
-          messages: [...messageHistory, { role: "user", content: userMessage }],
+        // Send the initial request
+        const body = JSON.stringify({
+          prompt: userMessage,
+          chat_history: messageHistory.filter((msg) => msg.content !== ""),
+        });
+        console.log("body", body);
+        const response = await fetch("http://localhost:8080/v1/stream", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + (await getAccessToken()),
+          },
+          body,
         });
 
-        stream.on("text", (text) =>
-          updateAssistantMessage(assistantMessageId, text),
-        );
+        if (!response.ok) {
+          throw new Error("Failed to initialize stream");
+        }
 
-        stream.on("message", async (message) => {
-          if (message.content) {
-            for (const content of message.content) {
-              if (content.type === "tool_use") {
-                // await handleToolExecution(content.name, content.input);
+        const reader = response.body?.getReader();
+        if (!reader) throw new Error("No reader available");
+
+        const decoder = new TextDecoder();
+
+        while (true) {
+          const { done, value } = await reader.read();
+          if (done) break;
+
+          const chunk = decoder.decode(value);
+          console.log(chunk);
+          const lines = chunk.split("\n");
+
+          for (const line of lines) {
+            if (line.startsWith("data: ")) {
+              const jsonStr = line.slice(6);
+              try {
+                const data: StreamResponse = JSON.parse(jsonStr);
+
+                switch (data.type) {
+                  case "Message":
+                    updateAssistantMessage(
+                      assistantMessageId,
+                      data.content as string,
+                    );
+                    break;
+                  case "ToolCall":
+                    setToolOutput(data.content as ToolOutput); // TODO zod
+                    break;
+                  case "Error":
+                    console.error("Stream error:", data.content);
+                    break;
+                }
+              } catch (e) {
+                console.error("Failed to parse SSE data:", e);
               }
             }
           }
-        });
+        }
       } catch (error) {
         console.error("Error sending message:", error);
       } finally {
         setIsLoading(false);
       }
     },
-    [messages, anthropic.messages, portfolio, updateAssistantMessage],
+    [messages, updateAssistantMessage, getAccessToken],
   );
 
   return {
     messages,
     isLoading,
     sendMessage,
+    setMessages,
+    toolOutput,
   };
 }

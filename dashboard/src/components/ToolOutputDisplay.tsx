@@ -1,32 +1,24 @@
-import { ToolOutput } from "../hooks/useTools";
 import { Spinner } from "./Spinner";
 import { useWaitForTransaction } from "../hooks/useWaitForTransaction";
+import { ToolOutput } from "../hooks/useChat";
 
 export function ToolOutputDisplay({
   toolOutput,
 }: {
   toolOutput: ToolOutput | null;
 }) {
-  const signature =
-    toolOutput?.type === "swap_tokens" && toolOutput.status === "success"
-      ? toolOutput.data?.result
-      : null;
+  const signature = toolOutput?.name === "trade" ? toolOutput.result : null;
 
   const { data: transactionStatus, isLoading: isConfirming } =
     useWaitForTransaction(signature);
 
   if (!toolOutput) return null;
 
-  switch (toolOutput.type) {
-    case "swap_tokens":
+  switch (toolOutput.name) {
+    case "trade":
       return (
         <div className="flex items-center gap-2 text-sm">
-          {toolOutput.status === "loading" ? (
-            <div className="flex items-center gap-2">
-              <Spinner />
-              <span>Sending swap transaction...</span>
-            </div>
-          ) : signature && isConfirming ? (
+          {isConfirming ? (
             <div className="flex flex-col gap-2">
               <div className="flex flex-row justify-start items-center gap-2">
                 <Spinner />
@@ -84,6 +76,8 @@ export function ToolOutputDisplay({
       );
 
     default:
-      return null;
+      return (
+        <div>{JSON.stringify(JSON.parse(toolOutput.result), null, 2)}</div>
+      );
   }
 }

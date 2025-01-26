@@ -2,9 +2,11 @@ import { useState, useEffect } from "react";
 import { useChat } from "../hooks/useChat";
 import { usePrivy } from "@privy-io/react-auth";
 import { DelegateActionButton } from "./DelegateActionButton";
+import { ToolOutputDisplay } from "./ToolOutputDisplay";
 
 export function Chat() {
-  const { messages, isLoading, sendMessage } = useChat();
+  const { messages, isLoading, sendMessage, setMessages, toolOutput } =
+    useChat();
   const [inputMessage, setInputMessage] = useState("");
 
   const { getAccessToken, unlinkEmail, user, linkWallet, logout } = usePrivy();
@@ -43,6 +45,11 @@ export function Chat() {
       }
 
       if (e.key === "Enter") {
+        if (inputMessage.trim() === "clear") {
+          setMessages([]);
+          setInputMessage("");
+          return;
+        }
         if (inputMessage.trim()) {
           sendMessage(inputMessage);
           setInputMessage("");
@@ -56,7 +63,7 @@ export function Chat() {
 
     window.addEventListener("keydown", handleKeyPress);
     return () => window.removeEventListener("keydown", handleKeyPress);
-  }, [inputMessage, sendMessage]);
+  }, [inputMessage, sendMessage, setMessages]);
 
   return (
     <div className="flex flex-col gap-4 h-[70vh] w-full max-w-4xl mx-auto px-4 font-mono">
@@ -112,13 +119,11 @@ export function Chat() {
                   ),
               )}
 
-              {/*
               {toolOutput && (
                 <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
                   <ToolOutputDisplay toolOutput={toolOutput} />
                 </div>
               )}
-							*/}
 
               {isLoading && (
                 <div className="bg-purple-900/20 text-purple-300 rounded px-4 py-2">
