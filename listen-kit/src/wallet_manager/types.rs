@@ -79,16 +79,22 @@ pub struct WalletAccount {
     pub chain_id: String,
     pub chain_type: String,
     pub connector_type: String,
-    pub delegated: bool,
     pub first_verified_at: u64,
-    pub imported: bool,
     pub latest_verified_at: u64,
-    pub public_key: String,
-    pub recovery_method: String,
     pub verified_at: u64,
     pub wallet_client: String,
     pub wallet_client_type: String,
-    pub wallet_index: u64,
+    // Optional fields
+    #[serde(default)]
+    pub delegated: bool,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub imported: Option<bool>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub public_key: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub recovery_method: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wallet_index: Option<u64>,
 }
 
 #[derive(Serialize)]

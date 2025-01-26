@@ -8,7 +8,7 @@ export function Chat() {
   const { messages, isLoading, sendMessage, toolOutput } = useChat();
   const [inputMessage, setInputMessage] = useState("");
 
-  const { getAccessToken } = usePrivy();
+  const { getAccessToken, unlinkEmail, user, linkWallet, logout } = usePrivy();
 
   const fetchAuth = async () => {
     const res = await fetch("http://localhost:8080/v1/auth", {
@@ -71,6 +71,20 @@ export function Chat() {
               </button>
               <button onClick={fetchTestTx} className="btn">
                 TestTx
+              </button>
+              <button
+                onClick={() => {
+                  if (user?.email?.address) unlinkEmail(user?.email?.address);
+                }}
+                className="btn"
+              >
+                UnlinkEmail
+              </button>
+              <button onClick={linkWallet} className="btn">
+                LinkWallet
+              </button>
+              <button onClick={logout} className="btn">
+                Logout
               </button>
             </div>
             <div className="flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">

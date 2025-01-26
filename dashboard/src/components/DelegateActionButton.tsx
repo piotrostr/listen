@@ -50,7 +50,7 @@ export function DelegateActionButton() {
   return (
     <>
       {isAlreadyDelegated ? (
-        <p>✅ {delegatedWallet?.address}</p>
+        <p>✅ {delegatedWallet?.address.slice(0, 5) + ".."}</p>
       ) : (
         <button
           disabled={!ready || !walletToDelegate || isAlreadyDelegated}

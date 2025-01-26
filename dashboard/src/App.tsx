@@ -4,14 +4,24 @@ import { Header } from "./components/Header";
 import { Portfolio } from "./components/Portfolio";
 
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { PrivyProvider, usePrivy } from "@privy-io/react-auth";
+import {
+  PrivyProvider,
+  PrivyProviderProps,
+  usePrivy,
+} from "@privy-io/react-auth";
 
 const queryClient = new QueryClient();
+
+const privyConfig: PrivyProviderProps["config"] = {
+  appearance: {
+    // walletChainType: "solana-only",
+  },
+};
 
 function App() {
   const privyAppId = import.meta.env.VITE_PRIVY_APP_ID;
   return (
-    <PrivyProvider appId={privyAppId}>
+    <PrivyProvider appId={privyAppId} config={privyConfig}>
       <QueryClientProvider client={queryClient}>
         <Contents />
       </QueryClientProvider>

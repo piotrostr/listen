@@ -89,7 +89,7 @@ impl WalletManager {
         Ok(UserSession {
             user_id: user.id,
             session_id: claims.session_id,
-            wallet_address: wallet.public_key.clone(),
+            wallet_address: wallet.address.clone(),
         })
     }
 
@@ -157,7 +157,8 @@ impl WalletManager {
                 response.status()
             ));
         }
-
-        Ok(response.json().await?)
+        let text = response.text().await?;
+        // dbg!(serde_json::from_str::<serde_json::Value>(&text)?);
+        Ok(serde_json::from_str(&text)?)
     }
 }
