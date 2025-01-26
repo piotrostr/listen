@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useChat } from "../hooks/useChat";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { usePrivy } from "@privy-io/react-auth";
+import { DelegateActionButton } from "./DelegateActionButton";
 
 export function Chat() {
   const { messages, isLoading, sendMessage, toolOutput } = useChat();
@@ -17,7 +18,7 @@ export function Chat() {
         Authorization: `Bearer ${await getAccessToken()}`,
       },
     });
-    const data = await res.json();
+    const data = await res.text();
     console.log(res.status, data);
   };
 
@@ -64,6 +65,7 @@ export function Chat() {
         <div className="h-full border-2 border-purple-500/30 rounded-lg overflow-hidden bg-black/40 backdrop-blur-sm">
           <div className="h-full flex flex-col">
             <div className="flex flex-row gap-2 p-4 justify-center">
+              <DelegateActionButton />
               <button onClick={fetchAuth} className="btn">
                 Auth
               </button>

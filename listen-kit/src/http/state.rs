@@ -1,5 +1,4 @@
 use crate::wallet_manager::config::PrivyConfig;
-use crate::wallet_manager::kv_store::RedisKVStore;
 use crate::wallet_manager::WalletManager;
 use rig::agent::Agent;
 use rig::providers::anthropic::completion::CompletionModel;
@@ -7,7 +6,7 @@ use std::sync::Arc;
 
 pub struct AppState {
     pub(crate) agent: Arc<Agent<CompletionModel>>,
-    pub(crate) wallet_manager: Arc<WalletManager<RedisKVStore>>,
+    pub(crate) wallet_manager: Arc<WalletManager>,
 }
 
 impl AppState {

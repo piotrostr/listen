@@ -118,7 +118,10 @@ async fn healthz() -> Result<HttpResponse, Error> {
 async fn auth(req: HttpRequest) -> Result<HttpResponse, Error> {
     let user_session = match verify_auth(&req).await {
         Ok(session) => session,
-        Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
+        Err(e) => {
+            return Ok(HttpResponse::Unauthorized()
+                .json(json!({ "error": e.to_string() })))
+        }
     };
 
     Ok(HttpResponse::Ok().json(json!({

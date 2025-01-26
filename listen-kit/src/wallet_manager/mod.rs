@@ -8,40 +8,34 @@ use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use solana_sdk::transaction::Transaction;
 
 use config::PrivyConfig;
-use kv_store::{KVStore, RedisKVStore, Wallet};
 use types::{
     CreateWalletRequest, CreateWalletResponse, PrivyClaims,
     SignAndSendTransactionParams, SignAndSendTransactionRequest,
-    SignAndSendTransactionResponse,
+    SignAndSendTransactionResponse, User,
 };
 
 use util::{create_http_client, transaction_to_base64};
 
-// TODO add idempotency keys management and wallet persistence with remote and redundant KV store
-pub struct WalletManager<S: KVStore> {
+pub struct WalletManager {
     privy_config: PrivyConfig,
     http_client: reqwest::Client,
-    kv_store: S,
 }
 
 #[allow(dead_code)]
 #[derive(Clone)]
 pub struct UserSession {
     pub(crate) user_id: String,
-    pub(crate) wallet_id: String,
-    pub(crate) access_token: String,
     pub(crate) session_id: String,
     pub(crate) wallet_address: String,
 }
 
 /// WalletManager currently only supports Solana
-impl WalletManager<RedisKVStore> {
+impl WalletManager {
     pub fn new(privy_config: PrivyConfig) -> Self {
         let http_client = create_http_client(&privy_config);
         Self {
             privy_config,
             http_client,
-            kv_store: RedisKVStore::new(),
         }
     }
 
@@ -73,58 +67,30 @@ impl WalletManager<RedisKVStore> {
         access_token: &str,
     ) -> Result<UserSession> {
         let claims = self.validate_access_token(access_token)?;
-        if let Some(Wallet {
-            wallet_id,
-            wallet_address,
-        }) = self.kv_store.get_wallet(&claims.user_id).await?
-        {
-            Ok(UserSession {
-                user_id: claims.user_id,
-                wallet_id,
-                access_token: access_token.to_string(),
-                session_id: claims.session_id,
-                wallet_address,
+        let user = self.get_user_by_id(&claims.user_id).await?;
+        let wallet = user
+            .linked_accounts
+            .iter()
+            .find_map(|account| match account {
+                types::LinkedAccount::Wallet(wallet) => {
+                    if wallet.delegated
+                        && wallet.chain_type == "solana"
+                        && wallet.wallet_client == "privy"
+                    {
+                        Some(wallet)
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
             })
-        } else {
-            let wallet = self.create_wallet().await?;
-            self.kv_store
-                .set_wallet(
-                    &claims.user_id,
-                    Wallet {
-                        wallet_id: wallet.id.clone(),
-                        wallet_address: wallet.address.clone(),
-                    },
-                )
-                .await?;
-            Ok(UserSession {
-                user_id: claims.user_id,
-                wallet_id: wallet.id,
-                access_token: access_token.to_string(),
-                session_id: claims.session_id,
-                wallet_address: wallet.address,
-            })
-        }
+            .ok_or_else(|| anyhow!("Could not find a delegated wallet"))?;
 
-        // ideally wanna get that from privy
-        // if let Some(wallet_id) = self.get_wallet_from_claims(&claims).await? {
-        //     Ok(UserSession {
-        //         user_id: claims.user_id,
-        //         wallet_id,
-        //         access_token: access_token.to_string(),
-        //         session_id: claims.session_id,
-        //         wallet_address: "".to_string(), // TODO get wallet address
-        //     })
-        // } else {
-        //     let wallet = self.create_wallet().await?;
-        //     println!("{}", serde_json::to_string(&wallet)?);
-        //     Ok(UserSession {
-        //         user_id: claims.user_id,
-        //         wallet_id: wallet.id,
-        //         access_token: access_token.to_string(),
-        //         session_id: claims.session_id,
-        //         wallet_address: wallet.address,
-        //     })
-        // }
+        Ok(UserSession {
+            user_id: user.id,
+            session_id: claims.session_id,
+            wallet_address: wallet.public_key.clone(),
+        })
     }
 
     pub async fn sign_and_send_transaction(
@@ -133,6 +99,8 @@ impl WalletManager<RedisKVStore> {
         transaction: Transaction,
     ) -> Result<String> {
         let request = SignAndSendTransactionRequest {
+            address: session.wallet_address.clone(),
+            chain_type: "solana".to_string(),
             method: "signAndSendTransaction".to_string(),
             caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".to_string(),
             params: SignAndSendTransactionParams {
@@ -143,10 +111,7 @@ impl WalletManager<RedisKVStore> {
 
         let response = self
             .http_client
-            .post(format!(
-                "https://api.privy.io/v1/wallets/{}/rpc",
-                session.wallet_id
-            ))
+            .post("https://api.privy.io/v1/wallets/rpc")
             .json(&request)
             .send()
             .await?;
@@ -181,37 +146,18 @@ impl WalletManager<RedisKVStore> {
         Ok(token_data.claims)
     }
 
-    // this endpoint returns information about the user, if it was possible it'd be nice to get the
-    // wallet ID from here, let's see what privy says
-    //
-    // pub async fn get_wallet_from_claims(
-    //     &self,
-    //     claims: &PrivyClaims,
-    // ) -> Result<Option<String>> {
-    //     // Use the verified user_id to make the API call
-    //     let url =
-    //         format!("https://auth.privy.io/api/v1/users/{}", claims.user_id);
+    pub async fn get_user_by_id(&self, user_id: &str) -> Result<User> {
+        let url = format!("https://auth.privy.io/api/v1/users/{}", user_id);
 
-    //     let response = self.http_client.get(url).send().await?;
+        let response = self.http_client.get(url).send().await?;
 
-    //     if !response.status().is_success() {
-    //         return Err(anyhow!(
-    //             "Failed to get user data: {}",
-    //             response.status()
-    //         ));
-    //     }
-    //     let payload: serde_json::Value = response.json().await?;
-    //     println!("{:?}", payload);
-    //     let user_data: UserResponse = serde_json::from_value(payload)?;
+        if !response.status().is_success() {
+            return Err(anyhow!(
+                "Failed to get user data: {}",
+                response.status()
+            ));
+        }
 
-    //     // let user_data: UserResponse = response.json().await?;
-
-    //     // Return the first available wallet address (either regular or smart wallet)
-    //     let wallet_address = user_data
-    //         .wallet
-    //         .map(|w| w.address)
-    //         .or(user_data.smart_wallet.map(|w| w.address));
-
-    //     Ok(wallet_address)
-    // }
+        Ok(response.json().await?)
+    }
 }

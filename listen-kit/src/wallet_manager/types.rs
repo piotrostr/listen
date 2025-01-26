@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 // Request types for signing transactions
 #[derive(Serialize)]
 pub struct SignAndSendTransactionRequest {
+    pub address: String,
+    pub chain_type: String,
     pub method: String,
     pub caip2: String,
     pub params: SignAndSendTransactionParams,
@@ -44,14 +46,49 @@ pub struct PrivyClaims {
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct UserResponse {
-    pub(crate) wallet: Option<WalletInfo>,
-    pub(crate) smart_wallet: Option<WalletInfo>,
+pub struct User {
+    pub created_at: i64,
+    pub has_accepted_terms: bool,
+    pub id: String,
+    pub is_guest: bool,
+    pub linked_accounts: Vec<LinkedAccount>,
+    pub mfa_methods: Vec<serde_json::Value>,
 }
 
 #[derive(Serialize, Deserialize)]
-pub struct WalletInfo {
-    pub(crate) address: String,
+#[serde(tag = "type")]
+pub enum LinkedAccount {
+    #[serde(rename = "email")]
+    Email(EmailAccount),
+    #[serde(rename = "wallet")]
+    Wallet(WalletAccount),
+    Unknown(serde_json::Map<String, serde_json::Value>),
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct EmailAccount {
+    pub address: String,
+    pub first_verified_at: u64,
+    pub latest_verified_at: u64,
+    pub verified_at: u64,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct WalletAccount {
+    pub address: String,
+    pub chain_id: String,
+    pub chain_type: String,
+    pub connector_type: String,
+    pub delegated: bool,
+    pub first_verified_at: u64,
+    pub imported: bool,
+    pub latest_verified_at: u64,
+    pub public_key: String,
+    pub recovery_method: String,
+    pub verified_at: u64,
+    pub wallet_client: String,
+    pub wallet_client_type: String,
+    pub wallet_index: u64,
 }
 
 #[derive(Serialize)]
