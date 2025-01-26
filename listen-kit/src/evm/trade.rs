@@ -52,29 +52,37 @@ pub async fn trade(
     )
     .context("Failed to create CurrencyAmount")?;
 
+    let router_address = *SWAP_ROUTER_02_ADDRESSES
+        .get(&chain_id)
+        .expect("Swap router address not found");
+
     let amount = U256::from_str(&input_amount)?;
-    let spender = signer.address();
+
+    let gas_price = provider
+        .get_gas_price()
+        .await
+        .context("Failed to get gas price")?;
 
     if !check_allowance(
         input_addr,
         signer.address(),
-        spender,
+        router_address,
         amount,
         provider,
     )
     .await
     .context("Failed to check allowance")?
     {
-        tracing::info!(?input_addr, ?spender, ?amount, "Approving token");
+        tracing::info!(
+            ?input_addr,
+            ?router_address,
+            ?amount,
+            "Approving token"
+        );
         let call = IERC20::approveCall {
-            spender: signer.address(),
+            spender: router_address,
             amount: U256::MAX,
         };
-
-        let gas_price = provider
-            .get_gas_price()
-            .await
-            .context("Failed to get gas price")?;
 
         let request = TransactionRequest::default()
             .with_from(signer.address())
@@ -83,6 +91,7 @@ pub async fn trade(
             .with_gas_price(gas_price);
 
         send_transaction(request, provider, signer.clone()).await?;
+        // should probably wait for the tx here and verify approvals, but retries will handle this
     }
 
     // Create pool instance
@@ -115,13 +124,10 @@ pub async fn trade(
 
     let request = TransactionRequest::default()
         .with_from(signer.address())
-        .with_to(
-            *SWAP_ROUTER_02_ADDRESSES
-                .get(&chain_id)
-                .expect("Swap router address not found"),
-        )
+        .with_to(router_address)
         .with_input(params.calldata)
-        .with_value(params.value);
+        .with_value(params.value)
+        .with_gas_price(gas_price);
 
     send_transaction(request, provider, signer).await
 }
