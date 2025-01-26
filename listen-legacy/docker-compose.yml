@@ -11,6 +11,6 @@ services:
 
   listen-dashboard:
     build:
-      context: ./dashboard
+      context: ../dashboard
     ports:
       - 4173:4173
