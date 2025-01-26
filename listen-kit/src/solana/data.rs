@@ -116,8 +116,8 @@ pub async fn holdings_to_portfolio(
                 })
                 .unwrap_or(0.0);
 
-            let amount =
-                holding.amount as f64 / (10f64.powi(metadata.decimals as i32));
+            let amount = holding.amount as f64
+                / (10f64.powi(metadata.decimals as i32));
 
             PortfolioItem {
                 address: metadata.address.clone(),

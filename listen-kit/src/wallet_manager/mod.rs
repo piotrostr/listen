@@ -5,7 +5,6 @@ pub mod util;
 
 use anyhow::{anyhow, Result};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
-use solana_sdk::transaction::Transaction;
 
 use config::PrivyConfig;
 use types::{
@@ -93,13 +92,14 @@ impl WalletManager {
         })
     }
 
+    #[cfg(feature = "solana")]
     pub async fn sign_and_send_transaction(
         &self,
-        session: &UserSession,
-        transaction: Transaction,
+        address: String,
+        transaction: solana_sdk::transaction::Transaction,
     ) -> Result<String> {
         let request = SignAndSendTransactionRequest {
-            address: session.wallet_address.clone(),
+            address,
             chain_type: "solana".to_string(),
             method: "signAndSendTransaction".to_string(),
             caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".to_string(),

@@ -5,9 +5,9 @@ use rig::providers::anthropic::completion::CompletionModel;
 #[cfg(feature = "solana")]
 use crate::solana::{
     tools::{
-        initialize, BuyPumpToken, DeployToken, FetchPairInfo, FetchTokenPrice,
-        GetBalance, GetTokenBalance, Portfolio, Scan, SellPumpToken, Trade,
-        TransferSol, TransferToken, WalletAddress,
+        initialize, BuyPumpToken, DeployToken, FetchPairInfo,
+        FetchTokenPrice, GetBalance, GetTokenBalance, Portfolio, Scan,
+        SellPumpToken, Trade, TransferSol, TransferToken, WalletAddress,
     },
     util::env,
 };

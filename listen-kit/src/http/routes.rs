@@ -1,7 +1,9 @@
 use super::middleware::verify_auth;
 use super::state::AppState;
 use actix_web::error::ErrorInternalServerError;
-use actix_web::{get, post, web, Error, HttpRequest, HttpResponse, Responder};
+use actix_web::{
+    get, post, web, Error, HttpRequest, HttpResponse, Responder,
+};
 use actix_web_lab::sse;
 use futures_util::StreamExt;
 use rig::completion::Message;
@@ -157,7 +159,8 @@ async fn test_tx(
     use solana_sdk::transaction::Transaction;
     use std::str::FromStr;
 
-    let user = Pubkey::from_str(user_session.wallet_address.as_str()).unwrap();
+    let user =
+        Pubkey::from_str(user_session.wallet_address.as_str()).unwrap();
     let tx = Transaction::new_unsigned(Message::new_with_blockhash(
         &[transfer(
             &user,
@@ -173,7 +176,7 @@ async fn test_tx(
 
     let signature = state
         .wallet_manager
-        .sign_and_send_transaction(&user_session, tx)
+        .sign_and_send_transaction(user_session.wallet_address, tx)
         .await
         .map_err(|e| ErrorInternalServerError(e.to_string()))?;
 

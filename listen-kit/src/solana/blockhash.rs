@@ -64,7 +64,13 @@ impl BlockhashCache {
         }
 
         // If we don't have a valid blockhash yet, fetch it immediately
-        match self.client.get_latest_blockhash_with_commitment(CommitmentConfig::finalized()).await {
+        match self
+            .client
+            .get_latest_blockhash_with_commitment(
+                CommitmentConfig::finalized(),
+            )
+            .await
+        {
             Ok(res) => {
                 let new_blockhash = res.0;
                 let mut hash_writer = self.blockhash.write().await;

@@ -243,9 +243,11 @@ pub fn get_pump_token_amount(
 
     let new_virtual_token_reserve = reserves_product
         .checked_div(new_virtual_sol_reserve)
-        .ok_or("Division by zero or overflow in new virtual token reserve calculation").map_err(|e| anyhow!(e))?
+        .ok_or("Division by zero or overflow in new virtual token reserve calculation")
+        .map_err(|e| anyhow!(e))?
         .checked_add(1)
-        .ok_or("Overflow in new virtual token reserve calculation").map_err(|e| anyhow!(e))?;
+        .ok_or("Overflow in new virtual token reserve calculation")
+        .map_err(|e| anyhow!(e))?;
 
     let amount_out = virtual_token_reserves
         .checked_sub(new_virtual_token_reserve)
@@ -459,7 +461,10 @@ pub fn make_pump_sell_ix(
         AccountMeta::new(pump_accounts.associated_bonding_curve, false),
         AccountMeta::new(ata, false),
         AccountMeta::new(owner, true),
-        AccountMeta::new_readonly(Pubkey::from_str(SYSTEM_PROGRAM_ID)?, false),
+        AccountMeta::new_readonly(
+            Pubkey::from_str(SYSTEM_PROGRAM_ID)?,
+            false,
+        ),
         AccountMeta::new_readonly(
             Pubkey::from_str(ASSOCIATED_TOKEN_PROGRAM)?,
             false,
@@ -517,7 +522,10 @@ pub fn make_pump_swap_ix(
         AccountMeta::new(associated_bonding_curve, false),
         AccountMeta::new(ata, false),
         AccountMeta::new(owner, true),
-        AccountMeta::new_readonly(Pubkey::from_str(SYSTEM_PROGRAM_ID)?, false),
+        AccountMeta::new_readonly(
+            Pubkey::from_str(SYSTEM_PROGRAM_ID)?,
+            false,
+        ),
         AccountMeta::new_readonly(Pubkey::from_str(TOKEN_PROGRAM)?, false),
         AccountMeta::new_readonly(Pubkey::from_str(RENT_PROGRAM)?, false),
         AccountMeta::new_readonly(Pubkey::from_str(EVENT_AUTHORITY)?, false),

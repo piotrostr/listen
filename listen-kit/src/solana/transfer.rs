@@ -36,8 +36,9 @@ pub async fn transfer_spl(
     let from_ata = spl_associated_token_account::get_associated_token_address(
         &from, &mint,
     );
-    let to_ata =
-        spl_associated_token_account::get_associated_token_address(&to, &mint);
+    let to_ata = spl_associated_token_account::get_associated_token_address(
+        &to, &mint,
+    );
 
     let mut instructions = vec![];
 

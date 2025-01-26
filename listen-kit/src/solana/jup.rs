@@ -230,8 +230,10 @@ impl Jupiter {
         }
 
         // Create and sign transaction
-        let mut tx =
-            Transaction::new_with_payer(&instructions, Some(&signer.pubkey()));
+        let mut tx = Transaction::new_with_payer(
+            &instructions,
+            Some(&signer.pubkey()),
+        );
         tx.sign(&[signer], recent_blockhash);
 
         let result = send_tx(tx).await?;
