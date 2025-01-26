@@ -108,6 +108,8 @@ export function useChat() {
           const chunk = decoder.decode(value);
           const lines = chunk.split("\n");
 
+          console.log(chunk);
+
           for (const line of lines) {
             if (line.startsWith("data: ")) {
               const jsonStr = line.slice(6);

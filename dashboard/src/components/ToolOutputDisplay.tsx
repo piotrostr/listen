@@ -7,12 +7,21 @@ export function ToolOutputDisplay({
 }: {
   toolOutput: ToolOutput | null;
 }) {
+  console.log(toolOutput);
   const signature = toolOutput?.name === "trade" ? toolOutput.result : null;
 
   const { data: transactionStatus, isLoading: isConfirming } =
     useWaitForTransaction(signature);
 
   if (!toolOutput) return null;
+
+  const tryRenderJSON = (jsonstr: string) => {
+    try {
+      return JSON.stringify(JSON.parse(jsonstr), null, 2);
+    } catch {
+      return jsonstr;
+    }
+  };
 
   switch (toolOutput.name) {
     case "trade":
@@ -77,7 +86,9 @@ export function ToolOutputDisplay({
 
     default:
       return (
-        <div>{JSON.stringify(JSON.parse(toolOutput.result), null, 2)}</div>
+        <pre className="whitespace-pre-wrap text-sm overflow-x-auto bg-blue-950/30 p-4 rounded-md">
+          {tryRenderJSON(toolOutput.result)}
+        </pre>
       );
   }
 }
