@@ -1,10 +1,38 @@
 import { useState, useEffect } from "react";
 import { useChat } from "../hooks/useChat";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
+import { usePrivy } from "@privy-io/react-auth";
+import { DelegateActionButton } from "./DelegateActionButton";
 
 export function Chat() {
   const { messages, isLoading, sendMessage, toolOutput } = useChat();
   const [inputMessage, setInputMessage] = useState("");
+
+  const { getAccessToken } = usePrivy();
+
+  const fetchAuth = async () => {
+    const res = await fetch("http://localhost:8080/v1/auth", {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${await getAccessToken()}`,
+      },
+    });
+    const data = await res.text();
+    console.log(res.status, data);
+  };
+
+  const fetchTestTx = async () => {
+    const res = await fetch("http://localhost:8080/v1/test_tx", {
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${await getAccessToken()}`,
+      },
+    });
+    const data = await res.text();
+    console.log(res.status, data);
+  };
 
   useEffect(() => {
     const handleKeyPress = (e: KeyboardEvent) => {
@@ -36,6 +64,15 @@ export function Chat() {
       <div className="flex-1 overflow-hidden">
         <div className="h-full border-2 border-purple-500/30 rounded-lg overflow-hidden bg-black/40 backdrop-blur-sm">
           <div className="h-full flex flex-col">
+            <div className="flex flex-row gap-2 p-4 justify-center">
+              <DelegateActionButton />
+              <button onClick={fetchAuth} className="btn">
+                Auth
+              </button>
+              <button onClick={fetchTestTx} className="btn">
+                TestTx
+              </button>
+            </div>
             <div className="flex-1 overflow-y-auto p-4 scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
               {messages.map(
                 (msg) =>

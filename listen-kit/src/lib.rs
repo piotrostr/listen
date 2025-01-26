@@ -8,3 +8,5 @@ pub mod solana;
 pub mod evm;
 
 pub mod agent;
+
+pub mod wallet_manager;
