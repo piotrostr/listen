@@ -809,7 +809,7 @@ mod tests {
                 .await
                 .expect("get bonding curve");
 
-        println!("{:?}", bonding_curve);
+        tracing::debug!(?bonding_curve, "bonding_curve");
 
         assert!(!bonding_curve.complete);
         assert_ne!(bonding_curve.virtual_token_reserves, 0);
@@ -831,7 +831,7 @@ mod tests {
                 .await
                 .expect("get bonding curve");
 
-        println!("{:?}", bonding_curve);
+        tracing::debug!(?bonding_curve, "bonding_curve");
 
         assert!(bonding_curve.complete);
         assert_eq!(bonding_curve.virtual_token_reserves, 0);

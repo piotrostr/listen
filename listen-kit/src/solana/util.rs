@@ -136,7 +136,7 @@ pub async fn verify_transaction(
         )
         .await;
 
-    println!("signature: {}, confirmation: {:?}", signature, confirmation);
+    tracing::debug!(?signature, ?confirmation);
 
     match confirmation {
         Ok(resp) => resp.value,

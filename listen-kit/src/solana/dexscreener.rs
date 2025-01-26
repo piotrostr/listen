@@ -86,6 +86,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_search_by_mint() {
+        tracing::debug!("search_by_mint");
         let response = search_ticker(
             "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump".to_string(),
         )

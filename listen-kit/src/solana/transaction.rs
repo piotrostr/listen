@@ -142,7 +142,7 @@ mod tests {
             let start = std::time::Instant::now();
             let _ = super::get_jito_tip_pubkey();
             let elapsed = start.elapsed();
-            println!("elapsed: {:?}", elapsed);
+            tracing::info!(?elapsed, "bench_get_jito_tip_pubkey");
         }
     }
 }

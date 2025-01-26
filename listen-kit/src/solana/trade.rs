@@ -43,7 +43,7 @@ mod tests {
             &keypair,
         )
         .await;
-        println!("{:?}", result);
+        tracing::debug!("{:?}", result);
 
         assert!(result.is_ok());
     }
