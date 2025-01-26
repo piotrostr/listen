@@ -33,6 +33,7 @@ jobs:
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
       - name: Lint
+        working-directory: ${{ matrix.directory }}
         run: cargo clippy
   build:
     runs-on: ubuntu-latest
@@ -55,6 +56,7 @@ jobs:
       - name: Install Protoc
         uses: arduino/setup-protoc@v3
       - name: Build
+        working-directory: ${{ matrix.directory }}
         run: cargo build
 
   # Uncomment when tests are stable
