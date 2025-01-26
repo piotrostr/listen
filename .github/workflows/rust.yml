@@ -14,43 +14,49 @@ concurrency:
 jobs:
   lint:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory: ["./listen-legacy", "./listen-kit"]
     steps:
-    - name: Check out
-      uses: actions/checkout@v4
-    - name: Set up cargo cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }} 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v3
-    - name: Lint
-      run: cargo clippy
+      - name: Check out
+        uses: actions/checkout@v4
+      - name: Set up cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+      - name: Lint
+        run: cargo clippy
   build:
     runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        directory: ["./listen-legacy", "./listen-kit"]
     steps:
-    - name: Check out
-      uses: actions/checkout@v4
-    - name: Set up cargo cache
-      uses: actions/cache@v4
-      with:
-        path: |
-          ~/.cargo/bin/
-          ~/.cargo/registry/index/
-          ~/.cargo/registry/cache/
-          ~/.cargo/git/db/
-          target/
-        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }} 
-    - name: Install Protoc
-      uses: arduino/setup-protoc@v3
-    - name: Build
-      run: cargo build
-  
+      - name: Check out
+        uses: actions/checkout@v4
+      - name: Set up cargo cache
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/bin/
+            ~/.cargo/registry/index/
+            ~/.cargo/registry/cache/
+            ~/.cargo/git/db/
+            target/
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+      - name: Install Protoc
+        uses: arduino/setup-protoc@v3
+      - name: Build
+        run: cargo build
+
   # Uncomment when tests are stable
   # test:
   #   runs-on: ubuntu-latest
@@ -66,7 +72,7 @@ jobs:
   #         ~/.cargo/registry/cache/
   #         ~/.cargo/git/db/
   #         target/
-  #       key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }} 
+  #       key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
   #   - name: Install Protoc
   #     uses: arduino/setup-protoc@v3
   #   - name: Run tests
