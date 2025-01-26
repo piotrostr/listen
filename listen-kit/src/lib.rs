@@ -9,6 +9,7 @@ pub mod evm;
 
 pub mod agent;
 
+#[cfg(feature = "http")]
 pub mod wallet_manager;
 
 #[ctor::ctor]
