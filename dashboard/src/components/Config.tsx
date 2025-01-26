@@ -1,7 +1,7 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { DelegateActionButton } from "./DelegateActionButton";
 
-export function ConfigModal() {
+export function Config() {
   const { getAccessToken, unlinkEmail, user, linkWallet, logout } = usePrivy();
 
   const fetchAuth = async () => {

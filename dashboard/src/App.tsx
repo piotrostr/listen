@@ -7,6 +7,7 @@ import {
 import { GettingStarted } from "./components/GettingStarted";
 import { LoggedInView } from "./components/LoggedInView";
 import { Layout } from "./components/Layout";
+import { Config } from "./components/Config";
 
 const queryClient = new QueryClient();
 
@@ -39,6 +40,7 @@ function Inner() {
   return (
     <Layout>
       {ready && authenticated ? <LoggedInView /> : <GettingStarted />}
+      <Config />
     </Layout>
   );
 }
