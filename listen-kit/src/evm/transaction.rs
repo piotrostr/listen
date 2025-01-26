@@ -11,6 +11,7 @@ pub async fn send_transaction(
     provider: &EvmProvider,
     signer: PrivateKeySigner,
 ) -> Result<String> {
+    tracing::info!(?request, "Sending transaction");
     // Estimate gas
     let gas_limit = provider
         .estimate_gas(&request)

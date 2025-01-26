@@ -3,19 +3,11 @@ use alloy::primitives::{Address, U256};
 use alloy::providers::Provider;
 use alloy::rpc::types::TransactionRequest;
 use alloy::signers::local::PrivateKeySigner;
-use alloy::sol;
 use anyhow::{Context, Result};
 
-use crate::evm::util::EvmProvider;
-
+use super::abi::IERC20;
 use super::transaction::send_transaction;
-
-sol! {
-    #[sol(rpc)]
-    interface IERC20 {
-        function transfer(address to, uint256 amount) external returns (bool);
-    }
-}
+use super::util::EvmProvider;
 
 pub async fn transfer_eth(
     from: Address,
