@@ -1,11 +1,10 @@
 import { useState, useEffect } from "react";
 import { useChat } from "../hooks/useChat";
-import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { usePrivy } from "@privy-io/react-auth";
 import { DelegateActionButton } from "./DelegateActionButton";
 
 export function Chat() {
-  const { messages, isLoading, sendMessage, toolOutput } = useChat();
+  const { messages, isLoading, sendMessage } = useChat();
   const [inputMessage, setInputMessage] = useState("");
 
   const { getAccessToken, unlinkEmail, user, linkWallet, logout } = usePrivy();
@@ -113,11 +112,13 @@ export function Chat() {
                   ),
               )}
 
+              {/*
               {toolOutput && (
                 <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
                   <ToolOutputDisplay toolOutput={toolOutput} />
                 </div>
               )}
+							*/}
 
               {isLoading && (
                 <div className="bg-purple-900/20 text-purple-300 rounded px-4 py-2">

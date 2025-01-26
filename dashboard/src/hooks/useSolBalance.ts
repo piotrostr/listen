@@ -1,10 +1,10 @@
 import { useQuery } from "@tanstack/react-query";
 import { Connection, LAMPORTS_PER_SOL } from "@solana/web3.js";
-import { usePubkey } from "./usePubkey";
+import { usePrivyWallet } from "./usePrivyWallet";
 
 export const useSolBalance = () => {
-  const { data: pubkey } = usePubkey();
   const connection = new Connection(import.meta.env.VITE_RPC_URL);
+  const { data: pubkey } = usePrivyWallet();
 
   const fetchSOLBalance = async (): Promise<number> => {
     try {

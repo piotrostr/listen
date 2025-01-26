@@ -1,100 +1,126 @@
 import { useQuery } from "@tanstack/react-query";
-import { HoldingsResponse } from "./schema";
+import { AccountInfo, Connection, PublicKey } from "@solana/web3.js";
+import { usePrivyWallet } from "./usePrivyWallet";
+import { AccountLayout } from "@solana/spl-token";
+import { Holding, TokenMetadata, PriceResponse } from "./types";
+import { tokenMetadataCache } from "./cache";
 
-export type PortfolioItem = {
-  address: string;
-  name: string;
-  symbol: string;
-  decimals: number;
-  logoURI: string;
-  price: number;
-  amount: number;
-  daily_volume: number;
-};
+const TOKEN_PROGRAM_ID = new PublicKey(
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+);
 
-export type PortfolioData = PortfolioItem[];
+const connection = new Connection(import.meta.env.VITE_RPC_URL);
 
-interface TokenMetadata {
-  address: string;
-  name: string;
-  symbol: string;
-  decimals: number;
-  logoURI: string;
-  volume24h?: number;
+async function getHoldings(
+  connection: Connection,
+  owner: PublicKey,
+): Promise<Holding[]> {
+  const atas = await connection.getTokenAccountsByOwner(owner, {
+    programId: TOKEN_PROGRAM_ID,
+  });
+
+  const holdings = atas.value
+    .map((ata) => parseHolding(ata))
+    .filter((holding): holding is Holding => {
+      return holding !== null && holding.amount > 0n;
+    });
+
+  return holdings;
 }
 
-interface PriceResponse {
-  data: {
-    [key: string]: {
-      id: string;
-      type: string;
-      price: string;
+function parseHolding(ata: {
+  pubkey: PublicKey;
+  account: AccountInfo<Buffer>;
+}): Holding | null {
+  try {
+    const parsedData = AccountLayout.decode(ata.account.data);
+    if (!parsedData) return null;
+    return {
+      mint: parsedData.mint.toString(),
+      ata: ata.pubkey.toString(),
+      amount: parsedData.amount,
     };
-  };
+  } catch (error) {
+    console.error("Failed to parse holding:", error);
+    return null;
+  }
 }
 
-export const usePortfolio = () => {
-  const API_BASE = "http://localhost:6969";
+async function fetchTokenMetadata(mint: string): Promise<TokenMetadata> {
+  try {
+    // First check IndexedDB cache
+    const cachedMetadata = await tokenMetadataCache.get(mint);
+    if (cachedMetadata) {
+      return cachedMetadata;
+    }
 
-  const fetchTokenMetadata = async (mint: string): Promise<TokenMetadata> => {
+    // If not in cache, fetch from API
     const response = await fetch(`https://tokens.jup.ag/token/${mint}`);
-    return response.json();
-  };
+    if (!response.ok) {
+      throw new Error(`Failed to fetch metadata for ${mint}`);
+    }
+    const metadata = await response.json();
 
-  const fetchPrices = async (mints: string[]): Promise<PriceResponse> => {
+    // Store in IndexedDB
+    await tokenMetadataCache.set(mint, metadata);
+
+    return metadata;
+  } catch (error) {
+    console.error(`Error fetching metadata for ${mint}:`, error);
+    throw error;
+  }
+}
+
+async function fetchPrices(mints: string[]): Promise<PriceResponse> {
+  try {
     const response = await fetch(
       `https://api.jup.ag/price/v2?ids=${mints.join(",")}`,
     );
+    if (!response.ok) {
+      throw new Error("Failed to fetch prices");
+    }
     return response.json();
-  };
+  } catch (error) {
+    console.error("Error fetching prices:", error);
+    throw error;
+  }
+}
 
-  const fetchHoldings = async (): Promise<HoldingsResponse> => {
-    const response = await fetch(`${API_BASE}/holdings`);
-    return response.json();
-  };
+export const usePortfolio = () => {
+  const { data: ownerPublicKey } = usePrivyWallet();
 
-  // Main query function
-  const fetchPortfolioData = async (): Promise<PortfolioData> => {
-    // 1. Get holdings
-    const holdingsResponse = await fetchHoldings();
-    const holdings = holdingsResponse.holdings;
+  return useQuery({
+    queryKey: ["portfolio", ownerPublicKey?.toString()],
+    queryFn: async () => {
+      // Get holdings
+      const holdings = await getHoldings(connection, ownerPublicKey!);
+      const mints = holdings.map((h) => h.mint);
 
-    // 2. Fetch token metadata for all mints
-    const metadataPromises = holdings.map((holding) =>
-      fetchTokenMetadata(holding.mint),
-    );
-    const tokenMetadata = await Promise.all(metadataPromises);
+      // Get metadata and prices in parallel
+      const [tokenMetadata, pricesResponse] = await Promise.all([
+        Promise.all(mints.map(fetchTokenMetadata)),
+        fetchPrices(mints),
+      ]);
 
-    // 3. Fetch prices for all mints
-    const mints = holdings.map((holding) => holding.mint);
-    const pricesResponse = await fetchPrices(mints);
+      // Combine data
+      return holdings.map((holding, index) => {
+        const metadata = tokenMetadata[index];
+        const price = Number(pricesResponse.data[holding.mint]?.price || 0);
+        const amount = Number(holding.amount) / Math.pow(10, metadata.decimals);
 
-    // 4. Combine all data
-    return holdings.map((holding, index) => {
-      const metadata = tokenMetadata[index];
-      const price = Number(pricesResponse.data[holding.mint].price);
-      const amount = holding.amount / Math.pow(10, metadata.decimals);
-
-      return {
-        address: metadata.address,
-        name: metadata.name,
-        symbol: metadata.symbol,
-        decimals: metadata.decimals,
-        logoURI: metadata.logoURI,
-        price,
-        amount,
-        daily_volume: metadata.volume24h || 0,
-      };
-    });
-  };
-
-  // Use React Query to handle the data fetching
-  return useQuery<PortfolioData, Error>({
-    queryKey: ["portfolio"],
-    queryFn: () => {
-      return [];
-    }, // fetchPortfolioData,
-    refetchInterval: 30000, // Refetch every 60 seconds
-    staleTime: 30000, // Consider data stale after 60 seconds
+        return {
+          address: metadata.address,
+          name: metadata.name,
+          symbol: metadata.symbol,
+          decimals: metadata.decimals,
+          logoURI: metadata.logoURI,
+          price,
+          amount,
+          daily_volume: metadata.volume24h || 0,
+        };
+      });
+    },
+    enabled: !!ownerPublicKey,
+    staleTime: 10000, // 10 seconds
   });
 };

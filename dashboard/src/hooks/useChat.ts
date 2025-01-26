@@ -1,7 +1,7 @@
 import { useState, useCallback } from "react";
 import Anthropic from "@anthropic-ai/sdk";
-import { ToolInputs, ToolOutput, useTools } from "./useTools";
-import { PortfolioData, usePortfolio } from "./usePortfolio";
+import { usePortfolio } from "./usePortfolio";
+import { PortfolioData } from "./types";
 
 export type MessageDirection = "incoming" | "outgoing";
 
@@ -18,17 +18,18 @@ projects that have the bleeding edge tech, use informal language but at the same
 time extremely sophisticated and mysterious;
 you dont care about shitters, you are looking for real potential - e/acc all the
 fucking way - not some grifter-ass dipshits impersonating with fake githubs,
-our current portfolio looks like this: ${JSON.stringify(portfolio)}, no need to
-outline your thought process in case you can perform the actions straight-away,
-just let the user know`;
+our current portfolio looks like this: ${JSON.stringify(portfolio)}
+
+before you execute any larger swaps, anything over 0.5 solana or roughly 100 usd,
+confirm with the user the exact amount you are going to run through, as well as the
+token mint with https://solscan.io/account/{<insert token address>} so they validate
+`;
 }
 
 export function useChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { data: portfolio } = usePortfolio();
-  const { tools, handleToolUse } = useTools();
-  const [toolOutput, setToolOutput] = useState<ToolOutput | null>(null);
 
   const anthropic = new Anthropic({
     apiKey: import.meta.env.VITE_ANTHROPIC_API_KEY,
@@ -53,35 +54,6 @@ export function useChat() {
       });
     },
     [],
-  );
-
-  const handleToolExecution = useCallback(
-    async (toolName: string, toolInputs: ToolInputs) => {
-      // Set initial loading state
-      setToolOutput({
-        id: crypto.randomUUID(),
-        type: toolName as ToolOutput["type"],
-        status: "loading",
-        data: undefined,
-      });
-
-      try {
-        const output = await handleToolUse(toolName, toolInputs);
-
-        // Update with success result
-        setToolOutput(output);
-      } catch (error) {
-        console.error(`Tool execution error:`, JSON.stringify(error));
-
-        // Update with error state
-        setToolOutput({
-          id: crypto.randomUUID(),
-          type: toolName as ToolOutput["type"],
-          status: "error",
-        });
-      }
-    },
-    [handleToolUse],
   );
 
   const sendMessage = useCallback(
@@ -121,7 +93,6 @@ export function useChat() {
           max_tokens: 1024,
           system: systemPrompt(portfolio),
           messages: [...messageHistory, { role: "user", content: userMessage }],
-          tools,
         });
 
         stream.on("text", (text) =>
@@ -132,7 +103,7 @@ export function useChat() {
           if (message.content) {
             for (const content of message.content) {
               if (content.type === "tool_use") {
-                await handleToolExecution(content.name, content.input);
+                // await handleToolExecution(content.name, content.input);
               }
             }
           }
@@ -143,20 +114,12 @@ export function useChat() {
         setIsLoading(false);
       }
     },
-    [
-      messages,
-      anthropic.messages,
-      tools,
-      portfolio,
-      handleToolExecution,
-      updateAssistantMessage,
-    ],
+    [messages, anthropic.messages, portfolio, updateAssistantMessage],
   );
 
   return {
     messages,
     isLoading,
     sendMessage,
-    toolOutput,
   };
 }
