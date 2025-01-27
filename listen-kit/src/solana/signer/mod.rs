@@ -34,8 +34,8 @@ pub struct SignerContext;
 impl SignerContext {
     pub async fn with_signer<T>(
         signer: Arc<dyn TransactionSigner>,
-        f: impl Future<Output = T> + Send,
-    ) -> T {
+        f: impl Future<Output = Result<T>> + Send,
+    ) -> Result<T> {
         CURRENT_SIGNER.scope(signer, f).await
     }
 

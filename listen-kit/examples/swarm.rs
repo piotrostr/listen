@@ -68,14 +68,27 @@ async fn trade_action(prompt: String) -> Result<String> {
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
-    let leader = rig::providers::openai::Client::from_env()
-        .agent(rig::providers::openai::GPT_4O)
-        .preamble("you are a swarm leader, you have a data agent to redirect all of the user prompts that require looking for data and trader agent to perform any trading actions, use your swarm accordingly")
-        .tool(DataAction)
-        .tool(TradeAction)
-        .build();
+    use listen_kit::solana::signer::local::LocalSigner;
+    use listen_kit::solana::signer::SignerContext;
+    use listen_kit::solana::util::env;
 
-    cli_chatbot(leader).await?;
+    let signer = LocalSigner::new(env("SOLANA_PRIVATE_KEY"));
+    SignerContext::with_signer(Arc::new(signer), async {
+        let leader = rig::providers::openai::Client::from_env()
+            .agent(rig::providers::openai::GPT_4O)
+            .preamble(
+                "you are a swarm leader, you have a data agent to redirect 
+                all of the user prompts that require looking for data and trader 
+                agent to perform any trading actions, use your swarm accordingly",
+            )
+            .tool(DataAction)
+            .tool(TradeAction)
+            .build();
+
+        cli_chatbot(leader).await?;
+        Ok(())
+    })
+    .await?;
 
     Ok(())
 }

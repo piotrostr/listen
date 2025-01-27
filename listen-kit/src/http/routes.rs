@@ -8,6 +8,7 @@ use actix_web::{
     get, post, web, Error, HttpRequest, HttpResponse, Responder,
 };
 use actix_web_lab::sse;
+use anyhow::Result;
 use futures_util::StreamExt;
 use rig::completion::Message;
 use rig::streaming::{StreamingChat, StreamingChoice};
@@ -40,10 +41,10 @@ pub enum ServerError {
 pub async fn spawn_with_signer<F, Fut, T>(
     signer: Arc<dyn TransactionSigner>,
     f: F,
-) -> tokio::task::JoinHandle<T>
+) -> tokio::task::JoinHandle<Result<T>>
 where
     F: FnOnce() -> Fut + Send + 'static,
-    Fut: Future<Output = T> + Send + 'static,
+    Fut: Future<Output = Result<T>> + Send + 'static,
     T: Send + 'static,
 {
     tokio::spawn(async move {
@@ -91,7 +92,7 @@ async fn stream(
                             .unwrap(),
                         )))
                         .await;
-                    return;
+                    return Ok(());
                 }
             };
 
@@ -132,6 +133,7 @@ async fn stream(
                     break;
                 }
             }
+        Ok(())
         }).await;
 
     sse::Sse::from_infallible_receiver(rx)
