@@ -24,7 +24,7 @@ use crate::solana::{
     },
     pump::_make_buy_ixs,
     pump::{get_bonding_curve, get_pump_token_amount, BondingCurveLayout},
-    transaction::{get_jito_tip_pubkey, send_tx},
+    transaction::get_jito_tip_pubkey,
     util::apply_fee,
     util::make_compute_budget_ixs,
 };
@@ -48,11 +48,11 @@ pub struct DeployTokenParams {
     pub dev_buy: Option<u64>,
 }
 
-pub async fn deploy_token(
+pub async fn create_deploy_token_tx(
     params: DeployTokenParams,
-    keypair: &Keypair,
-) -> Result<String> {
-    let res = launch(
+    owner: &Pubkey,
+) -> Result<Transaction> {
+    let res = create_launch_tx(
         &IPFSMetaForm {
             name: params.name.clone(),
             symbol: params.symbol.clone(),
@@ -63,7 +63,7 @@ pub async fn deploy_token(
             show_name: true,
         },
         params.image_url,
-        keypair,
+        owner,
         params.dev_buy,
     )
     .await?;
@@ -272,12 +272,12 @@ pub async fn load_image(image_path: &str) -> Result<Vec<u8>> {
     }
 }
 
-pub async fn launch(
+pub async fn create_launch_tx(
     ipfs_meta: &IPFSMetaForm,
     image_path: Option<String>,
-    signer: &Keypair,
+    owner: &Pubkey,
     dev_buy: Option<u64>, // lamports
-) -> Result<String> {
+) -> Result<Transaction> {
     let mut ixs = vec![];
 
     // Add compute budget instructions
@@ -299,7 +299,7 @@ pub async fn launch(
         ipfs_meta.symbol.clone(),
         metadata_uri,
         mint,
-        signer.pubkey(),
+        *owner,
     ));
 
     let (bonding_curve, associated_bonding_curve) = get_bc_and_abc(mint);
@@ -316,7 +316,7 @@ pub async fn launch(
         debug!("dev_buy: {}", dev_buy);
         debug!("token_amount: {}", token_amount);
         ixs.append(&mut _make_buy_ixs(
-            signer.pubkey(),
+            *owner,
             mint,
             bonding_curve,
             associated_bonding_curve,
@@ -329,18 +329,14 @@ pub async fn launch(
     }
 
     // static tip of 50000 lamports for the launch
-    ixs.push(transfer(&signer.pubkey(), &get_jito_tip_pubkey(), 50000));
+    ixs.push(transfer(owner, &get_jito_tip_pubkey(), 50000));
 
-    let create_tx = Transaction::new_signed_with_payer(
-        &ixs,
-        Some(&signer.pubkey()),
-        &[signer, &mint_signer],
-        BLOCKHASH_CACHE.get_blockhash().await?,
-    );
+    let mut create_tx = Transaction::new_with_payer(&ixs, Some(owner));
 
-    let res = send_tx(&create_tx).await?;
+    create_tx
+        .partial_sign(&[mint_signer], BLOCKHASH_CACHE.get_blockhash().await?);
 
-    Ok(res)
+    Ok(create_tx)
 }
 
 pub fn get_bc_and_abc(mint: Pubkey) -> (Pubkey, Pubkey) {
@@ -470,6 +466,7 @@ mod launcher_tests {
     use solana_sdk::signer::EncodableKey;
 
     use super::*;
+    use crate::solana::transaction::send_tx;
     use crate::solana::util::{env, init_logger, load_keypair_for_tests};
 
     #[tokio::test]
@@ -487,7 +484,11 @@ mod launcher_tests {
             website: None,
             dev_buy: None,
         };
-        let res = deploy_token(params, &keypair).await.unwrap();
+        let mut tx = create_deploy_token_tx(params, &keypair.pubkey())
+            .await
+            .unwrap();
+        tx.sign(&[&keypair], BLOCKHASH_CACHE.get_blockhash().await.unwrap());
+        let res = send_tx(&tx).await.unwrap();
         tracing::info!(?res, "deploy_token");
     }
 
@@ -498,7 +499,7 @@ mod launcher_tests {
         init_logger().ok();
         let signer =
             Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).unwrap();
-        launch(
+        let mut tx = create_launch_tx(
             &IPFSMetaForm {
                 name: "test".to_string(),
                 symbol: "test".to_string(),
@@ -509,11 +510,15 @@ mod launcher_tests {
                 show_name: true,
             },
             None,
-            &signer,
+            &signer.pubkey(),
             Some(50000),
         )
         .await
         .unwrap();
+
+        tx.sign(&[&signer], BLOCKHASH_CACHE.get_blockhash().await.unwrap());
+
+        send_tx(&tx).await.unwrap();
     }
 
     #[tokio::test]
@@ -523,7 +528,7 @@ mod launcher_tests {
         init_logger().ok();
         let signer =
             Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).unwrap();
-        launch(
+        let mut tx = create_launch_tx(
             &IPFSMetaForm {
                 name: "test".to_string(),
                 symbol: "test".to_string(),
@@ -534,11 +539,15 @@ mod launcher_tests {
                 show_name: true,
             },
             None,
-            &signer,
+            &signer.pubkey(),
             None,
         )
         .await
         .unwrap();
+
+        tx.sign(&[&signer], BLOCKHASH_CACHE.get_blockhash().await.unwrap());
+
+        send_tx(&tx).await.unwrap();
     }
 
     #[tokio::test]

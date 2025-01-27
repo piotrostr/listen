@@ -10,14 +10,17 @@ use rig_tool_macro::tool;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::native_token::sol_to_lamports;
 use solana_sdk::pubkey::Pubkey;
-use solana_sdk::signature::Keypair;
 use std::str::FromStr;
 
 use crate::solana::{
     data::PortfolioItem, dexscreener::PairInfo, util::wrap_unsafe,
 };
 
+use super::data::holdings_to_portfolio;
+use super::deploy_token::create_deploy_token_tx;
 use super::signer::SignerContext;
+use super::trade::create_trade_transaction;
+use super::trade_pump::{create_buy_pump_fun_tx, create_sell_pump_fun_tx};
 use super::transfer::{create_transfer_sol_tx, create_transfer_spl_tx};
 
 static SOLANA_RPC_URL: Lazy<String> = Lazy::new(|| {
@@ -39,7 +42,7 @@ pub async fn trade(
     let signer = SignerContext::current().await;
     let owner = signer.pubkey()?;
     let mut tx = wrap_unsafe(move || async move {
-        crate::solana::trade::create_trade_transaction(
+        create_trade_transaction(
             input_mint,
             sol_to_lamports(input_amount),
             output_mint,
@@ -158,9 +161,10 @@ pub async fn deploy_token(
     image_url: String,
     description: String,
 ) -> Result<String> {
-    let keypair = Keypair::new(); // FIXME use the signer context
-    wrap_unsafe(move || async move {
-        crate::solana::deploy_token::deploy_token(
+    let signer = SignerContext::current().await;
+    let owner = signer.pubkey()?;
+    let mut tx = wrap_unsafe(move || async move {
+        create_deploy_token_tx(
             crate::solana::deploy_token::DeployTokenParams {
                 name,
                 symbol,
@@ -171,9 +175,15 @@ pub async fn deploy_token(
                 image_url: Some(image_url),
                 description,
             },
-            &keypair,
+            &owner,
         )
         .await
+    })
+    .await
+    .map_err(|e| anyhow!("{:#?}", e))?;
+
+    wrap_unsafe(move || async move {
+        signer.sign_and_send_transaction(&mut tx).await
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))
@@ -190,16 +200,23 @@ pub async fn buy_pump_token(
     sol_amount: f64,
     slippage_bps: u16,
 ) -> Result<String> {
-    let keypair = Keypair::new(); // FIXME use the signer context
-    wrap_unsafe(move || async move {
-        crate::solana::trade_pump::buy_pump_fun(
+    let signer = SignerContext::current().await;
+    let owner = signer.pubkey()?;
+    let mut tx = wrap_unsafe(move || async move {
+        create_buy_pump_fun_tx(
             mint,
             sol_to_lamports(sol_amount),
             slippage_bps,
             &create_rpc(),
-            &keypair,
+            &owner,
         )
         .await
+    })
+    .await
+    .map_err(|e| anyhow!("{:#?}", e))?;
+
+    wrap_unsafe(move || async move {
+        signer.sign_and_send_transaction(&mut tx).await
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))
@@ -210,10 +227,17 @@ pub async fn sell_pump_token(
     mint: String,
     token_amount: u64,
 ) -> Result<String> {
-    let keypair = Keypair::new(); // FIXME use the signer context
+    let signer = SignerContext::current().await;
+    let owner = signer.pubkey()?;
+
+    let mut tx = wrap_unsafe(move || async move {
+        create_sell_pump_fun_tx(mint, token_amount, &owner).await
+    })
+    .await
+    .map_err(|e| anyhow!("{:#?}", e))?;
+
     wrap_unsafe(move || async move {
-        crate::solana::trade_pump::sell_pump_fun(mint, token_amount, &keypair)
-            .await
+        signer.sign_and_send_transaction(&mut tx).await
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))
@@ -230,7 +254,7 @@ pub async fn portfolio() -> Result<Vec<PortfolioItem>> {
     .await
     .map_err(|e| anyhow!("{:#?}", e))?;
 
-    crate::solana::data::holdings_to_portfolio(holdings).await
+    holdings_to_portfolio(holdings).await
 }
 
 #[tool]

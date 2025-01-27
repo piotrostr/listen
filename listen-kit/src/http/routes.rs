@@ -80,61 +80,63 @@ async fn stream(
         user_session.clone(),
     ));
 
-    spawn_with_signer(signer, || async move { // FIXME indent
-            let mut stream = match agent.stream_chat(&prompt, messages).await {
-                Ok(s) => s,
-                Err(e) => {
-                    let _ = tx
-                        .send(sse::Event::Data(sse::Data::new(
-                            serde_json::to_string(&StreamResponse::Error(
-                                e.to_string(),
-                            ))
-                            .unwrap(),
-                        )))
-                        .await;
-                    return Ok(());
-                }
-            };
+    spawn_with_signer(signer, || async move {
+        let mut stream = match agent.stream_chat(&prompt, messages).await {
+            Ok(s) => s,
+            Err(e) => {
+                let _ = tx
+                    .send(sse::Event::Data(sse::Data::new(
+                        serde_json::to_string(&StreamResponse::Error(
+                            e.to_string(),
+                        ))
+                        .unwrap(),
+                    )))
+                    .await;
+                return Ok(());
+            }
+        };
 
-            while let Some(chunk) = stream.next().await {
-                let response = match chunk {
-                    Ok(StreamingChoice::Message(text)) => {
-                        StreamResponse::Message(text)
-                    }
-                    Ok(StreamingChoice::ToolCall(name, _, params)) => {
-                        tracing::debug!(tool = name, parameters = ?params, "Tool call");
-                        match agent.tools.call(&name, params.to_string()).await {
-                            Ok(result) => {
-                                tracing::debug!(tool = name, result = ?result, "Tool call result");
-                                StreamResponse::ToolCall {
-                                    name: name.to_string(),
-                                    result: result.to_string(),
-                                }
-                            }
-                            Err(e) => {
-                                tracing::error!(tool = name, error = ?e, "Tool call error");
-                                StreamResponse::Error(format!(
-                                    "Tool call failed: {}",
-                                    e
-                                ))
+        while let Some(chunk) = stream.next().await {
+            let response = match chunk {
+                Ok(StreamingChoice::Message(text)) => {
+                    StreamResponse::Message(text)
+                }
+                Ok(StreamingChoice::ToolCall(name, _, params)) => {
+                    tracing::debug!(tool = name, parameters = ?params, "Tool call");
+                    match agent.tools.call(&name, params.to_string()).await {
+                        Ok(result) => {
+                            tracing::debug!(tool = name, result = ?result, "Tool call result");
+                            StreamResponse::ToolCall {
+                                name: name.to_string(),
+                                result: result.to_string(),
                             }
                         }
+                        Err(e) => {
+                            tracing::error!(tool = name, error = ?e, "Tool call error");
+                            StreamResponse::Error(format!(
+                                "Tool call failed: {}",
+                                e
+                            ))
+                        }
                     }
-                    Err(e) => StreamResponse::Error(e.to_string()),
-                };
-
-                if tx
-                    .send(sse::Event::Data(sse::Data::new(
-                        serde_json::to_string(&response).unwrap(),
-                    )))
-                    .await
-                    .is_err()
-                {
-                    break;
                 }
+                Err(e) => StreamResponse::Error(e.to_string()),
+            };
+
+            if tx
+                .send(sse::Event::Data(sse::Data::new(
+                    serde_json::to_string(&response).unwrap(),
+                )))
+                .await
+                .is_err()
+            {
+                break;
             }
+        }
+
         Ok(())
-        }).await;
+
+    }).await;
 
     sse::Sse::from_infallible_receiver(rx)
         .with_keep_alive(Duration::from_secs(15))
