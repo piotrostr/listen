@@ -10,6 +10,8 @@ use rig_tool_macro::tool;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::native_token::sol_to_lamports;
 use solana_sdk::pubkey::Pubkey;
+use solana_sdk::transaction::Transaction;
+use std::future::Future;
 use std::str::FromStr;
 
 use crate::solana::{
@@ -32,6 +34,25 @@ fn create_rpc() -> RpcClient {
     RpcClient::new(SOLANA_RPC_URL.to_string())
 }
 
+async fn execute_transaction<F, Fut>(tx_creator: F) -> Result<String>
+where
+    F: FnOnce(Pubkey) -> Fut + Send + 'static,
+    Fut: Future<Output = Result<Transaction>> + Send + 'static,
+{
+    let signer = SignerContext::current().await;
+    let owner = signer.pubkey()?;
+
+    let mut tx = wrap_unsafe(move || async move { tx_creator(owner).await })
+        .await
+        .map_err(|e| anyhow!("{:#?}", e))?;
+
+    wrap_unsafe(move || async move {
+        signer.sign_and_send_transaction(&mut tx).await
+    })
+    .await
+    .map_err(|e| anyhow!("{:#?}", e))
+}
+
 #[tool]
 pub async fn trade(
     input_mint: String,
@@ -39,9 +60,7 @@ pub async fn trade(
     output_mint: String,
     slippage_bps: u16,
 ) -> Result<String> {
-    let signer = SignerContext::current().await;
-    let owner = signer.pubkey()?;
-    let mut tx = wrap_unsafe(move || async move {
+    execute_transaction(move |owner| async move {
         create_trade_transaction(
             input_mint,
             sol_to_lamports(input_amount),
@@ -52,30 +71,14 @@ pub async fn trade(
         .await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))?;
-
-    wrap_unsafe(move || async move {
-        signer.sign_and_send_transaction(&mut tx).await
-    })
-    .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 #[tool]
 pub async fn transfer_sol(to: String, amount: u64) -> Result<String> {
-    let signer = SignerContext::current().await;
-    let owner = signer.pubkey()?;
-    let mut tx = wrap_unsafe(move || async move {
+    execute_transaction(move |owner| async move {
         create_transfer_sol_tx(&Pubkey::from_str(&to)?, amount, &owner).await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))?;
-
-    wrap_unsafe(move || async move {
-        signer.sign_and_send_transaction(&mut tx).await
-    })
-    .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 /// param amount is token amount, accounting for decimals
@@ -86,9 +89,7 @@ pub async fn transfer_token(
     amount: u64,
     mint: String,
 ) -> Result<String> {
-    let signer = SignerContext::current().await;
-    let owner = signer.pubkey()?;
-    let mut tx = wrap_unsafe(move || async move {
+    execute_transaction(move |owner| async move {
         create_transfer_spl_tx(
             &Pubkey::from_str(&to)?,
             amount,
@@ -99,13 +100,6 @@ pub async fn transfer_token(
         .await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))?;
-
-    wrap_unsafe(move || async move {
-        signer.sign_and_send_transaction(&mut tx).await
-    })
-    .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 #[tool]
@@ -161,9 +155,7 @@ pub async fn deploy_token(
     image_url: String,
     description: String,
 ) -> Result<String> {
-    let signer = SignerContext::current().await;
-    let owner = signer.pubkey()?;
-    let mut tx = wrap_unsafe(move || async move {
+    execute_transaction(move |owner| async move {
         create_deploy_token_tx(
             crate::solana::deploy_token::DeployTokenParams {
                 name,
@@ -180,13 +172,6 @@ pub async fn deploy_token(
         .await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))?;
-
-    wrap_unsafe(move || async move {
-        signer.sign_and_send_transaction(&mut tx).await
-    })
-    .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 #[tool]
@@ -200,9 +185,7 @@ pub async fn buy_pump_token(
     sol_amount: f64,
     slippage_bps: u16,
 ) -> Result<String> {
-    let signer = SignerContext::current().await;
-    let owner = signer.pubkey()?;
-    let mut tx = wrap_unsafe(move || async move {
+    execute_transaction(move |owner| async move {
         create_buy_pump_fun_tx(
             mint,
             sol_to_lamports(sol_amount),
@@ -213,13 +196,6 @@ pub async fn buy_pump_token(
         .await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))?;
-
-    wrap_unsafe(move || async move {
-        signer.sign_and_send_transaction(&mut tx).await
-    })
-    .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 #[tool]
@@ -227,20 +203,10 @@ pub async fn sell_pump_token(
     mint: String,
     token_amount: u64,
 ) -> Result<String> {
-    let signer = SignerContext::current().await;
-    let owner = signer.pubkey()?;
-
-    let mut tx = wrap_unsafe(move || async move {
+    execute_transaction(move |owner| async move {
         create_sell_pump_fun_tx(mint, token_amount, &owner).await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))?;
-
-    wrap_unsafe(move || async move {
-        signer.sign_and_send_transaction(&mut tx).await
-    })
-    .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 #[tool]
