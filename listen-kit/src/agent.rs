@@ -3,13 +3,10 @@ use rig::agent::{Agent, AgentBuilder};
 use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
 
 #[cfg(feature = "solana")]
-use crate::solana::{
-    tools::{
-        initialize, BuyPumpToken, DeployToken, FetchPairInfo,
-        FetchTokenPrice, GetBalance, GetTokenBalance, Portfolio, Scan,
-        SellPumpToken, Trade, TransferSol, TransferToken, WalletAddress,
-    },
-    util::env,
+use crate::solana::tools::{
+    BuyPumpToken, DeployToken, FetchPairInfo, FetchTokenPrice, GetBalance,
+    GetTokenBalance, Portfolio, Scan, SellPumpToken, Trade, TransferSol,
+    TransferToken, WalletAddress,
 };
 
 pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
@@ -27,8 +24,6 @@ pub async fn default_agent() -> Result<Agent<AnthropicCompletionModel>> {
 #[cfg(feature = "solana")]
 pub async fn create_trader_agent() -> Result<Agent<AnthropicCompletionModel>>
 {
-    initialize(env("SOLANA_PRIVATE_KEY")).await;
-
     Ok(claude_agent_builder()
         .preamble("you are a solana trading agent")
         .max_tokens(1024)

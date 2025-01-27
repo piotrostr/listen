@@ -1,16 +1,19 @@
 #[cfg(feature = "solana")]
 use {
     anyhow::Result,
-    listen_kit::solana::tools::{initialize, Portfolio},
+    listen_kit::solana::signer::local::LocalSigner,
+    listen_kit::solana::signer::SignerContext,
+    listen_kit::solana::tools::Portfolio,
     listen_kit::solana::util::env,
     rig::streaming::{stream_to_stdout, StreamingPrompt},
+    std::sync::Arc,
 };
 
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
-    initialize(env("SOLANA_PRIVATE_KEY")).await;
-
+    let signer = LocalSigner::new(env("SOLANA_PRIVATE_KEY"));
+    SignerContext::with_signer(Arc::new(signer), async {
     let agent = rig::providers::anthropic::Client::from_env()
         .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
         .preamble("you are a portfolio checker, if you do wanna call a tool, outline the reasoning why that tool")
@@ -20,9 +23,10 @@ async fn main() -> Result<()> {
 
     let mut stream = agent
         .stream_prompt("whats the portfolio looking like?")
-        .await?;
+        .await.unwrap(); // FIXME accept Result for the closure
 
-    stream_to_stdout(agent, &mut stream).await?;
+    stream_to_stdout(agent, &mut stream).await.unwrap(); // FIXME accept Result for the closure
+    }).await;
 
     Ok(())
 }

@@ -79,8 +79,7 @@ async fn stream(
         user_session.clone(),
     ));
 
-    spawn_with_signer(signer, || async move {
-            println!("after {}", SignerContext::current().await.pubkey().unwrap());
+    spawn_with_signer(signer, || async move { // FIXME indent
             let mut stream = match agent.stream_chat(&prompt, messages).await {
                 Ok(s) => s,
                 Err(e) => {
