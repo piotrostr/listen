@@ -182,7 +182,7 @@ export function useChat() {
         setIsLoading(false);
       }
     },
-    [messages, updateAssistantMessage, getAccessToken],
+    [messages, updateAssistantMessage, getAccessToken, portfolio, user],
   );
 
   return {
