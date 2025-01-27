@@ -7,6 +7,7 @@ description = "Blockchain actions for AI agents"
 documentation = "https://docs.listen-rs.com"
 
 [features]
+full = ["http", "solana", "evm"]
 default = ["evm"]
 http = [
   "actix-web",

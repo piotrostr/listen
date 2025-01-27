@@ -1,6 +1,6 @@
 use anyhow::Result;
 use rig::agent::{Agent, AgentBuilder};
-use rig::providers::anthropic::completion::CompletionModel;
+use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
 
 #[cfg(feature = "solana")]
 use crate::solana::{
@@ -12,12 +12,12 @@ use crate::solana::{
     util::env,
 };
 
-pub fn claude_agent_builder() -> AgentBuilder<CompletionModel> {
+pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
     rig::providers::anthropic::Client::from_env()
         .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
 }
 
-pub async fn default_agent() -> Result<Agent<CompletionModel>> {
+pub async fn default_agent() -> Result<Agent<AnthropicCompletionModel>> {
     Ok(claude_agent_builder()
         .preamble("be nice to the users")
         .max_tokens(1024)
@@ -25,7 +25,8 @@ pub async fn default_agent() -> Result<Agent<CompletionModel>> {
 }
 
 #[cfg(feature = "solana")]
-pub async fn create_trader_agent() -> Result<Agent<CompletionModel>> {
+pub async fn create_trader_agent() -> Result<Agent<AnthropicCompletionModel>>
+{
     initialize(env("SOLANA_PRIVATE_KEY")).await;
 
     Ok(claude_agent_builder()
@@ -47,7 +48,7 @@ pub async fn create_trader_agent() -> Result<Agent<CompletionModel>> {
 }
 
 #[cfg(feature = "solana")]
-pub async fn create_data_agent() -> Result<Agent<CompletionModel>> {
+pub async fn create_data_agent() -> Result<Agent<AnthropicCompletionModel>> {
     Ok(claude_agent_builder()
         .preamble("you are a solana blockchain agent with tools for fetching data and information about tokens and pairs")
         .max_tokens(1024)
@@ -56,7 +57,8 @@ pub async fn create_data_agent() -> Result<Agent<CompletionModel>> {
 }
 
 #[cfg(feature = "solana")]
-pub async fn create_scanner_agent() -> Result<Agent<CompletionModel>> {
+pub async fn create_scanner_agent() -> Result<Agent<AnthropicCompletionModel>>
+{
     Ok(claude_agent_builder()
         .preamble("you are a screening agent, you are screening newly listed tokens, your purpose is to validate whether a given token is real or not by checking if its contract address is present in the social links")
         .tool(Scan)
