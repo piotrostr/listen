@@ -1,5 +1,6 @@
 use crate::solana::signer::privy::PrivySigner;
 use crate::solana::signer::{SignerContext, TransactionSigner};
+use crate::solana::tools::get_balance;
 
 use super::middleware::verify_auth;
 use super::state::AppState;
@@ -9,6 +10,7 @@ use actix_web::{
 };
 use actix_web_lab::sse;
 use anyhow::Result;
+use futures::TryFutureExt;
 use futures_util::StreamExt;
 use rig::completion::Message;
 use rig::streaming::{StreamingChat, StreamingChoice};
@@ -211,5 +213,35 @@ async fn test_tx(
     Ok(HttpResponse::Ok().json(json!({
         "status": "ok",
         "signature": signature,
+    })))
+}
+
+#[get("/test_balance")]
+async fn test_balance(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let user_session = match verify_auth(&req).await {
+        Ok(s) => s,
+        Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
+    };
+
+    let signer: Arc<dyn TransactionSigner> = Arc::new(PrivySigner::new(
+        state.wallet_manager.clone(),
+        user_session.clone(),
+    ));
+
+    let join_result =
+        spawn_with_signer(signer, || async move { get_balance().await })
+            .await
+            .map_err(|e| ErrorInternalServerError(e.to_string()))
+            .await?;
+
+    let balance =
+        join_result.map_err(|e| ErrorInternalServerError(e.to_string()))?;
+
+    Ok(HttpResponse::Ok().json(json!({
+        "status": "ok",
+        "balance": balance,
     })))
 }
