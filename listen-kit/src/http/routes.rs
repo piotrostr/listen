@@ -1,3 +1,6 @@
+use crate::solana::signer::privy::PrivySigner;
+use crate::solana::signer::{SignerContext, TransactionSigner};
+
 use super::middleware::verify_auth;
 use super::state::AppState;
 use actix_web::error::ErrorInternalServerError;
@@ -10,6 +13,8 @@ use rig::completion::Message;
 use rig::streaming::{StreamingChat, StreamingChoice};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::future::Future;
+use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Deserialize)]
@@ -32,13 +37,27 @@ pub enum ServerError {
     PrivyError,
 }
 
+pub async fn spawn_with_signer<F, Fut, T>(
+    signer: Arc<dyn TransactionSigner>,
+    f: F,
+) -> tokio::task::JoinHandle<T>
+where
+    F: FnOnce() -> Fut + Send + 'static,
+    Fut: Future<Output = T> + Send + 'static,
+    T: Send + 'static,
+{
+    tokio::spawn(async move {
+        SignerContext::with_signer(signer, async { f().await }).await
+    })
+}
+
 #[post("/stream")]
 async fn stream(
     req: HttpRequest,
     state: web::Data<AppState>,
     request: web::Json<ChatRequest>,
 ) -> impl Responder {
-    let _user_session = match verify_auth(&req).await {
+    let user_session = match verify_auth(&req).await {
         Ok(s) => s,
         Err(_) => {
             let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
@@ -55,60 +74,66 @@ async fn stream(
     let prompt = request.prompt.clone();
     let messages = request.chat_history.clone();
 
-    tokio::spawn(async move {
-        let mut stream = match agent.stream_chat(&prompt, messages).await {
-            Ok(s) => s,
-            Err(e) => {
-                let _ = tx
-                    .send(sse::Event::Data(sse::Data::new(
-                        serde_json::to_string(&StreamResponse::Error(
-                            e.to_string(),
-                        ))
-                        .unwrap(),
-                    )))
-                    .await;
-                return;
-            }
-        };
+    let signer: Arc<dyn TransactionSigner> = Arc::new(PrivySigner::new(
+        state.wallet_manager.clone(),
+        user_session.clone(),
+    ));
 
-        while let Some(chunk) = stream.next().await {
-            let response = match chunk {
-                Ok(StreamingChoice::Message(text)) => {
-                    StreamResponse::Message(text)
-                }
-                Ok(StreamingChoice::ToolCall(name, _, params)) => {
-                    tracing::debug!(tool = name, parameters = ?params, "Tool call");
-                    match agent.tools.call(&name, params.to_string()).await {
-                        Ok(result) => {
-                            tracing::debug!(tool = name, result = ?result, "Tool call result");
-                            StreamResponse::ToolCall {
-                                name: name.to_string(),
-                                result: result.to_string(),
-                            }
-                        }
-                        Err(e) => {
-                            tracing::error!(tool = name, error = ?e, "Tool call error");
-                            StreamResponse::Error(format!(
-                                "Tool call failed: {}",
-                                e
+    spawn_with_signer(signer, || async move {
+            println!("after {}", SignerContext::current().await.pubkey().unwrap());
+            let mut stream = match agent.stream_chat(&prompt, messages).await {
+                Ok(s) => s,
+                Err(e) => {
+                    let _ = tx
+                        .send(sse::Event::Data(sse::Data::new(
+                            serde_json::to_string(&StreamResponse::Error(
+                                e.to_string(),
                             ))
-                        }
-                    }
+                            .unwrap(),
+                        )))
+                        .await;
+                    return;
                 }
-                Err(e) => StreamResponse::Error(e.to_string()),
             };
 
-            if tx
-                .send(sse::Event::Data(sse::Data::new(
-                    serde_json::to_string(&response).unwrap(),
-                )))
-                .await
-                .is_err()
-            {
-                break;
+            while let Some(chunk) = stream.next().await {
+                let response = match chunk {
+                    Ok(StreamingChoice::Message(text)) => {
+                        StreamResponse::Message(text)
+                    }
+                    Ok(StreamingChoice::ToolCall(name, _, params)) => {
+                        tracing::debug!(tool = name, parameters = ?params, "Tool call");
+                        match agent.tools.call(&name, params.to_string()).await {
+                            Ok(result) => {
+                                tracing::debug!(tool = name, result = ?result, "Tool call result");
+                                StreamResponse::ToolCall {
+                                    name: name.to_string(),
+                                    result: result.to_string(),
+                                }
+                            }
+                            Err(e) => {
+                                tracing::error!(tool = name, error = ?e, "Tool call error");
+                                StreamResponse::Error(format!(
+                                    "Tool call failed: {}",
+                                    e
+                                ))
+                            }
+                        }
+                    }
+                    Err(e) => StreamResponse::Error(e.to_string()),
+                };
+
+                if tx
+                    .send(sse::Event::Data(sse::Data::new(
+                        serde_json::to_string(&response).unwrap(),
+                    )))
+                    .await
+                    .is_err()
+                {
+                    break;
+                }
             }
-        }
-    });
+        }).await;
 
     sse::Sse::from_infallible_receiver(rx)
         .with_keep_alive(Duration::from_secs(15))
@@ -176,7 +201,7 @@ async fn test_tx(
 
     let signature = state
         .wallet_manager
-        .sign_and_send_transaction(user_session.wallet_address, tx)
+        .sign_and_send_transaction(user_session.wallet_address, &tx)
         .await
         .map_err(|e| ErrorInternalServerError(e.to_string()))?;
 

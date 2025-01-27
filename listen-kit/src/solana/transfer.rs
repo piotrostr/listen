@@ -20,7 +20,7 @@ pub async fn transfer_sol(
         &[&keypair],
         recent_blockhash,
     );
-    let res = send_tx(tx).await?;
+    let res = send_tx(&tx).await?;
 
     Ok(res)
 }
@@ -70,7 +70,7 @@ pub async fn transfer_spl(
         BLOCKHASH_CACHE.get_blockhash().await?,
     );
 
-    let res = send_tx(tx).await?;
+    let res = send_tx(&tx).await?;
 
     Ok(res)
 }

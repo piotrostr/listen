@@ -236,7 +236,7 @@ impl Jupiter {
         );
         tx.sign(&[signer], recent_blockhash);
 
-        let result = send_tx(tx).await?;
+        let result = send_tx(&tx).await?;
 
         Ok(result)
     }

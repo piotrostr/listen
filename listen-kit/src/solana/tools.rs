@@ -20,6 +20,8 @@ use crate::solana::{
     data::PortfolioItem, dexscreener::PairInfo, util::wrap_unsafe,
 };
 
+use super::signer::SignerContext;
+
 static KEYPAIR: Lazy<Arc<RwLock<Keypair>>> =
     Lazy::new(|| Arc::new(RwLock::new(Keypair::new())));
 
@@ -106,7 +108,9 @@ pub async fn wallet_address() -> Result<String> {
 
 #[tool]
 pub async fn get_balance() -> Result<u64> {
-    let pubkey = KEYPAIR.read().await.pubkey();
+    let signer = SignerContext::current().await.clone();
+    println!("Signer: {}", signer.pubkey()?);
+    let pubkey = signer.pubkey()?;
 
     wrap_unsafe(move || async move {
         create_rpc()

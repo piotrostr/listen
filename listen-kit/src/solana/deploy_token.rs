@@ -338,7 +338,7 @@ pub async fn launch(
         BLOCKHASH_CACHE.get_blockhash().await?,
     );
 
-    let res = send_tx(create_tx).await?;
+    let res = send_tx(&create_tx).await?;
 
     Ok(res)
 }

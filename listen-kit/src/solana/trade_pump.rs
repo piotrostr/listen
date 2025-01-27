@@ -58,7 +58,7 @@ pub async fn buy_pump_fun(
         latest_blockhash,
     );
 
-    let result = send_tx(tx).await?;
+    let result = send_tx(&tx).await?;
     Ok(result)
 }
 
@@ -88,7 +88,7 @@ pub async fn sell_pump_fun(
         latest_blockhash,
     );
 
-    let result = send_tx(tx).await?;
+    let result = send_tx(&tx).await?;
     Ok(result)
 }
 
