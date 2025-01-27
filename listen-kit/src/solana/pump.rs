@@ -321,7 +321,7 @@ pub async fn buy_pump_token(
         latest_blockhash,
     );
 
-    send_tx(tx).await?;
+    send_tx(&tx).await?;
 
     Ok(())
 }
@@ -426,7 +426,7 @@ pub async fn sell_pump_token(
         latest_blockhash,
     );
 
-    send_tx(tx).await?;
+    send_tx(&tx).await?;
 
     Ok(())
 }

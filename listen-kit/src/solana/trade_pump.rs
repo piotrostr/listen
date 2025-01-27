@@ -1,16 +1,10 @@
-use crate::solana::{
-    blockhash::BLOCKHASH_CACHE,
-    pump::{
-        _make_buy_ixs, get_bonding_curve, get_pump_token_amount,
-        make_pump_sell_ix, mint_to_pump_accounts,
-    },
-    transaction::send_tx,
+use crate::solana::pump::{
+    _make_buy_ixs, get_bonding_curve, get_pump_token_amount,
+    make_pump_sell_ix, mint_to_pump_accounts,
 };
 use anyhow::Result;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
-use solana_sdk::signature::Keypair;
-use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
 use std::str::FromStr;
 
@@ -19,13 +13,13 @@ fn apply_slippage(amount: u64, slippage_bps: u16) -> u64 {
     amount - slippage
 }
 
-pub async fn buy_pump_fun(
+pub async fn create_buy_pump_fun_tx(
     mint: String,
     sol_amount: u64,
     slippage_bps: u16,
     rpc_client: &RpcClient,
-    keypair: &Keypair,
-) -> Result<String> {
+    owner: &Pubkey,
+) -> Result<Transaction> {
     let mint = Pubkey::from_str(&mint)?;
     let pump_accounts = mint_to_pump_accounts(&mint);
 
@@ -38,10 +32,8 @@ pub async fn buy_pump_fun(
         sol_amount,
     )?;
 
-    let owner = keypair.pubkey();
-
     let buy_ixs = _make_buy_ixs(
-        owner,
+        *owner,
         pump_accounts.mint,
         pump_accounts.bonding_curve,
         pump_accounts.associated_bonding_curve,
@@ -49,47 +41,29 @@ pub async fn buy_pump_fun(
         sol_amount,
     )?;
 
-    let latest_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
+    let tx = Transaction::new_with_payer(buy_ixs.as_slice(), Some(owner));
 
-    let tx = Transaction::new_signed_with_payer(
-        buy_ixs.as_slice(),
-        Some(&owner),
-        &[&keypair],
-        latest_blockhash,
-    );
-
-    let result = send_tx(tx).await?;
-    Ok(result)
+    Ok(tx)
 }
 
-pub async fn sell_pump_fun(
+pub async fn create_sell_pump_fun_tx(
     mint: String,
     token_amount: u64,
-    keypair: &Keypair,
-) -> Result<String> {
+    owner: &Pubkey,
+) -> Result<Transaction> {
     let mint = Pubkey::from_str(&mint)?;
     let pump_accounts = mint_to_pump_accounts(&mint);
 
-    let owner = keypair.pubkey();
-
     let ata = spl_associated_token_account::get_associated_token_address(
-        &owner,
+        owner,
         &pump_accounts.mint,
     );
 
-    let ix = make_pump_sell_ix(owner, pump_accounts, token_amount, ata)?;
+    let ix = make_pump_sell_ix(*owner, pump_accounts, token_amount, ata)?;
 
-    let latest_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
+    let tx = Transaction::new_with_payer([ix].as_slice(), Some(owner));
 
-    let tx = Transaction::new_signed_with_payer(
-        [ix].as_slice(),
-        Some(&owner),
-        &[&keypair],
-        latest_blockhash,
-    );
-
-    let result = send_tx(tx).await?;
-    Ok(result)
+    Ok(tx)
 }
 
 #[cfg(test)]
@@ -97,32 +71,36 @@ mod tests {
     use solana_sdk::native_token::sol_to_lamports;
 
     use super::*;
-    use crate::solana::util::{load_keypair_for_tests, make_rpc_client};
+    use crate::solana::util::{make_rpc_client, make_test_signer};
 
     #[tokio::test]
     async fn test_buy_pump_fun() {
-        let keypair = load_keypair_for_tests();
+        let signer = make_test_signer();
         let rpc_client = make_rpc_client();
-        buy_pump_fun(
+        let mut tx = create_buy_pump_fun_tx(
             "76VCegXJdjqHXBdQyeVV3Swt3JgXrBoQpXcvRQsYpump".to_string(),
             sol_to_lamports(0.0001),
             500,
             &rpc_client,
-            &keypair,
+            &signer.pubkey().unwrap(),
         )
         .await
         .unwrap();
+        let result = signer.sign_and_send_transaction(&mut tx).await;
+        assert!(result.is_ok(), "{:?}", result);
     }
 
     #[tokio::test]
     async fn test_sell_pump_fun() {
-        let keypair = load_keypair_for_tests();
-        sell_pump_fun(
+        let signer = make_test_signer();
+        let mut tx = create_sell_pump_fun_tx(
             "76VCegXJdjqHXBdQyeVV3Swt3JgXrBoQpXcvRQsYpump".to_string(),
             (1. * 1e6) as u64,
-            &keypair,
+            &signer.pubkey().unwrap(),
         )
         .await
         .unwrap();
+        let result = signer.sign_and_send_transaction(&mut tx).await;
+        assert!(result.is_ok(), "{:?}", result);
     }
 }

@@ -3,11 +3,15 @@ use {
     anyhow::Result,
     futures::StreamExt,
     listen_kit::agent::create_trader_agent,
+    listen_kit::solana::signer::local::LocalSigner,
+    listen_kit::solana::signer::SignerContext,
+    listen_kit::solana::util::env,
     rig::agent::Agent,
     rig::completion::Message,
     rig::providers::anthropic::completion::CompletionModel,
     rig::streaming::{StreamingChat, StreamingChoice},
     std::io::Write,
+    std::sync::Arc,
 };
 
 #[cfg(feature = "solana")]
@@ -200,10 +204,16 @@ impl AgentWrapper {
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
-    let trader_agent = create_trader_agent().await?;
-    let wrapped_agent = AgentWrapper::new(trader_agent);
+    let signer = LocalSigner::new(env("SOLANA_PRIVATE_KEY"));
+    SignerContext::with_signer(Arc::new(signer), async {
+        let trader_agent = create_trader_agent().await?;
+        let wrapped_agent = AgentWrapper::new(trader_agent);
 
-    wrapped_agent.chat_loop().await?;
+        wrapped_agent.chat_loop().await?;
+
+        Ok(())
+    })
+    .await?;
 
     Ok(())
 }

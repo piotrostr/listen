@@ -1,3 +1,7 @@
+use crate::solana::signer::privy::PrivySigner;
+use crate::solana::signer::{SignerContext, TransactionSigner};
+use crate::solana::tools::get_balance;
+
 use super::middleware::verify_auth;
 use super::state::AppState;
 use actix_web::error::ErrorInternalServerError;
@@ -5,11 +9,15 @@ use actix_web::{
     get, post, web, Error, HttpRequest, HttpResponse, Responder,
 };
 use actix_web_lab::sse;
+use anyhow::Result;
+use futures::TryFutureExt;
 use futures_util::StreamExt;
 use rig::completion::Message;
 use rig::streaming::{StreamingChat, StreamingChoice};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use std::future::Future;
+use std::sync::Arc;
 use std::time::Duration;
 
 #[derive(Deserialize)]
@@ -32,13 +40,27 @@ pub enum ServerError {
     PrivyError,
 }
 
+pub async fn spawn_with_signer<F, Fut, T>(
+    signer: Arc<dyn TransactionSigner>,
+    f: F,
+) -> tokio::task::JoinHandle<Result<T>>
+where
+    F: FnOnce() -> Fut + Send + 'static,
+    Fut: Future<Output = Result<T>> + Send + 'static,
+    T: Send + 'static,
+{
+    tokio::spawn(async move {
+        SignerContext::with_signer(signer, async { f().await }).await
+    })
+}
+
 #[post("/stream")]
 async fn stream(
     req: HttpRequest,
     state: web::Data<AppState>,
     request: web::Json<ChatRequest>,
 ) -> impl Responder {
-    let _user_session = match verify_auth(&req).await {
+    let user_session = match verify_auth(&req).await {
         Ok(s) => s,
         Err(_) => {
             let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
@@ -55,7 +77,12 @@ async fn stream(
     let prompt = request.prompt.clone();
     let messages = request.chat_history.clone();
 
-    tokio::spawn(async move {
+    let signer: Arc<dyn TransactionSigner> = Arc::new(PrivySigner::new(
+        state.wallet_manager.clone(),
+        user_session.clone(),
+    ));
+
+    spawn_with_signer(signer, || async move {
         let mut stream = match agent.stream_chat(&prompt, messages).await {
             Ok(s) => s,
             Err(e) => {
@@ -67,7 +94,7 @@ async fn stream(
                         .unwrap(),
                     )))
                     .await;
-                return;
+                return Ok(());
             }
         };
 
@@ -108,7 +135,10 @@ async fn stream(
                 break;
             }
         }
-    });
+
+        Ok(())
+
+    }).await;
 
     sse::Sse::from_infallible_receiver(rx)
         .with_keep_alive(Duration::from_secs(15))
@@ -176,12 +206,42 @@ async fn test_tx(
 
     let signature = state
         .wallet_manager
-        .sign_and_send_transaction(user_session.wallet_address, tx)
+        .sign_and_send_transaction(user_session.wallet_address, &tx)
         .await
         .map_err(|e| ErrorInternalServerError(e.to_string()))?;
 
     Ok(HttpResponse::Ok().json(json!({
         "status": "ok",
         "signature": signature,
+    })))
+}
+
+#[get("/test_balance")]
+async fn test_balance(
+    req: HttpRequest,
+    state: web::Data<AppState>,
+) -> Result<HttpResponse, Error> {
+    let user_session = match verify_auth(&req).await {
+        Ok(s) => s,
+        Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
+    };
+
+    let signer: Arc<dyn TransactionSigner> = Arc::new(PrivySigner::new(
+        state.wallet_manager.clone(),
+        user_session.clone(),
+    ));
+
+    let join_result =
+        spawn_with_signer(signer, || async move { get_balance().await })
+            .await
+            .map_err(|e| ErrorInternalServerError(e.to_string()))
+            .await?;
+
+    let balance =
+        join_result.map_err(|e| ErrorInternalServerError(e.to_string()))?;
+
+    Ok(HttpResponse::Ok().json(json!({
+        "status": "ok",
+        "balance": balance,
     })))
 }

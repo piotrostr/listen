@@ -10,32 +10,47 @@ use rig_tool_macro::tool;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::native_token::sol_to_lamports;
 use solana_sdk::pubkey::Pubkey;
-use solana_sdk::signature::Keypair;
-use solana_sdk::signer::Signer;
+use solana_sdk::transaction::Transaction;
+use std::future::Future;
 use std::str::FromStr;
-use std::sync::Arc;
-use tokio::sync::RwLock;
 
 use crate::solana::{
     data::PortfolioItem, dexscreener::PairInfo, util::wrap_unsafe,
 };
 
-static KEYPAIR: Lazy<Arc<RwLock<Keypair>>> =
-    Lazy::new(|| Arc::new(RwLock::new(Keypair::new())));
+use super::data::holdings_to_portfolio;
+use super::deploy_token::create_deploy_token_tx;
+use super::signer::SignerContext;
+use super::trade::create_trade_transaction;
+use super::trade_pump::{create_buy_pump_fun_tx, create_sell_pump_fun_tx};
+use super::transfer::{create_transfer_sol_tx, create_transfer_spl_tx};
 
 static SOLANA_RPC_URL: Lazy<String> = Lazy::new(|| {
     std::env::var("SOLANA_RPC_URL")
         .unwrap_or_else(|_| "https://api.mainnet-beta.solana.com".to_string())
 });
 
-pub async fn initialize(private_key: String) {
-    let keypair = Keypair::from_base58_string(&private_key);
-
-    *KEYPAIR.write().await = keypair;
-}
-
 fn create_rpc() -> RpcClient {
     RpcClient::new(SOLANA_RPC_URL.to_string())
+}
+
+async fn execute_transaction<F, Fut>(tx_creator: F) -> Result<String>
+where
+    F: FnOnce(Pubkey) -> Fut + Send + 'static,
+    Fut: Future<Output = Result<Transaction>> + Send + 'static,
+{
+    let signer = SignerContext::current().await;
+    let owner = signer.pubkey()?;
+
+    let mut tx = wrap_unsafe(move || async move { tx_creator(owner).await })
+        .await
+        .map_err(|e| anyhow!("{:#?}", e))?;
+
+    wrap_unsafe(move || async move {
+        signer.sign_and_send_transaction(&mut tx).await
+    })
+    .await
+    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 #[tool]
@@ -45,34 +60,25 @@ pub async fn trade(
     output_mint: String,
     slippage_bps: u16,
 ) -> Result<String> {
-    let keypair = KEYPAIR.read().await;
-    wrap_unsafe(move || async move {
-        crate::solana::trade::trade(
+    execute_transaction(move |owner| async move {
+        create_trade_transaction(
             input_mint,
             sol_to_lamports(input_amount),
             output_mint,
             slippage_bps,
-            &keypair,
+            &owner,
         )
         .await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 #[tool]
 pub async fn transfer_sol(to: String, amount: u64) -> Result<String> {
-    let keypair = KEYPAIR.read().await;
-    wrap_unsafe(move || async move {
-        crate::solana::transfer::transfer_sol(
-            Pubkey::from_str(&to)?,
-            amount,
-            &keypair,
-        )
-        .await
+    execute_transaction(move |owner| async move {
+        create_transfer_sol_tx(&Pubkey::from_str(&to)?, amount, &owner).await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 /// param amount is token amount, accounting for decimals
@@ -83,34 +89,32 @@ pub async fn transfer_token(
     amount: u64,
     mint: String,
 ) -> Result<String> {
-    let keypair = KEYPAIR.read().await;
-    wrap_unsafe(move || async move {
-        crate::solana::transfer::transfer_spl(
-            Pubkey::from_str(&to)?,
+    execute_transaction(move |owner| async move {
+        create_transfer_spl_tx(
+            &Pubkey::from_str(&to)?,
             amount,
-            Pubkey::from_str(&mint)?,
-            &keypair,
+            &Pubkey::from_str(&mint)?,
+            &owner,
             &create_rpc(),
         )
         .await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 #[tool]
 pub async fn wallet_address() -> Result<String> {
-    let keypair = KEYPAIR.read().await;
-    Ok(keypair.pubkey().to_string())
+    Ok(SignerContext::current().await.pubkey()?.to_string())
 }
 
 #[tool]
 pub async fn get_balance() -> Result<u64> {
-    let pubkey = KEYPAIR.read().await.pubkey();
+    let signer = SignerContext::current().await.clone();
+    let owner = signer.pubkey()?;
 
     wrap_unsafe(move || async move {
         create_rpc()
-            .get_balance(&pubkey)
+            .get_balance(&owner)
             .await
             .map_err(|e| anyhow!("{:#?}", e))
     })
@@ -121,11 +125,11 @@ pub async fn get_balance() -> Result<u64> {
 /// in order to convert to UI amount: amount / 10^decimals
 #[tool]
 pub async fn get_token_balance(mint: String) -> Result<(String, u8)> {
-    let keypair = KEYPAIR.read().await;
+    let signer = SignerContext::current().await;
+    let owner = signer.pubkey()?;
     let mint = Pubkey::from_str(&mint)?;
     let ata = spl_associated_token_account::get_associated_token_address(
-        &keypair.pubkey(),
-        &mint,
+        &owner, &mint,
     );
     let balance = wrap_unsafe(move || async move {
         create_rpc()
@@ -151,9 +155,8 @@ pub async fn deploy_token(
     image_url: String,
     description: String,
 ) -> Result<String> {
-    let keypair = KEYPAIR.read().await;
-    wrap_unsafe(move || async move {
-        crate::solana::deploy_token::deploy_token(
+    execute_transaction(move |owner| async move {
+        create_deploy_token_tx(
             crate::solana::deploy_token::DeployTokenParams {
                 name,
                 symbol,
@@ -164,12 +167,11 @@ pub async fn deploy_token(
                 image_url: Some(image_url),
                 description,
             },
-            &keypair,
+            &owner,
         )
         .await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 #[tool]
@@ -183,19 +185,17 @@ pub async fn buy_pump_token(
     sol_amount: f64,
     slippage_bps: u16,
 ) -> Result<String> {
-    let keypair = KEYPAIR.read().await;
-    wrap_unsafe(move || async move {
-        crate::solana::trade_pump::buy_pump_fun(
+    execute_transaction(move |owner| async move {
+        create_buy_pump_fun_tx(
             mint,
             sol_to_lamports(sol_amount),
             slippage_bps,
             &create_rpc(),
-            &keypair,
+            &owner,
         )
         .await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 #[tool]
@@ -203,27 +203,24 @@ pub async fn sell_pump_token(
     mint: String,
     token_amount: u64,
 ) -> Result<String> {
-    let keypair = KEYPAIR.read().await;
-    wrap_unsafe(move || async move {
-        crate::solana::trade_pump::sell_pump_fun(mint, token_amount, &keypair)
-            .await
+    execute_transaction(move |owner| async move {
+        create_sell_pump_fun_tx(mint, token_amount, &owner).await
     })
     .await
-    .map_err(|e| anyhow!("{:#?}", e))
 }
 
 #[tool]
 pub async fn portfolio() -> Result<Vec<PortfolioItem>> {
-    let keypair = KEYPAIR.read().await;
+    let owner = SignerContext::current().await.pubkey()?;
     let holdings = wrap_unsafe(move || async move {
-        crate::solana::balance::get_holdings(&create_rpc(), &keypair.pubkey())
+        crate::solana::balance::get_holdings(&create_rpc(), &owner)
             .await
             .map_err(|e| anyhow!("{:#?}", e))
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))?;
 
-    crate::solana::data::holdings_to_portfolio(holdings).await
+    holdings_to_portfolio(holdings).await
 }
 
 #[tool]

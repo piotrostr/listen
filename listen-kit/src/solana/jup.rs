@@ -4,10 +4,8 @@ use anyhow::{anyhow, Result};
 use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
+use solana_sdk::pubkey::Pubkey;
 use solana_sdk::transaction::Transaction;
-use solana_sdk::{pubkey::Pubkey, signature::Keypair, signer::Signer};
-
-use crate::solana::{blockhash::BLOCKHASH_CACHE, transaction::send_tx};
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PlatformFee {
@@ -164,10 +162,10 @@ impl Jupiter {
 
     pub async fn swap(
         quote_response: QuoteResponse,
-        signer: &Keypair,
-    ) -> Result<String> {
+        owner: &Pubkey,
+    ) -> Result<Transaction> {
         let swap_request = SwapRequest {
-            user_public_key: signer.pubkey().to_string(),
+            user_public_key: owner.to_string(),
             wrap_and_unwrap_sol: true,
             use_shared_accounts: true,
             fee_account: None,
@@ -197,7 +195,6 @@ impl Jupiter {
             .json::<SwapInstructionsResponse>()
             .await
             .map_err(|e| anyhow!(e))?;
-        let recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
 
         let mut instructions = Vec::new();
 
@@ -229,16 +226,9 @@ impl Jupiter {
             instructions.push(Self::convert_instruction_data(cleanup_ix)?);
         }
 
-        // Create and sign transaction
-        let mut tx = Transaction::new_with_payer(
-            &instructions,
-            Some(&signer.pubkey()),
-        );
-        tx.sign(&[signer], recent_blockhash);
+        let tx = Transaction::new_with_payer(&instructions, Some(owner));
 
-        let result = send_tx(tx).await?;
-
-        Ok(result)
+        Ok(tx)
     }
 
     fn convert_instruction_data(

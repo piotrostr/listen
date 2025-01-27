@@ -1,44 +1,32 @@
 use anyhow::Result;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
-use solana_sdk::signature::Keypair;
-use solana_sdk::signer::Signer;
 use solana_sdk::transaction::Transaction;
 
-use crate::solana::{blockhash::BLOCKHASH_CACHE, transaction::send_tx};
-
-pub async fn transfer_sol(
-    to: Pubkey,
+pub async fn create_transfer_sol_tx(
+    to: &Pubkey,
     amount: u64,
-    keypair: &Keypair,
-) -> Result<String> {
-    let from = keypair.pubkey();
-    let recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
-    let tx = Transaction::new_signed_with_payer(
-        &[solana_sdk::system_instruction::transfer(&from, &to, amount)],
-        None,
-        &[&keypair],
-        recent_blockhash,
+    from: &Pubkey,
+) -> Result<Transaction> {
+    let tx = Transaction::new_with_payer(
+        &[solana_sdk::system_instruction::transfer(from, to, amount)],
+        Some(from),
     );
-    let res = send_tx(tx).await?;
-
-    Ok(res)
+    Ok(tx)
 }
 
-pub async fn transfer_spl(
-    to: Pubkey,
+pub async fn create_transfer_spl_tx(
+    to: &Pubkey,
     amount: u64,
-    mint: Pubkey,
-    keypair: &Keypair,
+    mint: &Pubkey,
+    from: &Pubkey,
     rpc_client: &RpcClient,
-) -> Result<String> {
-    let from = keypair.pubkey();
+) -> Result<Transaction> {
     let from_ata = spl_associated_token_account::get_associated_token_address(
-        &from, &mint,
+        from, mint,
     );
-    let to_ata = spl_associated_token_account::get_associated_token_address(
-        &to, &mint,
-    );
+    let to_ata =
+        spl_associated_token_account::get_associated_token_address(to, mint);
 
     let mut instructions = vec![];
 
@@ -46,9 +34,9 @@ pub async fn transfer_spl(
     if rpc_client.get_account(&to_ata).await.is_err() {
         instructions.push(
             spl_associated_token_account::instruction::create_associated_token_account(
-                &from,
-                &to,
-                &mint,
+                from,
+                to,
+                mint,
                 &spl_token::id(),
             ),
         );
@@ -58,50 +46,53 @@ pub async fn transfer_spl(
         &spl_token::id(),
         &from_ata,
         &to_ata,
-        &from,
+        from,
         &[],
         amount,
     )?);
 
-    let tx = Transaction::new_signed_with_payer(
-        &instructions,
-        Some(&from),
-        &[keypair],
-        BLOCKHASH_CACHE.get_blockhash().await?,
-    );
+    let tx = Transaction::new_with_payer(&instructions, Some(from));
 
-    let res = send_tx(tx).await?;
-
-    Ok(res)
+    Ok(tx)
 }
 
 #[cfg(test)]
 mod tests {
     use solana_sdk::native_token::sol_to_lamports;
     use solana_sdk::pubkey;
-    use solana_sdk::signer::Signer;
 
     use super::*;
-    use crate::solana::util::{load_keypair_for_tests, make_rpc_client};
+    use crate::solana::util::{make_rpc_client, make_test_signer};
 
     #[tokio::test]
     async fn test_transfer_sol() {
-        let keypair = load_keypair_for_tests();
-        let to = keypair.pubkey();
+        let signer = make_test_signer();
+        let owner = signer.pubkey().unwrap();
         let amount = sol_to_lamports(0.0001);
-        let result = transfer_sol(to, amount, &keypair).await;
+        let mut tx = create_transfer_sol_tx(&owner, amount, &owner)
+            .await
+            .unwrap();
+        let result = signer.sign_and_send_transaction(&mut tx).await;
         assert!(result.is_ok(), "{:?}", result);
     }
 
     #[tokio::test]
     async fn test_transfer_spl() {
-        let keypair = load_keypair_for_tests();
+        let signer = make_test_signer();
         let rpc_client = make_rpc_client();
-        let to = keypair.pubkey();
+        let owner = signer.pubkey().unwrap();
         let mint = pubkey!("Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump");
         let amount = (10. * 1e6) as u64;
-        let result =
-            transfer_spl(to, amount, mint, &keypair, &rpc_client).await;
+        let mut tx = create_transfer_spl_tx(
+            &owner,
+            amount,
+            &mint,
+            &owner,
+            &rpc_client,
+        )
+        .await
+        .unwrap();
+        let result = signer.sign_and_send_transaction(&mut tx).await;
         assert!(result.is_ok(), "{:?}", result);
     }
 }

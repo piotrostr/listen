@@ -15,7 +15,11 @@ use solana_sdk::signature::Keypair;
 use std::future::Future;
 use std::io::Write;
 use std::str::FromStr;
+use std::sync::Arc;
 use tokio::sync::mpsc;
+
+use super::signer::local::LocalSigner;
+use super::signer::TransactionSigner;
 
 pub fn env(var: &str) -> String {
     std::env::var(var).unwrap_or_else(|_| panic!("{} env var not set", var))
@@ -117,6 +121,10 @@ pub fn apply_fee(amount: u64) -> u64 {
 
 pub fn load_keypair_for_tests() -> Keypair {
     Keypair::from_base58_string(&env("SOLANA_PRIVATE_KEY"))
+}
+
+pub fn make_test_signer() -> Arc<dyn TransactionSigner> {
+    Arc::new(LocalSigner::new(env("SOLANA_PRIVATE_KEY")))
 }
 
 pub fn make_rpc_client() -> RpcClient {

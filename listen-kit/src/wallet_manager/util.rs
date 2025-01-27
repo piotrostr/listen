@@ -41,8 +41,8 @@ pub fn base64encode(data: &[u8]) -> String {
 
 #[cfg(feature = "solana")]
 pub fn transaction_to_base64(
-    transaction: solana_sdk::transaction::Transaction,
+    transaction: &solana_sdk::transaction::Transaction,
 ) -> Result<String> {
-    let serialized = bincode::serialize(&transaction)?;
+    let serialized = bincode::serialize(transaction)?;
     Ok(base64encode(&serialized))
 }

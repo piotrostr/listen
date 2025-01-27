@@ -1,6 +1,8 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useState, useCallback } from "react";
 import { z } from "zod";
+import { introPrompt } from "./prompts";
+import { usePortfolio } from "./usePortfolio";
 
 export type MessageDirection = "incoming" | "outgoing";
 
@@ -24,6 +26,8 @@ export interface StreamResponse {
 }
 
 export function useChat() {
+  const { data: portfolio } = usePortfolio();
+  const { user } = usePrivy();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { getAccessToken } = usePrivy();
@@ -78,9 +82,15 @@ export function useChat() {
           },
         ]);
 
+        const chat_history = messageHistory.filter((msg) => msg.content !== "");
+        if (chat_history.length > 0) {
+          chat_history[0].content +=
+            " " + introPrompt(portfolio, user?.wallet?.address || "");
+        }
+
         const body = JSON.stringify({
           prompt: userMessage,
-          chat_history: messageHistory.filter((msg) => msg.content !== ""),
+          chat_history: chat_history,
         });
 
         const response = await fetch("http://localhost:8080/v1/stream", {
@@ -172,7 +182,7 @@ export function useChat() {
         setIsLoading(false);
       }
     },
-    [messages, updateAssistantMessage, getAccessToken],
+    [messages, updateAssistantMessage, getAccessToken, portfolio, user],
   );
 
   return {

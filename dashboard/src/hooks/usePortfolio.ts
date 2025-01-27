@@ -1,9 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { AccountInfo, Connection, PublicKey } from "@solana/web3.js";
 import { usePrivyWallet } from "./usePrivyWallet";
-import { AccountLayout } from "@solana/spl-token";
 import { Holding, TokenMetadata, PriceResponse } from "./types";
 import { tokenMetadataCache } from "./cache";
+import { decodeTokenAccount } from "./util";
 
 const TOKEN_PROGRAM_ID = new PublicKey(
   "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
@@ -33,7 +33,7 @@ function parseHolding(ata: {
   account: AccountInfo<Buffer>;
 }): Holding | null {
   try {
-    const parsedData = AccountLayout.decode(ata.account.data);
+    const parsedData = decodeTokenAccount(ata.account.data);
     if (!parsedData) return null;
     return {
       mint: parsedData.mint.toString(),

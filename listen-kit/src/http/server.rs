@@ -4,7 +4,7 @@ use actix_web::{web, App, HttpServer};
 use rig::agent::Agent;
 use rig::providers::anthropic::completion::CompletionModel;
 
-use super::routes::{auth, healthz, stream, test_tx};
+use super::routes::{auth, healthz, stream, test_balance, test_tx};
 use super::state::AppState;
 
 pub async fn run_server(
@@ -23,7 +23,8 @@ pub async fn run_server(
                 web::scope("/v1")
                     .service(stream)
                     .service(auth)
-                    .service(test_tx),
+                    .service(test_tx)
+                    .service(test_balance),
             )
     })
     .bind("127.0.0.1:8080")?

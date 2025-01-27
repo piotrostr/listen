@@ -96,7 +96,7 @@ impl WalletManager {
     pub async fn sign_and_send_transaction(
         &self,
         address: String,
-        transaction: solana_sdk::transaction::Transaction,
+        transaction: &solana_sdk::transaction::Transaction,
     ) -> Result<String> {
         let request = SignAndSendTransactionRequest {
             address,
