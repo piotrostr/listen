@@ -1,8 +1,35 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useSolBalance } from "../hooks/useSolBalance";
+import { useChatType } from "../hooks/useChatType";
+
+const Balance = ({
+  chatType,
+  balance,
+}: {
+  chatType: string | null;
+  balance: number | undefined;
+}) => {
+  if (chatType === "solana" || chatType === "pump") {
+    return (
+      <div className="flex items-center gap-2 mr-4">
+        <img
+          src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
+          alt="SOL"
+          className="w-6 h-6 rounded-full"
+        />
+        <span className="text-sm text-gray-300">
+          {balance?.toFixed(2) || "0.00"}
+        </span>
+      </div>
+    );
+  }
+
+  return <></>;
+};
 
 export const Header = () => {
   const { data: balance } = useSolBalance();
+  const { chatType } = useChatType();
   const { user, logout } = usePrivy();
 
   return (
@@ -21,18 +48,7 @@ export const Header = () => {
 
           {/* Right side */}
           <div className="flex items-center space-x-4">
-            {/* SOL Balance */}
-            <div className="flex items-center gap-2 mr-4">
-              <img
-                src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
-                alt="SOL"
-                className="w-6 h-6 rounded-full"
-              />
-              <span className="text-sm text-gray-300">
-                {balance?.toFixed(2) || "0.00"}
-              </span>
-            </div>
-
+            <Balance chatType={chatType} balance={balance} />
             {/* Documentation Link */}
             <div className="items-center space-x-4">
               <a
