@@ -1,0 +1,8 @@
+fly.toml
+.git/
+target
+.env
+mocks
+scripts
+examples
+dump.rdb
