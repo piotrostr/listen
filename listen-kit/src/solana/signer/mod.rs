@@ -1,4 +1,5 @@
 pub mod local;
+#[cfg(feature = "http")]
 pub mod privy;
 
 use std::future::Future;
@@ -9,6 +10,7 @@ use async_trait::async_trait;
 use solana_sdk::pubkey::Pubkey;
 
 use self::local::LocalSigner;
+#[cfg(feature = "http")]
 use self::privy::PrivySigner;
 
 #[async_trait]
@@ -22,6 +24,7 @@ pub trait TransactionSigner: Send + Sync {
 
 pub enum SignerType {
     Local(LocalSigner),
+    #[cfg(feature = "http")]
     Privy(PrivySigner),
 }
 
