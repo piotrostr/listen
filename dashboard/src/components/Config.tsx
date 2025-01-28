@@ -1,6 +1,7 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { DelegateActionButton } from "./DelegateActionButton";
 import { useEffect, useState } from "react";
+import { config } from "../config";
 
 export function Config() {
   const { getAccessToken, unlinkEmail, user, linkWallet, logout } = usePrivy();
@@ -14,7 +15,7 @@ export function Config() {
   }, [accessToken, getAccessToken]);
 
   const fetchAuth = async () => {
-    const res = await fetch("http://localhost:8080/v1/auth", {
+    const res = await fetch(config.API_BASE_URL + "/v1/auth", {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -26,7 +27,7 @@ export function Config() {
   };
 
   const fetchTestTx = async () => {
-    const res = await fetch("http://localhost:8080/v1/test_tx", {
+    const res = await fetch(config.API_BASE_URL + "/v1/test_tx", {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",
@@ -38,7 +39,7 @@ export function Config() {
   };
 
   const fetchBalanceTx = async () => {
-    const res = await fetch("http://localhost:8080/v1/test_balance", {
+    const res = await fetch(config.API_BASE_URL + "/v1/test_balance", {
       headers: {
         "Content-Type": "application/json",
         Accept: "application/json",

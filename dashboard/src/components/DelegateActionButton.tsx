@@ -4,6 +4,7 @@ import {
   useDelegatedActions,
   type WalletWithMetadata,
 } from "@privy-io/react-auth";
+import { userHasDelegatedWallet } from "../hooks/util";
 
 export function DelegateActionButton() {
   const { user } = usePrivy();
@@ -21,10 +22,7 @@ export function DelegateActionButton() {
   );
 
   // Check if the wallet to delegate by inspecting the user's linked accounts
-  const isAlreadyDelegated = !!user?.linkedAccounts.find(
-    (account): account is WalletWithMetadata =>
-      account.type === "wallet" && account.delegated,
-  );
+  const isAlreadyDelegated = userHasDelegatedWallet(user);
 
   const delegatedWallet = user?.linkedAccounts.find(
     (account): account is WalletWithMetadata =>
@@ -41,7 +39,11 @@ export function DelegateActionButton() {
 
   if (ready && !walletToDelegate) {
     return (
-      <button disabled={!ready} onClick={onCreateWallet}>
+      <button
+        disabled={!ready}
+        onClick={onCreateWallet}
+        className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
+      >
         Create a wallet
       </button>
     );
@@ -55,6 +57,7 @@ export function DelegateActionButton() {
         <button
           disabled={!ready || !walletToDelegate || isAlreadyDelegated}
           onClick={onDelegate}
+          className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
         >
           Delegate access
         </button>

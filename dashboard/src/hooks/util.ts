@@ -1,3 +1,4 @@
+import { User, WalletWithMetadata } from "@privy-io/react-auth";
 import { PublicKey } from "@solana/web3.js";
 
 interface RawAccount {
@@ -29,3 +30,10 @@ export function decodeTokenAccount(data: Buffer): RawAccount {
     closeAuthority: new PublicKey(data.slice(133, 165)),
   };
 }
+
+export const userHasDelegatedWallet = (user: User | null) => {
+  return !!user?.linkedAccounts.find(
+    (account): account is WalletWithMetadata =>
+      account.type === "wallet" && account.delegated,
+  );
+};

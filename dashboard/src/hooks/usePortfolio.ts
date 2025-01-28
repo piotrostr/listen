@@ -9,7 +9,9 @@ const TOKEN_PROGRAM_ID = new PublicKey(
   "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
 );
 
-const connection = new Connection(import.meta.env.VITE_RPC_URL);
+const connection = new Connection(
+  import.meta.env?.VITE_RPC_URL ?? "https://api.mainnet-beta.solana.com",
+);
 
 async function getHoldings(
   connection: Connection,
