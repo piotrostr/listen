@@ -5,9 +5,9 @@ import {
   usePrivy,
 } from "@privy-io/react-auth";
 import { GettingStarted } from "./components/GettingStarted";
-import { LoggedInView } from "./components/LoggedInView";
 import { Layout } from "./components/Layout";
-import { Config } from "./components/Config";
+import { userHasDelegatedWallet } from "./hooks/util";
+import { LoggedInView } from "./components/LoggedInView";
 
 const queryClient = new QueryClient();
 
@@ -18,9 +18,8 @@ const privyConfig: PrivyProviderProps["config"] = {
 };
 
 function App() {
-  const privyAppId = import.meta.env.VITE_PRIVY_APP_ID;
   return (
-    <PrivyProvider appId={privyAppId} config={privyConfig}>
+    <PrivyProvider appId={"cm6c7ifqd00ar52m1qxfgbkkn"} config={privyConfig}>
       <QueryClientProvider client={queryClient}>
         <Inner />
       </QueryClientProvider>
@@ -29,7 +28,9 @@ function App() {
 }
 
 function Inner() {
-  const { authenticated, ready } = usePrivy();
+  const { authenticated, ready, user } = usePrivy();
+  const isDelegated = userHasDelegatedWallet(user);
+
   if (!ready) {
     return (
       <Layout>
@@ -39,8 +40,11 @@ function Inner() {
   }
   return (
     <Layout>
-      {ready && authenticated ? <LoggedInView /> : <GettingStarted />}
-      <Config />
+      {ready && authenticated && isDelegated ? (
+        <LoggedInView />
+      ) : (
+        <GettingStarted />
+      )}
     </Layout>
   );
 }

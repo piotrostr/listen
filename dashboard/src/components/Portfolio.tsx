@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { usePortfolio } from "../hooks/usePortfolio";
 import { usePrivyWallet } from "../hooks/usePrivyWallet";
+import { ChatSelector } from "./ChatSelector";
+import { useChatType } from "../hooks/useChatType";
 
 export function PortfolioSkeleton() {
   return (
@@ -65,6 +67,7 @@ export function Portfolio() {
   const { data: assets, isLoading } = usePortfolio();
   const { data: pubkey } = usePrivyWallet();
   const [clicked, setClicked] = useState(false);
+  const { chatType, setChatType } = useChatType();
 
   if (isLoading) {
     return <PortfolioSkeleton />;
@@ -127,6 +130,7 @@ export function Portfolio() {
             ))}
           </div>
         </div>
+        <ChatSelector selectedChat={chatType} onSelectChat={setChatType} />
       </div>
     </div>
   );

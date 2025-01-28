@@ -3,6 +3,7 @@ import { useState, useCallback } from "react";
 import { z } from "zod";
 import { introPrompt } from "./prompts";
 import { usePortfolio } from "./usePortfolio";
+import { config } from "../config";
 
 export type MessageDirection = "incoming" | "outgoing";
 
@@ -93,7 +94,7 @@ export function useChat() {
           chat_history: chat_history,
         });
 
-        const response = await fetch("http://localhost:8080/v1/stream", {
+        const response = await fetch(config.API_BASE_URL + "/v1/stream", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
