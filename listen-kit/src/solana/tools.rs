@@ -14,9 +14,8 @@ use solana_sdk::transaction::Transaction;
 use std::future::Future;
 use std::str::FromStr;
 
-use crate::solana::{
-    data::PortfolioItem, dexscreener::PairInfo, util::wrap_unsafe,
-};
+use crate::common::wrap_unsafe;
+use crate::solana::{data::PortfolioItem, dexscreener::PairInfo};
 
 use super::data::holdings_to_portfolio;
 use super::deploy_token::create_deploy_token_tx;

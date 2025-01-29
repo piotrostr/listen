@@ -12,11 +12,9 @@ use solana_sdk::compute_budget::ComputeBudgetInstruction;
 use solana_sdk::instruction::Instruction;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
-use std::future::Future;
 use std::io::Write;
 use std::str::FromStr;
 use std::sync::Arc;
-use tokio::sync::mpsc;
 
 use crate::signer::solana::LocalSolanaSigner;
 use crate::signer::TransactionSigner;
@@ -157,20 +155,4 @@ pub fn parse_pubkey(s: &str) -> Result<Pubkey> {
         Ok(pubkey) => Ok(pubkey),
         Err(e) => Err(anyhow!(e)),
     }
-}
-
-pub async fn wrap_unsafe<F, Fut, T>(f: F) -> Result<T>
-where
-    F: FnOnce() -> Fut + Send + 'static,
-    Fut: Future<Output = Result<T>> + Send + 'static,
-    T: Send + 'static,
-{
-    let (tx, mut rx) = mpsc::channel(1);
-
-    tokio::spawn(async move {
-        let result = f().await;
-        let _ = tx.send(result).await;
-    });
-
-    rx.recv().await.ok_or_else(|| anyhow!("Channel closed"))?
 }

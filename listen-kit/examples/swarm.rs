@@ -2,7 +2,7 @@
 use {
     anyhow::{anyhow, Result},
     listen_kit::agent::{create_data_agent, create_trader_agent},
-    listen_kit::solana::util::wrap_unsafe,
+    listen_kit::common::wrap_unsafe,
     rig::agent::Agent,
     rig::cli_chatbot::cli_chatbot,
     rig::completion::Prompt,
