@@ -4,6 +4,9 @@ use anyhow::Result;
 use async_trait::async_trait;
 use std::str::FromStr;
 
+use crate::evm::transaction::send_transaction;
+use crate::evm::util::make_provider;
+
 use super::TransactionSigner;
 
 pub struct LocalEvmSigner {
@@ -28,8 +31,8 @@ impl TransactionSigner for LocalEvmSigner {
 
     async fn sign_and_send_evm_transaction(
         &self,
-        _tx: alloy::rpc::types::TransactionRequest,
+        tx: alloy::rpc::types::TransactionRequest,
     ) -> Result<String> {
-        todo!()
+        send_transaction(tx, &make_provider()?, &self.wallet).await
     }
 }

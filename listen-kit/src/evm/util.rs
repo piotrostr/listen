@@ -1,9 +1,10 @@
 use std::str::FromStr;
 
+use alloy::network::EthereumWallet;
 use alloy::providers::{ProviderBuilder, RootProvider};
 use alloy::signers::local::PrivateKeySigner;
 use alloy::transports::http::{Client, Http};
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 
 pub type EvmProvider = RootProvider<Http<Client>>;
 
@@ -14,6 +15,10 @@ pub fn make_provider() -> Result<EvmProvider> {
 
 pub fn make_signer() -> Result<PrivateKeySigner> {
     Ok(PrivateKeySigner::from_str(&env("ETHEREUM_PRIVATE_KEY"))?)
+}
+
+pub fn make_wallet() -> Result<EthereumWallet> {
+    Ok(EthereumWallet::from(make_signer()?))
 }
 
 pub fn env(var: &str) -> String {

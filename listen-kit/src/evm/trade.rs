@@ -1,9 +1,10 @@
 use std::str::FromStr;
 
+use alloy::network::EthereumWallet;
 use alloy::primitives::Address;
 use alloy::{
     network::TransactionBuilder, providers::Provider,
-    rpc::types::TransactionRequest, signers::local::PrivateKeySigner,
+    rpc::types::TransactionRequest,
 };
 use anyhow::{Context, Result};
 use uniswap_sdk_core::{prelude::*, token};
@@ -34,7 +35,7 @@ pub async fn trade(
     input_amount: String,
     output_token_address: String,
     provider: &EvmProvider,
-    signer: PrivateKeySigner,
+    wallet: &EthereumWallet,
 ) -> Result<String> {
     // Convert addresses from string to Address type
     let input_addr = Address::from_str(&input_token_address)?;
@@ -65,7 +66,7 @@ pub async fn trade(
 
     if !check_allowance(
         input_addr,
-        signer.address(),
+        wallet.default_signer().address(),
         router_address,
         amount,
         provider,
@@ -85,12 +86,12 @@ pub async fn trade(
         };
 
         let request = TransactionRequest::default()
-            .with_from(signer.address())
+            .with_from(wallet.default_signer().address())
             .with_to(input_addr)
             .with_call(&call)
             .with_gas_price(gas_price);
 
-        send_transaction(request, provider, signer.clone()).await?;
+        send_transaction(request, provider, wallet).await?;
         // should probably wait for the tx here and verify approvals, but retries will handle this
     }
 
@@ -116,31 +117,31 @@ pub async fn trade(
     let params = swap_call_parameters(
         &mut [trade],
         SwapOptions {
-            recipient: signer.address(),
+            recipient: wallet.default_signer().address(),
             ..Default::default()
         },
     )
     .context("Failed to get swap parameters")?;
 
     let request = TransactionRequest::default()
-        .with_from(signer.address())
+        .with_from(wallet.default_signer().address())
         .with_to(router_address)
         .with_input(params.calldata)
         .with_value(params.value)
         .with_gas_price(gas_price);
 
-    send_transaction(request, provider, signer).await
+    send_transaction(request, provider, wallet).await
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::evm::util::{make_provider, make_signer};
+    use crate::evm::util::{make_provider, make_wallet};
 
     #[tokio::test]
     async fn test_trade_evm() {
         let provider = make_provider().unwrap();
-        let signer = make_signer().unwrap();
+        let wallet = make_wallet().unwrap();
 
         //  WETH on arbitrum
         let output_token =
@@ -151,9 +152,14 @@ mod tests {
         // 1 usdc
         let input_amount = "1000000".to_string();
 
-        let result =
-            trade(input_token, input_amount, output_token, &provider, signer)
-                .await;
+        let result = trade(
+            input_token,
+            input_amount,
+            output_token,
+            &provider,
+            &wallet,
+        )
+        .await;
 
         assert!(result.is_ok(), "Trade failed: {:?}", result);
     }
