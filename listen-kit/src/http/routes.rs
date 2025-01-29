@@ -1,5 +1,5 @@
-use crate::solana::signer::privy::PrivySigner;
-use crate::solana::signer::{SignerContext, TransactionSigner};
+use crate::signer::privy::PrivySigner;
+use crate::signer::{SignerContext, TransactionSigner};
 use crate::solana::tools::get_balance;
 
 use super::middleware::verify_auth;

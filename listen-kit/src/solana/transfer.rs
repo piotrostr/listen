@@ -58,6 +58,8 @@ pub async fn create_transfer_spl_tx(
 
 #[cfg(test)]
 mod tests {
+    use std::str::FromStr;
+
     use solana_sdk::native_token::sol_to_lamports;
     use solana_sdk::pubkey;
 
@@ -67,12 +69,12 @@ mod tests {
     #[tokio::test]
     async fn test_transfer_sol() {
         let signer = make_test_signer();
-        let owner = signer.pubkey().unwrap();
+        let owner = Pubkey::from_str(&signer.address()).unwrap();
         let amount = sol_to_lamports(0.0001);
         let mut tx = create_transfer_sol_tx(&owner, amount, &owner)
             .await
             .unwrap();
-        let result = signer.sign_and_send_transaction(&mut tx).await;
+        let result = signer.sign_and_send_solana_transaction(&mut tx).await;
         assert!(result.is_ok(), "{:?}", result);
     }
 
@@ -80,7 +82,7 @@ mod tests {
     async fn test_transfer_spl() {
         let signer = make_test_signer();
         let rpc_client = make_rpc_client();
-        let owner = signer.pubkey().unwrap();
+        let owner = Pubkey::from_str(&signer.address()).unwrap();
         let mint = pubkey!("Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump");
         let amount = (10. * 1e6) as u64;
         let mut tx = create_transfer_spl_tx(
@@ -92,7 +94,7 @@ mod tests {
         )
         .await
         .unwrap();
-        let result = signer.sign_and_send_transaction(&mut tx).await;
+        let result = signer.sign_and_send_solana_transaction(&mut tx).await;
         assert!(result.is_ok(), "{:?}", result);
     }
 }

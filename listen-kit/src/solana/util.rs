@@ -18,8 +18,8 @@ use std::str::FromStr;
 use std::sync::Arc;
 use tokio::sync::mpsc;
 
-use super::signer::local::LocalSigner;
-use super::signer::TransactionSigner;
+use crate::signer::solana::LocalSolanaSigner;
+use crate::signer::TransactionSigner;
 
 pub fn env(var: &str) -> String {
     std::env::var(var).unwrap_or_else(|_| panic!("{} env var not set", var))
@@ -124,7 +124,7 @@ pub fn load_keypair_for_tests() -> Keypair {
 }
 
 pub fn make_test_signer() -> Arc<dyn TransactionSigner> {
-    Arc::new(LocalSigner::new(env("SOLANA_PRIVATE_KEY")))
+    Arc::new(LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY")))
 }
 
 pub fn make_rpc_client() -> RpcClient {

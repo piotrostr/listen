@@ -1,6 +1,5 @@
 use anyhow::Result;
 use async_trait::async_trait;
-use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use std::sync::Arc;
@@ -10,11 +9,11 @@ use crate::solana::transaction::send_tx;
 
 use super::TransactionSigner;
 
-pub struct LocalSigner {
+pub struct LocalSolanaSigner {
     keypair: Arc<Keypair>,
 }
 
-impl LocalSigner {
+impl LocalSolanaSigner {
     pub fn new(private_key: String) -> Self {
         let keypair = Keypair::from_base58_string(&private_key);
         Self {
@@ -24,12 +23,12 @@ impl LocalSigner {
 }
 
 #[async_trait]
-impl TransactionSigner for LocalSigner {
-    fn pubkey(&self) -> Result<Pubkey> {
-        Ok(self.keypair.pubkey())
+impl TransactionSigner for LocalSolanaSigner {
+    fn address(&self) -> String {
+        self.keypair.pubkey().to_string()
     }
 
-    async fn sign_and_send_transaction(
+    async fn sign_and_send_solana_transaction(
         &self,
         tx: &mut solana_sdk::transaction::Transaction,
     ) -> Result<String> {

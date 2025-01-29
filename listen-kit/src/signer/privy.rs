@@ -1,10 +1,8 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use async_trait::async_trait;
-use solana_sdk::pubkey::Pubkey;
 
 use crate::solana::blockhash::BLOCKHASH_CACHE;
 use crate::wallet_manager::{UserSession, WalletManager};
-use std::str::FromStr;
 use std::sync::Arc;
 
 use super::TransactionSigner;
@@ -28,12 +26,11 @@ impl PrivySigner {
 
 #[async_trait]
 impl TransactionSigner for PrivySigner {
-    fn pubkey(&self) -> Result<Pubkey> {
-        Pubkey::from_str(&self.session.wallet_address)
-            .map_err(|e| anyhow!("Invalid wallet address: {}", e))
+    fn address(&self) -> String {
+        self.session.wallet_address.clone()
     }
 
-    async fn sign_and_send_transaction(
+    async fn sign_and_send_solana_transaction(
         &self,
         tx: &mut solana_sdk::transaction::Transaction,
     ) -> Result<String> {

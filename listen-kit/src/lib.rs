@@ -12,6 +12,8 @@ pub mod agent;
 #[cfg(feature = "http")]
 pub mod wallet_manager;
 
+pub mod signer;
+
 #[ctor::ctor]
 fn init() {
     dotenv::dotenv().ok();

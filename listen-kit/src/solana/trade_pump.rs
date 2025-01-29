@@ -82,11 +82,11 @@ mod tests {
             sol_to_lamports(0.0001),
             500,
             &rpc_client,
-            &signer.pubkey().unwrap(),
+            &Pubkey::from_str(&signer.address()).unwrap(),
         )
         .await
         .unwrap();
-        let result = signer.sign_and_send_transaction(&mut tx).await;
+        let result = signer.sign_and_send_solana_transaction(&mut tx).await;
         assert!(result.is_ok(), "{:?}", result);
     }
 
@@ -96,11 +96,11 @@ mod tests {
         let mut tx = create_sell_pump_fun_tx(
             "76VCegXJdjqHXBdQyeVV3Swt3JgXrBoQpXcvRQsYpump".to_string(),
             (1. * 1e6) as u64,
-            &signer.pubkey().unwrap(),
+            &Pubkey::from_str(&signer.address()).unwrap(),
         )
         .await
         .unwrap();
-        let result = signer.sign_and_send_transaction(&mut tx).await;
+        let result = signer.sign_and_send_solana_transaction(&mut tx).await;
         assert!(result.is_ok(), "{:?}", result);
     }
 }

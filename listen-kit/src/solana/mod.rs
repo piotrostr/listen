@@ -8,7 +8,6 @@ pub mod jup;
 pub mod price;
 pub mod pump;
 pub mod scan;
-pub mod signer;
 pub mod tools;
 pub mod trade;
 pub mod trade_pump;

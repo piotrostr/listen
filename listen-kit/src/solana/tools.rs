@@ -20,10 +20,10 @@ use crate::solana::{
 
 use super::data::holdings_to_portfolio;
 use super::deploy_token::create_deploy_token_tx;
-use super::signer::SignerContext;
 use super::trade::create_trade_transaction;
 use super::trade_pump::{create_buy_pump_fun_tx, create_sell_pump_fun_tx};
 use super::transfer::{create_transfer_sol_tx, create_transfer_spl_tx};
+use crate::signer::SignerContext;
 
 static SOLANA_RPC_URL: Lazy<String> = Lazy::new(|| {
     std::env::var("SOLANA_RPC_URL")
@@ -40,14 +40,14 @@ where
     Fut: Future<Output = Result<Transaction>> + Send + 'static,
 {
     let signer = SignerContext::current().await;
-    let owner = signer.pubkey()?;
+    let owner = Pubkey::from_str(&signer.address())?;
 
     let mut tx = wrap_unsafe(move || async move { tx_creator(owner).await })
         .await
         .map_err(|e| anyhow!("{:#?}", e))?;
 
     wrap_unsafe(move || async move {
-        signer.sign_and_send_transaction(&mut tx).await
+        signer.sign_and_send_solana_transaction(&mut tx).await
     })
     .await
     .map_err(|e| anyhow!("{:#?}", e))
@@ -104,13 +104,13 @@ pub async fn transfer_token(
 
 #[tool]
 pub async fn wallet_address() -> Result<String> {
-    Ok(SignerContext::current().await.pubkey()?.to_string())
+    Ok(SignerContext::current().await.address())
 }
 
 #[tool]
 pub async fn get_balance() -> Result<u64> {
     let signer = SignerContext::current().await.clone();
-    let owner = signer.pubkey()?;
+    let owner = Pubkey::from_str(&signer.address())?;
 
     wrap_unsafe(move || async move {
         create_rpc()
@@ -126,7 +126,7 @@ pub async fn get_balance() -> Result<u64> {
 #[tool]
 pub async fn get_token_balance(mint: String) -> Result<(String, u8)> {
     let signer = SignerContext::current().await;
-    let owner = signer.pubkey()?;
+    let owner = Pubkey::from_str(&signer.address())?;
     let mint = Pubkey::from_str(&mint)?;
     let ata = spl_associated_token_account::get_associated_token_address(
         &owner, &mint,
@@ -211,7 +211,7 @@ pub async fn sell_pump_token(
 
 #[tool]
 pub async fn portfolio() -> Result<Vec<PortfolioItem>> {
-    let owner = SignerContext::current().await.pubkey()?;
+    let owner = Pubkey::from_str(&SignerContext::current().await.address())?;
     let holdings = wrap_unsafe(move || async move {
         crate::solana::balance::get_holdings(&create_rpc(), &owner)
             .await

@@ -1,8 +1,8 @@
 #[cfg(feature = "solana")]
 use {
     anyhow::Result,
-    listen_kit::solana::signer::local::LocalSigner,
-    listen_kit::solana::signer::SignerContext,
+    listen_kit::signer::solana::LocalSolanaSigner,
+    listen_kit::signer::SignerContext,
     listen_kit::solana::tools::Portfolio,
     listen_kit::solana::util::env,
     rig::streaming::{stream_to_stdout, StreamingPrompt},
@@ -12,7 +12,7 @@ use {
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
-    let signer = LocalSigner::new(env("SOLANA_PRIVATE_KEY"));
+    let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
     SignerContext::with_signer(Arc::new(signer), async {
         let agent = rig::providers::anthropic::Client::from_env()
             .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)

@@ -68,11 +68,11 @@ async fn trade_action(prompt: String) -> Result<String> {
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
-    use listen_kit::solana::signer::local::LocalSigner;
-    use listen_kit::solana::signer::SignerContext;
+    use listen_kit::signer::solana::LocalSolanaSigner;
+    use listen_kit::signer::SignerContext;
     use listen_kit::solana::util::env;
 
-    let signer = LocalSigner::new(env("SOLANA_PRIVATE_KEY"));
+    let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
     SignerContext::with_signer(Arc::new(signer), async {
         let leader = rig::providers::openai::Client::from_env()
             .agent(rig::providers::openai::GPT_4O)
