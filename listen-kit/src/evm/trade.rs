@@ -1,17 +1,16 @@
 use std::str::FromStr;
 
-use alloy::network::EthereumWallet;
 use alloy::primitives::Address;
 use alloy::{
     network::TransactionBuilder, providers::Provider,
     rpc::types::TransactionRequest,
 };
-use anyhow::{Context, Result};
+use anyhow::{anyhow, Context, Result};
 use uniswap_sdk_core::{prelude::*, token};
 use uniswap_v3_sdk::prelude::*;
 
 use super::abi::IERC20;
-use super::{transaction::send_transaction, util::EvmProvider};
+use super::util::EvmProvider;
 
 pub async fn check_allowance(
     token_address: Address,
@@ -30,13 +29,46 @@ pub async fn check_allowance(
     Ok(current_allowance == U256::MAX)
 }
 
-pub async fn trade(
+pub async fn create_approve_tx(
+    input_token_address: String,
+    router_address: String,
+    owner: String,
+    provider: &EvmProvider,
+) -> Result<TransactionRequest> {
+    // TODO good example for reasoning loop demo
+    tracing::info!(?input_token_address, ?router_address, "Approving token");
+    let input_addr = Address::from_str(&input_token_address)?;
+    let router_addr = Address::from_str(&router_address)?;
+    let owner_addr = Address::from_str(&owner)?;
+    let call = IERC20::approveCall {
+        spender: router_addr,
+        amount: U256::MAX,
+    };
+
+    // TODO move gas price to global cache
+    let gas_price = provider
+        .get_gas_price()
+        .await
+        .context("Failed to get gas price")?;
+
+    let tx = TransactionRequest::default()
+        .with_from(owner_addr)
+        .with_to(input_addr)
+        .with_call(&call)
+        .with_gas_price(gas_price);
+
+    Ok(tx)
+    // send_transaction(tx, provider, wallet).await?;
+    // should probably wait for the tx here and verify approvals, but retries will handle this
+}
+
+pub async fn create_trade_tx(
     input_token_address: String,
     input_amount: String,
     output_token_address: String,
     provider: &EvmProvider,
-    wallet: &EthereumWallet,
-) -> Result<String> {
+    owner: Address,
+) -> Result<TransactionRequest> {
     // Convert addresses from string to Address type
     let input_addr = Address::from_str(&input_token_address)?;
     let output_addr = Address::from_str(&output_token_address)?;
@@ -59,41 +91,17 @@ pub async fn trade(
 
     let amount = U256::from_str(&input_amount)?;
 
+    if !check_allowance(input_addr, owner, router_address, amount, provider)
+        .await
+        .context("Failed to check allowance")?
+    {
+        return Err(anyhow!("Allowance not set"));
+    }
+
     let gas_price = provider
         .get_gas_price()
         .await
         .context("Failed to get gas price")?;
-
-    if !check_allowance(
-        input_addr,
-        wallet.default_signer().address(),
-        router_address,
-        amount,
-        provider,
-    )
-    .await
-    .context("Failed to check allowance")?
-    {
-        tracing::info!(
-            ?input_addr,
-            ?router_address,
-            ?amount,
-            "Approving token"
-        );
-        let call = IERC20::approveCall {
-            spender: router_address,
-            amount: U256::MAX,
-        };
-
-        let request = TransactionRequest::default()
-            .with_from(wallet.default_signer().address())
-            .with_to(input_addr)
-            .with_call(&call)
-            .with_gas_price(gas_price);
-
-        send_transaction(request, provider, wallet).await?;
-        // should probably wait for the tx here and verify approvals, but retries will handle this
-    }
 
     // Create pool instance
     let pool = Pool::<EphemeralTickMapDataProvider>::from_pool_key_with_tick_data_provider(
@@ -117,31 +125,32 @@ pub async fn trade(
     let params = swap_call_parameters(
         &mut [trade],
         SwapOptions {
-            recipient: wallet.default_signer().address(),
+            recipient: owner,
             ..Default::default()
         },
     )
     .context("Failed to get swap parameters")?;
 
     let request = TransactionRequest::default()
-        .with_from(wallet.default_signer().address())
+        .with_from(owner)
         .with_to(router_address)
         .with_input(params.calldata)
         .with_value(params.value)
         .with_gas_price(gas_price);
 
-    send_transaction(request, provider, wallet).await
+    Ok(request)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::evm::util::{make_provider, make_wallet};
+    use crate::evm::util::{
+        execute_evm_transaction, make_provider, with_local_evm_signer,
+    };
 
     #[tokio::test]
     async fn test_trade_evm() {
         let provider = make_provider().unwrap();
-        let wallet = make_wallet().unwrap();
 
         //  WETH on arbitrum
         let output_token =
@@ -152,15 +161,19 @@ mod tests {
         // 1 usdc
         let input_amount = "1000000".to_string();
 
-        let result = trade(
-            input_token,
-            input_amount,
-            output_token,
-            &provider,
-            &wallet,
-        )
-        .await;
-
-        assert!(result.is_ok(), "Trade failed: {:?}", result);
+        with_local_evm_signer(execute_evm_transaction(
+            move |owner| async move {
+                create_trade_tx(
+                    input_token,
+                    input_amount,
+                    output_token,
+                    &provider,
+                    owner,
+                )
+                .await
+            },
+        ))
+        .await
+        .unwrap();
     }
 }
