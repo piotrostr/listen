@@ -92,6 +92,7 @@ export function useChat() {
         const body = JSON.stringify({
           prompt: userMessage,
           chat_history: chat_history,
+          chain: "solana",
         });
 
         const response = await fetch(config.API_BASE_URL + "/v1/stream", {
