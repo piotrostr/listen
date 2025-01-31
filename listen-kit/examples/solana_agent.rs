@@ -2,7 +2,7 @@
 use {
     anyhow::Result,
     futures::StreamExt,
-    listen_kit::agent::create_trader_agent,
+    listen_kit::agent::create_solana_agent,
     listen_kit::signer::solana::LocalSolanaSigner,
     listen_kit::signer::SignerContext,
     listen_kit::solana::util::env,
@@ -206,7 +206,7 @@ impl AgentWrapper {
 async fn main() -> Result<()> {
     let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
     SignerContext::with_signer(Arc::new(signer), async {
-        let trader_agent = create_trader_agent().await?;
+        let trader_agent = create_solana_agent().await?;
         let wrapped_agent = AgentWrapper::new(trader_agent);
 
         wrapped_agent.chat_loop().await?;

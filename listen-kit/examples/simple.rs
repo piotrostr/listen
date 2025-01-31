@@ -3,7 +3,6 @@ use {
     anyhow::Result,
     listen_kit::signer::solana::LocalSolanaSigner,
     listen_kit::signer::SignerContext,
-    listen_kit::solana::tools::Portfolio,
     listen_kit::solana::util::env,
     rig::streaming::{stream_to_stdout, StreamingPrompt},
     std::sync::Arc,
@@ -12,13 +11,15 @@ use {
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
+    use listen_kit::solana::tools::GetPortfolio;
+
     let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
     SignerContext::with_signer(Arc::new(signer), async {
         let agent = rig::providers::anthropic::Client::from_env()
             .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
             .preamble("you are a portfolio checker, if you do wanna call a tool, outline the reasoning why that tool")
             .max_tokens(1024)
-            .tool(Portfolio)
+            .tool(GetPortfolio)
             .build();
 
         let mut stream = agent

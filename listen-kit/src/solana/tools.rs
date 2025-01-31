@@ -10,18 +10,18 @@ use rig_tool_macro::tool;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::native_token::sol_to_lamports;
 use solana_sdk::pubkey::Pubkey;
-use solana_sdk::transaction::Transaction;
-use std::future::Future;
 use std::str::FromStr;
 
 use crate::common::wrap_unsafe;
-use crate::solana::{data::PortfolioItem, dexscreener::PairInfo};
+use crate::solana::data::PortfolioItem;
 
 use super::data::holdings_to_portfolio;
 use super::deploy_token::create_deploy_token_tx;
+use super::dexscreener::{search_ticker, DexScreenerResponse};
 use super::trade::create_trade_transaction;
 use super::trade_pump::{create_buy_pump_fun_tx, create_sell_pump_fun_tx};
 use super::transfer::{create_transfer_sol_tx, create_transfer_spl_tx};
+use super::util::execute_solana_transaction;
 use crate::signer::SignerContext;
 
 static SOLANA_RPC_URL: Lazy<String> = Lazy::new(|| {
@@ -33,33 +33,14 @@ fn create_rpc() -> RpcClient {
     RpcClient::new(SOLANA_RPC_URL.to_string())
 }
 
-async fn execute_transaction<F, Fut>(tx_creator: F) -> Result<String>
-where
-    F: FnOnce(Pubkey) -> Fut + Send + 'static,
-    Fut: Future<Output = Result<Transaction>> + Send + 'static,
-{
-    let signer = SignerContext::current().await;
-    let owner = Pubkey::from_str(&signer.address())?;
-
-    let mut tx = wrap_unsafe(move || async move { tx_creator(owner).await })
-        .await
-        .map_err(|e| anyhow!("{:#?}", e))?;
-
-    wrap_unsafe(move || async move {
-        signer.sign_and_send_solana_transaction(&mut tx).await
-    })
-    .await
-    .map_err(|e| anyhow!("{:#?}", e))
-}
-
 #[tool]
-pub async fn trade(
+pub async fn perform_jupiter_swap(
     input_mint: String,
     input_amount: f64,
     output_mint: String,
     slippage_bps: u16,
 ) -> Result<String> {
-    execute_transaction(move |owner| async move {
+    execute_solana_transaction(move |owner| async move {
         create_trade_transaction(
             input_mint,
             sol_to_lamports(input_amount),
@@ -74,7 +55,7 @@ pub async fn trade(
 
 #[tool]
 pub async fn transfer_sol(to: String, amount: u64) -> Result<String> {
-    execute_transaction(move |owner| async move {
+    execute_solana_transaction(move |owner| async move {
         create_transfer_sol_tx(&Pubkey::from_str(&to)?, amount, &owner).await
     })
     .await
@@ -83,12 +64,12 @@ pub async fn transfer_sol(to: String, amount: u64) -> Result<String> {
 /// param amount is token amount, accounting for decimals
 /// e.g. 1 Fartcoin = 1 * 10^6 (6 decimals)
 #[tool]
-pub async fn transfer_token(
+pub async fn transfer_spl_token(
     to: String,
     amount: u64,
     mint: String,
 ) -> Result<String> {
-    execute_transaction(move |owner| async move {
+    execute_solana_transaction(move |owner| async move {
         create_transfer_spl_tx(
             &Pubkey::from_str(&to)?,
             amount,
@@ -102,12 +83,12 @@ pub async fn transfer_token(
 }
 
 #[tool]
-pub async fn wallet_address() -> Result<String> {
+pub async fn get_public_key() -> Result<String> {
     Ok(SignerContext::current().await.address())
 }
 
 #[tool]
-pub async fn get_balance() -> Result<u64> {
+pub async fn get_sol_balance() -> Result<u64> {
     let signer = SignerContext::current().await.clone();
     let owner = Pubkey::from_str(&signer.address())?;
 
@@ -123,7 +104,7 @@ pub async fn get_balance() -> Result<u64> {
 /// get_token_balance returns the amount as String and the decimals as u8
 /// in order to convert to UI amount: amount / 10^decimals
 #[tool]
-pub async fn get_token_balance(mint: String) -> Result<(String, u8)> {
+pub async fn get_spl_token_balance(mint: String) -> Result<(String, u8)> {
     let signer = SignerContext::current().await;
     let owner = Pubkey::from_str(&signer.address())?;
     let mint = Pubkey::from_str(&mint)?;
@@ -144,7 +125,7 @@ pub async fn get_token_balance(mint: String) -> Result<(String, u8)> {
 
 #[tool]
 #[allow(clippy::too_many_arguments)]
-pub async fn deploy_token(
+pub async fn deploy_pump_fun_token(
     name: String,
     symbol: String,
     twitter: String,
@@ -154,7 +135,7 @@ pub async fn deploy_token(
     image_url: String,
     description: String,
 ) -> Result<String> {
-    execute_transaction(move |owner| async move {
+    execute_solana_transaction(move |owner| async move {
         create_deploy_token_tx(
             crate::solana::deploy_token::DeployTokenParams {
                 name,
@@ -179,12 +160,12 @@ pub async fn fetch_token_price(mint: String) -> Result<f64> {
 }
 
 #[tool]
-pub async fn buy_pump_token(
+pub async fn buy_pump_fun_token(
     mint: String,
     sol_amount: f64,
     slippage_bps: u16,
 ) -> Result<String> {
-    execute_transaction(move |owner| async move {
+    execute_solana_transaction(move |owner| async move {
         create_buy_pump_fun_tx(
             mint,
             sol_to_lamports(sol_amount),
@@ -198,18 +179,18 @@ pub async fn buy_pump_token(
 }
 
 #[tool]
-pub async fn sell_pump_token(
+pub async fn sell_pump_fun_token(
     mint: String,
     token_amount: u64,
 ) -> Result<String> {
-    execute_transaction(move |owner| async move {
+    execute_solana_transaction(move |owner| async move {
         create_sell_pump_fun_tx(mint, token_amount, &owner).await
     })
     .await
 }
 
 #[tool]
-pub async fn portfolio() -> Result<Vec<PortfolioItem>> {
+pub async fn get_portfolio() -> Result<Vec<PortfolioItem>> {
     let owner = Pubkey::from_str(&SignerContext::current().await.address())?;
     let holdings = wrap_unsafe(move || async move {
         crate::solana::balance::get_holdings(&create_rpc(), &owner)
@@ -223,11 +204,8 @@ pub async fn portfolio() -> Result<Vec<PortfolioItem>> {
 }
 
 #[tool]
-pub async fn fetch_pair_info(mint_or_symbol: String) -> Result<PairInfo> {
-    crate::solana::data::fetch_pair_info(mint_or_symbol).await
-}
-
-#[tool]
-pub async fn scan(mint: String) -> Result<String> {
-    crate::solana::scan::scan(mint).await
+pub async fn search_on_dex_screener(
+    phrase: String,
+) -> Result<DexScreenerResponse> {
+    search_ticker(phrase).await
 }

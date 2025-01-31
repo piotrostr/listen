@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-export type ChatType = "ethereum" | "solana" | "pump" | null;
+export type ChatType = "evm" | "solana" | "pump";
 
 const CHAT_TYPE_KEY = ["chatType"];
 
@@ -9,8 +9,7 @@ export const useChatType = () => {
 
   const { data: chatType = null } = useQuery<ChatType>({
     queryKey: CHAT_TYPE_KEY,
-    // Initial value is null
-    initialData: null,
+    initialData: "solana",
   });
 
   const setChatType = (newChatType: ChatType) => {
@@ -18,7 +17,7 @@ export const useChatType = () => {
   };
 
   return {
-    chatType,
+    chatType: chatType!,
     setChatType,
   };
 };

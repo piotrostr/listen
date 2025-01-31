@@ -11,7 +11,7 @@ RUN cargo chef cook --features http --features solana --release --recipe-path re
 COPY . .
 RUN cargo build --features http --features solana --release --bin server
 
-EXPOSE 8080
+EXPOSE 6969
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app

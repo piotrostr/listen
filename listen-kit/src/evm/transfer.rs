@@ -1,20 +1,20 @@
-use alloy::network::{EthereumWallet, TransactionBuilder};
+use std::str::FromStr;
+
+use alloy::network::TransactionBuilder;
 use alloy::primitives::{Address, U256};
 use alloy::providers::Provider;
 use alloy::rpc::types::TransactionRequest;
 use anyhow::{Context, Result};
 
 use super::abi::IERC20;
-use super::transaction::send_transaction;
 use super::util::EvmProvider;
 
-pub async fn transfer_eth(
-    from: Address,
-    to: Address,
-    amount: U256,
+pub async fn create_transfer_eth_tx(
+    to: String,
+    amount: String,
     provider: &EvmProvider,
-    wallet: &EthereumWallet,
-) -> Result<String> {
+    owner: Address,
+) -> Result<TransactionRequest> {
     // Get the current gas price
     let gas_price = provider
         .get_gas_price()
@@ -23,24 +23,25 @@ pub async fn transfer_eth(
 
     // Create transaction request
     let request = TransactionRequest::default()
-        .with_from(from)
-        .with_to(to)
-        .with_value(amount)
+        .with_from(owner)
+        .with_to(Address::from_str(&to)?)
+        .with_value(U256::from_str(&amount)?)
         .with_gas_price(gas_price);
 
-    send_transaction(request, provider, wallet).await
+    Ok(request)
 }
 
-pub async fn transfer_erc20(
-    from: Address,
-    token_address: Address,
-    to: Address,
-    amount: U256,
+pub async fn create_transfer_erc20_tx(
+    token_address: String,
+    to: String,
+    amount: String,
     provider: &EvmProvider,
-    wallet: &EthereumWallet,
-) -> Result<String> {
-    // Create contract instance
-    let call = IERC20::transferCall { to, amount };
+    owner: Address,
+) -> Result<TransactionRequest> {
+    let call = IERC20::transferCall {
+        to: Address::from_str(&to)?,
+        amount: U256::from_str(&amount)?,
+    };
 
     // Get the current gas price
     let gas_price = provider
@@ -49,46 +50,56 @@ pub async fn transfer_erc20(
         .context("Failed to get gas price")?;
 
     let request = TransactionRequest::default()
-        .with_from(from)
-        .with_to(token_address)
+        .with_from(owner)
+        .with_to(Address::from_str(&token_address)?)
         .with_call(&call)
         .with_gas_price(gas_price);
 
-    send_transaction(request, provider, wallet).await
+    Ok(request)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::evm::util::{make_provider, make_wallet};
-    use alloy::primitives::{address, U256};
+    use crate::evm::util::{
+        execute_evm_transaction, make_provider, with_local_evm_signer,
+    };
 
     #[tokio::test]
     async fn test_transfer_eth() {
-        let provider = make_provider().unwrap();
-        let wallet = make_wallet().unwrap();
-        let address = wallet.default_signer().address();
-        let from = address;
-        let to = address;
-        let amount = U256::from(10000000000000u64); // 0.00001 ETH
-
-        let result = transfer_eth(from, to, amount, &provider, &wallet).await;
-        assert!(result.is_ok(), "Transfer failed: {:?}", result);
+        with_local_evm_signer(execute_evm_transaction(
+            move |owner| async move {
+                create_transfer_eth_tx(
+                    owner.to_string(),
+                    "10000000000000".to_string(),
+                    &make_provider()?,
+                    owner,
+                )
+                .await
+            },
+        ))
+        .await
+        .unwrap();
     }
 
     #[tokio::test]
     async fn test_transfer_erc20() {
-        let provider = make_provider().unwrap();
-        let wallet = make_wallet().unwrap();
-        let address = wallet.default_signer().address();
-        let from = address;
-        let to = address;
-        // USDC token address on ARB mainnet
-        let token = address!("0xaf88d065e77c8cc2239327c5edb3a432268e5831");
-        let amount = U256::from(1000000); // 1 USDC (6 decimals)
-
-        let result =
-            transfer_erc20(from, token, to, amount, &provider, &wallet).await;
-        assert!(result.is_ok(), "Transfer failed: {:?}", result);
+        with_local_evm_signer(execute_evm_transaction(
+            move |owner: Address| async move {
+                // USDC on ARB
+                let token_address =
+                    "0xaf88d065e77c8cc2239327c5edb3a432268e5831".to_string();
+                create_transfer_erc20_tx(
+                    token_address,
+                    owner.to_string(),
+                    "1000000".to_string(), // 1 USDC
+                    &make_provider()?,
+                    owner,
+                )
+                .await
+            },
+        ))
+        .await
+        .unwrap();
     }
 }

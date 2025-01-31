@@ -26,6 +26,7 @@ pub struct UserSession {
     pub(crate) user_id: String,
     pub(crate) session_id: String,
     pub(crate) wallet_address: String,
+    pub(crate) pubkey: String,
 }
 
 /// WalletManager currently only supports Solana
@@ -67,7 +68,7 @@ impl WalletManager {
     ) -> Result<UserSession> {
         let claims = self.validate_access_token(access_token)?;
         let user = self.get_user_by_id(&claims.user_id).await?;
-        let wallet = user
+        let solana_wallet = user
             .linked_accounts
             .iter()
             .find_map(|account| match account {
@@ -83,17 +84,77 @@ impl WalletManager {
                 }
                 _ => None,
             })
-            .ok_or_else(|| anyhow!("Could not find a delegated wallet"))?;
+            .ok_or_else(|| {
+                anyhow!("Could not find a delegated solana wallet")
+            })?;
+        let evm_wallet = user
+            .linked_accounts
+            .iter()
+            .find_map(|account| match account {
+                types::LinkedAccount::Wallet(wallet) => {
+                    if wallet.delegated
+                        && wallet.chain_type == "ethereum"
+                        && wallet.wallet_client == "privy"
+                    {
+                        Some(wallet)
+                    } else {
+                        None
+                    }
+                }
+                _ => None,
+            })
+            .ok_or_else(|| {
+                anyhow!("Could not find a delegated ethereum wallet")
+            })?;
 
         Ok(UserSession {
             user_id: user.id,
             session_id: claims.session_id,
-            wallet_address: wallet.address.clone(),
+            wallet_address: evm_wallet.address.clone(),
+            pubkey: solana_wallet.address.clone(),
         })
     }
 
+    #[cfg(feature = "evm")]
+    pub async fn sign_and_send_evm_transaction(
+        &self,
+        address: String,
+        transaction: alloy::rpc::types::TransactionRequest,
+    ) -> Result<String> {
+        use self::types::{
+            SignAndSendEvmTransactionParams, SignAndSendEvmTransactionRequest,
+        };
+
+        let request = SignAndSendEvmTransactionRequest {
+            address,
+            chain_type: "ethereum".to_string(),
+            method: "eth_sendTransaction".to_string(),
+            caip2: "eip155:42161".to_string(), // TODO parametrize this
+            params: SignAndSendEvmTransactionParams {
+                transaction: serde_json::to_value(transaction)?,
+            },
+        };
+
+        let response = self
+            .http_client
+            .post("https://auth.privy.io/api/v1/wallets/rpc")
+            .json(&request)
+            .send()
+            .await?;
+
+        if !response.status().is_success() {
+            return Err(anyhow!(
+                "Failed to send transaction: {}",
+                response.text().await?
+            ));
+        }
+
+        let result: SignAndSendTransactionResponse = response.json().await?;
+        Ok(result.data.hash)
+    }
+
     #[cfg(feature = "solana")]
-    pub async fn sign_and_send_transaction(
+    pub async fn sign_and_send_solana_transaction(
         &self,
         address: String,
         transaction: &solana_sdk::transaction::Transaction,

@@ -12,12 +12,15 @@ use solana_sdk::compute_budget::ComputeBudgetInstruction;
 use solana_sdk::instruction::Instruction;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
+use solana_sdk::transaction::Transaction;
+use std::future::Future;
 use std::io::Write;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use crate::common::wrap_unsafe;
 use crate::signer::solana::LocalSolanaSigner;
-use crate::signer::TransactionSigner;
+use crate::signer::{SignerContext, TransactionSigner};
 
 pub fn env(var: &str) -> String {
     std::env::var(var).unwrap_or_else(|_| panic!("{} env var not set", var))
@@ -155,4 +158,25 @@ pub fn parse_pubkey(s: &str) -> Result<Pubkey> {
         Ok(pubkey) => Ok(pubkey),
         Err(e) => Err(anyhow!(e)),
     }
+}
+
+pub async fn execute_solana_transaction<F, Fut>(
+    tx_creator: F,
+) -> Result<String>
+where
+    F: FnOnce(Pubkey) -> Fut + Send + 'static,
+    Fut: Future<Output = Result<Transaction>> + Send + 'static,
+{
+    let signer = SignerContext::current().await;
+    let owner = Pubkey::from_str(&signer.address())?;
+
+    let mut tx = wrap_unsafe(move || async move { tx_creator(owner).await })
+        .await
+        .map_err(|e| anyhow!("{:#?}", e))?;
+
+    wrap_unsafe(move || async move {
+        signer.sign_and_send_solana_transaction(&mut tx).await
+    })
+    .await
+    .map_err(|e| anyhow!("{:#?}", e))
 }

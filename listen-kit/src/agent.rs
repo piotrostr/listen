@@ -2,11 +2,16 @@ use anyhow::Result;
 use rig::agent::{Agent, AgentBuilder};
 use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
 
+#[cfg(feature = "evm")]
+use crate::evm::tools::{
+    ApproveTokenForRouterSpend, GetErc20Balance, GetEthBalance, Trade,
+    TransferErc20, TransferEth, VerifySwapRouterHasAllowance, WalletAddress,
+};
 #[cfg(feature = "solana")]
 use crate::solana::tools::{
-    BuyPumpToken, DeployToken, FetchPairInfo, FetchTokenPrice, GetBalance,
-    GetTokenBalance, Portfolio, Scan, SellPumpToken, Trade, TransferSol,
-    TransferToken, WalletAddress,
+    BuyPumpFunToken, DeployPumpFunToken, FetchTokenPrice, GetPortfolio,
+    GetPublicKey, GetSolBalance, GetSplTokenBalance, PerformJupiterSwap,
+    SearchOnDexScreener, SellPumpFunToken, TransferSol, TransferSplToken,
 };
 
 pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
@@ -14,7 +19,7 @@ pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
         .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
 }
 
-pub async fn default_agent() -> Result<Agent<AnthropicCompletionModel>> {
+pub async fn plain_agent() -> Result<Agent<AnthropicCompletionModel>> {
     Ok(claude_agent_builder()
         .preamble("be nice to the users")
         .max_tokens(1024)
@@ -22,40 +27,52 @@ pub async fn default_agent() -> Result<Agent<AnthropicCompletionModel>> {
 }
 
 #[cfg(feature = "solana")]
-pub async fn create_trader_agent() -> Result<Agent<AnthropicCompletionModel>>
+pub async fn create_solana_agent() -> Result<Agent<AnthropicCompletionModel>>
 {
     Ok(claude_agent_builder()
         .preamble("you are a solana trading agent")
         .max_tokens(1024)
-        .tool(Trade)
+        .tool(PerformJupiterSwap)
         .tool(TransferSol)
-        .tool(TransferToken)
-        .tool(WalletAddress)
-        .tool(GetBalance)
-        .tool(GetTokenBalance)
-        .tool(DeployToken)
+        .tool(TransferSplToken)
+        .tool(GetPublicKey)
+        .tool(GetSolBalance)
+        .tool(GetSplTokenBalance)
         .tool(FetchTokenPrice)
-        .tool(BuyPumpToken)
-        .tool(Portfolio)
-        .tool(FetchPairInfo)
-        .tool(SellPumpToken)
+        .tool(GetPortfolio)
+        .tool(SearchOnDexScreener)
         .build())
 }
 
 #[cfg(feature = "solana")]
-pub async fn create_data_agent() -> Result<Agent<AnthropicCompletionModel>> {
+pub async fn create_pump_agent() -> Result<Agent<AnthropicCompletionModel>> {
     Ok(claude_agent_builder()
-        .preamble("you are a solana blockchain agent with tools for fetching data and information about tokens and pairs")
+        .preamble("you are a pump.fun trading agent")
         .max_tokens(1024)
-        .tool(FetchPairInfo)
+        .tool(TransferSol)
+        .tool(TransferSplToken)
+        .tool(GetPublicKey)
+        .tool(GetSolBalance)
+        .tool(GetSplTokenBalance)
+        .tool(DeployPumpFunToken)
+        .tool(BuyPumpFunToken)
+        .tool(SellPumpFunToken)
+        .tool(GetPortfolio)
         .build())
 }
 
-#[cfg(feature = "solana")]
-pub async fn create_scanner_agent() -> Result<Agent<AnthropicCompletionModel>>
-{
+#[cfg(feature = "evm")]
+pub async fn create_evm_agent() -> Result<Agent<AnthropicCompletionModel>> {
     Ok(claude_agent_builder()
-        .preamble("you are a screening agent, you are screening newly listed tokens, your purpose is to validate whether a given token is real or not by checking if its contract address is present in the social links")
-        .tool(Scan)
+        .preamble("you are an ethereum trading agent")
+        .max_tokens(1024)
+        .tool(Trade)
+        .tool(TransferEth)
+        .tool(TransferErc20)
+        .tool(WalletAddress)
+        .tool(GetEthBalance)
+        .tool(GetErc20Balance)
+        .tool(ApproveTokenForRouterSpend)
+        .tool(VerifySwapRouterHasAllowance)
         .build())
 }

@@ -9,10 +9,10 @@ primary_region = 'sfo'
 [build]
 
 [env]
-PORT = '8080'
+PORT = '6969'
 
 [http_service]
-internal_port = 8080
+internal_port = 6969
 force_https = true
 auto_stop_machines = 'stop'
 auto_start_machines = true
