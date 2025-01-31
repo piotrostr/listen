@@ -1,16 +1,19 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useSolBalance } from "../hooks/useSolBalance";
-import { useChatType } from "../hooks/useChatType";
+import ethereumIcon from "../assets/icons/ethereum.svg";
+import { useBalance, UseBalanceReturnType } from "wagmi";
+import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { Address } from "viem";
 
 const Balance = ({
-  chatType,
-  balance,
+  solanaBalance,
+  ethereumBalance,
 }: {
-  chatType: string | null;
-  balance: number | undefined;
+  solanaBalance: number | undefined;
+  ethereumBalance: number | undefined;
 }) => {
-  if (chatType === "solana" || chatType === "pump") {
-    return (
+  return (
+    <div className="flex flex-row gap-1">
       <div className="flex items-center gap-2 mr-4">
         <img
           src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
@@ -18,18 +21,30 @@ const Balance = ({
           className="w-6 h-6 rounded-full"
         />
         <span className="text-sm text-gray-300">
-          {balance?.toFixed(2) || "0.00"}
+          {solanaBalance?.toFixed(2) || "0.00"}
         </span>
       </div>
-    );
-  }
-
-  return <></>;
+      <div className="flex items-center gap-2 mr-4">
+        <img src={ethereumIcon} alt="ETH" className="w-6 h-6 rounded-full" />
+        <span className="text-sm text-gray-300">
+          {ethereumBalance?.toFixed(4) || "0.0000"}
+        </span>
+      </div>
+    </div>
+  );
 };
 
+function balanceToUI(balance: UseBalanceReturnType["data"]) {
+  if (!balance?.value || !balance?.decimals) return 0;
+  return Number(balance?.value) / 10 ** balance?.decimals;
+}
+
 export const Header = () => {
-  const { data: balance } = useSolBalance();
-  const { chatType } = useChatType();
+  const { data: solanaBalance } = useSolBalance();
+  const { data: wallets } = usePrivyWallets();
+  const { data: ethereumBalance } = useBalance({
+    address: wallets?.evmWallet as Address,
+  });
   const { user, logout } = usePrivy();
 
   return (
@@ -48,7 +63,10 @@ export const Header = () => {
 
           {/* Right side */}
           <div className="flex items-center space-x-4">
-            <Balance chatType={chatType} balance={balance} />
+            <Balance
+              solanaBalance={solanaBalance}
+              ethereumBalance={balanceToUI(ethereumBalance)}
+            />
             {/* Documentation Link */}
             <div className="items-center space-x-4">
               <a

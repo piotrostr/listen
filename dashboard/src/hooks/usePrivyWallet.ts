@@ -1,21 +1,39 @@
-import { useSolanaWallets } from "@privy-io/react-auth";
-import { PublicKey } from "@solana/web3.js";
-import { useQuery } from "@tanstack/react-query";
+import { useSolanaWallets, useWallets } from "@privy-io/react-auth";
+import { useQuery, UseQueryResult } from "@tanstack/react-query";
 
-export const usePrivyWallet = () => {
-  const { ready, wallets } = useSolanaWallets();
-  const wallet = wallets.find(
+interface WalletAddresses {
+  solanaWallet: string;
+  evmWallet: string;
+}
+
+export const usePrivyWallets = (): UseQueryResult<
+  WalletAddresses | null,
+  Error
+> => {
+  const { ready: solanaReady, wallets: solanaWallets } = useSolanaWallets();
+  const { ready: evmReady, wallets: evmWallets } = useWallets();
+
+  const solanaWallet = solanaWallets.find(
     (wallet) => wallet.type === "solana" && wallet.walletClientType === "privy",
   );
-  return useQuery<PublicKey | null, Error>({
+
+  const evmWallet = evmWallets.find(
+    (wallet) =>
+      wallet.type === "ethereum" && wallet.walletClientType === "privy",
+  );
+
+  return useQuery<WalletAddresses | null, Error>({
     queryKey: ["privy-wallet"],
-    queryFn: async () => {
-      if (!wallet) {
+    queryFn: () => {
+      if (!solanaWallet || !evmWallet) {
         return null;
       }
-      return new PublicKey(wallet.address);
+      return {
+        solanaWallet: solanaWallet.address,
+        evmWallet: evmWallet.address,
+      };
     },
-    enabled: ready && !!wallet,
+    enabled: solanaReady && evmReady && !!solanaWallet && !!evmWallet,
     staleTime: 20000,
     refetchInterval: 20000,
   });

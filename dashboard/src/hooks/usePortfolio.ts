@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { AccountInfo, Connection, PublicKey } from "@solana/web3.js";
-import { usePrivyWallet } from "./usePrivyWallet";
+import { usePrivyWallets } from "./usePrivyWallet";
 import { Holding, TokenMetadata, PriceResponse } from "./types";
 import { tokenMetadataCache } from "./cache";
 import { decodeTokenAccount } from "./util";
@@ -89,13 +89,16 @@ async function fetchPrices(mints: string[]): Promise<PriceResponse> {
 }
 
 export const usePortfolio = () => {
-  const { data: ownerPublicKey } = usePrivyWallet();
+  const { data: wallets } = usePrivyWallets();
 
   return useQuery({
-    queryKey: ["portfolio", ownerPublicKey?.toString()],
+    queryKey: ["portfolio", wallets?.solanaWallet.toString()],
     queryFn: async () => {
       // Get holdings
-      const holdings = await getHoldings(connection, ownerPublicKey!);
+      const holdings = await getHoldings(
+        connection,
+        new PublicKey(wallets!.solanaWallet),
+      );
       const mints = holdings.map((h) => h.mint);
 
       // Get metadata and prices in parallel
@@ -122,7 +125,7 @@ export const usePortfolio = () => {
         };
       });
     },
-    enabled: !!ownerPublicKey,
+    enabled: !!wallets,
     staleTime: 10000, // 10 seconds
   });
 };

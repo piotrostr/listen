@@ -1,7 +1,6 @@
 import ethereumIcon from "../assets/icons/ethereum.svg";
 import pumpIcon from "../assets/icons/pump.png";
-
-type ChatType = "ethereum" | "solana" | "pump" | null;
+import { ChatType } from "../hooks/useChatType";
 
 interface ChatOptionProps {
   id: ChatType;
@@ -29,7 +28,7 @@ function ChatOption({ id, iconPath, isSelected, onClick }: ChatOptionProps) {
 
 const CHAT_OPTIONS = [
   {
-    id: "ethereum" as const,
+    id: "evm" as const,
     iconPath: ethereumIcon,
   },
   {

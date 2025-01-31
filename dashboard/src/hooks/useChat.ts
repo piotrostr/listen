@@ -4,6 +4,7 @@ import { z } from "zod";
 import { introPrompt } from "./prompts";
 import { usePortfolio } from "./usePortfolio";
 import { config } from "../config";
+import { useChatType } from "./useChatType";
 
 export type MessageDirection = "incoming" | "outgoing";
 
@@ -31,6 +32,7 @@ export function useChat() {
   const { user } = usePrivy();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const { chatType } = useChatType();
   const { getAccessToken } = usePrivy();
 
   const updateAssistantMessage = useCallback(
@@ -92,7 +94,7 @@ export function useChat() {
         const body = JSON.stringify({
           prompt: userMessage,
           chat_history: chat_history,
-          chain: "solana",
+          chain: chatType,
         });
 
         const response = await fetch(config.API_BASE_URL + "/v1/stream", {
@@ -184,7 +186,14 @@ export function useChat() {
         setIsLoading(false);
       }
     },
-    [messages, updateAssistantMessage, getAccessToken, portfolio, user],
+    [
+      messages,
+      updateAssistantMessage,
+      getAccessToken,
+      portfolio,
+      user,
+      chatType,
+    ],
   );
 
   return {

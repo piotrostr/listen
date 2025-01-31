@@ -31,9 +31,20 @@ export function decodeTokenAccount(data: Buffer): RawAccount {
   };
 }
 
-export const userHasDelegatedWallet = (user: User | null) => {
+export const userHasDelegatedSolanaWallet = (user: User | null) => {
   return !!user?.linkedAccounts.find(
     (account): account is WalletWithMetadata =>
-      account.type === "wallet" && account.delegated,
+      account.type === "wallet" &&
+      account.delegated &&
+      account.chainType === "solana",
+  );
+};
+
+export const userHasDelegatedEvmWallet = (user: User | null) => {
+  return !!user?.linkedAccounts.find(
+    (account): account is WalletWithMetadata =>
+      account.type === "wallet" &&
+      account.delegated &&
+      account.chainType === "ethereum",
   );
 };
