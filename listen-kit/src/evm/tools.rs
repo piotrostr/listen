@@ -1,5 +1,6 @@
 use std::str::FromStr;
 
+use alloy::primitives::utils::parse_ether;
 use alloy::primitives::Address;
 use alloy::providers::Provider;
 use anyhow::{Context, Result};
@@ -73,6 +74,11 @@ pub async fn trade(
     input_amount: String,
     output_token_address: String,
 ) -> Result<String> {
+    let input_amount = if input_amount.contains('.') {
+        parse_ether(&input_amount)?.to_string()
+    } else {
+        input_amount
+    };
     execute_evm_transaction(move |owner| async move {
         create_trade_tx(
             input_token_address,

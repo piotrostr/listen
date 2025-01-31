@@ -2,6 +2,8 @@ use anyhow::Result;
 use rig::agent::{Agent, AgentBuilder};
 use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
 
+const PREAMBLE_COMMON: &str = "never assume you know the token address, if you dont have it in the context, search for it";
+
 #[cfg(feature = "evm")]
 use crate::evm::tools::{
     ApproveTokenForRouterSpend, GetErc20Balance, GetEthBalance, Trade,
@@ -30,7 +32,10 @@ pub async fn plain_agent() -> Result<Agent<AnthropicCompletionModel>> {
 pub async fn create_solana_agent() -> Result<Agent<AnthropicCompletionModel>>
 {
     Ok(claude_agent_builder()
-        .preamble("you are a solana trading agent")
+        .preamble(&format!(
+            "{} {}",
+            "you are a solana trading agent;", PREAMBLE_COMMON
+        ))
         .max_tokens(1024)
         .tool(PerformJupiterSwap)
         .tool(TransferSol)
@@ -47,7 +52,10 @@ pub async fn create_solana_agent() -> Result<Agent<AnthropicCompletionModel>>
 #[cfg(feature = "solana")]
 pub async fn create_pump_agent() -> Result<Agent<AnthropicCompletionModel>> {
     Ok(claude_agent_builder()
-        .preamble("you are a pump.fun trading agent")
+        .preamble(&format!(
+            "{} {}",
+            "you are a pump.fun trading agent", PREAMBLE_COMMON,
+        ))
         .max_tokens(1024)
         .tool(TransferSol)
         .tool(TransferSplToken)
@@ -64,7 +72,10 @@ pub async fn create_pump_agent() -> Result<Agent<AnthropicCompletionModel>> {
 #[cfg(feature = "evm")]
 pub async fn create_evm_agent() -> Result<Agent<AnthropicCompletionModel>> {
     Ok(claude_agent_builder()
-        .preamble("you are an ethereum trading agent")
+        .preamble(&format!(
+            "{} {}",
+            "you are an ethereum trading agent", PREAMBLE_COMMON
+        ))
         .max_tokens(1024)
         .tool(Trade)
         .tool(TransferEth)
