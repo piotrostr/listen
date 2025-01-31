@@ -30,17 +30,17 @@ pub async fn check_allowance(
 
 pub async fn create_approve_tx(
     input_token_address: String,
-    router_address: String,
+    spender: String,
     owner: String,
     provider: &EvmProvider,
 ) -> Result<TransactionRequest> {
     // TODO good example for reasoning loop demo
-    tracing::info!(?input_token_address, ?router_address, "Approving token");
+    tracing::info!(?input_token_address, ?spender, "Approving token");
     let input_addr = Address::from_str(&input_token_address)?;
-    let router_addr = Address::from_str(&router_address)?;
+    let spender_addr = Address::from_str(&spender)?;
     let owner_addr = Address::from_str(&owner)?;
     let call = IERC20::approveCall {
-        spender: router_addr,
+        spender: spender_addr,
         amount: U256::MAX,
     };
 

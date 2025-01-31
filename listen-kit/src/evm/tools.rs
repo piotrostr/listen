@@ -11,7 +11,7 @@ use crate::common::wrap_unsafe;
 use crate::signer::SignerContext;
 
 use super::balance::{balance, token_balance};
-use super::trade::{check_allowance, create_trade_tx};
+use super::trade::{check_allowance, create_approve_tx, create_trade_tx};
 use super::transfer::{create_transfer_erc20_tx, create_transfer_eth_tx};
 use super::util::{execute_evm_transaction, make_provider};
 
@@ -42,8 +42,29 @@ pub async fn verify_swap_router_has_allowance(
 }
 
 #[tool]
-pub async fn approve_router() -> Result<String> {
-    todo!()
+pub async fn approve_token_for_router_spend(
+    input_token_address: String,
+) -> Result<String> {
+    let provider = make_provider()?;
+    let router_address = wrap_unsafe(move || async move {
+        let router_address = *SWAP_ROUTER_02_ADDRESSES
+            .get(&make_provider()?.get_chain_id().await?)
+            .context("Router address not found")?;
+
+        Ok(router_address)
+    })
+    .await?;
+
+    execute_evm_transaction(move |owner| async move {
+        create_approve_tx(
+            input_token_address,
+            router_address.to_string(),
+            owner.to_string(),
+            &provider,
+        )
+        .await
+    })
+    .await
 }
 
 #[tool]
