@@ -40,7 +40,7 @@ pub async fn run_server(
             .service(healthz)
             .service(web::scope("/v1").service(stream).service(auth))
     })
-    .bind("0.0.0.0:8080")?
+    .bind("0.0.0.0:6969")?
     .run()
     .await
 }
