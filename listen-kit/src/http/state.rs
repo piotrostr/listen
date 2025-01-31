@@ -23,6 +23,12 @@ pub struct AppStateBuilder {
     wallet_manager: Option<WalletManager>,
 }
 
+impl Default for AppStateBuilder {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl AppStateBuilder {
     pub fn new() -> Self {
         Self {
@@ -91,6 +97,6 @@ impl AppStateBuilder {
 
 impl AppState {
     pub fn builder() -> AppStateBuilder {
-        AppStateBuilder::new()
+        AppStateBuilder::default()
     }
 }

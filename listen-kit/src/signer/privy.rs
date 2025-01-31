@@ -30,6 +30,7 @@ impl TransactionSigner for PrivySigner {
         self.session.wallet_address.clone()
     }
 
+    #[cfg(feature = "solana")]
     async fn sign_and_send_solana_transaction(
         &self,
         tx: &mut solana_sdk::transaction::Transaction,
@@ -37,7 +38,22 @@ impl TransactionSigner for PrivySigner {
         tx.message.recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
         let tx_hash = self
             .wallet_manager
-            .sign_and_send_transaction(
+            .sign_and_send_solana_transaction(
+                self.session.wallet_address.clone(),
+                tx,
+            )
+            .await?;
+        Ok(tx_hash)
+    }
+
+    #[cfg(feature = "evm")]
+    async fn sign_and_send_evm_transaction(
+        &self,
+        tx: alloy::rpc::types::TransactionRequest,
+    ) -> Result<String> {
+        let tx_hash = self
+            .wallet_manager
+            .sign_and_send_evm_transaction(
                 self.session.wallet_address.clone(),
                 tx,
             )

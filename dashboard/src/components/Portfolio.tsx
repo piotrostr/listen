@@ -71,7 +71,11 @@ export function Portfolio() {
 
   const handleClickCopy = () => {
     if (!wallets) return;
-    navigator.clipboard.writeText(wallets.solanaWallet);
+    navigator.clipboard.writeText(
+      chatType === "solana" || chatType === "pump"
+        ? wallets.solanaWallet
+        : wallets.evmWallet,
+    );
     setClicked(true);
     setTimeout(() => setClicked(false), 1000);
   };
