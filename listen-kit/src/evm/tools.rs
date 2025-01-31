@@ -123,7 +123,7 @@ pub async fn wallet_address() -> Result<String> {
 }
 
 #[tool]
-pub async fn get_balance(address: String) -> Result<String> {
+pub async fn get_eth_balance(address: String) -> Result<String> {
     wrap_unsafe(
         move || async move { balance(&make_provider()?, address).await },
     )
@@ -131,7 +131,7 @@ pub async fn get_balance(address: String) -> Result<String> {
 }
 
 #[tool]
-pub async fn get_token_balance(
+pub async fn get_erc20_balance(
     token_address: String,
     address: String,
 ) -> Result<String> {

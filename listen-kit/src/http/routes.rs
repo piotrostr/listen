@@ -1,16 +1,13 @@
 use crate::signer::privy::PrivySigner;
 use crate::signer::{SignerContext, TransactionSigner};
-use crate::solana::tools::get_balance;
 
 use super::middleware::verify_auth;
 use super::state::AppState;
-use actix_web::error::ErrorInternalServerError;
 use actix_web::{
     get, post, web, Error, HttpRequest, HttpResponse, Responder,
 };
 use actix_web_lab::sse;
 use anyhow::Result;
-use futures::TryFutureExt;
 use futures_util::StreamExt;
 use rig::completion::Message;
 use rig::streaming::{StreamingChat, StreamingChoice};
@@ -166,82 +163,5 @@ async fn auth(req: HttpRequest) -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().json(json!({
         "status": "ok",
         "wallet_address": user_session.wallet_address,
-    })))
-}
-
-// this is just to check whether transaction signing through privy works it
-// will get remove in the
-// future and the logic incorporated in the tools as opt-in
-#[get("/test_tx")]
-async fn test_tx(
-    req: HttpRequest,
-    state: web::Data<AppState>,
-) -> Result<HttpResponse, Error> {
-    let user_session = match verify_auth(&req).await {
-        Ok(session) => session,
-        Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
-    };
-    use solana_client::nonblocking::rpc_client::RpcClient;
-    use solana_sdk::message::Message;
-    use solana_sdk::pubkey;
-    use solana_sdk::pubkey::Pubkey;
-    use solana_sdk::system_instruction::transfer;
-    use solana_sdk::transaction::Transaction;
-    use std::str::FromStr;
-
-    let user =
-        Pubkey::from_str(user_session.wallet_address.as_str()).unwrap();
-    let tx = Transaction::new_unsigned(Message::new_with_blockhash(
-        &[transfer(
-            &user,
-            &pubkey!("aiamaErRMjbeNmf2b8BMZWFR3ofxrnZEf2mLKp935fM"),
-            100000,
-        )],
-        Some(&user),
-        &RpcClient::new("https://api.mainnet-beta.solana.com".to_string())
-            .get_latest_blockhash()
-            .await
-            .unwrap(),
-    ));
-
-    let signature = state
-        .wallet_manager
-        .sign_and_send_transaction(user_session.wallet_address, &tx)
-        .await
-        .map_err(|e| ErrorInternalServerError(e.to_string()))?;
-
-    Ok(HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "signature": signature,
-    })))
-}
-
-#[get("/test_balance")]
-async fn test_balance(
-    req: HttpRequest,
-    state: web::Data<AppState>,
-) -> Result<HttpResponse, Error> {
-    let user_session = match verify_auth(&req).await {
-        Ok(s) => s,
-        Err(_) => return Ok(HttpResponse::Unauthorized().finish()),
-    };
-
-    let signer: Arc<dyn TransactionSigner> = Arc::new(PrivySigner::new(
-        state.wallet_manager.clone(),
-        user_session.clone(),
-    ));
-
-    let join_result =
-        spawn_with_signer(signer, || async move { get_balance().await })
-            .await
-            .map_err(|e| ErrorInternalServerError(e.to_string()))
-            .await?;
-
-    let balance =
-        join_result.map_err(|e| ErrorInternalServerError(e.to_string()))?;
-
-    Ok(HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "balance": balance,
     })))
 }

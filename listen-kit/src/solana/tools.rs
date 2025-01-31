@@ -33,7 +33,7 @@ fn create_rpc() -> RpcClient {
 }
 
 #[tool]
-pub async fn trade(
+pub async fn perform_jupiter_swap(
     input_mint: String,
     input_amount: f64,
     output_mint: String,
@@ -63,7 +63,7 @@ pub async fn transfer_sol(to: String, amount: u64) -> Result<String> {
 /// param amount is token amount, accounting for decimals
 /// e.g. 1 Fartcoin = 1 * 10^6 (6 decimals)
 #[tool]
-pub async fn transfer_token(
+pub async fn transfer_spl_token(
     to: String,
     amount: u64,
     mint: String,
@@ -82,12 +82,12 @@ pub async fn transfer_token(
 }
 
 #[tool]
-pub async fn wallet_address() -> Result<String> {
+pub async fn get_public_key() -> Result<String> {
     Ok(SignerContext::current().await.address())
 }
 
 #[tool]
-pub async fn get_balance() -> Result<u64> {
+pub async fn get_sol_balance() -> Result<u64> {
     let signer = SignerContext::current().await.clone();
     let owner = Pubkey::from_str(&signer.address())?;
 
@@ -103,7 +103,7 @@ pub async fn get_balance() -> Result<u64> {
 /// get_token_balance returns the amount as String and the decimals as u8
 /// in order to convert to UI amount: amount / 10^decimals
 #[tool]
-pub async fn get_token_balance(mint: String) -> Result<(String, u8)> {
+pub async fn get_spl_token_balance(mint: String) -> Result<(String, u8)> {
     let signer = SignerContext::current().await;
     let owner = Pubkey::from_str(&signer.address())?;
     let mint = Pubkey::from_str(&mint)?;
@@ -124,7 +124,7 @@ pub async fn get_token_balance(mint: String) -> Result<(String, u8)> {
 
 #[tool]
 #[allow(clippy::too_many_arguments)]
-pub async fn deploy_token(
+pub async fn deploy_pump_fun_token(
     name: String,
     symbol: String,
     twitter: String,
@@ -159,7 +159,7 @@ pub async fn fetch_token_price(mint: String) -> Result<f64> {
 }
 
 #[tool]
-pub async fn buy_pump_token(
+pub async fn buy_pump_fun_token(
     mint: String,
     sol_amount: f64,
     slippage_bps: u16,
@@ -178,7 +178,7 @@ pub async fn buy_pump_token(
 }
 
 #[tool]
-pub async fn sell_pump_token(
+pub async fn sell_pump_fun_token(
     mint: String,
     token_amount: u64,
 ) -> Result<String> {
@@ -189,7 +189,7 @@ pub async fn sell_pump_token(
 }
 
 #[tool]
-pub async fn portfolio() -> Result<Vec<PortfolioItem>> {
+pub async fn get_portfolio() -> Result<Vec<PortfolioItem>> {
     let owner = Pubkey::from_str(&SignerContext::current().await.address())?;
     let holdings = wrap_unsafe(move || async move {
         crate::solana::balance::get_holdings(&create_rpc(), &owner)
@@ -203,11 +203,6 @@ pub async fn portfolio() -> Result<Vec<PortfolioItem>> {
 }
 
 #[tool]
-pub async fn fetch_pair_info(mint_or_symbol: String) -> Result<PairInfo> {
+pub async fn search_token(mint_or_symbol: String) -> Result<PairInfo> {
     crate::solana::data::fetch_pair_info(mint_or_symbol).await
-}
-
-#[tool]
-pub async fn scan(mint: String) -> Result<String> {
-    crate::solana::scan::scan(mint).await
 }

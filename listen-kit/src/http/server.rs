@@ -1,16 +1,35 @@
+use crate::wallet_manager::WalletManager;
 use actix_cors::Cors;
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{web, App, HttpServer};
 use rig::agent::Agent;
 use rig::providers::anthropic::completion::CompletionModel;
 
-use super::routes::{auth, healthz, stream, test_balance, test_tx};
+use super::routes::{auth, healthz, stream};
 use super::state::AppState;
 
 pub async fn run_server(
-    agent: Agent<CompletionModel>,
+    #[cfg(feature = "solana")] solana_agent: Agent<CompletionModel>,
+    #[cfg(feature = "solana")] pump_fun_agent: Agent<CompletionModel>,
+    #[cfg(feature = "evm")] evm_agent: Agent<CompletionModel>,
+    wallet_manager: WalletManager,
 ) -> std::io::Result<()> {
-    let state = web::Data::new(AppState::new(agent));
+    let mut builder = AppState::builder().with_wallet_manager(wallet_manager);
+
+    #[cfg(feature = "solana")]
+    {
+        builder = builder
+            .with_solana_agent(solana_agent)
+            .with_pump_fun_agent(pump_fun_agent);
+    }
+
+    #[cfg(feature = "evm")]
+    {
+        builder = builder.with_evm_agent(evm_agent);
+    }
+
+    let state =
+        web::Data::new(builder.build().expect("Failed to build AppState"));
 
     HttpServer::new(move || {
         App::new()
@@ -19,13 +38,7 @@ pub async fn run_server(
             .wrap(Cors::permissive())
             .app_data(state.clone())
             .service(healthz)
-            .service(
-                web::scope("/v1")
-                    .service(stream)
-                    .service(auth)
-                    .service(test_tx)
-                    .service(test_balance),
-            )
+            .service(web::scope("/v1").service(stream).service(auth))
     })
     .bind("0.0.0.0:8080")?
     .run()

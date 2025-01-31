@@ -1,22 +1,96 @@
-use crate::wallet_manager::config::PrivyConfig;
 use crate::wallet_manager::WalletManager;
 use rig::agent::Agent;
 use rig::providers::anthropic::completion::CompletionModel;
 use std::sync::Arc;
 
 pub struct AppState {
-    pub(crate) agent: Arc<Agent<CompletionModel>>,
+    #[cfg(feature = "solana")]
+    pub(crate) solana_agent: Arc<Agent<CompletionModel>>,
+    #[cfg(feature = "solana")]
+    pub(crate) pump_fun_agent: Arc<Agent<CompletionModel>>,
+    #[cfg(feature = "evm")]
+    pub(crate) evm_agent: Arc<Agent<CompletionModel>>,
     pub(crate) wallet_manager: Arc<WalletManager>,
 }
 
-impl AppState {
-    pub fn new(agent: Agent<CompletionModel>) -> Self {
+pub struct AppStateBuilder {
+    #[cfg(feature = "solana")]
+    solana_agent: Option<Agent<CompletionModel>>,
+    #[cfg(feature = "solana")]
+    pump_fun_agent: Option<Agent<CompletionModel>>,
+    #[cfg(feature = "evm")]
+    evm_agent: Option<Agent<CompletionModel>>,
+    wallet_manager: Option<WalletManager>,
+}
+
+impl AppStateBuilder {
+    pub fn new() -> Self {
         Self {
-            agent: agent.into(),
-            wallet_manager: WalletManager::new(
-                PrivyConfig::from_env().expect("Failed to load privy config"),
-            )
-            .into(),
+            #[cfg(feature = "solana")]
+            solana_agent: None,
+            #[cfg(feature = "solana")]
+            pump_fun_agent: None,
+            #[cfg(feature = "evm")]
+            evm_agent: None,
+            wallet_manager: None,
         }
+    }
+
+    #[cfg(feature = "solana")]
+    pub fn with_solana_agent(
+        mut self,
+        agent: Agent<CompletionModel>,
+    ) -> Self {
+        self.solana_agent = Some(agent);
+        self
+    }
+
+    #[cfg(feature = "solana")]
+    pub fn with_pump_fun_agent(
+        mut self,
+        agent: Agent<CompletionModel>,
+    ) -> Self {
+        self.pump_fun_agent = Some(agent);
+        self
+    }
+
+    #[cfg(feature = "evm")]
+    pub fn with_evm_agent(mut self, agent: Agent<CompletionModel>) -> Self {
+        self.evm_agent = Some(agent);
+        self
+    }
+
+    pub fn with_wallet_manager(
+        mut self,
+        wallet_manager: WalletManager,
+    ) -> Self {
+        self.wallet_manager = Some(wallet_manager);
+        self
+    }
+
+    pub fn build(self) -> Result<AppState, &'static str> {
+        Ok(AppState {
+            #[cfg(feature = "solana")]
+            solana_agent: Arc::new(self.solana_agent.ok_or(
+                "Solana agent is required when solana feature is enabled",
+            )?),
+            #[cfg(feature = "solana")]
+            pump_fun_agent: Arc::new(self.pump_fun_agent.ok_or(
+                "Pump fun agent is required when solana feature is enabled",
+            )?),
+            #[cfg(feature = "evm")]
+            evm_agent: Arc::new(self.evm_agent.ok_or(
+                "EVM agent is required when evm feature is enabled",
+            )?),
+            wallet_manager: Arc::new(
+                self.wallet_manager.ok_or("Wallet manager is required")?,
+            ),
+        })
+    }
+}
+
+impl AppState {
+    pub fn builder() -> AppStateBuilder {
+        AppStateBuilder::new()
     }
 }
