@@ -52,7 +52,7 @@ pub async fn create_pump_agent() -> Result<Agent<AnthropicCompletionModel>> {
         .max_tokens(1024)
         .tool(TransferSol)
         .tool(TransferSplToken)
-        .tool(WalletAddress)
+        .tool(GetPublicKey)
         .tool(GetSolBalance)
         .tool(GetSplTokenBalance)
         .tool(DeployPumpFunToken)

@@ -1,8 +1,7 @@
-use crate::signer::privy::PrivySigner;
-use crate::signer::{SignerContext, TransactionSigner};
-
 use super::middleware::verify_auth;
 use super::state::AppState;
+use crate::signer::privy::PrivySigner;
+use crate::signer::{SignerContext, TransactionSigner};
 use actix_web::{
     get, post, web, Error, HttpRequest, HttpResponse, Responder,
 };
@@ -21,6 +20,8 @@ use std::time::Duration;
 pub struct ChatRequest {
     prompt: String,
     chat_history: Vec<Message>,
+    #[serde(default)]
+    chain: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -35,6 +36,7 @@ pub enum StreamResponse {
 pub enum ServerError {
     WalletError,
     PrivyError,
+    ChainNotSupported,
 }
 
 pub async fn spawn_with_signer<F, Fut, T>(
@@ -62,7 +64,10 @@ async fn stream(
         Err(_) => {
             let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
             let error_event = sse::Event::Data(sse::Data::new(
-                serde_json::to_string("Error: unauthorized").unwrap(),
+                serde_json::to_string(&StreamResponse::Error(
+                    "Error: unauthorized".to_string(),
+                ))
+                .unwrap(),
             ));
             let _ = tx.send(error_event).await;
             return sse::Sse::from_infallible_receiver(rx);
@@ -70,7 +75,38 @@ async fn stream(
     };
 
     let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(32);
-    let agent = state.agent.clone();
+
+    // Select the appropriate agent based on the chain parameter
+    let agent = match request.chain.as_deref() {
+        #[cfg(feature = "solana")]
+        Some("solana") => state.solana_agent.clone(),
+        #[cfg(feature = "solana")]
+        Some("pump_fun") => state.pump_fun_agent.clone(),
+        #[cfg(feature = "evm")]
+        Some("evm") => state.evm_agent.clone(),
+        Some(chain) => {
+            let error_event = sse::Event::Data(sse::Data::new(
+                serde_json::to_string(&StreamResponse::Error(format!(
+                    "Unsupported chain: {}",
+                    chain
+                )))
+                .unwrap(),
+            ));
+            let _ = tx.send(error_event).await;
+            return sse::Sse::from_infallible_receiver(rx);
+        }
+        None => {
+            let error_event = sse::Event::Data(sse::Data::new(
+                serde_json::to_string(&StreamResponse::Error(
+                    "Chain parameter is required".to_string(),
+                ))
+                .unwrap(),
+            ));
+            let _ = tx.send(error_event).await;
+            return sse::Sse::from_infallible_receiver(rx);
+        }
+    };
+
     let prompt = request.prompt.clone();
     let messages = request.chat_history.clone();
 
@@ -134,7 +170,6 @@ async fn stream(
         }
 
         Ok(())
-
     }).await;
 
     sse::Sse::from_infallible_receiver(rx)
