@@ -13,10 +13,11 @@ use solana_sdk::pubkey::Pubkey;
 use std::str::FromStr;
 
 use crate::common::wrap_unsafe;
-use crate::solana::{data::PortfolioItem, dexscreener::PairInfo};
+use crate::solana::data::PortfolioItem;
 
 use super::data::holdings_to_portfolio;
 use super::deploy_token::create_deploy_token_tx;
+use super::dexscreener::{search_ticker, DexScreenerResponse};
 use super::trade::create_trade_transaction;
 use super::trade_pump::{create_buy_pump_fun_tx, create_sell_pump_fun_tx};
 use super::transfer::{create_transfer_sol_tx, create_transfer_spl_tx};
@@ -203,6 +204,8 @@ pub async fn get_portfolio() -> Result<Vec<PortfolioItem>> {
 }
 
 #[tool]
-pub async fn search_token(mint_or_symbol: String) -> Result<PairInfo> {
-    crate::solana::data::fetch_pair_info(mint_or_symbol).await
+pub async fn search_on_dex_screener(
+    phrase: String,
+) -> Result<DexScreenerResponse> {
+    search_ticker(phrase).await
 }

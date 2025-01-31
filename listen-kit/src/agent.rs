@@ -11,7 +11,7 @@ use crate::evm::tools::{
 use crate::solana::tools::{
     BuyPumpFunToken, DeployPumpFunToken, FetchTokenPrice, GetPortfolio,
     GetPublicKey, GetSolBalance, GetSplTokenBalance, PerformJupiterSwap,
-    SearchToken, SellPumpFunToken, TransferSol, TransferSplToken,
+    SearchOnDexScreener, SellPumpFunToken, TransferSol, TransferSplToken,
 };
 
 pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
@@ -39,9 +39,8 @@ pub async fn create_solana_agent() -> Result<Agent<AnthropicCompletionModel>>
         .tool(GetSolBalance)
         .tool(GetSplTokenBalance)
         .tool(FetchTokenPrice)
-        .tool(SearchToken)
-        .tool(GetSplTokenBalance)
         .tool(GetPortfolio)
+        .tool(SearchOnDexScreener)
         .build())
 }
 
