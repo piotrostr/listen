@@ -16,7 +16,6 @@ pub async fn check_allowance(
     token_address: Address,
     owner: Address,
     spender: Address,
-    amount: U256,
     provider: &EvmProvider,
 ) -> Result<bool> {
     let current_allowance = IERC20::new(token_address, provider)
@@ -24,9 +23,9 @@ pub async fn check_allowance(
         .call()
         .await?
         ._0;
-    tracing::info!(?current_allowance, ?amount, "Allowance check");
+    tracing::info!(?current_allowance, "Allowance check");
 
-    Ok(current_allowance == U256::MAX)
+    Ok(current_allowance >= U256::from(u128::MAX))
 }
 
 pub async fn create_approve_tx(
@@ -89,9 +88,7 @@ pub async fn create_trade_tx(
         .get(&chain_id)
         .expect("Swap router address not found");
 
-    let amount = U256::from_str(&input_amount)?;
-
-    if !check_allowance(input_addr, owner, router_address, amount, provider)
+    if !check_allowance(input_addr, owner, router_address, provider)
         .await
         .context("Failed to check allowance")?
     {
@@ -147,6 +144,32 @@ mod tests {
     use crate::evm::util::{
         execute_evm_transaction, make_provider, with_local_evm_signer,
     };
+
+    #[tokio::test]
+    async fn test_approval() {
+        let provider = make_provider().unwrap();
+
+        let router_address = *SWAP_ROUTER_02_ADDRESSES
+            .get(&provider.get_chain_id().await.unwrap())
+            .expect("Router address not found");
+
+        let input_token =
+            "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1".to_string();
+
+        with_local_evm_signer(execute_evm_transaction(
+            move |owner| async move {
+                create_approve_tx(
+                    input_token,
+                    router_address.to_string(),
+                    owner.to_string(),
+                    &provider,
+                )
+                .await
+            },
+        ))
+        .await
+        .unwrap();
+    }
 
     #[tokio::test]
     async fn test_trade_evm() {

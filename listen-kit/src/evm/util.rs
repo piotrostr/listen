@@ -38,7 +38,7 @@ where
     Fut: Future<Output = Result<T>> + Send,
 {
     SignerContext::with_signer(
-        Arc::new(LocalEvmSigner::new(env("ETHETREUM_PRIVATE_KEY"))),
+        Arc::new(LocalEvmSigner::new(env("ETHEREUM_PRIVATE_KEY"))),
         future,
     )
     .await
