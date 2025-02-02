@@ -9,8 +9,61 @@
 </p>
 
 <p align="center">
-<code>listen</code> is a Solana Swiss-Knife toolkit for algorithmic trading
+<code>listen</code> started sa Solana Swiss-Knife toolkit for algorithmic trading, its mission is to become the go-to framework for AI portfolio management agents
 </p>
+
+## Listen Architecture
+
+```mermaid
+graph TB
+    subgraph "Rig Agent Kit by Listen"
+        RAK[RIG Agent Kit]
+        RAK_MT[Multi-tenant Stream Manager]
+        RAK_WALLET[Delegated Wallet Manager]
+        RAK --> RAK_MT
+        RAK --> RAK_WALLET
+    end
+
+    subgraph "Listen Trading Engine"
+        LTE[Trading Engine]
+        ORDER_COL[Order Collector]
+        PIPE[Pipeline Executor]
+        EXEC[Order Executor]
+
+        ORDER_COL --> PIPE
+        PIPE --> EXEC
+        LTE --> ORDER_COL
+    end
+
+    subgraph "Listen Data Service"
+        LDS[Data Service]
+        SUB[Substreams Indexer]
+        DB[(Clickhouse OLAP)]
+        PRICE[Price Stream]
+
+        SUB -->|Index Solana Slots| DB
+        LDS --> PRICE
+        LDS --> DB
+    end
+
+    %% External Systems
+    MOBILE[Mobile App]
+    CHAIN((Blockchain))
+    PRIVY((Privy))
+    WALLET[(Solana/EVM Wallets)]
+
+    %% Connections
+    RAK -->|Tool Calls| CHAIN
+    RAK -->|Execute Trades| LTE
+    LDS -->|Pricing Updates| LTE
+    LDS -->|Enriched Data| MOBILE
+    MOBILE -->|User Intents| RAK
+    LTE -->|Sign & Send Tx| CHAIN
+    DB -->|Query Data| RAK
+    RAK_WALLET -->|Integration| PRIVY
+    PRIVY --> WALLET
+
+```
 
 ## Features
 
