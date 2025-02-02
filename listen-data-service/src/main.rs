@@ -61,7 +61,7 @@ async fn main() -> Result<()> {
         match stream.next().await {
             None => break,
             Some(Ok(BlockResponse::New(data))) => {
-                println!("Received block: {:#?}", data);
+                println!("Received block");
                 process_block_scoped_data(&db, &data).await?;
                 persist_cursor(&db, data.cursor).await?;
             }

@@ -170,7 +170,7 @@ async fn process_substreams_response(
         Some(Message::Session(session)) => {
             println!(
                 "Received session message (Workers {}, Trace ID {})",
-                "", /*session.max_parallel_workers,*/ &session.trace_id
+                session.max_parallel_workers, &session.trace_id
             );
             BlockProcessedResult::Skip()
         }
@@ -181,18 +181,18 @@ async fn process_substreams_response(
             BlockProcessedResult::BlockUndoSignal(block_undo_signal)
         }
         Some(Message::Progress(progress)) => {
-            // if last_progress_report.elapsed() > Duration::from_secs(30) {
-            //     let processed_bytes = progress.processed_bytes.unwrap_or_default();
+            if last_progress_report.elapsed() > Duration::from_secs(30) {
+                let processed_bytes = progress.processed_bytes.unwrap_or_default();
 
-            //     println!(
-            //         "Latest progress message received (Stages: {}, Jobs: {}, Processed Bytes: [Read: {}, Written: {}])",
-            //         progress.stages.len(),
-            //         progress.running_jobs.len(),
-            //         processed_bytes.total_bytes_read,
-            //         processed_bytes.total_bytes_written,
-            //     );
-            //     *last_progress_report = Instant::now();
-            // }
+                println!(
+                    "Latest progress message received (Stages: {}, Jobs: {}, Processed Bytes: [Read: {}, Written: {}])",
+                    progress.stages.len(),
+                    progress.running_jobs.len(),
+                    processed_bytes.total_bytes_read,
+                    processed_bytes.total_bytes_written,
+                );
+                *last_progress_report = Instant::now();
+            }
 
             // The `ModulesProgress` messages goal is to report active parallel processing happening
             // either to fill up backward (relative to your request's start block) some missing state
