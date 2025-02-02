@@ -1,0 +1,17 @@
+specVersion: v0.1.0
+package:
+  name: listen
+  version: v0.1.0
+
+imports:
+  solana: https://spkg.io/streamingfast/solana-common-v0.3.0.spkg
+
+modules:
+  - name: map_filtered_transactions
+    use: solana:transactions_by_programid_and_account_without_votes
+    initialBlock: 317850969
+
+network: solana-mainnet-beta
+
+params:
+  map_filtered_transactions: program:ComputeBudget111111111111111111111111111111 || (program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA && account:3MQw72oGrizUDEcD9gZYMgqo1pc364y5GnnJHcGpvurK)

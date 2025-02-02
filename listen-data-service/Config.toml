@@ -1,0 +1,15 @@
+[substreams]
+endpoint = "https://mainnet.sol.streamingfast.io:443"
+output_module_name = "map_trades_to_pubsub"
+start_block = 317868704
+end_block = 317868750
+
+[modules]
+binary_path = "./ao-solana-dex-trades-pubsub-v0.0.3.spkg"
+
+[surreal]
+endpoint = "127.0.0.1:8000"
+username = "root"
+password = "root"
+namespace = "substreams"
+database = "sink"

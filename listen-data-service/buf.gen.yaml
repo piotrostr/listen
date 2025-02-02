@@ -1,0 +1,19 @@
+version: v1
+managed:
+  enabled: true
+plugins:
+  - plugin: buf.build/community/neoeinstein-prost:v0.4.0
+    out: src/pb
+    opt:
+      - file_descriptor_set=false
+
+  - plugin: buf.build/community/neoeinstein-tonic:v0.4.1
+    out: src/pb
+    opt:
+      - no_server=true
+
+  - plugin: buf.build/community/neoeinstein-prost-crate:v0.4.1
+    out: src/pb
+    opt:
+      - include_file=pb.rs
+      - no_features

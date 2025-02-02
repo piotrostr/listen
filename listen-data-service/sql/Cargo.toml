@@ -1,0 +1,26 @@
+[package]
+name = "listen_sql"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.release]
+lto = true
+opt-level = "z"
+strip = "debuginfo"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+substreams = "0.5.21"
+substreams-database-change = "1"
+hex = "0.4.3"
+prost = "0.11"
+prost-types = "0.11"
+anyhow = "1.0"
+sha2 = "0.10.8"
+
+[target.wasm32-unknown-unknown.dependencies]
+getrandom = { version = "0.2", features = ["custom"] }
