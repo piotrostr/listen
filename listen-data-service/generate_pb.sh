@@ -1,8 +1,5 @@
 #!/bin/bash
 
-OUTPUT_PATH=ao-solana-dex-trades-pubsub-v0.0.3.spkg
+SPKG_PATH="tl-solana-dex-trades-1-0-22-v1.0.22.spkg"
 
-curl https://spkg.io/v1/files/ao-solana-dex-trades-pubsub-v0.0.3.spkg \
-    --output $OUTPUT_PATH
-
-buf generate --exclude-path="google" ./$OUTPUT_PATH#format=bin
+buf generate --exclude-path="google" ./$SPKG_PATH#format=bin

@@ -1,11 +1,14 @@
 [substreams]
 endpoint = "https://mainnet.sol.streamingfast.io:443"
-output_module_name = "map_trades_to_pubsub"
+output_module_name = "map_block"
+# endpoint = "https://mainnet.eth.streamingfast.io:443"
+# output_module_name = "db_out"
 start_block = 317868704
 end_block = 317868750
 
 [modules]
-binary_path = "./ao-solana-dex-trades-pubsub-v0.0.3.spkg"
+binary_path = "tl-solana-dex-trades-1-0-22-v1.0.22.spkg"
+# binary_path = "https://github.com/streamingfast/substreams-eth-block-meta/releases/download/v0.5.1/substreams-eth-block-meta-v0.5.1.spkg"
 
 [surreal]
 endpoint = "127.0.0.1:8000"

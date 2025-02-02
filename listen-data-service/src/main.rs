@@ -36,8 +36,8 @@ async fn main() -> Result<()> {
         endpoint_url = format!("{}://{}", "https", endpoint_url);
     }
 
-    let token = if std::env::var("SUBSTREAMS_TOKEN").is_ok() {
-        Some(std::env::var("SUBSTREAMS_TOKEN")?)
+    let token = if std::env::var("SUBSTREAMS_API_TOKEN").is_ok() {
+        Some(std::env::var("SUBSTREAMS_API_TOKEN")?)
     } else {
         None
     };

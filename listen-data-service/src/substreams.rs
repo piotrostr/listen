@@ -17,10 +17,11 @@ use crate::pb::sf::substreams::rpc::v2::{
 use crate::pb::sf::substreams::v1::Modules;
 use std::fmt::Display;
 
-use http::{uri::Scheme, Uri};
+use http::Uri;
 use tonic::{
+    codec::CompressionEncoding,
     codegen::http,
-    metadata::MetadataValue,
+    metadata::{KeyAndValueRef, MetadataMap},
     transport::{Channel, ClientTlsConfig},
 };
 
@@ -233,17 +234,17 @@ impl Stream for SubstreamsStream {
     }
 }
 
+impl Display for SubstreamsEndpoint {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        Display::fmt(self.uri.as_str(), f)
+    }
+}
+
 #[derive(Clone, Debug)]
 pub struct SubstreamsEndpoint {
     pub uri: String,
     pub token: Option<String>,
     channel: Channel,
-}
-
-impl Display for SubstreamsEndpoint {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        Display::fmt(self.uri.as_str(), f)
-    }
 }
 
 impl SubstreamsEndpoint {
@@ -253,18 +254,26 @@ impl SubstreamsEndpoint {
             .parse::<Uri>()
             .expect("the url should have been validated by now, so it is a valid Uri");
 
-        let endpoint = match uri.scheme().unwrap_or(&Scheme::HTTP).as_str() {
-            "http" => Channel::builder(uri),
-            "https" => Channel::builder(uri)
-                .tls_config(ClientTlsConfig::new().with_native_roots())
-                .expect("TLS config on this host is invalid"),
-            _ => panic!("invalid uri scheme for firehose endpoint"),
-        }
-        .connect_timeout(Duration::from_secs(10))
-        .tcp_keepalive(Some(Duration::from_secs(30)));
+        let channel = if uri.scheme_str() == Some("https") {
+            let tls = ClientTlsConfig::new()
+                .domain_name(uri.host().unwrap_or("mainnet.sol.streamingfast.io"))
+                .with_native_roots();
 
-        let uri = endpoint.uri().to_string();
-        let channel = endpoint.connect_lazy();
+            Channel::from_shared(uri.to_string())?
+                .tls_config(tls)?
+                .user_agent("substreams-rust/1.0")?
+                .connect_timeout(Duration::from_secs(10))
+                .timeout(Duration::from_secs(60))
+                .concurrency_limit(1)
+                .rate_limit(5, Duration::from_secs(1))
+                .http2_keep_alive_interval(Duration::from_secs(30))
+                .tcp_keepalive(Some(Duration::from_secs(60)))
+                .connect_lazy()
+        } else {
+            Channel::from_shared(uri.to_string())?.connect_lazy()
+        };
+
+        let uri = uri.to_string();
 
         Ok(SubstreamsEndpoint {
             uri,
@@ -278,27 +287,55 @@ impl SubstreamsEndpoint {
         request: Request,
     ) -> Result<tonic::Streaming<Response>, anyhow::Error> {
         println!("Connecting to substreams endpoint {}", self.uri);
-        let token_metadata: Option<MetadataValue<tonic::metadata::Ascii>> = match self.token.clone()
-        {
-            Some(token) => Some(format!("Bearer {}", token).as_str().try_into()?),
 
-            None => None,
-        };
+        // Create metadata map with all required headers
+        let mut metadata = MetadataMap::new();
+
+        // Add token if present
+        if let Some(token) = &self.token {
+            if !token.starts_with("eyJ") {
+                println!("Warning: Token doesn't look like a JWT");
+            }
+            metadata.insert("authorization", token.parse()?);
+        }
+
+        // Add additional headers
+        metadata.insert("x-sf-substreams-version", "v0.1.0".parse().unwrap());
+        metadata.insert("x-sf-substreams-endpoint", "mainnet.sol".parse().unwrap());
+
+        println!("Request details:");
+        println!("URI: {}", self.uri);
+        println!("Headers: {:?}", metadata);
 
         let mut client = StreamClient::with_interceptor(
             self.channel.clone(),
-            move |mut r: tonic::Request<()>| {
-                if let Some(ref t) = token_metadata {
-                    r.metadata_mut().insert("authorization", t.clone());
+            move |mut req: tonic::Request<()>| {
+                for item in metadata.iter() {
+                    match item {
+                        KeyAndValueRef::Ascii(k, v) => {
+                            req.metadata_mut().insert(k, v.clone());
+                        }
+                        KeyAndValueRef::Binary(k, v) => {
+                            req.metadata_mut().insert_bin(k, v.clone());
+                        }
+                    }
                 }
 
-                Ok(r)
+                Ok(req)
             },
-        );
+        )
+        .accept_compressed(CompressionEncoding::Gzip)
+        .send_compressed(CompressionEncoding::Gzip)
+        .max_decoding_message_size(100 * 1024 * 1024);
 
-        let response_stream = client.blocks(request).await?;
-        let block_stream = response_stream.into_inner();
+        let response_stream = client.blocks(request).await.map_err(|e| {
+            println!("Initial connection error: {:?}", e);
+            println!("Status code: {:?}", e.code());
+            println!("Message: {}", e.message());
+            println!("Metadata: {:?}", e.metadata());
+            anyhow!("Failed to connect: {}", e)
+        })?;
 
-        Ok(block_stream)
+        Ok(response_stream.into_inner())
     }
 }
