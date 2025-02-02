@@ -1,4 +1,0 @@
-CREATE TABLE IF NOT EXISTS events (
-    "id" VARCHAR(64),
-)
-ENGINE = MergeTree PRIMARY KEY (id)
