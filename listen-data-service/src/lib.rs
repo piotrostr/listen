@@ -2,6 +2,7 @@ pub mod config;
 pub mod package;
 pub mod pb;
 pub mod substreams;
+pub mod substreams_stream;
 
 use anyhow::Result;
 use serde::{Deserialize, Serialize};

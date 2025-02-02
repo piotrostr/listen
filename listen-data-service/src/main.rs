@@ -1,8 +1,9 @@
 use anyhow::Result;
-use futures::StreamExt;
+use futures03::StreamExt;
 use listen_data_service::config::Config;
 use listen_data_service::package;
-use listen_data_service::substreams::{BlockResponse, SubstreamsEndpoint, SubstreamsStream};
+use listen_data_service::substreams::SubstreamsEndpoint;
+use listen_data_service::substreams_stream::{BlockResponse, SubstreamsStream};
 use listen_data_service::{
     load_persisted_cursor, persist_cursor, process_block_scoped_data, process_block_undo_signal,
 };
