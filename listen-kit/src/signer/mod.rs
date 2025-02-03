@@ -36,7 +36,15 @@ pub enum SignerType {
 
 #[async_trait]
 pub trait TransactionSigner: Send + Sync {
-    fn address(&self) -> String;
+    #[cfg(feature = "evm")]
+    fn address(&self) -> String {
+        unimplemented!()
+    }
+
+    #[cfg(feature = "solana")]
+    fn pubkey(&self) -> String {
+        unimplemented!()
+    }
 
     #[cfg(feature = "solana")]
     async fn sign_and_send_solana_transaction(

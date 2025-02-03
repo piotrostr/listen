@@ -30,6 +30,10 @@ impl TransactionSigner for PrivySigner {
         self.session.wallet_address.clone()
     }
 
+    fn pubkey(&self) -> String {
+        self.session.pubkey.clone()
+    }
+
     #[cfg(feature = "solana")]
     async fn sign_and_send_solana_transaction(
         &self,

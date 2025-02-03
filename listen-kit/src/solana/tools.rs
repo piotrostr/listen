@@ -84,13 +84,14 @@ pub async fn transfer_spl_token(
 
 #[tool]
 pub async fn get_public_key() -> Result<String> {
-    Ok(SignerContext::current().await.address())
+    Ok(SignerContext::current().await.pubkey())
 }
 
 #[tool]
 pub async fn get_sol_balance() -> Result<u64> {
     let signer = SignerContext::current().await.clone();
-    let owner = Pubkey::from_str(&signer.address())?;
+    println!("Signer: {}", signer.pubkey());
+    let owner = Pubkey::from_str(&signer.pubkey())?;
 
     wrap_unsafe(move || async move {
         create_rpc()
@@ -106,7 +107,7 @@ pub async fn get_sol_balance() -> Result<u64> {
 #[tool]
 pub async fn get_spl_token_balance(mint: String) -> Result<(String, u8)> {
     let signer = SignerContext::current().await;
-    let owner = Pubkey::from_str(&signer.address())?;
+    let owner = Pubkey::from_str(&signer.pubkey())?;
     let mint = Pubkey::from_str(&mint)?;
     let ata = spl_associated_token_account::get_associated_token_address(
         &owner, &mint,
@@ -191,7 +192,7 @@ pub async fn sell_pump_fun_token(
 
 #[tool]
 pub async fn get_portfolio() -> Result<Vec<PortfolioItem>> {
-    let owner = Pubkey::from_str(&SignerContext::current().await.address())?;
+    let owner = Pubkey::from_str(&SignerContext::current().await.pubkey())?;
     let holdings = wrap_unsafe(move || async move {
         crate::solana::balance::get_holdings(&create_rpc(), &owner)
             .await

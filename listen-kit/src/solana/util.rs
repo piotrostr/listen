@@ -168,7 +168,7 @@ where
     Fut: Future<Output = Result<Transaction>> + Send + 'static,
 {
     let signer = SignerContext::current().await;
-    let owner = Pubkey::from_str(&signer.address())?;
+    let owner = Pubkey::from_str(&signer.pubkey())?;
 
     let mut tx = wrap_unsafe(move || async move { tx_creator(owner).await })
         .await

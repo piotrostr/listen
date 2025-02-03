@@ -10,7 +10,7 @@ use config::PrivyConfig;
 use types::{
     CreateWalletRequest, CreateWalletResponse, PrivyClaims,
     SignAndSendTransactionParams, SignAndSendTransactionRequest,
-    SignAndSendTransactionResponse, User,
+    SignAndSendTransactionResponse, User, WalletAccount,
 };
 
 use util::{create_http_client, transaction_to_base64};
@@ -25,7 +25,9 @@ pub struct WalletManager {
 pub struct UserSession {
     pub(crate) user_id: String,
     pub(crate) session_id: String,
+    #[cfg(feature = "evm")]
     pub(crate) wallet_address: String,
+    #[cfg(feature = "solana")]
     pub(crate) pubkey: String,
 }
 
@@ -68,51 +70,34 @@ impl WalletManager {
     ) -> Result<UserSession> {
         let claims = self.validate_access_token(access_token)?;
         let user = self.get_user_by_id(&claims.user_id).await?;
-        let solana_wallet = user
-            .linked_accounts
-            .iter()
-            .find_map(|account| match account {
-                types::LinkedAccount::Wallet(wallet) => {
-                    if wallet.delegated
-                        && wallet.chain_type == "solana"
-                        && wallet.wallet_client == "privy"
-                    {
-                        Some(wallet)
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            })
-            .ok_or_else(|| {
-                anyhow!("Could not find a delegated solana wallet")
-            })?;
-        let evm_wallet = user
-            .linked_accounts
-            .iter()
-            .find_map(|account| match account {
-                types::LinkedAccount::Wallet(wallet) => {
-                    if wallet.delegated
-                        && wallet.chain_type == "ethereum"
-                        && wallet.wallet_client == "privy"
-                    {
-                        Some(wallet)
-                    } else {
-                        None
-                    }
-                }
-                _ => None,
-            })
-            .ok_or_else(|| {
-                anyhow!("Could not find a delegated ethereum wallet")
-            })?;
 
-        Ok(UserSession {
+        // Initialize basic session data
+        let mut session = UserSession {
             user_id: user.id,
             session_id: claims.session_id,
-            wallet_address: evm_wallet.address.clone(),
-            pubkey: solana_wallet.address.clone(),
-        })
+            #[cfg(feature = "evm")]
+            wallet_address: String::new(),
+            #[cfg(feature = "solana")]
+            pubkey: String::new(),
+        };
+
+        // Handle Solana wallet
+        #[cfg(feature = "solana")]
+        {
+            let solana_wallet =
+                find_wallet(&user.linked_accounts, "solana", "privy")?;
+            session.pubkey = solana_wallet.address.clone();
+        }
+
+        // Handle EVM wallet
+        #[cfg(feature = "evm")]
+        {
+            let evm_wallet =
+                find_wallet(&user.linked_accounts, "ethereum", "privy")?;
+            session.wallet_address = evm_wallet.address.clone();
+        }
+
+        Ok(session)
     }
 
     #[cfg(feature = "evm")]
@@ -222,4 +207,29 @@ impl WalletManager {
         // dbg!(serde_json::from_str::<serde_json::Value>(&text)?);
         Ok(serde_json::from_str(&text)?)
     }
+}
+
+fn find_wallet<'a>(
+    linked_accounts: &'a [types::LinkedAccount],
+    chain_type: &str,
+    wallet_client: &str,
+) -> Result<&'a WalletAccount> {
+    linked_accounts
+        .iter()
+        .find_map(|account| match account {
+            types::LinkedAccount::Wallet(wallet) => {
+                if wallet.delegated
+                    && wallet.chain_type == chain_type
+                    && wallet.wallet_client == wallet_client
+                {
+                    Some(wallet)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        })
+        .ok_or_else(|| {
+            anyhow!("Could not find a delegated {} wallet", chain_type)
+        })
 }
