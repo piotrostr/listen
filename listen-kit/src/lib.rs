@@ -12,6 +12,7 @@ pub mod wallet_manager;
 
 pub mod agent;
 pub mod common;
+pub mod reasoning_loop;
 pub mod signer;
 
 #[ctor::ctor]
