@@ -31,7 +31,6 @@ pub struct UserSession {
     pub(crate) pubkey: String,
 }
 
-/// WalletManager currently only supports Solana
 impl WalletManager {
     pub fn new(privy_config: PrivyConfig) -> Self {
         let http_client = create_http_client(&privy_config);
