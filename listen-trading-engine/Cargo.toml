@@ -1,0 +1,18 @@
+[package]
+name = "listen-trading-engine"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.95"
+base64 = "0.22.1"
+chrono = { version = "0.4.39", features = ["serde"] }
+ctor = "0.2.9"
+dotenv = "0.15.0"
+reqwest = { version = "0.12.12", features = ["json"] }
+serde = { version = "1.0.217", features = ["derive"] }
+serde_json = "1.0.138"
+tokio = { version = "1.43.0", features = ["rt", "macros"] }
+tracing = "0.1.41"
+tracing-subscriber = "0.3.19"
+uuid = { version = "1.12.1", features = ["serde"] }
