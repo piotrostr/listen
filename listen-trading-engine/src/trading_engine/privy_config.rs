@@ -4,16 +4,17 @@ use anyhow::Result;
 pub struct PrivyConfig {
     pub(crate) app_id: String,
     pub(crate) app_secret: String,
-    pub(crate) verification_key: String,
+}
+
+fn must_get_env(name: &str) -> String {
+    std::env::var(name).unwrap_or_else(|_| panic!("Missing env var: {}", name))
 }
 
 impl PrivyConfig {
     pub fn from_env() -> Result<Self> {
         Ok(Self {
-            app_id: std::env::var("PRIVY_APP_ID").expect("PRIVY_APP_ID is not set"),
-            app_secret: std::env::var("PRIVY_APP_SECRET").expect("PRIVY_APP_SECRET is not set"),
-            verification_key: std::env::var("PRIVY_VERIFICATION_KEY")
-                .expect("PRIVY_VERIFICATION_KEY is not set"),
+            app_id: must_get_env("PRIVY_APP_ID"),
+            app_secret: must_get_env("PRIVY_APP_SECRET"),
         })
     }
 }
@@ -23,7 +24,6 @@ mod tests {
     use super::*;
 
     #[test]
-    #[ignore]
     fn test_privy_config_from_env() {
         PrivyConfig::from_env().unwrap();
     }
