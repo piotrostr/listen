@@ -88,7 +88,7 @@ async function fetchPrices(mints: string[]): Promise<PriceResponse> {
   }
 }
 
-export const usePortfolio = () => {
+export const useSolanaPortfolio = () => {
   const { data: wallets } = usePrivyWallets();
 
   return useQuery({

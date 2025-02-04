@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { usePortfolio } from "../hooks/usePortfolio";
+import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
+import { useEvmPortfolio } from "../hooks/useEvmPortfolio";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { ChatSelector } from "./ChatSelector";
 import { useChatType } from "../hooks/useChatType";
@@ -60,7 +61,10 @@ const CopyIcon = () => (
 );
 
 export function Portfolio() {
-  const { data: assets, isLoading } = usePortfolio();
+  const { data: solanaAssets, isLoading: isLoadingSolana } =
+    useSolanaPortfolio();
+  const { data: evmAssets, isLoading: isLoadingEvm } = useEvmPortfolio();
+  const isLoading = isLoadingSolana || isLoadingEvm;
   const { data: wallets } = usePrivyWallets();
   const [clicked, setClicked] = useState(false);
   const { chatType, setChatType } = useChatType();
@@ -80,13 +84,17 @@ export function Portfolio() {
     setTimeout(() => setClicked(false), 1000);
   };
 
+  const isSolana = chatType === "solana" || chatType === "pump";
+  const isEvm = chatType === "evm";
+  const assets = isSolana ? solanaAssets : evmAssets;
+
   return (
     <div className="h-[70vh] font-mono">
       <div className="h-full border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm overflow-hidden flex flex-col">
         <div className="flex flex-row justify-between items-center p-4">
           <h2 className="text-xl font-bold">Portfolio</h2>
           <div className="flex items-center gap-2">
-            {(chatType === "solana" || chatType === "pump") && (
+            {isSolana && (
               <>
                 <div>
                   {wallets?.solanaWallet?.toString().slice(0, 4)}...
@@ -97,7 +105,7 @@ export function Portfolio() {
                 </div>
               </>
             )}
-            {chatType === "evm" && (
+            {isEvm && (
               <>
                 <div>
                   {wallets?.evmWallet?.toString().slice(0, 4)}...

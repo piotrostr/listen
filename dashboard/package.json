@@ -13,6 +13,7 @@
     "@privy-io/react-auth": "^2.0.8",
     "@solana/web3.js": "^1.98.0",
     "@tanstack/react-query": "^5.64.1",
+    "alchemy-sdk": "^3.5.1",
     "autoprefixer": "^10.4.20",
     "postcss": "^8.5.1",
     "react": "^18.3.1",
