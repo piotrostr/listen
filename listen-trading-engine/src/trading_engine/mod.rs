@@ -1,151 +1,147 @@
-mod caip2;
-mod constants;
-mod order;
-mod privy_config;
-mod types;
-mod util;
+pub mod caip2;
+pub mod constants;
+pub mod evaluator;
+pub mod executor;
+pub mod order;
+pub mod pipeline;
+pub mod privy_config;
+pub mod types;
+pub mod util;
 
-use self::order::Order;
-use self::privy_config::PrivyConfig;
-use self::types::{
-    SignAndSendTransactionParams, SignAndSendTransactionRequest, SignAndSendTransactionResponse,
-};
-use self::util::create_http_client;
-use anyhow::{anyhow, Result};
-use types::{SignAndSendEvmTransactionParams, SignAndSendEvmTransactionRequest};
+use std::collections::{HashMap, HashSet};
+use tokio::sync::RwLock;
+
+use anyhow::Result;
+use uuid::Uuid;
+
+use self::evaluator::Evaluator;
+use self::pipeline::{Condition, ConditionType, Pipeline, Status};
 
 pub struct TradingEngine {
-    http_client: reqwest::Client,
+    executor: executor::Executor,
+
+    // Active pipelines indexed by UUID
+    active_pipelines: RwLock<HashMap<Uuid, Pipeline>>,
+
+    // Asset to pipeline index for efficient updates
+    asset_subscriptions: RwLock<HashMap<String, HashSet<Uuid>>>,
+
+    // Current market state
+    price_cache: RwLock<HashMap<String, f64>>,
 }
 
 impl TradingEngine {
     pub fn from_env() -> Result<Self> {
-        let privy_config = PrivyConfig::from_env()?;
-        let http_client = create_http_client(&privy_config);
-        Ok(Self { http_client })
+        Ok(Self {
+            executor: executor::Executor::from_env()?,
+            active_pipelines: RwLock::new(HashMap::new()),
+            asset_subscriptions: RwLock::new(HashMap::new()),
+            price_cache: RwLock::new(HashMap::new()),
+        })
+    }
+    pub async fn add_pipeline(&self, pipeline: Pipeline) -> Result<()> {
+        let mut active_pipelines = self.active_pipelines.write().await;
+        let mut asset_subscriptions = self.asset_subscriptions.write().await;
+
+        // Extract all assets mentioned in pipeline conditions
+        let assets = self.extract_assets(&pipeline).await;
+
+        // Update asset subscriptions
+        for asset in assets {
+            asset_subscriptions
+                .entry(asset)
+                .or_default()
+                .insert(pipeline.id);
+        }
+
+        active_pipelines.insert(pipeline.id, pipeline);
+        Ok(())
     }
 
-    pub async fn execute_order(&self, order: Order) -> Result<String> {
-        if order.is_solana() {
-            if order.solana_transaction.is_none() {
-                return Err(anyhow!("Solana transaction required for Solana order"));
+    pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
+        // Update price cache
+        let mut cache = self.price_cache.write().await;
+        cache.insert(asset.to_string(), price);
+        drop(cache); // Release lock early
+
+        // Get affected pipelines
+        let subscriptions = self.asset_subscriptions.read().await;
+        if let Some(pipeline_ids) = subscriptions.get(asset) {
+            for pipeline_id in pipeline_ids {
+                if let Some(pipeline) = self.active_pipelines.write().await.get_mut(pipeline_id) {
+                    self.evaluate_pipeline(pipeline).await?;
+                }
             }
-            self.execute_solana_transaction(
-                order.address,
-                order.solana_transaction.unwrap(),
-                order.caip2,
-            )
-            .await
-        } else {
-            if order.evm_transaction.is_none() {
-                return Err(anyhow!("EVM transaction required for EVM order"));
+        }
+
+        Ok(())
+    }
+
+    async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<()> {
+        let current_step_ids = pipeline.current_steps.clone();
+        let price_cache = self.price_cache.read().await.clone();
+
+        for step_id in current_step_ids {
+            if let Some(step) = pipeline.steps.get_mut(&step_id) {
+                if matches!(step.status, Status::Pending)
+                    && Evaluator::evaluate_conditions(&step.conditions, &price_cache)
+                {
+                    // Execute order and update status
+                    match self.executor.execute_order(step.order.clone()).await {
+                        Ok(_) => {
+                            step.status = Status::Completed;
+                            pipeline.current_steps = step.next_steps.clone();
+                        }
+                        Err(e) => {
+                            step.status = Status::Failed;
+                            pipeline.status = Status::Failed;
+                            tracing::error!(%step_id, error = %e, "Order execution failed");
+                        }
+                    }
+                }
             }
-            self.execute_evm_transaction(order.address, order.evm_transaction.unwrap(), order.caip2)
-                .await
         }
+        // Check pipeline completion
+        if pipeline.current_steps.is_empty() {
+            pipeline.status = Status::Completed;
+        }
+
+        Ok(())
     }
 
-    async fn execute_evm_transaction(
+    /// Extract all unique assets mentioned in pipeline conditions
+    async fn extract_assets(&self, pipeline: &Pipeline) -> HashSet<String> {
+        let mut assets = HashSet::new();
+        for step in pipeline.steps.values() {
+            self.collect_assets_from_condition(&step.conditions, &mut assets)
+                .await;
+        }
+        assets
+    }
+
+    async fn collect_assets_from_condition(
         &self,
-        address: String,
-        transaction: serde_json::Value,
-        caip2: String,
-    ) -> Result<String> {
-        tracing::info!(?address, "Executing EVM transaction");
-        let request = SignAndSendEvmTransactionRequest {
-            address,
-            chain_type: "ethereum".to_string(),
-            method: "eth_sendTransaction".to_string(),
-            caip2,
-            params: SignAndSendEvmTransactionParams { transaction },
-        };
+        conditions: &[Condition],
+        assets: &mut HashSet<String>,
+    ) {
+        let mut stack = Vec::new();
+        stack.extend(conditions.iter());
 
-        let response = self
-            .http_client
-            .post("https://auth.privy.io/api/v1/wallets/rpc")
-            .json(&request)
-            .send()
-            .await?;
-
-        if !response.status().is_success() {
-            return Err(anyhow!(
-                "Failed to send transaction: {}",
-                response.text().await?
-            ));
+        while let Some(condition) = stack.pop() {
+            match &condition.condition_type {
+                ConditionType::PriceAbove { asset, .. } => {
+                    assets.insert(asset.clone());
+                }
+                ConditionType::PriceBelow { asset, .. } => {
+                    assets.insert(asset.clone());
+                }
+                ConditionType::PercentageChange { asset, .. } => {
+                    assets.insert(asset.clone());
+                }
+                ConditionType::And(sub_conditions) | ConditionType::Or(sub_conditions) => {
+                    stack.extend(sub_conditions.iter());
+                }
+            }
         }
-
-        let result: SignAndSendTransactionResponse = response.json().await?;
-        tracing::info!(
-            ?result.data.hash,
-            ?result.data.caip2,
-            "Transaction sent",
-        );
-        Ok(result.data.hash)
-    }
-
-    async fn execute_solana_transaction(
-        &self,
-        address: String,
-        transaction: String,
-        caip2: String,
-    ) -> Result<String> {
-        tracing::info!(?address, "Executing Solana transaction");
-        let request = SignAndSendTransactionRequest {
-            address,
-            chain_type: "solana".to_string(),
-            method: "signAndSendTransaction".to_string(),
-            caip2,
-            params: SignAndSendTransactionParams {
-                transaction,
-                encoding: "base64".to_string(),
-            },
-        };
-
-        let response = self
-            .http_client
-            .post("https://api.privy.io/v1/wallets/rpc")
-            .json(&request)
-            .send()
-            .await?;
-
-        if !response.status().is_success() {
-            return Err(anyhow!(
-                "Failed to sign transaction: {}",
-                response.text().await?
-            ));
-        }
-
-        let result: SignAndSendTransactionResponse = response.json().await?;
-        tracing::info!(
-            ?result.data.hash,
-            ?result.data.caip2,
-            "Transaction sent",
-        );
-        Ok(result.data.hash)
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-    use caip2::Caip2;
-
-    #[tokio::test]
-    async fn test_execute_order_eth() {
-        let engine = TradingEngine::from_env().unwrap();
-        let order = Order {
-            user_id: "-".to_string(),
-            address: constants::TEST_ADDRESS_EVM.to_string(),
-            caip2: Caip2::ARBITRUM.to_string(),
-            condition: super::order::Condition {},
-            evm_transaction: Some(serde_json::json!({
-                "from": constants::TEST_ADDRESS_EVM,
-                "to": constants::TEST_ADDRESS_EVM,
-                "value": "0x111",
-            })),
-            solana_transaction: None,
-        };
-        let result = engine.execute_order(order).await.unwrap();
-        assert_eq!(result.len(), 66);
     }
 }

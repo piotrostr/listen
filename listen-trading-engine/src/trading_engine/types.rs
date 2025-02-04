@@ -14,12 +14,6 @@ pub struct SignAndSendEvmTransactionParams {
     pub transaction: serde_json::Value,
 }
 
-#[derive(Deserialize)]
-pub struct SignAndSendEvmTransactionResponse {
-    pub method: String,
-    pub data: SignAndSendTransactionData,
-}
-
 // Request types for signing transactions
 #[derive(Serialize)]
 pub struct SignAndSendTransactionRequest {
@@ -36,7 +30,6 @@ pub struct SignAndSendTransactionParams {
     pub encoding: String,
 }
 
-// Response types for signed transactions
 #[derive(Deserialize)]
 pub struct SignAndSendTransactionResponse {
     pub method: String,
