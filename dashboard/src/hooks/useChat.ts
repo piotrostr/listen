@@ -2,7 +2,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useState, useCallback } from "react";
 import { z } from "zod";
 import { introPrompt } from "./prompts";
-import { usePortfolio } from "./usePortfolio";
+import { useSolanaPortfolio } from "./useSolanaPortfolio";
 import { config } from "../config";
 import { useChatType } from "./useChatType";
 
@@ -28,7 +28,7 @@ export interface StreamResponse {
 }
 
 export function useChat() {
-  const { data: portfolio } = usePortfolio();
+  const { data: portfolio } = useSolanaPortfolio();
   const { user } = usePrivy();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
