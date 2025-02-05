@@ -1,18 +1,18 @@
 use super::middleware::verify_auth;
 use super::state::AppState;
+use crate::common::spawn_with_signer;
+use crate::reasoning_loop::LoopResponse;
+use crate::reasoning_loop::ReasoningLoop;
 use crate::signer::privy::PrivySigner;
-use crate::signer::{SignerContext, TransactionSigner};
+use crate::signer::TransactionSigner;
 use actix_web::{
     get, post, web, Error, HttpRequest, HttpResponse, Responder,
 };
 use actix_web_lab::sse;
 use anyhow::Result;
-use futures_util::StreamExt;
 use rig::completion::Message;
-use rig::streaming::{StreamingChat, StreamingChoice};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
-use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -37,20 +37,6 @@ pub enum ServerError {
     WalletError,
     PrivyError,
     ChainNotSupported,
-}
-
-pub async fn spawn_with_signer<F, Fut, T>(
-    signer: Arc<dyn TransactionSigner>,
-    f: F,
-) -> tokio::task::JoinHandle<Result<T>>
-where
-    F: FnOnce() -> Fut + Send + 'static,
-    Fut: Future<Output = Result<T>> + Send + 'static,
-    T: Send + 'static,
-{
-    tokio::spawn(async move {
-        SignerContext::with_signer(signer, async { f().await }).await
-    })
 }
 
 #[post("/stream")]
@@ -116,61 +102,65 @@ async fn stream(
     ));
 
     spawn_with_signer(signer, || async move {
-        let mut stream = match agent.stream_chat(&prompt, messages).await {
-            Ok(s) => s,
-            Err(e) => {
-                let _ = tx
-                    .send(sse::Event::Data(sse::Data::new(
-                        serde_json::to_string(&StreamResponse::Error(
-                            e.to_string(),
-                        ))
-                        .unwrap(),
-                    )))
-                    .await;
-                return Ok(());
-            }
-        };
+        let reasoning_loop = ReasoningLoop::new(agent).with_stdout(false);
 
-        while let Some(chunk) = stream.next().await {
-            let response = match chunk {
-                Ok(StreamingChoice::Message(text)) => {
-                    StreamResponse::Message(text)
-                }
-                Ok(StreamingChoice::ToolCall(name, _, params)) => {
-                    tracing::debug!(tool = name, parameters = ?params, "Tool call");
-                    match agent.tools.call(&name, params.to_string()).await {
-                        Ok(result) => {
-                            tracing::debug!(tool = name, result = ?result, "Tool call result");
-                            StreamResponse::ToolCall {
-                                name: name.to_string(),
-                                result: result.to_string(),
-                            }
-                        }
-                        Err(e) => {
-                            tracing::error!(tool = name, error = ?e, "Tool call error");
-                            StreamResponse::Error(format!(
-                                "Tool call failed: {}",
-                                e
-                            ))
-                        }
+        let mut initial_messages = messages;
+        initial_messages.push(Message {
+            role: "user".to_string(),
+            content: prompt,
+        });
+
+        // Create a channel for the reasoning loop to send responses
+        let (internal_tx, mut internal_rx) = tokio::sync::mpsc::channel(32);
+
+        // Create a separate task to handle sending responses
+        let tx_clone = tx.clone();
+        let send_task = tokio::spawn(async move {
+            while let Some(response) = internal_rx.recv().await {
+                let stream_response = match response {
+                    LoopResponse::Message(text) => {
+                        StreamResponse::Message(text)
                     }
-                }
-                Err(e) => StreamResponse::Error(e.to_string()),
-            };
+                    LoopResponse::ToolCall { name, result } => {
+                        StreamResponse::ToolCall { name, result }
+                    }
+                };
 
-            if tx
-                .send(sse::Event::Data(sse::Data::new(
-                    serde_json::to_string(&response).unwrap(),
-                )))
-                .await
-                .is_err()
-            {
-                break;
+                if tx_clone
+                    .send(sse::Event::Data(sse::Data::new(
+                        serde_json::to_string(&stream_response).unwrap(),
+                    )))
+                    .await
+                    .is_err()
+                {
+                    break;
+                }
             }
+        });
+
+        // Run the reasoning loop in the current task (with signer context)
+        let loop_result = reasoning_loop
+            .stream(initial_messages, Some(internal_tx))
+            .await;
+
+        // Wait for the send task to complete
+        let _ = send_task.await;
+
+        // Check if the reasoning loop completed successfully
+        if let Err(e) = loop_result {
+            let _ = tx
+                .send(sse::Event::Data(sse::Data::new(
+                    serde_json::to_string(&StreamResponse::Error(
+                        e.to_string(),
+                    ))
+                    .unwrap(),
+                )))
+                .await;
         }
 
         Ok(())
-    }).await;
+    })
+    .await;
 
     sse::Sse::from_infallible_receiver(rx)
         .with_keep_alive(Duration::from_secs(15))
