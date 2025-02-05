@@ -47,6 +47,7 @@ impl LiFiClient {
         Ok(serde_json::from_value(res)?)
     }
 
+    #[allow(dead_code)]
     pub async fn post<T: for<'a> Deserialize<'a>, B: Serialize>(
         &self,
         endpoint: &str,

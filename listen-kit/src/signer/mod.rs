@@ -65,6 +65,16 @@ pub trait TransactionSigner: Send + Sync {
             "EVM transactions not supported by this signer"
         ))
     }
+
+    #[cfg(feature = "solana")]
+    async fn sign_and_send_encoded_solana_transaction(
+        &self,
+        _tx: String,
+    ) -> Result<String> {
+        Err(anyhow::anyhow!(
+            "Solana transactions not supported by this signer"
+        ))
+    }
 }
 
 tokio::task_local! {

@@ -1,6 +1,7 @@
 use serde::{Deserialize, Serialize};
 use serde_json::{Number, Value};
 
+#[allow(dead_code)]
 pub enum Order {
     Fastest,
     Cheapest,
@@ -34,7 +35,7 @@ pub struct QuoteResponse {
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TransactionRequest {
-    data: String,
+    pub data: String,
 }
 
 #[derive(Serialize, Deserialize, Debug)]

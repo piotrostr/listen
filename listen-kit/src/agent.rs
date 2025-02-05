@@ -31,6 +31,8 @@ pub async fn plain_agent() -> Result<Agent<AnthropicCompletionModel>> {
 #[cfg(feature = "solana")]
 pub async fn create_solana_agent() -> Result<Agent<AnthropicCompletionModel>>
 {
+    use crate::cross_chain::tools::BridgeFromSolToArb;
+
     Ok(claude_agent_builder()
         .preamble(&format!(
             "{} {}",
@@ -46,6 +48,7 @@ pub async fn create_solana_agent() -> Result<Agent<AnthropicCompletionModel>>
         .tool(FetchTokenPrice)
         .tool(GetPortfolio)
         .tool(SearchOnDexScreener)
+        .tool(BridgeFromSolToArb)
         .build())
 }
 

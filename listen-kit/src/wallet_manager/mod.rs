@@ -143,13 +143,26 @@ impl WalletManager {
         address: String,
         transaction: &solana_sdk::transaction::Transaction,
     ) -> Result<String> {
+        self.sign_and_send_encoded_solana_transaction(
+            address,
+            transaction_to_base64(transaction)?,
+        )
+        .await
+    }
+
+    #[cfg(feature = "solana")]
+    pub async fn sign_and_send_encoded_solana_transaction(
+        &self,
+        address: String,
+        encoded_transaction: String,
+    ) -> Result<String> {
         let request = SignAndSendTransactionRequest {
             address,
             chain_type: "solana".to_string(),
             method: "signAndSendTransaction".to_string(),
             caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp".to_string(),
             params: SignAndSendTransactionParams {
-                transaction: transaction_to_base64(transaction)?,
+                transaction: encoded_transaction,
                 encoding: "base64".to_string(),
             },
         };
