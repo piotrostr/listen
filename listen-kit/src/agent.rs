@@ -2,7 +2,7 @@ use anyhow::Result;
 use rig::agent::{Agent, AgentBuilder};
 use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
 
-const PREAMBLE_COMMON: &str = "never assume you know the token address, if you dont have it in the context, search for it";
+const PREAMBLE_COMMON: &str = "";
 
 #[cfg(feature = "evm")]
 use crate::evm::tools::{
