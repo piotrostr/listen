@@ -5,6 +5,7 @@ import { introPrompt } from "./prompts";
 import { useSolanaPortfolio } from "./useSolanaPortfolio";
 import { config } from "../config";
 import { useChatType } from "./useChatType";
+import { useEvmPortfolio } from "./useEvmPortfolio";
 
 export type MessageDirection = "incoming" | "outgoing";
 
@@ -28,7 +29,8 @@ export interface StreamResponse {
 }
 
 export function useChat() {
-  const { data: portfolio } = useSolanaPortfolio();
+  const { data: solanaPortfolio } = useSolanaPortfolio();
+  const { data: evmPortfolio } = useEvmPortfolio();
   const { user } = usePrivy();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
@@ -85,10 +87,22 @@ export function useChat() {
           },
         ]);
 
+        if (
+          !user ||
+          solanaPortfolio === undefined ||
+          evmPortfolio === undefined
+        ) {
+          console.error("User or portfolio not available");
+        }
+
         const chat_history = messageHistory.filter((msg) => msg.content !== "");
-        if (chat_history.length > 0) {
-          chat_history[0].content +=
-            " " + introPrompt(portfolio, user?.wallet?.address || "");
+        if (chat_history.length == 0) {
+          userMessage +=
+            " " +
+            introPrompt(
+              [...solanaPortfolio!, ...evmPortfolio!],
+              user?.wallet?.address || "",
+            );
         }
 
         const body = JSON.stringify({
@@ -190,7 +204,8 @@ export function useChat() {
       messages,
       updateAssistantMessage,
       getAccessToken,
-      portfolio,
+      solanaPortfolio,
+      evmPortfolio,
       user,
       chatType,
     ],
