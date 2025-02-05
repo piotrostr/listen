@@ -38,32 +38,24 @@ impl ReasoningLoop {
 
         let mut current_messages = messages;
 
-        loop {
+        'outer: loop {
             let mut stream =
                 self.agent.stream_chat("", current_messages.clone()).await?;
             let mut current_response = String::new();
-            let mut tool_results = Vec::new();
 
             while let Some(chunk) = stream.next().await {
                 match chunk? {
                     StreamingChoice::Message(text) => {
-                        match self.stdout {
-                            true => {
-                                print!("{}", text);
-                                std::io::stdout().flush()?;
-                            }
-                            false => {
-                                if let Some(tx) = &tx {
-                                    tx.send(LoopResponse::Message(
-                                        text.clone(),
-                                    ))
-                                    .await?;
-                                }
-                            }
+                        if self.stdout {
+                            print!("{}", text);
+                            std::io::stdout().flush()?;
+                        } else if let Some(tx) = &tx {
+                            tx.send(LoopResponse::Message(text.clone()))
+                                .await?;
                         }
                         current_response.push_str(&text);
                     }
-                    StreamingChoice::ToolCall(name, _id, params) => {
+                    StreamingChoice::ToolCall(name, tool_id, params) => {
                         if self.stdout {
                             println!(
                                 "\nCalling tool: {} with params: {}",
@@ -81,12 +73,39 @@ impl ReasoningLoop {
                             println!("Tool result: {}", result);
                         }
 
-                        tool_results.push((name, result.to_string()));
+                        // Add the assistant's response up to this point
+                        if !current_response.is_empty() {
+                            current_messages.push(Message {
+                                role: "assistant".to_string(),
+                                content: current_response.clone(),
+                            });
+                            current_response.clear();
+                        }
+
+                        // Add the tool result as a user message with proper structure
+                        current_messages.push(Message {
+                            role: "user".to_string(),
+                            content: format!(
+                                "{{\"type\": \"tool_result\", \"tool_use_id\": \"{}\", \"content\": \"{}\"}}",
+                                tool_id, result
+                            ),
+                        });
+
+                        if let Some(tx) = &tx {
+                            tx.send(LoopResponse::ToolCall {
+                                name,
+                                result: result.to_string(),
+                            })
+                            .await?;
+                        }
+
+                        // Continue the outer loop with updated messages
+                        continue 'outer;
                     }
                 }
             }
 
-            // Add assistant's response to message history
+            // Add any remaining response to messages
             if !current_response.is_empty() {
                 current_messages.push(Message {
                     role: "assistant".to_string(),
@@ -94,29 +113,8 @@ impl ReasoningLoop {
                 });
             }
 
-            // Add tool results to message history and send them
-            if !tool_results.is_empty() {
-                for (tool_name, result) in tool_results {
-                    current_messages.push(Message {
-                        role: "user".to_string(),
-                        content: format!(
-                            "Tool {} result: {}",
-                            tool_name, result
-                        ),
-                    });
-
-                    if let Some(tx) = &tx {
-                        tx.send(LoopResponse::ToolCall {
-                            name: tool_name,
-                            result,
-                        })
-                        .await?;
-                    }
-                }
-            } else {
-                // No more tool calls, we can exit the loop
-                break;
-            }
+            // If we get here, there were no tool calls in this iteration
+            break;
         }
 
         Ok(current_messages)
