@@ -56,13 +56,6 @@ impl ReasoningLoop {
                         current_response.push_str(&text);
                     }
                     StreamingChoice::ToolCall(name, tool_id, params) => {
-                        if self.stdout {
-                            println!(
-                                "\nCalling tool: {} with params: {}",
-                                name, params
-                            );
-                        }
-
                         let result = self
                             .agent
                             .tools
