@@ -1,11 +1,11 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useState, useCallback } from "react";
+import { useCallback, useState } from "react";
 import { z } from "zod";
-import { introPrompt } from "./prompts";
-import { useSolanaPortfolio } from "./useSolanaPortfolio";
 import { config } from "../config";
+import { introPrompt } from "./prompts";
 import { useChatType } from "./useChatType";
 import { useEvmPortfolio } from "./useEvmPortfolio";
+import { useSolanaPortfolio } from "./useSolanaPortfolio";
 
 export type MessageDirection = "incoming" | "outgoing";
 
@@ -42,7 +42,7 @@ export function useChat() {
       setMessages((prev) => {
         const updatedMessages = [...prev];
         const assistantMessageIndex = updatedMessages.findIndex(
-          (msg) => msg.id === assistantMessageId,
+          (msg) => msg.id === assistantMessageId
         );
         if (assistantMessageIndex !== -1) {
           updatedMessages[assistantMessageIndex] = {
@@ -54,7 +54,7 @@ export function useChat() {
         return updatedMessages;
       });
     },
-    [],
+    []
   );
 
   const sendMessage = useCallback(
@@ -76,11 +76,11 @@ export function useChat() {
           content: msg.message,
         }));
 
-        const assistantMessageId = crypto.randomUUID();
+        let currentAssistantMessageId = crypto.randomUUID();
         setMessages((prev) => [
           ...prev,
           {
-            id: assistantMessageId,
+            id: currentAssistantMessageId,
             message: "",
             direction: "incoming",
             timestamp: new Date(),
@@ -101,7 +101,7 @@ export function useChat() {
             " " +
             introPrompt(
               [...solanaPortfolio!, ...evmPortfolio!],
-              user?.wallet?.address || "",
+              user?.wallet?.address || ""
             );
         }
 
@@ -147,8 +147,8 @@ export function useChat() {
                 switch (data.type) {
                   case "Message":
                     updateAssistantMessage(
-                      assistantMessageId,
-                      data.content as string,
+                      currentAssistantMessageId,
+                      data.content as string
                     );
                     break;
                   case "ToolCall": {
@@ -158,6 +158,17 @@ export function useChat() {
                       {
                         id: crypto.randomUUID(),
                         message: `Tool ${toolOutput.name}: ${toolOutput.result}`,
+                        direction: "incoming",
+                        timestamp: new Date(),
+                      },
+                    ]);
+                    // Start a new assistant message after tool call
+                    currentAssistantMessageId = crypto.randomUUID();
+                    setMessages((prev) => [
+                      ...prev,
+                      {
+                        id: currentAssistantMessageId,
+                        message: "",
                         direction: "incoming",
                         timestamp: new Date(),
                       },
@@ -191,7 +202,9 @@ export function useChat() {
           ...prev,
           {
             id: crypto.randomUUID(),
-            message: `An error occurred: ${error instanceof Error ? error.message : "Unknown error"}`,
+            message: `An error occurred: ${
+              error instanceof Error ? error.message : "Unknown error"
+            }`,
             direction: "incoming",
             timestamp: new Date(),
           },
@@ -208,7 +221,7 @@ export function useChat() {
       evmPortfolio,
       user,
       chatType,
-    ],
+    ]
   );
 
   return {
