@@ -3,8 +3,8 @@ use futures::future::join_all;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
+use crate::dexscreener::{search_ticker, PairInfo};
 use crate::solana::balance::Holding;
-use crate::solana::dexscreener::{search_ticker, PairInfo};
 
 pub async fn fetch_pair_info(mint_or_symbol: String) -> Result<PairInfo> {
     let res = search_ticker(mint_or_symbol.clone()).await?;

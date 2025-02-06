@@ -12,6 +12,7 @@ pub mod wallet_manager;
 
 pub mod common;
 pub mod cross_chain;
+pub mod dexscreener;
 pub mod reasoning_loop;
 pub mod signer;
 

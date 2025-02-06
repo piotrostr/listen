@@ -5,6 +5,10 @@ use anyhow::{anyhow, Result};
 use super::lifi::LiFi;
 use rig_tool_macro::tool;
 
+// TODO support sponsored transactions here
+// it would save a lot of gas if we could drip on any chain,
+// fees are substantially higher if the user has an empty wallet on the dest chain
+
 #[tool(description = "
 Get a quote for a multichain swap (or bridge).
 
@@ -76,7 +80,10 @@ pub async fn get_multichain_quote(
 #[tool(description = "
 Multichain swap (or bridge).
 
-Use this in case of the user trying to swap tokens that exist on two remote
+This can be used for any swap, solana to solana, evm to evm, solana to evm,
+evm to solana, etc.
+
+Use this in case of the user trying to swap any tokens that exist on two remote
 chains, or would like to bridge the tokens
 
 Don't use this in case you are not certain about all of the params, use the

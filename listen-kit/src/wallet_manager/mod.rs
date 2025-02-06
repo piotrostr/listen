@@ -13,7 +13,10 @@ use types::{
     SignAndSendTransactionResponse, User, WalletAccount,
 };
 
-use util::{create_http_client, transaction_to_base64};
+#[cfg(feature = "solana")]
+use util::transaction_to_base64;
+
+use util::create_http_client;
 
 pub struct WalletManager {
     privy_config: PrivyConfig,

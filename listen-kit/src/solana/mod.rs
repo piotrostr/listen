@@ -4,7 +4,6 @@ pub mod blockhash;
 pub mod constants;
 pub mod data;
 pub mod deploy_token;
-pub mod dexscreener;
 pub mod jup;
 pub mod price;
 pub mod pump;

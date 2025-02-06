@@ -10,7 +10,6 @@ documentation = "https://docs.listen-rs.com"
 default = ["http"]
 full = ["http", "solana", "evm"]
 http = [
-  "solana",
   "actix-web",
   "actix-cors",
   "actix-web-lab",

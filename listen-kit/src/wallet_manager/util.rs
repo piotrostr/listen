@@ -1,5 +1,4 @@
 use super::config::PrivyConfig;
-use anyhow::Result;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 pub fn create_http_client(privy_config: &PrivyConfig) -> reqwest::Client {
@@ -42,7 +41,7 @@ pub fn base64encode(data: &[u8]) -> String {
 #[cfg(feature = "solana")]
 pub fn transaction_to_base64(
     transaction: &solana_sdk::transaction::Transaction,
-) -> Result<String> {
+) -> anyhow::Result<String> {
     let serialized = bincode::serialize(transaction)?;
     Ok(base64encode(&serialized))
 }
