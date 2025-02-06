@@ -16,6 +16,11 @@ use crate::solana::tools::{
     SearchOnDexScreener, SellPumpFunToken, TransferSol, TransferSplToken,
 };
 
+// this might need some refactoring, as truly, with http
+// and remote signing you can get away without much of the core deps, both evm+solana
+#[cfg(feature = "full")]
+use crate::cross_chain::tools::{GetMultichainQuote, MultichainSwap};
+
 pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
     rig::providers::anthropic::Client::from_env()
         .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
@@ -31,8 +36,6 @@ pub async fn plain_agent() -> Result<Agent<AnthropicCompletionModel>> {
 #[cfg(feature = "solana")]
 pub async fn create_solana_agent() -> Result<Agent<AnthropicCompletionModel>>
 {
-    use crate::cross_chain::tools::BridgeFromSolToArb;
-
     Ok(claude_agent_builder()
         .preamble(&format!(
             "{} {}",
@@ -48,7 +51,6 @@ pub async fn create_solana_agent() -> Result<Agent<AnthropicCompletionModel>>
         .tool(FetchTokenPrice)
         .tool(GetPortfolio)
         .tool(SearchOnDexScreener)
-        .tool(BridgeFromSolToArb)
         .build())
 }
 
@@ -88,5 +90,38 @@ pub async fn create_evm_agent() -> Result<Agent<AnthropicCompletionModel>> {
         .tool(GetErc20Balance)
         .tool(ApproveTokenForRouterSpend)
         .tool(VerifySwapRouterHasAllowance)
+        .build())
+}
+
+#[cfg(feature = "full")]
+pub async fn create_multichain_agent(
+) -> Result<Agent<AnthropicCompletionModel>> {
+    // note: this is only going to work with a signer that implements both evm and solana
+    Ok(claude_agent_builder()
+        .preamble(&format!(
+            "{} {}",
+            "you are a an agent with tools for trading on solana and ethereum", PREAMBLE_COMMON,
+        ))
+        .max_tokens(1024)
+        .tool(GetMultichainQuote)
+        .tool(MultichainSwap)
+        .tool(GetSolBalance)
+        .tool(GetEthBalance)
+        .tool(GetErc20Balance)
+        .tool(ApproveTokenForRouterSpend)
+        .tool(VerifySwapRouterHasAllowance)
+        .tool(TransferSol)
+        .tool(TransferSplToken)
+        .tool(GetPublicKey)
+        .tool(GetSolBalance)
+        .tool(GetSplTokenBalance)
+        .tool(DeployPumpFunToken)
+        .tool(BuyPumpFunToken)
+        .tool(SellPumpFunToken)
+        .tool(GetPortfolio)
+        .tool(GetMultichainQuote)
+        .tool(MultichainSwap)
+        .tool(PerformJupiterSwap)
+        .tool(SearchOnDexScreener)
         .build())
 }

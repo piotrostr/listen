@@ -33,6 +33,68 @@ pub struct QuoteResponse {
     pub transaction_request: Option<TransactionRequest>,
 }
 
+impl QuoteResponse {
+    pub fn summary(&self) -> serde_json::Value {
+        let estimate = &self.estimate;
+        let action = &self.action;
+
+        // Calculate total gas costs in USD
+        let total_gas_usd: f64 = estimate
+            .gas_costs
+            .as_ref()
+            .map(|costs| {
+                costs
+                    .iter()
+                    .filter_map(|cost| {
+                        cost.amount_usd
+                            .as_ref()
+                            .and_then(|amount| amount.parse::<f64>().ok())
+                    })
+                    .sum()
+            })
+            .unwrap_or(0.0);
+
+        // Calculate total fee costs in USD
+        let total_fees_usd: f64 = estimate
+            .fee_costs
+            .as_ref()
+            .map(|costs| {
+                costs
+                    .iter()
+                    .filter_map(|cost| {
+                        cost.amount_usd
+                            .as_ref()
+                            .and_then(|amount| amount.parse::<f64>().ok())
+                    })
+                    .sum()
+            })
+            .unwrap_or(0.0);
+
+        serde_json::json!({
+            "from": {
+                "token": action.from_token.symbol,
+                "amount": estimate.from_amount,
+                "amount_usd": estimate.from_amount_usd,
+                "chain_id": action.from_chain_id,
+            },
+            "to": {
+                "token": action.to_token.symbol,
+                "amount": estimate.to_amount,
+                "amount_min": estimate.to_amount_min,
+                "amount_usd": estimate.to_amount_usd,
+                "chain_id": action.to_chain_id,
+            },
+            "costs": {
+                "gas_usd": total_gas_usd,
+                "fees_usd": total_fees_usd,
+                "total_usd": total_gas_usd + total_fees_usd
+            },
+            "execution_time_seconds": estimate.execution_duration,
+            "slippage_percent": action.slippage.unwrap_or(0.0)
+        })
+    }
+}
+
 #[derive(Serialize, Deserialize, Debug)]
 pub struct TransactionRequest {
     pub data: String,
