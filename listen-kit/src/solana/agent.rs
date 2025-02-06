@@ -5,9 +5,10 @@ use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletio
 use super::tools::{
     BuyPumpFunToken, DeployPumpFunToken, FetchTokenPrice, GetPortfolio,
     GetPublicKey, GetSolBalance, GetSplTokenBalance, PerformJupiterSwap,
-    SearchOnDexScreener, SellPumpFunToken, TransferSol, TransferSplToken,
+    SellPumpFunToken, TransferSol, TransferSplToken,
 };
 use crate::common::{claude_agent_builder, PREAMBLE_COMMON};
+use crate::dexscreener::tools::SearchOnDexScreener;
 
 pub async fn create_solana_agent() -> Result<Agent<AnthropicCompletionModel>>
 {
