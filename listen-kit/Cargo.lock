@@ -3802,7 +3802,7 @@ dependencies = [
  "rand 0.8.5",
  "redis",
  "reqwest 0.12.12",
- "rig-core 0.6.1 (git+https://github.com/piotrostr/rig?branch=feat%2Fanthropic-streaming-api)",
+ "rig-core 0.6.1",
  "rig-tool-macro",
  "serde",
  "serde_json",
@@ -5014,23 +5014,6 @@ dependencies = [
 [[package]]
 name = "rig-core"
 version = "0.6.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db412a240081bfa42e95c84b5e2c75e29a6b9b06060623f2b735b40abe08f535"
-dependencies = [
- "futures",
- "glob",
- "ordered-float",
- "reqwest 0.11.27",
- "schemars",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "rig-core"
-version = "0.6.1"
 source = "git+https://github.com/piotrostr/rig?branch=feat%2Fanthropic-streaming-api#2e2f6bbb72a36bf64942932074d4f88e02d2becc"
 dependencies = [
  "bytes",
@@ -5048,15 +5031,32 @@ dependencies = [
 ]
 
 [[package]]
-name = "rig-tool-macro"
-version = "0.2.0"
+name = "rig-core"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "003120897577a52c29371de128a6491e194bf195f9bcdfc2d8608fcc4026ff4f"
+checksum = "7f8190b6b290cc0b9bd7ff44156e288f0df82c2d3cbccc9ffa1c44493b38ffc4"
+dependencies = [
+ "futures",
+ "glob",
+ "ordered-float",
+ "reqwest 0.11.27",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "rig-tool-macro"
+version = "0.4.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5365d13629538315435c3b4ab888fdb4bf72121a454c71aadcc35a729db786cd"
 dependencies = [
  "anyhow",
  "proc-macro2",
  "quote",
- "rig-core 0.6.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rig-core 0.7.0",
  "serde",
  "serde_json",
  "syn 1.0.109",
