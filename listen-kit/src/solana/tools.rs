@@ -13,7 +13,6 @@ use solana_sdk::pubkey::Pubkey;
 use std::str::FromStr;
 
 use crate::common::wrap_unsafe;
-use crate::dexscreener::{search_ticker, DexScreenerResponse};
 use crate::solana::data::PortfolioItem;
 
 use super::data::holdings_to_portfolio;
