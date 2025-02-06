@@ -1,0 +1,11 @@
+# substreams auth file
+.substreams.env
+
+# Compiled source files
+target/
+
+# Sink data when running any sinker
+sink-data/
+
+# The spkg packed by the subtreams cli
+*.spkg

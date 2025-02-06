@@ -1,0 +1,11 @@
+{
+  "generator": "sol-transactions",
+  "state": {
+    "name": "listen",
+    "chainName": "",
+    "initialBlock": 317850969,
+    "initialBlockSet": true,
+    "filter": "program:ComputeBudget111111111111111111111111111111 || (program:TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA \u0026\u0026 account:3MQw72oGrizUDEcD9gZYMgqo1pc364y5GnnJHcGpvurK)",
+    "filterContainsAccount": true
+  }
+}

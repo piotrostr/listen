@@ -1,0 +1,15 @@
+[substreams]
+endpoint = "https://mainnet.sol.streamingfast.io:443"
+output_module_name = "map_block"
+start_block = 317868704
+end_block = 317868750
+
+[modules]
+binary_path = "tl-solana-dex-trades-1-0-22-v1.0.22.spkg"
+
+[surreal]
+endpoint = "127.0.0.1:8000"
+username = "root"
+password = "root"
+namespace = "substreams"
+database = "sink"
