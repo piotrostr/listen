@@ -1,9 +1,11 @@
+use anyhow::{anyhow, Result};
+use rig_tool_macro::tool;
+
 use crate::common::wrap_unsafe;
 use crate::signer::SignerContext;
-use anyhow::{anyhow, Result};
 
+use super::approvals::{create_approval_transaction, get_allowance};
 use super::lifi::LiFi;
-use rig_tool_macro::tool;
 
 // TODO support sponsored transactions here
 // it would save a lot of gas if we could drip on any chain,
@@ -25,6 +27,9 @@ address or a symbol.
 
 The amount has to be a string to avoid precision loss. The amount is accounting
 for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
+
+Note that sometimes the quote will return a transaction request, with an address that might require approval.
+In that case, you can use the approve_token tool to approve the token.
 
 Supported from_chains:
 - sol
@@ -145,15 +150,84 @@ pub async fn multichain_swap(
         })?;
 
     match quote.transaction_request {
-        Some(transaction_request) => wrap_unsafe(move || async move {
-            signer
-                .sign_and_send_encoded_solana_transaction(
-                    transaction_request.data,
-                )
-                .await
-        })
-        .await
-        .map_err(|e| anyhow!("{:#?}", e)),
+        Some(transaction_request) => {
+            wrap_unsafe(move || async move {
+                if transaction_request.is_solana() {
+                    signer
+                        .sign_and_send_encoded_solana_transaction(
+                            transaction_request.data,
+                        )
+                        .await
+                } else {
+                    signer
+                        .sign_and_send_json_evm_transaction(
+                            transaction_request.to_json_rpc()?,
+                        )
+                        .await
+                }
+            })
+            .await
+        }
         None => Err(anyhow!("No transaction request")),
     }
+}
+
+#[tool(description = "
+Check if a token has enough approval for a spender.
+
+token_address is the ERC20 token contract address
+spender_address is the address that needs approval
+amount is the amount to check approval for (in token decimals)
+
+Returns 'true' if approved, 'false' if not approved
+")]
+pub async fn check_approval(
+    token_address: String,
+    spender_address: String,
+    amount: String,
+) -> Result<String> {
+    let signer = SignerContext::current().await;
+    let owner_address = signer.address();
+
+    let allowance =
+        get_allowance(&token_address, &owner_address, &spender_address)
+            .await?;
+    let amount = amount
+        .parse::<u128>()
+        .map_err(|_| anyhow!("Invalid amount"))?;
+
+    Ok((allowance >= amount).to_string())
+}
+
+#[tool(description = "
+Approve a token for a spender.
+
+token_address is the ERC20 token contract address
+spender_address is the address that needs approval
+amount is the amount to approve (in token decimals)
+")]
+pub async fn approve_token(
+    token_address: String,
+    spender_address: String,
+    amount: String,
+) -> Result<String> {
+    let signer = SignerContext::current().await;
+    let owner_address = signer.address();
+
+    let transaction = create_approval_transaction(
+        &token_address,
+        &spender_address,
+        amount.parse::<u128>()?,
+        &owner_address,
+    )?;
+
+    wrap_unsafe(move || async move {
+        signer
+            .sign_and_send_json_evm_transaction(transaction)
+            .await
+            .map_err(|e| anyhow!(e.to_string()))
+    })
+    .await?;
+
+    Ok("Approved".to_string())
 }

@@ -71,4 +71,13 @@ impl TransactionSigner for PrivySigner {
             )
             .await
     }
+
+    async fn sign_and_send_json_evm_transaction(
+        &self,
+        tx: serde_json::Value,
+    ) -> Result<String> {
+        self.wallet_manager
+            .sign_and_send_json_evm_transaction(self.address(), tx)
+            .await
+    }
 }

@@ -9,6 +9,7 @@ use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 use config::PrivyConfig;
 use types::{
     CreateWalletRequest, CreateWalletResponse, PrivyClaims,
+    SignAndSendEvmTransactionParams, SignAndSendEvmTransactionRequest,
     SignAndSendTransactionParams, SignAndSendTransactionRequest,
     SignAndSendTransactionResponse, User, WalletAccount,
 };
@@ -96,18 +97,37 @@ impl WalletManager {
         address: String,
         transaction: alloy::rpc::types::TransactionRequest,
     ) -> Result<String> {
-        use self::types::{
-            SignAndSendEvmTransactionParams, SignAndSendEvmTransactionRequest,
-        };
+        self.sign_and_send_json_evm_transaction(
+            address,
+            serde_json::to_value(transaction)?,
+        )
+        .await
+    }
 
+    #[cfg(feature = "solana")]
+    pub async fn sign_and_send_solana_transaction(
+        &self,
+        address: String,
+        transaction: &solana_sdk::transaction::Transaction,
+    ) -> Result<String> {
+        self.sign_and_send_encoded_solana_transaction(
+            address,
+            transaction_to_base64(transaction)?,
+        )
+        .await
+    }
+
+    pub async fn sign_and_send_json_evm_transaction(
+        &self,
+        address: String,
+        transaction: serde_json::Value,
+    ) -> Result<String> {
         let request = SignAndSendEvmTransactionRequest {
             address,
             chain_type: "ethereum".to_string(),
             method: "eth_sendTransaction".to_string(),
-            caip2: "eip155:42161".to_string(), // TODO parametrize this
-            params: SignAndSendEvmTransactionParams {
-                transaction: serde_json::to_value(transaction)?,
-            },
+            caip2: "eip155:42161".to_string(), // TODO parametrize this - hardcoded arb
+            params: SignAndSendEvmTransactionParams { transaction },
         };
 
         let response = self
@@ -126,19 +146,6 @@ impl WalletManager {
 
         let result: SignAndSendTransactionResponse = response.json().await?;
         Ok(result.data.hash)
-    }
-
-    #[cfg(feature = "solana")]
-    pub async fn sign_and_send_solana_transaction(
-        &self,
-        address: String,
-        transaction: &solana_sdk::transaction::Transaction,
-    ) -> Result<String> {
-        self.sign_and_send_encoded_solana_transaction(
-            address,
-            transaction_to_base64(transaction)?,
-        )
-        .await
     }
 
     pub async fn sign_and_send_encoded_solana_transaction(
