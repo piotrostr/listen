@@ -59,7 +59,6 @@ impl TransactionSigner for PrivySigner {
         Ok(tx_hash)
     }
 
-    #[cfg(feature = "solana")]
     async fn sign_and_send_encoded_solana_transaction(
         &self,
         encoded_transaction: String,

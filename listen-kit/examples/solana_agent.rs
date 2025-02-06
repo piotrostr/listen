@@ -1,10 +1,10 @@
 #[cfg(feature = "solana")]
 use {
-    anyhow::Result, listen_kit::agent::create_solana_agent,
-    listen_kit::reasoning_loop::ReasoningLoop,
+    anyhow::Result, listen_kit::reasoning_loop::ReasoningLoop,
     listen_kit::signer::solana::LocalSolanaSigner,
-    listen_kit::signer::SignerContext, listen_kit::solana::util::env,
-    rig::completion::Message, std::sync::Arc,
+    listen_kit::signer::SignerContext,
+    listen_kit::solana::agent::create_solana_agent,
+    listen_kit::solana::util::env, rig::completion::Message, std::sync::Arc,
 };
 
 #[cfg(feature = "solana")]

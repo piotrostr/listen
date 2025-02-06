@@ -1,3 +1,4 @@
+pub mod agent;
 pub mod balance;
 pub mod blockhash;
 pub mod constants;

@@ -34,3 +34,20 @@ where
         SignerContext::with_signer(signer, async { f().await }).await
     })
 }
+
+use rig::agent::{Agent, AgentBuilder};
+use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
+
+pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
+    rig::providers::anthropic::Client::from_env()
+        .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
+}
+
+pub async fn plain_agent() -> Result<Agent<AnthropicCompletionModel>> {
+    Ok(claude_agent_builder()
+        .preamble("be nice to the users")
+        .max_tokens(1024)
+        .build())
+}
+
+pub const PREAMBLE_COMMON: &str = "";

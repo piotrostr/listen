@@ -6,8 +6,6 @@ use std::sync::Arc;
 pub struct AppState {
     #[cfg(feature = "solana")]
     pub(crate) solana_agent: Arc<Agent<CompletionModel>>,
-    #[cfg(feature = "solana")]
-    pub(crate) pump_fun_agent: Arc<Agent<CompletionModel>>,
     #[cfg(feature = "evm")]
     pub(crate) evm_agent: Arc<Agent<CompletionModel>>,
     pub(crate) wallet_manager: Arc<WalletManager>,
@@ -16,8 +14,6 @@ pub struct AppState {
 pub struct AppStateBuilder {
     #[cfg(feature = "solana")]
     solana_agent: Option<Agent<CompletionModel>>,
-    #[cfg(feature = "solana")]
-    pump_fun_agent: Option<Agent<CompletionModel>>,
     #[cfg(feature = "evm")]
     evm_agent: Option<Agent<CompletionModel>>,
     wallet_manager: Option<WalletManager>,
@@ -34,8 +30,6 @@ impl AppStateBuilder {
         Self {
             #[cfg(feature = "solana")]
             solana_agent: None,
-            #[cfg(feature = "solana")]
-            pump_fun_agent: None,
             #[cfg(feature = "evm")]
             evm_agent: None,
             wallet_manager: None,
@@ -48,15 +42,6 @@ impl AppStateBuilder {
         agent: Agent<CompletionModel>,
     ) -> Self {
         self.solana_agent = Some(agent);
-        self
-    }
-
-    #[cfg(feature = "solana")]
-    pub fn with_pump_fun_agent(
-        mut self,
-        agent: Agent<CompletionModel>,
-    ) -> Self {
-        self.pump_fun_agent = Some(agent);
         self
     }
 
@@ -79,10 +64,6 @@ impl AppStateBuilder {
             #[cfg(feature = "solana")]
             solana_agent: Arc::new(self.solana_agent.ok_or(
                 "Solana agent is required when solana feature is enabled",
-            )?),
-            #[cfg(feature = "solana")]
-            pump_fun_agent: Arc::new(self.pump_fun_agent.ok_or(
-                "Pump fun agent is required when solana feature is enabled",
             )?),
             #[cfg(feature = "evm")]
             evm_agent: Arc::new(self.evm_agent.ok_or(

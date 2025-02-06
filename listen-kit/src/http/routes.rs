@@ -66,8 +66,6 @@ async fn stream(
     let agent = match request.chain.as_deref() {
         #[cfg(feature = "solana")]
         Some("solana") => state.solana_agent.clone(),
-        #[cfg(feature = "solana")]
-        Some("pump") => state.pump_fun_agent.clone(),
         #[cfg(feature = "evm")]
         Some("evm") => state.evm_agent.clone(),
         Some(chain) => {

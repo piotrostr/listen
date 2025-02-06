@@ -36,12 +36,10 @@ pub enum SignerType {
 
 #[async_trait]
 pub trait TransactionSigner: Send + Sync {
-    #[cfg(feature = "evm")]
     fn address(&self) -> String {
         unimplemented!()
     }
 
-    #[cfg(feature = "solana")]
     fn pubkey(&self) -> String {
         unimplemented!()
     }
@@ -66,13 +64,21 @@ pub trait TransactionSigner: Send + Sync {
         ))
     }
 
-    #[cfg(feature = "solana")]
     async fn sign_and_send_encoded_solana_transaction(
         &self,
         _tx: String,
     ) -> Result<String> {
         Err(anyhow::anyhow!(
             "Solana transactions not supported by this signer"
+        ))
+    }
+
+    async fn sign_and_send_encoded_evm_transaction(
+        &self,
+        _tx: String,
+    ) -> Result<String> {
+        Err(anyhow::anyhow!(
+            "EVM transactions not supported by this signer"
         ))
     }
 }

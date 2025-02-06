@@ -25,9 +25,7 @@ pub struct WalletManager {
 pub struct UserSession {
     pub(crate) user_id: String,
     pub(crate) session_id: String,
-    #[cfg(feature = "evm")]
     pub(crate) wallet_address: String,
-    #[cfg(feature = "solana")]
     pub(crate) pubkey: String,
 }
 
@@ -74,27 +72,17 @@ impl WalletManager {
         let mut session = UserSession {
             user_id: user.id,
             session_id: claims.session_id,
-            #[cfg(feature = "evm")]
             wallet_address: String::new(),
-            #[cfg(feature = "solana")]
             pubkey: String::new(),
         };
 
-        // Handle Solana wallet
-        #[cfg(feature = "solana")]
-        {
-            let solana_wallet =
-                find_wallet(&user.linked_accounts, "solana", "privy")?;
-            session.pubkey = solana_wallet.address.clone();
-        }
+        let solana_wallet =
+            find_wallet(&user.linked_accounts, "solana", "privy")?;
+        session.pubkey = solana_wallet.address.clone();
 
-        // Handle EVM wallet
-        #[cfg(feature = "evm")]
-        {
-            let evm_wallet =
-                find_wallet(&user.linked_accounts, "ethereum", "privy")?;
-            session.wallet_address = evm_wallet.address.clone();
-        }
+        let evm_wallet =
+            find_wallet(&user.linked_accounts, "ethereum", "privy")?;
+        session.wallet_address = evm_wallet.address.clone();
 
         Ok(session)
     }
@@ -150,7 +138,6 @@ impl WalletManager {
         .await
     }
 
-    #[cfg(feature = "solana")]
     pub async fn sign_and_send_encoded_solana_transaction(
         &self,
         address: String,

@@ -10,7 +10,6 @@ use super::state::AppState;
 
 pub async fn run_server(
     #[cfg(feature = "solana")] solana_agent: Agent<CompletionModel>,
-    #[cfg(feature = "solana")] pump_fun_agent: Agent<CompletionModel>,
     #[cfg(feature = "evm")] evm_agent: Agent<CompletionModel>,
     wallet_manager: WalletManager,
 ) -> std::io::Result<()> {
@@ -18,9 +17,7 @@ pub async fn run_server(
 
     #[cfg(feature = "solana")]
     {
-        builder = builder
-            .with_solana_agent(solana_agent)
-            .with_pump_fun_agent(pump_fun_agent);
+        builder = builder.with_solana_agent(solana_agent);
     }
 
     #[cfg(feature = "evm")]

@@ -10,12 +10,8 @@ pub mod evm;
 #[cfg(feature = "http")]
 pub mod wallet_manager;
 
-// this might not have to be feature full, if privy is not
-#[cfg(feature = "full")]
-pub mod cross_chain;
-
-pub mod agent;
 pub mod common;
+pub mod cross_chain;
 pub mod reasoning_loop;
 pub mod signer;
 
