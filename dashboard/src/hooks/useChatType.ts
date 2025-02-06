@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-export type ChatType = "evm" | "solana" | "pump";
+export type ChatType = "evm" | "solana" | "omni";
 
 const CHAT_TYPE_KEY = ["chatType"];
 

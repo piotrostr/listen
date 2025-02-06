@@ -1,9 +1,9 @@
 import { useState } from "react";
-import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
+import { useChatType } from "../hooks/useChatType";
 import { useEvmPortfolio } from "../hooks/useEvmPortfolio";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
 import { ChatSelector } from "./ChatSelector";
-import { useChatType } from "../hooks/useChatType";
 
 export function PortfolioSkeleton() {
   return (
@@ -76,17 +76,20 @@ export function Portfolio() {
   const handleClickCopy = () => {
     if (!wallets) return;
     navigator.clipboard.writeText(
-      chatType === "solana" || chatType === "pump"
-        ? wallets.solanaWallet
-        : wallets.evmWallet,
+      chatType === "solana" ? wallets.solanaWallet : wallets.evmWallet
     );
     setClicked(true);
     setTimeout(() => setClicked(false), 1000);
   };
 
-  const isSolana = chatType === "solana" || chatType === "pump";
+  const isSolana = chatType === "solana";
   const isEvm = chatType === "evm";
-  const assets = isSolana ? solanaAssets : evmAssets;
+  const assets =
+    chatType === "omni"
+      ? [...(solanaAssets ?? []), ...(evmAssets ?? [])]
+      : chatType === "solana"
+      ? solanaAssets
+      : evmAssets;
 
   return (
     <div className="h-[70vh] font-mono">
@@ -134,7 +137,9 @@ export function Portfolio() {
                       className="w-8 h-8 rounded-full"
                     />
                     <div>
-                      <h3 className="font-bold">{asset.name}</h3>
+                      <h3 className="font-bold">
+                        {asset.name} ({asset.chain})
+                      </h3>
                       <p className="text-sm text-gray-400">${asset.symbol}</p>
                     </div>
                   </div>
