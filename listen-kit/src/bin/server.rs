@@ -13,6 +13,11 @@ async fn main() -> std::io::Result<()> {
             std::io::Error::new(std::io::ErrorKind::Other, e)
         })?);
 
+    let omni_agent =
+        listen_kit::cross_chain::agent::create_cross_chain_agent()
+            .await
+            .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
     // Create agents based on enabled features
     #[cfg(feature = "solana")]
     let solana_agent = listen_kit::solana::agent::create_solana_agent()
@@ -26,16 +31,17 @@ async fn main() -> std::io::Result<()> {
 
     // Run server with appropriate agents based on features
     #[cfg(all(feature = "solana", feature = "evm"))]
-    return run_server(solana_agent, evm_agent, wallet_manager).await;
+    return run_server(solana_agent, evm_agent, wallet_manager, omni_agent)
+        .await;
 
     #[cfg(all(feature = "solana", not(feature = "evm")))]
-    return run_server(solana_agent, wallet_manager).await;
+    return run_server(solana_agent, wallet_manager, omni_agent).await;
 
     #[cfg(all(feature = "evm", not(feature = "solana")))]
-    return run_server(evm_agent, wallet_manager).await;
+    return run_server(evm_agent, wallet_manager, omni_agent).await;
 
     #[cfg(not(any(feature = "solana", feature = "evm")))]
-    return run_server(wallet_manager).await;
+    return run_server(wallet_manager, omni_agent).await;
 }
 
 #[cfg(not(feature = "http"))]

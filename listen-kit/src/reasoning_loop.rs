@@ -39,6 +39,7 @@ impl ReasoningLoop {
         let mut current_messages = messages;
 
         'outer: loop {
+            println!("current_messages: {:?}", current_messages);
             let mut stream =
                 self.agent.stream_chat("", current_messages.clone()).await?;
             let mut current_response = String::new();
@@ -60,10 +61,10 @@ impl ReasoningLoop {
                             .agent
                             .tools
                             .call(&name, params.to_string())
-                            .await?;
+                            .await;
 
                         if self.stdout {
-                            println!("Tool result: {}", result);
+                            println!("Tool result: {:?}", result);
                         }
 
                         // Add the assistant's response up to this point
@@ -78,16 +79,25 @@ impl ReasoningLoop {
                         // Add the tool result as a user message with proper structure
                         current_messages.push(Message {
                             role: "user".to_string(),
-                            content: format!(
-                                "{{\"type\": \"tool_result\", \"tool_use_id\": \"{}\", \"content\": \"{}\"}}",
-                                tool_id, result
-                            ),
+                            content: match &result {
+                                Ok(content) => format!(
+                                    "{{\"type\": \"tool_result\", \"tool_use_id\": \"{}\", \"content\": \"{}\"}}",
+                                    tool_id, content
+                                ),
+                                Err(err) => format!(
+                                    "{{\"type\": \"tool_result\", \"tool_use_id\": \"{}\", \"content\": \"{}\", \"is_error\": true}}",
+                                    tool_id, err.to_string()
+                                ),
+                            },
                         });
 
                         if let Some(tx) = &tx {
                             tx.send(LoopResponse::ToolCall {
                                 name,
-                                result: result.to_string(),
+                                result: match &result {
+                                    Ok(content) => content.to_string(),
+                                    Err(err) => err.to_string(),
+                                },
                             })
                             .await?;
                         }

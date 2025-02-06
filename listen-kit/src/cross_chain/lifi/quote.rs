@@ -1,3 +1,4 @@
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
 use serde_json::{Number, Value};
 
@@ -90,14 +91,60 @@ impl QuoteResponse {
                 "total_usd": total_gas_usd + total_fees_usd
             },
             "execution_time_seconds": estimate.execution_duration,
-            "slippage_percent": action.slippage.unwrap_or(0.0)
+            "slippage_percent": action.slippage.unwrap_or(0.0),
+            "transaction_request": self.transaction_request.as_ref().map(|r| r.is_evm().then(|| r.to_json_rpc().unwrap())),
         })
     }
 }
 
 #[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
 pub struct TransactionRequest {
     pub data: String,
+    // EVM specific fields
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chain_id: Option<Number>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub from: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gas_limit: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub gas_price: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub to: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+}
+
+impl TransactionRequest {
+    /// Returns true if this is an EVM transaction request
+    pub fn is_evm(&self) -> bool {
+        self.chain_id.is_some()
+    }
+
+    /// Returns true if this is a Solana transaction request
+    pub fn is_solana(&self) -> bool {
+        !self.is_evm()
+    }
+
+    /// Converts the transaction request to a JSON-RPC compatible format
+    /// Returns None for Solana transactions
+    pub fn to_json_rpc(&self) -> Result<serde_json::Value> {
+        if !self.is_evm() {
+            return Err(anyhow!("Not an EVM transaction"));
+        }
+
+        // For EVM transactions, construct JSON-RPC format
+        Ok(serde_json::json!({
+            "from": self.from,
+            "to": self.to,
+            "data": self.data,
+            "chainId": self.chain_id,
+            "gas": self.gas_limit.as_ref().map(|s| format!("0x{}", s.trim_start_matches("0x"))),
+            "gasPrice": self.gas_price.as_ref().map(|s| format!("0x{}", s.trim_start_matches("0x"))),
+            "value": self.value.as_ref().map(|s| format!("0x{}", s.trim_start_matches("0x"))),
+        }))
+    }
 }
 
 #[derive(Serialize, Deserialize, Debug)]

@@ -12,8 +12,11 @@ pub async fn run_server(
     #[cfg(feature = "solana")] solana_agent: Agent<CompletionModel>,
     #[cfg(feature = "evm")] evm_agent: Agent<CompletionModel>,
     wallet_manager: WalletManager,
+    omni_agent: Agent<CompletionModel>,
 ) -> std::io::Result<()> {
-    let mut builder = AppState::builder().with_wallet_manager(wallet_manager);
+    let builder = AppState::builder()
+        .with_wallet_manager(wallet_manager)
+        .with_omni_agent(omni_agent);
 
     #[cfg(feature = "solana")]
     {

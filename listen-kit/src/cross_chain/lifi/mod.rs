@@ -119,7 +119,6 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    #[ignore]
     async fn test_get_chains() {
         let lifi = LiFi::new(None);
         let chains = lifi.get_chains().await;
@@ -136,7 +135,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_get_tools() {
         let lifi = LiFi::new(None);
         let tools = lifi.get_tools(&["sol".to_string()]).await;
@@ -144,7 +142,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_get_tokens() {
         let lifi = LiFi::new(None);
         let tokens = lifi.get_tokens("sol", None, Some(0.1)).await;
@@ -152,7 +149,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_get_token() {
         let lifi = LiFi::new(None);
         let token = lifi.get_token("sol", "listen").await;
@@ -160,7 +156,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore]
     async fn test_get_connections() {
         let lifi = LiFi::new(None);
         let connections = lifi
@@ -185,6 +180,23 @@ mod tests {
                 "USDC",
                 "aiamaErRMjbeNmf2b8BMZWFR3ofxrnZEf2mLKp935fM",
                 "0x2fAA30d5EdDF1e4fa126aEdA79159878D58A2438",
+                "1000000000",
+            )
+            .await;
+        assert!(quote.is_ok(), "{:?}", quote);
+    }
+
+    #[tokio::test]
+    async fn test_get_quote_evm() {
+        let lifi = LiFi::new(None);
+        let quote = lifi
+            .get_quote(
+                "arb",
+                "sol",
+                "USDC",
+                "USDC",
+                "0x2fAA30d5EdDF1e4fa126aEdA79159878D58A2438",
+                "aiamaErRMjbeNmf2b8BMZWFR3ofxrnZEf2mLKp935fM",
                 "1000000000",
             )
             .await;

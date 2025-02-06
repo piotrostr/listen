@@ -9,6 +9,7 @@ pub struct AppState {
     #[cfg(feature = "evm")]
     pub(crate) evm_agent: Arc<Agent<CompletionModel>>,
     pub(crate) wallet_manager: Arc<WalletManager>,
+    pub(crate) omni_agent: Arc<Agent<CompletionModel>>,
 }
 
 pub struct AppStateBuilder {
@@ -17,6 +18,7 @@ pub struct AppStateBuilder {
     #[cfg(feature = "evm")]
     evm_agent: Option<Agent<CompletionModel>>,
     wallet_manager: Option<WalletManager>,
+    omni_agent: Option<Agent<CompletionModel>>,
 }
 
 impl Default for AppStateBuilder {
@@ -33,6 +35,7 @@ impl AppStateBuilder {
             #[cfg(feature = "evm")]
             evm_agent: None,
             wallet_manager: None,
+            omni_agent: None,
         }
     }
 
@@ -59,6 +62,11 @@ impl AppStateBuilder {
         self
     }
 
+    pub fn with_omni_agent(mut self, agent: Agent<CompletionModel>) -> Self {
+        self.omni_agent = Some(agent);
+        self
+    }
+
     pub fn build(self) -> Result<AppState, &'static str> {
         Ok(AppState {
             #[cfg(feature = "solana")]
@@ -71,6 +79,10 @@ impl AppStateBuilder {
             )?),
             wallet_manager: Arc::new(
                 self.wallet_manager.ok_or("Wallet manager is required")?,
+            ),
+            omni_agent: Arc::new(
+                self.omni_agent
+                    .expect("omni agent is required with http feature"),
             ),
         })
     }

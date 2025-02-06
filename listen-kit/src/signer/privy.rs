@@ -1,6 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
 
+#[cfg(feature = "solana")]
 use crate::solana::blockhash::BLOCKHASH_CACHE;
 use crate::wallet_manager::{UserSession, WalletManager};
 use std::sync::Arc;
@@ -68,6 +69,15 @@ impl TransactionSigner for PrivySigner {
                 self.pubkey(),
                 encoded_transaction,
             )
+            .await
+    }
+
+    async fn sign_and_send_json_evm_transaction(
+        &self,
+        tx: serde_json::Value,
+    ) -> Result<String> {
+        self.wallet_manager
+            .sign_and_send_json_evm_transaction(self.address(), tx)
             .await
     }
 }

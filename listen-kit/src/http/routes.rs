@@ -68,6 +68,7 @@ async fn stream(
         Some("solana") => state.solana_agent.clone(),
         #[cfg(feature = "evm")]
         Some("evm") => state.evm_agent.clone(),
+        Some("omni") => state.omni_agent.clone(),
         Some(chain) => {
             let error_event = sse::Event::Data(sse::Data::new(
                 serde_json::to_string(&StreamResponse::Error(format!(

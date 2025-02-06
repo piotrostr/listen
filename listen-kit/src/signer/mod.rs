@@ -73,9 +73,9 @@ pub trait TransactionSigner: Send + Sync {
         ))
     }
 
-    async fn sign_and_send_encoded_evm_transaction(
+    async fn sign_and_send_json_evm_transaction(
         &self,
-        _tx: String,
+        _tx: serde_json::Value,
     ) -> Result<String> {
         Err(anyhow::anyhow!(
             "EVM transactions not supported by this signer"

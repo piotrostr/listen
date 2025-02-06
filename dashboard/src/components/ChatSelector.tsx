@@ -1,5 +1,5 @@
 import ethereumIcon from "../assets/icons/ethereum.svg";
-import pumpIcon from "../assets/icons/pump.png";
+import omniIcon from "../assets/icons/infinity.svg";
 import { ChatType } from "../hooks/useChatType";
 
 interface ChatOptionProps {
@@ -37,8 +37,8 @@ const CHAT_OPTIONS = [
       "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
   },
   {
-    id: "pump" as const,
-    iconPath: pumpIcon,
+    id: "omni" as const,
+    iconPath: omniIcon,
   },
 ] as const;
 
