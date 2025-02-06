@@ -95,7 +95,7 @@ async function getTokenHoldings(address: string): Promise<PortfolioItem[]> {
         ...metadata,
         price: Number(price),
         amount,
-        daily_volume: 0, // Alchemy doesn't provide this directly
+        chain: "arb", // hardcoding for now
       };
 
       return portfolioItem;

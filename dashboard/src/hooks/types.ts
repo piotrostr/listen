@@ -6,7 +6,7 @@ export type PortfolioItem = {
   logoURI: string;
   price: number;
   amount: number;
-  daily_volume: number;
+  chain: string;
 };
 
 export type PortfolioData = PortfolioItem[];

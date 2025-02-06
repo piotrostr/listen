@@ -122,6 +122,7 @@ export const useSolanaPortfolio = () => {
           price,
           amount,
           daily_volume: metadata.volume24h || 0,
+          chain: "solana",
         };
       });
     },

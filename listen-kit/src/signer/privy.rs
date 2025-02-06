@@ -42,10 +42,7 @@ impl TransactionSigner for PrivySigner {
         tx.message.recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
         let tx_hash = self
             .wallet_manager
-            .sign_and_send_solana_transaction(
-                self.session.wallet_address.clone(),
-                tx,
-            )
+            .sign_and_send_solana_transaction(self.pubkey(), tx)
             .await?;
         Ok(tx_hash)
     }
@@ -57,11 +54,20 @@ impl TransactionSigner for PrivySigner {
     ) -> Result<String> {
         let tx_hash = self
             .wallet_manager
-            .sign_and_send_evm_transaction(
-                self.session.wallet_address.clone(),
-                tx,
-            )
+            .sign_and_send_evm_transaction(self.address(), tx)
             .await?;
         Ok(tx_hash)
+    }
+
+    async fn sign_and_send_encoded_solana_transaction(
+        &self,
+        encoded_transaction: String,
+    ) -> Result<String> {
+        self.wallet_manager
+            .sign_and_send_encoded_solana_transaction(
+                self.pubkey(),
+                encoded_transaction,
+            )
+            .await
     }
 }

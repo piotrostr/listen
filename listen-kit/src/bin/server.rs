@@ -4,9 +4,6 @@ use listen_kit::http::server::run_server;
 #[cfg(feature = "http")]
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    use listen_kit::agent::{
-        create_evm_agent, create_pump_agent, create_solana_agent,
-    };
     use listen_kit::wallet_manager::config::PrivyConfig;
     use listen_kit::wallet_manager::WalletManager;
 
@@ -18,32 +15,21 @@ async fn main() -> std::io::Result<()> {
 
     // Create agents based on enabled features
     #[cfg(feature = "solana")]
-    let solana_agent = create_solana_agent()
-        .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
-
-    #[cfg(feature = "solana")]
-    let pump_fun_agent = create_pump_agent()
+    let solana_agent = listen_kit::solana::agent::create_solana_agent()
         .await
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
     #[cfg(feature = "evm")]
-    let evm_agent = create_evm_agent()
+    let evm_agent = listen_kit::evm::agent::create_evm_agent()
         .await
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
     // Run server with appropriate agents based on features
     #[cfg(all(feature = "solana", feature = "evm"))]
-    return run_server(
-        solana_agent,
-        pump_fun_agent,
-        evm_agent,
-        wallet_manager,
-    )
-    .await;
+    return run_server(solana_agent, evm_agent, wallet_manager).await;
 
     #[cfg(all(feature = "solana", not(feature = "evm")))]
-    return run_server(solana_agent, pump_fun_agent, wallet_manager).await;
+    return run_server(solana_agent, wallet_manager).await;
 
     #[cfg(all(feature = "evm", not(feature = "solana")))]
     return run_server(evm_agent, wallet_manager).await;

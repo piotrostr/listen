@@ -1,33 +1,47 @@
 use anyhow::Result;
+use core::panic;
 use futures_util::StreamExt;
 use rig::agent::Agent;
 use rig::completion::Message;
 use rig::providers::anthropic::completion::CompletionModel;
 use rig::streaming::{StreamingChat, StreamingChoice};
 use std::io::Write;
+use std::sync::Arc;
+use tokio::sync::mpsc::Sender;
+
+pub enum LoopResponse {
+    Message(String),
+    ToolCall { name: String, result: String },
+}
 
 pub struct ReasoningLoop {
-    agent: Agent<CompletionModel>,
+    agent: Arc<Agent<CompletionModel>>,
     stdout: bool,
 }
 
 impl ReasoningLoop {
-    pub fn new(agent: Agent<CompletionModel>) -> Self {
+    pub fn new(agent: Arc<Agent<CompletionModel>>) -> Self {
         Self {
             agent,
-            stdout: true, // Default to true, could make this configurable
+            stdout: true,
         }
     }
 
-    pub async fn run(&self, messages: Vec<Message>) -> Result<Vec<Message>> {
+    pub async fn stream(
+        &self,
+        messages: Vec<Message>,
+        tx: Option<Sender<LoopResponse>>,
+    ) -> Result<Vec<Message>> {
+        if tx.is_none() && !self.stdout {
+            panic!("enable stdout or provide tx channel");
+        }
+
         let mut current_messages = messages;
 
-        loop {
+        'outer: loop {
             let mut stream =
                 self.agent.stream_chat("", current_messages.clone()).await?;
-
             let mut current_response = String::new();
-            let mut tool_results = Vec::new();
 
             while let Some(chunk) = stream.next().await {
                 match chunk? {
@@ -35,17 +49,13 @@ impl ReasoningLoop {
                         if self.stdout {
                             print!("{}", text);
                             std::io::stdout().flush()?;
+                        } else if let Some(tx) = &tx {
+                            tx.send(LoopResponse::Message(text.clone()))
+                                .await?;
                         }
                         current_response.push_str(&text);
                     }
-                    StreamingChoice::ToolCall(name, _id, params) => {
-                        if self.stdout {
-                            println!(
-                                "\nCalling tool: {} with params: {}",
-                                name, params
-                            );
-                        }
-
+                    StreamingChoice::ToolCall(name, tool_id, params) => {
                         let result = self
                             .agent
                             .tools
@@ -56,12 +66,39 @@ impl ReasoningLoop {
                             println!("Tool result: {}", result);
                         }
 
-                        tool_results.push((name, result.to_string()));
+                        // Add the assistant's response up to this point
+                        if !current_response.is_empty() {
+                            current_messages.push(Message {
+                                role: "assistant".to_string(),
+                                content: current_response.clone(),
+                            });
+                            current_response.clear();
+                        }
+
+                        // Add the tool result as a user message with proper structure
+                        current_messages.push(Message {
+                            role: "user".to_string(),
+                            content: format!(
+                                "{{\"type\": \"tool_result\", \"tool_use_id\": \"{}\", \"content\": \"{}\"}}",
+                                tool_id, result
+                            ),
+                        });
+
+                        if let Some(tx) = &tx {
+                            tx.send(LoopResponse::ToolCall {
+                                name,
+                                result: result.to_string(),
+                            })
+                            .await?;
+                        }
+
+                        // Continue the outer loop with updated messages
+                        continue 'outer;
                     }
                 }
             }
 
-            // Add assistant's response to message history
+            // Add any remaining response to messages
             if !current_response.is_empty() {
                 current_messages.push(Message {
                     role: "assistant".to_string(),
@@ -69,31 +106,13 @@ impl ReasoningLoop {
                 });
             }
 
-            // Add tool results to message history if any
-            if !tool_results.is_empty() {
-                for (tool_name, result) in tool_results {
-                    current_messages.push(Message {
-                        role: "user".to_string(),
-                        content: format!(
-                            "Tool {} result: {}",
-                            tool_name, result
-                        ),
-                    });
-                }
-            } else {
-                // Print newline after completion if stdout is enabled
-                if self.stdout {
-                    println!();
-                }
-                // No more tool calls, we can exit the loop
-                break;
-            }
+            // If we get here, there were no tool calls in this iteration
+            break;
         }
 
         Ok(current_messages)
     }
 
-    // Optional: Add method to configure stdout printing
     pub fn with_stdout(mut self, enabled: bool) -> Self {
         self.stdout = enabled;
         self

@@ -10,8 +10,8 @@ pub mod evm;
 #[cfg(feature = "http")]
 pub mod wallet_manager;
 
-pub mod agent;
 pub mod common;
+pub mod cross_chain;
 pub mod reasoning_loop;
 pub mod signer;
 
