@@ -11,6 +11,7 @@ pub trait KVStore {
         Self: Sized;
     async fn get<T: DeserializeOwned + Send>(&self, key: &str) -> Result<Option<T>>;
     async fn set<T: Serialize + Send + Sync>(&self, key: &str, value: &T) -> Result<()>;
+    async fn exists(&self, key: &str) -> Result<bool>;
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -51,14 +52,20 @@ impl KVStore for RedisKVStore {
         let _: () = conn.set(key, json_str).await?;
         Ok(())
     }
+
+    async fn exists(&self, key: &str) -> Result<bool> {
+        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let exists: bool = redis::cmd("EXISTS").arg(key).query_async(&mut conn).await?;
+        Ok(exists)
+    }
 }
 
 impl RedisKVStore {
     pub fn make_price_key(price: &Price) -> String {
         format!("solana:{}:{}", price.coin_mint, price.pc_mint)
     }
-    pub fn make_metadata_key(metadata: &TokenMetadata) -> String {
-        format!("solana:{}", metadata.mint)
+    pub fn make_metadata_key(mint: &str) -> String {
+        format!("solana:{}", mint)
     }
 
     pub async fn insert_price(&self, price: &Price) -> Result<()> {
@@ -72,12 +79,16 @@ impl RedisKVStore {
     }
 
     pub async fn insert_metadata(&self, metadata: &TokenMetadata) -> Result<()> {
-        let key = Self::make_metadata_key(metadata);
+        let key = Self::make_metadata_key(&metadata.mint);
         self.set(&key, metadata).await
     }
 
     pub async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>> {
         let key = format!("solana:{}", mint);
         self.get(&key).await
+    }
+
+    pub async fn has_metadata(&self, mint: &str) -> Result<bool> {
+        self.exists(&Self::make_metadata_key(mint)).await
     }
 }

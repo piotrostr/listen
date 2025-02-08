@@ -61,18 +61,20 @@ pub async fn get_token_metadata(
     kv_store: &Arc<RedisKVStore>,
     mint: &str,
 ) -> Result<Option<TokenMetadata>> {
-    if let Some(metadata) = kv_store.get_metadata(mint).await? {
-        Ok(Some(metadata))
-    } else {
-        match TokenMetadata::fetch_by_mint(mint).await {
-            Ok(metadata) => {
-                kv_store.insert_metadata(&metadata).await?;
-                Ok(Some(metadata))
-            }
-            Err(e) => {
-                eprintln!("Failed to fetch metadata for {}: {}", mint, e);
-                Ok(None)
-            }
+    // First check if metadata exists without fetching it
+    if kv_store.has_metadata(mint).await? {
+        return Ok(None); // Metadata already exists, no need to fetch
+    }
+
+    // If metadata doesn't exist, fetch and store it
+    match TokenMetadata::fetch_by_mint(mint).await {
+        Ok(metadata) => {
+            kv_store.insert_metadata(&metadata).await?;
+            Ok(Some(metadata))
+        }
+        Err(e) => {
+            eprintln!("Failed to fetch metadata for {}: {}", mint, e);
+            Ok(None)
         }
     }
 }

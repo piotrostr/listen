@@ -37,7 +37,7 @@ pub fn make_pipeline() -> Result<Pipeline> {
                 }),
             ),
         ))
-        .account(RaydiumAmmV4Decoder, RaydiumAmmV4AccountProcessor)
+        .account(RaydiumAmmV4Decoder, RaydiumAmmV4AccountProcessor::new())
         .metrics(Arc::new(LogMetrics::new()))
         .build()?;
 
