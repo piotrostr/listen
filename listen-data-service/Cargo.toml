@@ -1,0 +1,26 @@
+[package]
+name = "listen-data-service"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.95"
+async-trait = "0.1.86"
+carbon-core = "0.4.0"
+carbon-log-metrics = "0.4.0"
+carbon-raydium-amm-v4-decoder = "0.4.0"
+carbon-rpc-block-subscribe-datasource = "0.4.0"
+carbon-rpc-program-subscribe-datasource = "0.4.0"
+ctor = "0.2.9"
+dotenv = "0.15.0"
+solana-account-decoder = "2.1.13"
+solana-client = "2.1.13"
+solana-sdk = "2.1.13"
+tokio = { version = "1.43.0", features = ["rt", "macros"] }
+tracing-subscriber = "0.3.19"
+redis = { version = "0.28.2", features = ["tokio-comp"] }
+serde_json = "1.0.138"
+serde = { version = "1.0.217", features = ["derive"] }
+reqwest = { version = "0.12.12", features = ["json"] }
+mpl-token-metadata = "5.1.0"
+spl-token = "7.0.0"
