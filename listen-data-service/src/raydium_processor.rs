@@ -9,6 +9,7 @@ use carbon_core::{
 };
 use carbon_raydium_amm_v4_decoder::accounts::{amm_info::AmmInfo, RaydiumAmmV4Account};
 use std::sync::Arc;
+use tracing::{info, warn};
 
 pub struct RaydiumAmmV4AccountProcessor {
     kv_store: Arc<RedisKVStore>,
@@ -35,9 +36,12 @@ impl Processor for RaydiumAmmV4AccountProcessor {
         match &account.data {
             RaydiumAmmV4Account::AmmInfo(pool) => {
                 let (coin_price, pc_price) = calculate_pool_prices(pool);
-                println!("\nAccount: {:#?}", _meta.pubkey);
-                println!("Coin price in PC: {}", coin_price);
-                println!("PC price in Coin: {}", pc_price);
+                info!(
+                    account = %_meta.pubkey,
+                    coin_price,
+                    pc_price,
+                    "processed"
+                );
 
                 // Spawn a task to handle Redis writes
                 let kv_store = self.kv_store.clone();
@@ -54,19 +58,19 @@ impl Processor for RaydiumAmmV4AccountProcessor {
 
                     // Store the price data
                     if let Err(e) = kv_store.insert_price(&price).await {
-                        eprintln!("Failed to store price: {}", e);
+                        warn!(error = %e, "price set failed");
                     }
 
                     // Only fetch metadata if it doesn't exist
                     for mint in [&coin_mint, &pc_mint] {
                         if let Err(e) = get_token_metadata(&kv_store, mint).await {
-                            eprintln!("Failed to fetch metadata for {}: {}", mint, e);
+                            warn!(mint, error = %e, "metadata fetch failed");
                         }
                     }
                 });
             }
             _ => {
-                println!("\nUnnecessary Account: {:#?}", _meta.pubkey);
+                info!(account = %_meta.pubkey, "skip");
             }
         };
 

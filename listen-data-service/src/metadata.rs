@@ -5,6 +5,7 @@ use serde::{Deserialize, Serialize};
 use solana_sdk::{program_pack::Pack, pubkey::Pubkey};
 use spl_token::state::Mint;
 use std::{str::FromStr, sync::Arc};
+use tracing::{debug, info, warn};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct MplTokenMetadata {
@@ -61,21 +62,17 @@ pub async fn get_token_metadata(
     kv_store: &Arc<RedisKVStore>,
     mint: &str,
 ) -> Result<Option<TokenMetadata>> {
-    // First check if metadata exists without fetching it
     if kv_store.has_metadata(mint).await? {
-        return Ok(None); // Metadata already exists, no need to fetch
+        debug!(mint, "metadata already exists");
+        return Ok(None);
     }
 
-    // If metadata doesn't exist, fetch and store it
     match TokenMetadata::fetch_by_mint(mint).await {
         Ok(metadata) => {
             kv_store.insert_metadata(&metadata).await?;
             Ok(Some(metadata))
         }
-        Err(e) => {
-            eprintln!("Failed to fetch metadata for {}: {}", mint, e);
-            Ok(None)
-        }
+        Err(e) => Err(e),
     }
 }
 
@@ -96,7 +93,8 @@ impl TokenMetadata {
         let token_pubkey = Pubkey::from_str(mint)?;
         let token_account = rpc_client.get_account_data(&token_pubkey).await?;
         let token_data = Mint::unpack(&token_account)?;
-        println!("{:?}", token_data);
+        info!(mint, "spl metadata fetch ok");
+
         Ok(SplTokenMetadata {
             mint_authority: token_data.mint_authority.map(|p| p.to_string()).into(),
             supply: token_data.supply,
@@ -116,16 +114,17 @@ impl TokenMetadata {
         // Get metadata account data
         let metadata_account = rpc_client.get_account_data(&metadata_pubkey).await?;
         let metadata = Metadata::from_bytes(&metadata_account)?;
+        info!(mint, "mpl metadata fetch ok");
 
-        println!("{:?}", metadata);
-
-        let uri = convert_ipfs_uri(&metadata.uri);
+        let uri = convert_ipfs_uri(&metadata.uri)
+            .trim_matches(char::from(0))
+            .to_string();
 
         // Create base token metadata
         let mut token_metadata = MplTokenMetadata {
             name: metadata.name.trim_matches(char::from(0)).to_string(),
             symbol: metadata.symbol.trim_matches(char::from(0)).to_string(),
-            uri: uri.trim_matches(char::from(0)).to_string(),
+            uri: uri.clone(),
             ipfs_metadata: None,
         };
 
@@ -133,9 +132,13 @@ impl TokenMetadata {
         let client = reqwest::Client::new();
         if let Ok(response) = client.get(&uri).send().await {
             if let Ok(ipfs_metadata) = response.json::<serde_json::Value>().await {
-                println!("{}", serde_json::to_string_pretty(&ipfs_metadata).unwrap());
+                info!(mint, uri, "ipfs fetch ok");
                 token_metadata.ipfs_metadata = Some(serde_json::from_value(ipfs_metadata)?);
+            } else {
+                warn!(mint, uri, "ipfs fetch failed");
             }
+        } else {
+            warn!(mint, uri, "ipfs fetch failed");
         }
 
         Ok(token_metadata)

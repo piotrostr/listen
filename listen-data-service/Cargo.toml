@@ -24,3 +24,4 @@ serde = { version = "1.0.217", features = ["derive"] }
 reqwest = { version = "0.12.12", features = ["json"] }
 mpl-token-metadata = "5.1.0"
 spl-token = "7.0.0"
+tracing = "0.1.41"

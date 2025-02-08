@@ -1,6 +1,7 @@
 use anyhow::Result;
 use redis::AsyncCommands;
 use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use tracing::{debug, info};
 
 use crate::metadata::TokenMetadata;
 
@@ -30,12 +31,14 @@ pub struct RedisKVStore {
 impl KVStore for RedisKVStore {
     fn new() -> Self {
         let client = redis::Client::open("redis://127.0.0.1/").expect("Failed to connect to Redis");
+        info!("Connected to Redis at 127.0.0.1");
         Self { client }
     }
 
     async fn get<T: DeserializeOwned + Send>(&self, key: &str) -> Result<Option<T>> {
         let mut conn = self.client.get_multiplexed_async_connection().await?;
         let value: Option<String> = conn.get(key).await?;
+        debug!(key, "redis get ok");
 
         match value {
             Some(json_str) => {
@@ -50,12 +53,14 @@ impl KVStore for RedisKVStore {
         let mut conn = self.client.get_multiplexed_async_connection().await?;
         let json_str = serde_json::to_string(value)?;
         let _: () = conn.set(key, json_str).await?;
+        debug!(key, "redis set ok");
         Ok(())
     }
 
     async fn exists(&self, key: &str) -> Result<bool> {
         let mut conn = self.client.get_multiplexed_async_connection().await?;
         let exists: bool = redis::cmd("EXISTS").arg(key).query_async(&mut conn).await?;
+        debug!(key, exists, "redis exists ok");
         Ok(exists)
     }
 }
