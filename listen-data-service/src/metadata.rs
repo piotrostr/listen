@@ -1,3 +1,4 @@
+use crate::de::*;
 use crate::{kv_store::RedisKVStore, util::make_rpc_client};
 use anyhow::Result;
 use mpl_token_metadata::accounts::Metadata;
@@ -35,13 +36,27 @@ pub struct TokenMetadata {
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct IpfsMetadata {
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_optional_string_or_object")]
     pub created_on: Option<String>,
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_optional_string_or_object")]
     pub description: Option<String>,
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_optional_string_or_object")]
     pub image: Option<String>,
+    #[serde(deserialize_with = "deserialize_string_or_object")]
     pub name: String,
+    #[serde(deserialize_with = "deserialize_string_or_object")]
     pub symbol: String,
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_string_or_bool")]
     pub show_name: Option<bool>,
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_optional_string_or_object")]
     pub twitter: Option<String>,
+    #[serde(default)]
+    #[serde(deserialize_with = "deserialize_optional_string_or_object")]
     pub website: Option<String>,
 }
 
@@ -145,7 +160,6 @@ impl TokenMetadata {
         Ok(token_metadata)
     }
 }
-
 #[cfg(test)]
 mod tests {
     // use crate::kv_store::KVStore;
@@ -191,5 +205,46 @@ mod tests {
                 .await
                 .unwrap();
         println!("{:?}", metadata);
+    }
+
+    #[test]
+    fn test_ipfs_metadata_bool_deserialization() {
+        // Test string "true"
+        let string_true = serde_json::json!({
+            "name": "Test",
+            "symbol": "TST",
+            "showName": "true"
+        });
+
+        // Test boolean true
+        let bool_true = serde_json::json!({
+            "name": "Test",
+            "symbol": "TST",
+            "showName": true
+        });
+
+        let metadata1: IpfsMetadata = serde_json::from_value(string_true).unwrap();
+        let metadata2: IpfsMetadata = serde_json::from_value(bool_true).unwrap();
+
+        assert_eq!(metadata1.show_name, Some(true));
+        assert_eq!(metadata2.show_name, Some(true));
+    }
+
+    #[test]
+    fn test_ipfs_metadata_object_fields() {
+        let object_fields = serde_json::json!({
+            "name": "test",
+            "symbol": "TST",
+            "description": {},
+            "twitter": null,
+            "website": {}
+        });
+
+        let metadata: IpfsMetadata = serde_json::from_value(object_fields).unwrap();
+
+        assert_eq!(metadata.name, "test");
+        assert_eq!(metadata.description, None);
+        assert_eq!(metadata.twitter, None);
+        assert_eq!(metadata.website, None);
     }
 }

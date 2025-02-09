@@ -61,7 +61,12 @@ impl Processor for RaydiumAmmV4InstructionProcessor {
                     )
                     .await
                     {
-                        error!("Error processing swap: {}", e);
+                        error!(
+                            "Error processing swap: {:#}\nError chain:\n{:?}\nTransaction: https://solscan.io/tx/{}", 
+                            e,
+                            e.chain().collect::<Vec<_>>(),
+                            meta.transaction_metadata.signature
+                        );
                     }
                 });
             }

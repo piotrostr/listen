@@ -11,7 +11,7 @@ use crate::{
 };
 use anyhow::Result;
 use chrono::Utc;
-use tracing::info;
+use tracing::{debug, info, warn};
 
 pub async fn calculate_price_for_wsol(token_amount: f64, sol_amount: f64) -> Result<f64> {
     let sol_price = SOL_PRICE_CACHE.get_price().await;
@@ -31,13 +31,13 @@ pub async fn process_swap(
 ) -> Result<()> {
     // Only process swaps with exactly 2 tokens
     if diffs.len() != 2 {
-        info!("Skipping swap with {} diffs", diffs.len());
+        warn!("Skipping swap with {} diffs", diffs.len());
         return Ok(());
     }
 
     // skip tiny swaps
     if diffs[0].diff.abs() < 0.0001 || diffs[1].diff.abs() < 0.0001 {
-        info!("Skipping swap with tiny diffs");
+        debug!("Skipping swap with tiny diffs");
         return Ok(());
     }
 

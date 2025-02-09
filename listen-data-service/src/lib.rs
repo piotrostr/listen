@@ -8,6 +8,7 @@ fn init() {
 }
 
 pub mod constants;
+pub mod de;
 
 #[cfg(feature = "rpc")]
 pub mod rpc;
