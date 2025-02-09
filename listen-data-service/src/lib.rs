@@ -1,4 +1,5 @@
 pub mod kv_store;
+pub mod message_queue;
 pub mod metadata;
 pub mod pipeline;
 pub mod raydium_processor;
