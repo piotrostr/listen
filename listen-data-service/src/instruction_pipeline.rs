@@ -13,11 +13,11 @@ pub fn make_raydium_instruction_pipeline() -> Result<Pipeline> {
         .datasource(RpcTransactionCrawler::new(
             std::env::var("RPC_URL")?,
             pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"),
-            300,
+            1,
             Duration::from_secs(1),
             Filters::new(None, None, None),
             None,
-            20,
+            1,
         ))
         .metrics(Arc::new(LogMetrics::new()))
         .instruction(RaydiumAmmV4Decoder, RaydiumAmmV4InstructionProcessor::new())

@@ -16,6 +16,11 @@ struct TradeData {
     p: String,
 }
 
+#[derive(Debug, Deserialize)]
+struct BinancePrice {
+    price: String,
+}
+
 #[derive(Debug, Clone)]
 pub struct SolPriceCache {
     price: Arc<RwLock<f64>>,
@@ -28,8 +33,33 @@ impl SolPriceCache {
         }
     }
 
+    pub async fn set_price(&self, price: f64) {
+        *self.price.write().await = price;
+    }
+
     pub async fn get_price(&self) -> f64 {
-        *self.price.read().await
+        let current_price = *self.price.read().await;
+        if current_price == 0.0 {
+            match self.fetch_rest_price().await {
+                Ok(rest_price) => {
+                    *self.price.write().await = rest_price;
+                    rest_price
+                }
+                Err(e) => {
+                    error!("Failed to fetch REST price: {}", e);
+                    current_price
+                }
+            }
+        } else {
+            current_price
+        }
+    }
+
+    async fn fetch_rest_price(&self) -> Result<f64> {
+        let rest_url = "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT";
+        let response = reqwest::get(rest_url).await?;
+        let price_data: BinancePrice = response.json().await?;
+        price_data.price.parse::<f64>().map_err(Into::into)
     }
 
     pub async fn start_price_stream(&self) -> Result<()> {
@@ -86,5 +116,22 @@ mod tests {
         let price = price_cache_clone.get_price().await;
         info!("Current SOL price: ${:.3}", price);
         assert!(price > 0.0, "Price should be greater than 0");
+    }
+
+    #[tokio::test]
+    async fn test_rest_fallback() {
+        let price_cache = SolPriceCache::new();
+
+        // Test initial state (should trigger REST fallback)
+        let price = price_cache.get_price().await;
+        info!("Initial SOL price from REST: ${:.3}", price);
+        assert!(price > 0.0, "REST fallback price should be greater than 0");
+
+        // Test that the price was cached
+        let cached_price = *price_cache.price.read().await;
+        assert_eq!(
+            price, cached_price,
+            "Price should be cached after REST call"
+        );
     }
 }

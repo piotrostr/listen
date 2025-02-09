@@ -6,6 +6,7 @@ pub mod kv_store;
 pub mod message_queue;
 pub mod metadata;
 pub mod price;
+pub mod process_swap;
 pub mod raydium_intruction_processor;
 pub mod raydium_processor;
 pub mod sol_price_stream;

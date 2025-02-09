@@ -20,3 +20,39 @@ pub fn write_json(data: &str, file_name: &str) -> Result<()> {
     serde_json::to_writer(writer, data)?;
     Ok(())
 }
+
+pub fn round_to_decimals(x: f64, decimals: u32) -> f64 {
+    let y = 10i32.pow(decimals) as f64;
+    (x * y).round() / y
+}
+
+pub async fn get_jup_price(mint: String) -> Result<f64> {
+    let url = format!(
+        "https://api.jup.ag/price/v2?ids={}&vsToken=EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        mint
+    );
+
+    let response = reqwest::get(&url).await?;
+    let json: serde_json::Value = response.json().await?;
+
+    // Extract price from response
+    let price = json["data"][&mint]["price"]
+        .as_str()
+        .ok_or_else(|| anyhow::anyhow!("Failed to parse price"))?;
+
+    let price = price.parse::<f64>()?;
+
+    Ok(price)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_get_jup_price() {
+        let price = get_jup_price("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN".to_string()).await;
+        assert!(price.is_ok());
+        assert!(price.unwrap() > 0.0);
+    }
+}

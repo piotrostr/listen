@@ -1,14 +1,4 @@
-use serde::{Deserialize, Serialize};
-use std::fmt::Debug;
-
-#[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct PriceUpdate {
-    pub name: String,
-    pub pubkey: String,
-    pub price: f64,
-    pub market_cap: Option<f64>,
-    pub timestamp: i64,
-}
+use crate::price::PriceUpdate;
 
 #[async_trait::async_trait]
 pub trait MessageQueue: Send + Sync + 'static {
