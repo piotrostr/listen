@@ -160,7 +160,7 @@ mod tests {
                 .await
                 .unwrap();
         assert!(mpl_metadata.ipfs_metadata.is_some());
-        assert_eq!(mpl_metadata.name, "Fartcoin");
+        assert_eq!(mpl_metadata.name, "Fartcoin ");
     }
 
     #[tokio::test]

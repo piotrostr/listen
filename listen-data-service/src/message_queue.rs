@@ -3,6 +3,7 @@ use std::fmt::Debug;
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct PriceUpdate {
+    pub name: String,
     pub pubkey: String,
     pub price: f64,
     pub market_cap: Option<f64>,

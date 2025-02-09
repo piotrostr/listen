@@ -83,9 +83,8 @@ mod tests {
         // Wait a bit for the first price update
         sleep(Duration::from_secs(2)).await;
 
-        // Get the price
         let price = price_cache_clone.get_price().await;
-        assert!(price > 0.0, "Price should be greater than 0");
         info!("Current SOL price: ${:.3}", price);
+        assert!(price > 0.0, "Price should be greater than 0");
     }
 }

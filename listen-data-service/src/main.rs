@@ -6,7 +6,7 @@ use listen_data_service::{
     instruction_pipeline::make_raydium_instruction_pipeline,
     sol_price_stream::SolPriceCache,
 };
-use tracing::error;
+use tracing::{error, info};
 
 #[derive(Parser)]
 pub enum Command {
@@ -18,6 +18,8 @@ pub enum Command {
 #[tokio::main]
 async fn main() -> Result<()> {
     let command = Command::parse();
+    tracing_subscriber::fmt().init();
+    info!("Starting up...");
 
     let mut pipeline: Pipeline;
     match command {

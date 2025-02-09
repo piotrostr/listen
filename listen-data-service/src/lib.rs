@@ -11,8 +11,16 @@ pub mod raydium_processor;
 pub mod sol_price_stream;
 pub mod util;
 
+#[cfg(test)]
+pub mod debug;
+
 #[ctor::ctor]
 fn init() {
-    tracing_subscriber::fmt::init();
     dotenv::dotenv().ok();
+
+    #[cfg(test)]
+    {
+        std::env::set_var("RUST_LOG", "info");
+        let _ = tracing_subscriber::fmt::try_init();
+    }
 }

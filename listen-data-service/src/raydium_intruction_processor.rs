@@ -1,8 +1,13 @@
+use anyhow::Result;
 use std::{collections::HashMap, sync::Arc};
+use tracing::{error, info};
 
 use crate::{
     constants::{USDC_MINT_KEY_STR, WSOL_MINT_KEY_STR},
     kv_store::RedisKVStore,
+    message_queue::{MessageQueue, PriceUpdate, RedisMessageQueue},
+    metadata::get_token_metadata,
+    sol_price_stream::SOL_PRICE_CACHE,
     util::make_kv_store,
 };
 use carbon_core::{
@@ -10,19 +15,86 @@ use carbon_core::{
     processor::Processor,
 };
 use carbon_raydium_amm_v4_decoder::instructions::RaydiumAmmV4Instruction;
+use chrono::Utc;
 use solana_transaction_status_client_types::TransactionTokenBalance;
 
 pub struct RaydiumAmmV4InstructionProcessor {
-    kv_store: Arc<RedisKVStore>,
+    pub kv_store: Arc<RedisKVStore>,
+    pub message_queue: Arc<RedisMessageQueue>,
 }
 
 impl RaydiumAmmV4InstructionProcessor {
     pub fn new() -> Self {
         Self {
             kv_store: make_kv_store().expect("Failed to create KV store"),
+            message_queue: Arc::new(
+                RedisMessageQueue::new("redis://127.0.0.1/")
+                    .expect("Failed to create message queue"),
+            ),
         }
     }
+
+    async fn process_swap(&self, diffs: Vec<Diff>) -> Result<()> {
+        // Only process swaps with exactly 2 tokens
+        if diffs.len() != 2 {
+            info!("Skipping swap with {} diffs", diffs.len());
+            return Ok(());
+        }
+
+        let (token0, token1) = (&diffs[0], &diffs[1]);
+
+        // Get absolute values of diffs since they're opposite signs
+        let amount0 = token0.diff.abs();
+        let amount1 = token1.diff.abs();
+
+        // Determine which token is WSOL or USDC (if any)
+        let (price, coin_mint) = match (token0.mint.as_str(), token1.mint.as_str()) {
+            (WSOL_MINT_KEY_STR, other_mint) => {
+                let sol_price = SOL_PRICE_CACHE.get_price().await;
+                ((amount1 / amount0) * sol_price, other_mint)
+            }
+            (other_mint, WSOL_MINT_KEY_STR) => {
+                let sol_price = SOL_PRICE_CACHE.get_price().await;
+                ((amount0 / amount1) * sol_price, other_mint)
+            }
+            (USDC_MINT_KEY_STR, other_mint) => (amount1 / amount0, other_mint),
+            (other_mint, USDC_MINT_KEY_STR) => (amount0 / amount1, other_mint),
+            _ => return Ok(()), // Skip pairs without SOL or USDC
+        };
+
+        // Get metadata for the non-WSOL/USDC token
+        let token_metadata = get_token_metadata(&self.kv_store, &coin_mint).await?;
+
+        // Calculate market cap if we have the metadata
+        let market_cap = token_metadata.as_ref().map(|metadata| {
+            let supply = metadata.spl.supply as f64;
+            let adjusted_supply = supply / (10_f64.powi(metadata.spl.decimals as i32));
+            price * adjusted_supply
+        });
+
+        // Get token name from metadata, fallback to mint address
+        let name = token_metadata
+            .map(|m| m.mpl.name)
+            .unwrap_or_else(|| coin_mint.to_string());
+
+        // Create and publish price update
+        let price_update = PriceUpdate {
+            name,
+            pubkey: coin_mint.to_string(),
+            price,
+            market_cap,
+            timestamp: Utc::now().timestamp(),
+        };
+
+        info!("price_update: {:#?}", price_update);
+
+        self.message_queue
+            .publish_price_update(price_update)
+            .await?;
+        Ok(())
+    }
 }
+
 #[async_trait::async_trait]
 impl Processor for RaydiumAmmV4InstructionProcessor {
     type InputType = InstructionProcessorInputType<RaydiumAmmV4Instruction>;
@@ -35,39 +107,16 @@ impl Processor for RaydiumAmmV4InstructionProcessor {
         let (meta, instruction, _nested_instructions) = data;
         match &instruction.data {
             RaydiumAmmV4Instruction::SwapBaseIn(_) | RaydiumAmmV4Instruction::SwapBaseOut(_) => {
-                println!(
-                    "https://solscan.io/tx/{}",
-                    meta.transaction_metadata.signature.to_string()
-                );
                 let diffs = get_token_balance_diff(
                     meta.transaction_metadata.meta.pre_token_balances.unwrap(),
                     meta.transaction_metadata.meta.post_token_balances.unwrap(),
                 );
-                let swapped_tokens = diffs
-                    .iter()
-                    .map(|diff| diff.mint.as_str())
-                    .collect::<Vec<&str>>();
-                if swapped_tokens.contains(&WSOL_MINT_KEY_STR)
-                    && swapped_tokens.contains(&USDC_MINT_KEY_STR)
-                {
-                    for diff in diffs {
-                        match self.kv_store.get_metadata(&diff.mint).await {
-                            Ok(Some(metadata)) => {
-                                println!(
-                                    "{}: {} ({} -> {})",
-                                    metadata.mpl.name, diff.diff, diff.pre_amount, diff.post_amount
-                                );
-                            }
-                            _ => {
-                                println!(
-                                    "{}: {} ({} -> {})",
-                                    diff.mint, diff.diff, diff.pre_amount, diff.post_amount
-                                );
-                            }
-                        }
-                    }
+
+                info!("diffs: {:#?}", diffs);
+
+                if let Err(e) = self.process_swap(diffs).await {
+                    error!("Error processing swap: {}", e);
                 }
-                println!("--------------------------------");
             }
             _ => {}
         }
@@ -78,10 +127,10 @@ impl Processor for RaydiumAmmV4InstructionProcessor {
 
 #[derive(Debug)]
 pub struct Diff {
-    mint: String,
-    pre_amount: f64,
-    post_amount: f64,
-    diff: f64,
+    pub mint: String,
+    pub pre_amount: f64,
+    pub post_amount: f64,
+    pub diff: f64,
 }
 
 fn get_token_balance_diff(
