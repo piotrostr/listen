@@ -11,7 +11,7 @@ use crate::{
 };
 use anyhow::Result;
 use chrono::Utc;
-use tracing::{debug, info, warn};
+use tracing::{debug, info};
 
 pub async fn calculate_price_for_wsol(token_amount: f64, sol_amount: f64) -> Result<f64> {
     let sol_price = SOL_PRICE_CACHE.get_price().await;
@@ -31,7 +31,7 @@ pub async fn process_swap(
 ) -> Result<()> {
     // Only process swaps with exactly 2 tokens
     if diffs.len() != 2 {
-        warn!("Skipping swap with {} diffs", diffs.len());
+        debug!("Skipping swap with {} diffs", diffs.len());
         return Ok(());
     }
 
@@ -94,6 +94,8 @@ pub async fn process_swap(
     };
 
     info!("price_update: {:#?}", price_update);
+
+    // optionally grab price from jup to confirm
     // info!(
     //     "jupiter price: {}",
     //     crate::util::get_jup_price(coin_mint.to_string())
