@@ -2313,6 +2313,7 @@ dependencies = [
  "carbon-raydium-amm-v4-decoder",
  "carbon-rpc-block-subscribe-datasource",
  "carbon-rpc-program-subscribe-datasource",
+ "chrono",
  "ctor",
  "dotenv",
  "mpl-token-metadata",
