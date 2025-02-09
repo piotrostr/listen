@@ -15,6 +15,7 @@ pub trait KVStore {
     async fn get<T: DeserializeOwned + Send>(&self, key: &str) -> Result<Option<T>>;
     async fn set<T: Serialize + Send + Sync>(&self, key: &str, value: &T) -> Result<()>;
     async fn exists(&self, key: &str) -> Result<bool>;
+    async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>>;
 }
 
 pub struct RedisKVStore {
@@ -56,6 +57,20 @@ impl KVStore for RedisKVStore {
         let exists: bool = redis::cmd("EXISTS").arg(key).query_async(&mut conn).await?;
         debug!(key, exists, "redis exists ok");
         Ok(exists)
+    }
+
+    async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>> {
+        let key = format!("solana:{}", mint);
+        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let data: Option<String> = conn.get(&key).await?;
+
+        match data {
+            Some(json_str) => {
+                let metadata: TokenMetadata = serde_json::from_str(&json_str)?;
+                Ok(Some(metadata))
+            }
+            None => Ok(None),
+        }
     }
 }
 

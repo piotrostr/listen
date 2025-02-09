@@ -80,7 +80,7 @@ pub async fn get_token_metadata(
 ) -> Result<Option<TokenMetadata>> {
     if kv_store.has_metadata(mint).await? {
         debug!(mint, "metadata already exists");
-        return Ok(None);
+        return kv_store.get_metadata(mint).await;
     }
 
     match TokenMetadata::fetch_by_mint(mint).await {
