@@ -1,5 +1,5 @@
 use anyhow::Result;
-use listen_data_service::make_pipeline;
+use listen_data_service::pipeline::make_pipeline;
 
 #[tokio::main]
 async fn main() -> Result<()> {
