@@ -29,7 +29,7 @@ impl RaydiumAmmV4InstructionProcessor {
         Ok(usdc_amount.abs() / token_amount.abs())
     }
 
-    pub async fn process_swap(&self, diffs: Vec<Diff>) -> Result<()> {
+    pub async fn process_swap(&self, diffs: Vec<Diff>, slot: u64) -> Result<()> {
         // Only process swaps with exactly 2 tokens
         if diffs.len() != 2 {
             info!("Skipping swap with {} diffs", diffs.len());
@@ -91,15 +91,16 @@ impl RaydiumAmmV4InstructionProcessor {
             price,
             market_cap,
             timestamp: Utc::now().timestamp(),
+            slot,
         };
 
         info!("price_update: {:#?}", price_update);
-        info!(
-            "jupiter price: {}",
-            crate::util::get_jup_price(coin_mint.to_string())
-                .await
-                .unwrap()
-        );
+        // info!(
+        //     "jupiter price: {}",
+        //     crate::util::get_jup_price(coin_mint.to_string())
+        //         .await
+        //         .unwrap()
+        // );
 
         self.message_queue
             .publish_price_update(price_update)

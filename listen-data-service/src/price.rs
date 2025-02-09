@@ -16,4 +16,5 @@ pub struct PriceUpdate {
     pub price: f64,
     pub market_cap: Option<f64>,
     pub timestamp: i64,
+    pub slot: u64,
 }

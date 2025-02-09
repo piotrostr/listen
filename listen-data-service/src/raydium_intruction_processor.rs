@@ -1,4 +1,3 @@
-use core::panic;
 use std::{collections::HashMap, sync::Arc};
 use tracing::{debug, error};
 
@@ -48,10 +47,12 @@ impl Processor for RaydiumAmmV4InstructionProcessor {
                     meta.transaction_metadata.signature
                 );
 
-                if let Err(e) = self.process_swap(diffs).await {
+                if let Err(e) = self
+                    .process_swap(diffs, meta.transaction_metadata.slot)
+                    .await
+                {
                     error!("Error processing swap: {}", e);
                 }
-                panic!("test");
             }
             _ => {}
         }
