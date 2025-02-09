@@ -1,7 +1,10 @@
 use std::{collections::HashMap, sync::Arc};
 use tracing::{debug, error};
 
-use crate::{kv_store::RedisKVStore, message_queue::RedisMessageQueue, util::make_kv_store};
+use crate::{
+    kv_store::RedisKVStore, message_queue::RedisMessageQueue, process_swap::process_swap,
+    util::make_kv_store,
+};
 use carbon_core::{
     error::CarbonResult, instruction::InstructionProcessorInputType, metrics::MetricsCollection,
     processor::Processor,
@@ -47,12 +50,20 @@ impl Processor for RaydiumAmmV4InstructionProcessor {
                     meta.transaction_metadata.signature
                 );
 
-                if let Err(e) = self
-                    .process_swap(diffs, meta.transaction_metadata.slot)
+                let message_queue = self.message_queue.clone();
+                let kv_store = self.kv_store.clone();
+                tokio::spawn(async move {
+                    if let Err(e) = process_swap(
+                        diffs,
+                        meta.transaction_metadata.slot,
+                        &message_queue,
+                        &kv_store,
+                    )
                     .await
-                {
-                    error!("Error processing swap: {}", e);
-                }
+                    {
+                        error!("Error processing swap: {}", e);
+                    }
+                });
             }
             _ => {}
         }
