@@ -8,7 +8,7 @@ use std::{sync::Arc, time::Duration};
 
 use crate::raydium_intruction_processor::RaydiumAmmV4InstructionProcessor;
 
-pub fn make_raydium_instruction_pipeline() -> Result<Pipeline> {
+pub fn make_raydium_rpc_instruction_pipeline() -> Result<Pipeline> {
     let pipeline = Pipeline::builder()
         .datasource(RpcTransactionCrawler::new(
             std::env::var("RPC_URL")?,

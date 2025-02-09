@@ -69,7 +69,7 @@ pub async fn process_swap(
     };
 
     // Get metadata for the non-WSOL/USDC token
-    let token_metadata = get_token_metadata(&kv_store, &coin_mint).await?;
+    let token_metadata = get_token_metadata(kv_store, coin_mint).await?;
 
     // Calculate market cap if we have the metadata
     let market_cap = token_metadata.as_ref().map(|metadata| {

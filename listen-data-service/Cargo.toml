@@ -3,34 +3,56 @@ name = "listen-data-service"
 version = "0.1.0"
 edition = "2021"
 
+[features]
+default = ["geyser"]
+geyser = ["carbon-yellowstone-grpc-datasource", "yellowstone-grpc-proto"]
+rpc = [
+  "carbon-rpc-block-subscribe-datasource",
+  "carbon-rpc-program-subscribe-datasource",
+  "carbon-rpc-transaction-crawler-datasource",
+]
+
 [dependencies]
 anyhow = "1.0.95"
-async-trait = "0.1.86"
-carbon-core = "0.4.0"
-carbon-log-metrics = "0.4.0"
-carbon-raydium-amm-v4-decoder = "0.4.0"
-carbon-rpc-block-subscribe-datasource = "0.4.0"
-carbon-rpc-program-subscribe-datasource = "0.4.0"
+async-trait = "0.1.83"
+carbon-core = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.4.0" }
+carbon-log-metrics = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.4.0" }
+carbon-raydium-amm-v4-decoder = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.4.0" }
 ctor = "0.2.9"
 dotenv = "0.15.0"
-solana-account-decoder = "2.1.13"
-solana-client = "2.1.13"
-solana-sdk = "2.1.13"
-tokio = { version = "1.43.0", features = ["rt", "macros"] }
-tracing-subscriber = "0.3.19"
+
+# need yellowstone protos compat
+solana-account-decoder = "=2.0.10"
+solana-client = "=2.0.10"
+solana-sdk = "=2.0.10"
+solana-transaction-status = "=2.0.10"
+
+tokio = { version = "1.40.0", features = ["rt", "macros"] }
+serde = { version = "1.0.217", features = ["derive"] }
+reqwest = { version = "0.11.0", features = ["json"] }
 redis = { version = "0.28.2", features = ["tokio-comp"] }
 serde_json = "1.0.138"
-serde = { version = "1.0.217", features = ["derive"] }
-reqwest = { version = "0.12.12", features = ["json"] }
 mpl-token-metadata = "5.1.0"
-spl-token = "7.0.0"
+spl-token = "5.0.2"
+clap = { version = "4.5.28", features = ["derive"] }
+tracing-subscriber = "0.3.19"
 tracing = "0.1.41"
 chrono = "0.4.39"
-carbon-jupiter-swap-decoder = "0.4.0"
-clap = { version = "4.5.28", features = ["derive"] }
-carbon-rpc-transaction-crawler-datasource = "0.4.0"
-solana-transaction-status-client-types = "2.1.13"
-tokio-tungstenite = { version = "0.20.1", features = ["native-tls"] }
-futures-util = "0.3.31"
+futures-util = "0.3.30"
 url = "2.5.4"
 once_cell = "1.19"
+tokio-tungstenite = { version = "0.20.1", features = ["native-tls"] }
+
+# rpc
+carbon-rpc-block-subscribe-datasource = { version = "0.4.0", optional = true }
+carbon-rpc-program-subscribe-datasource = { version = "0.4.0", optional = true }
+carbon-rpc-transaction-crawler-datasource = { version = "0.4.0", optional = true }
+
+# geyser
+carbon-yellowstone-grpc-datasource = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", optional = true, version = "0.4.0" }
+yellowstone-grpc-proto = { version = "=2.0.0", git = "https://github.com/rpcpool/yellowstone-grpc.git", rev = "17faff5ac068c2f212c471acf67a8dcc1d7caff5", optional = true }
+
+
+[patch.crates-io.curve25519-dalek]
+git = "https://github.com/anza-xyz/curve25519-dalek.git"
+rev = "b500cdc2a920cd5bff9e2dd974d7b97349d61464"

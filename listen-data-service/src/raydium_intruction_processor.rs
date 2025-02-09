@@ -10,7 +10,7 @@ use carbon_core::{
     processor::Processor,
 };
 use carbon_raydium_amm_v4_decoder::instructions::RaydiumAmmV4Instruction;
-use solana_transaction_status_client_types::TransactionTokenBalance;
+use solana_transaction_status::TransactionTokenBalance;
 
 pub struct RaydiumAmmV4InstructionProcessor {
     pub kv_store: Arc<RedisKVStore>,

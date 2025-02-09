@@ -1,7 +1,20 @@
-pub mod account_pipeline;
+#[ctor::ctor]
+fn init() {
+    #[cfg(test)]
+    {
+        std::env::set_var("RUST_LOG", "info");
+        let _ = tracing_subscriber::fmt::try_init();
+    }
+}
+
 pub mod constants;
-pub mod instruction_pipeline;
-pub mod jupiter_processor;
+
+#[cfg(feature = "rpc")]
+pub mod rpc;
+
+#[cfg(feature = "geyser")]
+pub mod geyser;
+
 pub mod kv_store;
 pub mod message_queue;
 pub mod metadata;
@@ -14,14 +27,3 @@ pub mod util;
 
 #[cfg(test)]
 pub mod debug;
-
-#[ctor::ctor]
-fn init() {
-    dotenv::dotenv().ok();
-
-    #[cfg(test)]
-    {
-        std::env::set_var("RUST_LOG", "info");
-        let _ = tracing_subscriber::fmt::try_init();
-    }
-}
