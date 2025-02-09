@@ -1,9 +1,11 @@
 use anyhow::Result;
 use redis::AsyncCommands;
-use serde::{de::DeserializeOwned, Deserialize, Serialize};
+use serde::{de::DeserializeOwned, Serialize};
+
 use tracing::{debug, info};
 
 use crate::metadata::TokenMetadata;
+use crate::price::Price;
 
 #[async_trait::async_trait]
 pub trait KVStore {
@@ -13,14 +15,6 @@ pub trait KVStore {
     async fn get<T: DeserializeOwned + Send>(&self, key: &str) -> Result<Option<T>>;
     async fn set<T: Serialize + Send + Sync>(&self, key: &str, value: &T) -> Result<()>;
     async fn exists(&self, key: &str) -> Result<bool>;
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct Price {
-    pub(crate) coin_price: f64,
-    pub(crate) pc_price: f64,
-    pub(crate) coin_mint: String,
-    pub(crate) pc_mint: String,
 }
 
 pub struct RedisKVStore {

@@ -1,11 +1,15 @@
 use anyhow::Result;
 use futures_util::StreamExt;
+use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use tracing::{error, info};
 use url::Url;
+
+// Global SOL price cache
+pub static SOL_PRICE_CACHE: Lazy<SolPriceCache> = Lazy::new(|| SolPriceCache::new());
 
 #[derive(Debug, Deserialize)]
 struct TradeData {
@@ -28,9 +32,10 @@ impl SolPriceCache {
         *self.price.read().await
     }
 
-    pub async fn start_price_stream(self) -> Result<()> {
+    pub async fn start_price_stream(&self) -> Result<()> {
         let url = Url::parse("wss://stream.binance.com:9443/ws/solusdt@trade")?;
         let (ws_stream, _) = connect_async(url).await?;
+        let price = self.price.clone();
         info!("WebSocket connected to Binance SOL/USDT stream");
 
         let (_, mut read) = ws_stream.split();
@@ -40,7 +45,7 @@ impl SolPriceCache {
                 Ok(Message::Text(text)) => match serde_json::from_str::<TradeData>(&text) {
                     Ok(trade) => {
                         if let Ok(new_price) = trade.p.parse::<f64>() {
-                            *self.price.write().await = new_price;
+                            *price.write().await = new_price;
                         }
                     }
                     Err(e) => error!("Error parsing JSON: {}", e),
