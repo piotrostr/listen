@@ -8,9 +8,16 @@ use carbon_rpc_transaction_crawler_datasource::{
 use solana_sdk::pubkey;
 use std::{sync::Arc, time::Duration};
 
-use crate::raydium_intruction_processor::RaydiumAmmV4InstructionProcessor;
+use crate::{
+    db::ClickhouseDb, kv_store::RedisKVStore, message_queue::RedisMessageQueue,
+    raydium_intruction_processor::RaydiumAmmV4InstructionProcessor,
+};
 
-pub fn make_raydium_rpc_instruction_pipeline() -> Result<Pipeline> {
+pub fn make_raydium_rpc_instruction_pipeline(
+    kv_store: Arc<RedisKVStore>,
+    message_queue: Arc<RedisMessageQueue>,
+    db: Arc<ClickhouseDb>,
+) -> Result<Pipeline> {
     let pipeline = Pipeline::builder()
         .datasource(RpcTransactionCrawler::new(
             std::env::var("RPC_URL")?,
@@ -24,7 +31,7 @@ pub fn make_raydium_rpc_instruction_pipeline() -> Result<Pipeline> {
         .metrics(Arc::new(LogMetrics::new()))
         .instruction(
             RaydiumAmmV4Decoder,
-            RaydiumAmmV4InstructionProcessor::new(),
+            RaydiumAmmV4InstructionProcessor::new(kv_store, message_queue, db),
         )
         .build()?;
 

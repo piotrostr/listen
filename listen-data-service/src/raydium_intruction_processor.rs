@@ -2,11 +2,8 @@ use std::sync::Arc;
 use tracing::{debug, error};
 
 use crate::{
-    db::{ClickhouseDb, Database},
-    kv_store::RedisKVStore,
-    message_queue::RedisMessageQueue,
+    db::ClickhouseDb, kv_store::RedisKVStore, message_queue::RedisMessageQueue,
     process_swap::process_swap,
-    util::make_kv_store,
 };
 use carbon_core::{
     error::CarbonResult, instruction::InstructionProcessorInputType,
@@ -18,12 +15,6 @@ pub struct RaydiumAmmV4InstructionProcessor {
     pub kv_store: Arc<RedisKVStore>,
     pub message_queue: Arc<RedisMessageQueue>,
     pub db: Arc<ClickhouseDb>,
-}
-
-impl Default for RaydiumAmmV4InstructionProcessor {
-    fn default() -> Self {
-        Self::new()
-    }
 }
 
 #[async_trait::async_trait]
@@ -51,16 +42,15 @@ impl Processor for RaydiumAmmV4InstructionProcessor {
 }
 
 impl RaydiumAmmV4InstructionProcessor {
-    pub fn new() -> Self {
+    pub fn new(
+        kv_store: Arc<RedisKVStore>,
+        message_queue: Arc<RedisMessageQueue>,
+        db: Arc<ClickhouseDb>,
+    ) -> Self {
         Self {
-            kv_store: make_kv_store().expect("Failed to create KV store"),
-            message_queue: Arc::new(
-                RedisMessageQueue::new(
-                    &std::env::var("REDIS_URL").expect("REDIS_URL must be set"),
-                )
-                .expect("Failed to create message queue"),
-            ),
-            db: Arc::new(ClickhouseDb::new()),
+            kv_store,
+            message_queue,
+            db,
         }
     }
 

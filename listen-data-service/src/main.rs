@@ -1,12 +1,14 @@
 use anyhow::Result;
 use carbon_core::pipeline::Pipeline;
 use clap::Parser;
-use listen_data_service::{db::Database, sol_price_stream::SOL_PRICE_CACHE};
+use listen_data_service::{
+    sol_price_stream::SOL_PRICE_CACHE,
+    util::{make_db, make_kv_store, make_message_queue},
+};
 
 #[cfg(feature = "geyser")]
 use listen_data_service::geyser::make_raydium_geyser_instruction_pipeline;
 
-use listen_data_service::db::ClickhouseDb;
 #[cfg(feature = "rpc")]
 use listen_data_service::rpc::{
     account_pipeline::make_raydium_rpc_accounts_pipeline,
@@ -44,12 +46,14 @@ async fn main() -> Result<()> {
         std::process::exit(1);
     }
 
+    let db = make_db().await?;
+
+    let kv_store = make_kv_store()?;
+    let message_queue = make_message_queue()?;
+
     #[cfg(any(feature = "rpc", feature = "geyser"))]
     {
         let command = Command::parse();
-
-        // be sure to call this
-        ClickhouseDb::new().initialize().await?;
 
         let mut pipeline: Pipeline;
         #[cfg(feature = "rpc")]
@@ -58,14 +62,22 @@ async fn main() -> Result<()> {
                 pipeline = make_raydium_rpc_accounts_pipeline()?;
             }
             Command::RaydiumInstructionsRpc => {
-                pipeline = make_raydium_rpc_instruction_pipeline()?;
+                pipeline = make_raydium_rpc_instruction_pipeline(
+                    kv_store,
+                    message_queue,
+                    db,
+                )?;
             }
         }
 
         #[cfg(feature = "geyser")]
         match command {
             Command::RaydiumInstructionsGeyser => {
-                pipeline = make_raydium_geyser_instruction_pipeline()?;
+                pipeline = make_raydium_geyser_instruction_pipeline(
+                    kv_store,
+                    message_queue,
+                    db,
+                )?;
             }
         }
 

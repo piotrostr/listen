@@ -1,49 +1,72 @@
-use crate::{price::PriceUpdate, util::must_get_env};
-use anyhow::Result;
+use std::{sync::Arc, time::Duration};
+
+use crate::price::PriceUpdate;
+use anyhow::{Context, Result};
+use clickhouse::inserter::Inserter;
 use clickhouse::Client;
+use tokio::sync::RwLock;
 use tracing::{debug, info};
 
 #[async_trait::async_trait]
 pub trait Database {
-    fn new() -> Self
+    fn new(
+        database_url: &str,
+        password: &str,
+        user: &str,
+        database: &str,
+    ) -> Self
     where
         Self: Sized;
-    async fn initialize(&self) -> Result<()>;
+    async fn initialize(&mut self) -> Result<()>;
 
     async fn health_check(&self) -> Result<()>;
 
     async fn insert_price(&self, price: &PriceUpdate) -> Result<()>;
+
+    async fn commit_price_updates(&self) -> Result<()>;
 }
 
 pub struct ClickhouseDb {
     client: Client,
+    inserter: Option<Arc<RwLock<Inserter<PriceUpdate>>>>,
+    transaction_count: Arc<RwLock<u32>>,
+    is_initialized: bool,
 }
 
 #[async_trait::async_trait]
 impl Database for ClickhouseDb {
-    fn new() -> Self {
-        let database_url = must_get_env("CLICKHOUSE_URL");
-        let password = must_get_env("CLICKHOUSE_PASSWORD");
-        let user = must_get_env("CLICKHOUSE_USER");
-        let database = must_get_env("CLICKHOUSE_DATABASE");
-
+    fn new(
+        database_url: &str,
+        password: &str,
+        user: &str,
+        database: &str,
+    ) -> Self {
         let client = Client::default()
-            .with_url(database_url.as_str())
+            .with_url(database_url)
             .with_password(password)
             .with_user(user)
             .with_database(database);
 
         info!("Connecting to ClickHouse at {}", database_url);
-        Self { client }
+        Self {
+            client,
+            inserter: None,
+            transaction_count: Arc::new(RwLock::new(0)),
+            is_initialized: false,
+        }
     }
 
     async fn health_check(&self) -> Result<()> {
         debug!("clickhouse healthz");
-        self.client.query("SELECT 1").execute().await?;
+        self.client
+            .query("SELECT 1")
+            .execute()
+            .await
+            .context("Failed to execute health check query")?;
         Ok(())
     }
 
-    async fn initialize(&self) -> Result<()> {
+    async fn initialize(&mut self) -> Result<()> {
         debug!("initializing clickhouse");
         self.client
             .query(
@@ -66,16 +89,64 @@ impl Database for ClickhouseDb {
                 "#,
             )
             .execute()
-            .await?;
+            .await
+            .context("Failed to create price_updates table")?;
+
+        self.inserter = Some(Arc::new(RwLock::new(
+            self.client
+                .inserter::<PriceUpdate>("price_updates")
+                .context("Failed to prepare price insert statement")?
+                .with_timeouts(
+                    Some(Duration::from_secs(5)),
+                    Some(Duration::from_secs(20)),
+                )
+                .with_max_bytes(50_000_000)
+                .with_max_rows(750_000)
+                .with_period(Some(Duration::from_secs(15))),
+        )));
+
+        self.is_initialized = true;
 
         Ok(())
     }
 
     async fn insert_price(&self, price: &PriceUpdate) -> Result<()> {
         debug!("inserting price: {}", price.signature);
-        let mut insert = self.client.insert::<PriceUpdate>("price_updates")?;
-        insert.write(price).await?;
-        insert.end().await?;
+        self.inserter
+            .as_ref()
+            .expect("inserter not initialized")
+            .write()
+            .await
+            .write(price)
+            .context("Failed to write price to insert buffer")?;
+
+        let mut count = self.transaction_count.write().await;
+        *count += 1;
+
+        if *count >= 500 {
+            info!("Transaction count reached {}, triggering commit", *count);
+            *count = 0;
+            drop(count);
+
+            self.commit_price_updates().await?;
+        }
+
+        Ok(())
+    }
+
+    async fn commit_price_updates(&self) -> Result<()> {
+        debug!("committing price updates");
+        let stats = self
+            .inserter
+            .as_ref()
+            .expect("inserter not initialized")
+            .write()
+            .await
+            .commit()
+            .await
+            .context("Failed to commit price updates")?;
+
+        info!("Committed {} rows ({} bytes)", stats.rows, stats.bytes);
 
         Ok(())
     }
@@ -83,11 +154,13 @@ impl Database for ClickhouseDb {
 
 #[cfg(test)]
 mod tests {
+    use crate::util::make_db;
+
     use super::*;
 
     #[tokio::test]
     async fn test_health_check() {
-        let db = ClickhouseDb::new();
+        let db = make_db().await.unwrap();
         db.health_check().await.unwrap();
     }
 }

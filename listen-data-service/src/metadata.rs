@@ -3,6 +3,7 @@ use crate::{kv_store::RedisKVStore, util::make_rpc_client};
 use anyhow::Result;
 use mpl_token_metadata::accounts::Metadata;
 use serde::{Deserialize, Serialize};
+use solana_sdk::commitment_config::CommitmentConfig;
 use solana_sdk::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
 use spl_token::state::Mint;
@@ -107,8 +108,17 @@ impl TokenMetadata {
     pub async fn fetch_spl_by_mint(mint: &str) -> Result<SplTokenMetadata> {
         let rpc_client = make_rpc_client()?;
         let token_pubkey = Pubkey::from_str(mint)?;
-        let token_account = rpc_client.get_account_data(&token_pubkey).await?;
-        let token_data = Mint::unpack(&token_account)?;
+        let token_account = rpc_client
+            .get_account_with_commitment(
+                &token_pubkey,
+                CommitmentConfig::processed(),
+            )
+            .await?;
+        let data = match token_account.value {
+            Some(account_data) => account_data.data,
+            None => return Err(anyhow::anyhow!("Token account not found")),
+        };
+        let token_data = Mint::unpack(&data)?;
         info!(mint, "spl metadata fetch ok");
 
         Ok(SplTokenMetadata {
@@ -134,9 +144,17 @@ impl TokenMetadata {
         let (metadata_pubkey, _) = Metadata::find_pda(&token_pubkey);
 
         // Get metadata account data
-        let metadata_account =
-            rpc_client.get_account_data(&metadata_pubkey).await?;
-        let metadata = Metadata::from_bytes(&metadata_account)?;
+        let metadata_account = rpc_client
+            .get_account_with_commitment(
+                &metadata_pubkey,
+                CommitmentConfig::processed(),
+            )
+            .await?;
+        let data = match metadata_account.value {
+            Some(account_data) => account_data.data,
+            None => return Err(anyhow::anyhow!("Metadata account not found")),
+        };
+        let metadata = Metadata::from_bytes(&data)?;
         info!(mint, "mpl metadata fetch ok");
 
         let uri = convert_ipfs_uri(&metadata.uri)
@@ -172,9 +190,7 @@ impl TokenMetadata {
 }
 #[cfg(test)]
 mod tests {
-    // use crate::kv_store::KVStore;
-
-    use crate::kv_store::KVStore;
+    use crate::util::make_kv_store;
 
     use super::*;
 
@@ -212,7 +228,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_token_metadata() {
-        let kv_store = Arc::new(RedisKVStore::new());
+        let kv_store = make_kv_store().unwrap();
         let metadata = get_token_metadata(
             &kv_store,
             "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",

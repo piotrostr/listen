@@ -9,7 +9,7 @@ use crate::price::Price;
 
 #[async_trait::async_trait]
 pub trait KVStore {
-    fn new() -> Self
+    fn new(redis_url: &str) -> Self
     where
         Self: Sized;
     async fn get<T: DeserializeOwned + Send>(
@@ -31,11 +31,9 @@ pub struct RedisKVStore {
 
 #[async_trait::async_trait]
 impl KVStore for RedisKVStore {
-    fn new() -> Self {
-        let redis_url =
-            std::env::var("REDIS_URL").expect("REDIS_URL must be set");
-        let client = redis::Client::open(redis_url.clone())
-            .expect("Failed to connect to Redis");
+    fn new(redis_url: &str) -> Self {
+        let client =
+            redis::Client::open(redis_url).expect("Failed to connect to Redis");
         info!("Connected to Redis at {}", redis_url);
         Self { client }
     }

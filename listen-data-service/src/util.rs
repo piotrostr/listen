@@ -2,16 +2,37 @@ use anyhow::Result;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use std::{fs::File, io::BufWriter, sync::Arc};
 
-use crate::kv_store::{KVStore, RedisKVStore};
+use crate::{
+    db::{ClickhouseDb, Database},
+    kv_store::{KVStore, RedisKVStore},
+    message_queue::RedisMessageQueue,
+};
 
 pub fn make_rpc_client() -> Result<RpcClient> {
-    let rpc_client = RpcClient::new(std::env::var("RPC_URL")?);
+    let rpc_client = RpcClient::new(must_get_env("RPC_URL"));
     Ok(rpc_client)
 }
 
 pub fn make_kv_store() -> Result<Arc<RedisKVStore>> {
-    let kv_store = RedisKVStore::new();
+    let kv_store = RedisKVStore::new(must_get_env("REDIS_URL").as_str());
     Ok(Arc::new(kv_store))
+}
+
+pub fn make_message_queue() -> Result<Arc<RedisMessageQueue>> {
+    let message_queue =
+        RedisMessageQueue::new(must_get_env("REDIS_URL").as_str())?;
+    Ok(Arc::new(message_queue))
+}
+
+pub async fn make_db() -> Result<Arc<ClickhouseDb>> {
+    let mut db = ClickhouseDb::new(
+        must_get_env("CLICKHOUSE_URL").as_str(),
+        must_get_env("CLICKHOUSE_PASSWORD").as_str(),
+        must_get_env("CLICKHOUSE_USER").as_str(),
+        must_get_env("CLICKHOUSE_DATABASE").as_str(),
+    );
+    db.initialize().await?;
+    Ok(Arc::new(db))
 }
 
 pub fn write_json(data: &str, file_name: &str) -> Result<()> {
@@ -46,7 +67,10 @@ pub async fn get_jup_price(mint: String) -> Result<f64> {
 }
 
 pub fn must_get_env(key: &str) -> String {
-    std::env::var(key).expect(&format!("{} must be set", key))
+    match std::env::var(key) {
+        Ok(val) => val,
+        Err(_) => panic!("{} must be set", key),
+    }
 }
 
 #[cfg(test)]

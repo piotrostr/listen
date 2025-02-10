@@ -16,7 +16,7 @@ use carbon_rpc_program_subscribe_datasource::{Filters, RpcProgramSubscribe};
 pub fn make_raydium_rpc_accounts_pipeline() -> Result<Pipeline> {
     let pipeline = Pipeline::builder()
         .datasource(RpcProgramSubscribe::new(
-            must_get_env("WS_URL")?,
+            must_get_env("WS_URL"),
             Filters::new(
                 pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8"),
                 Some(RpcProgramAccountsConfig {

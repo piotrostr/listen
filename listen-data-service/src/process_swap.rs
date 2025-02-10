@@ -199,7 +199,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_sol_for_token() {
-        let diffs = vec![
+        let diffs = [
             Diff {
                 mint: "G6ZaVuWEuGtFRooaiHQWjDzoCzr2f7BWr3PhsQRnjSTE"
                     .to_string(),
@@ -229,7 +229,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_sol_for_token_2() {
-        let diffs = vec![
+        let diffs = [
             Diff {
                 mint: "So11111111111111111111111111111111111111112".to_string(),
                 pre_amount: 450.295597127,

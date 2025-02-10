@@ -782,36 +782,13 @@ dependencies = [
 [[package]]
 name = "carbon-core"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7dae390ab6c42de8fce10971f8cbe156893cb133b957c08b2cf5a2d61cbd03d"
-dependencies = [
- "async-trait",
- "borsh 0.10.4",
- "bs58",
- "carbon-macros 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "carbon-proc-macros 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures",
- "log",
- "serde",
- "serde_json",
- "solana-client",
- "solana-sdk",
- "solana-transaction-status",
- "thiserror",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
-name = "carbon-core"
-version = "0.4.0"
 source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-trait",
  "borsh 0.10.4",
  "bs58",
- "carbon-macros 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
- "carbon-proc-macros 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
+ "carbon-macros",
+ "carbon-proc-macros",
  "futures",
  "log",
  "serde",
@@ -830,22 +807,9 @@ version = "0.4.0"
 source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-trait",
- "carbon-core 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
+ "carbon-core",
  "log",
  "tokio",
-]
-
-[[package]]
-name = "carbon-macros"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "071b744ba6ebeaa2b9ea60c8c3b463d0280d4f034265ba3fd9d2ac696e8db70e"
-dependencies = [
- "hex",
- "paste",
- "solana-client",
- "solana-sdk",
- "solana-transaction-status",
 ]
 
 [[package]]
@@ -858,25 +822,6 @@ dependencies = [
  "solana-client",
  "solana-sdk",
  "solana-transaction-status",
-]
-
-[[package]]
-name = "carbon-proc-macros"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b088582d0c5e28f01f2d1a107cdfbf904ed245d66326eaace77e9a8c4d913258"
-dependencies = [
- "borsh-derive-internal",
- "hex",
- "paste",
- "proc-macro2",
- "quote",
- "serde",
- "solana-client",
- "solana-sdk",
- "solana-transaction-status",
- "syn 1.0.109",
- "unicode-xid",
 ]
 
 [[package]]
@@ -902,7 +847,7 @@ name = "carbon-raydium-amm-v4-decoder"
 version = "0.4.0"
 source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
- "carbon-core 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
+ "carbon-core",
  "serde",
  "serde-big-array",
  "solana-sdk",
@@ -911,11 +856,10 @@ dependencies = [
 [[package]]
 name = "carbon-rpc-block-subscribe-datasource"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d359842d21d9622bd954da73a407b141b9605f3f8f9780069b2826d96556f22a"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-trait",
- "carbon-core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "carbon-core",
  "env_logger 0.11.6",
  "futures",
  "log",
@@ -928,11 +872,10 @@ dependencies = [
 [[package]]
 name = "carbon-rpc-program-subscribe-datasource"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36948b5e37d04d025fa5a35f2a7f1dcc2122a78d50ae0a80cff1d94364f330fa"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-trait",
- "carbon-core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "carbon-core",
  "env_logger 0.11.6",
  "futures",
  "log",
@@ -945,12 +888,11 @@ dependencies = [
 [[package]]
 name = "carbon-rpc-transaction-crawler-datasource"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b53a32e0fecc620819fc7e8367c5a7cc34f0d196d8f5d79e380eb542a8e89ec0"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-stream",
  "async-trait",
- "carbon-core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "carbon-core",
  "env_logger 0.11.6",
  "futures",
  "log",
@@ -969,7 +911,7 @@ version = "0.4.0"
 source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-trait",
- "carbon-core 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
+ "carbon-core",
  "env_logger 0.11.6",
  "futures",
  "futures-util",
@@ -1140,6 +1082,7 @@ dependencies = [
  "hyper-tls 0.6.0",
  "hyper-util",
  "lz4_flex",
+ "quanta",
  "replace_with",
  "sealed",
  "serde",
@@ -2609,7 +2552,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "carbon-core 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
+ "carbon-core",
  "carbon-log-metrics",
  "carbon-raydium-amm-v4-decoder",
  "carbon-rpc-block-subscribe-datasource",
@@ -3325,6 +3268,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "quanta"
+version = "0.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3bd1fe6824cea6538803de3ff1bc0cf3949024db3d43c9643024bfb33a807c0e"
+dependencies = [
+ "crossbeam-utils",
+ "libc",
+ "once_cell",
+ "raw-cpuid",
+ "wasi 0.11.0+wasi-snapshot-preview1",
+ "web-sys",
+ "winapi",
+]
+
+[[package]]
 name = "quinn"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3450,6 +3408,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ca3129af7b92a17112d59ad498c6f81eaf463253766b90396d39ea7a39d6613c"
 dependencies = [
  "rand_core 0.5.1",
+]
+
+[[package]]
+name = "raw-cpuid"
+version = "11.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6928fa44c097620b706542d428957635951bade7143269085389d42c8a4927e"
+dependencies = [
+ "bitflags 2.8.0",
 ]
 
 [[package]]
