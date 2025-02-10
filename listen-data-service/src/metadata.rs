@@ -1,6 +1,6 @@
 use crate::de::*;
 use crate::{kv_store::RedisKVStore, util::make_rpc_client};
-use anyhow::Result;
+use anyhow::{Context, Result};
 use mpl_token_metadata::accounts::Metadata;
 use serde::{Deserialize, Serialize};
 use solana_sdk::commitment_config::CommitmentConfig;
@@ -86,18 +86,24 @@ pub async fn get_token_metadata(
 
     match TokenMetadata::fetch_by_mint(mint).await {
         Ok(metadata) => {
-            kv_store.insert_metadata(&metadata).await?;
+            kv_store
+                .insert_metadata(&metadata)
+                .await
+                .context("failed to insert metadata")?;
+
             Ok(Some(metadata))
         }
         Err(e) => Err(e),
     }
 }
 
-// TODO worth also adding SPL
 impl TokenMetadata {
     pub async fn fetch_by_mint(mint: &str) -> Result<Self> {
-        let mpl_metadata = TokenMetadata::fetch_mpl_by_mint(mint).await?;
+        let mpl_metadata = TokenMetadata::fetch_mpl_by_mint(mint)
+            .await
+            .unwrap_or_default();
         let spl_metadata = TokenMetadata::fetch_spl_by_mint(mint).await?;
+
         Ok(TokenMetadata {
             mint: mint.to_string(),
             mpl: mpl_metadata,
@@ -113,12 +119,14 @@ impl TokenMetadata {
                 &token_pubkey,
                 CommitmentConfig::processed(),
             )
-            .await?;
-        let data = match token_account.value {
-            Some(account_data) => account_data.data,
-            None => return Err(anyhow::anyhow!("Token account not found")),
-        };
-        let token_data = Mint::unpack(&data)?;
+            .await
+            .context("failed to get token account")?;
+
+        let data = token_account.value.context("Token account not found")?.data;
+
+        let token_data =
+            Mint::unpack(&data).context("failed to unpack mint data")?;
+
         debug!(mint, "spl metadata fetch ok");
 
         Ok(SplTokenMetadata {
@@ -137,11 +145,18 @@ impl TokenMetadata {
     }
 
     pub async fn fetch_mpl_by_mint(mint: &str) -> Result<MplTokenMetadata> {
-        let rpc_client = make_rpc_client()?;
-        let token_pubkey = Pubkey::from_str(mint)?;
+        let rpc_client =
+            make_rpc_client().context("failed to make rpc client")?;
+        let token_pubkey =
+            Pubkey::from_str(mint).context("failed to parse mint")?;
 
         // Find metadata PDA
         let (metadata_pubkey, _) = Metadata::find_pda(&token_pubkey);
+        debug!(
+            mint,
+            metadata_pubkey = metadata_pubkey.to_string(),
+            "attempting to fetch MPL metadata"
+        );
 
         // Get metadata account data
         let metadata_account = rpc_client
@@ -149,13 +164,41 @@ impl TokenMetadata {
                 &metadata_pubkey,
                 CommitmentConfig::processed(),
             )
-            .await?;
-        let data = match metadata_account.value {
-            Some(account_data) => account_data.data,
-            None => return Err(anyhow::anyhow!("Metadata account not found")),
+            .await
+            .context(format!(
+                "failed to get metadata account: {}",
+                metadata_pubkey
+            ))?;
+
+        let data = metadata_account
+            .value
+            .context(format!(
+                "Metadata account not found: token: {} mpl pda: {}",
+                token_pubkey, metadata_pubkey
+            ))?
+            .data;
+
+        debug!(mint, data_len = data.len(), "got metadata account data");
+
+        let metadata = match Metadata::from_bytes(&data) {
+            Ok(m) => m,
+            Err(e) => {
+                warn!(
+                    mint,
+                    error = e.to_string(),
+                    "failed to parse metadata, trying alternative parsing"
+                );
+                return Err(e.into());
+            }
         };
-        let metadata = Metadata::from_bytes(&data)?;
-        debug!(mint, "mpl metadata fetch ok");
+
+        debug!(
+            mint,
+            name = metadata.name,
+            symbol = metadata.symbol,
+            uri = metadata.uri,
+            "parsed metadata successfully"
+        );
 
         let uri = convert_ipfs_uri(&metadata.uri)
             .trim_matches(char::from(0))
@@ -176,8 +219,10 @@ impl TokenMetadata {
                 response.json::<serde_json::Value>().await
             {
                 debug!(mint, uri, "ipfs fetch ok");
-                token_metadata.ipfs_metadata =
-                    Some(serde_json::from_value(ipfs_metadata)?);
+                token_metadata.ipfs_metadata = Some(
+                    serde_json::from_value(ipfs_metadata)
+                        .context("failed to parse ipfs metadata")?,
+                );
             } else {
                 warn!(mint, uri, "ipfs fetch failed");
             }
@@ -217,6 +262,18 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_fetch_mpl_by_mint_3() {
+        let mpl_metadata = TokenMetadata::fetch_mpl_by_mint(
+            "EfAynhvukY3nGyWEYhDSijDT9NnHA4o7NXDUXcrMpump",
+        )
+        .await
+        .unwrap();
+
+        assert_eq!(mpl_metadata.name, "Parallel AI");
+        assert_eq!(mpl_metadata.symbol, "PAI");
+    }
+
+    #[tokio::test]
     async fn test_fetch_spl_by_mint() {
         let spl_metadata = TokenMetadata::fetch_spl_by_mint(
             "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
@@ -238,47 +295,22 @@ mod tests {
         debug!("{:?}", metadata);
     }
 
-    #[test]
-    fn test_ipfs_metadata_bool_deserialization() {
-        // Test string "true"
-        let string_true = serde_json::json!({
-            "name": "Test",
-            "symbol": "TST",
-            "showName": "true"
-        });
+    // Add a new test for fetch_by_mint that shows the complete behavior
+    #[tokio::test]
+    async fn test_fetch_by_mint_no_mpl() {
+        let metadata = TokenMetadata::fetch_by_mint(
+            "EfAynhvukY3nGyWEYhDSijDT9NnHA4o7NXDUXcrMpump",
+        )
+        .await
+        .unwrap();
 
-        // Test boolean true
-        let bool_true = serde_json::json!({
-            "name": "Test",
-            "symbol": "TST",
-            "showName": true
-        });
+        // Should have default MPL metadata
+        assert_eq!(metadata.mpl.name, "");
+        assert_eq!(metadata.mpl.symbol, "");
+        assert_eq!(metadata.mpl.uri, "");
+        assert!(metadata.mpl.ipfs_metadata.is_none());
 
-        let metadata1: IpfsMetadata =
-            serde_json::from_value(string_true).unwrap();
-        let metadata2: IpfsMetadata =
-            serde_json::from_value(bool_true).unwrap();
-
-        assert_eq!(metadata1.show_name, Some(true));
-        assert_eq!(metadata2.show_name, Some(true));
-    }
-
-    #[test]
-    fn test_ipfs_metadata_object_fields() {
-        let object_fields = serde_json::json!({
-            "name": "test",
-            "symbol": "TST",
-            "description": {},
-            "twitter": null,
-            "website": {}
-        });
-
-        let metadata: IpfsMetadata =
-            serde_json::from_value(object_fields).unwrap();
-
-        assert_eq!(metadata.name, "test");
-        assert_eq!(metadata.description, None);
-        assert_eq!(metadata.twitter, None);
-        assert_eq!(metadata.website, None);
+        // But should still have SPL metadata
+        assert!(metadata.spl.is_initialized);
     }
 }

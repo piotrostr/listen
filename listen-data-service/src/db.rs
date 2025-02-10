@@ -36,7 +36,7 @@ impl ClickhouseDb {
         Ok(self
             .client
             .inserter::<PriceUpdate>("price_updates")
-            .context("Failed to prepare price insert statement")?
+            .context("failed to prepare price insert statement")?
             .with_timeouts(
                 Some(Duration::from_secs(5)),
                 Some(Duration::from_secs(20)),

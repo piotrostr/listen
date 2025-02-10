@@ -58,3 +58,52 @@ where
         ))),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::metadata::IpfsMetadata;
+
+    #[test]
+    fn test_ipfs_metadata_bool_deserialization() {
+        // Test string "true"
+        let string_true = serde_json::json!({
+            "name": "Test",
+            "symbol": "TST",
+            "showName": "true"
+        });
+
+        // Test boolean true
+        let bool_true = serde_json::json!({
+            "name": "Test",
+            "symbol": "TST",
+            "showName": true
+        });
+
+        let metadata1: IpfsMetadata =
+            serde_json::from_value(string_true).unwrap();
+        let metadata2: IpfsMetadata =
+            serde_json::from_value(bool_true).unwrap();
+
+        assert_eq!(metadata1.show_name, Some(true));
+        assert_eq!(metadata2.show_name, Some(true));
+    }
+
+    #[test]
+    fn test_ipfs_metadata_object_fields() {
+        let object_fields = serde_json::json!({
+            "name": "test",
+            "symbol": "TST",
+            "description": {},
+            "twitter": null,
+            "website": {}
+        });
+
+        let metadata: IpfsMetadata =
+            serde_json::from_value(object_fields).unwrap();
+
+        assert_eq!(metadata.name, "test");
+        assert_eq!(metadata.description, None);
+        assert_eq!(metadata.twitter, None);
+        assert_eq!(metadata.website, None);
+    }
+}

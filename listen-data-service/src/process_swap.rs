@@ -11,7 +11,7 @@ use crate::{
     price::PriceUpdate,
     sol_price_stream::SOL_PRICE_CACHE,
 };
-use anyhow::Result;
+use anyhow::{Context, Result};
 use carbon_core::transaction::TransactionMetadata;
 use chrono::Utc;
 use tracing::{debug, warn};
@@ -103,7 +103,8 @@ pub async fn process_swap(
                 sol_price,
                 true,
             )
-            .await?;
+            .await
+            .context("failed to process first hop")?;
 
             // Process second hop: SOL to token being bought
             process_two_token_swap(
@@ -115,7 +116,8 @@ pub async fn process_swap(
                 sol_price,
                 true,
             )
-            .await?;
+            .await
+            .context("failed to process second hop")?;
 
             return Ok(());
         }
@@ -159,7 +161,9 @@ async fn process_two_token_swap(
     };
 
     // Get metadata and emit price update
-    let token_metadata = get_token_metadata(kv_store, &coin_mint).await?;
+    let token_metadata = get_token_metadata(kv_store, &coin_mint)
+        .await
+        .context("failed to get token metadata")?;
 
     // Calculate market cap if we have the metadata
     let market_cap = token_metadata.as_ref().map(|metadata| {
@@ -193,8 +197,14 @@ async fn process_two_token_swap(
         is_buy,
     };
 
-    db.insert_price(&price_update).await?;
-    message_queue.publish_price_update(price_update).await?;
+    db.insert_price(&price_update)
+        .await
+        .context("failed to insert price update")?;
+
+    message_queue
+        .publish_price_update(price_update)
+        .await
+        .context("failed to publish price update")?;
 
     Ok(())
 }

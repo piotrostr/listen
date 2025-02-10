@@ -2,7 +2,7 @@
 #[ctor::ctor]
 fn init() {
     dotenv::dotenv().ok();
-    std::env::set_var("RUST_LOG", "info");
+    std::env::set_var("RUST_LOG", "debug");
     let _ = tracing_subscriber::fmt::try_init();
 }
 

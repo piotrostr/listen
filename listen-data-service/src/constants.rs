@@ -6,6 +6,12 @@ pub const WSOL_MINT_KEY: Pubkey =
 pub const USDC_MINT_KEY: Pubkey =
     pubkey!("EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v");
 
+pub const USDT_MINT_KEY: Pubkey =
+    pubkey!("Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB");
+
+pub const USDT_MINT_KEY_STR: &str =
+    "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB";
+
 pub const WSOL_MINT_KEY_STR: &str =
     "So11111111111111111111111111111111111111112";
 pub const USDC_MINT_KEY_STR: &str =

@@ -87,9 +87,8 @@ impl RaydiumAmmV4InstructionProcessor {
                 Err(e) => {
                     metrics.increment_failed_swaps();
                     error!(
-                        "Error processing swap: {:#}\nError chain:\n{:?}\nTransaction: https://solscan.io/tx/{}", 
-                        e,
-                        e.chain().collect::<Vec<_>>(),
+                        ?e,
+                        "Transaction: https://solscan.io/tx/{}",
                         tx_meta.signature
                     );
                 }
