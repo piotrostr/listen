@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::{
-    constants::{USDC_MINT_KEY_STR, WSOL_MINT_KEY_STR},
+    constants::WSOL_MINT_KEY_STR,
     db::{ClickhouseDb, Database},
     kv_store::RedisKVStore,
     message_queue::{MessageQueue, RedisMessageQueue},
@@ -16,20 +16,26 @@ use solana_transaction_status::TransactionTokenBalance;
 use std::collections::HashMap;
 use tracing::{debug, info};
 
-pub async fn calculate_price_for_wsol(
-    token_amount: f64,
-    sol_amount: f64,
+pub fn process_diffs(
+    diffs: Vec<Diff>,
     sol_price: f64,
-) -> Result<f64> {
-    let price = (sol_amount.abs() / token_amount.abs()) * sol_price;
-    Ok(price)
-}
+) -> Result<(f64, f64, String)> {
+    let (token0, token1) = (&diffs[0], &diffs[1]);
 
-pub async fn calculate_price_for_usdc(
-    token_amount: f64,
-    usdc_amount: f64,
-) -> Result<f64> {
-    Ok(usdc_amount.abs() / token_amount.abs())
+    let amount0 = token0.diff.abs();
+    let amount1 = token1.diff.abs();
+
+    let (sol_amount, token_amount, coin_mint) =
+        match (token0.mint.as_str(), token1.mint.as_str()) {
+            (WSOL_MINT_KEY_STR, other_mint) => (amount0, amount1, other_mint),
+            (other_mint, WSOL_MINT_KEY_STR) => (amount1, amount0, other_mint),
+            _ => return Err(anyhow::anyhow!("Invalid token pair")),
+        };
+
+    let price = (sol_amount.abs() / token_amount.abs()) * sol_price;
+    let swap_amount = sol_amount * sol_price;
+
+    Ok((price, swap_amount, coin_mint.to_string()))
 }
 
 pub async fn process_swap(
@@ -51,7 +57,9 @@ pub async fn process_swap(
             .as_ref()
             .unwrap(),
     );
-    // Only process swaps with exactly 2 tokens
+
+    // TODO support these too
+    // skip swaps with more than 2 tokens
     if diffs.len() != 2 {
         debug!("Skipping swap with {} diffs", diffs.len());
         return Ok(());
@@ -63,42 +71,12 @@ pub async fn process_swap(
         return Ok(());
     }
 
-    let (token0, token1) = (&diffs[0], &diffs[1]);
-
-    // Get absolute values of diffs since they're opposite signs
-    let amount0 = token0.diff.abs();
-    let amount1 = token1.diff.abs();
-
     let sol_price = SOL_PRICE_CACHE.get_price().await;
 
-    // Determine which token is WSOL or USDC (if any)
-    let (price, coin_mint, swap_amount) =
-        match (token0.mint.as_str(), token1.mint.as_str()) {
-            (WSOL_MINT_KEY_STR, other_mint) => {
-                let price =
-                    calculate_price_for_wsol(amount1, amount0, sol_price)
-                        .await?;
-                (price, other_mint, amount0 * sol_price)
-            }
-            (other_mint, WSOL_MINT_KEY_STR) => {
-                let price =
-                    calculate_price_for_wsol(amount0, amount1, sol_price)
-                        .await?;
-                (price, other_mint, amount1 * sol_price)
-            }
-            (USDC_MINT_KEY_STR, other_mint) => {
-                let price = calculate_price_for_usdc(amount1, amount0).await?;
-                (price, other_mint, amount0)
-            }
-            (other_mint, USDC_MINT_KEY_STR) => {
-                let price = calculate_price_for_usdc(amount0, amount1).await?;
-                (price, other_mint, amount1)
-            }
-            _ => return Ok(()), // Skip pairs without SOL or USDC
-        };
+    let (price, swap_amount, coin_mint) = process_diffs(diffs, sol_price)?;
 
     // Get metadata for the non-WSOL/USDC token
-    let token_metadata = get_token_metadata(kv_store, coin_mint).await?;
+    let token_metadata = get_token_metadata(kv_store, &coin_mint).await?;
 
     // Calculate market cap if we have the metadata
     let market_cap = token_metadata.as_ref().map(|metadata| {
@@ -199,7 +177,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_sol_for_token() {
-        let diffs = [
+        let diffs = vec![
             Diff {
                 mint: "G6ZaVuWEuGtFRooaiHQWjDzoCzr2f7BWr3PhsQRnjSTE"
                     .to_string(),
@@ -219,17 +197,19 @@ mod tests {
             },
         ];
 
-        let price =
-            calculate_price_for_wsol(diffs[0].diff, diffs[1].diff, 201.36)
-                .await
-                .unwrap();
+        let (price, swap_amount, _) = process_diffs(diffs, 201.36).unwrap();
         let rounded_price = round_to_decimals(price, 4);
         assert!(rounded_price == 0.0758, "price: {}", rounded_price);
+        assert!(
+            swap_amount == 3.3524082689999943 * 201.36,
+            "swap_amount: {}",
+            swap_amount
+        );
     }
 
     #[tokio::test]
     async fn test_sol_for_token_2() {
-        let diffs = [
+        let diffs = vec![
             Diff {
                 mint: "So11111111111111111111111111111111111111112".to_string(),
                 pre_amount: 450.295597127,
@@ -249,11 +229,13 @@ mod tests {
             },
         ];
 
-        let price =
-            calculate_price_for_wsol(diffs[1].diff, diffs[0].diff, 202.12)
-                .await
-                .unwrap();
+        let (price, swap_amount, _) = process_diffs(diffs, 202.12).unwrap();
         let rounded_price = round_to_decimals(price, 5);
         assert!(rounded_price == 0.00148, "price: {}", rounded_price);
+        assert!(
+            swap_amount == 0.05000000000001137 * 202.12,
+            "swap_amount: {}",
+            swap_amount
+        );
     }
 }
