@@ -5,7 +5,7 @@ use solana_transaction_status::{
     TransactionTokenBalance, UiTransactionTokenBalance,
 };
 
-use crate::constants::WSOL_MINT_KEY_STR;
+use crate::constants::{RAYDIUM_AUTHORITY_MINT_KEY_STR, WSOL_MINT_KEY_STR};
 
 pub trait TokenBalanceInfo {
     fn get_mint(&self) -> &str;
@@ -99,30 +99,39 @@ pub fn get_token_balance_diff<T: TokenBalanceInfo + std::fmt::Debug>(
         }
     }
 
+    // dont take the diffs from the raydium authority mint nor zero diffs
+    let should_collect = |diff: &Diff| diff.diff != 0.0;
+
     for ((mint, owner), pre_amount) in pre_balances_map.iter() {
         if let Some(post_amount) =
             post_balances_map.get(&(mint.clone(), owner.clone()))
         {
             let diff = post_amount - pre_amount;
-            diffs.push(Diff {
+            let res = Diff {
                 mint: mint.clone(),
                 pre_amount: *pre_amount,
                 post_amount: *post_amount,
                 diff,
                 owner: owner.clone(),
-            });
+            };
+            if should_collect(&res) {
+                diffs.push(res);
+            }
         }
     }
 
     for ((mint, owner), post_amount) in post_balances_map {
         if !pre_balances_map.contains_key(&(mint.clone(), owner.clone())) {
-            diffs.push(Diff {
+            let res = Diff {
                 mint,
                 pre_amount: 0.0,
                 post_amount,
                 diff: post_amount,
                 owner,
-            });
+            };
+            if should_collect(&res) {
+                diffs.push(res);
+            }
         }
     }
 

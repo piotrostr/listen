@@ -1,9 +1,8 @@
 use anyhow::Result;
-use carbon_core::pipeline::Pipeline;
+use carbon_core::pipeline::{Pipeline, ShutdownStrategy};
 use carbon_log_metrics::LogMetrics;
 use carbon_raydium_amm_v4_decoder::RaydiumAmmV4Decoder;
 use carbon_yellowstone_grpc_datasource::YellowstoneGrpcGeyserClient;
-use solana_sdk::{pubkey, pubkey::Pubkey};
 use std::{
     collections::{HashMap, HashSet},
     sync::Arc,
@@ -15,13 +14,11 @@ use yellowstone_grpc_proto::geyser::{
 };
 
 use crate::{
-    db::ClickhouseDb, kv_store::RedisKVStore, message_queue::RedisMessageQueue,
+    constants::RAYDIUM_AMM_V4_PROGRAM_ID, db::ClickhouseDb,
+    kv_store::RedisKVStore, message_queue::RedisMessageQueue,
     raydium_intruction_processor::RaydiumAmmV4InstructionProcessor,
     util::must_get_env,
 };
-
-pub const RAYDIUM_AMM_V4_PROGRAM_ID: Pubkey =
-    pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8");
 
 pub fn make_raydium_geyser_instruction_pipeline(
     kv_store: Arc<RedisKVStore>,
@@ -56,6 +53,7 @@ pub fn make_raydium_geyser_instruction_pipeline(
             Arc::new(RwLock::new(HashSet::new())),
         ))
         .metrics(Arc::new(LogMetrics::new()))
+        .shutdown_strategy(ShutdownStrategy::Immediate)
         .instruction(
             RaydiumAmmV4Decoder,
             RaydiumAmmV4InstructionProcessor::new(kv_store, message_queue, db),

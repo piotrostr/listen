@@ -37,13 +37,16 @@ pub async fn process_swap(
     // TODO support these too
     // skip swaps with more than 2 tokens
     if diffs.len() != 2 {
-        debug!("Skipping swap with {} diffs", diffs.len());
+        warn!(
+            "https://solscan.io/tx/{} Skipping swap {:#?}",
+            transaction_metadata.signature, diffs
+        );
         return Ok(());
     }
 
     // skip tiny swaps
-    if diffs[0].diff.abs() < 0.0001 || diffs[1].diff.abs() < 0.0001 {
-        debug!("Skipping swap with tiny diffs");
+    if diffs[0].diff.abs() < 0.01 || diffs[1].diff.abs() < 0.01 {
+        debug!("skipping tiny diffs");
         return Ok(());
     }
 
