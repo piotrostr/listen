@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{Context, Result};
 use redis::AsyncCommands;
 use serde::{de::DeserializeOwned, Serialize};
 
@@ -42,8 +42,13 @@ impl KVStore for RedisKVStore {
         &self,
         key: &str,
     ) -> Result<Option<T>> {
-        let mut conn = self.client.get_multiplexed_async_connection().await?;
-        let value: Option<String> = conn.get(key).await?;
+        let mut conn = self
+            .client
+            .get_multiplexed_async_connection()
+            .await
+            .context("Failed to get connection")?;
+        let value: Option<String> =
+            conn.get(key).await.context("Failed to get key")?;
         debug!(key, "redis get ok");
 
         match value {
@@ -60,25 +65,42 @@ impl KVStore for RedisKVStore {
         key: &str,
         value: &T,
     ) -> Result<()> {
-        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let mut conn = self
+            .client
+            .get_multiplexed_async_connection()
+            .await
+            .context("Failed to get connection")?;
         let json_str = serde_json::to_string(value)?;
-        let _: () = conn.set(key, json_str).await?;
+        let _: () =
+            conn.set(key, json_str).await.context("Failed to set key")?;
         debug!(key, "redis set ok");
         Ok(())
     }
 
     async fn exists(&self, key: &str) -> Result<bool> {
-        let mut conn = self.client.get_multiplexed_async_connection().await?;
-        let exists: bool =
-            redis::cmd("EXISTS").arg(key).query_async(&mut conn).await?;
+        let mut conn = self
+            .client
+            .get_multiplexed_async_connection()
+            .await
+            .context("Failed to get connection")?;
+        let exists: bool = redis::cmd("EXISTS")
+            .arg(key)
+            .query_async(&mut conn)
+            .await
+            .context("Failed to query exists")?;
         debug!(key, exists, "redis exists ok");
         Ok(exists)
     }
 
     async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>> {
         let key = format!("solana:{}", mint);
-        let mut conn = self.client.get_multiplexed_async_connection().await?;
-        let data: Option<String> = conn.get(&key).await?;
+        let mut conn = self
+            .client
+            .get_multiplexed_async_connection()
+            .await
+            .context("Failed to get connection")?;
+        let data: Option<String> =
+            conn.get(&key).await.context("Failed to get key")?;
 
         match data {
             Some(json_str) => {

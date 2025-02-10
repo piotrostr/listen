@@ -7,6 +7,7 @@ use crate::{
     kv_store::RedisKVStore,
     message_queue::{MessageQueue, RedisMessageQueue},
     metadata::get_token_metadata,
+    metrics::SwapMetrics,
     price::PriceUpdate,
     sol_price_stream::SOL_PRICE_CACHE,
 };
@@ -20,6 +21,7 @@ pub async fn process_swap(
     message_queue: &RedisMessageQueue,
     kv_store: &Arc<RedisKVStore>,
     db: &Arc<ClickhouseDb>,
+    metrics: &SwapMetrics,
 ) -> Result<()> {
     let diffs = get_token_balance_diff(
         transaction_metadata
@@ -36,11 +38,13 @@ pub async fn process_swap(
 
     if diffs.iter().all(|d| d.diff.abs() < 0.01) {
         debug!("skipping tiny diffs");
+        metrics.increment_skipped_tiny_swaps();
         return Ok(());
     }
 
     if diffs.iter().any(|d| d.diff == 0.0) {
         debug!("skipping zero diffs (arbitrage likely)");
+        metrics.increment_skipped_zero_swaps();
         return Ok(());
     }
 
@@ -51,6 +55,7 @@ pub async fn process_swap(
             "https://solscan.io/tx/{} Skipping swap with unexpected number of tokens {:#?}",
             transaction_metadata.signature, diffs
         );
+        metrics.increment_skipped_unexpected_number_of_tokens();
         return Ok(());
     }
 
@@ -81,6 +86,7 @@ pub async fn process_swap(
                 "https://solscan.io/tx/{} Skipping multi-hop swap with unexpected token changes {:#?}",
                 transaction_metadata.signature, diffs
             );
+            metrics.increment_skipped_unexpected_number_of_tokens();
             return Ok(());
         }
 
@@ -121,6 +127,7 @@ pub async fn process_swap(
             "https://solscan.io/tx/{} Skipping swap with unexpected number of tokens {:#?}",
             transaction_metadata.signature, diffs
         );
+        metrics.increment_skipped_unexpected_number_of_tokens();
         return Ok(());
     }
 

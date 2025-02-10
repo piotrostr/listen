@@ -20,6 +20,7 @@ pub mod db;
 pub mod kv_store;
 pub mod message_queue;
 pub mod metadata;
+pub mod metrics;
 pub mod price;
 pub mod process_swap;
 pub mod raydium_intruction_processor;

@@ -3,7 +3,7 @@ use tracing::{debug, error};
 
 use crate::{
     db::ClickhouseDb, kv_store::RedisKVStore, message_queue::RedisMessageQueue,
-    process_swap::process_swap,
+    metrics::SwapMetrics, process_swap::process_swap,
 };
 use carbon_core::{
     error::CarbonResult, instruction::InstructionProcessorInputType,
@@ -15,6 +15,7 @@ pub struct RaydiumAmmV4InstructionProcessor {
     pub kv_store: Arc<RedisKVStore>,
     pub message_queue: Arc<RedisMessageQueue>,
     pub db: Arc<ClickhouseDb>,
+    pub metrics: Arc<SwapMetrics>,
 }
 
 #[async_trait::async_trait]
@@ -49,6 +50,7 @@ impl RaydiumAmmV4InstructionProcessor {
             kv_store,
             message_queue,
             db,
+            metrics: Arc::new(SwapMetrics::new()),
         }
     }
 
@@ -65,16 +67,32 @@ impl RaydiumAmmV4InstructionProcessor {
         let kv_store = self.kv_store.clone();
         let tx_meta = meta.transaction_metadata.clone();
         let db = self.db.clone();
+        let metrics = self.metrics.clone();
+
+        metrics.increment_total_swaps();
+
         tokio::spawn(async move {
-            if let Err(e) =
-                process_swap(&tx_meta, &message_queue, &kv_store, &db).await
+            match process_swap(
+                &tx_meta,
+                &message_queue,
+                &kv_store,
+                &db,
+                &metrics,
+            )
+            .await
             {
-                error!(
-                    "Error processing swap: {:#}\nError chain:\n{:?}\nTransaction: https://solscan.io/tx/{}", 
-                    e,
-                    e.chain().collect::<Vec<_>>(),
-                    tx_meta.signature
-                );
+                Ok(_) => {
+                    metrics.increment_successful_swaps();
+                }
+                Err(e) => {
+                    metrics.increment_failed_swaps();
+                    error!(
+                        "Error processing swap: {:#}\nError chain:\n{:?}\nTransaction: https://solscan.io/tx/{}", 
+                        e,
+                        e.chain().collect::<Vec<_>>(),
+                        tx_meta.signature
+                    );
+                }
             }
         });
     }
