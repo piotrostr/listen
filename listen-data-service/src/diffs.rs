@@ -45,6 +45,10 @@ pub fn process_diffs(
     diffs: &Vec<Diff>,
     sol_price: f64,
 ) -> Result<(f64, f64, String)> {
+    if diffs.len() != 2 {
+        return Err(anyhow::anyhow!("Expected exactly 2 token balance diffs"));
+    }
+
     let (token0, token1) = (&diffs[0], &diffs[1]);
 
     let amount0 = token0.diff.abs();
@@ -62,6 +66,7 @@ pub fn process_diffs(
 
     Ok((price, swap_amount, coin_mint.to_string()))
 }
+
 #[derive(Debug)]
 pub struct Diff {
     pub mint: String,
@@ -99,8 +104,8 @@ pub fn get_token_balance_diff<T: TokenBalanceInfo + std::fmt::Debug>(
         }
     }
 
-    // dont take the diffs from the raydium authority mint nor zero diffs
-    let should_collect = |diff: &Diff| diff.diff != 0.0;
+    let should_collect =
+        |diff: &Diff| diff.owner == RAYDIUM_AUTHORITY_MINT_KEY_STR;
 
     for ((mint, owner), pre_amount) in pre_balances_map.iter() {
         if let Some(post_amount) =

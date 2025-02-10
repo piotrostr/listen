@@ -201,6 +201,7 @@ mod tests {
             transaction_meta.pre_token_balances.as_ref().unwrap(),
             transaction_meta.post_token_balances.as_ref().unwrap(),
         );
+        println!("diffs: {:#?}", diffs);
         let (price, swap_amount, _) = process_diffs(&diffs, 203.67).unwrap();
         let rounded_price = round_to_decimals(price, 5);
         assert!(rounded_price == 0.00035, "price: {}", rounded_price);

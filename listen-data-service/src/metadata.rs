@@ -8,7 +8,7 @@ use solana_sdk::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
 use spl_token::state::Mint;
 use std::{str::FromStr, sync::Arc};
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 pub struct MplTokenMetadata {
@@ -119,7 +119,7 @@ impl TokenMetadata {
             None => return Err(anyhow::anyhow!("Token account not found")),
         };
         let token_data = Mint::unpack(&data)?;
-        info!(mint, "spl metadata fetch ok");
+        debug!(mint, "spl metadata fetch ok");
 
         Ok(SplTokenMetadata {
             mint_authority: token_data
@@ -155,7 +155,7 @@ impl TokenMetadata {
             None => return Err(anyhow::anyhow!("Metadata account not found")),
         };
         let metadata = Metadata::from_bytes(&data)?;
-        info!(mint, "mpl metadata fetch ok");
+        debug!(mint, "mpl metadata fetch ok");
 
         let uri = convert_ipfs_uri(&metadata.uri)
             .trim_matches(char::from(0))
@@ -175,7 +175,7 @@ impl TokenMetadata {
             if let Ok(ipfs_metadata) =
                 response.json::<serde_json::Value>().await
             {
-                info!(mint, uri, "ipfs fetch ok");
+                debug!(mint, uri, "ipfs fetch ok");
                 token_metadata.ipfs_metadata =
                     Some(serde_json::from_value(ipfs_metadata)?);
             } else {
