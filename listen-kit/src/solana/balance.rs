@@ -58,3 +58,18 @@ pub async fn get_holdings(
 
     Ok(holdings)
 }
+
+// Get ata balance for an owner and mint
+pub async fn get_balance(
+    rpc_client: &RpcClient,
+    owner: &Pubkey,
+    mint: &Pubkey,
+) -> Result<String> {
+    let token_account =
+        spl_associated_token_account::get_associated_token_address(
+            &owner, &mint,
+        );
+    tracing::info!("token account: {}", token_account);
+    let ata = rpc_client.get_token_account_balance(&token_account).await?;
+    Ok(ata.amount)
+}
