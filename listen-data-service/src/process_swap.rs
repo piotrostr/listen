@@ -34,9 +34,13 @@ pub async fn process_swap(
             .unwrap(),
     );
 
-    // skip tiny swaps
     if diffs.iter().all(|d| d.diff.abs() < 0.01) {
         debug!("skipping tiny diffs");
+        return Ok(());
+    }
+
+    if diffs.iter().any(|d| d.diff == 0.0) {
+        debug!("skipping zero diffs (arbitrage likely)");
         return Ok(());
     }
 
@@ -311,5 +315,30 @@ mod tests {
             "swap_amount: {}",
             rounded_swap_amount
         );
+    }
+
+    #[tokio::test]
+    async fn test_by_signature_2() {
+        let signature = "5HdnMgQTdsuYjL8fgb6RphArEyr9qECCbDy22D8DwJA1i4mdCbhNqv645AHJMHUU4JGjsjfjPyKFfnxVZkaX8PMG";
+        let transaction = make_rpc_client()
+            .unwrap()
+            .get_transaction_with_config(
+                &signature.parse().unwrap(),
+                solana_client::rpc_config::RpcTransactionConfig {
+                    encoding: Some(solana_transaction_status::UiTransactionEncoding::JsonParsed),
+                    max_supported_transaction_version: Some(0),
+                    ..Default::default()
+                },
+            )
+            .await
+            .unwrap();
+
+        let transaction_meta = transaction.transaction.meta.unwrap();
+
+        let diffs = get_token_balance_diff(
+            transaction_meta.pre_token_balances.as_ref().unwrap(),
+            transaction_meta.post_token_balances.as_ref().unwrap(),
+        );
+        info!("diffs: {:#?}", diffs);
     }
 }
