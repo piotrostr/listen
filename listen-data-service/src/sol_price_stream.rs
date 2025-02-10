@@ -9,7 +9,7 @@ use tracing::{error, info};
 use url::Url;
 
 // Global SOL price cache
-pub static SOL_PRICE_CACHE: Lazy<SolPriceCache> = Lazy::new(|| SolPriceCache::new());
+pub static SOL_PRICE_CACHE: Lazy<SolPriceCache> = Lazy::new(SolPriceCache::new);
 
 #[derive(Debug, Deserialize)]
 struct TradeData {
@@ -24,6 +24,12 @@ struct BinancePrice {
 #[derive(Debug, Clone)]
 pub struct SolPriceCache {
     price: Arc<RwLock<f64>>,
+}
+
+impl Default for SolPriceCache {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SolPriceCache {

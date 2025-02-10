@@ -17,12 +17,18 @@ pub struct RaydiumAmmV4InstructionProcessor {
     pub message_queue: Arc<RedisMessageQueue>,
 }
 
+impl Default for RaydiumAmmV4InstructionProcessor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl RaydiumAmmV4InstructionProcessor {
     pub fn new() -> Self {
         Self {
             kv_store: make_kv_store().expect("Failed to create KV store"),
             message_queue: Arc::new(
-                RedisMessageQueue::new("redis://127.0.0.1/")
+                RedisMessageQueue::new(&std::env::var("REDIS_URL").expect("REDIS_URL must be set"))
                     .expect("Failed to create message queue"),
             ),
         }

@@ -25,7 +25,9 @@ pub struct RedisKVStore {
 #[async_trait::async_trait]
 impl KVStore for RedisKVStore {
     fn new() -> Self {
-        let client = redis::Client::open("redis://127.0.0.1/").expect("Failed to connect to Redis");
+        let client =
+            redis::Client::open(std::env::var("REDIS_URL").expect("REDIS_URL must be set"))
+                .expect("Failed to connect to Redis");
         info!("Connected to Redis at 127.0.0.1");
         Self { client }
     }
