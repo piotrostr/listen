@@ -33,7 +33,7 @@ pub struct Command {}
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt().init();
-    dotenv::dotenv().ok();
+    dotenv::dotenv().expect("Failed to load .env file");
     info!("Starting up...");
 
     #[cfg(not(any(feature = "rpc", feature = "geyser")))]
