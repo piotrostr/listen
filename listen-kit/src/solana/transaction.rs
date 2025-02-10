@@ -2,7 +2,6 @@ use anyhow::{anyhow, Result};
 use rand::rngs::ThreadRng;
 use rand::thread_rng;
 use rand::Rng;
-use serde::Deserialize;
 use serde_json::json;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
@@ -17,6 +16,10 @@ use std::str::FromStr;
 use tracing::info;
 
 use crate::solana::util::env;
+
+use solana_sdk::system_instruction;
+
+use serde::Deserialize;
 
 #[derive(Debug, Deserialize)]
 pub struct JitoResponse {
@@ -131,6 +134,20 @@ pub fn get_jito_tip_pubkey() -> Pubkey {
     ];
     let index = fast_random_0_to_7();
     Pubkey::from_str(PUBKEYS[index as usize]).expect("parse tip pubkey")
+}
+
+/// Adds a Jito tip instruction to a transaction
+#[inline]
+pub fn add_jito_tip(
+    tip_lamports: u64,
+    instructions: &mut Vec<solana_sdk::instruction::Instruction>,
+    payer: &Pubkey,
+) {
+    instructions.push(system_instruction::transfer(
+        payer,
+        &get_jito_tip_pubkey(),
+        tip_lamports,
+    ));
 }
 
 #[cfg(test)]
