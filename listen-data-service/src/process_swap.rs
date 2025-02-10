@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::{
     constants::{USDC_MINT_KEY_STR, WSOL_MINT_KEY_STR},
+    db::{ClickhouseDb, Database},
     kv_store::RedisKVStore,
     message_queue::{MessageQueue, RedisMessageQueue},
     metadata::get_token_metadata,
@@ -35,6 +36,7 @@ pub async fn process_swap(
     transaction_metadata: &TransactionMetadata,
     message_queue: &RedisMessageQueue,
     kv_store: &Arc<RedisKVStore>,
+    db: &Arc<ClickhouseDb>,
     base_in: bool,
 ) -> Result<()> {
     let diffs = get_token_balance_diff(
@@ -111,6 +113,8 @@ pub async fn process_swap(
         .map(|m| m.mpl.name)
         .unwrap_or_else(|| coin_mint.to_string());
 
+    let market_cap = market_cap.unwrap_or(0.0);
+
     let price_update = PriceUpdate {
         name,
         pubkey: coin_mint.to_string(),
@@ -132,6 +136,8 @@ pub async fn process_swap(
     } else {
         debug!("price_update: {:#?}", price_update);
     }
+
+    db.insert_price(&price_update).await?;
 
     message_queue.publish_price_update(price_update).await?;
 

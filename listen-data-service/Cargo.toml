@@ -51,6 +51,7 @@ carbon-rpc-transaction-crawler-datasource = { version = "0.4.0", optional = true
 # geyser
 carbon-yellowstone-grpc-datasource = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", optional = true, version = "0.4.0" }
 yellowstone-grpc-proto = { version = "=2.0.0", git = "https://github.com/rpcpool/yellowstone-grpc.git", rev = "17faff5ac068c2f212c471acf67a8dcc1d7caff5", optional = true }
+clickhouse = { version = "0.13.1", features = ["native-tls"] }
 
 
 [patch.crates-io.curve25519-dalek]

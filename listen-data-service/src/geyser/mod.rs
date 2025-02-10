@@ -14,7 +14,10 @@ use yellowstone_grpc_proto::geyser::{
     SubscribeRequestFilterTransactions,
 };
 
-use crate::raydium_intruction_processor::RaydiumAmmV4InstructionProcessor;
+use crate::{
+    raydium_intruction_processor::RaydiumAmmV4InstructionProcessor,
+    util::must_get_env,
+};
 
 pub const RAYDIUM_AMM_V4_PROGRAM_ID: Pubkey =
     pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8");
@@ -40,11 +43,8 @@ pub fn make_raydium_geyser_instruction_pipeline() -> Result<Pipeline> {
 
     let pipeline = Pipeline::builder()
         .datasource(YellowstoneGrpcGeyserClient::new(
-            std::env::var("GEYSER_URL").expect("GEYSER_URL is not set"),
-            Some(
-                std::env::var("GEYSER_X_TOKEN")
-                    .expect("GEYSER_X_TOKEN is not set"),
-            ),
+            must_get_env("GEYSER_URL"),
+            Some(must_get_env("GEYSER_X_TOKEN")),
             Some(CommitmentLevel::Processed),
             account_filters,
             transaction_filters,

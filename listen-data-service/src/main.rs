@@ -1,11 +1,12 @@
 use anyhow::Result;
 use carbon_core::pipeline::Pipeline;
 use clap::Parser;
-use listen_data_service::sol_price_stream::SOL_PRICE_CACHE;
+use listen_data_service::{db::Database, sol_price_stream::SOL_PRICE_CACHE};
 
 #[cfg(feature = "geyser")]
 use listen_data_service::geyser::make_raydium_geyser_instruction_pipeline;
 
+use listen_data_service::db::ClickhouseDb;
 #[cfg(feature = "rpc")]
 use listen_data_service::rpc::{
     account_pipeline::make_raydium_rpc_accounts_pipeline,
@@ -46,6 +47,9 @@ async fn main() -> Result<()> {
     #[cfg(any(feature = "rpc", feature = "geyser"))]
     {
         let command = Command::parse();
+
+        // be sure to call this
+        ClickhouseDb::new().initialize().await?;
 
         let mut pipeline: Pipeline;
         #[cfg(feature = "rpc")]

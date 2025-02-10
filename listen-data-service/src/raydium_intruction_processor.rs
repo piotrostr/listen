@@ -2,8 +2,11 @@ use std::sync::Arc;
 use tracing::{debug, error};
 
 use crate::{
-    kv_store::RedisKVStore, message_queue::RedisMessageQueue,
-    process_swap::process_swap, util::make_kv_store,
+    db::{ClickhouseDb, Database},
+    kv_store::RedisKVStore,
+    message_queue::RedisMessageQueue,
+    process_swap::process_swap,
+    util::make_kv_store,
 };
 use carbon_core::{
     error::CarbonResult, instruction::InstructionProcessorInputType,
@@ -14,6 +17,7 @@ use carbon_raydium_amm_v4_decoder::instructions::RaydiumAmmV4Instruction;
 pub struct RaydiumAmmV4InstructionProcessor {
     pub kv_store: Arc<RedisKVStore>,
     pub message_queue: Arc<RedisMessageQueue>,
+    pub db: Arc<ClickhouseDb>,
 }
 
 impl Default for RaydiumAmmV4InstructionProcessor {
@@ -56,6 +60,7 @@ impl RaydiumAmmV4InstructionProcessor {
                 )
                 .expect("Failed to create message queue"),
             ),
+            db: Arc::new(ClickhouseDb::new()),
         }
     }
 
@@ -72,11 +77,16 @@ impl RaydiumAmmV4InstructionProcessor {
         let message_queue = self.message_queue.clone();
         let kv_store = self.kv_store.clone();
         let tx_meta = meta.transaction_metadata.clone();
-
+        let db = self.db.clone();
         tokio::spawn(async move {
-            if let Err(e) =
-                process_swap(&tx_meta, &message_queue, &kv_store, is_base_in)
-                    .await
+            if let Err(e) = process_swap(
+                &tx_meta,
+                &message_queue,
+                &kv_store,
+                &db,
+                is_base_in,
+            )
+            .await
             {
                 error!(
                     "Error processing swap: {:#}\nError chain:\n{:?}\nTransaction: https://solscan.io/tx/{}", 

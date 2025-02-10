@@ -45,6 +45,10 @@ pub async fn get_jup_price(mint: String) -> Result<f64> {
     Ok(price)
 }
 
+pub fn must_get_env(key: &str) -> String {
+    std::env::var(key).expect(&format!("{} must be set", key))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
