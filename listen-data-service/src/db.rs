@@ -81,7 +81,8 @@ impl Database for ClickhouseDb {
                     swap_amount Float64,
                     owner String,
                     signature String,
-                    base_in Bool,
+                    multi_hop Bool,
+                    is_buy Bool,
                     INDEX idx_mints (name, pubkey) TYPE minmax GRANULARITY 1
                 ) 
                 ENGINE = MergeTree()
@@ -123,7 +124,7 @@ impl Database for ClickhouseDb {
         let mut count = self.transaction_count.write().await;
         *count += 1;
 
-        if *count >= 500 {
+        if *count >= 1000 {
             info!("Transaction count reached {}, triggering commit", *count);
             *count = 0;
             drop(count);

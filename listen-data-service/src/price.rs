@@ -22,4 +22,5 @@ pub struct PriceUpdate {
     pub owner: String,
     pub signature: String,
     pub multi_hop: bool,
+    pub is_buy: bool,
 }

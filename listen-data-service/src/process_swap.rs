@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::constants::WSOL_MINT_KEY_STR;
-use crate::diffs::{get_token_balance_diff, process_diffs, Diff};
+use crate::diffs::{get_token_balance_diff, process_diffs, Diff, DiffsResult};
 use crate::{
     db::{ClickhouseDb, Database},
     kv_store::RedisKVStore,
@@ -41,6 +41,14 @@ pub async fn process_swap(
     }
 
     let sol_price = SOL_PRICE_CACHE.get_price().await;
+
+    if diffs.len() > 3 {
+        warn!(
+            "https://solscan.io/tx/{} Skipping swap with unexpected number of tokens {:#?}",
+            transaction_metadata.signature, diffs
+        );
+        return Ok(());
+    }
 
     // Handle multi-hop swaps (3 tokens)
     if diffs.len() == 3 {
@@ -134,8 +142,12 @@ async fn process_two_token_swap(
     sol_price: f64,
     multi_hop: bool,
 ) -> Result<()> {
-    let (price, swap_amount, coin_mint) = match process_diffs(diffs, sol_price)
-    {
+    let DiffsResult {
+        price,
+        swap_amount,
+        coin_mint,
+        is_buy,
+    } = match process_diffs(diffs, sol_price) {
         Ok(result) => result,
         Err(e) => {
             let token_mints =
@@ -165,7 +177,7 @@ async fn process_two_token_swap(
 
     let price_update = PriceUpdate {
         name,
-        pubkey: coin_mint.to_string(),
+        pubkey: coin_mint,
         price,
         market_cap,
         timestamp: Utc::now().timestamp(),
@@ -177,6 +189,7 @@ async fn process_two_token_swap(
             transaction_metadata.signature
         ),
         multi_hop,
+        is_buy,
     };
 
     info!("price_update: {:#?}", price_update);
@@ -218,7 +231,9 @@ mod tests {
             },
         ];
 
-        let (price, swap_amount, _) = process_diffs(&diffs, 201.36).unwrap();
+        let DiffsResult {
+            price, swap_amount, ..
+        } = process_diffs(&diffs, 201.36).unwrap();
         let rounded_price = round_to_decimals(price, 4);
         assert!(rounded_price == 0.0758, "price: {}", rounded_price);
         assert!(
@@ -250,7 +265,9 @@ mod tests {
             },
         ];
 
-        let (price, swap_amount, _) = process_diffs(&diffs, 202.12).unwrap();
+        let DiffsResult {
+            price, swap_amount, ..
+        } = process_diffs(&diffs, 202.12).unwrap();
         let rounded_price = round_to_decimals(price, 5);
         assert!(rounded_price == 0.00148, "price: {}", rounded_price);
         assert!(
@@ -283,7 +300,9 @@ mod tests {
             transaction_meta.post_token_balances.as_ref().unwrap(),
         );
         println!("diffs: {:#?}", diffs);
-        let (price, swap_amount, _) = process_diffs(&diffs, 203.67).unwrap();
+        let DiffsResult {
+            price, swap_amount, ..
+        } = process_diffs(&diffs, 203.67).unwrap();
         let rounded_price = round_to_decimals(price, 5);
         assert!(rounded_price == 0.00035, "price: {}", rounded_price);
         let rounded_swap_amount = round_to_decimals(swap_amount, 4);

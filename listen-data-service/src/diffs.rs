@@ -41,18 +41,23 @@ impl TokenBalanceInfo for UiTransactionTokenBalance {
     }
 }
 
-pub fn process_diffs(
-    diffs: &Vec<Diff>,
-    sol_price: f64,
-) -> Result<(f64, f64, String)> {
+#[derive(Debug)]
+pub struct DiffsResult {
+    pub price: f64,
+    pub swap_amount: f64,
+    pub coin_mint: String,
+    pub is_buy: bool,
+}
+
+pub fn process_diffs(diffs: &Vec<Diff>, sol_price: f64) -> Result<DiffsResult> {
     if diffs.len() != 2 {
         return Err(anyhow::anyhow!("Expected exactly 2 token balance diffs"));
     }
 
     let (token0, token1) = (&diffs[0], &diffs[1]);
 
-    let amount0 = token0.diff.abs();
-    let amount1 = token1.diff.abs();
+    let amount0 = token0.diff;
+    let amount1 = token1.diff;
 
     let (sol_amount, token_amount, coin_mint) =
         match (token0.mint.as_str(), token1.mint.as_str()) {
@@ -61,10 +66,21 @@ pub fn process_diffs(
             _ => return Err(anyhow::anyhow!("Non-WSOL swap")),
         };
 
-    let price = (sol_amount.abs() / token_amount.abs()) * sol_price;
-    let swap_amount = sol_amount * sol_price;
+    // raydium token balance negative
+    let is_buy = token_amount < 0.0;
 
-    Ok((price, swap_amount, coin_mint.to_string()))
+    let sol_amount_abs = sol_amount.abs();
+    let token_amount_abs = token_amount.abs();
+
+    let price = (sol_amount_abs / token_amount_abs) * sol_price;
+    let swap_amount = sol_amount_abs * sol_price;
+
+    Ok(DiffsResult {
+        price,
+        swap_amount,
+        coin_mint: coin_mint.to_string(),
+        is_buy,
+    })
 }
 
 #[derive(Debug, Clone)]
