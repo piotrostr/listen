@@ -4,7 +4,9 @@ use carbon_core::pipeline::Pipeline;
 use carbon_log_metrics::LogMetrics;
 use carbon_raydium_amm_v4_decoder::RaydiumAmmV4Decoder;
 use solana_account_decoder::UiAccountEncoding;
-use solana_client::rpc_config::{RpcAccountInfoConfig, RpcProgramAccountsConfig};
+use solana_client::rpc_config::{
+    RpcAccountInfoConfig, RpcProgramAccountsConfig,
+};
 use solana_sdk::pubkey;
 use std::sync::Arc;
 

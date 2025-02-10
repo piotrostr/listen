@@ -12,8 +12,15 @@ pub trait KVStore {
     fn new() -> Self
     where
         Self: Sized;
-    async fn get<T: DeserializeOwned + Send>(&self, key: &str) -> Result<Option<T>>;
-    async fn set<T: Serialize + Send + Sync>(&self, key: &str, value: &T) -> Result<()>;
+    async fn get<T: DeserializeOwned + Send>(
+        &self,
+        key: &str,
+    ) -> Result<Option<T>>;
+    async fn set<T: Serialize + Send + Sync>(
+        &self,
+        key: &str,
+        value: &T,
+    ) -> Result<()>;
     async fn exists(&self, key: &str) -> Result<bool>;
     async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>>;
 }
@@ -25,13 +32,18 @@ pub struct RedisKVStore {
 #[async_trait::async_trait]
 impl KVStore for RedisKVStore {
     fn new() -> Self {
-        let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
-        let client = redis::Client::open(redis_url.clone()).expect("Failed to connect to Redis");
+        let redis_url =
+            std::env::var("REDIS_URL").expect("REDIS_URL must be set");
+        let client = redis::Client::open(redis_url.clone())
+            .expect("Failed to connect to Redis");
         info!("Connected to Redis at {}", redis_url);
         Self { client }
     }
 
-    async fn get<T: DeserializeOwned + Send>(&self, key: &str) -> Result<Option<T>> {
+    async fn get<T: DeserializeOwned + Send>(
+        &self,
+        key: &str,
+    ) -> Result<Option<T>> {
         let mut conn = self.client.get_multiplexed_async_connection().await?;
         let value: Option<String> = conn.get(key).await?;
         debug!(key, "redis get ok");
@@ -45,7 +57,11 @@ impl KVStore for RedisKVStore {
         }
     }
 
-    async fn set<T: Serialize + Send + Sync>(&self, key: &str, value: &T) -> Result<()> {
+    async fn set<T: Serialize + Send + Sync>(
+        &self,
+        key: &str,
+        value: &T,
+    ) -> Result<()> {
         let mut conn = self.client.get_multiplexed_async_connection().await?;
         let json_str = serde_json::to_string(value)?;
         let _: () = conn.set(key, json_str).await?;
@@ -55,7 +71,8 @@ impl KVStore for RedisKVStore {
 
     async fn exists(&self, key: &str) -> Result<bool> {
         let mut conn = self.client.get_multiplexed_async_connection().await?;
-        let exists: bool = redis::cmd("EXISTS").arg(key).query_async(&mut conn).await?;
+        let exists: bool =
+            redis::cmd("EXISTS").arg(key).query_async(&mut conn).await?;
         debug!(key, exists, "redis exists ok");
         Ok(exists)
     }
@@ -88,17 +105,27 @@ impl RedisKVStore {
         self.set(&key, price).await
     }
 
-    pub async fn get_price(&self, coin_mint: &str, pc_mint: &str) -> Result<Option<Price>> {
+    pub async fn get_price(
+        &self,
+        coin_mint: &str,
+        pc_mint: &str,
+    ) -> Result<Option<Price>> {
         let key = format!("solana:{}:{}", coin_mint, pc_mint);
         self.get(&key).await
     }
 
-    pub async fn insert_metadata(&self, metadata: &TokenMetadata) -> Result<()> {
+    pub async fn insert_metadata(
+        &self,
+        metadata: &TokenMetadata,
+    ) -> Result<()> {
         let key = Self::make_metadata_key(&metadata.mint);
         self.set(&key, metadata).await
     }
 
-    pub async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>> {
+    pub async fn get_metadata(
+        &self,
+        mint: &str,
+    ) -> Result<Option<TokenMetadata>> {
         let key = format!("solana:{}", mint);
         self.get(&key).await
     }

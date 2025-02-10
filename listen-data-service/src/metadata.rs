@@ -112,11 +112,17 @@ impl TokenMetadata {
         info!(mint, "spl metadata fetch ok");
 
         Ok(SplTokenMetadata {
-            mint_authority: token_data.mint_authority.map(|p| p.to_string()).into(),
+            mint_authority: token_data
+                .mint_authority
+                .map(|p| p.to_string())
+                .into(),
             supply: token_data.supply,
             decimals: token_data.decimals,
             is_initialized: token_data.is_initialized,
-            freeze_authority: token_data.freeze_authority.map(|p| p.to_string()).into(),
+            freeze_authority: token_data
+                .freeze_authority
+                .map(|p| p.to_string())
+                .into(),
         })
     }
 
@@ -128,7 +134,8 @@ impl TokenMetadata {
         let (metadata_pubkey, _) = Metadata::find_pda(&token_pubkey);
 
         // Get metadata account data
-        let metadata_account = rpc_client.get_account_data(&metadata_pubkey).await?;
+        let metadata_account =
+            rpc_client.get_account_data(&metadata_pubkey).await?;
         let metadata = Metadata::from_bytes(&metadata_account)?;
         info!(mint, "mpl metadata fetch ok");
 
@@ -147,9 +154,12 @@ impl TokenMetadata {
         // Fetch IPFS metadata if available
         let client = reqwest::Client::new();
         if let Ok(response) = client.get(&uri).send().await {
-            if let Ok(ipfs_metadata) = response.json::<serde_json::Value>().await {
+            if let Ok(ipfs_metadata) =
+                response.json::<serde_json::Value>().await
+            {
                 info!(mint, uri, "ipfs fetch ok");
-                token_metadata.ipfs_metadata = Some(serde_json::from_value(ipfs_metadata)?);
+                token_metadata.ipfs_metadata =
+                    Some(serde_json::from_value(ipfs_metadata)?);
             } else {
                 warn!(mint, uri, "ipfs fetch failed");
             }
@@ -170,40 +180,45 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_mpl_by_mint() {
-        let mpl_metadata =
-            TokenMetadata::fetch_mpl_by_mint("9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump")
-                .await
-                .unwrap();
+        let mpl_metadata = TokenMetadata::fetch_mpl_by_mint(
+            "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+        )
+        .await
+        .unwrap();
         assert!(mpl_metadata.ipfs_metadata.is_some());
         assert_eq!(mpl_metadata.name, "Fartcoin ");
     }
 
     #[tokio::test]
     async fn test_fetch_mpl_by_mint_2() {
-        let mpl_metadata =
-            TokenMetadata::fetch_mpl_by_mint("Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump")
-                .await
-                .unwrap();
+        let mpl_metadata = TokenMetadata::fetch_mpl_by_mint(
+            "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump",
+        )
+        .await
+        .unwrap();
         assert!(mpl_metadata.ipfs_metadata.is_some());
         assert_eq!(mpl_metadata.name, "listen-rs");
     }
 
     #[tokio::test]
     async fn test_fetch_spl_by_mint() {
-        let spl_metadata =
-            TokenMetadata::fetch_spl_by_mint("9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump")
-                .await
-                .unwrap();
+        let spl_metadata = TokenMetadata::fetch_spl_by_mint(
+            "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+        )
+        .await
+        .unwrap();
         println!("{:?}", spl_metadata);
     }
 
     #[tokio::test]
     async fn test_get_token_metadata() {
         let kv_store = Arc::new(RedisKVStore::new());
-        let metadata =
-            get_token_metadata(&kv_store, "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump")
-                .await
-                .unwrap();
+        let metadata = get_token_metadata(
+            &kv_store,
+            "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+        )
+        .await
+        .unwrap();
         println!("{:?}", metadata);
     }
 
@@ -223,8 +238,10 @@ mod tests {
             "showName": true
         });
 
-        let metadata1: IpfsMetadata = serde_json::from_value(string_true).unwrap();
-        let metadata2: IpfsMetadata = serde_json::from_value(bool_true).unwrap();
+        let metadata1: IpfsMetadata =
+            serde_json::from_value(string_true).unwrap();
+        let metadata2: IpfsMetadata =
+            serde_json::from_value(bool_true).unwrap();
 
         assert_eq!(metadata1.show_name, Some(true));
         assert_eq!(metadata2.show_name, Some(true));
@@ -240,7 +257,8 @@ mod tests {
             "website": {}
         });
 
-        let metadata: IpfsMetadata = serde_json::from_value(object_fields).unwrap();
+        let metadata: IpfsMetadata =
+            serde_json::from_value(object_fields).unwrap();
 
         assert_eq!(metadata.name, "test");
         assert_eq!(metadata.description, None);

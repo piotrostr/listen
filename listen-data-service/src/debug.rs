@@ -1,7 +1,7 @@
 use tracing::info;
 
 use crate::constants::{USDC_MINT_KEY_STR, WSOL_MINT_KEY_STR};
-use crate::raydium_intruction_processor::Diff;
+use crate::process_swap::Diff;
 use crate::raydium_intruction_processor::RaydiumAmmV4InstructionProcessor;
 
 #[cfg(test)]
@@ -22,13 +22,19 @@ impl RaydiumAmmV4InstructionProcessor {
                     Ok(Some(metadata)) => {
                         info!(
                             "{}: {} ({} -> {})",
-                            metadata.mpl.name, diff.diff, diff.pre_amount, diff.post_amount
+                            metadata.mpl.name,
+                            diff.diff,
+                            diff.pre_amount,
+                            diff.post_amount
                         );
                     }
                     _ => {
                         info!(
                             "{}: {} ({} -> {})",
-                            diff.mint, diff.diff, diff.pre_amount, diff.post_amount
+                            diff.mint,
+                            diff.diff,
+                            diff.pre_amount,
+                            diff.post_amount
                         );
                     }
                 }

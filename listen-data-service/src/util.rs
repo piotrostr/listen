@@ -51,7 +51,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_jup_price() {
-        let price = get_jup_price("JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN".to_string()).await;
+        let price = get_jup_price(
+            "JUPyiwrYJFskUPiHa7hkeR8VUtAeFoSYbKedZNsDvCN".to_string(),
+        )
+        .await;
         assert!(price.is_ok());
         assert!(price.unwrap() > 0.0);
     }

@@ -4,7 +4,10 @@ use crate::price::PriceUpdate;
 pub trait MessageQueue: Send + Sync + 'static {
     type Error: std::error::Error + Send + Sync + 'static;
 
-    async fn publish_price_update(&self, price_update: PriceUpdate) -> Result<(), Self::Error>;
+    async fn publish_price_update(
+        &self,
+        price_update: PriceUpdate,
+    ) -> Result<(), Self::Error>;
 }
 
 // Redis implementation of MessageQueue
@@ -23,7 +26,10 @@ impl RedisMessageQueue {
 impl MessageQueue for RedisMessageQueue {
     type Error = redis::RedisError;
 
-    async fn publish_price_update(&self, price_update: PriceUpdate) -> Result<(), Self::Error> {
+    async fn publish_price_update(
+        &self,
+        price_update: PriceUpdate,
+    ) -> Result<(), Self::Error> {
         let mut conn = self.client.get_multiplexed_async_connection().await?;
         let payload = serde_json::to_string(&price_update).map_err(|e| {
             redis::RedisError::from((

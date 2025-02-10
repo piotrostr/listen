@@ -1,7 +1,9 @@
 use serde::{de::Error, Deserialize, Deserializer};
 use serde_json::Value;
 
-pub fn deserialize_string_or_bool<'de, D>(deserializer: D) -> Result<Option<bool>, D::Error>
+pub fn deserialize_string_or_bool<'de, D>(
+    deserializer: D,
+) -> Result<Option<bool>, D::Error>
 where
     D: Deserializer<'de>,
 {
@@ -23,7 +25,9 @@ where
     }
 }
 
-pub fn deserialize_string_or_object<'de, D>(deserializer: D) -> Result<String, D::Error>
+pub fn deserialize_string_or_object<'de, D>(
+    deserializer: D,
+) -> Result<String, D::Error>
 where
     D: Deserializer<'de>,
 {

@@ -10,7 +10,8 @@ use std::{
 };
 use tokio::sync::RwLock;
 use yellowstone_grpc_proto::geyser::{
-    CommitmentLevel, SubscribeRequestFilterAccounts, SubscribeRequestFilterTransactions,
+    CommitmentLevel, SubscribeRequestFilterAccounts,
+    SubscribeRequestFilterTransactions,
 };
 
 use crate::raydium_intruction_processor::RaydiumAmmV4InstructionProcessor;
@@ -34,19 +35,26 @@ pub fn make_raydium_geyser_instruction_pipeline() -> Result<Pipeline> {
     );
 
     // Create empty account filters since we only care about transactions
-    let account_filters: HashMap<String, SubscribeRequestFilterAccounts> = HashMap::new();
+    let account_filters: HashMap<String, SubscribeRequestFilterAccounts> =
+        HashMap::new();
 
     let pipeline = Pipeline::builder()
         .datasource(YellowstoneGrpcGeyserClient::new(
             std::env::var("GEYSER_URL").expect("GEYSER_URL is not set"),
-            Some(std::env::var("GEYSER_X_TOKEN").expect("GEYSER_X_TOKEN is not set")),
+            Some(
+                std::env::var("GEYSER_X_TOKEN")
+                    .expect("GEYSER_X_TOKEN is not set"),
+            ),
             Some(CommitmentLevel::Processed),
             account_filters,
             transaction_filters,
             Arc::new(RwLock::new(HashSet::new())),
         ))
         .metrics(Arc::new(LogMetrics::new()))
-        .instruction(RaydiumAmmV4Decoder, RaydiumAmmV4InstructionProcessor::new())
+        .instruction(
+            RaydiumAmmV4Decoder,
+            RaydiumAmmV4InstructionProcessor::new(),
+        )
         .build()?;
 
     Ok(pipeline)

@@ -2,7 +2,9 @@ use anyhow::Result;
 use carbon_core::pipeline::Pipeline;
 use carbon_log_metrics::LogMetrics;
 use carbon_raydium_amm_v4_decoder::RaydiumAmmV4Decoder;
-use carbon_rpc_transaction_crawler_datasource::{Filters, RpcTransactionCrawler};
+use carbon_rpc_transaction_crawler_datasource::{
+    Filters, RpcTransactionCrawler,
+};
 use solana_sdk::pubkey;
 use std::{sync::Arc, time::Duration};
 
@@ -20,7 +22,10 @@ pub fn make_raydium_rpc_instruction_pipeline() -> Result<Pipeline> {
             100,
         ))
         .metrics(Arc::new(LogMetrics::new()))
-        .instruction(RaydiumAmmV4Decoder, RaydiumAmmV4InstructionProcessor::new())
+        .instruction(
+            RaydiumAmmV4Decoder,
+            RaydiumAmmV4InstructionProcessor::new(),
+        )
         .build()?;
 
     Ok(pipeline)
