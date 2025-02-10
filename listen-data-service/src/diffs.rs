@@ -79,35 +79,48 @@ pub fn get_token_balance_diff<T: TokenBalanceInfo + std::fmt::Debug>(
     let mut pre_balances_map = HashMap::new();
     let mut post_balances_map = HashMap::new();
 
-    println!("pre_balances: {:#?}", pre_balances);
-    println!("post_balances: {:#?}", post_balances);
-
     for balance in pre_balances {
         if let Some(amount) = balance.get_ui_amount() {
-            pre_balances_map.insert(
+            let key = (
                 balance.get_mint().to_string(),
-                (amount, balance.get_owner().to_string()),
+                balance.get_owner().to_string(),
             );
+            pre_balances_map.insert(key, amount);
         }
     }
 
     for balance in post_balances {
         if let Some(amount) = balance.get_ui_amount() {
-            post_balances_map.insert(
+            let key = (
                 balance.get_mint().to_string(),
-                (amount, balance.get_owner().to_string()),
+                balance.get_owner().to_string(),
             );
+            post_balances_map.insert(key, amount);
         }
     }
 
-    for (mint, (pre_amount, owner)) in pre_balances_map {
-        if let Some((post_amount, _)) = post_balances_map.get(&mint) {
+    for ((mint, owner), pre_amount) in pre_balances_map.iter() {
+        if let Some(post_amount) =
+            post_balances_map.get(&(mint.clone(), owner.clone()))
+        {
             let diff = post_amount - pre_amount;
             diffs.push(Diff {
-                mint,
-                pre_amount,
+                mint: mint.clone(),
+                pre_amount: *pre_amount,
                 post_amount: *post_amount,
                 diff,
+                owner: owner.clone(),
+            });
+        }
+    }
+
+    for ((mint, owner), post_amount) in post_balances_map {
+        if !pre_balances_map.contains_key(&(mint.clone(), owner.clone())) {
+            diffs.push(Diff {
+                mint,
+                pre_amount: 0.0,
+                post_amount,
+                diff: post_amount,
                 owner,
             });
         }

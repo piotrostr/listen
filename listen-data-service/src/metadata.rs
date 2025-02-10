@@ -223,7 +223,7 @@ mod tests {
         )
         .await
         .unwrap();
-        println!("{:?}", spl_metadata);
+        debug!("{:?}", spl_metadata);
     }
 
     #[tokio::test]
@@ -235,7 +235,7 @@ mod tests {
         )
         .await
         .unwrap();
-        println!("{:?}", metadata);
+        debug!("{:?}", metadata);
     }
 
     #[test]

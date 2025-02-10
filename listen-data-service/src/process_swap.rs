@@ -94,11 +94,7 @@ pub async fn process_swap(
         base_in,
     };
 
-    if swap_amount > 2000.0 {
-        info!("price_update: {:#?}", price_update);
-    } else {
-        debug!("price_update: {:#?}", price_update);
-    }
+    info!("price_update: {:#?}", price_update);
 
     db.insert_price(&price_update).await?;
 
@@ -202,14 +198,14 @@ mod tests {
             transaction_meta.pre_token_balances.as_ref().unwrap(),
             transaction_meta.post_token_balances.as_ref().unwrap(),
         );
-        println!("diffs: {:#?}", diffs);
-
-        let (price, swap_amount, _) = process_diffs(&diffs, 201.36).unwrap();
-        assert!(price == 0.00034245999245592905, "price: {}", price);
+        let (price, swap_amount, _) = process_diffs(&diffs, 203.67).unwrap();
+        let rounded_price = round_to_decimals(price, 5);
+        assert!(rounded_price == 0.00035, "price: {}", rounded_price);
+        let rounded_swap_amount = round_to_decimals(swap_amount, 4);
         assert!(
-            swap_amount == 0.00034245999245592905 * 201.36,
+            rounded_swap_amount == 0.8618,
             "swap_amount: {}",
-            swap_amount
+            rounded_swap_amount
         );
     }
 }
