@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <users>
+        <default>
+            <password>${CLICKHOUSE_PASSWORD}</password>
+            <networks>
+                <ip>::/0</ip>
+            </networks>
+        </default>
+    </users>
+</clickhouse>
