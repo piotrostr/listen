@@ -14,10 +14,10 @@ use carbon_core::transaction::TransactionMetadata;
 use chrono::Utc;
 use solana_transaction_status::TransactionTokenBalance;
 use std::collections::HashMap;
-use tracing::{debug, info};
+use tracing::{debug, info, warn};
 
 pub fn process_diffs(
-    diffs: Vec<Diff>,
+    diffs: &Vec<Diff>,
     sol_price: f64,
 ) -> Result<(f64, f64, String)> {
     let (token0, token1) = (&diffs[0], &diffs[1]);
@@ -29,7 +29,7 @@ pub fn process_diffs(
         match (token0.mint.as_str(), token1.mint.as_str()) {
             (WSOL_MINT_KEY_STR, other_mint) => (amount0, amount1, other_mint),
             (other_mint, WSOL_MINT_KEY_STR) => (amount1, amount0, other_mint),
-            _ => return Err(anyhow::anyhow!("Invalid token pair")),
+            _ => return Err(anyhow::anyhow!("Non-WSOL swap")),
         };
 
     let price = (sol_amount.abs() / token_amount.abs()) * sol_price;
@@ -73,7 +73,16 @@ pub async fn process_swap(
 
     let sol_price = SOL_PRICE_CACHE.get_price().await;
 
-    let (price, swap_amount, coin_mint) = process_diffs(diffs, sol_price)?;
+    let (price, swap_amount, coin_mint) = match process_diffs(&diffs, sol_price)
+    {
+        Ok(result) => result,
+        Err(e) => {
+            let token_mints =
+                diffs.iter().map(|d| d.mint.clone()).collect::<Vec<_>>();
+            warn!(?e, ?token_mints);
+            return Ok(());
+        }
+    };
 
     // Get metadata for the non-WSOL/USDC token
     let token_metadata = get_token_metadata(kv_store, &coin_mint).await?;
@@ -197,7 +206,7 @@ mod tests {
             },
         ];
 
-        let (price, swap_amount, _) = process_diffs(diffs, 201.36).unwrap();
+        let (price, swap_amount, _) = process_diffs(&diffs, 201.36).unwrap();
         let rounded_price = round_to_decimals(price, 4);
         assert!(rounded_price == 0.0758, "price: {}", rounded_price);
         assert!(
@@ -229,7 +238,7 @@ mod tests {
             },
         ];
 
-        let (price, swap_amount, _) = process_diffs(diffs, 202.12).unwrap();
+        let (price, swap_amount, _) = process_diffs(&diffs, 202.12).unwrap();
         let rounded_price = round_to_decimals(price, 5);
         assert!(rounded_price == 0.00148, "price: {}", rounded_price);
         assert!(
