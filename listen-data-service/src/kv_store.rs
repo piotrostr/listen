@@ -1,7 +1,6 @@
 use anyhow::{Context, Result};
-use redis::AsyncCommands;
+use bb8_redis::{bb8, redis::cmd, RedisConnectionManager};
 use serde::{de::DeserializeOwned, Serialize};
-
 use tracing::{debug, info};
 
 use crate::metadata::TokenMetadata;
@@ -26,16 +25,20 @@ pub trait KVStore {
 }
 
 pub struct RedisKVStore {
-    client: redis::Client,
+    pool: bb8::Pool<RedisConnectionManager>,
 }
 
 #[async_trait::async_trait]
 impl KVStore for RedisKVStore {
     fn new(redis_url: &str) -> Self {
-        let client =
-            redis::Client::open(redis_url).expect("Failed to connect to Redis");
+        let manager = RedisConnectionManager::new(redis_url)
+            .expect("Failed to create Redis connection manager");
+        let pool = bb8::Pool::builder()
+            .max_size(50)
+            .min_idle(Some(10))
+            .build_unchecked(manager);
         info!("Connected to Redis at {}", redis_url);
-        Self { client }
+        Self { pool }
     }
 
     async fn get<T: DeserializeOwned + Send>(
@@ -43,12 +46,15 @@ impl KVStore for RedisKVStore {
         key: &str,
     ) -> Result<Option<T>> {
         let mut conn = self
-            .client
-            .get_multiplexed_async_connection()
+            .pool
+            .get()
             .await
-            .context("Failed to get connection")?;
-        let value: Option<String> =
-            conn.get(key).await.context("Failed to get key")?;
+            .context("Failed to get connection from pool")?;
+        let value: Option<String> = cmd("GET")
+            .arg(key)
+            .query_async(&mut *conn)
+            .await
+            .context("Failed to get key")?;
         debug!(key, "redis get ok");
 
         match value {
@@ -66,26 +72,30 @@ impl KVStore for RedisKVStore {
         value: &T,
     ) -> Result<()> {
         let mut conn = self
-            .client
-            .get_multiplexed_async_connection()
+            .pool
+            .get()
             .await
-            .context("Failed to get connection")?;
+            .context("Failed to get connection from pool")?;
         let json_str = serde_json::to_string(value)?;
-        let _: () =
-            conn.set(key, json_str).await.context("Failed to set key")?;
+        let _: () = cmd("SET")
+            .arg(key)
+            .arg(json_str)
+            .query_async(&mut *conn)
+            .await
+            .context("Failed to set key")?;
         debug!(key, "redis set ok");
         Ok(())
     }
 
     async fn exists(&self, key: &str) -> Result<bool> {
         let mut conn = self
-            .client
-            .get_multiplexed_async_connection()
+            .pool
+            .get()
             .await
-            .context("Failed to get connection")?;
-        let exists: bool = redis::cmd("EXISTS")
+            .context("Failed to get connection from pool")?;
+        let exists: bool = cmd("EXISTS")
             .arg(key)
-            .query_async(&mut conn)
+            .query_async(&mut *conn)
             .await
             .context("Failed to query exists")?;
         debug!(key, exists, "redis exists ok");
@@ -95,12 +105,15 @@ impl KVStore for RedisKVStore {
     async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>> {
         let key = format!("solana:{}", mint);
         let mut conn = self
-            .client
-            .get_multiplexed_async_connection()
+            .pool
+            .get()
             .await
-            .context("Failed to get connection")?;
-        let data: Option<String> =
-            conn.get(&key).await.context("Failed to get key")?;
+            .context("Failed to get connection from pool")?;
+        let data: Option<String> = cmd("GET")
+            .arg(&key)
+            .query_async(&mut *conn)
+            .await
+            .context("Failed to get key")?;
 
         match data {
             Some(json_str) => {

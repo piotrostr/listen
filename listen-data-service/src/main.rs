@@ -46,6 +46,9 @@ async fn main() -> Result<()> {
         std::process::exit(1);
     }
 
+    // this is important for cold starts, once routines try all at once it can 429
+    info!("Solana price: {}", SOL_PRICE_CACHE.get_price().await);
+
     let db = make_db().await?;
 
     let kv_store = make_kv_store()?;
