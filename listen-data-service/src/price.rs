@@ -16,7 +16,7 @@ pub struct PriceUpdate {
     pub pubkey: String,
     pub price: f64,
     pub market_cap: f64,
-    pub timestamp: i64,
+    pub timestamp: u64,
     pub slot: u64,
     pub swap_amount: f64, // denoted as usd
     pub owner: String,

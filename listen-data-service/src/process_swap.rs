@@ -14,7 +14,7 @@ use crate::{
 use anyhow::Result;
 use carbon_core::transaction::TransactionMetadata;
 use chrono::Utc;
-use tracing::{debug, info, warn};
+use tracing::{debug, warn};
 
 pub async fn process_swap(
     transaction_metadata: &TransactionMetadata,
@@ -50,7 +50,7 @@ pub async fn process_swap(
 
     let sol_price = SOL_PRICE_CACHE.get_price().await;
 
-    if diffs.len() > 3 {
+    if diffs.len() > 3 || diffs.len() < 2 {
         warn!(
             "https://solscan.io/tx/{} Skipping swap with unexpected number of tokens {:#?}",
             transaction_metadata.signature, diffs
@@ -83,7 +83,7 @@ pub async fn process_swap(
             || sol_diff.is_none()
         {
             warn!(
-                "https://solscan.io/tx/{} Skipping multi-hop swap with unexpected token changes {:#?}",
+                "https://solscan.io/tx/{} three diff swap with unexpected token changes {:#?}",
                 transaction_metadata.signature, diffs
             );
             metrics.increment_skipped_unexpected_number_of_tokens();
@@ -119,16 +119,6 @@ pub async fn process_swap(
 
             return Ok(());
         }
-    }
-
-    // Handle regular 2-token swaps
-    if diffs.len() != 2 {
-        warn!(
-            "https://solscan.io/tx/{} Skipping swap with unexpected number of tokens {:#?}",
-            transaction_metadata.signature, diffs
-        );
-        metrics.increment_skipped_unexpected_number_of_tokens();
-        return Ok(());
     }
 
     process_two_token_swap(
@@ -191,7 +181,7 @@ async fn process_two_token_swap(
         pubkey: coin_mint,
         price,
         market_cap,
-        timestamp: Utc::now().timestamp(),
+        timestamp: Utc::now().timestamp() as u64,
         slot: transaction_metadata.slot,
         swap_amount,
         owner: transaction_metadata.fee_payer.to_string(),
@@ -202,8 +192,6 @@ async fn process_two_token_swap(
         multi_hop,
         is_buy,
     };
-
-    info!("price_update: {:#?}", price_update);
 
     db.insert_price(&price_update).await?;
     message_queue.publish_price_update(price_update).await?;
@@ -325,6 +313,7 @@ mod tests {
     }
 
     #[tokio::test]
+    #[ignore = "placeholder, useful for debugging"]
     async fn test_by_signature_2() {
         let signature = "5HdnMgQTdsuYjL8fgb6RphArEyr9qECCbDy22D8DwJA1i4mdCbhNqv645AHJMHUU4JGjsjfjPyKFfnxVZkaX8PMG";
         let transaction = make_rpc_client()
@@ -342,10 +331,9 @@ mod tests {
 
         let transaction_meta = transaction.transaction.meta.unwrap();
 
-        let diffs = get_token_balance_diff(
+        let _diffs = get_token_balance_diff(
             transaction_meta.pre_token_balances.as_ref().unwrap(),
             transaction_meta.post_token_balances.as_ref().unwrap(),
         );
-        info!("diffs: {:#?}", diffs);
     }
 }

@@ -22,15 +22,29 @@ pub trait Database {
     async fn health_check(&self) -> Result<()>;
 
     async fn insert_price(&self, price: &PriceUpdate) -> Result<()>;
-
-    async fn commit_price_updates(&self) -> Result<()>;
 }
 
 pub struct ClickhouseDb {
     client: Client,
     inserter: Option<Arc<RwLock<Inserter<PriceUpdate>>>>,
-    transaction_count: Arc<RwLock<u32>>,
     is_initialized: bool,
+    max_rows: u64,
+}
+
+impl ClickhouseDb {
+    fn create_inserter(&self) -> Result<Inserter<PriceUpdate>> {
+        Ok(self
+            .client
+            .inserter::<PriceUpdate>("price_updates")
+            .context("Failed to prepare price insert statement")?
+            .with_timeouts(
+                Some(Duration::from_secs(5)),
+                Some(Duration::from_secs(20)),
+            )
+            .with_max_rows(self.max_rows)
+            .with_max_bytes(1_000_000) // price update is roughly ~200 bytes
+            .with_period(Some(Duration::from_secs(15))))
+    }
 }
 
 #[async_trait::async_trait]
@@ -47,12 +61,15 @@ impl Database for ClickhouseDb {
             .with_user(user)
             .with_database(database);
 
+        // TODO: could be parametrized
+        let max_rows = 1000;
+
         info!("Connecting to ClickHouse at {}", database_url);
         Self {
             client,
             inserter: None,
-            transaction_count: Arc::new(RwLock::new(0)),
             is_initialized: false,
+            max_rows,
         }
     }
 
@@ -76,7 +93,7 @@ impl Database for ClickhouseDb {
                     pubkey String,
                     price Float64,
                     market_cap Float64,
-                    timestamp DateTime64(0),
+                    timestamp UInt64,
                     slot UInt64,
                     swap_amount Float64,
                     owner String,
@@ -93,61 +110,35 @@ impl Database for ClickhouseDb {
             .await
             .context("Failed to create price_updates table")?;
 
-        self.inserter = Some(Arc::new(RwLock::new(
-            self.client
-                .inserter::<PriceUpdate>("price_updates")
-                .context("Failed to prepare price insert statement")?
-                .with_timeouts(
-                    Some(Duration::from_secs(5)),
-                    Some(Duration::from_secs(20)),
-                )
-                .with_max_bytes(50_000_000)
-                .with_max_rows(750_000)
-                .with_period(Some(Duration::from_secs(15))),
-        )));
-
+        self.inserter = Some(Arc::new(RwLock::new(self.create_inserter()?)));
         self.is_initialized = true;
 
         Ok(())
     }
 
+    /// insert_price uses a batched writer to avoid spamming writes
+    /// it is configurable at the initializer
     async fn insert_price(&self, price: &PriceUpdate) -> Result<()> {
         debug!("inserting price: {}", price.signature);
-        self.inserter
-            .as_ref()
-            .expect("inserter not initialized")
-            .write()
-            .await
-            .write(price)
-            .context("Failed to write price to insert buffer")?;
 
-        let mut count = self.transaction_count.write().await;
-        *count += 1;
-
-        if *count >= 1000 {
-            info!("Transaction count reached {}, triggering commit", *count);
-            *count = 0;
-            drop(count);
-
-            self.commit_price_updates().await?;
-        }
-
-        Ok(())
-    }
-
-    async fn commit_price_updates(&self) -> Result<()> {
-        debug!("committing price updates");
-        let stats = self
+        let mut inserter = self
             .inserter
             .as_ref()
             .expect("inserter not initialized")
             .write()
-            .await
-            .commit()
-            .await
-            .context("Failed to commit price updates")?;
+            .await;
 
-        info!("Committed {} rows ({} bytes)", stats.rows, stats.bytes);
+        inserter
+            .write(price)
+            .context("Failed to write price to insert buffer")?;
+
+        let pending = inserter.pending();
+        debug!("Pending: {} rows ({} bytes)", pending.rows, pending.bytes);
+
+        if pending.rows >= self.max_rows {
+            let stats = inserter.commit().await?;
+            info!("Committed {} rows ({} bytes)", stats.rows, stats.bytes);
+        }
 
         Ok(())
     }
