@@ -1,0 +1,26 @@
+app = "listen-clickhouse"
+primary_region = "waw"
+
+[build]
+dockerfile = "Dockerfile"
+
+[[mounts]]
+source = "clickhouse_data"
+destination = "/var/lib/clickhouse"
+
+[[services]]
+protocol = "tcp"
+internal_port = 9000
+[[services.ports]]
+port = 9000
+
+[[services]]
+protocol = "tcp"
+internal_port = 8123
+[[services.ports]]
+port = 8123
+
+[[vm]]
+memory = "2gb"
+cpu_kind = "shared"
+cpus = 2

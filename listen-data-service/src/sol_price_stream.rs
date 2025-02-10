@@ -9,7 +9,7 @@ use tracing::{error, info};
 use url::Url;
 
 // Global SOL price cache
-pub static SOL_PRICE_CACHE: Lazy<SolPriceCache> = Lazy::new(|| SolPriceCache::new());
+pub static SOL_PRICE_CACHE: Lazy<SolPriceCache> = Lazy::new(SolPriceCache::new);
 
 #[derive(Debug, Deserialize)]
 struct TradeData {
@@ -24,6 +24,12 @@ struct BinancePrice {
 #[derive(Debug, Clone)]
 pub struct SolPriceCache {
     price: Arc<RwLock<f64>>,
+}
+
+impl Default for SolPriceCache {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl SolPriceCache {
@@ -56,7 +62,8 @@ impl SolPriceCache {
     }
 
     async fn fetch_rest_price(&self) -> Result<f64> {
-        let rest_url = "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT";
+        let rest_url =
+            "https://api.binance.com/api/v3/ticker/price?symbol=SOLUSDT";
         let response = reqwest::get(rest_url).await?;
         let price_data: BinancePrice = response.json().await?;
         price_data.price.parse::<f64>().map_err(Into::into)
@@ -72,14 +79,16 @@ impl SolPriceCache {
 
         while let Some(message) = read.next().await {
             match message {
-                Ok(Message::Text(text)) => match serde_json::from_str::<TradeData>(&text) {
-                    Ok(trade) => {
-                        if let Ok(new_price) = trade.p.parse::<f64>() {
-                            *price.write().await = new_price;
+                Ok(Message::Text(text)) => {
+                    match serde_json::from_str::<TradeData>(&text) {
+                        Ok(trade) => {
+                            if let Ok(new_price) = trade.p.parse::<f64>() {
+                                *price.write().await = new_price;
+                            }
                         }
+                        Err(e) => error!("Error parsing JSON: {}", e),
                     }
-                    Err(e) => error!("Error parsing JSON: {}", e),
-                },
+                }
                 Ok(Message::Ping(_)) => {}
                 Err(e) => {
                     error!("WebSocket error: {}", e);

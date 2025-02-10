@@ -1,12 +1,18 @@
 use carbon_core::{
-    account::AccountProcessorInputType, error::CarbonResult, metrics::MetricsCollection,
-    processor::Processor,
+    account::AccountProcessorInputType, error::CarbonResult,
+    metrics::MetricsCollection, processor::Processor,
 };
 use carbon_raydium_amm_v4_decoder::accounts::RaydiumAmmV4Account;
 use std::sync::Arc;
 use tracing::info;
 
 pub struct RaydiumAmmV4AccountProcessor {}
+
+impl Default for RaydiumAmmV4AccountProcessor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl RaydiumAmmV4AccountProcessor {
     pub fn new() -> Self {
@@ -24,12 +30,9 @@ impl Processor for RaydiumAmmV4AccountProcessor {
         _metrics: Arc<MetricsCollection>,
     ) -> CarbonResult<()> {
         let (_meta, account) = data;
-        match &account.data {
-            RaydiumAmmV4Account::AmmInfo(pool) => {
-                info!("pool: {:#?}", pool);
-            }
-            _ => {}
-        }
+        if let RaydiumAmmV4Account::AmmInfo(pool) = &account.data {
+            info!("pool: {:#?}", pool);
+        };
 
         Ok(())
     }

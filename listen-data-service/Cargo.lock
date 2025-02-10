@@ -552,6 +552,27 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "72b3254f16251a8381aa12e40e3c4d2f0199f8c6508fbecb9d91f575e0fbb8c6"
 
 [[package]]
+name = "bb8"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "212d8b8e1a22743d9241575c6ba822cf9c8fef34771c86ab7e477a4fbfd254e5"
+dependencies = [
+ "futures-util",
+ "parking_lot",
+ "tokio",
+]
+
+[[package]]
+name = "bb8-redis"
+version = "0.20.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3428672918816ef7533c206902630ccaceebf69ca8831a30c18eacf5cb619070"
+dependencies = [
+ "bb8",
+ "redis",
+]
+
+[[package]]
 name = "bincode"
 version = "1.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -713,6 +734,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "bstr"
+version = "1.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "531a9155a481e2ee699d4f98f43c0ca4ff8ee1bfd55c31e9e98fb29d2b176fe0"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
 name = "bumpalo"
 version = "3.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -773,36 +803,13 @@ dependencies = [
 [[package]]
 name = "carbon-core"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7dae390ab6c42de8fce10971f8cbe156893cb133b957c08b2cf5a2d61cbd03d"
-dependencies = [
- "async-trait",
- "borsh 0.10.4",
- "bs58",
- "carbon-macros 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "carbon-proc-macros 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
- "futures",
- "log",
- "serde",
- "serde_json",
- "solana-client",
- "solana-sdk",
- "solana-transaction-status",
- "thiserror",
- "tokio",
- "tokio-util",
-]
-
-[[package]]
-name = "carbon-core"
-version = "0.4.0"
 source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-trait",
  "borsh 0.10.4",
  "bs58",
- "carbon-macros 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
- "carbon-proc-macros 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
+ "carbon-macros",
+ "carbon-proc-macros",
  "futures",
  "log",
  "serde",
@@ -821,22 +828,9 @@ version = "0.4.0"
 source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-trait",
- "carbon-core 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
+ "carbon-core",
  "log",
  "tokio",
-]
-
-[[package]]
-name = "carbon-macros"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "071b744ba6ebeaa2b9ea60c8c3b463d0280d4f034265ba3fd9d2ac696e8db70e"
-dependencies = [
- "hex",
- "paste",
- "solana-client",
- "solana-sdk",
- "solana-transaction-status",
 ]
 
 [[package]]
@@ -849,25 +843,6 @@ dependencies = [
  "solana-client",
  "solana-sdk",
  "solana-transaction-status",
-]
-
-[[package]]
-name = "carbon-proc-macros"
-version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b088582d0c5e28f01f2d1a107cdfbf904ed245d66326eaace77e9a8c4d913258"
-dependencies = [
- "borsh-derive-internal",
- "hex",
- "paste",
- "proc-macro2",
- "quote",
- "serde",
- "solana-client",
- "solana-sdk",
- "solana-transaction-status",
- "syn 1.0.109",
- "unicode-xid",
 ]
 
 [[package]]
@@ -893,7 +868,7 @@ name = "carbon-raydium-amm-v4-decoder"
 version = "0.4.0"
 source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
- "carbon-core 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
+ "carbon-core",
  "serde",
  "serde-big-array",
  "solana-sdk",
@@ -902,11 +877,10 @@ dependencies = [
 [[package]]
 name = "carbon-rpc-block-subscribe-datasource"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d359842d21d9622bd954da73a407b141b9605f3f8f9780069b2826d96556f22a"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-trait",
- "carbon-core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "carbon-core",
  "env_logger 0.11.6",
  "futures",
  "log",
@@ -919,11 +893,10 @@ dependencies = [
 [[package]]
 name = "carbon-rpc-program-subscribe-datasource"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "36948b5e37d04d025fa5a35f2a7f1dcc2122a78d50ae0a80cff1d94364f330fa"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-trait",
- "carbon-core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "carbon-core",
  "env_logger 0.11.6",
  "futures",
  "log",
@@ -936,12 +909,11 @@ dependencies = [
 [[package]]
 name = "carbon-rpc-transaction-crawler-datasource"
 version = "0.4.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b53a32e0fecc620819fc7e8367c5a7cc34f0d196d8f5d79e380eb542a8e89ec0"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-stream",
  "async-trait",
- "carbon-core 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "carbon-core",
  "env_logger 0.11.6",
  "futures",
  "log",
@@ -960,7 +932,7 @@ version = "0.4.0"
 source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#f3f1a5fc5c99bd7cf07b30b6d1e1992a61952fbc"
 dependencies = [
  "async-trait",
- "carbon-core 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
+ "carbon-core",
  "env_logger 0.11.6",
  "futures",
  "futures-util",
@@ -1027,6 +999,12 @@ dependencies = [
  "crypto-common",
  "inout",
 ]
+
+[[package]]
+name = "cityhash-rs"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93a719913643003b84bd13022b4b7e703c09342cd03b679c4641c7d2e50dc34d"
 
 [[package]]
 name = "clap"
@@ -1107,6 +1085,45 @@ name = "clap_lex"
 version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f46ad14479a25103f283c0f10005961cf086d8dc42205bb44c46ac563475dca6"
+
+[[package]]
+name = "clickhouse"
+version = "0.13.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2135bb9638e8c8c1e3d794f242099e57987059ba52e7e3de597e1d99b2c4a5a3"
+dependencies = [
+ "bstr",
+ "bytes",
+ "cityhash-rs",
+ "clickhouse-derive",
+ "futures",
+ "futures-channel",
+ "http-body-util",
+ "hyper 1.6.0",
+ "hyper-tls 0.6.0",
+ "hyper-util",
+ "lz4_flex",
+ "quanta",
+ "replace_with",
+ "sealed",
+ "serde",
+ "static_assertions",
+ "thiserror",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "clickhouse-derive"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d70f3e2893f7d3e017eeacdc9a708fbc29a10488e3ebca21f9df6a5d2b616dbb"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde_derive_internals",
+ "syn 2.0.98",
+]
 
 [[package]]
 name = "colorchoice"
@@ -2152,6 +2169,22 @@ dependencies = [
 ]
 
 [[package]]
+name = "hyper-tls"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "70206fc6890eaca9fde8a0bf71caa2ddfc9fe045ac9e5c70df101a7dbde866e0"
+dependencies = [
+ "bytes",
+ "http-body-util",
+ "hyper 1.6.0",
+ "hyper-util",
+ "native-tls",
+ "tokio",
+ "tokio-native-tls",
+ "tower-service",
+]
+
+[[package]]
 name = "hyper-util"
 version = "0.1.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2540,7 +2573,8 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
- "carbon-core 0.4.0 (git+https://github.com/sevenlabs-hq/carbon?branch=main)",
+ "bb8-redis",
+ "carbon-core",
  "carbon-log-metrics",
  "carbon-raydium-amm-v4-decoder",
  "carbon-rpc-block-subscribe-datasource",
@@ -2549,6 +2583,7 @@ dependencies = [
  "carbon-yellowstone-grpc-datasource",
  "chrono",
  "clap 4.5.28",
+ "clickhouse",
  "ctor",
  "dotenv",
  "futures-util",
@@ -2592,6 +2627,12 @@ name = "log"
 version = "0.4.25"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "04cbf5b083de1c7e0222a7a51dbfdba1cbe1c6ab0b15e29fff3f6c077fd9cd9f"
+
+[[package]]
+name = "lz4_flex"
+version = "0.11.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "75761162ae2b0e580d7e7c390558127e5f01b4194debd6221fd8c207fc80e3f5"
 
 [[package]]
 name = "matchit"
@@ -3249,6 +3290,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "quanta"
+version = "0.12.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "3bd1fe6824cea6538803de3ff1bc0cf3949024db3d43c9643024bfb33a807c0e"
+dependencies = [
+ "crossbeam-utils",
+ "libc",
+ "once_cell",
+ "raw-cpuid",
+ "wasi 0.11.0+wasi-snapshot-preview1",
+ "web-sys",
+ "winapi",
+]
+
+[[package]]
 name = "quinn"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3377,6 +3433,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "raw-cpuid"
+version = "11.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c6928fa44c097620b706542d428957635951bade7143269085389d42c8a4927e"
+dependencies = [
+ "bitflags 2.8.0",
+]
+
+[[package]]
 name = "rayon"
 version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3457,6 +3522,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
+name = "replace_with"
+version = "0.1.7"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e3a8614ee435691de62bcffcf4a66d91b3594bf1428a5722e79103249a095690"
+
+[[package]]
 name = "reqwest"
 version = "0.11.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3473,7 +3544,7 @@ dependencies = [
  "http-body 0.4.6",
  "hyper 0.14.32",
  "hyper-rustls",
- "hyper-tls",
+ "hyper-tls 0.5.0",
  "ipnet",
  "js-sys",
  "log",
@@ -3775,6 +3846,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "sealed"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22f968c5ea23d555e670b449c1c5e7b2fc399fdaec1d304a17cd48e288abc107"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.98",
+]
+
+[[package]]
 name = "security-framework"
 version = "2.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3848,6 +3930,17 @@ name = "serde_derive"
 version = "1.0.217"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5a9bf7cf98d04a2b28aead066b7496853d4779c9cc183c440dbac457641e19a0"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.98",
+]
+
+[[package]]
+name = "serde_derive_internals"
+version = "0.29.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "18d26a20a969b9e3fdf2fc2d9f21eda6c40e2de84c9408bb5d3b05d499aae711"
 dependencies = [
  "proc-macro2",
  "quote",

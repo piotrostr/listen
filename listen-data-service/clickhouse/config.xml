@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<clickhouse>
+    <logger>
+        <level>warning</level>
+        <console>1</console>
+    </logger>
+    <listen_host>::</listen_host>
+    <path>/var/lib/clickhouse/</path>
+    <tmp_path>/var/lib/clickhouse/tmp/</tmp_path>
+</clickhouse>
