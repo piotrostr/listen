@@ -21,5 +21,5 @@ pub struct PriceUpdate {
     pub swap_amount: f64, // denoted as usd
     pub owner: String,
     pub signature: String,
-    pub base_in: bool,
+    pub multi_hop: bool,
 }

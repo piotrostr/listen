@@ -67,7 +67,7 @@ pub fn process_diffs(
     Ok((price, swap_amount, coin_mint.to_string()))
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub struct Diff {
     pub mint: String,
     pub pre_amount: f64,

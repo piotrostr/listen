@@ -28,11 +28,9 @@ impl Processor for RaydiumAmmV4InstructionProcessor {
     ) -> CarbonResult<()> {
         let (meta, instruction, _nested_instructions) = data;
         match &instruction.data {
-            RaydiumAmmV4Instruction::SwapBaseIn(_) => {
-                self.spawn_swap_processor(&meta, true);
-            }
-            RaydiumAmmV4Instruction::SwapBaseOut(_) => {
-                self.spawn_swap_processor(&meta, false);
+            RaydiumAmmV4Instruction::SwapBaseIn(_)
+            | RaydiumAmmV4Instruction::SwapBaseOut(_) => {
+                self.spawn_swap_processor(&meta);
             }
             _ => {}
         }
@@ -57,7 +55,6 @@ impl RaydiumAmmV4InstructionProcessor {
     fn spawn_swap_processor(
         &self,
         meta: &carbon_core::instruction::InstructionMetadata,
-        is_base_in: bool,
     ) {
         debug!(
             "https://solscan.io/tx/{}",
@@ -69,14 +66,8 @@ impl RaydiumAmmV4InstructionProcessor {
         let tx_meta = meta.transaction_metadata.clone();
         let db = self.db.clone();
         tokio::spawn(async move {
-            if let Err(e) = process_swap(
-                &tx_meta,
-                &message_queue,
-                &kv_store,
-                &db,
-                is_base_in,
-            )
-            .await
+            if let Err(e) =
+                process_swap(&tx_meta, &message_queue, &kv_store, &db).await
             {
                 error!(
                     "Error processing swap: {:#}\nError chain:\n{:?}\nTransaction: https://solscan.io/tx/{}", 

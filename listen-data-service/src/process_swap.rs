@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
-use crate::diffs::{get_token_balance_diff, process_diffs};
+use crate::constants::WSOL_MINT_KEY_STR;
+use crate::diffs::{get_token_balance_diff, process_diffs, Diff};
 use crate::{
     db::{ClickhouseDb, Database},
     kv_store::RedisKVStore,
@@ -19,7 +20,6 @@ pub async fn process_swap(
     message_queue: &RedisMessageQueue,
     kv_store: &Arc<RedisKVStore>,
     db: &Arc<ClickhouseDb>,
-    base_in: bool,
 ) -> Result<()> {
     let diffs = get_token_balance_diff(
         transaction_metadata
@@ -34,25 +34,107 @@ pub async fn process_swap(
             .unwrap(),
     );
 
-    // TODO support these too
-    // skip swaps with more than 2 tokens
-    if diffs.len() != 2 {
-        warn!(
-            "https://solscan.io/tx/{} Skipping swap {:#?}",
-            transaction_metadata.signature, diffs
-        );
-        return Ok(());
-    }
-
     // skip tiny swaps
-    if diffs[0].diff.abs() < 0.01 || diffs[1].diff.abs() < 0.01 {
+    if diffs.iter().all(|d| d.diff.abs() < 0.01) {
         debug!("skipping tiny diffs");
         return Ok(());
     }
 
     let sol_price = SOL_PRICE_CACHE.get_price().await;
 
-    let (price, swap_amount, coin_mint) = match process_diffs(&diffs, sol_price)
+    // Handle multi-hop swaps (3 tokens)
+    if diffs.len() == 3 {
+        // Find the tokens with positive and negative changes
+        let mut positive_diff = None;
+        let mut negative_diff = None;
+        let mut sol_diff = None;
+
+        for diff in &diffs {
+            if diff.mint == WSOL_MINT_KEY_STR {
+                sol_diff = Some(diff);
+                continue;
+            }
+            if diff.diff > 0.0 {
+                positive_diff = Some(diff);
+            } else if diff.diff < 0.0 {
+                negative_diff = Some(diff);
+            }
+        }
+
+        if positive_diff.is_none()
+            || negative_diff.is_none()
+            || sol_diff.is_none()
+        {
+            warn!(
+                "https://solscan.io/tx/{} Skipping multi-hop swap with unexpected token changes {:#?}",
+                transaction_metadata.signature, diffs
+            );
+            return Ok(());
+        }
+
+        if let (Some(pos), Some(neg), Some(sol)) =
+            (positive_diff, negative_diff, sol_diff)
+        {
+            // Process first hop: token being sold to SOL
+            process_two_token_swap(
+                &vec![neg.clone(), sol.clone()],
+                transaction_metadata,
+                message_queue,
+                kv_store,
+                db,
+                sol_price,
+                true,
+            )
+            .await?;
+
+            // Process second hop: SOL to token being bought
+            process_two_token_swap(
+                &vec![pos.clone(), sol.clone()],
+                transaction_metadata,
+                message_queue,
+                kv_store,
+                db,
+                sol_price,
+                true,
+            )
+            .await?;
+
+            return Ok(());
+        }
+    }
+
+    // Handle regular 2-token swaps
+    if diffs.len() != 2 {
+        warn!(
+            "https://solscan.io/tx/{} Skipping swap with unexpected number of tokens {:#?}",
+            transaction_metadata.signature, diffs
+        );
+        return Ok(());
+    }
+
+    process_two_token_swap(
+        &diffs,
+        transaction_metadata,
+        message_queue,
+        kv_store,
+        db,
+        sol_price,
+        false,
+    )
+    .await
+}
+
+// Helper function to process a single two-token swap
+async fn process_two_token_swap(
+    diffs: &Vec<Diff>,
+    transaction_metadata: &TransactionMetadata,
+    message_queue: &RedisMessageQueue,
+    kv_store: &Arc<RedisKVStore>,
+    db: &Arc<ClickhouseDb>,
+    sol_price: f64,
+    multi_hop: bool,
+) -> Result<()> {
+    let (price, swap_amount, coin_mint) = match process_diffs(diffs, sol_price)
     {
         Ok(result) => result,
         Err(e) => {
@@ -63,7 +145,7 @@ pub async fn process_swap(
         }
     };
 
-    // Get metadata for the non-WSOL/USDC token
+    // Get metadata and emit price update
     let token_metadata = get_token_metadata(kv_store, &coin_mint).await?;
 
     // Calculate market cap if we have the metadata
@@ -94,13 +176,12 @@ pub async fn process_swap(
             "https://solscan.io/tx/{}",
             transaction_metadata.signature
         ),
-        base_in,
+        multi_hop,
     };
 
     info!("price_update: {:#?}", price_update);
 
     db.insert_price(&price_update).await?;
-
     message_queue.publish_price_update(price_update).await?;
 
     Ok(())
