@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
+use crate::diffs::{get_token_balance_diff, process_diffs};
 use crate::{
-    constants::WSOL_MINT_KEY_STR,
     db::{ClickhouseDb, Database},
     kv_store::RedisKVStore,
     message_queue::{MessageQueue, RedisMessageQueue},
@@ -12,31 +12,7 @@ use crate::{
 use anyhow::Result;
 use carbon_core::transaction::TransactionMetadata;
 use chrono::Utc;
-use solana_transaction_status::TransactionTokenBalance;
-use std::collections::HashMap;
 use tracing::{debug, info, warn};
-
-pub fn process_diffs(
-    diffs: &Vec<Diff>,
-    sol_price: f64,
-) -> Result<(f64, f64, String)> {
-    let (token0, token1) = (&diffs[0], &diffs[1]);
-
-    let amount0 = token0.diff.abs();
-    let amount1 = token1.diff.abs();
-
-    let (sol_amount, token_amount, coin_mint) =
-        match (token0.mint.as_str(), token1.mint.as_str()) {
-            (WSOL_MINT_KEY_STR, other_mint) => (amount0, amount1, other_mint),
-            (other_mint, WSOL_MINT_KEY_STR) => (amount1, amount0, other_mint),
-            _ => return Err(anyhow::anyhow!("Non-WSOL swap")),
-        };
-
-    let price = (sol_amount.abs() / token_amount.abs()) * sol_price;
-    let swap_amount = sol_amount * sol_price;
-
-    Ok((price, swap_amount, coin_mint.to_string()))
-}
 
 pub async fn process_swap(
     transaction_metadata: &TransactionMetadata,
@@ -131,56 +107,12 @@ pub async fn process_swap(
     Ok(())
 }
 
-#[derive(Debug)]
-pub struct Diff {
-    pub mint: String,
-    pub pre_amount: f64,
-    pub post_amount: f64,
-    pub diff: f64,
-    pub owner: String,
-}
-
-fn get_token_balance_diff(
-    pre_balances: &Vec<TransactionTokenBalance>,
-    post_balances: &Vec<TransactionTokenBalance>,
-) -> Vec<Diff> {
-    let mut diffs = Vec::new();
-    let mut pre_balances_map = HashMap::new();
-    let mut post_balances_map = HashMap::new();
-
-    for balance in pre_balances {
-        if let Some(amount) = balance.ui_token_amount.ui_amount {
-            pre_balances_map
-                .insert(balance.mint.clone(), (amount, balance.owner.clone()));
-        }
-    }
-
-    for balance in post_balances {
-        if let Some(amount) = balance.ui_token_amount.ui_amount {
-            post_balances_map
-                .insert(balance.mint.clone(), (amount, balance.owner.clone()));
-        }
-    }
-
-    for (mint, (pre_amount, owner)) in pre_balances_map {
-        if let Some((post_amount, _)) = post_balances_map.get(&mint) {
-            let diff = post_amount - pre_amount;
-            diffs.push(Diff {
-                mint,
-                pre_amount,
-                post_amount: *post_amount,
-                diff,
-                owner,
-            });
-        }
-    }
-
-    diffs
-}
-
 #[cfg(test)]
 mod tests {
-    use crate::util::round_to_decimals;
+    use crate::{
+        diffs::Diff,
+        util::{make_rpc_client, round_to_decimals},
+    };
 
     use super::*;
 
@@ -243,6 +175,39 @@ mod tests {
         assert!(rounded_price == 0.00148, "price: {}", rounded_price);
         assert!(
             swap_amount == 0.05000000000001137 * 202.12,
+            "swap_amount: {}",
+            swap_amount
+        );
+    }
+
+    #[tokio::test]
+    async fn test_by_signature() {
+        let signature = "538voMuFQKp3oE6Tu598R8kJN12sum2cGMxZBxrV2Vuip1TL4qdWaXiJ8u3yRxgJy9SFX4faP2zC83oDX68D2wuW";
+        let transaction = make_rpc_client()
+            .unwrap()
+            .get_transaction_with_config(
+                &signature.parse().unwrap(),
+                solana_client::rpc_config::RpcTransactionConfig {
+                    encoding: Some(solana_transaction_status::UiTransactionEncoding::JsonParsed),
+                    max_supported_transaction_version: Some(0),
+                    ..Default::default()
+                },
+            )
+            .await
+            .unwrap();
+
+        let transaction_meta = transaction.transaction.meta.unwrap();
+
+        let diffs = get_token_balance_diff(
+            transaction_meta.pre_token_balances.as_ref().unwrap(),
+            transaction_meta.post_token_balances.as_ref().unwrap(),
+        );
+        println!("diffs: {:#?}", diffs);
+
+        let (price, swap_amount, _) = process_diffs(&diffs, 201.36).unwrap();
+        assert!(price == 0.00034245999245592905, "price: {}", price);
+        assert!(
+            swap_amount == 0.00034245999245592905 * 201.36,
             "swap_amount: {}",
             swap_amount
         );
