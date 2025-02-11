@@ -56,7 +56,7 @@ export default function PriceUpdates() {
   return (
     <div className="space-y-6">
       {/* Latest Update Section */}
-      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg">
+      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg h-48">
         <h2 className="text-lg font-semibold mb-2">Latest Update</h2>
         {latestUpdate ? (
           <div className="space-y-1">
