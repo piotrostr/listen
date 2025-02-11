@@ -3,3 +3,4 @@
 target
 .env
 dump.rdb
+scripts
