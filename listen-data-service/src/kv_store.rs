@@ -8,7 +8,7 @@ use crate::price::Price;
 
 #[async_trait::async_trait]
 pub trait KVStore {
-    fn new(redis_url: &str) -> Self
+    fn new(redis_url: &str) -> Result<Self>
     where
         Self: Sized;
     async fn get<T: DeserializeOwned + Send>(
@@ -30,15 +30,18 @@ pub struct RedisKVStore {
 
 #[async_trait::async_trait]
 impl KVStore for RedisKVStore {
-    fn new(redis_url: &str) -> Self {
+    fn new(redis_url: &str) -> Result<Self> {
         let manager = RedisConnectionManager::new(redis_url)
-            .expect("Failed to create Redis connection manager");
+            .context("Failed to create Redis connection manager")?;
         let pool = bb8::Pool::builder()
-            .max_size(50)
-            .min_idle(Some(10))
+            .max_size(100)
+            .min_idle(Some(20))
+            .connection_timeout(std::time::Duration::from_secs(10))
+            .idle_timeout(Some(std::time::Duration::from_secs(300)))
+            // .max_lifetime(Some(std::time::Duration::from_secs(3600)))
             .build_unchecked(manager);
         info!("Connected to Redis at {}", redis_url);
-        Self { pool }
+        Ok(Self { pool })
     }
 
     async fn get<T: DeserializeOwned + Send>(
@@ -50,20 +53,22 @@ impl KVStore for RedisKVStore {
             .get()
             .await
             .context("Failed to get connection from pool")?;
+
         let value: Option<String> = cmd("GET")
             .arg(key)
             .query_async(&mut *conn)
             .await
             .context("Failed to get key")?;
+
         debug!(key, "redis get ok");
 
-        match value {
+        return match value {
             Some(json_str) => {
                 let value = serde_json::from_str(&json_str)?;
                 Ok(Some(value))
             }
             None => Ok(None),
-        }
+        };
     }
 
     async fn set<T: Serialize + Send + Sync>(

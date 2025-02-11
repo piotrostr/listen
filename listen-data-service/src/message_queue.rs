@@ -1,3 +1,5 @@
+use anyhow::{Context, Result};
+
 use crate::price::PriceUpdate;
 
 #[async_trait::async_trait]
@@ -16,8 +18,9 @@ pub struct RedisMessageQueue {
 }
 
 impl RedisMessageQueue {
-    pub fn new(redis_url: &str) -> Result<Self, redis::RedisError> {
-        let client = redis::Client::open(redis_url)?;
+    pub fn new(redis_url: &str) -> Result<Self> {
+        let client = redis::Client::open(redis_url)
+            .context("Failed to create Redis client")?;
         Ok(Self { client })
     }
 }

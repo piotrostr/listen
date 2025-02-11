@@ -25,8 +25,6 @@ services:
       - 6379:6379
     volumes:
       - redis-data:/data
-    environment:
-      - REDIS_PASSWORD=default
   
   clickhouse:
     build:
@@ -40,6 +38,17 @@ services:
       - clickhouse-logs:/var/log/clickhouse-server
     environment: 
       - CLICKHOUSE_PASSWORD=default
+
+  preview:
+    build:
+      context: ./preview
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - 3000:3000
+    depends_on:
+      - redis
 
 volumes:
   redis-data:
