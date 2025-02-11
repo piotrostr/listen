@@ -1,5 +1,5 @@
 use anyhow::Result;
-use carbon_core::pipeline::Pipeline;
+use carbon_core::pipeline::{Pipeline, ShutdownStrategy};
 use carbon_log_metrics::LogMetrics;
 use carbon_raydium_amm_v4_decoder::RaydiumAmmV4Decoder;
 use carbon_rpc_transaction_crawler_datasource::{
@@ -29,6 +29,7 @@ pub fn make_raydium_rpc_instruction_pipeline(
             100,
         ))
         .metrics(Arc::new(LogMetrics::new()))
+        .shutdown_strategy(ShutdownStrategy::Immediate)
         .instruction(
             RaydiumAmmV4Decoder,
             RaydiumAmmV4InstructionProcessor::new(kv_store, message_queue, db),
