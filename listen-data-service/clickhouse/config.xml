@@ -3,8 +3,18 @@
     <logger>
         <level>warning</level>
         <console>1</console>
+        <log>/var/log/clickhouse-server/clickhouse-server.log</log>
+        <errorlog>/var/log/clickhouse-server/clickhouse-server.err.log</errorlog>
     </logger>
-    <listen_host>::</listen_host>
     <path>/var/lib/clickhouse/</path>
     <tmp_path>/var/lib/clickhouse/tmp/</tmp_path>
+    <format_schema_path>/var/lib/clickhouse/format_schemas/</format_schema_path>
+    <listen_host>0.0.0.0</listen_host>
+    <http_port>8123</http_port>
+    <tcp_port>9000</tcp_port>
+    <users_config>users.xml</users_config>
+    <default_profile>default</default_profile>
+    <default_database>default</default_database>
+    <mark_cache_size>5368709120</mark_cache_size>
+    <max_concurrent_queries>100</max_concurrent_queries>
 </clickhouse>

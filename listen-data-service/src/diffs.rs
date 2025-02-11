@@ -49,9 +49,20 @@ pub struct DiffsResult {
     pub is_buy: bool,
 }
 
-pub fn process_diffs(diffs: &Vec<Diff>, sol_price: f64) -> Result<DiffsResult> {
+#[derive(Debug, thiserror::Error)]
+pub enum DiffsError {
+    #[error("Expected exactly 2 token balance diffs")]
+    ExpectedExactlyTwoTokenBalanceDiffs,
+    #[error("Non-WSOL swap")]
+    NonWsolsSwap,
+}
+
+pub fn process_diffs(
+    diffs: &[Diff],
+    sol_price: f64,
+) -> Result<DiffsResult, DiffsError> {
     if diffs.len() != 2 {
-        return Err(anyhow::anyhow!("Expected exactly 2 token balance diffs"));
+        return Err(DiffsError::ExpectedExactlyTwoTokenBalanceDiffs);
     }
 
     let (token0, token1) = (&diffs[0], &diffs[1]);
@@ -63,7 +74,7 @@ pub fn process_diffs(diffs: &Vec<Diff>, sol_price: f64) -> Result<DiffsResult> {
         match (token0.mint.as_str(), token1.mint.as_str()) {
             (WSOL_MINT_KEY_STR, other_mint) => (amount0, amount1, other_mint),
             (other_mint, WSOL_MINT_KEY_STR) => (amount1, amount0, other_mint),
-            _ => return Err(anyhow::anyhow!("Non-WSOL swap")),
+            _ => return Err(DiffsError::NonWsolsSwap),
         };
 
     // raydium token balance negative

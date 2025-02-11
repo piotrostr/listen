@@ -1,5 +1,7 @@
-use crate::de::*;
-use crate::{kv_store::RedisKVStore, util::make_rpc_client};
+use crate::{
+    kv_store::{KVStoreExt, RedisKVStore},
+    util::make_rpc_client,
+};
 use anyhow::{Context, Result};
 use mpl_token_metadata::accounts::Metadata;
 use serde::{Deserialize, Serialize};
@@ -15,7 +17,7 @@ pub struct MplTokenMetadata {
     pub name: String,
     pub symbol: String,
     pub uri: String,
-    pub ipfs_metadata: Option<IpfsMetadata>,
+    pub ipfs_metadata: Option<serde_json::Value>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
@@ -34,42 +36,19 @@ pub struct TokenMetadata {
     pub spl: SplTokenMetadata,
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-pub struct IpfsMetadata {
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_optional_string_or_object")]
-    pub created_on: Option<String>,
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_optional_string_or_object")]
-    pub description: Option<String>,
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_optional_string_or_object")]
-    pub image: Option<String>,
-    #[serde(deserialize_with = "deserialize_string_or_object")]
-    pub name: String,
-    #[serde(deserialize_with = "deserialize_string_or_object")]
-    pub symbol: String,
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_string_or_bool")]
-    pub show_name: Option<bool>,
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_optional_string_or_object")]
-    pub twitter: Option<String>,
-    #[serde(default)]
-    #[serde(deserialize_with = "deserialize_optional_string_or_object")]
-    pub website: Option<String>,
+fn extract_ipfs_cid(uri: &str) -> Option<String> {
+    if uri.starts_with("ipfs://") {
+        Some(uri.replace("ipfs://", ""))
+    } else if uri.contains("/ipfs/") {
+        uri.split("/ipfs/").nth(1).map(|s| s.to_string())
+    } else {
+        None
+    }
 }
 
-pub const IPFS_GATEWAYS: &[&str] = &[
-    "https://ipfs.io/ipfs/",
-    "https://cloudflare-ipfs.com/ipfs/",
-    "https://gateway.pinata.cloud/ipfs/",
-];
-
 fn convert_ipfs_uri(uri: &str) -> String {
-    if uri.starts_with("ipfs://") {
-        uri.replace("ipfs://", "https://ipfs.io/ipfs/")
+    if let Some(cid) = extract_ipfs_cid(uri) {
+        format!("https://ipfs.io/ipfs/{}", cid)
     } else {
         uri.to_string()
     }
@@ -79,9 +58,10 @@ pub async fn get_token_metadata(
     kv_store: &Arc<RedisKVStore>,
     mint: &str,
 ) -> Result<Option<TokenMetadata>> {
-    if kv_store.has_metadata(mint).await? {
-        debug!(mint, "metadata already exists");
-        return kv_store.get_metadata(mint).await;
+    // Try to get from cache first
+    if let Some(metadata) = kv_store.get_metadata(mint).await? {
+        debug!(mint, "metadata found in cache");
+        return Ok(Some(metadata));
     }
 
     match TokenMetadata::fetch_by_mint(mint).await {
@@ -219,12 +199,9 @@ impl TokenMetadata {
                 response.json::<serde_json::Value>().await
             {
                 debug!(mint, uri, "ipfs fetch ok");
-                token_metadata.ipfs_metadata = Some(
-                    serde_json::from_value(ipfs_metadata)
-                        .context("failed to parse ipfs metadata")?,
-                );
+                token_metadata.ipfs_metadata = Some(ipfs_metadata);
             } else {
-                warn!(mint, uri, "ipfs fetch failed");
+                warn!(mint, uri, "ipfs response not json");
             }
         } else {
             warn!(mint, uri, "ipfs fetch failed");
@@ -233,6 +210,7 @@ impl TokenMetadata {
         Ok(token_metadata)
     }
 }
+
 #[cfg(test)]
 mod tests {
     use crate::util::make_kv_store;
@@ -285,7 +263,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_token_metadata() {
-        let kv_store = make_kv_store().unwrap();
+        let kv_store = make_kv_store().await.unwrap();
         let metadata = get_token_metadata(
             &kv_store,
             "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
@@ -295,22 +273,26 @@ mod tests {
         debug!("{:?}", metadata);
     }
 
-    // Add a new test for fetch_by_mint that shows the complete behavior
-    #[tokio::test]
-    async fn test_fetch_by_mint_no_mpl() {
-        let metadata = TokenMetadata::fetch_by_mint(
-            "EfAynhvukY3nGyWEYhDSijDT9NnHA4o7NXDUXcrMpump",
-        )
-        .await
-        .unwrap();
-
-        // Should have default MPL metadata
-        assert_eq!(metadata.mpl.name, "");
-        assert_eq!(metadata.mpl.symbol, "");
-        assert_eq!(metadata.mpl.uri, "");
-        assert!(metadata.mpl.ipfs_metadata.is_none());
-
-        // But should still have SPL metadata
-        assert!(metadata.spl.is_initialized);
+    #[test]
+    fn test_extract_ipfs_cid() {
+        assert_eq!(
+            extract_ipfs_cid("ipfs://QmSomeHash"),
+            Some("QmSomeHash".to_string())
+        );
+        assert_eq!(
+            extract_ipfs_cid("https://ipfs.io/ipfs/QmSomeHash"),
+            Some("QmSomeHash".to_string())
+        );
+        assert_eq!(
+            extract_ipfs_cid("https://gateway.pinata.cloud/ipfs/QmSomeHash"),
+            Some("QmSomeHash".to_string())
+        );
+        assert_eq!(extract_ipfs_cid("https://example.com/something"), None);
+        assert_eq!(
+            extract_ipfs_cid(
+                "https://gateway.pinata.cloud/ipfs/QmNez6GhGsCYmcW34StMuRw4CWRHZurXmUurQdePV5XcAe"
+            ),
+            Some("QmNez6GhGsCYmcW34StMuRw4CWRHZurXmUurQdePV5XcAe".to_string())
+        );
     }
 }

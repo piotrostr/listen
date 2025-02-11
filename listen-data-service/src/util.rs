@@ -1,4 +1,5 @@
 use anyhow::Result;
+use bb8_redis::{bb8, RedisConnectionManager};
 use solana_client::nonblocking::rpc_client::RpcClient;
 use std::{fs::File, io::BufWriter, sync::Arc};
 
@@ -8,29 +9,60 @@ use crate::{
     message_queue::RedisMessageQueue,
 };
 
+pub fn is_local() -> bool {
+    std::env::var("LOCAL").is_ok()
+}
+
 pub fn make_rpc_client() -> Result<RpcClient> {
     let rpc_client = RpcClient::new(must_get_env("RPC_URL"));
     Ok(rpc_client)
 }
 
-pub fn make_kv_store() -> Result<Arc<RedisKVStore>> {
-    let kv_store = RedisKVStore::new(must_get_env("REDIS_URL").as_str());
-    Ok(Arc::new(kv_store))
+pub async fn make_kv_store() -> Result<Arc<RedisKVStore>> {
+    match is_local() {
+        true => {
+            let kv_store = RedisKVStore::new("redis://localhost:6379").await?;
+            Ok(Arc::new(kv_store))
+        }
+        false => {
+            let kv_store =
+                RedisKVStore::new(must_get_env("REDIS_URL").as_str()).await?;
+            Ok(Arc::new(kv_store))
+        }
+    }
 }
 
-pub fn make_message_queue() -> Result<Arc<RedisMessageQueue>> {
-    let message_queue =
-        RedisMessageQueue::new(must_get_env("REDIS_URL").as_str())?;
-    Ok(Arc::new(message_queue))
+pub async fn make_message_queue() -> Result<Arc<RedisMessageQueue>> {
+    match is_local() {
+        true => {
+            let message_queue =
+                RedisMessageQueue::new("redis://localhost:6379").await?;
+            Ok(Arc::new(message_queue))
+        }
+        false => {
+            let message_queue =
+                RedisMessageQueue::new(must_get_env("REDIS_URL").as_str())
+                    .await?;
+            Ok(Arc::new(message_queue))
+        }
+    }
 }
 
 pub async fn make_db() -> Result<Arc<ClickhouseDb>> {
-    let mut db = ClickhouseDb::new(
-        must_get_env("CLICKHOUSE_URL").as_str(),
-        must_get_env("CLICKHOUSE_PASSWORD").as_str(),
-        must_get_env("CLICKHOUSE_USER").as_str(),
-        must_get_env("CLICKHOUSE_DATABASE").as_str(),
-    );
+    let mut db = match is_local() {
+        true => ClickhouseDb::new(
+            "http://localhost:8123",
+            "default",
+            "default",
+            "default",
+        ),
+        false => ClickhouseDb::new(
+            must_get_env("CLICKHOUSE_URL").as_str(),
+            must_get_env("CLICKHOUSE_USER").as_str(),
+            must_get_env("CLICKHOUSE_PASSWORD").as_str(),
+            must_get_env("CLICKHOUSE_DATABASE").as_str(),
+        ),
+    };
     db.initialize().await?;
     Ok(Arc::new(db))
 }
@@ -71,6 +103,20 @@ pub fn must_get_env(key: &str) -> String {
         Ok(val) => val,
         Err(_) => panic!("{} must be set", key),
     }
+}
+
+pub async fn create_redis_pool(
+    redis_url: &str,
+) -> Result<bb8::Pool<RedisConnectionManager>> {
+    let manager = RedisConnectionManager::new(redis_url)?;
+    let pool = bb8::Pool::builder()
+        .max_size(200)
+        .min_idle(Some(20))
+        .max_lifetime(Some(std::time::Duration::from_secs(60 * 15))) // 15 minutes
+        .idle_timeout(Some(std::time::Duration::from_secs(60 * 5))) // 5 minutes
+        .build(manager)
+        .await?;
+    Ok(pool)
 }
 
 #[cfg(test)]

@@ -1,0 +1,93 @@
+services:
+  indexer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    env_file:
+      - .env
+    volumes:
+      - .env:/app/.env
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - CLICKHOUSE_URL=http://clickhouse:8123
+      - CLICKHOUSE_USER=default
+      - CLICKHOUSE_PASSWORD=default
+      - CLICKHOUSE_DATABASE=default
+    depends_on:
+      redis:
+        condition: service_healthy
+      clickhouse:
+        condition: service_healthy
+
+  redis:
+    build:
+      context: ./redis
+      dockerfile: Dockerfile
+    ports:
+      - 6379:6379
+    volumes:
+      - redis-data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: '1.5G'
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    command: redis-server /usr/local/etc/redis/redis.conf --save "" --appendonly no
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  clickhouse:
+    build:
+      context: ./clickhouse
+      dockerfile: Dockerfile
+    ports:
+      - 8123:8123
+      - 9000:9000
+    volumes:
+      - clickhouse-data:/var/lib/clickhouse
+      - clickhouse-logs:/var/log/clickhouse-server
+    environment:
+      - CLICKHOUSE_PASSWORD=default
+      - CLICKHOUSE_HOST=0.0.0.0
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8123/ping",
+        ]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  preview:
+    build:
+      context: ../preview
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379
+    ports:
+      - 3000:3000
+    depends_on:
+      redis:
+        condition: service_healthy
+
+volumes:
+  redis-data:
+  clickhouse-data:
+  clickhouse-logs:

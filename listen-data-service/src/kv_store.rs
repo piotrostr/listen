@@ -5,10 +5,12 @@ use tracing::{debug, info};
 
 use crate::metadata::TokenMetadata;
 use crate::price::Price;
+use crate::util::create_redis_pool;
 
+/// internal impl
 #[async_trait::async_trait]
 pub trait KVStore {
-    fn new(redis_url: &str) -> Self
+    async fn new(redis_url: &str) -> Result<Self>
     where
         Self: Sized;
     async fn get<T: DeserializeOwned + Send>(
@@ -21,7 +23,19 @@ pub trait KVStore {
         value: &T,
     ) -> Result<()>;
     async fn exists(&self, key: &str) -> Result<bool>;
+}
+
+#[async_trait::async_trait]
+pub trait KVStoreExt: KVStore {
     async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>>;
+    async fn insert_metadata(&self, metadata: &TokenMetadata) -> Result<()>;
+    async fn has_metadata(&self, mint: &str) -> Result<bool>;
+    async fn get_price(
+        &self,
+        coin_mint: &str,
+        pc_mint: &str,
+    ) -> Result<Option<Price>>;
+    async fn insert_price(&self, price: &Price) -> Result<()>;
 }
 
 pub struct RedisKVStore {
@@ -30,15 +44,10 @@ pub struct RedisKVStore {
 
 #[async_trait::async_trait]
 impl KVStore for RedisKVStore {
-    fn new(redis_url: &str) -> Self {
-        let manager = RedisConnectionManager::new(redis_url)
-            .expect("Failed to create Redis connection manager");
-        let pool = bb8::Pool::builder()
-            .max_size(50)
-            .min_idle(Some(10))
-            .build_unchecked(manager);
-        info!("Connected to Redis at {}", redis_url);
-        Self { pool }
+    async fn new(redis_url: &str) -> Result<Self> {
+        let pool = create_redis_pool(redis_url).await?;
+        info!("Connected to Redis KV store at {}", redis_url);
+        Ok(Self { pool })
     }
 
     async fn get<T: DeserializeOwned + Send>(
@@ -49,19 +58,22 @@ impl KVStore for RedisKVStore {
             .pool
             .get()
             .await
-            .context("Failed to get connection from pool")?;
+            .context("Failed to get Redis connection")?;
+
         let value: Option<String> = cmd("GET")
             .arg(key)
             .query_async(&mut *conn)
             .await
-            .context("Failed to get key")?;
-        debug!(key, "redis get ok");
+            .with_context(|| {
+                format!("Failed to execute GET for key: {}", key)
+            })?;
 
         match value {
-            Some(json_str) => {
-                let value = serde_json::from_str(&json_str)?;
-                Ok(Some(value))
-            }
+            Some(json_str) => serde_json::from_str(&json_str)
+                .with_context(|| {
+                    format!("Failed to deserialize value for key: {}", key)
+                })
+                .map(Some),
             None => Ok(None),
         }
     }
@@ -71,99 +83,76 @@ impl KVStore for RedisKVStore {
         key: &str,
         value: &T,
     ) -> Result<()> {
-        let mut conn = self
-            .pool
-            .get()
-            .await
-            .context("Failed to get connection from pool")?;
+        let mut conn = self.pool.get().await.context(format!(
+            "Failed to get Redis connection: {:#?}",
+            self.pool.state().statistics
+        ))?;
         let json_str = serde_json::to_string(value)?;
         let _: () = cmd("SET")
             .arg(key)
             .arg(json_str)
             .query_async(&mut *conn)
             .await
-            .context("Failed to set key")?;
+            .with_context(|| format!("Failed to set key: {}", key))?;
         debug!(key, "redis set ok");
         Ok(())
     }
 
     async fn exists(&self, key: &str) -> Result<bool> {
-        let mut conn = self
-            .pool
-            .get()
-            .await
-            .context("Failed to get connection from pool")?;
+        let mut conn = self.pool.get().await.context(format!(
+            "Failed to get Redis connection: {:#?}",
+            self.pool.state().statistics
+        ))?;
         let exists: bool = cmd("EXISTS")
             .arg(key)
             .query_async(&mut *conn)
             .await
-            .context("Failed to query exists")?;
+            .with_context(|| {
+                format!("Failed to query exists for key: {}", key)
+            })?;
         debug!(key, exists, "redis exists ok");
         Ok(exists)
-    }
-
-    async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>> {
-        let key = format!("solana:{}", mint);
-        let mut conn = self
-            .pool
-            .get()
-            .await
-            .context("Failed to get connection from pool")?;
-        let data: Option<String> = cmd("GET")
-            .arg(&key)
-            .query_async(&mut *conn)
-            .await
-            .context("Failed to get key")?;
-
-        match data {
-            Some(json_str) => {
-                let metadata: TokenMetadata = serde_json::from_str(&json_str)?;
-                Ok(Some(metadata))
-            }
-            None => Ok(None),
-        }
     }
 }
 
 impl RedisKVStore {
-    pub fn make_price_key(price: &Price) -> String {
-        format!("solana:{}:{}", price.coin_mint, price.pc_mint)
-    }
-    pub fn make_metadata_key(mint: &str) -> String {
-        format!("solana:{}", mint)
+    pub fn make_price_key(&self, coin_mint: &str, pc_mint: &str) -> String {
+        format!("solana:price:{}:{}", coin_mint, pc_mint)
     }
 
-    pub async fn insert_price(&self, price: &Price) -> Result<()> {
-        let key = Self::make_price_key(price);
+    pub fn make_metadata_key(&self, mint: &str) -> String {
+        format!("solana:metadata:{}", mint)
+    }
+}
+
+#[async_trait::async_trait]
+impl KVStoreExt for RedisKVStore {
+    async fn insert_price(&self, price: &Price) -> Result<()> {
+        let key = self.make_price_key(&price.coin_mint, &price.pc_mint);
         self.set(&key, price).await
     }
 
-    pub async fn get_price(
+    async fn get_price(
         &self,
         coin_mint: &str,
         pc_mint: &str,
     ) -> Result<Option<Price>> {
-        let key = format!("solana:{}:{}", coin_mint, pc_mint);
+        let key = self.make_price_key(coin_mint, pc_mint);
         self.get(&key).await
     }
 
-    pub async fn insert_metadata(
-        &self,
-        metadata: &TokenMetadata,
-    ) -> Result<()> {
-        let key = Self::make_metadata_key(&metadata.mint);
+    async fn insert_metadata(&self, metadata: &TokenMetadata) -> Result<()> {
+        let key = self.make_metadata_key(&metadata.mint);
         self.set(&key, metadata).await
     }
 
-    pub async fn get_metadata(
-        &self,
-        mint: &str,
-    ) -> Result<Option<TokenMetadata>> {
-        let key = format!("solana:{}", mint);
+    async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>> {
+        let key = self.make_metadata_key(mint);
         self.get(&key).await
     }
 
-    pub async fn has_metadata(&self, mint: &str) -> Result<bool> {
-        self.exists(&Self::make_metadata_key(mint)).await
+    async fn has_metadata(&self, mint: &str) -> Result<bool> {
+        let key = self.make_metadata_key(mint);
+        self.exists(&key).await
     }
 }

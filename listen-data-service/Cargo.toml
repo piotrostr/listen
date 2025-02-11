@@ -2,6 +2,7 @@
 name = "listen-data-service"
 version = "0.1.0"
 edition = "2021"
+default-run = "main"
 
 [features]
 default = ["geyser"]
@@ -53,8 +54,23 @@ carbon-yellowstone-grpc-datasource = { git = "https://github.com/sevenlabs-hq/ca
 yellowstone-grpc-proto = { version = "=2.0.0", git = "https://github.com/rpcpool/yellowstone-grpc.git", rev = "17faff5ac068c2f212c471acf67a8dcc1d7caff5", optional = true }
 clickhouse = { version = "0.13.1", features = ["native-tls", "inserter"] }
 bb8-redis = "0.20.0"
+thiserror = "2.0.11"
 
 
 [patch.crates-io.curve25519-dalek]
 git = "https://github.com/anza-xyz/curve25519-dalek.git"
 rev = "b500cdc2a920cd5bff9e2dd974d7b97349d61464"
+
+[[bin]]
+name = "indexer"
+path = "src/bin/indexer.rs"
+required-features = ["geyser"]
+
+[[bin]]
+name = "rpc-crawler"
+path = "src/bin/rpc_crawler.rs"
+required-features = ["rpc"]
+
+[[bin]]
+name = "main"
+path = "src/main.rs"

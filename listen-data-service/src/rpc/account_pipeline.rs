@@ -1,7 +1,7 @@
 use crate::raydium_processor::RaydiumAmmV4AccountProcessor;
 use crate::util::must_get_env;
 use anyhow::Result;
-use carbon_core::pipeline::Pipeline;
+use carbon_core::pipeline::{Pipeline, ShutdownStrategy};
 use carbon_log_metrics::LogMetrics;
 use carbon_raydium_amm_v4_decoder::RaydiumAmmV4Decoder;
 use solana_account_decoder::UiAccountEncoding;
@@ -31,6 +31,7 @@ pub fn make_raydium_rpc_accounts_pipeline() -> Result<Pipeline> {
             ),
         ))
         .account(RaydiumAmmV4Decoder, RaydiumAmmV4AccountProcessor::new())
+        .shutdown_strategy(ShutdownStrategy::Immediate)
         .metrics(Arc::new(LogMetrics::new()))
         .build()?;
 

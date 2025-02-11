@@ -1,3 +1,8 @@
+use crate::util::create_redis_pool;
+use anyhow::{Context, Result};
+use bb8_redis::{bb8, RedisConnectionManager};
+use tracing::info;
+
 use crate::price::PriceUpdate;
 
 #[async_trait::async_trait]
@@ -12,13 +17,14 @@ pub trait MessageQueue: Send + Sync + 'static {
 
 // Redis implementation of MessageQueue
 pub struct RedisMessageQueue {
-    client: redis::Client,
+    pool: bb8::Pool<RedisConnectionManager>,
 }
 
 impl RedisMessageQueue {
-    pub fn new(redis_url: &str) -> Result<Self, redis::RedisError> {
-        let client = redis::Client::open(redis_url)?;
-        Ok(Self { client })
+    pub async fn new(redis_url: &str) -> Result<Self> {
+        let pool = create_redis_pool(redis_url).await?;
+        info!("Connected to Redis message queue at {}", redis_url);
+        Ok(Self { pool })
     }
 }
 
@@ -30,7 +36,21 @@ impl MessageQueue for RedisMessageQueue {
         &self,
         price_update: PriceUpdate,
     ) -> Result<(), Self::Error> {
-        let mut conn = self.client.get_multiplexed_async_connection().await?;
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .context(format!(
+                "Failed to get Redis connection: {:#?}",
+                self.pool.state().statistics
+            ))
+            .map_err(|e| {
+                redis::RedisError::from((
+                    redis::ErrorKind::IoError,
+                    "Failed to get Redis connection",
+                    e.to_string(),
+                ))
+            })?;
         let payload = serde_json::to_string(&price_update).map_err(|e| {
             redis::RedisError::from((
                 redis::ErrorKind::IoError,
@@ -42,7 +62,7 @@ impl MessageQueue for RedisMessageQueue {
         redis::cmd("PUBLISH")
             .arg("price_updates")
             .arg(payload)
-            .query_async(&mut conn)
+            .query_async(&mut *conn)
             .await
     }
 }
