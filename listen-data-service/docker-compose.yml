@@ -25,7 +25,12 @@ services:
       - 6379:6379
     volumes:
       - redis-data:/data
-  
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
   clickhouse:
     build:
       context: ./clickhouse
@@ -36,8 +41,12 @@ services:
     volumes:
       - clickhouse-data:/var/lib/clickhouse
       - clickhouse-logs:/var/log/clickhouse-server
-    environment: 
+    environment:
       - CLICKHOUSE_PASSWORD=default
+    ulimits:
+      nofile:
+        soft: 262144
+        hard: 262144
 
   preview:
     build:
@@ -54,4 +63,3 @@ volumes:
   redis-data:
   clickhouse-data:
   clickhouse-logs:
-

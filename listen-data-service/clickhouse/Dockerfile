@@ -14,8 +14,8 @@ RUN chown -R clickhouse:clickhouse \
 	/var/log/clickhouse-server \
 	/var/lib/clickhouse
 
-# Copy config files as templates
-COPY config.xml /etc/clickhouse-server/config.xml.template
+# Copy config files directly (not as templates)
+COPY config.xml /etc/clickhouse-server/config.xml
 COPY users.xml /etc/clickhouse-server/users.xml.template
 
 # Copy and make the entrypoint script executable

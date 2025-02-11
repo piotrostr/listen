@@ -150,15 +150,7 @@ async fn process_two_token_swap(
         swap_amount,
         coin_mint,
         is_buy,
-    } = match process_diffs(diffs, sol_price) {
-        Ok(result) => result,
-        Err(e) => {
-            let token_mints =
-                diffs.iter().map(|d| d.mint.clone()).collect::<Vec<_>>();
-            warn!(?e, ?token_mints);
-            return Ok(());
-        }
-    };
+    } = process_diffs(diffs, sol_price)?;
 
     // Get metadata and emit price update
     let token_metadata = get_token_metadata(kv_store, &coin_mint)

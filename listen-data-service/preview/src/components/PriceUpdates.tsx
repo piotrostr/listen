@@ -61,7 +61,7 @@ export default function PriceUpdates() {
         {latestUpdate ? (
           <div className="space-y-1">
             <div className="font-medium">{latestUpdate.name}</div>
-            <div>Price: ${latestUpdate.price.toFixed(2)}</div>
+            <div>Price: ${latestUpdate.price.toFixed(5)}</div>
             <div>Amount: ${latestUpdate.swap_amount.toFixed(2)}</div>
             <div className="text-sm text-gray-500">
               {new Date(latestUpdate.timestamp).toLocaleString()}

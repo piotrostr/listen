@@ -58,7 +58,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
               )}
             </div>
             <div className="text-sm text-gray-500">
-              Price: ${token.lastPrice.toFixed(2)}
+              Price: ${token.lastPrice.toFixed(5)}
             </div>
           </div>
         </div>
