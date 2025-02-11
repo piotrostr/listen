@@ -1,18 +1,8 @@
 "use client";
 
-import type { PriceUpdate } from "@/app/types";
+import type { PriceUpdate, TokenData } from "@/app/types";
 import { useEffect, useState } from "react";
 import { TokenTile } from "./TokenTile";
-
-interface TokenData {
-  name: string;
-  totalVolume: number;
-  lastPrice: number;
-  lastUpdate: Date;
-  marketCap: number;
-  uniqueAddresses: Set<string>;
-  pubkey: string;
-}
 
 export default function PriceUpdates() {
   const [latestUpdate, setLatestUpdate] = useState<PriceUpdate | null>(null);
@@ -27,11 +17,14 @@ export default function PriceUpdates() {
 
       setTokenMap((prevMap) => {
         const newMap = new Map(prevMap);
-        const existing = newMap.get(data.name);
+        const existing = newMap.get(data.pubkey);
 
-        newMap.set(data.name, {
+        newMap.set(data.pubkey, {
           name: data.name,
-          totalVolume: (existing?.totalVolume || 0) + data.swap_amount,
+          buyVolume:
+            (existing?.buyVolume || 0) + (data.is_buy ? data.swap_amount : 0),
+          sellVolume:
+            (existing?.sellVolume || 0) + (!data.is_buy ? data.swap_amount : 0),
           lastPrice: data.price,
           lastUpdate: new Date(data.timestamp),
           marketCap: data.market_cap,
@@ -57,7 +50,7 @@ export default function PriceUpdates() {
   }, []);
 
   const topTokens = Array.from(tokenMap.values())
-    .sort((a, b) => b.totalVolume - a.totalVolume)
+    .sort((a, b) => b.buyVolume - a.buyVolume)
     .slice(0, 10);
 
   return (
@@ -86,7 +79,7 @@ export default function PriceUpdates() {
         </h2>
         <div className="divide-y dark:divide-gray-800">
           {topTokens.map((token, index) => (
-            <TokenTile key={token.name} token={token} index={index} />
+            <TokenTile key={token.pubkey} token={token} index={index} />
           ))}
         </div>
       </div>

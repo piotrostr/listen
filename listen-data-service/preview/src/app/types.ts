@@ -49,3 +49,14 @@ export const TokenMetadataSchema = z.object({
 });
 
 export type TokenMetadata = z.infer<typeof TokenMetadataSchema>;
+
+export interface TokenData {
+  name: string;
+  buyVolume: number;
+  sellVolume: number;
+  lastPrice: number;
+  lastUpdate: Date;
+  marketCap: number;
+  uniqueAddresses: Set<string>;
+  pubkey: string;
+}

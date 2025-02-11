@@ -1,16 +1,6 @@
-import { TokenMetadata } from "@/app/types";
+import { TokenData, TokenMetadata } from "@/app/types";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-
-interface TokenData {
-  name: string;
-  totalVolume: number;
-  lastPrice: number;
-  lastUpdate: Date;
-  marketCap: number;
-  uniqueAddresses: Set<string>;
-  pubkey: string;
-}
 
 interface TokenTileProps {
   token: TokenData;
@@ -25,6 +15,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
       .then(async (res) => {
         if (!res.ok) {
           const text = await res.text();
+          console.log(text);
           throw new Error(text || res.statusText);
         }
         return res.json();
@@ -73,7 +64,14 @@ export function TokenTile({ token, index }: TokenTileProps) {
         </div>
       </div>
       <div className="text-right">
-        <div className="font-medium">${token.totalVolume.toLocaleString()}</div>
+        <div className="flex flex-col">
+          <span className="text-green-500 font-medium">
+            +${token.buyVolume.toLocaleString()}
+          </span>
+          <span className="text-red-500 font-medium">
+            -${token.sellVolume.toLocaleString()}
+          </span>
+        </div>
         <div className="text-sm text-gray-500">
           MC: ${(token.marketCap / 1e6).toFixed(1)}M
         </div>
