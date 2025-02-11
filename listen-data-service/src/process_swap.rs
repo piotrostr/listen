@@ -52,8 +52,8 @@ pub async fn process_swap(
 
     if diffs.len() > 3 || diffs.len() < 2 {
         warn!(
-            "https://solscan.io/tx/{} Skipping swap with unexpected number of tokens {:#?}",
-            transaction_metadata.signature, diffs
+            "https://solscan.io/tx/{} Skipping swap with unexpected number of tokens: {}",
+            transaction_metadata.signature, diffs.len()
         );
         metrics.increment_skipped_unexpected_number_of_tokens();
         return Ok(());
@@ -83,8 +83,8 @@ pub async fn process_swap(
             || sol_diff.is_none()
         {
             warn!(
-                "https://solscan.io/tx/{} three diff swap with unexpected token changes {:#?}",
-                transaction_metadata.signature, diffs
+                "https://solscan.io/tx/{} three diff swap with unexpected token changes",
+                transaction_metadata.signature
             );
             metrics.increment_skipped_unexpected_number_of_tokens();
             return Ok(());

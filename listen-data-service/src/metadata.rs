@@ -197,7 +197,6 @@ impl TokenMetadata {
             if let Ok(ipfs_metadata) =
                 response.json::<serde_json::Value>().await
             {
-                println!("{} ipfs_metadata: {:?}", mint, ipfs_metadata);
                 debug!(mint, uri, "ipfs fetch ok");
                 token_metadata.ipfs_metadata = Some(ipfs_metadata);
             } else {
