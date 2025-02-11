@@ -16,7 +16,6 @@ use crate::{
 use anyhow::{Context, Result};
 use carbon_core::transaction::TransactionMetadata;
 use chrono::Utc;
-use clap::error;
 use tracing::{debug, warn};
 
 pub async fn process_swap(

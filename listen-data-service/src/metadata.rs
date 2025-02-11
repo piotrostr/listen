@@ -58,9 +58,10 @@ pub async fn get_token_metadata(
     kv_store: &Arc<RedisKVStore>,
     mint: &str,
 ) -> Result<Option<TokenMetadata>> {
-    if kv_store.has_metadata(mint).await? {
-        debug!(mint, "metadata already exists");
-        return kv_store.get_metadata(mint).await;
+    // Try to get from cache first
+    if let Some(metadata) = kv_store.get_metadata(mint).await? {
+        debug!(mint, "metadata found in cache");
+        return Ok(Some(metadata));
     }
 
     match TokenMetadata::fetch_by_mint(mint).await {
@@ -262,7 +263,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_token_metadata() {
-        let kv_store = make_kv_store().unwrap();
+        let kv_store = make_kv_store().await.unwrap();
         let metadata = get_token_metadata(
             &kv_store,
             "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",

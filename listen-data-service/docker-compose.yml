@@ -27,6 +27,16 @@ services:
       - 6379:6379
     volumes:
       - redis-data:/data
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: '1.5G'
+    ulimits:
+      nofile:
+        soft: 65536
+        hard: 65536
+    command: redis-server /usr/local/etc/redis/redis.conf --save "" --appendonly no
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
       interval: 5s

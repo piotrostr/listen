@@ -20,8 +20,8 @@ async fn main() -> Result<()> {
     info!("Solana price: {}", SOL_PRICE_CACHE.get_price().await);
 
     let db = make_db().await?;
-    let kv_store = make_kv_store()?;
-    let message_queue = make_message_queue()?;
+    let kv_store = make_kv_store().await?;
+    let message_queue = make_message_queue().await?;
 
     let mut pipeline =
         make_raydium_geyser_instruction_pipeline(kv_store, message_queue, db)?;
