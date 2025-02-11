@@ -15,7 +15,7 @@ export async function GET(
   }
 
   const redis = new Redis(process.env.REDIS_URL);
-  const key = `solana:${mint}`;
+  const key = `solana:metadata:${mint}`;
 
   try {
     const data = await redis.get(key);

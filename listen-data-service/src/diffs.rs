@@ -49,7 +49,7 @@ pub struct DiffsResult {
     pub is_buy: bool,
 }
 
-pub fn process_diffs(diffs: &Vec<Diff>, sol_price: f64) -> Result<DiffsResult> {
+pub fn process_diffs(diffs: &[Diff], sol_price: f64) -> Result<DiffsResult> {
     if diffs.len() != 2 {
         return Err(anyhow::anyhow!("Expected exactly 2 token balance diffs"));
     }

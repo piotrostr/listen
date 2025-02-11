@@ -95,7 +95,7 @@ pub async fn process_swap(
         {
             // Process first hop: token being sold to SOL
             process_two_token_swap(
-                &vec![neg.clone(), sol.clone()],
+                &[neg.clone(), sol.clone()],
                 transaction_metadata,
                 message_queue,
                 kv_store,
@@ -108,7 +108,7 @@ pub async fn process_swap(
 
             // Process second hop: SOL to token being bought
             process_two_token_swap(
-                &vec![pos.clone(), sol.clone()],
+                &[pos.clone(), sol.clone()],
                 transaction_metadata,
                 message_queue,
                 kv_store,
@@ -137,7 +137,7 @@ pub async fn process_swap(
 
 // Helper function to process a single two-token swap
 async fn process_two_token_swap(
-    diffs: &Vec<Diff>,
+    diffs: &[Diff],
     transaction_metadata: &TransactionMetadata,
     message_queue: &RedisMessageQueue,
     kv_store: &Arc<RedisKVStore>,
