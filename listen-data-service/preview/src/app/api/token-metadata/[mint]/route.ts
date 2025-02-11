@@ -1,15 +1,17 @@
 import { TokenMetadataSchema } from "@/app/types";
 import { Redis } from "ioredis";
-import { NextApiRequest, NextApiResponse } from "next";
 
-export default async function handler(
-  request: NextApiRequest,
-  res: NextApiResponse
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ mint: string }> }
 ) {
-  const { mint } = request.query;
+  const { mint } = await params;
 
   if (!process.env.REDIS_URL) {
-    return res.status(500).json({ error: "Redis URL not configured" });
+    return Response.json(
+      { error: "Redis URL not configured" },
+      { status: 500 }
+    );
   }
 
   const redis = new Redis(process.env.REDIS_URL);
@@ -18,15 +20,15 @@ export default async function handler(
   try {
     const data = await redis.get(key);
     if (!data) {
-      return res.status(404).json({ error: "Metadata not found" });
+      return Response.json({ error: "Metadata not found" }, { status: 404 });
     }
 
     const parsedData = JSON.parse(data);
     const metadata = TokenMetadataSchema.parse(parsedData);
-    return res.status(200).json(metadata);
+    return Response.json(metadata, { status: 200 });
   } catch (parseError) {
     console.error("Failed to parse metadata:", parseError);
-    return res.status(500).json({ error: "Invalid metadata format" });
+    return Response.json({ error: "Invalid metadata format" }, { status: 500 });
   } finally {
     redis.disconnect();
   }
