@@ -1,7 +1,9 @@
 use std::sync::Arc;
 
 use crate::constants::WSOL_MINT_KEY_STR;
-use crate::diffs::{get_token_balance_diff, process_diffs, Diff, DiffsResult};
+use crate::diffs::{
+    get_token_balance_diff, process_diffs, Diff, DiffsError, DiffsResult,
+};
 use crate::{
     db::{ClickhouseDb, Database},
     kv_store::RedisKVStore,
@@ -100,6 +102,7 @@ pub async fn process_swap(
                 message_queue,
                 kv_store,
                 db,
+                metrics,
                 sol_price,
                 true,
             )
@@ -113,6 +116,7 @@ pub async fn process_swap(
                 message_queue,
                 kv_store,
                 db,
+                metrics,
                 sol_price,
                 true,
             )
@@ -129,10 +133,12 @@ pub async fn process_swap(
         message_queue,
         kv_store,
         db,
+        metrics,
         sol_price,
         false,
     )
     .await
+    .context("failed to process two token swap")
 }
 
 // Helper function to process a single two-token swap
@@ -142,6 +148,7 @@ async fn process_two_token_swap(
     message_queue: &RedisMessageQueue,
     kv_store: &Arc<RedisKVStore>,
     db: &Arc<ClickhouseDb>,
+    metrics: &SwapMetrics,
     sol_price: f64,
     multi_hop: bool,
 ) -> Result<()> {
@@ -150,30 +157,52 @@ async fn process_two_token_swap(
         swap_amount,
         coin_mint,
         is_buy,
-    } = process_diffs(diffs, sol_price)?;
+    } = match process_diffs(diffs, sol_price) {
+        Ok(result) => result,
+        Err(e) => {
+            match e {
+                DiffsError::NonWsolsSwap => {
+                    metrics.increment_skipped_non_wsol();
+                }
+                DiffsError::ExpectedExactlyTwoTokenBalanceDiffs => {
+                    metrics.increment_skipped_unexpected_number_of_tokens();
+                }
+            }
+            return Ok(());
+        }
+    };
 
     // Get metadata and emit price update
-    let token_metadata = get_token_metadata(kv_store, &coin_mint)
-        .await
-        .context("failed to get token metadata")?;
+    let token_metadata = match get_token_metadata(kv_store, &coin_mint).await {
+        Ok(Some(metadata)) => metadata,
+        Ok(None) => {
+            warn!(
+                "https://solscan.io/tx/{} failed to get token metadata",
+                transaction_metadata.signature
+            );
+            metrics.increment_skipped_no_metadata();
+            return Ok(());
+        }
+        Err(e) => {
+            warn!(
+                "https://solscan.io/tx/{} failed to get token metadata: {}",
+                transaction_metadata.signature, e
+            );
+            metrics.increment_skipped_no_metadata();
+            return Ok(());
+        }
+    };
 
     // Calculate market cap if we have the metadata
-    let market_cap = token_metadata.as_ref().map(|metadata| {
-        let supply = metadata.spl.supply as f64;
+    let market_cap = {
+        let supply = token_metadata.spl.supply as f64;
         let adjusted_supply =
-            supply / (10_f64.powi(metadata.spl.decimals as i32));
+            supply / (10_f64.powi(token_metadata.spl.decimals as i32));
         price * adjusted_supply
-    });
-
-    // Get token name from metadata, fallback to mint address
-    let name = token_metadata
-        .map(|m| m.mpl.name)
-        .unwrap_or_else(|| coin_mint.to_string());
-
-    let market_cap = market_cap.unwrap_or(0.0);
+    };
 
     let price_update = PriceUpdate {
-        name,
+        name: token_metadata.mpl.name,
         pubkey: coin_mint,
         price,
         market_cap,
@@ -181,22 +210,28 @@ async fn process_two_token_swap(
         slot: transaction_metadata.slot,
         swap_amount,
         owner: transaction_metadata.fee_payer.to_string(),
-        signature: format!(
-            "https://solscan.io/tx/{}",
-            transaction_metadata.signature
-        ),
+        signature: transaction_metadata.signature.to_string(),
         multi_hop,
         is_buy,
     };
 
-    db.insert_price(&price_update)
-        .await
-        .context("failed to insert price update")?;
+    match db.insert_price(&price_update).await {
+        Ok(_) => metrics.increment_db_insert_success(),
+        Err(e) => {
+            warn!("failed to insert price update: {}", e);
+            metrics.increment_db_insert_failure();
+            return Err(e.into());
+        }
+    }
 
-    message_queue
-        .publish_price_update(price_update)
-        .await
-        .context("failed to publish price update")?;
+    match message_queue.publish_price_update(price_update).await {
+        Ok(_) => metrics.increment_message_send_success(),
+        Err(e) => {
+            warn!("failed to publish price update: {}", e);
+            metrics.increment_message_send_failure();
+            return Err(e.into());
+        }
+    }
 
     Ok(())
 }

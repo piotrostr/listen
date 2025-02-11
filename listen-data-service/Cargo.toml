@@ -54,6 +54,7 @@ carbon-yellowstone-grpc-datasource = { git = "https://github.com/sevenlabs-hq/ca
 yellowstone-grpc-proto = { version = "=2.0.0", git = "https://github.com/rpcpool/yellowstone-grpc.git", rev = "17faff5ac068c2f212c471acf67a8dcc1d7caff5", optional = true }
 clickhouse = { version = "0.13.1", features = ["native-tls", "inserter"] }
 bb8-redis = "0.20.0"
+thiserror = "2.0.11"
 
 
 [patch.crates-io.curve25519-dalek]
