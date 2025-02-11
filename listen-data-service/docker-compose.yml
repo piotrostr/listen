@@ -18,10 +18,6 @@ services:
         condition: service_healthy
       clickhouse:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
 
   redis:
     build:
@@ -36,10 +32,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
 
   clickhouse:
     build:
@@ -59,19 +51,23 @@ services:
         soft: 262144
         hard: 262144
     healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8123/ping"]
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:8123/ping",
+        ]
       interval: 5s
       timeout: 5s
       retries: 5
       start_period: 10s
-    deploy:
-      resources:
-        limits:
-          cpus: '2'
 
   preview:
     build:
-      context: ./preview
+      context: ../preview
       dockerfile: Dockerfile
     environment:
       - REDIS_URL=redis://redis:6379
@@ -80,10 +76,6 @@ services:
     depends_on:
       redis:
         condition: service_healthy
-    deploy:
-      resources:
-        limits:
-          cpus: '1'
 
 volumes:
   redis-data:

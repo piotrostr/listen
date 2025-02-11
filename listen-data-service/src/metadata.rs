@@ -200,7 +200,7 @@ impl TokenMetadata {
                 debug!(mint, uri, "ipfs fetch ok");
                 token_metadata.ipfs_metadata = Some(ipfs_metadata);
             } else {
-                warn!(mint, uri, "ipfs fetch failed");
+                warn!(mint, uri, "ipfs response not json");
             }
         } else {
             warn!(mint, uri, "ipfs fetch failed");
@@ -287,5 +287,11 @@ mod tests {
             Some("QmSomeHash".to_string())
         );
         assert_eq!(extract_ipfs_cid("https://example.com/something"), None);
+        assert_eq!(
+            extract_ipfs_cid(
+                "https://gateway.pinata.cloud/ipfs/QmNez6GhGsCYmcW34StMuRw4CWRHZurXmUurQdePV5XcAe"
+            ),
+            Some("QmNez6GhGsCYmcW34StMuRw4CWRHZurXmUurQdePV5XcAe".to_string())
+        );
     }
 }

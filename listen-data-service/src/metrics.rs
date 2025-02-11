@@ -15,6 +15,7 @@ pub struct SwapMetrics {
     pub message_send_failure: AtomicU64,
     pub db_insert_success: AtomicU64,
     pub db_insert_failure: AtomicU64,
+    pub multi_hop_swap: AtomicU64,
 }
 
 impl SwapMetrics {
@@ -74,6 +75,10 @@ impl SwapMetrics {
         self.message_send_failure.fetch_add(1, Ordering::Relaxed);
     }
 
+    pub fn increment_multi_hop_swap(&self) {
+        self.multi_hop_swap.fetch_add(1, Ordering::Relaxed);
+    }
+
     fn log_metrics(&self) {
         let total = self.total_swaps_processed.load(Ordering::Relaxed);
         let successful = self.successful_swaps.load(Ordering::Relaxed);
@@ -91,6 +96,7 @@ impl SwapMetrics {
             self.message_send_failure.load(Ordering::Relaxed);
         let db_insert_success = self.db_insert_success.load(Ordering::Relaxed);
         let db_insert_failure = self.db_insert_failure.load(Ordering::Relaxed);
+        let multi_hop = self.multi_hop_swap.load(Ordering::Relaxed);
 
         let success_rate = if total > 0 {
             (successful as f64 / total as f64) * 100.0
@@ -111,7 +117,8 @@ impl SwapMetrics {
              Message Send Success: {}\n\
              Message Send Failure: {}\n\
              DB Insert Success: {}\n\
-             DB Insert Failure: {}",
+             DB Insert Failure: {}\n\
+             Multi-hop Swaps: {}",
             total,
             successful,
             success_rate,
@@ -125,6 +132,7 @@ impl SwapMetrics {
             message_send_failure,
             db_insert_success,
             db_insert_failure,
+            multi_hop,
         );
     }
 }

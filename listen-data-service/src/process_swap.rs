@@ -16,6 +16,7 @@ use crate::{
 use anyhow::{Context, Result};
 use carbon_core::transaction::TransactionMetadata;
 use chrono::Utc;
+use clap::error;
 use tracing::{debug, warn};
 
 pub async fn process_swap(
@@ -53,8 +54,8 @@ pub async fn process_swap(
     let sol_price = SOL_PRICE_CACHE.get_price().await;
 
     if diffs.len() > 3 || diffs.len() < 2 {
-        warn!(
-            "https://solscan.io/tx/{} Skipping swap with unexpected number of tokens: {}",
+        debug!(
+            "https://solscan.io/tx/{} skipping swap with unexpected number of tokens: {}",
             transaction_metadata.signature, diffs.len()
         );
         metrics.increment_skipped_unexpected_number_of_tokens();
@@ -63,6 +64,7 @@ pub async fn process_swap(
 
     // Handle multi-hop swaps (3 tokens)
     if diffs.len() == 3 {
+        metrics.increment_multi_hop_swap();
         // Find the tokens with positive and negative changes
         let mut positive_diff = None;
         let mut negative_diff = None;
@@ -84,7 +86,7 @@ pub async fn process_swap(
             || negative_diff.is_none()
             || sol_diff.is_none()
         {
-            warn!(
+            debug!(
                 "https://solscan.io/tx/{} three diff swap with unexpected token changes",
                 transaction_metadata.signature
             );
@@ -176,7 +178,7 @@ async fn process_two_token_swap(
     let token_metadata = match get_token_metadata(kv_store, &coin_mint).await {
         Ok(Some(metadata)) => metadata,
         Ok(None) => {
-            warn!(
+            debug!(
                 "https://solscan.io/tx/{} failed to get token metadata",
                 transaction_metadata.signature
             );
@@ -218,7 +220,6 @@ async fn process_two_token_swap(
     match db.insert_price(&price_update).await {
         Ok(_) => metrics.increment_db_insert_success(),
         Err(e) => {
-            warn!("failed to insert price update: {}", e);
             metrics.increment_db_insert_failure();
             return Err(e.into());
         }
@@ -227,7 +228,6 @@ async fn process_two_token_swap(
     match message_queue.publish_price_update(price_update).await {
         Ok(_) => metrics.increment_message_send_success(),
         Err(e) => {
-            warn!("failed to publish price update: {}", e);
             metrics.increment_message_send_failure();
             return Err(e.into());
         }
