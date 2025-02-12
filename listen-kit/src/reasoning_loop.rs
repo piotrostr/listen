@@ -1,5 +1,5 @@
+use crate::streaming::SendableStream;
 use anyhow::Result;
-use futures_util::StreamExt;
 use rig::agent::Agent;
 use rig::completion::AssistantContent;
 use rig::completion::Message;
@@ -43,13 +43,11 @@ impl ReasoningLoop {
         let stdout = self.stdout;
 
         'outer: loop {
-            println!("current_messages: {:?}", current_messages);
-
             let mut current_response = String::new();
 
-            // Stream directly without the channel
-            let mut stream =
-                agent.stream_chat("", current_messages.clone()).await?;
+            let stream =
+                agent.stream_chat(" ", current_messages.clone()).await?;
+            let mut stream = SendableStream::new(stream);
 
             while let Some(chunk) = stream.next().await {
                 match chunk? {
@@ -64,17 +62,7 @@ impl ReasoningLoop {
                         current_response.push_str(&text);
                     }
                     StreamingChoice::ToolCall(name, tool_id, params) => {
-                        let result = self
-                            .agent
-                            .tools
-                            .call(&name, params.to_string())
-                            .await;
-
-                        if stdout {
-                            println!("Tool result: {:?}", result);
-                        }
-
-                        // Add the assistant's response up to this point
+                        // Add the assistant's response up to this point with the tool call
                         if !current_response.is_empty() {
                             current_messages.push(Message::Assistant {
                                 content: OneOrMany::one(
@@ -86,7 +74,29 @@ impl ReasoningLoop {
                             current_response.clear();
                         }
 
-                        // Add the tool result as a user message with proper structure
+                        // Add the tool use message from the assistant
+                        current_messages.push(Message::Assistant {
+                            content: OneOrMany::one(
+                                AssistantContent::tool_call(
+                                    tool_id.clone(),
+                                    name.clone(),
+                                    params.clone(),
+                                ),
+                            ),
+                        });
+
+                        // Call the tool and get result
+                        let result = self
+                            .agent
+                            .tools
+                            .call(&name, params.to_string())
+                            .await;
+
+                        if stdout {
+                            println!("Tool result: {:?}", result);
+                        }
+
+                        // Add the tool result as a user message
                         current_messages.push(Message::User {
                             content: OneOrMany::one(
                                 UserContent::tool_result(
