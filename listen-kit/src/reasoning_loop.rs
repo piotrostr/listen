@@ -45,26 +45,13 @@ impl ReasoningLoop {
         'outer: loop {
             println!("current_messages: {:?}", current_messages);
 
-            let (chunk_tx, mut chunk_rx) = tokio::sync::mpsc::channel(32);
-
-            let messages_clone = current_messages.clone();
-            let agent_clone = agent.clone();
-
-            // Move stream handling into spawn_local (stream is not Send)
-            tokio::task::spawn_local(async move {
-                if let Ok(mut stream) =
-                    agent_clone.stream_chat("", messages_clone).await
-                {
-                    while let Some(chunk) = stream.next().await {
-                        if chunk_tx.send(chunk).await.is_err() {
-                            break;
-                        }
-                    }
-                }
-            });
-
             let mut current_response = String::new();
-            while let Some(chunk) = chunk_rx.recv().await {
+
+            // Stream directly without the channel
+            let mut stream =
+                agent.stream_chat("", current_messages.clone()).await?;
+
+            while let Some(chunk) = stream.next().await {
                 match chunk? {
                     StreamingChoice::Message(text) => {
                         if stdout {
