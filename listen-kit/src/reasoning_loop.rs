@@ -39,17 +39,35 @@ impl ReasoningLoop {
         }
 
         let mut current_messages = messages;
+        let agent = self.agent.clone();
+        let stdout = self.stdout;
 
         'outer: loop {
             println!("current_messages: {:?}", current_messages);
-            let mut stream =
-                self.agent.stream_chat("", current_messages.clone()).await?;
-            let mut current_response = String::new();
 
-            while let Some(chunk) = stream.next().await {
+            let (chunk_tx, mut chunk_rx) = tokio::sync::mpsc::channel(32);
+
+            let messages_clone = current_messages.clone();
+            let agent_clone = agent.clone();
+
+            // Move stream handling into spawn_local (stream is not Send)
+            tokio::task::spawn_local(async move {
+                if let Ok(mut stream) =
+                    agent_clone.stream_chat("", messages_clone).await
+                {
+                    while let Some(chunk) = stream.next().await {
+                        if chunk_tx.send(chunk).await.is_err() {
+                            break;
+                        }
+                    }
+                }
+            });
+
+            let mut current_response = String::new();
+            while let Some(chunk) = chunk_rx.recv().await {
                 match chunk? {
                     StreamingChoice::Message(text) => {
-                        if self.stdout {
+                        if stdout {
                             print!("{}", text);
                             std::io::stdout().flush()?;
                         } else if let Some(tx) = &tx {
@@ -65,7 +83,7 @@ impl ReasoningLoop {
                             .call(&name, params.to_string())
                             .await;
 
-                        if self.stdout {
+                        if stdout {
                             println!("Tool result: {:?}", result);
                         }
 
@@ -91,8 +109,6 @@ impl ReasoningLoop {
                                             Ok(content) => {
                                                 content.to_string()
                                             }
-                                            // TODO this might need to be marked as error: <text> since
-                                            // there is on longer the is_error param passed in the response
                                             Err(err) => err.to_string(),
                                         },
                                     )),
@@ -111,7 +127,6 @@ impl ReasoningLoop {
                             .await?;
                         }
 
-                        // Continue the outer loop with updated messages
                         continue 'outer;
                     }
                 }
