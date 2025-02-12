@@ -15,6 +15,7 @@ pub mod cross_chain;
 pub mod dexscreener;
 pub mod reasoning_loop;
 pub mod signer;
+pub mod streaming;
 
 #[ctor::ctor]
 fn init() {
