@@ -2,9 +2,12 @@ use anyhow::Result;
 use core::panic;
 use futures_util::StreamExt;
 use rig::agent::Agent;
+use rig::completion::AssistantContent;
 use rig::completion::Message;
+use rig::message::{ToolResultContent, UserContent};
 use rig::providers::anthropic::completion::CompletionModel;
 use rig::streaming::{StreamingChat, StreamingChoice};
+use rig::OneOrMany;
 use std::io::Write;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
@@ -69,26 +72,31 @@ impl ReasoningLoop {
 
                         // Add the assistant's response up to this point
                         if !current_response.is_empty() {
-                            current_messages.push(Message {
-                                role: "assistant".to_string(),
-                                content: current_response.clone(),
+                            current_messages.push(Message::Assistant {
+                                content: OneOrMany::one(
+                                    AssistantContent::text(
+                                        current_response.clone(),
+                                    ),
+                                ),
                             });
                             current_response.clear();
                         }
 
                         // Add the tool result as a user message with proper structure
-                        current_messages.push(Message {
-                            role: "user".to_string(),
-                            content: match &result {
-                                Ok(content) => format!(
-                                    "{{\"type\": \"tool_result\", \"tool_use_id\": \"{}\", \"content\": \"{}\"}}",
-                                    tool_id, content
+                        current_messages.push(Message::User {
+                            content: OneOrMany::one(
+                                UserContent::tool_result(
+                                    tool_id,
+                                    OneOrMany::one(ToolResultContent::text(
+                                        match &result {
+                                            Ok(content) => {
+                                                content.to_string()
+                                            }
+                                            Err(err) => err.to_string(),
+                                        },
+                                    )),
                                 ),
-                                Err(err) => format!(
-                                    "{{\"type\": \"tool_result\", \"tool_use_id\": \"{}\", \"content\": \"{}\", \"is_error\": true}}",
-                                    tool_id, err.to_string()
-                                ),
-                            },
+                            ),
                         });
 
                         if let Some(tx) = &tx {
@@ -110,9 +118,10 @@ impl ReasoningLoop {
 
             // Add any remaining response to messages
             if !current_response.is_empty() {
-                current_messages.push(Message {
-                    role: "assistant".to_string(),
-                    content: current_response,
+                current_messages.push(Message::Assistant {
+                    content: OneOrMany::one(AssistantContent::text(
+                        current_response,
+                    )),
                 });
             }
 
