@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
-import { usePrivyWallets } from "./usePrivyWallet";
 import { Alchemy, Network } from "alchemy-sdk";
 import { tokenMetadataCache } from "./cache";
-import { TokenMetadata, PortfolioItem } from "./types";
+import { PortfolioItem, TokenMetadata } from "./types";
+import { usePrivyWallets } from "./usePrivyWallet";
 
 const alchemy = new Alchemy({
   apiKey: import.meta.env.VITE_ALCHEMY_API_KEY,
@@ -10,7 +10,7 @@ const alchemy = new Alchemy({
 });
 
 async function getTokensMetadata(
-  addresses: string[],
+  addresses: string[]
 ): Promise<Map<string, TokenMetadata>> {
   try {
     const metadataMap = new Map<string, TokenMetadata>();
@@ -24,7 +24,7 @@ async function getTokensMetadata(
         } else {
           addressesToFetch.push(address);
         }
-      }),
+      })
     );
 
     if (addressesToFetch.length === 0) {
@@ -32,7 +32,7 @@ async function getTokensMetadata(
     }
 
     const metadataResults = await Promise.all(
-      addressesToFetch.map((address) => alchemy.core.getTokenMetadata(address)),
+      addressesToFetch.map((address) => alchemy.core.getTokenMetadata(address))
     );
 
     addressesToFetch.forEach(async (address, index) => {
@@ -60,16 +60,18 @@ async function getTokensMetadata(
 async function getTokenHoldings(address: string): Promise<PortfolioItem[]> {
   try {
     // Get token balances
-    const balances = await alchemy.core.getTokenBalances(address);
+    const { tokenBalances } = await alchemy.core.getTokenBalances(address);
 
     // Filter out zero balances
-    const nonZeroBalances = balances.tokenBalances.filter(
-      (token) => token.tokenBalance !== "0",
-    );
+    const nonZeroBalances = tokenBalances.filter((token) => {
+      if (!token.tokenBalance) return false;
+      const balance = BigInt(token.tokenBalance);
+      return balance !== BigInt(0);
+    });
 
     // Batch fetch metadata for all tokens
     const tokenAddresses = nonZeroBalances.map(
-      (token) => token.contractAddress,
+      (token) => token.contractAddress
     );
     const metadataMap = await getTokensMetadata(tokenAddresses);
 
@@ -78,7 +80,7 @@ async function getTokenHoldings(address: string): Promise<PortfolioItem[]> {
       tokenAddresses.map((address) => ({
         address,
         network: Network.ARB_MAINNET,
-      })),
+      }))
     );
 
     const tokens = nonZeroBalances.map((token) => {
@@ -87,15 +89,17 @@ async function getTokenHoldings(address: string): Promise<PortfolioItem[]> {
 
       const price =
         priceData.data.find((p) => p.address === token.contractAddress)
-          ?.prices[0].value || "0";
-      const amount =
-        Number(token.tokenBalance) / Math.pow(10, metadata.decimals);
+          ?.prices[0]?.value || "0";
+
+      // Convert hex balance to decimal
+      const rawBalance = BigInt(token.tokenBalance!);
+      const amount = Number(rawBalance) / Math.pow(10, metadata.decimals);
 
       const portfolioItem: PortfolioItem = {
         ...metadata,
         price: Number(price),
         amount,
-        chain: "arb", // hardcoding for now
+        chain: "arb",
       };
 
       return portfolioItem;
