@@ -11,6 +11,8 @@ use actix_web::{
 use actix_web_lab::sse;
 use anyhow::Result;
 use rig::completion::Message;
+use rig::message::UserContent;
+use rig::OneOrMany;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
@@ -104,9 +106,8 @@ async fn stream(
         let reasoning_loop = ReasoningLoop::new(agent).with_stdout(false);
 
         let mut initial_messages = messages;
-        initial_messages.push(Message {
-            role: "user".to_string(),
-            content: prompt,
+        initial_messages.push(Message::User {
+            content: OneOrMany::one(UserContent::text(prompt)),
         });
 
         // Create a channel for the reasoning loop to send responses
