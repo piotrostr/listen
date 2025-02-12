@@ -15,31 +15,25 @@ use {
 async fn main() -> Result<()> {
     let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
 
-    // Create a local task set
-    let local = tokio::task::LocalSet::new();
+    SignerContext::with_signer(Arc::new(signer), async {
+        let agent = rig::providers::anthropic::Client::from_env()
+            .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
+            .preamble("you are a portfolio checker, if you do wanna call a tool, outline the reasoning why that tool")
+            .max_tokens(1024)
+            .tool(GetPortfolio)
+            .build();
 
-    local.run_until(async move {
-        SignerContext::with_signer(Arc::new(signer), async {
-            let agent = rig::providers::anthropic::Client::from_env()
-                .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
-                .preamble("you are a portfolio checker, if you do wanna call a tool, outline the reasoning why that tool")
-                .max_tokens(1024)
-                .tool(GetPortfolio)
-                .build();
+        let agent = ReasoningLoop::new(Arc::new(agent));
 
-            let agent = ReasoningLoop::new(Arc::new(agent));
+        agent.stream(vec![Message::User {
+            content: OneOrMany::one(UserContent::text(
+                "whats the portfolio looking like?".to_string(),
+            )),
+        }], None).await?;
 
-            agent.stream(vec![Message::User {
-                content: OneOrMany::one(UserContent::text(
-                    "whats the portfolio looking like?".to_string(),
-                )),
-            }], None).await?;
-
-            Ok(())
-        }).await
-    }).await?;
-
-    Ok(())
+        Ok(())
+    })
+    .await
 }
 
 #[cfg(not(feature = "solana"))]

@@ -1,5 +1,5 @@
-use crate::streaming::SendableStream;
 use anyhow::Result;
+use futures::StreamExt;
 use rig::agent::Agent;
 use rig::completion::AssistantContent;
 use rig::completion::Message;
@@ -45,9 +45,8 @@ impl ReasoningLoop {
         'outer: loop {
             let mut current_response = String::new();
 
-            let stream =
+            let mut stream =
                 agent.stream_chat(" ", current_messages.clone()).await?;
-            let mut stream = SendableStream::new(stream);
 
             while let Some(chunk) = stream.next().await {
                 match chunk? {
