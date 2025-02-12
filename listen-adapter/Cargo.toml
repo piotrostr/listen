@@ -19,3 +19,4 @@ async-stream = "0.3"
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 redis = { version = "0.23.3", features = ["tokio-comp"] }
+clickhouse = { version = "0.13.1", features = ["native-tls"] }
