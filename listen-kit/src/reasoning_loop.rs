@@ -1,5 +1,4 @@
 use anyhow::Result;
-use core::panic;
 use futures_util::StreamExt;
 use rig::agent::Agent;
 use rig::completion::AssistantContent;
@@ -92,6 +91,8 @@ impl ReasoningLoop {
                                             Ok(content) => {
                                                 content.to_string()
                                             }
+                                            // TODO this might need to be marked as error: <text> since
+                                            // there is on longer the is_error param passed in the response
                                             Err(err) => err.to_string(),
                                         },
                                     )),
