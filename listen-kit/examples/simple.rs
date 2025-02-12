@@ -4,14 +4,15 @@ use {
     listen_kit::signer::solana::LocalSolanaSigner,
     listen_kit::signer::SignerContext,
     listen_kit::solana::util::env,
-    rig::streaming::{stream_to_stdout, StreamingPrompt},
     std::sync::Arc,
+    listen_kit::reasoning_loop::ReasoningLoop,
+    listen_kit::solana::tools::GetPortfolio,
+    rig::{message::Message, OneOrMany, message::UserContent},
 };
 
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
-    use listen_kit::solana::tools::GetPortfolio;
 
     let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
     SignerContext::with_signer(Arc::new(signer), async {
@@ -22,11 +23,16 @@ async fn main() -> Result<()> {
             .tool(GetPortfolio)
             .build();
 
-        let mut stream = agent
-            .stream_prompt("whats the portfolio looking like?")
-            .await?; 
+        let agent = ReasoningLoop::new(Arc::new(agent));
 
-        stream_to_stdout(agent, &mut stream).await?;
+        agent
+            .stream(vec![Message::User {
+                content: OneOrMany::one(UserContent::text(
+                    "whats the portfolio looking like?"
+                        .to_string(),
+                )),
+            }], None)
+            .await?; 
 
         Ok(())
 
