@@ -49,13 +49,83 @@ resource "kubernetes_deployment" "indexer" {
             name  = "REDIS_URL"
             value = "redis://redis-service:6379"
           }
+
+          env {
+            name  = "CLICKHOUSE_USERNAME"
+            value = "default"
+          }
+
+          env {
+            name  = "CLICKHOUSE_PASSWORD"
+            value = "default"
+          }
+
+          env {
+            name  = "CLICKHOUSE_DATABASE"
+            value = "default"
+          }
+
           env {
             name  = "CLICKHOUSE_URL"
             value = "http://clickhouse-service:8123"
           }
+
+          env {
+            name = "RPC_URL"
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.indexer_secrets.metadata[0].name
+                key  = "RPC_URL"
+              }
+            }
+          }
+
+          env {
+            name = "WS_URL"
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.indexer_secrets.metadata[0].name
+                key  = "WS_URL"
+              }
+            }
+          }
+
+          env {
+            name = "GEYSER_URL"
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.indexer_secrets.metadata[0].name
+                key  = "GEYSER_URL"
+              }
+            }
+          }
+
+          env {
+            name = "GEYSER_X_TOKEN"
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.indexer_secrets.metadata[0].name
+                key  = "GEYSER_X_TOKEN"
+              }
+            }
+          }
         }
       }
     }
+  }
+}
+
+resource "kubernetes_secret" "indexer_secrets" {
+  metadata {
+    name      = "indexer-secrets"
+    namespace = kubernetes_namespace.listen_data.metadata[0].name
+  }
+
+  data = {
+    RPC_URL        = var.rpc_url
+    WS_URL         = var.ws_url
+    GEYSER_URL     = var.geyser_url
+    GEYSER_X_TOKEN = var.geyser_x_token
   }
 }
 

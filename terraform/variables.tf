@@ -12,3 +12,28 @@ variable "cluster_name" {
   description = "The name for the GKE cluster"
   default     = "listen-data-cluster"
 } 
+
+variable "rpc_url" {
+  description = "Solana RPC URL"
+  type        = string
+  sensitive   = true
+}
+
+// optional
+variable "ws_url" {
+  description = "Solana WebSocket URL"
+  type        = string
+  sensitive   = true
+}
+
+variable "geyser_url" {
+  description = "The Geyser URL"
+  type        = string
+  sensitive   = true
+}
+
+variable "geyser_x_token" {
+  description = "The Geyser X-Header Token"
+  type        = string
+  sensitive   = true
+} 
