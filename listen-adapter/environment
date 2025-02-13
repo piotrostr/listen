@@ -4,3 +4,5 @@ CLICKHOUSE_USER=default
 CLICKHOUSE_PASSWORD=default
 CLICKHOUSE_DATABASE=default
 HOST=0.0.0.0 
+SSL_CERT_PATH=/etc/letsencrypt/live/api.listen-rs.com/fullchain.pem
+SSL_KEY_PATH=/etc/letsencrypt/live/api.listen-rs.com/privkey.pem
