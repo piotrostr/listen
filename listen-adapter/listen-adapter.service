@@ -7,9 +7,12 @@ StartLimitIntervalSec=0
 Type=simple
 User=listen-adapter
 Group=listen-adapter
+SupplementaryGroups=ssl-cert
 Restart=always
 RestartSec=1
 Environment=RUST_LOG=info
+Environment=SSL_CERT_PATH=/etc/letsencrypt/live/api.listen-rs.com/fullchain.pem
+Environment=SSL_KEY_PATH=/etc/letsencrypt/live/api.listen-rs.com/privkey.pem
 EnvironmentFile=/etc/listen-adapter/environment
 WorkingDirectory=/opt/listen-adapter
 ExecStart=/usr/local/bin/adapter
