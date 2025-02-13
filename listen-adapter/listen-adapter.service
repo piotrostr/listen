@@ -15,9 +15,9 @@ Environment=SSL_KEY_PATH=/etc/letsencrypt/live/api.listen-rs.com/privkey.pem
 EnvironmentFile=/etc/listen-adapter/environment
 WorkingDirectory=/opt/listen-adapter
 
-# Run pre-start checks with explicit group membership
-ExecStartPre=/usr/bin/sudo -u listen-adapter -g ssl-cert /bin/sh -c 'ls -l $SSL_CERT_PATH $SSL_KEY_PATH'
-ExecStartPre=/usr/bin/sudo -u listen-adapter /bin/sh -c 'groups'
+# Run pre-start checks
+ExecStartPre=/bin/sh -c 'ls -l $SSL_CERT_PATH $SSL_KEY_PATH'
+ExecStartPre=/bin/sh -c 'groups'
 ExecStart=/usr/local/bin/adapter
 
 [Install]
