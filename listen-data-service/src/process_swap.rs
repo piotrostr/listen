@@ -202,6 +202,15 @@ async fn process_two_token_swap(
         price * adjusted_supply
     };
 
+    let is_pump = token_metadata
+        .mpl
+        .ipfs_metadata
+        .as_ref()
+        .and_then(|metadata| metadata.get("createdOn"))
+        .map_or(false, |value| {
+            value.as_str().map_or(false, |s| s.contains("pump.fun"))
+        });
+
     let price_update = PriceUpdate {
         name: token_metadata.mpl.name,
         pubkey: coin_mint,
@@ -214,6 +223,7 @@ async fn process_two_token_swap(
         signature: transaction_metadata.signature.to_string(),
         multi_hop,
         is_buy,
+        is_pump,
     };
 
     match db.insert_price(&price_update).await {

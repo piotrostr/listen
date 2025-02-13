@@ -1,3 +1,4 @@
+terraform.tfvars
 .substreams.env
 dump.rdb
 FAST.json
@@ -20,3 +21,4 @@ fuck.json
 ai.json
 auth.json
 book
+ansible/inventory

@@ -58,8 +58,8 @@ pub async fn make_db() -> Result<Arc<ClickhouseDb>> {
         ),
         false => ClickhouseDb::new(
             must_get_env("CLICKHOUSE_URL").as_str(),
-            must_get_env("CLICKHOUSE_USER").as_str(),
             must_get_env("CLICKHOUSE_PASSWORD").as_str(),
+            must_get_env("CLICKHOUSE_USER").as_str(),
             must_get_env("CLICKHOUSE_DATABASE").as_str(),
         ),
     };

@@ -1,40 +1,15 @@
-use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{middleware::Logger, web, App, HttpServer};
 use dotenv::dotenv;
-use std::sync::Arc;
 use tracing::info;
 
 use listen_adapter::{
-    redis_subscriber::RedisSubscriber, state::AppState, websocket::handle_ws_connection,
+    redis_subscriber::create_redis_subscriber, routes::ws_route, state::AppState,
 };
-
-async fn create_redis_subscriber(redis_url: &str) -> anyhow::Result<Arc<RedisSubscriber>> {
-    let subscriber = RedisSubscriber::new(redis_url)?;
-    subscriber.start_listening("price_updates").await?;
-
-    Ok(Arc::new(subscriber))
-}
-
-async fn ws_route(
-    req: HttpRequest,
-    stream: web::Payload,
-    state: web::Data<AppState>,
-) -> Result<HttpResponse, Error> {
-    let (res, session, msg_stream) = actix_ws::handle(&req, stream)?;
-
-    // Spawn WebSocket handler
-    actix_web::rt::spawn(handle_ws_connection(
-        session,
-        msg_stream,
-        state.redis_subscriber.clone(),
-    ));
-
-    Ok(res)
-}
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    env_logger::init();
+    tracing_subscriber::fmt::init();
 
     let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
     let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
@@ -53,6 +28,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(web::Data::new(app_state.clone()))
             .route("/ws", web::get().to(ws_route))
     })

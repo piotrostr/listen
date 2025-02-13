@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use futures::StreamExt;
 use tokio::sync::broadcast;
@@ -46,13 +48,22 @@ impl RedisSubscriber {
     }
 }
 
+pub async fn create_redis_subscriber(redis_url: &str) -> anyhow::Result<Arc<RedisSubscriber>> {
+    let subscriber = RedisSubscriber::new(redis_url)?;
+    subscriber.start_listening("price_updates").await?;
+
+    Ok(Arc::new(subscriber))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[tokio::test]
     async fn test_redis_subscriber() {
-        let subscriber = RedisSubscriber::new("redis://localhost:6379").unwrap();
+        let subscriber = create_redis_subscriber("redis://localhost:6379")
+            .await
+            .unwrap();
         subscriber.start_listening("price_updates").await.unwrap();
 
         let mut sub = subscriber.subscribe();

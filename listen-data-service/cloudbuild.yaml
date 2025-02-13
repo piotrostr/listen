@@ -1,0 +1,22 @@
+steps:
+  # Build the container image
+  - name: 'gcr.io/cloud-builders/docker'
+    args: [
+      'build',
+      '-t', 'gcr.io/listen-sol-prod/listen-data-service:$COMMIT_SHA',
+      '-t', 'gcr.io/listen-sol-prod/listen-data-service:latest',
+      '.'
+    ]
+
+  # Push the container image to Container Registry
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/listen-sol-prod/listen-data-service:$COMMIT_SHA']
+  
+  - name: 'gcr.io/cloud-builders/docker'
+    args: ['push', 'gcr.io/listen-sol-prod/listen-data-service:latest']
+
+images:
+  - 'gcr.io/listen-sol-prod/listen-data-service:$COMMIT_SHA'
+  - 'gcr.io/listen-sol-prod/listen-data-service:latest'
+
+timeout: '1800s' 
