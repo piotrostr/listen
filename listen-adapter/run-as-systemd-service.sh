@@ -29,6 +29,18 @@ sudo chown root:listen-adapter /etc/listen-adapter/environment
 sudo chmod 640 /etc/listen-adapter/environment
 sudo chown -R listen-adapter:listen-adapter /opt/listen-adapter
 
+# Set proper group ownership on the archive directory
+sudo chown -R root:ssl-cert /etc/letsencrypt/archive/api.listen-rs.com/
+
+# Set proper permissions on the archive directory
+sudo chmod 750 /etc/letsencrypt/archive/api.listen-rs.com/
+
+# Set proper permissions on the certificate files
+sudo chmod 640 /etc/letsencrypt/archive/api.listen-rs.com/*.pem
+
+# Make sure the live directory is also accessible
+sudo chmod 755 /etc/letsencrypt/live/api.listen-rs.com/
+
 sudo cp listen-adapter.service /etc/systemd/system/
 sudo systemctl daemon-reload
 sudo systemctl enable listen-adapter

@@ -10,11 +10,14 @@ Group=listen-adapter
 SupplementaryGroups=ssl-cert
 Restart=always
 RestartSec=1
-Environment=RUST_LOG=info
 Environment=SSL_CERT_PATH=/etc/letsencrypt/live/api.listen-rs.com/fullchain.pem
 Environment=SSL_KEY_PATH=/etc/letsencrypt/live/api.listen-rs.com/privkey.pem
 EnvironmentFile=/etc/listen-adapter/environment
 WorkingDirectory=/opt/listen-adapter
+
+# check permissions before starting
+ExecStartPre=/bin/sh -c 'ls -l $SSL_CERT_PATH $SSL_KEY_PATH'
+ExecStartPre=/bin/sh -c 'groups ${USER}'
 ExecStart=/usr/local/bin/adapter
 
 [Install]
