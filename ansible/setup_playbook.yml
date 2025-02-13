@@ -1,0 +1,110 @@
+- name: listen-vps
+  hosts: your_target_hosts
+  become: yes
+
+  vars:
+    github_repo: "listen"
+    github_username: "piotrostr"
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+
+    - name: Install required packages
+      apt:
+        name:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - openssl
+          - build-essential
+          - pkg-config
+          - libssl-dev
+          - lsb-release
+          - gpg
+        state: present
+
+    # 1) Install Clickhouse
+    # - name: Download Clickhouse install script
+    #   get_url:
+    #     url: https://clickhouse.com/
+    #     dest: /tmp/clickhouse_install.sh
+    #     mode: "0755"
+
+    # - name: Install Clickhouse
+    #   shell: /tmp/clickhouse_install.sh
+    #   args:
+    #     creates: /usr/bin/clickhouse
+
+    # 2) Install Redis
+    - name: Download Redis GPG key
+      shell: curl -fsSL https://packages.redis.io/gpg | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+
+    - name: Set Redis keyring permissions
+      file:
+        path: /usr/share/keyrings/redis-archive-keyring.gpg
+        mode: "0644"
+
+    - name: Add Redis repository
+      shell: echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/redis.list
+
+    - name: Update apt cache after adding Redis repo
+      apt:
+        update_cache: yes
+
+    - name: Install Redis
+      apt:
+        name: redis
+        state: present
+
+    - name: Enable and start Redis
+      systemd:
+        name: redis-server
+        enabled: yes
+        state: started
+
+    # 3) Update CA certificates
+    - name: Update CA certificates
+      shell: update-ca-certificates --fresh
+
+    - name: Download rustup installer
+      get_url:
+        url: https://sh.rustup.rs
+        dest: /tmp/rustup.sh
+        mode: "0755"
+
+    - name: Install Rust
+      shell: /tmp/rustup.sh -y
+      args:
+        creates: /{{ ansible_user }}/.cargo/bin/rustc
+      become: yes
+      become_user: "{{ ansible_user }}"
+
+    - name: Add Cargo to PATH
+      lineinfile:
+        path: /{{ ansible_user }}/.profile
+        line: 'export PATH="$HOME/.cargo/bin:$PATH"'
+        create: yes
+      become: yes
+      become_user: "{{ ansible_user }}"
+
+    - name: Clone GitHub repository
+      git:
+        repo: "https://github.com/{{ github_username }}/{{ github_repo }}.git"
+        dest: /{{ ansible_user }}/{{ github_repo }}
+
+    - name: Copy listen-data-service .env file
+      copy:
+        src: ../listen-data-service/.env
+        dest: /{{ ansible_user }}/{{ github_repo }}/listen-data-service/.env
+
+    - name: Copy listen-adapter .env file
+      copy:
+        src: ../listen-adapter/.env
+        dest: /{{ ansible_user }}/{{ github_repo }}/listen-adapter/.env
+
+    - name: Print SSH instructions
+      debug:
+        msg: "Setup complete! Connect using: ssh {{ ansible_user }}@{{ inventory_hostname }}"
