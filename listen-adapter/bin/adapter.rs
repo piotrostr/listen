@@ -1,5 +1,6 @@
-use actix_web::{middleware::Logger, web, App, HttpServer};
+use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer};
 use dotenv::dotenv;
+use serde_json::json;
 use tracing::info;
 
 use listen_adapter::{
@@ -28,6 +29,7 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .app_data(app_data.clone())
             .route("/ws", web::get().to(ws_route))
+            .route("/", web::get().to(health_check))
     };
 
     // Check if SSL certificates are configured
@@ -62,4 +64,12 @@ async fn main() -> std::io::Result<()> {
     }
 
     Ok(())
+}
+
+async fn health_check() -> HttpResponse {
+    let timestamp = chrono::Utc::now().timestamp();
+    HttpResponse::Ok().json(json!({
+        "status": "ok",
+        "timestamp": timestamp
+    }))
 }

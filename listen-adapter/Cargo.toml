@@ -21,6 +21,7 @@ redis = { version = "0.23.3", features = ["tokio-comp"] }
 clickhouse = { version = "0.13.1", features = ["native-tls"] }
 rustls-pemfile = "2"
 rustls = { version = "0.23" }
+chrono = "0.4"
 
 [[bin]]
 name = "adapter"
