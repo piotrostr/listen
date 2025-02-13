@@ -1,5 +1,6 @@
 services:
   indexer:
+    image: piotrostr/listen-indexer
     build:
       context: .
       dockerfile: Dockerfile
@@ -19,6 +20,21 @@ services:
       clickhouse:
         condition: service_healthy
 
+  adapter:
+    image: piotostr/listen-adapter
+    build:
+      context: ../listen-adapter
+      dockerfile: Dockerfile
+    environment:
+      - REDIS_URL=redis://redis:6379
+      - HOST=0.0.0.0
+      - PORT=6968
+    ports:
+      - 6968:6968
+    depends_on:
+      redis:
+        condition: service_healthy
+
   redis:
     build:
       context: ./redis
@@ -30,8 +46,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '2'
-          memory: '1.5G'
+          cpus: "2"
+          memory: "1.5G"
     ulimits:
       nofile:
         soft: 65536
