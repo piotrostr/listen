@@ -11,7 +11,7 @@ pub struct RedisSubscriber {
 impl RedisSubscriber {
     pub fn new(redis_url: &str) -> Result<Self> {
         let client = redis::Client::open(redis_url)?;
-        let (tx, _) = broadcast::channel(100); // Buffer size of 100 messages
+        let (tx, _) = broadcast::channel(200);
         Ok(Self { client, tx })
     }
 
@@ -43,5 +43,20 @@ impl RedisSubscriber {
         });
 
         Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_redis_subscriber() {
+        let subscriber = RedisSubscriber::new("redis://localhost:6379").unwrap();
+        subscriber.start_listening("price_updates").await.unwrap();
+
+        let mut sub = subscriber.subscribe();
+        let msg = sub.recv().await.unwrap();
+        assert!(msg != "");
     }
 }
