@@ -1,4 +1,4 @@
-use actix_web::{web, App, Error, HttpRequest, HttpResponse, HttpServer};
+use actix_web::{middleware::Logger, web, App, Error, HttpRequest, HttpResponse, HttpServer};
 use dotenv::dotenv;
 use std::sync::Arc;
 use tracing::info;
@@ -34,7 +34,7 @@ async fn ws_route(
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    env_logger::init();
+    tracing_subscriber::fmt::init();
 
     let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
     let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
@@ -53,6 +53,7 @@ async fn main() -> std::io::Result<()> {
 
     HttpServer::new(move || {
         App::new()
+            .wrap(Logger::default())
             .app_data(web::Data::new(app_state.clone()))
             .route("/ws", web::get().to(ws_route))
     })

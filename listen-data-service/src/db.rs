@@ -100,6 +100,7 @@ impl Database for ClickhouseDb {
                     signature String,
                     multi_hop Bool,
                     is_buy Bool,
+                    is_pump Bool,
                     INDEX idx_mints (name, pubkey) TYPE minmax GRANULARITY 1
                 ) 
                 ENGINE = MergeTree()
