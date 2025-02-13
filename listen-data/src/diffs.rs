@@ -362,6 +362,12 @@ pub fn process_token_2022_transfer(
     }
 }
 
+impl Default for TokenTransferProcessor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
 impl TokenTransferProcessor {
     pub fn new() -> Self {
         Self {

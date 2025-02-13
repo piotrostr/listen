@@ -113,10 +113,10 @@ pub struct PoolAccounts {
 /// 2. the pool has enough sol pooled
 /// 3. the pool has enough burn pct
 /// 4. the token is safe (mint authority + freeze authority)
-///     if everything is good, it swaps the token it has the possibility of
-///     checking top holders, but this is not relevant the top holders ratio
-///     right after creation does not matter as much, as long as it is not
-///     a pump fun
+///    if everything is good, it swaps the token it has the possibility of
+///    checking top holders, but this is not relevant the top holders ratio
+///    right after creation does not matter as much, as long as it is not
+///    a pump fun
 pub async fn run_checks(
     signature: String,
 ) -> Result<(bool, Checklist), Box<dyn std::error::Error>> {
