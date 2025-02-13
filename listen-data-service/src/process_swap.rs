@@ -220,7 +220,7 @@ async fn process_two_token_swap(
         Ok(_) => metrics.increment_db_insert_success(),
         Err(e) => {
             metrics.increment_db_insert_failure();
-            return Err(e.into());
+            return Err(e);
         }
     }
 
