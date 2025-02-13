@@ -20,6 +20,7 @@ impl ClickhouseDb {
         min_volume: Option<f64>,
         min_market_cap: Option<f64>,
         time_range: Option<u64>,
+        only_pumpfun_tokens: bool,
     ) -> Result<Vec<TopToken>> {
         let time_range = time_range.unwrap_or(86400); // 24h in seconds
         let current_time = std::time::SystemTime::now()
@@ -55,7 +56,8 @@ impl ClickhouseDb {
                     SELECT
                         name,
                         pubkey,
-                        (last_value(price) - first_value(price)) / first_value(price) * 100 as price_change_24h
+                        (last_value(price) - first_value(price)) / first_value(price) * 100 as price_change_24h,
+                        anyLast(is_pump) as is_pump
                     FROM price_updates
                     WHERE timestamp >= {start_time}
                     GROUP BY name, pubkey
@@ -81,6 +83,10 @@ impl ClickhouseDb {
 
         if let Some(min_market_cap) = min_market_cap {
             conditions.push(format!("lp.market_cap >= {min_market_cap}"));
+        }
+
+        if only_pumpfun_tokens {
+            conditions.push("pc.is_pump = true".to_string());
         }
 
         if !conditions.is_empty() {
@@ -111,10 +117,11 @@ mod tests {
                 Some(1000.0),    // min volume
                 Some(100_000.0), // min market cap
                 Some(24 * 3600), // 24h timeframe
+                true,            // only show pumps
             )
             .await?;
 
-        println!("Top 10 tokens:");
+        println!("Top 10 pump tokens:");
         for token in tokens {
             println!(
                 "{}: price=${:.2}, mcap=${:.2}, vol=${:.2}, change={:.2}%",

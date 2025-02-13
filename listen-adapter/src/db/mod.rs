@@ -19,6 +19,7 @@ pub struct PriceUpdate {
     pub signature: String,
     pub multi_hop: bool,
     pub is_buy: bool,
+    pub is_pump: bool,
 }
 
 pub struct ClickhouseDb {

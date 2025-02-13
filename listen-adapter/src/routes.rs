@@ -32,7 +32,7 @@ pub async fn health_check() -> HttpResponse {
 pub async fn top_tokens(state: web::Data<AppState>) -> Result<HttpResponse, Error> {
     let tokens = state
         .clickhouse_db
-        .get_top_tokens(20, None, None, Some(60 * 5))
+        .get_top_tokens(20, None, None, Some(60 * 5), true)
         .await;
 
     match tokens {
