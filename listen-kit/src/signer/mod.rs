@@ -54,6 +54,17 @@ pub trait TransactionSigner: Send + Sync {
         ))
     }
 
+    #[cfg(feature = "solana")]
+    async fn sign_and_send_solana_transaction_with_tip(
+        &self,
+        _ix: &mut Vec<solana_sdk::instruction::Instruction>,
+        _tip_lamports: u64,
+    ) -> Result<String> {
+        Err(anyhow::anyhow!(
+            "Solana instructions not supported by this signer"
+        ))
+    }
+
     #[cfg(feature = "evm")]
     async fn sign_and_send_evm_transaction(
         &self,
