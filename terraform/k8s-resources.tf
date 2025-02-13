@@ -32,7 +32,7 @@ resource "kubernetes_deployment" "indexer" {
       spec {
         container {
           name  = "indexer"
-          image = "piotrostr/listen-indexer:latest"
+          image = "gcr.io/listen-sol-prod/listen-indexer:latest"
 
           resources {
             requests = {
@@ -132,7 +132,7 @@ resource "kubernetes_deployment" "redis" {
 
 resource "kubernetes_deployment" "clickhouse" {
   metadata {
-    name      = "clickhouse/clickhouse-server:latest"
+    name      = "clickhouse"
     namespace = kubernetes_namespace.listen_data.metadata[0].name
   }
 
@@ -158,7 +158,7 @@ resource "kubernetes_deployment" "clickhouse" {
       spec {
         container {
           name  = "clickhouse"
-          image = "clickhouse:latest" # You'll need to update this with your actual image
+          image = "clickhouse/clickhouse-server:latest"
 
           resources {
             requests = {
@@ -259,7 +259,7 @@ resource "kubernetes_deployment" "adapter" {
       spec {
         container {
           name  = "adapter"
-          image = "piotrostr/listen-adapter:latest"
+          image = "gcr.io/listen-sol-prod/listen-adapter:latest"
 
           resources {
             requests = {

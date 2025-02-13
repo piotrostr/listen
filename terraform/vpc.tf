@@ -1,5 +1,5 @@
 module "vpc" {
-  source  = "terraform-google-modules/network/google"
+  source = "terraform-google-modules/network/google"
 
   project_id   = var.project_id
   network_name = "listen-data-network"

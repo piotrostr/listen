@@ -2,12 +2,19 @@ terraform {
   required_providers {
     google = {
       source  = "hashicorp/google"
+      version = "6.14.0"
+    }
+    google-beta = {
+      source  = "hashicorp/google-beta"
+      version = "6.14.0"
     }
     kubernetes = {
       source  = "hashicorp/kubernetes"
+      version = "2.23.0"
     }
   }
 }
+
 
 provider "google" {
   credentials = file("terraform-key.json")
