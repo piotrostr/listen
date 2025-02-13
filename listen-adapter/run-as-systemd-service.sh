@@ -16,6 +16,9 @@ sudo mkdir -p /etc/listen-adapter
 sudo cp target/release/adapter /usr/local/bin/
 sudo chmod +x /usr/local/bin/adapter
 
+# Add capability to bind to privileged ports
+sudo setcap 'cap_net_bind_service=+ep' /usr/local/bin/adapter
+
 # Copy environment file if it doesn't exist
 if [ ! -f /etc/listen-adapter/environment ]; then
     sudo cp environment /etc/listen-adapter/
@@ -33,4 +36,4 @@ sudo systemctl start listen-adapter
 
 # Show status
 echo "Service installation complete. Checking status..."
-sudo systemctl status listen-adapter
+sudo systemctl status listen-adapter 
