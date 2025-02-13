@@ -1,10 +1,10 @@
 output "kubernetes_cluster_name" {
-  value       = module.gke.name
+  value       = resource.google_container_cluster.default.name
   description = "GKE Cluster Name"
 }
 
 output "kubernetes_cluster_host" {
-  value       = module.gke.endpoint
+  value       = resource.google_container_cluster.default.endpoint
   description = "GKE Cluster Host"
 }
 

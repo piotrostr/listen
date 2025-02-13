@@ -1,13 +1,18 @@
-module "gke" {
-  source = "terraform-google-modules/kubernetes-engine/google"
+resource "google_container_cluster" "default" {
+  name     = var.cluster_name
+  location = var.region
 
-  project_id        = var.project_id
-  name              = var.cluster_name
-  region            = var.region
-  network           = module.vpc.network_name
-  subnetwork        = module.vpc.subnets_names[0]
-  ip_range_pods     = "pods"
-  ip_range_services = "services"
+  enable_autopilot         = true
+  enable_l4_ilb_subsetting = true
 
-  enable_vertical_pod_autoscaling = true
-} 
+  network    = google_compute_network.vpc.name
+  subnetwork = google_compute_subnetwork.subnet.name
+
+  ip_allocation_policy {
+    stack_type                    = "IPV4_IPV6"
+    services_secondary_range_name = "services"
+    cluster_secondary_range_name  = "pods"
+  }
+
+  deletion_protection = false
+}

@@ -10,8 +10,8 @@ variable "region" {
 
 variable "cluster_name" {
   description = "The name for the GKE cluster"
-  default     = "listen-data-cluster"
-} 
+  default     = "listen-cluster"
+}
 
 variable "rpc_url" {
   description = "Solana RPC URL"

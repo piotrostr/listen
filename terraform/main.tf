@@ -23,7 +23,7 @@ provider "google" {
 data "google_client_config" "default" {}
 
 provider "kubernetes" {
-  host                   = "https://${module.gke.endpoint}"
+  host                   = "https://${resource.google_container_cluster.default.endpoint}"
   token                  = data.google_client_config.default.access_token
-  cluster_ca_certificate = base64decode(module.gke.ca_certificate)
-} 
+  cluster_ca_certificate = base64decode(resource.google_container_cluster.default.master_auth.0.cluster_ca_certificate)
+}

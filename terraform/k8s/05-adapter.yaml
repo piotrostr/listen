@@ -1,0 +1,68 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: adapter-service
+  namespace: listen-data
+spec:
+  selector:
+    app: adapter
+  ports:
+    - name: http
+      port: 80
+      targetPort: 6968
+  type: LoadBalancer
+  ipFamilyPolicy: RequireDualStack
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: adapter
+  namespace: listen-data
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: adapter
+  template:
+    metadata:
+      labels:
+        app: adapter
+    spec:
+      containers:
+        - name: adapter
+          image: gcr.io/listen-sol-prod/listen-adapter:latest
+          ports:
+            - containerPort: 6968
+              name: adapter-http
+          securityContext:
+            allowPrivilegeEscalation: false
+            privileged: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop:
+                - NET_RAW
+          resources:
+            requests:
+              cpu: "500m"
+              memory: "1Gi"
+            limits:
+              cpu: "1"
+              memory: "2Gi"
+          env:
+            - name: REDIS_URL
+              value: "redis://redis-service:6379"
+            - name: HOST
+              value: "0.0.0.0"
+            - name: PORT
+              value: "6968"
+      securityContext:
+        runAsNonRoot: true
+        seccompProfile:
+          type: RuntimeDefault
+      tolerations:
+        - effect: NoSchedule
+          key: kubernetes.io/arch
+          operator: Equal
+          value: amd64 

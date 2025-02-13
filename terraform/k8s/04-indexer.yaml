@@ -1,0 +1,58 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: indexer
+  namespace: listen-data-service
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: indexer
+  template:
+    metadata:
+      labels:
+        app: indexer
+    spec:
+      containers:
+        - name: indexer
+          image: gcr.io/listen-sol-prod/listen-data-service:latest
+          resources:
+            requests:
+              cpu: "2"        # 2 CPU cores
+              memory: "4Gi"   # 4 GB memory
+            limits:
+              cpu: "2"        # 2 CPU cores
+              memory: "4Gi"   # 4 GB memory
+          env:
+            - name: REDIS_URL
+              value: "redis://redis-service:6379"
+            - name: CLICKHOUSE_USERNAME
+              value: "default"
+            - name: CLICKHOUSE_PASSWORD
+              value: "default"
+            - name: CLICKHOUSE_DATABASE
+              value: "default"
+            - name: CLICKHOUSE_URL
+              value: "http://clickhouse-service:8123"
+            - name: RPC_URL
+              valueFrom:
+                secretKeyRef:
+                  name: indexer-secrets
+                  key: RPC_URL
+            - name: WS_URL
+              valueFrom:
+                secretKeyRef:
+                  name: indexer-secrets
+                  key: WS_URL
+            - name: GEYSER_URL
+              valueFrom:
+                secretKeyRef:
+                  name: indexer-secrets
+                  key: GEYSER_URL
+            - name: GEYSER_X_TOKEN
+              valueFrom:
+                secretKeyRef:
+                  name: indexer-secrets
+                  key: GEYSER_X_TOKEN 
