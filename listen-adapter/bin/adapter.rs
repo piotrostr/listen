@@ -1,10 +1,12 @@
-use actix_web::{middleware::Logger, web, App, HttpResponse, HttpServer};
+use actix_web::{middleware::Logger, web, App, HttpServer};
 use dotenv::dotenv;
-use serde_json::json;
 use tracing::info;
 
 use listen_adapter::{
-    redis_subscriber::create_redis_subscriber, routes::ws_route, state::AppState,
+    db::make_db,
+    redis_subscriber::create_redis_subscriber,
+    routes::{health_check, top_tokens, ws_route},
+    state::AppState,
     tls::load_rustls_config,
 };
 
@@ -20,7 +22,12 @@ async fn main() -> std::io::Result<()> {
         .await
         .expect("Failed to create Redis subscriber");
 
-    let app_state = AppState { redis_subscriber };
+    let clickhouse_db = make_db().expect("Failed to create Clickhouse DB");
+
+    let app_state = AppState {
+        redis_subscriber,
+        clickhouse_db,
+    };
     let app_data = web::Data::new(app_state);
 
     // Create the base app factory
@@ -30,6 +37,7 @@ async fn main() -> std::io::Result<()> {
             .app_data(app_data.clone())
             .route("/ws", web::get().to(ws_route))
             .route("/", web::get().to(health_check))
+            .route("/top-tokens", web::get().to(top_tokens))
     };
 
     // Check if SSL certificates are configured
@@ -64,12 +72,4 @@ async fn main() -> std::io::Result<()> {
     }
 
     Ok(())
-}
-
-async fn health_check() -> HttpResponse {
-    let timestamp = chrono::Utc::now().timestamp();
-    HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "timestamp": timestamp
-    }))
 }
