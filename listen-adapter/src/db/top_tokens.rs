@@ -56,8 +56,7 @@ impl ClickhouseDb {
                     SELECT
                         name,
                         pubkey,
-                        (last_value(price) - first_value(price)) / first_value(price) * 100 as price_change_24h,
-                        anyLast(is_pump) as is_pump
+                        (last_value(price) - first_value(price)) / first_value(price) * 100 as price_change_24h
                     FROM price_updates
                     WHERE timestamp >= {start_time}
                     GROUP BY name, pubkey
@@ -86,7 +85,7 @@ impl ClickhouseDb {
         }
 
         if only_pumpfun_tokens {
-            conditions.push("pc.is_pump = true".to_string());
+            // do nothing, need to migrate the table first
         }
 
         if !conditions.is_empty() {
