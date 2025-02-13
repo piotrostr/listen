@@ -4,6 +4,7 @@ use tracing::info;
 
 use listen_adapter::{
     redis_subscriber::create_redis_subscriber, routes::ws_route, state::AppState,
+    tls::load_rustls_config,
 };
 
 #[actix_web::main]
@@ -12,27 +13,53 @@ async fn main() -> std::io::Result<()> {
     tracing_subscriber::fmt::init();
 
     let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
-    let host = std::env::var("HOST").unwrap_or_else(|_| "127.0.0.1".to_string());
-    let port = std::env::var("PORT")
-        .unwrap_or_else(|_| "6968".to_string())
-        .parse::<u16>()
-        .expect("PORT must be a valid number");
+    let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());
 
     let redis_subscriber = create_redis_subscriber(&redis_url)
         .await
         .expect("Failed to create Redis subscriber");
 
     let app_state = AppState { redis_subscriber };
+    let app_data = web::Data::new(app_state);
 
-    info!("Starting WebSocket server at http://{}:{}", host, port);
-
-    HttpServer::new(move || {
+    // Create the base app factory
+    let app_factory = move || {
         App::new()
             .wrap(Logger::default())
-            .app_data(web::Data::new(app_state.clone()))
+            .app_data(app_data.clone())
             .route("/ws", web::get().to(ws_route))
-    })
-    .bind((host, port))?
-    .run()
-    .await
+    };
+
+    // Check if SSL certificates are configured
+    let has_ssl = std::env::var("SSL_CERT_PATH").is_ok() && std::env::var("SSL_KEY_PATH").is_ok();
+
+    if has_ssl {
+        info!("SSL certificates found, starting HTTP/HTTPS servers");
+
+        let http_server = HttpServer::new(app_factory.clone()).bind((host.clone(), 80))?;
+
+        let rustls_config = load_rustls_config()?;
+        let https_server =
+            HttpServer::new(app_factory).bind_rustls_0_23((host.clone(), 443), rustls_config)?;
+
+        info!("Starting WebSocket servers:");
+        info!("ws://{}:80/ws", host);
+        info!("wss://{}:443/ws", host);
+
+        // Run both servers concurrently
+        futures::future::try_join(http_server.run(), https_server.run()).await?;
+    } else {
+        // Start single server on port 6968
+        info!("No SSL certificates found, starting regular WebSocket server");
+
+        let port = 6968;
+        HttpServer::new(app_factory)
+            .bind((host.clone(), port))?
+            .run()
+            .await?;
+
+        info!("WebSocket server running at ws://{}:{}/ws", host, port);
+    }
+
+    Ok(())
 }

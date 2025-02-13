@@ -3,4 +3,5 @@ pub mod error;
 pub mod redis_subscriber;
 pub mod routes;
 pub mod state;
+pub mod tls;
 pub mod websocket;
