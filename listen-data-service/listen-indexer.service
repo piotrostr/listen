@@ -9,6 +9,7 @@ User=listen-indexer
 Group=listen-indexer
 Restart=always
 RestartSec=1
+Environment=IS_SYSTEMD_SERVICE=1
 EnvironmentFile=/etc/listen-indexer/environment
 WorkingDirectory=/opt/listen-indexer
 ExecStart=/usr/local/bin/indexer

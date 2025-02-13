@@ -21,7 +21,9 @@ async fn main() -> Result<()> {
     use tracing::{error, info};
 
     tracing_subscriber::fmt().init();
-    dotenv::dotenv().expect("Failed to load .env file");
+    if std::env::var("IS_SYSTEMD_SERVICE").is_err() {
+        dotenv::dotenv().expect("Failed to load .env file");
+    }
     info!("Starting RPC service...");
 
     // Initialize price cache for cold starts

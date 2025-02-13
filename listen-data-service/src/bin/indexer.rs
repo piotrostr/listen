@@ -13,7 +13,9 @@ pub struct Args {}
 #[tokio::main]
 async fn main() -> Result<()> {
     tracing_subscriber::fmt().init();
-    dotenv::dotenv().expect("Failed to load .env file");
+    if std::env::var("IS_SYSTEMD_SERVICE").is_err() {
+        dotenv::dotenv().expect("Failed to load .env file");
+    }
     info!("Starting geyser indexer...");
 
     // Initialize price cache for cold starts
