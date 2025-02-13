@@ -1,0 +1,6 @@
+REDIS_URL=redis://localhost:6379
+CLICKHOUSE_URL=http://localhost:8123
+CLICKHOUSE_USER=default
+CLICKHOUSE_PASSWORD=default
+CLICKHOUSE_DATABASE=default
+HOST=0.0.0.0 

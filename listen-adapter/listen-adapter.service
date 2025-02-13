@@ -1,0 +1,18 @@
+[Unit]
+Description=Listen Adapter Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=listen-adapter
+Group=listen-adapter
+Restart=always
+RestartSec=1
+Environment=RUST_LOG=info
+EnvironmentFile=/etc/listen-adapter/environment
+WorkingDirectory=/opt/listen-adapter
+ExecStart=/usr/local/bin/adapter
+
+[Install]
+WantedBy=multi-user.target 
