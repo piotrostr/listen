@@ -90,7 +90,7 @@ pub async fn handle_ws_connection(
             Ok(msg) = redis_rx.recv() => {
                 if let Ok(json) = serde_json::from_str::<Value>(&msg) {
                     if let Some(mint) = json.get("pubkey").and_then(|m| m.as_str()) {
-                        if subscribe_all || subscribed_mints.is_empty() || subscribed_mints.iter().any(|m| m == mint) {
+                        if subscribe_all || subscribed_mints.iter().any(|m| m == mint) {
                             if let Err(e) = session.text(msg).await {
                                 error!("Failed to send message: {}", e);
                                 break;
