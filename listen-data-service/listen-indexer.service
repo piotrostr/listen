@@ -1,0 +1,17 @@
+[Unit]
+Description=Listen Indexer Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=listen-indexer
+Group=listen-indexer
+Restart=always
+RestartSec=1
+EnvironmentFile=/etc/listen-indexer/environment
+WorkingDirectory=/opt/listen-indexer
+ExecStart=/usr/local/bin/indexer
+
+[Install]
+WantedBy=multi-user.target
