@@ -14,6 +14,8 @@ pub struct Candlestick {
 
 #[derive(PartialEq, Eq, Debug)]
 pub enum CandlestickInterval {
+    FifteenSeconds,
+    ThirtySeconds,
     OneMinute,
     FiveMinutes,
     FifteenMinutes,
@@ -26,6 +28,8 @@ pub enum CandlestickInterval {
 impl CandlestickInterval {
     pub fn from_str(s: &str) -> Result<Self> {
         match s {
+            "15s" => Ok(CandlestickInterval::FifteenSeconds),
+            "30s" => Ok(CandlestickInterval::ThirtySeconds),
             "1m" => Ok(CandlestickInterval::OneMinute),
             "5m" => Ok(CandlestickInterval::FiveMinutes),
             "15m" => Ok(CandlestickInterval::FifteenMinutes),
@@ -39,6 +43,8 @@ impl CandlestickInterval {
 
     pub fn to_string(&self) -> String {
         match self {
+            CandlestickInterval::FifteenSeconds => "15 SECOND".to_string(),
+            CandlestickInterval::ThirtySeconds => "30 SECOND".to_string(),
             CandlestickInterval::OneMinute => "1 MINUTE".to_string(),
             CandlestickInterval::FiveMinutes => "5 MINUTE".to_string(),
             CandlestickInterval::FifteenMinutes => "15 MINUTE".to_string(),
@@ -72,6 +78,8 @@ impl<'de> serde::Deserialize<'de> for CandlestickInterval {
 impl ClickhouseDb {
     pub async fn get_candlesticks(&self, mint: &str, interval: &str) -> Result<Vec<Candlestick>> {
         let interval_seconds = match interval {
+            "15 SECOND" => 15,
+            "30 SECOND" => 30,
             "1 MINUTE" => 60,
             "5 MINUTE" => 300,
             "15 MINUTE" => 900,
