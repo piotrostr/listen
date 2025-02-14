@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use dotenv::dotenv;
 use tracing::info;
@@ -40,6 +41,7 @@ async fn main() -> std::io::Result<()> {
     let app_factory = move || {
         App::new()
             .wrap(Logger::default())
+            .wrap(Cors::default().allow_any_origin())
             .app_data(app_data.clone())
             .route("/ws", web::get().to(ws_route))
             .route("/", web::get().to(health_check))

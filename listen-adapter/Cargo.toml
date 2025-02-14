@@ -24,6 +24,7 @@ rustls = { version = "0.23" }
 chrono = "0.4"
 ctor = "0.3.3"
 bb8-redis = "0.20.0"
+actix-cors = "0.7.0"
 
 [[bin]]
 name = "adapter"
