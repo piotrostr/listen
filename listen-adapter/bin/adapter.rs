@@ -6,7 +6,7 @@ use listen_adapter::{
     db::make_db,
     redis_client::make_redis_client,
     redis_subscriber::create_redis_subscriber,
-    routes::{get_candlesticks, health_check, top_tokens, ws_route},
+    routes::{get_candlesticks, get_metadata, health_check, top_tokens, ws_route},
     state::AppState,
     tls::load_rustls_config,
 };
@@ -45,6 +45,7 @@ async fn main() -> std::io::Result<()> {
             .route("/", web::get().to(health_check))
             .route("/top-tokens", web::get().to(top_tokens))
             .route("/candlesticks", web::get().to(get_candlesticks))
+            .route("/metadata", web::get().to(get_metadata))
     };
 
     // Check if SSL certificates are configured
