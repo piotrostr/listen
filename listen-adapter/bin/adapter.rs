@@ -48,7 +48,7 @@ async fn main() -> std::io::Result<()> {
             .route("/top-tokens", web::get().to(top_tokens))
             .route("/candlesticks", web::get().to(get_candlesticks))
             .route("/metadata", web::get().to(get_metadata))
-            .route("/query", web::get().to(query_db))
+            .route("/query", web::post().to(query_db))
     };
 
     // Check if SSL certificates are configured
