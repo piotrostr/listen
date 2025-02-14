@@ -1,3 +1,5 @@
+import Image from "next/image";
+
 export const Header = () => {
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur border-b border-purple-500/30">
@@ -5,11 +7,7 @@ export const Header = () => {
         <div className="flex justify-between items-center h-16">
           {/* Left side */}
           <div className="flex items-center space-x-4">
-            <img
-              src="/listen-more.png"
-              alt="Logo"
-              className="w-8 h-8 rounded"
-            />
+            <Image src="/listen-more.png" alt="Logo" width={32} height={32} />
             <span className="font-bold text-xl">listen-rs</span>
           </div>
 
