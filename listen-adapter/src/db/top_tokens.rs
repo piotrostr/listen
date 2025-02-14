@@ -37,7 +37,8 @@ impl ClickhouseDb {
                         pubkey,
                         price,
                         market_cap,
-                        timestamp
+                        timestamp,
+                        is_pump
                     FROM price_updates
                     WHERE timestamp >= {start_time}
                     ORDER BY timestamp DESC
@@ -85,7 +86,7 @@ impl ClickhouseDb {
         }
 
         if only_pumpfun_tokens {
-            // do nothing, need to migrate the table first
+            conditions.push("is_pump = true".to_string());
         }
 
         if !conditions.is_empty() {
@@ -116,11 +117,60 @@ mod tests {
                 Some(1000.0),    // min volume
                 Some(100_000.0), // min market cap
                 Some(24 * 3600), // 24h timeframe
-                true,            // only show pumps
+                false,           // only show pumps
             )
             .await?;
 
         println!("Top 10 pump tokens:");
+        for token in tokens {
+            println!(
+                "{}: price=${:.2}, mcap=${:.2}, vol=${:.2}, change={:.2}%",
+                token.name, token.price, token.market_cap, token.volume_24h, token.price_change_24h
+            );
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_top_tokens_with_min_volume() -> Result<()> {
+        let db = make_db()?;
+        let tokens = db
+            .get_top_tokens(10, Some(1000.0), None, None, false)
+            .await?;
+        println!("Top 10 tokens with min volume:");
+        for token in tokens {
+            println!(
+                "{}: price=${:.2}, mcap=${:.2}, vol=${:.2}, change={:.2}%",
+                token.name, token.price, token.market_cap, token.volume_24h, token.price_change_24h
+            );
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_top_tokens_with_min_market_cap() -> Result<()> {
+        let db = make_db()?;
+        let tokens = db
+            .get_top_tokens(10, None, Some(100_000.0), None, false)
+            .await?;
+        println!("Top 10 tokens with min market cap:");
+        for token in tokens {
+            println!(
+                "{}: price=${:.2}, mcap=${:.2}, vol=${:.2}, change={:.2}%",
+                token.name, token.price, token.market_cap, token.volume_24h, token.price_change_24h
+            );
+        }
+
+        Ok(())
+    }
+
+    #[tokio::test]
+    async fn test_get_top_tokens_with_only_pumpfun_tokens() -> Result<()> {
+        let db = make_db()?;
+        let tokens = db.get_top_tokens(10, None, None, None, true).await?;
+        println!("Top 10 pumpfun tokens:");
         for token in tokens {
             println!(
                 "{}: price=${:.2}, mcap=${:.2}, vol=${:.2}, change={:.2}%",

@@ -5,7 +5,7 @@ use tracing::info;
 use listen_adapter::{
     db::make_db,
     redis_subscriber::create_redis_subscriber,
-    routes::{health_check, top_tokens, ws_route},
+    routes::{get_candlesticks, health_check, top_tokens, ws_route},
     state::AppState,
     tls::load_rustls_config,
 };
@@ -38,6 +38,7 @@ async fn main() -> std::io::Result<()> {
             .route("/ws", web::get().to(ws_route))
             .route("/", web::get().to(health_check))
             .route("/top-tokens", web::get().to(top_tokens))
+            .route("/candlesticks", web::get().to(get_candlesticks))
     };
 
     // Check if SSL certificates are configured
