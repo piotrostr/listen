@@ -9,43 +9,61 @@ export default function PriceUpdates() {
   const [tokenMap, setTokenMap] = useState<Map<string, TokenData>>(new Map());
 
   useEffect(() => {
-    const eventSource = new EventSource("/api/price-updates");
+    const ws = new WebSocket("wss://api.listen-rs.com/ws");
 
-    eventSource.onmessage = (event) => {
-      const data: PriceUpdate = JSON.parse(event.data);
-      setLatestUpdate(data);
+    ws.onmessage = (event) => {
+      try {
+        const data: PriceUpdate = JSON.parse(event.data);
+        setLatestUpdate(data);
 
-      setTokenMap((prevMap) => {
-        const newMap = new Map(prevMap);
-        const existing = newMap.get(data.pubkey);
+        setTokenMap((prevMap) => {
+          const newMap = new Map(prevMap);
+          const existing = newMap.get(data.pubkey);
 
-        newMap.set(data.pubkey, {
-          name: data.name,
-          buyVolume:
-            (existing?.buyVolume || 0) + (data.is_buy ? data.swap_amount : 0),
-          sellVolume:
-            (existing?.sellVolume || 0) + (!data.is_buy ? data.swap_amount : 0),
-          lastPrice: data.price,
-          lastUpdate: new Date(data.timestamp),
-          marketCap: data.market_cap,
-          uniqueAddresses: new Set([
-            ...(existing?.uniqueAddresses || []),
-            data.owner,
-          ]),
-          pubkey: data.pubkey,
+          newMap.set(data.pubkey, {
+            name: data.name,
+            buyVolume:
+              (existing?.buyVolume || 0) + (data.is_buy ? data.swap_amount : 0),
+            sellVolume:
+              (existing?.sellVolume || 0) +
+              (!data.is_buy ? data.swap_amount : 0),
+            lastPrice: data.price,
+            lastUpdate: new Date(data.timestamp),
+            marketCap: data.market_cap,
+            uniqueAddresses: new Set([
+              ...(existing?.uniqueAddresses || []),
+              data.owner,
+            ]),
+            pubkey: data.pubkey,
+          });
+
+          return newMap;
         });
-
-        return newMap;
-      });
+      } catch (error) {
+        alert("Error parsing message: " + JSON.stringify(error));
+      }
     };
 
-    eventSource.onerror = (error) => {
-      console.error("EventSource failed:", error);
-      eventSource.close();
+    ws.onopen = () => {
+      ws.send(
+        JSON.stringify({
+          action: "subscribe",
+          mints: ["*"],
+        })
+      );
+      console.log("WebSocket connection opened");
+    };
+
+    ws.onerror = (error) => {
+      console.error("WebSocket failed:", error);
+    };
+
+    ws.onclose = () => {
+      console.log("WebSocket connection closed");
     };
 
     return () => {
-      eventSource.close();
+      ws.close();
     };
   }, []);
 

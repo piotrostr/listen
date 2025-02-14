@@ -11,7 +11,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
   const [metadata, setMetadata] = useState<TokenMetadata | null>(null);
 
   useEffect(() => {
-    fetch(`/api/token-metadata/${token.pubkey}`)
+    fetch(`https://api.listen-rs.com/metadata?mint=${token.pubkey}`)
       .then(async (res) => {
         if (!res.ok) {
           const text = await res.text();
@@ -31,16 +31,17 @@ export function TokenTile({ token, index }: TokenTileProps) {
       <div className="flex items-center space-x-4">
         <span className="text-gray-500 w-6">{index + 1}.</span>
         <div className="flex items-center space-x-3">
-          {metadata?.mpl.ipfs_metadata?.image && (
-            <div className="w-8 h-8 relative rounded-full overflow-hidden">
-              <Image
-                src={metadata.mpl.ipfs_metadata.image}
-                alt={token.name}
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
+          {metadata?.mpl.ipfs_metadata?.image &&
+            metadata.mpl.ipfs_metadata.image.startsWith("https://") && (
+              <div className="w-8 h-8 relative rounded-full overflow-hidden">
+                <Image
+                  src={metadata.mpl.ipfs_metadata.image}
+                  alt={token.name}
+                  fill
+                  className="object-cover"
+                />
+              </div>
+            )}
           <div>
             <div className="font-medium">
               <a
