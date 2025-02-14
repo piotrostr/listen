@@ -64,7 +64,48 @@ pub async fn process_swap(
     // Handle multi-hop swaps (3 tokens)
     if diffs.len() == 3 {
         metrics.increment_multi_hop_swap();
+
+        // TODO
+        // even though multi-hop swaps are ~1.5% of all swaps, some of those are
+        // 4-5 figs, important for volume estimation for latest price those are
+        // not crucial since every slot there will be a price update but the
+        // price/mc has to be calculated by a more complex formula
+        //
+        // are all examples of transactions where both raydium and whirlpool or meteora are used simultaneously
+        // https://solscan.io/tx/31pB39KowUTdDSjXhzCYi7QxVSWSM4ZijaSWAkCduWUUR6GuGrWwVBbcXLLdJnVLrWbQaV7YFL2SigBXRatGfnji#tokenBalanceChange
+        // https://solscan.io/tx/5j8nDKNNLbXcJqdZvM7h76m2tuzjMsbAWAo8vfSPwBMjnVaE47G6uXbG9NE6GFHth76K9qzJMBzNeM2xoHHkT3qZ#tokenBalanceChange
+        // https://solscan.io/tx/3m4LERWUekW7im8rgu8QgpSJA8a9yEYL3gDvorbd5YpkXarrL3PGoVmyFyQzd1Pw9oZiQy2LPUjaG8Xr4p433kwn#tokenBalanceChange
+        //
+        // two options
+        // 1) skip all multi-hops
+        // 2) detect multi-hops that go out of raydium and meteora, process them separately
+        // 3) support multi-hops cross-any-dex
+        //
+        // for now going with 1)
+        //
+        // volume is normalized, since skipping multi-hops for every token means
+        // some portion of multi-hops are raydium to raydium, token A to token
+        // B, thus A->SOL->C, those are supported but since detecting is
+        // error-prone and we cannot afford to receive wrong prices by the
+        // listen-trading-engine, skipping all multi-hops for now
+        //
+        // volume is normalized, since skipping multi-hops for every token means
+        // each will lose equally as much volume
+        //
+        // while 2) could work, jupiter has 12+ aggregator accounts which
+        // take part in transaction OKX also has an aggregator, it is not
+        // trivial so ideally, it could be 3)
+        //
+        // now for 3) - it is actually possible to change up the `diffs` module
+        // to not aggregate by raydium owner + mint, and allow multiple SOL
+        // pools accounts then match the pools to the diffs and calculate the
+        // pricing for each account separately this is the most appealing
+        // approach since raydium accounts will have the correct price, amounts
+        // are split but ratios are respected; for now (14th Feb '25) there are
+        // other priorities, but this is the way to go
+        return Ok(());
         // Find the tokens with positive and negative changes
+        #[allow(unreachable_code)]
         let mut positive_diff = None;
         let mut negative_diff = None;
         let mut sol_diff = None;
@@ -359,9 +400,8 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "placeholder, useful for debugging"]
     async fn test_by_signature_2() {
-        let signature = "5HdnMgQTdsuYjL8fgb6RphArEyr9qECCbDy22D8DwJA1i4mdCbhNqv645AHJMHUU4JGjsjfjPyKFfnxVZkaX8PMG";
+        let signature = "3m4LERWUekW7im8rgu8QgpSJA8a9yEYL3gDvorbd5YpkXarrL3PGoVmyFyQzd1Pw9oZiQy2LPUjaG8Xr4p433kwn";
         let transaction = make_rpc_client()
             .unwrap()
             .get_transaction_with_config(
@@ -377,9 +417,14 @@ mod tests {
 
         let transaction_meta = transaction.transaction.meta.unwrap();
 
-        let _diffs = get_token_balance_diff(
+        let diffs = get_token_balance_diff(
             transaction_meta.pre_token_balances.as_ref().unwrap(),
             transaction_meta.post_token_balances.as_ref().unwrap(),
         );
+
+        println!("pre: {:#?}", transaction_meta.pre_token_balances);
+        println!("post: {:#?}", transaction_meta.post_token_balances);
+
+        println!("diffs: {:#?}", diffs);
     }
 }

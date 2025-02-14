@@ -25,3 +25,15 @@ pub const RAYDIUM_AUTHORITY_MINT_KEY_STR: &str =
 
 pub const RAYDIUM_AMM_V4_PROGRAM_ID: Pubkey =
     pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8");
+
+pub const WHIRLPOOLS_PROGRAM_ID: Pubkey =
+    pubkey!("whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc");
+
+pub const WHIRLPOOLS_PROGRAM_ID_STR: &str =
+    "whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc";
+
+pub const METEORA_DLMM_PROGRAM_ID: Pubkey =
+    pubkey!("LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo");
+
+pub const METEORA_DLMM_PROGRAM_ID_STR: &str =
+    "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo";
