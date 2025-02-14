@@ -8,6 +8,38 @@ interface TokenTileProps {
   index: number;
 }
 
+function ChartModal({
+  isOpen,
+  onClose,
+  mint,
+}: {
+  isOpen: boolean;
+  onClose: () => void;
+  mint: string;
+}) {
+  if (!isOpen) return null;
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black bg-opacity-50"
+        onClick={onClose}
+      />
+      <div className="relative bg-white dark:bg-gray-900 w-[90vw] h-[80vh] rounded-lg p-4">
+        <button
+          onClick={onClose}
+          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+        >
+          ✕
+        </button>
+        <div className="w-full h-full">
+          <Chart mint={mint} />
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export function TokenTile({ token, index }: TokenTileProps) {
   const [metadata, setMetadata] = useState<TokenMetadata | null>(null);
   const [showChart, setShowChart] = useState(false);
@@ -32,7 +64,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
     <div>
       <div
         className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-        onClick={() => setShowChart(!showChart)}
+        onClick={() => setShowChart(true)}
       >
         <div className="flex items-center space-x-4">
           <span className="text-gray-500 w-6">{index + 1}.</span>
@@ -87,11 +119,11 @@ export function TokenTile({ token, index }: TokenTileProps) {
           </div>
         </div>
       </div>
-      {showChart && (
-        <div className="px-4 pb-4">
-          <Chart mint={token.pubkey} />
-        </div>
-      )}
+      <ChartModal
+        isOpen={showChart}
+        onClose={() => setShowChart(false)}
+        mint={token.pubkey}
+      />
     </div>
   );
 }

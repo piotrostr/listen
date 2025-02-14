@@ -32,19 +32,22 @@ type CandlestickData = z.infer<typeof CandlestickData>;
 const TV_COLORS = {
   GREEN: "#26a69a",
   RED: "#ef5350",
-  GREEN_TRANSPARENT: "rgba(38, 166, 154, 0.5)", // #26a69a with 0.5 opacity
-  RED_TRANSPARENT: "rgba(239, 83, 80, 0.5)", // #ef5350 with 0.5 opacity
+  GREEN_TRANSPARENT: "rgba(38, 166, 154, 0.5)",
+  RED_TRANSPARENT: "rgba(239, 83, 80, 0.5)",
 } as const;
 
-export function Chart({ mint, interval = "5m" }: ChartProps) {
+export function Chart({ mint, interval = "1m" }: ChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ReturnType<typeof createChart>>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
 
-    // Initialize chart
-    const chart = createChart(chartContainerRef.current, {
+    // Initialize chart with container dimensions
+    const container = chartContainerRef.current;
+    const chart = createChart(container, {
+      width: container.clientWidth,
+      height: container.clientHeight,
       layout: {
         background: { type: ColorType.Solid, color: "transparent" },
         textColor: "#d1d5db",
@@ -53,8 +56,16 @@ export function Chart({ mint, interval = "5m" }: ChartProps) {
         vertLines: { color: "#374151" },
         horzLines: { color: "#374151" },
       },
-      width: chartContainerRef.current.clientWidth,
-      height: 400,
+      timeScale: {
+        timeVisible: true,
+        secondsVisible: false,
+        tickMarkFormatter: (time: UTCTimestamp) => {
+          const date = new Date(time * 1000);
+          const hours = date.getHours().toString().padStart(2, "0");
+          const minutes = date.getMinutes().toString().padStart(2, "0");
+          return `${hours}:${minutes}`;
+        },
+      },
     });
 
     // Create candlestick series with default settings
@@ -101,7 +112,10 @@ export function Chart({ mint, interval = "5m" }: ChartProps) {
         // Sort in ascending order (oldest to newest)
         const sortedData = data.sort((a, b) => a.timestamp - b.timestamp);
 
-        const candleData = sortedData.map((d) => ({
+        // Filter out outliers TODO
+        const filteredData = sortedData;
+
+        const candleData = filteredData.map((d) => ({
           time: d.timestamp as UTCTimestamp,
           open: d.open,
           high: d.high,
@@ -109,7 +123,9 @@ export function Chart({ mint, interval = "5m" }: ChartProps) {
           close: d.close,
         }));
 
-        const volumeData = sortedData.map((d) => ({
+        console.log(candleData);
+
+        const volumeData = filteredData.map((d) => ({
           time: d.timestamp as UTCTimestamp,
           value: d.volume,
           color:
@@ -150,6 +166,7 @@ export function Chart({ mint, interval = "5m" }: ChartProps) {
       if (chartContainerRef.current) {
         chart.applyOptions({
           width: chartContainerRef.current.clientWidth,
+          height: chartContainerRef.current.clientHeight,
         });
       }
     };
@@ -163,5 +180,11 @@ export function Chart({ mint, interval = "5m" }: ChartProps) {
     };
   }, [mint, interval]);
 
-  return <div ref={chartContainerRef} />;
+  return (
+    <div
+      ref={chartContainerRef}
+      className="w-full h-full"
+      style={{ minHeight: "100%" }}
+    />
+  );
 }
