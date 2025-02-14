@@ -26,6 +26,7 @@ const IpfsMetadataSchema = z.object({
   showName: z.boolean().nullable().optional(),
   twitter: z.string().nullable().optional(),
   website: z.string().nullable().optional(),
+  telegram: z.string().nullable().optional(),
 });
 
 const MplTokenMetadataSchema = z.object({

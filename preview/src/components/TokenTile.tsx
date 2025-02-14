@@ -1,11 +1,47 @@
 import { TokenData, TokenMetadata } from "@/app/types";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { FaGlobe, FaTelegram, FaXTwitter } from "react-icons/fa6";
 import { Chart } from "./Chart";
 
 interface TokenTileProps {
   token: TokenData;
+  tokenMetadata: TokenMetadata | null;
   index: number;
+}
+
+function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
+  return (
+    <div className="flex flex-row gap-2">
+      {tokenMetadata?.mpl.ipfs_metadata?.twitter && (
+        <a
+          href={`https://twitter.com/${tokenMetadata?.mpl.ipfs_metadata?.twitter}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <FaXTwitter />
+        </a>
+      )}
+      {tokenMetadata?.mpl.ipfs_metadata?.telegram && (
+        <a
+          href={`https://t.me/${tokenMetadata?.mpl.ipfs_metadata?.telegram}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <FaTelegram />
+        </a>
+      )}
+      {tokenMetadata?.mpl.ipfs_metadata?.website && (
+        <a
+          href={`https://${tokenMetadata?.mpl.ipfs_metadata?.website}`}
+          target="_blank"
+          rel="noopener noreferrer"
+        >
+          <FaGlobe />
+        </a>
+      )}
+    </div>
+  );
 }
 
 function ChartModal({
@@ -96,6 +132,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
                   </span>
                 )}
               </div>
+              <Socials tokenMetadata={metadata} />
               <div className="text-sm text-gray-500">
                 Price: ${token.lastPrice.toFixed(5)}
               </div>
