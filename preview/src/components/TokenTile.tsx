@@ -1,6 +1,7 @@
 import { TokenData, TokenMetadata } from "@/app/types";
 import Image from "next/image";
 import { useEffect, useState } from "react";
+import { Chart } from "./Chart";
 
 interface TokenTileProps {
   token: TokenData;
@@ -9,9 +10,10 @@ interface TokenTileProps {
 
 export function TokenTile({ token, index }: TokenTileProps) {
   const [metadata, setMetadata] = useState<TokenMetadata | null>(null);
+  const [showChart, setShowChart] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/token-metadata/${token.pubkey}`)
+    fetch(`https://api.listen-rs.com/metadata?mint=${token.pubkey}`)
       .then(async (res) => {
         if (!res.ok) {
           const text = await res.text();
@@ -27,58 +29,69 @@ export function TokenTile({ token, index }: TokenTileProps) {
   }, [token.pubkey]);
 
   return (
-    <div className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800">
-      <div className="flex items-center space-x-4">
-        <span className="text-gray-500 w-6">{index + 1}.</span>
-        <div className="flex items-center space-x-3">
-          {metadata?.mpl.ipfs_metadata?.image && (
-            <div className="w-8 h-8 relative rounded-full overflow-hidden">
-              <Image
-                src={metadata.mpl.ipfs_metadata.image}
-                alt={token.name}
-                fill
-                className="object-cover"
-              />
-            </div>
-          )}
-          <div>
-            <div className="font-medium">
-              <a
-                href={`https://solscan.io/address/${token.pubkey}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="hover:text-blue-500"
-              >
-                {token.name}
-              </a>
-              {metadata?.mpl.symbol && (
-                <span className="ml-2 text-sm text-gray-500">
-                  {metadata.mpl.symbol}
-                </span>
+    <div>
+      <div
+        className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
+        onClick={() => setShowChart(!showChart)}
+      >
+        <div className="flex items-center space-x-4">
+          <span className="text-gray-500 w-6">{index + 1}.</span>
+          <div className="flex items-center space-x-3">
+            {metadata?.mpl.ipfs_metadata?.image &&
+              metadata.mpl.ipfs_metadata.image.startsWith("https://") && (
+                <div className="w-8 h-8 relative rounded-full overflow-hidden">
+                  <Image
+                    src={metadata.mpl.ipfs_metadata.image}
+                    alt={token.name}
+                    fill
+                    className="object-cover"
+                  />
+                </div>
               )}
-            </div>
-            <div className="text-sm text-gray-500">
-              Price: ${token.lastPrice.toFixed(5)}
+            <div>
+              <div className="font-medium">
+                <a
+                  href={`https://solscan.io/address/${token.pubkey}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="hover:text-blue-500"
+                >
+                  {token.name}
+                </a>
+                {metadata?.mpl.symbol && (
+                  <span className="ml-2 text-sm text-gray-500">
+                    {metadata.mpl.symbol}
+                  </span>
+                )}
+              </div>
+              <div className="text-sm text-gray-500">
+                Price: ${token.lastPrice.toFixed(5)}
+              </div>
             </div>
           </div>
         </div>
+        <div className="text-right">
+          <div className="flex flex-col">
+            <span className="text-green-500 font-medium">
+              +${token.buyVolume.toLocaleString()}
+            </span>
+            <span className="text-red-500 font-medium">
+              -${token.sellVolume.toLocaleString()}
+            </span>
+          </div>
+          <div className="text-sm text-gray-500">
+            MC: ${(token.marketCap / 1e6).toFixed(1)}M
+          </div>
+          <div className="text-xs text-gray-400">
+            {token.uniqueAddresses.size} traders
+          </div>
+        </div>
       </div>
-      <div className="text-right">
-        <div className="flex flex-col">
-          <span className="text-green-500 font-medium">
-            +${token.buyVolume.toLocaleString()}
-          </span>
-          <span className="text-red-500 font-medium">
-            -${token.sellVolume.toLocaleString()}
-          </span>
+      {showChart && (
+        <div className="px-4 pb-4">
+          <Chart mint={token.pubkey} />
         </div>
-        <div className="text-sm text-gray-500">
-          MC: ${(token.marketCap / 1e6).toFixed(1)}M
-        </div>
-        <div className="text-xs text-gray-400">
-          {token.uniqueAddresses.size} traders
-        </div>
-      </div>
+      )}
     </div>
   );
 }
