@@ -14,6 +14,7 @@ export default function PriceUpdates() {
     ws.onmessage = (event) => {
       try {
         const data: PriceUpdate = JSON.parse(event.data);
+        if (!data.is_pump) return;
         setLatestUpdate(data);
 
         setTokenMap((prevMap) => {

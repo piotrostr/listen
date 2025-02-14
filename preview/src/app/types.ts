@@ -12,6 +12,7 @@ export const PriceUpdateSchema = z.object({
   signature: z.string(),
   multi_hop: z.boolean(),
   is_buy: z.boolean(),
+  is_pump: z.boolean(),
 });
 
 export type PriceUpdate = z.infer<typeof PriceUpdateSchema>;

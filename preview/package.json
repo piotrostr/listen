@@ -10,6 +10,7 @@
   },
   "dependencies": {
     "ioredis": "^5.5.0",
+    "lightweight-charts": "^5.0.2",
     "next": "15.1.6",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
