@@ -17,8 +17,8 @@ impl ClickhouseDb {
         Ok(result)
     }
 
-    pub async fn generic_query(&self, query: &str) -> Result<Vec<PriceUpdate>> {
-        let result = self.client.query(query).fetch_all::<PriceUpdate>().await?;
+    pub async fn generic_query(&self, sql: &str) -> Result<Vec<PriceUpdate>> {
+        let result = self.client.query(sql).fetch_all::<PriceUpdate>().await?;
 
         Ok(result)
     }
@@ -35,6 +35,13 @@ mod tests {
             .get_by_mint("9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump")
             .await
             .unwrap();
+        println!("{:#?}", result);
+    }
+
+    #[tokio::test]
+    async fn test_generic_query() {
+        let db = make_db().unwrap();
+        let result = db.generic_query("SELECT 1").await.unwrap();
         println!("{:#?}", result);
     }
 }

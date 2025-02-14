@@ -89,14 +89,14 @@ pub async fn get_metadata(
 
 #[derive(Deserialize)]
 pub struct QueryParams {
-    pub query: String,
+    pub sql: String,
 }
 
 pub async fn query_db(
     state: web::Data<AppState>,
     query: web::Query<QueryParams>,
 ) -> Result<HttpResponse, Error> {
-    let result = state.clickhouse_db.generic_query(&query.query).await;
+    let result = state.clickhouse_db.generic_query(&query.sql).await;
     match result {
         Ok(result) => Ok(HttpResponse::Ok().json(result)),
         Err(e) => {
