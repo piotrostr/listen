@@ -6,7 +6,6 @@ import { Chart } from "./Chart";
 
 interface TokenTileProps {
   token: TokenData;
-  tokenMetadata: TokenMetadata | null;
   index: number;
 }
 
