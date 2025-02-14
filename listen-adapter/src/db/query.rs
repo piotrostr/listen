@@ -16,6 +16,12 @@ impl ClickhouseDb {
 
         Ok(result)
     }
+
+    pub async fn generic_query(&self, query: &str) -> Result<Vec<PriceUpdate>> {
+        let result = self.client.query(query).fetch_all::<PriceUpdate>().await?;
+
+        Ok(result)
+    }
 }
 
 #[cfg(test)]

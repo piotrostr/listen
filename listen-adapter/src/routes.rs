@@ -88,6 +88,25 @@ pub async fn get_metadata(
 }
 
 #[derive(Deserialize)]
+pub struct QueryParams {
+    pub query: String,
+}
+
+pub async fn query_db(
+    state: web::Data<AppState>,
+    query: web::Query<QueryParams>,
+) -> Result<HttpResponse, Error> {
+    let result = state.clickhouse_db.generic_query(&query.query).await;
+    match result {
+        Ok(result) => Ok(HttpResponse::Ok().json(result)),
+        Err(e) => {
+            error!("Error querying database: {}", e);
+            Err(InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR).into())
+        }
+    }
+}
+
+#[derive(Deserialize)]
 pub struct MetadataQuery {
     mint: String,
 }
