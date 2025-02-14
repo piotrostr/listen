@@ -3,6 +3,7 @@ use crate::{db::candlesticks::CandlestickInterval, state::AppState};
 use actix_web::{error::InternalError, http::StatusCode, web, Error, HttpRequest, HttpResponse};
 use serde::Deserialize;
 use serde_json::json;
+use std::collections::HashMap;
 use tracing::error;
 
 pub async fn ws_route(
@@ -96,7 +97,11 @@ pub async fn query_db(
     state: web::Data<AppState>,
     query: web::Query<QueryParams>,
 ) -> Result<HttpResponse, Error> {
-    let result = state.clickhouse_db.generic_query(&query.sql).await;
+    // url-decode the sql
+    let sql = url::form_urlencoded::parse(query.sql.as_bytes())
+        .map(|(key, value)| (key.to_string(), value.to_string()))
+        .collect::<HashMap<String, String>>();
+    let result = state.clickhouse_db.generic_query(&sql["sql"]).await;
     match result {
         Ok(result) => Ok(HttpResponse::Ok().json(result)),
         Err(e) => {

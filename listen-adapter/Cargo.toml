@@ -25,6 +25,7 @@ chrono = "0.4"
 ctor = "0.3.3"
 bb8-redis = "0.20.0"
 actix-cors = "0.7.0"
+url = "2.5.4"
 
 [[bin]]
 name = "adapter"
