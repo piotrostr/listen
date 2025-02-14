@@ -96,6 +96,28 @@ pub async fn query_db(
     state: web::Data<AppState>,
     query: web::Json<QueryParams>,
 ) -> Result<HttpResponse, Error> {
+    // Sanitize and validate the SQL query
+    let sql = query.sql.trim().to_uppercase();
+
+    // Only allow SELECT queries
+    if !sql.starts_with("SELECT ") {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "error": "Only SELECT queries are allowed"
+        })));
+    }
+
+    // Block potentially dangerous keywords
+    const BLOCKED_KEYWORDS: [&str; 7] = [
+        "DELETE", "DROP", "UPDATE", "INSERT", "ALTER", "TRUNCATE", "GRANT",
+    ];
+
+    if BLOCKED_KEYWORDS.iter().any(|keyword| sql.contains(keyword)) {
+        return Ok(HttpResponse::BadRequest().json(json!({
+            "error": "Query contains forbidden keywords"
+        })));
+    }
+
+    // Execute the validated query
     let result = state.clickhouse_db.generic_query(&query.sql).await;
     match result {
         Ok(result) => Ok(HttpResponse::Ok().json(result)),
