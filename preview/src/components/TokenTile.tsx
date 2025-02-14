@@ -57,13 +57,13 @@ function ChartModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center">
       <div
-        className="absolute inset-0 bg-black bg-opacity-50"
+        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
         onClick={onClose}
       />
-      <div className="relative bg-white dark:bg-gray-900 w-[90vw] h-[80vh] rounded-lg p-4">
+      <div className="relative bg-black/40 border border-purple-500/20 w-[90vw] h-[80vh] rounded-xl p-6 backdrop-blur-sm">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-gray-500 hover:text-gray-700 dark:hover:text-gray-300"
+          className="absolute top-4 right-4 text-purple-300/70 hover:text-purple-100 transition-colors"
         >
           ✕
         </button>

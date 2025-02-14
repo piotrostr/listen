@@ -70,33 +70,46 @@ export default function PriceUpdates() {
 
   const topTokens = Array.from(tokenMap.values())
     .sort((a, b) => b.buyVolume - a.buyVolume)
-    .slice(0, 10);
+    .slice(0, 20);
 
   return (
-    <div className="space-y-6">
+    <div className="h-[calc(100vh-6rem)] flex flex-col space-y-2 overflow-hidden p-2 max-w-7xl mx-auto px-4">
       {/* Latest Update Section */}
-      <div className="bg-gray-50 dark:bg-gray-800 p-4 rounded-lg h-48">
-        <h2 className="text-lg font-semibold mb-2">Latest Update</h2>
-        {latestUpdate ? (
-          <div className="space-y-1">
-            <div className="font-medium">{latestUpdate.name}</div>
-            <div>Price: ${latestUpdate.price.toFixed(5)}</div>
-            <div>Amount: ${latestUpdate.swap_amount.toFixed(2)}</div>
-            <div className="text-sm text-gray-500">
-              {new Date(latestUpdate.timestamp).toLocaleString()}
-            </div>
-          </div>
-        ) : (
-          <div>Waiting for updates...</div>
-        )}
+      <div className="bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl flex-shrink-0">
+        <div className="flex items-center">
+          {latestUpdate ? (
+            <>
+              <span className="text-purple-50 font-medium w-48 truncate">
+                {latestUpdate.name}
+              </span>
+              <span className="text-blue-200 w-32 text-right">
+                ${latestUpdate.price.toFixed(5)}
+              </span>
+              {latestUpdate.is_buy ? (
+                <span className="text-green-500 w-32 text-right">
+                  ${latestUpdate.swap_amount.toFixed(2)}
+                </span>
+              ) : (
+                <span className="text-red-500 w-32 text-right">
+                  ${latestUpdate.swap_amount.toFixed(2)}
+                </span>
+              )}
+              <span className="text-sm text-purple-300/70 w-24 text-right">
+                {new Date(latestUpdate.timestamp * 1000).toLocaleTimeString()}
+              </span>
+            </>
+          ) : (
+            <span className="text-purple-300/70">Waiting for updates...</span>
+          )}
+        </div>
       </div>
 
       {/* Top Tokens Section */}
-      <div className="bg-white dark:bg-gray-900 rounded-lg shadow">
-        <h2 className="text-lg font-semibold p-4 border-b dark:border-gray-800">
-          Top 10 Tokens by Volume
+      <div className="bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl shadow-lg flex-1 overflow-hidden flex flex-col min-h-0">
+        <h2 className="text-lg font-semibold p-4 border-b border-purple-500/20 text-purple-100 flex-shrink-0">
+          Top Tokens by Volume
         </h2>
-        <div className="divide-y dark:divide-gray-800">
+        <div className="divide-y divide-purple-500/20 overflow-y-auto">
           {topTokens.map((token, index) => (
             <TokenTile key={token.pubkey} token={token} index={index} />
           ))}

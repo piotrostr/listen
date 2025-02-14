@@ -32,16 +32,18 @@ type CandlestickData = z.infer<typeof CandlestickData>;
 const TV_COLORS = {
   GREEN: "#26a69a",
   RED: "#ef5350",
-  GREEN_TRANSPARENT: "rgba(38, 166, 154, 0.5)",
-  RED_TRANSPARENT: "rgba(239, 83, 80, 0.5)",
+  GREEN_TRANSPARENT: "rgba(38, 166, 154, 0.3)",
+  RED_TRANSPARENT: "rgba(239, 83, 80, 0.3)",
 } as const;
 
 export function Chart({ mint, interval = "1m" }: ChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ReturnType<typeof createChart>>(null);
+  const isDisposed = useRef(false);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
+    isDisposed.current = false;
 
     // Initialize chart with container dimensions
     const container = chartContainerRef.current;
@@ -103,11 +105,15 @@ export function Chart({ mint, interval = "1m" }: ChartProps) {
     });
 
     const fetchData = async () => {
+      if (isDisposed.current) return;
+
       try {
         const response = await fetch(
           `https://api.listen-rs.com/candlesticks?mint=${mint}&interval=${interval}`
         );
         const data = CandlestickData.parse(await response.json());
+
+        if (isDisposed.current) return;
 
         // Sort in ascending order (oldest to newest)
         const sortedData = data.sort((a, b) => a.timestamp - b.timestamp);
@@ -134,7 +140,7 @@ export function Chart({ mint, interval = "1m" }: ChartProps) {
               : TV_COLORS.RED_TRANSPARENT,
         }));
 
-        if (candleData.length > 0) {
+        if (candleData.length > 0 && !isDisposed.current) {
           candlestickSeries.setData(candleData);
           volumeSeries.setData(volumeData);
 
@@ -155,7 +161,9 @@ export function Chart({ mint, interval = "1m" }: ChartProps) {
           });
         }
       } catch (error) {
-        console.error("Failed to fetch chart data:", error);
+        if (!isDisposed.current) {
+          console.error("Failed to fetch chart data:", error);
+        }
       }
     };
 
@@ -163,7 +171,7 @@ export function Chart({ mint, interval = "1m" }: ChartProps) {
     chartRef.current = chart;
 
     const handleResize = () => {
-      if (chartContainerRef.current) {
+      if (chartContainerRef.current && !isDisposed.current) {
         chart.applyOptions({
           width: chartContainerRef.current.clientWidth,
           height: chartContainerRef.current.clientHeight,
@@ -175,6 +183,7 @@ export function Chart({ mint, interval = "1m" }: ChartProps) {
 
     // Cleanup
     return () => {
+      isDisposed.current = true;
       window.removeEventListener("resize", handleResize);
       chart.remove();
     };
