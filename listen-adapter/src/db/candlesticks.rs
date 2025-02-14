@@ -71,10 +71,21 @@ impl<'de> serde::Deserialize<'de> for CandlestickInterval {
 
 impl ClickhouseDb {
     pub async fn get_candlesticks(&self, mint: &str, interval: &str) -> Result<Vec<Candlestick>> {
+        let interval_seconds = match interval {
+            "1 MINUTE" => 60,
+            "5 MINUTE" => 300,
+            "15 MINUTE" => 900,
+            "30 MINUTE" => 1800,
+            "1 HOUR" => 3600,
+            "4 HOUR" => 14400,
+            "1 DAY" => 86400,
+            _ => return Err(anyhow::anyhow!("Invalid interval")),
+        };
+
         let query = format!(
             r#"
             SELECT
-                toStartOfInterval(toDateTime(timestamp), INTERVAL {interval}) as interval_timestamp,
+                intDiv(timestamp, {interval_seconds}) * {interval_seconds} as interval_timestamp,
                 argMin(price, timestamp) as open,
                 max(price) as high,
                 min(price) as low,
@@ -138,7 +149,6 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_candlesticks() {
-        dotenv::dotenv().ok();
         let db = make_db().unwrap();
         let candlesticks = db
             .get_candlesticks(
@@ -147,6 +157,6 @@ mod tests {
             )
             .await
             .unwrap();
-        println!("{:?}", candlesticks);
+        println!("{:#?}", candlesticks);
     }
 }

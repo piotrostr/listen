@@ -1,12 +1,14 @@
 use anyhow::Result;
-use clickhouse::Client;
+use clickhouse::{Client, Row};
+use serde::Deserialize;
 use std::sync::Arc;
 use tracing::debug;
 
 pub mod candlesticks;
+pub mod query;
 pub mod top_tokens;
 
-#[derive(Debug)]
+#[derive(Debug, Deserialize, Row)]
 pub struct PriceUpdate {
     pub name: String,
     pub pubkey: String,
