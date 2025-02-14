@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "deploy": "bunx vercel -y --prod --name listen-preview . --logs"
   },
   "dependencies": {
     "ioredis": "^5.5.0",
