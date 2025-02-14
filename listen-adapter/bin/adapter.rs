@@ -4,6 +4,7 @@ use tracing::info;
 
 use listen_adapter::{
     db::make_db,
+    redis_client::make_redis_client,
     redis_subscriber::create_redis_subscriber,
     routes::{get_candlesticks, health_check, top_tokens, ws_route},
     state::AppState,
@@ -24,8 +25,13 @@ async fn main() -> std::io::Result<()> {
 
     let clickhouse_db = make_db().expect("Failed to create Clickhouse DB");
 
+    let redis_client = make_redis_client()
+        .await
+        .expect("Failed to create Redis client");
+
     let app_state = AppState {
         redis_subscriber,
+        redis_client,
         clickhouse_db,
     };
     let app_data = web::Data::new(app_state);

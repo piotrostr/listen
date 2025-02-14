@@ -69,3 +69,25 @@ pub async fn get_candlesticks(
         }
     }
 }
+
+pub async fn get_metadata(
+    state: web::Data<AppState>,
+    query: web::Query<MetadataQuery>,
+) -> Result<HttpResponse, Error> {
+    match state.redis_client.get_metadata(&query.mint).await {
+        Ok(Some(metadata)) => Ok(HttpResponse::Ok().json(metadata)),
+        Ok(None) => Ok(HttpResponse::NotFound().json(json!({
+            "error": "Metadata not found",
+            "mint": query.mint
+        }))),
+        Err(e) => {
+            error!("Error fetching metadata: {}", e);
+            Err(InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR).into())
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct MetadataQuery {
+    mint: String,
+}
