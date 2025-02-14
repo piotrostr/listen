@@ -652,6 +652,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "ctor"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "952d7c24b2615675db90c2201742b49c314dea9fa56c6688cbf8c4dee2b2553f"
+
+[[package]]
 name = "deranged"
 version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1330,6 +1336,7 @@ dependencies = [
  "async-stream",
  "chrono",
  "clickhouse",
+ "ctor",
  "dotenv",
  "futures",
  "redis",

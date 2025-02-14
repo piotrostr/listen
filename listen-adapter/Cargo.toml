@@ -22,6 +22,7 @@ clickhouse = { version = "0.13.1", features = ["native-tls"] }
 rustls-pemfile = "2"
 rustls = { version = "0.23" }
 chrono = "0.4"
+ctor = "0.3.3"
 
 [[bin]]
 name = "adapter"
