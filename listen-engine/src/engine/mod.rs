@@ -8,16 +8,59 @@ pub mod privy_config;
 pub mod types;
 pub mod util;
 
-use std::collections::{HashMap, HashSet};
-use tokio::sync::RwLock;
-
+use crate::engine::evaluator::EvaluatorError;
+use crate::redis::client::{make_redis_client, RedisClient, RedisClientError};
+use crate::redis::subscriber::{
+    make_redis_subscriber, PriceUpdate, RedisSubscriber, RedisSubscriberError,
+};
 use anyhow::Result;
+use metrics::{counter, gauge, histogram};
+use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
+use std::time::Instant;
+use tokio::sync::mpsc;
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
 use self::evaluator::Evaluator;
 use self::pipeline::{Action, Condition, ConditionType, Pipeline, Status};
+use crate::server::EngineMessage;
+
+#[derive(Debug, thiserror::Error)]
+pub enum EngineError {
+    #[error("[Engine] Failed to add pipeline: {0}")]
+    AddPipelineError(RedisClientError),
+
+    #[error("[Engine] Failed to delete pipeline: {0}")]
+    DeletePipelineError(RedisClientError),
+
+    #[error("[Engine] Failed to get pipeline: {0}")]
+    GetPipelineError(String),
+
+    #[error("[Engine] Failed to evaluate pipeline: {0}")]
+    EvaluatePipelineError(EvaluatorError),
+
+    #[error("[Engine] Failed to extract assets: {0}")]
+    ExtractAssetsError(anyhow::Error),
+
+    #[error("[Engine] Failed to handle price update: {0}")]
+    HandlePriceUpdateError(anyhow::Error),
+
+    #[error("[Engine] Executor error: {0}")]
+    ExecutorError(executor::ExecutorError),
+
+    #[error("[Engine] Redis client error: {0}")]
+    RedisClientError(RedisClientError),
+
+    #[error("[Engine] Redis subscriber error: {0}")]
+    RedisSubscriberError(RedisSubscriberError),
+}
 
 pub struct Engine {
+    pub redis: Arc<RedisClient>,
+    pub redis_sub: Arc<RedisSubscriber>,
+
+    receiver: mpsc::Receiver<PriceUpdate>,
     executor: executor::Executor,
 
     // Active pipelines indexed by UUID
@@ -31,15 +74,68 @@ pub struct Engine {
 }
 
 impl Engine {
-    pub fn from_env() -> Result<Self> {
+    pub async fn from_env() -> Result<Self, EngineError> {
+        let (tx, rx) = mpsc::channel(1000);
         Ok(Self {
-            executor: executor::Executor::from_env()?,
+            executor: executor::Executor::from_env().map_err(EngineError::ExecutorError)?,
+            redis: make_redis_client()
+                .await
+                .map_err(EngineError::RedisClientError)?,
+            redis_sub: make_redis_subscriber(tx).map_err(EngineError::RedisSubscriberError)?,
+            receiver: rx,
             active_pipelines: RwLock::new(HashMap::new()),
             asset_subscriptions: RwLock::new(HashMap::new()),
             price_cache: RwLock::new(HashMap::new()),
         })
     }
-    pub async fn add_pipeline(&self, pipeline: Pipeline) -> Result<()> {
+
+    pub async fn run(&mut self, mut command_rx: mpsc::Receiver<EngineMessage>) -> Result<()> {
+        let pipelines = self.redis.get_all_pipelines().await?;
+        let total_pipelines = pipelines.len();
+        for pipeline in pipelines {
+            self.add_pipeline(pipeline).await?;
+        }
+        tracing::info!("Added {} pipelines", total_pipelines);
+
+        self.redis_sub.start_listening().await?;
+
+        loop {
+            tokio::select! {
+                Some(msg) = command_rx.recv() => {
+                    match msg {
+                        EngineMessage::AddPipeline { pipeline, response_tx } => {
+                            let result = self.add_pipeline(pipeline).await;
+                            // Ignore error from send - receiver may have dropped
+                            let _ = response_tx.send(result);
+                        },
+                        EngineMessage::DeletePipeline { pipeline_id, response_tx } => {
+                            let result = self.delete_pipeline(pipeline_id).await;
+                            let _ = response_tx.send(result);
+                        },
+                        EngineMessage::GetPipeline { pipeline_id, response_tx } => {
+                            let result = self.get_pipeline(pipeline_id).await;
+                            let _ = response_tx.send(result);
+                        },
+                    }
+                }
+                Some(price_update) = self.receiver.recv() => {
+                    if let Err(e) = self.handle_price_update(&price_update.pubkey, price_update.price).await {
+                        tracing::error!("Error handling price update: {}", e);
+                    }
+                }
+                else => break,
+            }
+        }
+
+        Ok(())
+    }
+
+    pub async fn add_pipeline(&self, pipeline: Pipeline) -> Result<(), EngineError> {
+        if let Err(e) = self.redis.save_pipeline(&pipeline).await {
+            return Err(EngineError::AddPipelineError(e));
+        }
+
+        // Then add to engine
         let mut active_pipelines = self.active_pipelines.write().await;
         let mut asset_subscriptions = self.asset_subscriptions.write().await;
 
@@ -58,7 +154,25 @@ impl Engine {
         Ok(())
     }
 
+    pub async fn delete_pipeline(&self, pipeline_id: Uuid) -> Result<(), EngineError> {
+        let mut active_pipelines = self.active_pipelines.write().await;
+        active_pipelines.remove(&pipeline_id);
+        Ok(())
+    }
+
+    pub async fn get_pipeline(&self, pipeline_id: Uuid) -> Result<Pipeline, EngineError> {
+        let active_pipelines = self.active_pipelines.read().await;
+        active_pipelines.get(&pipeline_id).cloned().ok_or_else(|| {
+            EngineError::GetPipelineError(format!("Pipeline not found: {}", pipeline_id))
+        })
+    }
+
     pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
+        let start = Instant::now();
+
+        // Increment counter
+        counter!("price_updates_processed", 1);
+
         // Update price cache
         let mut cache = self.price_cache.write().await;
         cache.insert(asset.to_string(), price);
@@ -74,43 +188,64 @@ impl Engine {
             }
         }
 
+        // Record duration
+        histogram!("price_update_duration", start.elapsed());
+
+        // Record current number of active pipelines
+        gauge!(
+            "active_pipelines",
+            self.active_pipelines.read().await.len() as f64
+        );
+
         Ok(())
     }
 
-    async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<()> {
+    async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<(), EngineError> {
+        let start = Instant::now();
+
         let current_step_ids = pipeline.current_steps.clone();
         let price_cache = self.price_cache.read().await.clone();
 
         for step_id in current_step_ids {
             if let Some(step) = pipeline.steps.get_mut(&step_id) {
-                if matches!(step.status, Status::Pending)
-                    && Evaluator::evaluate_conditions(&step.conditions, &price_cache)
-                {
-                    match &step.action {
-                        Action::Order(order) => {
-                            match self.executor.execute_order(order.clone()).await {
-                                Ok(_) => {
-                                    step.status = Status::Completed;
-                                    pipeline.current_steps = step.next_steps.clone();
-                                }
-                                Err(e) => {
-                                    step.status = Status::Failed;
-                                    pipeline.status = Status::Failed;
-                                    tracing::error!(%step_id, error = %e, "Order execution failed");
+                if matches!(step.status, Status::Pending) {
+                    match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
+                        Ok(true) => match &step.action {
+                            Action::Order(order) => {
+                                match self.executor.execute_order(order.clone()).await {
+                                    Ok(_) => {
+                                        step.status = Status::Completed;
+                                        pipeline.current_steps = step.next_steps.clone();
+                                    }
+                                    Err(e) => {
+                                        step.status = Status::Failed;
+                                        pipeline.status = Status::Failed;
+                                        tracing::error!(%step_id, error = %e, "Order execution failed");
+                                    }
                                 }
                             }
+                            Action::Notification(notification) => {
+                                tracing::info!(%step_id, ?notification, "TODO: Notification");
+                            }
+                        },
+                        Ok(false) => {
+                            // don't do anything
                         }
-                        Action::Notification(notification) => {
-                            tracing::info!(%step_id, ?notification, "TODO: Notification");
+                        Err(e) => {
+                            return Err(EngineError::EvaluatePipelineError(e));
                         }
                     }
                 }
             }
         }
-        // Check pipeline completion
+
         if pipeline.current_steps.is_empty() {
             pipeline.status = Status::Completed;
         }
+
+        let duration = start.elapsed();
+        counter!("pipeline_evaluations", 1);
+        histogram!("pipeline_evaluation_duration", duration);
 
         Ok(())
     }

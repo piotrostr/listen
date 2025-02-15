@@ -1,0 +1,6 @@
+scrape_configs:
+  - job_name: 'listen-engine'
+    static_configs:
+      - targets: ['localhost:6966']
+    metrics_path: '/metrics'
+    scrape_interval: 5s 

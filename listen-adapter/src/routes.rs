@@ -1,6 +1,7 @@
 use crate::websocket::handle_ws_connection;
 use crate::{db::candlesticks::CandlestickInterval, state::AppState};
 use actix_web::{error::InternalError, http::StatusCode, web, Error, HttpRequest, HttpResponse};
+use regex::Regex;
 use serde::Deserialize;
 use serde_json::json;
 use tracing::error;
@@ -96,29 +97,37 @@ pub async fn query_db(
     state: web::Data<AppState>,
     query: web::Json<QueryParams>,
 ) -> Result<HttpResponse, Error> {
-    // Sanitize and validate the SQL query
-    let sql = query.sql.trim().to_uppercase();
+    // Sanitize the SQL query
+    let sql = query.sql.trim();
 
-    // Only allow SELECT queries
-    if !sql.starts_with("SELECT ") {
+    // Only allow SELECT queries (case insensitive check)
+    if !sql.to_uppercase().starts_with("SELECT ") {
         return Ok(HttpResponse::BadRequest().json(json!({
             "error": "Only SELECT queries are allowed"
         })));
     }
 
-    // Block potentially dangerous keywords
-    const BLOCKED_KEYWORDS: [&str; 7] = [
-        "DELETE", "DROP", "UPDATE", "INSERT", "ALTER", "TRUNCATE", "GRANT",
+    // Block dangerous SQL commands while allowing table names containing these words
+    const BLOCKED_PATTERNS: [&str; 7] = [
+        r"(?i)\bDELETE\b",
+        r"(?i)\bDROP\b",
+        r"(?i)\bUPDATE\b",
+        r"(?i)\bINSERT\b",
+        r"(?i)\bALTER\b",
+        r"(?i)\bTRUNCATE\b",
+        r"(?i)\bGRANT\b",
     ];
 
-    if BLOCKED_KEYWORDS.iter().any(|keyword| sql.contains(keyword)) {
-        return Ok(HttpResponse::BadRequest().json(json!({
-            "error": "Query contains forbidden keywords"
-        })));
+    for pattern in BLOCKED_PATTERNS {
+        if Regex::new(pattern).unwrap().is_match(sql) {
+            return Ok(HttpResponse::BadRequest().json(json!({
+                "error": "Query contains forbidden SQL commands"
+            })));
+        }
     }
 
     // Execute the validated query
-    let result = state.clickhouse_db.generic_query(&query.sql).await;
+    let result = state.clickhouse_db.generic_query(sql).await;
     match result {
         Ok(result) => Ok(HttpResponse::Ok().json(result)),
         Err(e) => {

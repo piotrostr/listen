@@ -1384,6 +1384,7 @@ dependencies = [
  "dotenv",
  "futures",
  "redis 0.23.3",
+ "regex",
  "rustls",
  "rustls-pemfile",
  "serde",

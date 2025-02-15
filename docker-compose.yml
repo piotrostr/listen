@@ -102,6 +102,13 @@ services:
     depends_on:
       redis:
         condition: service_healthy
+      
+  grafana:
+    image: grafana/grafana-oss
+    ports:
+      - 3001:3000
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
 
 volumes:
   redis-data:

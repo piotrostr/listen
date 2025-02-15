@@ -1,0 +1,46 @@
+# Pipeline Creation and Management
+# Shows how many pipelines are currently active
+active_pipelines
+
+# Pipeline Creation Rate (per minute)
+rate(pipeline_creation_attempts_total[1m])
+
+# Pipeline Creation Success Rate
+rate(pipeline_creation_success_total[1m])
+
+# Pipeline Creation Errors
+rate(pipeline_creation_errors_total[1m])
+
+# Pipeline Creation Success Ratio
+rate(pipeline_creation_success_total[1m]) / rate(pipeline_creation_attempts_total[1m])
+
+# Pipeline Performance
+# Pipeline Evaluation Rate (evaluations per second)
+rate(pipeline_evaluations_total[1m])
+
+# 95th Percentile Pipeline Evaluation Latency
+histogram_quantile(0.95, rate(pipeline_evaluation_duration_bucket[1m]))
+
+# Price Update Processing
+# Price Updates Per Second
+rate(price_updates_processed_total[1m])
+
+# 95th Percentile Price Update Processing Time
+histogram_quantile(0.95, rate(price_update_duration_bucket[1m]))
+
+# System Load During Test
+# Pipeline Creation Latency (95th percentile)
+histogram_quantile(0.95, rate(pipeline_creation_duration_bucket[1m]))
+
+# Combined View
+# Pipeline Creation vs Evaluation Rate
+(
+  rate(pipeline_creation_success_total[1m]) +
+  rate(pipeline_evaluations_total[1m])
+)
+
+# Error Rates
+(
+  rate(pipeline_creation_errors_total[1m]) +
+  rate(pipeline_evaluation_errors_total[1m])
+) 

@@ -6,16 +6,21 @@ pub struct PrivyConfig {
     pub(crate) app_secret: String,
 }
 
-fn must_get_env(name: &str) -> String {
-    std::env::var(name).unwrap_or_else(|_| panic!("Missing env var: {}", name))
+#[derive(Debug, thiserror::Error)]
+pub enum PrivyConfigError {
+    #[error("[Privy] Missing required environment variable: {0}")]
+    MissingEnvVar(&'static str),
 }
 
 impl PrivyConfig {
-    pub fn from_env() -> Result<Self> {
-        Ok(Self {
-            app_id: must_get_env("PRIVY_APP_ID"),
-            app_secret: must_get_env("PRIVY_APP_SECRET"),
-        })
+    pub fn from_env() -> Result<Self, PrivyConfigError> {
+        let app_id = std::env::var("PRIVY_APP_ID")
+            .map_err(|_| PrivyConfigError::MissingEnvVar("PRIVY_APP_ID"))?;
+
+        let app_secret = std::env::var("PRIVY_APP_SECRET")
+            .map_err(|_| PrivyConfigError::MissingEnvVar("PRIVY_APP_SECRET"))?;
+
+        Ok(Self { app_id, app_secret })
     }
 }
 

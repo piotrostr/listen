@@ -1,3 +1,4 @@
+.DS_Store
 terraform.tfvars
 .substreams.env
 dump.rdb

@@ -1,3 +1,5 @@
+use crate::engine::privy_config::PrivyConfigError;
+
 use super::order::Order;
 use super::privy_config::PrivyConfig;
 use super::types::{SignAndSendEvmTransactionParams, SignAndSendEvmTransactionRequest};
@@ -11,17 +13,37 @@ pub struct Executor {
     http_client: reqwest::Client,
 }
 
+#[derive(Debug, thiserror::Error)]
+pub enum ExecutorError {
+    #[error("[Executor] Initialize: {0}")]
+    InitializeError(#[from] PrivyConfigError),
+
+    #[error("[Executor] Failed to execute order: {0}")]
+    ExecuteOrderError(String),
+
+    #[error("[Executor] Failed to execute EVM transaction: {0}")]
+    ExecuteEvmTransactionError(#[from] anyhow::Error),
+
+    #[error("[Executor] Failed to execute Solana transaction: {0}")]
+    ExecuteSolanaTransactionError(anyhow::Error),
+
+    #[error("[Executor] HTTP request failed: {0}")]
+    RequestError(#[from] reqwest::Error),
+}
+
 impl Executor {
-    pub fn from_env() -> Result<Self> {
-        let privy_config = PrivyConfig::from_env()?;
+    pub fn from_env() -> Result<Self, ExecutorError> {
+        let privy_config = PrivyConfig::from_env().map_err(ExecutorError::InitializeError)?;
         let http_client = create_http_client(&privy_config);
         Ok(Self { http_client })
     }
 
-    pub async fn execute_order(&self, order: Order) -> Result<String> {
+    pub async fn execute_order(&self, order: Order) -> Result<String, ExecutorError> {
         if order.is_solana() {
             if order.solana_transaction.is_none() {
-                return Err(anyhow!("Solana transaction required for Solana order"));
+                return Err(ExecutorError::ExecuteOrderError(
+                    "Solana transaction required for Solana order".to_string(),
+                ));
             }
             self.execute_solana_transaction(
                 order.address,
@@ -31,7 +53,9 @@ impl Executor {
             .await
         } else {
             if order.evm_transaction.is_none() {
-                return Err(anyhow!("EVM transaction required for EVM order"));
+                return Err(ExecutorError::ExecuteOrderError(
+                    "EVM transaction required for EVM order".to_string(),
+                ));
             }
             self.execute_evm_transaction(order.address, order.evm_transaction.unwrap(), order.caip2)
                 .await
@@ -43,7 +67,7 @@ impl Executor {
         address: String,
         transaction: serde_json::Value,
         caip2: String,
-    ) -> Result<String> {
+    ) -> Result<String, ExecutorError> {
         tracing::info!(?address, "Executing EVM transaction");
         let request = SignAndSendEvmTransactionRequest {
             address,
@@ -61,10 +85,10 @@ impl Executor {
             .await?;
 
         if !response.status().is_success() {
-            return Err(anyhow!(
+            return Err(ExecutorError::ExecuteEvmTransactionError(anyhow!(
                 "Failed to send transaction: {}",
                 response.text().await?
-            ));
+            )));
         }
 
         let result: SignAndSendTransactionResponse = response.json().await?;
@@ -82,7 +106,7 @@ impl Executor {
         address: String,
         transaction: String,
         caip2: String,
-    ) -> Result<String> {
+    ) -> Result<String, ExecutorError> {
         tracing::info!(?address, "Executing Solana transaction");
         let request = SignAndSendTransactionRequest {
             address,
@@ -103,10 +127,10 @@ impl Executor {
             .await?;
 
         if !response.status().is_success() {
-            return Err(anyhow!(
+            return Err(ExecutorError::ExecuteSolanaTransactionError(anyhow!(
                 "Failed to sign transaction: {}",
                 response.text().await?
-            ));
+            )));
         }
 
         let result: SignAndSendTransactionResponse = response.json().await?;
