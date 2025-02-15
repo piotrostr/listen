@@ -102,23 +102,9 @@ async fn cleanup_test_pipelines(redis_client: &RedisClient) -> Result<(), Engine
 }
 
 async fn get_top_volume_tokens() -> Result<HashSet<String>> {
-    // Query to get top tokens by volume in the last 24 hours
-    let sql = r#"
-        SELECT 
-            name,
-            pubkey,
-            sum(swap_amount) as total_volume
-        FROM price_updates
-        WHERE timestamp >= (extract(epoch from now()) - 86400)
-        GROUP BY name, pubkey
-        ORDER BY total_volume DESC
-        LIMIT 100
-    "#;
-
     let client = Client::new();
     let response = client
-        .post("https://api.listen-rs.com/query")
-        .json(&serde_json::json!({ "sql": sql }))
+        .get("https://api.listen-rs.com/top-tokens")
         .send()
         .await?;
 
@@ -129,13 +115,15 @@ async fn get_top_volume_tokens() -> Result<HashSet<String>> {
 
     let data: serde_json::Value = response.json().await?;
 
-    // Extract token names into a HashSet
+    // Extract token names from the response
     let tokens: HashSet<String> = data
         .as_array()
         .ok_or_else(|| anyhow::anyhow!("Invalid response format"))?
         .iter()
         .filter_map(|row| row["name"].as_str().map(String::from))
         .collect();
+
+    println!("Grabbing {} tokens from clickhouse", tokens.len());
 
     Ok(tokens)
 }
