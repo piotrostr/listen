@@ -10,7 +10,7 @@ pub enum Command {
 #[cfg(feature = "rpc")]
 #[tokio::main]
 async fn main() -> Result<()> {
-    use listen_data_service::{
+    use listen_data::{
         rpc::{
             account_pipeline::make_raydium_rpc_accounts_pipeline,
             instruction_pipeline::make_raydium_rpc_instruction_pipeline,

@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
-use listen_data_service::{
+use listen_data::{
     geyser::make_raydium_geyser_instruction_pipeline,
     sol_price_stream::SOL_PRICE_CACHE,
     util::{make_db, make_kv_store, make_message_queue},

@@ -184,6 +184,7 @@ pub async fn process_swap(
 }
 
 // Helper function to process a single two-token swap
+#[allow(clippy::too_many_arguments)]
 async fn process_two_token_swap(
     diffs: &[Diff],
     transaction_metadata: &TransactionMetadata,
@@ -248,8 +249,8 @@ async fn process_two_token_swap(
         .ipfs_metadata
         .as_ref()
         .and_then(|metadata| metadata.get("createdOn"))
-        .map_or(false, |value| {
-            value.as_str().map_or(false, |s| s.contains("pump.fun"))
+        .is_some_and(|value| {
+            value.as_str().is_some_and(|s| s.contains("pump.fun"))
         });
 
     let price_update = PriceUpdate {
@@ -271,7 +272,7 @@ async fn process_two_token_swap(
         Ok(_) => metrics.increment_db_insert_success(),
         Err(e) => {
             metrics.increment_db_insert_failure();
-            return Err(e.into());
+            return Err(e);
         }
     }
 
