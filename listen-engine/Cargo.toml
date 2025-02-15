@@ -16,3 +16,6 @@ tokio = { version = "1.43.0", features = ["rt", "macros"] }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 uuid = { version = "1.12.1", features = ["serde"] }
+redis = { version = "0.23.3", features = ["tokio-comp"] }
+futures-util = "0.3.31"
+actix-web = { version = "4", features = ["rustls-0_23"] }

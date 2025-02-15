@@ -122,10 +122,10 @@ impl Executor {
 
 #[cfg(test)]
 mod tests {
-    use crate::trading_engine::caip2::Caip2;
-    use crate::trading_engine::constants::*;
-    use crate::trading_engine::executor::Executor;
-    use crate::trading_engine::order::Order;
+    use crate::engine::caip2::Caip2;
+    use crate::engine::constants::*;
+    use crate::engine::executor::Executor;
+    use crate::engine::order::Order;
 
     #[tokio::test]
     async fn test_execute_order_eth() {

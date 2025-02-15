@@ -15,9 +15,9 @@ use anyhow::Result;
 use uuid::Uuid;
 
 use self::evaluator::Evaluator;
-use self::pipeline::{Condition, ConditionType, Pipeline, Status};
+use self::pipeline::{Action, Condition, ConditionType, Pipeline, Status};
 
-pub struct TradingEngine {
+pub struct Engine {
     executor: executor::Executor,
 
     // Active pipelines indexed by UUID
@@ -30,7 +30,7 @@ pub struct TradingEngine {
     price_cache: RwLock<HashMap<String, f64>>,
 }
 
-impl TradingEngine {
+impl Engine {
     pub fn from_env() -> Result<Self> {
         Ok(Self {
             executor: executor::Executor::from_env()?,
@@ -86,16 +86,22 @@ impl TradingEngine {
                 if matches!(step.status, Status::Pending)
                     && Evaluator::evaluate_conditions(&step.conditions, &price_cache)
                 {
-                    // Execute order and update status
-                    match self.executor.execute_order(step.order.clone()).await {
-                        Ok(_) => {
-                            step.status = Status::Completed;
-                            pipeline.current_steps = step.next_steps.clone();
+                    match &step.action {
+                        Action::Order(order) => {
+                            match self.executor.execute_order(order.clone()).await {
+                                Ok(_) => {
+                                    step.status = Status::Completed;
+                                    pipeline.current_steps = step.next_steps.clone();
+                                }
+                                Err(e) => {
+                                    step.status = Status::Failed;
+                                    pipeline.status = Status::Failed;
+                                    tracing::error!(%step_id, error = %e, "Order execution failed");
+                                }
+                            }
                         }
-                        Err(e) => {
-                            step.status = Status::Failed;
-                            pipeline.status = Status::Failed;
-                            tracing::error!(%step_id, error = %e, "Order execution failed");
+                        Action::Notification(notification) => {
+                            tracing::info!(%step_id, ?notification, "TODO: Notification");
                         }
                     }
                 }

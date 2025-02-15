@@ -33,9 +33,20 @@ pub struct Condition {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct Notification {
+    pub message: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum Action {
+    Order(Order),
+    Notification(Notification),
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct PipelineStep {
     pub id: Uuid,
-    pub order: Order,
+    pub action: Action,
     pub conditions: Vec<Condition>,
     pub next_steps: Vec<Uuid>,
     pub status: Status,
