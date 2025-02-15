@@ -7,6 +7,7 @@ import { TokenTile } from "./TokenTile";
 export default function PriceUpdates() {
   const [latestUpdate, setLatestUpdate] = useState<PriceUpdate | null>(null);
   const [tokenMap, setTokenMap] = useState<Map<string, TokenData>>(new Map());
+  const [marketCapFilter, setMarketCapFilter] = useState<string>("all");
 
   useEffect(() => {
     const ws = new WebSocket("wss://api.listen-rs.com/ws");
@@ -68,7 +69,28 @@ export default function PriceUpdates() {
     };
   }, []);
 
-  const topTokens = Array.from(tokenMap.values())
+  const filterTokensByMarketCap = (tokens: TokenData[]) => {
+    switch (marketCapFilter) {
+      case "under1m":
+        return tokens.filter((token) => token.marketCap < 1_000_000);
+      case "1mTo10m":
+        return tokens.filter(
+          (token) =>
+            token.marketCap >= 1_000_000 && token.marketCap < 10_000_000
+        );
+      case "10mTo100m":
+        return tokens.filter(
+          (token) =>
+            token.marketCap >= 10_000_000 && token.marketCap < 100_000_000
+        );
+      case "over100m":
+        return tokens.filter((token) => token.marketCap >= 100_000_000);
+      default:
+        return tokens;
+    }
+  };
+
+  const topTokens = filterTokensByMarketCap(Array.from(tokenMap.values()))
     .sort((a, b) => b.buyVolume - a.buyVolume)
     .slice(0, 20);
 
@@ -106,9 +128,25 @@ export default function PriceUpdates() {
 
       {/* Top Tokens Section */}
       <div className="bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl shadow-lg flex-1 overflow-hidden flex flex-col min-h-0">
-        <h2 className="text-lg font-semibold p-4 border-b border-purple-500/20 text-purple-100 flex-shrink-0">
-          Top Tokens by Volume
-        </h2>
+        <div className="p-4 border-b border-purple-500/20 flex justify-between items-center">
+          <h2 className="text-lg font-semibold text-purple-100">
+            Top Tokens by Volume
+          </h2>
+          <div className="flex items-center space-x-2">
+            <span className="text-purple-100">MC:</span>
+            <select
+              value={marketCapFilter}
+              onChange={(e) => setMarketCapFilter(e.target.value)}
+              className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-3 py-1 text-sm focus:outline-none focus:border-purple-500"
+            >
+              <option value="all">All Market Caps</option>
+              <option value="under1m">Under $1M</option>
+              <option value="1mTo10m">$1M - $10M</option>
+              <option value="10mTo100m">$10M - $100M</option>
+              <option value="over100m">Over $100M</option>
+            </select>
+          </div>
+        </div>
         <div className="divide-y divide-purple-500/20 overflow-y-auto">
           {topTokens.map((token, index) => (
             <TokenTile key={token.pubkey} token={token} index={index} />
