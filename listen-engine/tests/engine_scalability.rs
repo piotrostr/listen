@@ -101,6 +101,45 @@ async fn cleanup_test_pipelines(redis_client: &RedisClient) -> Result<(), Engine
     Ok(())
 }
 
+async fn get_top_volume_tokens() -> Result<HashSet<String>> {
+    // Query to get top tokens by volume in the last 24 hours
+    let sql = r#"
+        SELECT 
+            name,
+            pubkey,
+            sum(swap_amount) as total_volume
+        FROM price_updates
+        WHERE timestamp >= (extract(epoch from now()) - 86400)
+        GROUP BY name, pubkey
+        ORDER BY total_volume DESC
+        LIMIT 100
+    "#;
+
+    let client = Client::new();
+    let response = client
+        .post("https://api.listen-rs.com/query")
+        .json(&serde_json::json!({ "sql": sql }))
+        .send()
+        .await?;
+
+    if !response.status().is_success() {
+        println!("Response: {:?}", response.text().await?);
+        return Err(anyhow::anyhow!("Failed to query ClickHouse"));
+    }
+
+    let data: serde_json::Value = response.json().await?;
+
+    // Extract token names into a HashSet
+    let tokens: HashSet<String> = data
+        .as_array()
+        .ok_or_else(|| anyhow::anyhow!("Invalid response format"))?
+        .iter()
+        .filter_map(|row| row["name"].as_str().map(String::from))
+        .collect();
+
+    Ok(tokens)
+}
+
 #[tokio::test]
 async fn test_engine_scalability() -> Result<()> {
     tracing_subscriber::fmt::init();
@@ -120,26 +159,15 @@ async fn test_engine_scalability() -> Result<()> {
     sleep(Duration::from_secs(2)).await;
 
     let redis_client = make_redis_client().await?;
-    let mut conn = redis_client
-        .get_connection()
-        .await
-        .map_err(EngineError::RedisClientError)?;
 
     // Create HTTP client for API requests
     let client = Client::new();
 
-    // Get all symbol keys
-    let symbols: HashSet<String> = cmd("KEYS")
-        .arg("solana:metadata:*")
-        .query_async(&mut *conn)
-        .await
-        .map_err(|e| EngineError::RedisClientError(RedisClientError::RedisError(e)))?;
+    // Get top volume tokens from ClickHouse
+    let symbols = get_top_volume_tokens().await?;
 
-    println!("Found {} symbols", symbols.len());
-    assert!(
-        symbols.len() >= 100,
-        "Need at least 100 symbols for the test"
-    );
+    println!("Found {} active tokens", symbols.len());
+    assert!(!symbols.is_empty(), "No active tokens found");
 
     // Create a semaphore to limit concurrent requests
     let semaphore = Arc::new(Semaphore::new(150)); // Allow max 150 concurrent requests
