@@ -119,7 +119,6 @@ impl Engine {
                     }
                 }
                 Some(price_update) = self.receiver.recv() => {
-                    tracing::info!("Received price update: {}", price_update.pubkey);
                     if let Err(e) = self.handle_price_update(&price_update.pubkey, price_update.price).await {
                         tracing::error!("Error handling price update: {}", e);
                     }

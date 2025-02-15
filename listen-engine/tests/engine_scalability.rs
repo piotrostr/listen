@@ -11,6 +11,8 @@ use listen_engine::{
 };
 use reqwest::Client;
 use std::collections::{HashMap, HashSet};
+use std::sync::Arc;
+use tokio::sync::Semaphore;
 use tokio::time::{sleep, Duration};
 use uuid::Uuid;
 
@@ -19,7 +21,11 @@ async fn create_pipeline_via_api(
     user_id: &str,
     symbol: &str,
     price_threshold: f64,
+    semaphore: Arc<Semaphore>,
 ) -> Result<()> {
+    // Acquire semaphore permit
+    let _permit = semaphore.acquire().await.expect("Semaphore closed");
+
     let step_id = Uuid::new_v4();
 
     // Create pipeline request using the server's expected format
@@ -95,7 +101,7 @@ async fn cleanup_test_pipelines(redis_client: &RedisClient) -> Result<(), Engine
     Ok(())
 }
 
-#[tokio::test(flavor = "multi_thread", worker_threads = 4)]
+#[tokio::test]
 async fn test_engine_scalability() -> Result<()> {
     tracing_subscriber::fmt::init();
     if std::env::var("IS_SYSTEMD_SERVICE").is_err() {
@@ -135,6 +141,9 @@ async fn test_engine_scalability() -> Result<()> {
         "Need at least 100 symbols for the test"
     );
 
+    // Create a semaphore to limit concurrent requests
+    let semaphore = Arc::new(Semaphore::new(150)); // Allow max 150 concurrent requests
+
     // Create pipelines for each symbol via API
     let mut futures = Vec::new();
     for symbol in &symbols {
@@ -144,9 +153,12 @@ async fn test_engine_scalability() -> Result<()> {
                 "test_user",
                 symbol,
                 threshold,
+                semaphore.clone(),
             ));
         }
     }
+
+    println!("Launching {} pipeline creation requests...", futures.len());
     let results = futures_util::future::join_all(futures).await;
     let pipeline_count = results.len();
     for result in results {
