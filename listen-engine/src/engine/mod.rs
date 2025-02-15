@@ -105,15 +105,14 @@ impl Engine {
                     match msg {
                         EngineMessage::AddPipeline { pipeline, response_tx } => {
                             let result = self.add_pipeline(pipeline).await;
-                            // Ignore error from send - receiver may have dropped
                             let _ = response_tx.send(result);
                         },
-                        EngineMessage::DeletePipeline { pipeline_id, response_tx } => {
-                            let result = self.delete_pipeline(pipeline_id).await;
+                        EngineMessage::DeletePipeline { user_id, pipeline_id, response_tx } => {
+                            let result = self.delete_pipeline(&user_id, pipeline_id).await;
                             let _ = response_tx.send(result);
                         },
-                        EngineMessage::GetPipeline { pipeline_id, response_tx } => {
-                            let result = self.get_pipeline(pipeline_id).await;
+                        EngineMessage::GetPipeline { user_id, pipeline_id, response_tx } => {
+                            let result = self.get_pipeline(&user_id, pipeline_id).await;
                             let _ = response_tx.send(result);
                         },
                     }
@@ -154,13 +153,29 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn delete_pipeline(&self, pipeline_id: Uuid) -> Result<(), EngineError> {
+    pub async fn delete_pipeline(
+        &self,
+        user_id: &str,
+        pipeline_id: Uuid,
+    ) -> Result<(), EngineError> {
+        if let Err(e) = self
+            .redis
+            .delete_pipeline(&user_id, &pipeline_id.to_string())
+            .await
+        {
+            return Err(EngineError::DeletePipelineError(e));
+        }
         let mut active_pipelines = self.active_pipelines.write().await;
         active_pipelines.remove(&pipeline_id);
+
         Ok(())
     }
 
-    pub async fn get_pipeline(&self, pipeline_id: Uuid) -> Result<Pipeline, EngineError> {
+    pub async fn get_pipeline(
+        &self,
+        _user_id: &str,
+        pipeline_id: Uuid,
+    ) -> Result<Pipeline, EngineError> {
         let active_pipelines = self.active_pipelines.read().await;
         active_pipelines.get(&pipeline_id).cloned().ok_or_else(|| {
             EngineError::GetPipelineError(format!("Pipeline not found: {}", pipeline_id))
@@ -170,13 +185,12 @@ impl Engine {
     pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
         let start = Instant::now();
 
-        // Increment counter
         counter!("price_updates_processed", 1);
 
-        // Update price cache
-        let mut cache = self.price_cache.write().await;
-        cache.insert(asset.to_string(), price);
-        drop(cache); // Release lock early
+        {
+            let mut cache = self.price_cache.write().await;
+            cache.insert(asset.to_string(), price);
+        }
 
         // Get affected pipelines
         let subscriptions = self.asset_subscriptions.read().await;
@@ -188,10 +202,8 @@ impl Engine {
             }
         }
 
-        // Record duration
         histogram!("price_update_duration", start.elapsed());
 
-        // Record current number of active pipelines
         gauge!(
             "active_pipelines",
             self.active_pipelines.read().await.len() as f64
@@ -216,10 +228,16 @@ impl Engine {
                                     Ok(_) => {
                                         step.status = Status::Completed;
                                         pipeline.current_steps = step.next_steps.clone();
+                                        if let Err(e) = self.redis.save_pipeline(&pipeline).await {
+                                            return Err(EngineError::AddPipelineError(e));
+                                        }
                                     }
                                     Err(e) => {
                                         step.status = Status::Failed;
                                         pipeline.status = Status::Failed;
+                                        if let Err(e) = self.redis.save_pipeline(pipeline).await {
+                                            return Err(EngineError::AddPipelineError(e));
+                                        }
                                         tracing::error!(%step_id, error = %e, "Order execution failed");
                                     }
                                 }
@@ -241,6 +259,9 @@ impl Engine {
 
         if pipeline.current_steps.is_empty() {
             pipeline.status = Status::Completed;
+            if let Err(e) = self.redis.save_pipeline(pipeline).await {
+                return Err(EngineError::AddPipelineError(e));
+            }
         }
 
         let duration = start.elapsed();

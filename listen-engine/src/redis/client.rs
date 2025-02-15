@@ -77,19 +77,25 @@ impl RedisClient {
         }
     }
 
-    pub async fn get_pipeline(&self, key: &str) -> Result<Option<Pipeline>, RedisClientError> {
-        self.get(&format!("pipeline:{}", key)).await
+    pub async fn get_pipeline(
+        &self,
+        user_id: &str,
+        id: &str,
+    ) -> Result<Option<Pipeline>, RedisClientError> {
+        self.get(&format!("pipeline:{}:{}", user_id, id)).await
     }
 
     pub async fn save_pipeline(&self, pipeline: &Pipeline) -> Result<(), RedisClientError> {
-        self.set(&format!("pipeline:{}", pipeline.id), pipeline)
-            .await
+        self.set(
+            &format!("pipeline:{}:{}", pipeline.user_id, pipeline.id),
+            pipeline,
+        )
+        .await
     }
 
     pub async fn get_all_pipelines(&self) -> Result<Vec<Pipeline>, RedisClientError> {
         let mut conn = self.pool.get().await?;
 
-        // Get all keys in one operation
         let keys: Vec<String> = cmd("KEYS")
             .arg("pipeline:*")
             .query_async(&mut *conn)
@@ -114,14 +120,48 @@ impl RedisClient {
         Ok(pipelines)
     }
 
-    pub async fn save_all_pipelines(&self, pipelines: &[Pipeline]) -> Result<(), RedisClientError> {
+    pub async fn get_user_pipelines(
+        &self,
+        user_id: &str,
+    ) -> Result<Vec<Pipeline>, RedisClientError> {
+        let mut conn = self.pool.get().await?;
+
+        // Get all keys for the specific user
+        let keys: Vec<String> = cmd("KEYS")
+            .arg(format!("pipeline:{}:*", user_id))
+            .query_async(&mut *conn)
+            .await?;
+
+        let mut pipe = pipe();
+        for key in &keys {
+            pipe.get(key);
+        }
+
+        let results: Vec<Option<String>> = pipe.query_async(&mut *conn).await?;
+
+        let mut pipelines = Vec::with_capacity(results.len());
+        for json_str in results.into_iter().flatten() {
+            match serde_json::from_str(&json_str) {
+                Ok(pipeline) => pipelines.push(pipeline),
+                Err(e) => warn!("Failed to deserialize pipeline: {}", e),
+            }
+        }
+
+        Ok(pipelines)
+    }
+
+    pub async fn save_all_pipelines(
+        &self,
+        user_id: &str,
+        pipelines: &[Pipeline],
+    ) -> Result<(), RedisClientError> {
         let mut conn = self.pool.get().await?;
 
         for chunk in pipelines.chunks(PIPELINE_BATCH_SIZE) {
             let mut pipe = pipe();
 
             for pipeline in chunk {
-                let key = format!("pipeline:{}", pipeline.id);
+                let key = format!("pipeline:{}:{}", user_id, pipeline.id);
                 let value = serde_json::to_string(pipeline)?;
                 pipe.set(key, value);
             }
@@ -133,29 +173,12 @@ impl RedisClient {
         Ok(())
     }
 
-    pub async fn delete_pipeline(&self, id: &str) -> Result<(), RedisClientError> {
+    pub async fn delete_pipeline(&self, user_id: &str, id: &str) -> Result<(), RedisClientError> {
         let mut conn = self.pool.get().await?;
         let _: () = cmd("DEL")
-            .arg(format!("pipeline:{}", id))
+            .arg(format!("pipeline:{}:{}", user_id, id))
             .query_async(&mut *conn)
             .await?;
-        Ok(())
-    }
-
-    pub async fn delete_all_pipelines(&self, ids: &[String]) -> Result<(), RedisClientError> {
-        let mut conn = self.pool.get().await?;
-
-        for chunk in ids.chunks(PIPELINE_BATCH_SIZE) {
-            let mut pipe = pipe();
-
-            for id in chunk {
-                pipe.del(format!("pipeline:{}", id));
-            }
-
-            let _: () = pipe.query_async(&mut *conn).await?;
-            debug!("Deleted batch of {} pipelines", chunk.len());
-        }
-
         Ok(())
     }
 }

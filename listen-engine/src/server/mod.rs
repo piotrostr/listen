@@ -25,10 +25,12 @@ pub enum EngineMessage {
         response_tx: oneshot::Sender<Result<(), EngineError>>,
     },
     GetPipeline {
+        user_id: String,
         pipeline_id: Uuid,
         response_tx: oneshot::Sender<Result<Pipeline, EngineError>>,
     },
     DeletePipeline {
+        user_id: String,
         pipeline_id: Uuid,
         response_tx: oneshot::Sender<Result<(), EngineError>>,
     },
