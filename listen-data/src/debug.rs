@@ -2,7 +2,6 @@ use tracing::info;
 
 use crate::constants::{USDC_MINT_KEY_STR, WSOL_MINT_KEY_STR};
 use crate::diffs::Diff;
-use crate::kv_store::KVStoreExt;
 use crate::raydium_intruction_processor::RaydiumAmmV4InstructionProcessor;
 
 #[cfg(test)]

@@ -5,7 +5,7 @@ use std::{fs::File, io::BufWriter, sync::Arc};
 
 use crate::{
     db::{ClickhouseDb, Database},
-    kv_store::{KVStore, RedisKVStore},
+    kv_store::RedisKVStore,
     message_queue::RedisMessageQueue,
 };
 

@@ -7,50 +7,18 @@ use crate::metadata::TokenMetadata;
 use crate::price::Price;
 use crate::util::create_redis_pool;
 
-/// internal impl
-#[async_trait::async_trait]
-pub trait KVStore {
-    async fn new(redis_url: &str) -> Result<Self>
-    where
-        Self: Sized;
-    async fn get<T: DeserializeOwned + Send>(
-        &self,
-        key: &str,
-    ) -> Result<Option<T>>;
-    async fn set<T: Serialize + Send + Sync>(
-        &self,
-        key: &str,
-        value: &T,
-    ) -> Result<()>;
-    async fn exists(&self, key: &str) -> Result<bool>;
-}
-
-#[async_trait::async_trait]
-pub trait KVStoreExt: KVStore {
-    async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>>;
-    async fn insert_metadata(&self, metadata: &TokenMetadata) -> Result<()>;
-    async fn has_metadata(&self, mint: &str) -> Result<bool>;
-    async fn get_price(
-        &self,
-        coin_mint: &str,
-        pc_mint: &str,
-    ) -> Result<Option<Price>>;
-    async fn insert_price(&self, price: &Price) -> Result<()>;
-}
-
 pub struct RedisKVStore {
     pool: bb8::Pool<RedisConnectionManager>,
 }
 
-#[async_trait::async_trait]
-impl KVStore for RedisKVStore {
-    async fn new(redis_url: &str) -> Result<Self> {
+impl RedisKVStore {
+    pub async fn new(redis_url: &str) -> Result<Self> {
         let pool = create_redis_pool(redis_url).await?;
         info!("Connected to Redis KV store at {}", redis_url);
         Ok(Self { pool })
     }
 
-    async fn get<T: DeserializeOwned + Send>(
+    pub async fn get<T: DeserializeOwned + Send>(
         &self,
         key: &str,
     ) -> Result<Option<T>> {
@@ -78,7 +46,7 @@ impl KVStore for RedisKVStore {
         }
     }
 
-    async fn set<T: Serialize + Send + Sync>(
+    pub async fn set<T: Serialize + Send + Sync>(
         &self,
         key: &str,
         value: &T,
@@ -98,7 +66,7 @@ impl KVStore for RedisKVStore {
         Ok(())
     }
 
-    async fn exists(&self, key: &str) -> Result<bool> {
+    pub async fn exists(&self, key: &str) -> Result<bool> {
         let mut conn = self.pool.get().await.context(format!(
             "Failed to get Redis connection: {:#?}",
             self.pool.state().statistics
@@ -113,26 +81,21 @@ impl KVStore for RedisKVStore {
         debug!(key, exists, "redis exists ok");
         Ok(exists)
     }
-}
 
-impl RedisKVStore {
-    pub fn make_price_key(&self, coin_mint: &str, pc_mint: &str) -> String {
+    fn make_price_key(&self, coin_mint: &str, pc_mint: &str) -> String {
         format!("solana:price:{}:{}", coin_mint, pc_mint)
     }
 
-    pub fn make_metadata_key(&self, mint: &str) -> String {
+    fn make_metadata_key(&self, mint: &str) -> String {
         format!("solana:metadata:{}", mint)
     }
-}
 
-#[async_trait::async_trait]
-impl KVStoreExt for RedisKVStore {
-    async fn insert_price(&self, price: &Price) -> Result<()> {
+    pub async fn insert_price(&self, price: &Price) -> Result<()> {
         let key = self.make_price_key(&price.coin_mint, &price.pc_mint);
         self.set(&key, price).await
     }
 
-    async fn get_price(
+    pub async fn get_price(
         &self,
         coin_mint: &str,
         pc_mint: &str,
@@ -141,17 +104,23 @@ impl KVStoreExt for RedisKVStore {
         self.get(&key).await
     }
 
-    async fn insert_metadata(&self, metadata: &TokenMetadata) -> Result<()> {
+    pub async fn insert_metadata(
+        &self,
+        metadata: &TokenMetadata,
+    ) -> Result<()> {
         let key = self.make_metadata_key(&metadata.mint);
         self.set(&key, metadata).await
     }
 
-    async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>> {
+    pub async fn get_metadata(
+        &self,
+        mint: &str,
+    ) -> Result<Option<TokenMetadata>> {
         let key = self.make_metadata_key(mint);
         self.get(&key).await
     }
 
-    async fn has_metadata(&self, mint: &str) -> Result<bool> {
+    pub async fn has_metadata(&self, mint: &str) -> Result<bool> {
         let key = self.make_metadata_key(mint);
         self.exists(&key).await
     }

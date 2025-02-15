@@ -1,8 +1,8 @@
 services:
   indexer:
-    image: piotrostr/listen-indexer
+    image: listen-indexer
     build:
-      context: .
+      context: ./listen-data
       dockerfile: Dockerfile
     env_file:
       - .env
@@ -21,9 +21,9 @@ services:
         condition: service_healthy
 
   adapter:
-    image: piotostr/listen-adapter
+    image: listen-adapter
     build:
-      context: ../listen-adapter
+      context: ./listen-adapter
       dockerfile: Dockerfile
     environment:
       - REDIS_URL=redis://redis:6379
@@ -37,7 +37,7 @@ services:
 
   redis:
     build:
-      context: ./redis
+      context: ./vendor/redis
       dockerfile: Dockerfile
     ports:
       - 6379:6379
@@ -61,7 +61,7 @@ services:
 
   clickhouse:
     build:
-      context: ./clickhouse
+      context: ./vendor/clickhouse
       dockerfile: Dockerfile
     ports:
       - 8123:8123
@@ -93,7 +93,7 @@ services:
 
   preview:
     build:
-      context: ../preview
+      context: ./preview
       dockerfile: Dockerfile
     environment:
       - REDIS_URL=redis://redis:6379

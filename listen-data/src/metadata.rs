@@ -1,7 +1,4 @@
-use crate::{
-    kv_store::{KVStoreExt, RedisKVStore},
-    util::make_rpc_client,
-};
+use crate::{kv_store::RedisKVStore, util::make_rpc_client};
 use anyhow::{Context, Result};
 use mpl_token_metadata::accounts::Metadata;
 use serde::{Deserialize, Serialize};

@@ -1,3 +1,5 @@
+clickhouse
+redis
 .DS_Store
 .vscode
 target
