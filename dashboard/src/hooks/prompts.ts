@@ -46,6 +46,8 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
 
   always include the tags! otherwise the pipeline will not be executed
   </knowledge>
-  <context>address: ${userAddress} ${JSON.stringify(portfolio)}</context>
+  <context>address: ${userAddress} ${JSON.stringify(
+    portfolio
+  )} (prices in USD)</context>
   `;
 }

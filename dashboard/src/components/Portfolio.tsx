@@ -7,8 +7,8 @@ import { ChatSelector } from "./ChatSelector";
 
 export function PortfolioSkeleton() {
   return (
-    <div className="h-[70vh] font-mono">
-      <div className="h-full border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm overflow-hidden flex flex-col">
+    <div className="h-full font-mono">
+      <div className="h-[85vh] border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm overflow-hidden flex flex-col">
         <div className="flex flex-row justify-between items-center p-4">
           <div className="h-7 w-28 bg-purple-500/20 rounded animate-pulse" />
           <div className="flex items-center gap-2">
@@ -92,8 +92,8 @@ export function Portfolio() {
       : evmAssets;
 
   return (
-    <div className="h-[70vh] font-mono">
-      <div className="h-full border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm overflow-hidden flex flex-col">
+    <div className="h-full font-mono">
+      <div className="h-[85vh] border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm overflow-hidden flex flex-col">
         <div className="flex flex-row justify-between items-center p-4">
           <h2 className="text-xl font-bold">Portfolio</h2>
           <div className="flex items-center gap-2">
