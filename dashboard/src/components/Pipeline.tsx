@@ -1,5 +1,13 @@
 import { useState } from "react";
 import { useSolanaTokens } from "../hooks/useToken";
+import {
+  Pipeline,
+  PipelineActionType,
+  PipelineCondition,
+  PipelineConditionType,
+  PipelineSchema,
+  PipelineStep,
+} from "../types/pipeline";
 import { Spinner } from "./Spinner";
 
 interface PipelineProps {
@@ -46,6 +54,10 @@ const PipelineStepContainer = ({
 };
 
 export const SwapPipelineStep = ({ index, step }: SwapPipelineStepProps) => {
+  if (step.action.type !== PipelineActionType.SwapOrder) {
+    throw new Error("SwapPipelineStep received non-swap action type");
+  }
+
   const { data: tokens } = useSolanaTokens([
     step.action.input_token,
     step.action.output_token,
@@ -142,9 +154,7 @@ export const NotificationPipelineStep = ({
             />
           )}
           <div>
-            <div className="font-bold text-purple-100">
-              Notify when conditions are met for {tokenName}
-            </div>
+            <div className="font-bold text-purple-100">Send a notification</div>
           </div>
         </div>
       </div>
@@ -254,71 +264,13 @@ function PipelineMenu({
   );
 }
 
-export interface Pipeline {
-  steps: PipelineStep[];
-}
-
-interface PipelineStep {
-  action: PipelineAction;
-  conditions: PipelineCondition[];
-}
-
-enum PipelineActionType {
-  SwapOrder = "SwapOrder",
-  Notification = "Notification",
-}
-
-interface PipelineAction {
-  type: PipelineActionType;
-  input_token: string;
-  output_token: string;
-  // message in case of Notification
-  message: string | null;
-  // one of amount/percentage for SwapOrder
-  amount: number | null;
-  percentage: number | null;
-}
-
-enum PipelineConditionType {
-  PriceAbove = "PriceAbove",
-  PriceBelow = "PriceBelow",
-  Now = "Now",
-}
-
-interface PipelineCondition {
-  type: PipelineConditionType;
-  asset: string;
-  value: number;
-}
-
 export function serializePipeline(pipeline: Pipeline): string {
   return JSON.stringify(pipeline);
 }
 
 export function deserializePipeline(serialized: string): Pipeline {
   const parsed = JSON.parse(serialized);
-
-  if (!Array.isArray(parsed.steps)) {
-    throw new Error("Invalid pipeline format: steps must be an array");
-  }
-
-  parsed.steps.forEach((step: any) => {
-    if (!Object.values(PipelineActionType).includes(step.action.type)) {
-      throw new Error(`Invalid action type: ${step.action.type}`);
-    }
-
-    if (!Array.isArray(step.conditions)) {
-      throw new Error("Invalid step format: conditions must be an array");
-    }
-
-    step.conditions.forEach((condition: any) => {
-      if (!Object.values(PipelineConditionType).includes(condition.type)) {
-        throw new Error(`Invalid condition type: ${condition.type}`);
-      }
-    });
-  });
-
-  return parsed as Pipeline;
+  return PipelineSchema.parse(parsed);
 }
 
 export const mockOrderPipeline: Pipeline = {
@@ -330,7 +282,6 @@ export const mockOrderPipeline: Pipeline = {
         output_token: "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
         amount: 1000,
         percentage: null,
-        message: null,
       },
       conditions: [],
     },
@@ -340,8 +291,7 @@ export const mockOrderPipeline: Pipeline = {
         input_token: "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
         output_token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
         amount: null,
-        percentage: 0.5,
-        message: null,
+        percentage: 0.3,
       },
       conditions: [
         {
