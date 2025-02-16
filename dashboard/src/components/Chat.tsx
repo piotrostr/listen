@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import { type Message, useChat } from "../hooks/useChat";
 import { ChatContainer } from "./ChatContainer";
 import { ChatMessage, ToolMessage } from "./Messages";
+import { mockOrderPipeline, PipelineDisplay } from "./Pipeline";
 
 const LoadingIndicator = () => (
   <div className="bg-purple-900/20 text-purple-300 rounded px-4 py-2">...</div>
@@ -60,6 +61,7 @@ export function Chat() {
 
   return (
     <ChatContainer inputMessage={inputMessage}>
+      <PipelineDisplay pipeline={mockOrderPipeline} />
       {messages.map(renderMessage)}
       {isLoading && <LoadingIndicator />}
     </ChatContainer>
