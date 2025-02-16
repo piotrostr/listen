@@ -5,7 +5,7 @@ pub fn base64encode(data: &[u8]) -> String {
     STANDARD.encode(data)
 }
 
-pub fn create_http_client(privy_config: &PrivyConfig) -> reqwest::Client {
+pub fn create_privy_client(privy_config: &PrivyConfig) -> reqwest::Client {
     reqwest::Client::builder()
         .default_headers({
             let mut headers = reqwest::header::HeaderMap::new();

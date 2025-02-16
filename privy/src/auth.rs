@@ -1,10 +1,9 @@
 use anyhow::{anyhow, Result};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 
-use crate::privy::{
-    config::PrivyConfig,
+use crate::{
     types::{LinkedAccount, PrivyClaims, User, WalletAccount},
-    util::create_http_client,
+    Privy,
 };
 
 #[derive(Clone)]
@@ -13,11 +12,6 @@ pub struct UserSession {
     pub session_id: String,
     pub wallet_address: String,
     pub pubkey: String,
-}
-
-pub struct PrivyAuth {
-    privy_config: PrivyConfig,
-    http_client: reqwest::Client,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -34,15 +28,7 @@ pub enum PrivyAuthError {
     FindWalletError(anyhow::Error),
 }
 
-impl PrivyAuth {
-    pub fn new(privy_config: PrivyConfig) -> Self {
-        let http_client = create_http_client(&privy_config);
-        Self {
-            privy_config,
-            http_client,
-        }
-    }
-
+impl Privy {
     pub async fn authenticate_user(
         &self,
         access_token: &str,
@@ -72,9 +58,9 @@ impl PrivyAuth {
     pub fn validate_access_token(&self, access_token: &str) -> Result<PrivyClaims, PrivyAuthError> {
         let mut validation = Validation::new(Algorithm::ES256);
         validation.set_issuer(&["privy.io"]);
-        validation.set_audience(&[self.privy_config.app_id.clone()]);
+        validation.set_audience(&[self.config.app_id.clone()]);
 
-        let key = DecodingKey::from_ec_pem(self.privy_config.verification_key.as_bytes())
+        let key = DecodingKey::from_ec_pem(self.config.verification_key.as_bytes())
             .map_err(PrivyAuthError::ValidateAccessTokenError)?;
 
         let token_data = decode::<PrivyClaims>(access_token, &key, &validation)
@@ -87,7 +73,7 @@ impl PrivyAuth {
         let url = format!("https://auth.privy.io/api/v1/users/{}", user_id);
 
         let response = self
-            .http_client
+            .client
             .get(url)
             .send()
             .await

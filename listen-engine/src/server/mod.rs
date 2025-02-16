@@ -15,8 +15,8 @@ use crate::{
         Engine, EngineError,
     },
     metrics::metrics_handler,
-    privy::{auth::PrivyAuth, config::PrivyConfig},
 };
+use privy::{config::PrivyConfig, Privy};
 
 #[derive(Debug)]
 pub enum EngineMessage {
@@ -38,7 +38,7 @@ pub enum EngineMessage {
 
 pub struct AppState {
     engine_bridge_tx: mpsc::Sender<EngineMessage>,
-    privy_auth: Arc<PrivyAuth>,
+    privy: Arc<Privy>,
 }
 
 pub async fn run() -> std::io::Result<()> {
@@ -65,7 +65,7 @@ pub async fn run() -> std::io::Result<()> {
         }
     });
 
-    let privy_auth = Arc::new(PrivyAuth::new(PrivyConfig::from_env().map_err(|_| {
+    let privy = Arc::new(Privy::new(PrivyConfig::from_env().map_err(|_| {
         std::io::Error::new(std::io::ErrorKind::Other, "Failed to create privy config")
     })?));
 
@@ -74,7 +74,7 @@ pub async fn run() -> std::io::Result<()> {
         App::new()
             .app_data(Data::new(AppState {
                 engine_bridge_tx: tx.clone(),
-                privy_auth: privy_auth.clone(),
+                privy: privy.clone(),
             }))
             .wrap(middleware::Logger::default())
             .service(
@@ -127,7 +127,7 @@ async fn create_pipeline(
     let auth_token = auth_token.split(" ").nth(1).unwrap();
 
     let user = match state
-        .privy_auth
+        .privy
         .authenticate_user(auth_token)
         .await
         .map_err(|_| HttpResponse::Unauthorized())

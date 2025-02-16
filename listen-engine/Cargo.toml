@@ -6,7 +6,6 @@ default-run = "listen-engine"
 
 [dependencies]
 anyhow = "1.0.95"
-base64 = "0.22.1"
 chrono = { version = "0.4.39", features = ["serde"] }
 ctor = "0.2.9"
 dotenv = "0.15.0"
@@ -25,7 +24,7 @@ metrics = "0.21"
 metrics-exporter-prometheus = "0.12"
 once_cell = "1.18"
 bb8-redis = "0.20.0"
-jsonwebtoken = { version = "9.3.0" }
+privy = { path = "../privy" }
 
 [[bin]]
 name = "listen-engine"

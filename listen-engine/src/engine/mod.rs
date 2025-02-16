@@ -8,13 +8,15 @@ pub mod pipeline;
 
 use crate::engine::caip2::Caip2;
 use crate::engine::evaluator::EvaluatorError;
-use crate::engine::order::PrivyOrder;
 use crate::redis::client::{make_redis_client, RedisClient, RedisClientError};
 use crate::redis::subscriber::{
     make_redis_subscriber, PriceUpdate, RedisSubscriber, RedisSubscriberError,
 };
 use anyhow::Result;
 use metrics::{counter, gauge, histogram};
+use privy::config::PrivyConfig;
+use privy::tx::PrivyTransaction;
+use privy::{Privy, PrivyError};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 use std::time::Instant;
@@ -46,22 +48,25 @@ pub enum EngineError {
     #[error("[Engine] Failed to handle price update: {0}")]
     HandlePriceUpdateError(anyhow::Error),
 
-    #[error("[Engine] Executor error: {0}")]
-    ExecutorError(executor::ExecutorError),
+    #[error("[Engine] Transaction error: {0}")]
+    TransactionError(privy::tx::PrivyTransactionError),
 
     #[error("[Engine] Redis client error: {0}")]
     RedisClientError(RedisClientError),
 
     #[error("[Engine] Redis subscriber error: {0}")]
     RedisSubscriberError(RedisSubscriberError),
+
+    #[error("[Engine] Privy error: {0}")]
+    PrivyError(PrivyError),
 }
 
 pub struct Engine {
     pub redis: Arc<RedisClient>,
     pub redis_sub: Arc<RedisSubscriber>,
+    pub privy: Arc<Privy>,
 
     receiver: mpsc::Receiver<PriceUpdate>,
-    executor: executor::Executor,
 
     // Active pipelines indexed by UUID
     active_pipelines: RwLock<HashMap<Uuid, Pipeline>>,
@@ -77,7 +82,10 @@ impl Engine {
     pub async fn from_env() -> Result<Self, EngineError> {
         let (tx, rx) = mpsc::channel(1000);
         Ok(Self {
-            executor: executor::Executor::from_env().map_err(EngineError::ExecutorError)?,
+            privy: Arc::new(Privy::new(
+                PrivyConfig::from_env()
+                    .map_err(|e| EngineError::PrivyError(PrivyError::Config(e)))?,
+            )),
             redis: make_redis_client()
                 .await
                 .map_err(EngineError::RedisClientError)?,
@@ -225,14 +233,14 @@ impl Engine {
                         Ok(true) => match &step.action {
                             Action::Order(_order) => {
                                 // TODO here deconstruct the swap order into swap instructions
-                                let privy_order = PrivyOrder {
+                                let privy_transaction = PrivyTransaction {
                                     user_id: pipeline.user_id.clone(),
                                     address: pipeline.wallet_address.clone(),
                                     caip2: Caip2::SOLANA.to_string(), // TODO parametrize this
                                     evm_transaction: None,
                                     solana_transaction: None,
                                 };
-                                match self.executor.execute_order(privy_order).await {
+                                match self.privy.execute_transaction(privy_transaction).await {
                                     Ok(_) => {
                                         step.status = Status::Completed;
                                         pipeline.current_steps = step.next_steps.clone();
