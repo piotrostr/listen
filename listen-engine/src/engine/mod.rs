@@ -8,7 +8,9 @@ pub mod privy_config;
 pub mod types;
 pub mod util;
 
+use crate::engine::caip2::Caip2;
 use crate::engine::evaluator::EvaluatorError;
+use crate::engine::order::PrivyOrder;
 use crate::redis::client::{make_redis_client, RedisClient, RedisClientError};
 use crate::redis::subscriber::{
     make_redis_subscriber, PriceUpdate, RedisSubscriber, RedisSubscriberError,
@@ -223,8 +225,16 @@ impl Engine {
                 if matches!(step.status, Status::Pending) {
                     match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
                         Ok(true) => match &step.action {
-                            Action::Order(order) => {
-                                match self.executor.execute_order(order.clone()).await {
+                            Action::Order(_order) => {
+                                // TODO here deconstruct the swap order into swap instructions
+                                let privy_order = PrivyOrder {
+                                    user_id: pipeline.user_id.clone(),
+                                    address: pipeline.user_address.clone(),
+                                    caip2: Caip2::SOLANA.to_string(), // TODO parametrize this
+                                    evm_transaction: None,
+                                    solana_transaction: None,
+                                };
+                                match self.executor.execute_order(privy_order).await {
                                     Ok(_) => {
                                         step.status = Status::Completed;
                                         pipeline.current_steps = step.next_steps.clone();

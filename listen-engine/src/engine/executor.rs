@@ -1,6 +1,6 @@
 use crate::engine::privy_config::PrivyConfigError;
 
-use super::order::Order;
+use super::order::PrivyOrder;
 use super::privy_config::PrivyConfig;
 use super::types::{SignAndSendEvmTransactionParams, SignAndSendEvmTransactionRequest};
 use super::types::{
@@ -38,7 +38,7 @@ impl Executor {
         Ok(Self { http_client })
     }
 
-    pub async fn execute_order(&self, order: Order) -> Result<String, ExecutorError> {
+    pub async fn execute_order(&self, order: PrivyOrder) -> Result<String, ExecutorError> {
         if order.is_solana() {
             if order.solana_transaction.is_none() {
                 return Err(ExecutorError::ExecuteOrderError(
@@ -149,12 +149,12 @@ mod tests {
     use crate::engine::caip2::Caip2;
     use crate::engine::constants::*;
     use crate::engine::executor::Executor;
-    use crate::engine::order::Order;
+    use crate::engine::order::PrivyOrder;
 
     #[tokio::test]
     async fn test_execute_order_eth() {
         let engine = Executor::from_env().unwrap();
-        let order = Order {
+        let order = PrivyOrder {
             user_id: "-".to_string(),
             address: TEST_ADDRESS_EVM.to_string(),
             caip2: Caip2::ARBITRUM.to_string(),

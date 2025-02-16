@@ -4,7 +4,7 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use super::order::Order;
+use crate::engine::order::SwapOrder;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ConditionType {
@@ -33,7 +33,7 @@ pub struct Notification {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Action {
-    Order(Order),
+    Order(SwapOrder),
     Notification(Notification),
 }
 
@@ -50,6 +50,7 @@ pub struct PipelineStep {
 pub struct Pipeline {
     pub id: Uuid,
     pub user_id: String,
+    pub user_address: String,
     pub current_steps: Vec<Uuid>,
     pub steps: HashMap<Uuid, PipelineStep>,
     pub status: Status,

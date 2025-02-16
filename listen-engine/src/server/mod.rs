@@ -112,6 +112,7 @@ async fn healthz() -> impl Responder {
 #[derive(Debug, Deserialize, Serialize)]
 pub struct CreatePipelineRequest {
     pub user_id: String,
+    pub user_address: String,
     pub current_steps: Vec<Uuid>,
     pub steps: HashMap<Uuid, PipelineStep>,
 }
@@ -121,6 +122,7 @@ impl From<CreatePipelineRequest> for Pipeline {
         Self {
             id: Uuid::new_v4(),
             user_id: req.user_id,
+            user_address: req.user_address,
             current_steps: req.current_steps,
             steps: req.steps,
             status: Status::Pending,

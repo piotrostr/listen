@@ -31,6 +31,7 @@ async fn create_pipeline_via_api(
     // Create pipeline request using the server's expected format
     let request = CreatePipelineRequest {
         user_id: user_id.to_string(),
+        user_address: "".to_string(),
         current_steps: vec![step_id],
         steps: {
             let mut steps = HashMap::new();
@@ -44,7 +45,7 @@ async fn create_pipeline_via_api(
                     conditions: vec![Condition {
                         condition_type: ConditionType::PriceAbove {
                             asset: symbol.to_string(),
-                            threshold: price_threshold,
+                            value: price_threshold,
                         },
                         triggered: false,
                         last_evaluated: None,
