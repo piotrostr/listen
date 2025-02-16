@@ -1,7 +1,8 @@
 import { TokenData, TokenMetadata } from "@/app/types";
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { FaGlobe, FaTelegram, FaXTwitter } from "react-icons/fa6";
+import { FaCheck, FaGlobe, FaTelegram, FaXTwitter } from "react-icons/fa6";
+import { IoBarChart } from "react-icons/io5";
 import { Chart } from "./Chart";
 
 interface TokenTileProps {
@@ -17,6 +18,7 @@ function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
           href={`https://twitter.com/${tokenMetadata?.mpl.ipfs_metadata?.twitter}`}
           target="_blank"
           rel="noopener noreferrer"
+          className="hover:text-blue-500"
         >
           <FaXTwitter />
         </a>
@@ -26,6 +28,7 @@ function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
           href={`https://t.me/${tokenMetadata?.mpl.ipfs_metadata?.telegram}`}
           target="_blank"
           rel="noopener noreferrer"
+          className="hover:text-blue-500"
         >
           <FaTelegram />
         </a>
@@ -35,6 +38,7 @@ function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
           href={`https://${tokenMetadata?.mpl.ipfs_metadata?.website}`}
           target="_blank"
           rel="noopener noreferrer"
+          className="hover:text-blue-500"
         >
           <FaGlobe />
         </a>
@@ -75,9 +79,34 @@ function ChartModal({
   );
 }
 
+const CopyIcon = () => (
+  <svg
+    xmlns="http://www.w3.org/2000/svg"
+    fill="none"
+    viewBox="0 0 24 24"
+    strokeWidth={1.5}
+    stroke="currentColor"
+    className="w-4 h-4 cursor-pointer"
+  >
+    <path d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
+  </svg>
+);
+
 export function TokenTile({ token, index }: TokenTileProps) {
   const [metadata, setMetadata] = useState<TokenMetadata | null>(null);
   const [showChart, setShowChart] = useState(false);
+  const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (copied) {
+      setTimeout(() => setCopied(false), 1000);
+    }
+  }, [copied]);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(token.pubkey);
+    setCopied(true);
+  };
 
   useEffect(() => {
     fetch(`https://api.listen-rs.com/metadata?mint=${token.pubkey}`)
@@ -97,10 +126,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
 
   return (
     <div>
-      <div
-        className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800 cursor-pointer"
-        onClick={() => setShowChart(true)}
-      >
+      <div className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800">
         <div className="flex items-center space-x-4">
           <span className="text-gray-500 w-6">{index + 1}.</span>
           <div className="flex items-center space-x-3">
@@ -117,19 +143,33 @@ export function TokenTile({ token, index }: TokenTileProps) {
               )}
             <div>
               <div className="font-medium">
-                <a
-                  href={`https://solscan.io/address/${token.pubkey}`}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="hover:text-blue-500"
-                >
-                  {token.name}
-                </a>
-                {metadata?.mpl.symbol && (
-                  <span className="ml-2 text-sm text-gray-500">
-                    {metadata.mpl.symbol}
-                  </span>
-                )}
+                <span className="inline-flex items-center">
+                  <a
+                    href={`https://solscan.io/address/${token.pubkey}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:text-blue-500"
+                  >
+                    {token.name}
+                  </a>
+                  {metadata?.mpl.symbol && (
+                    <span className="ml-2 text-sm text-gray-500">
+                      {metadata.mpl.symbol}
+                    </span>
+                  )}
+                  <button
+                    onClick={handleCopy}
+                    className="ml-2 hover:text-blue-500"
+                  >
+                    {copied ? <FaCheck /> : <CopyIcon />}
+                  </button>
+                  <button
+                    onClick={() => setShowChart(true)}
+                    className="ml-2 hover:text-blue-500"
+                  >
+                    <IoBarChart />
+                  </button>
+                </span>
               </div>
               <Socials tokenMetadata={metadata} />
               <div className="text-sm text-gray-500">
