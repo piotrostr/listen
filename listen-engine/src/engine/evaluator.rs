@@ -21,7 +21,7 @@ pub enum EvaluatorError {
 
 impl From<EvaluatorError> for EngineError {
     fn from(err: EvaluatorError) -> Self {
-        EngineError::EvaluatePipelineError(err.into())
+        EngineError::EvaluatePipelineError(err)
     }
 }
 

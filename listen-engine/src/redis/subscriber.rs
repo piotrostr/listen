@@ -29,7 +29,7 @@ pub enum RedisSubscriberError {
     Redis(#[from] redis::RedisError),
 
     #[error("[RedisSubscriber] Failed to send price update: {0}")]
-    SendError(#[from] mpsc::error::SendError<PriceUpdate>),
+    SendError(String),
 
     #[error("[RedisSubscriber] JSON parsing error: {0}")]
     JsonError(#[from] serde_json::Error),

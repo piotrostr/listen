@@ -19,27 +19,29 @@ pub struct RedisClient {
 
 #[derive(Debug, thiserror::Error)]
 pub enum RedisClientError {
+    #[error("[Redis] Failed to create connection manager: {0}")]
+    CreateConnectionManagerError(#[from] bb8_redis::redis::RedisError),
     #[error("[Redis] Failed to connect: {0}")]
-    ConnectionError(#[from] bb8::RunError<bb8_redis::redis::RedisError>),
+    GetConnectionError(#[from] bb8::RunError<bb8_redis::redis::RedisError>),
     #[error("[Redis] Failed to serialize: {0}")]
     SerializeError(#[from] serde_json::Error),
     #[error("[Redis] Failed to deserialize: {0}")]
     DeserializeError(serde_json::Error),
     #[error("[Redis] Redis error: {0}")]
-    RedisError(#[from] bb8_redis::redis::RedisError),
+    RedisError(bb8_redis::redis::RedisError),
 }
 
 impl RedisClient {
     pub async fn new(redis_url: &str) -> Result<Self, RedisClientError> {
         let manager =
-            RedisConnectionManager::new(redis_url).map_err(|e| RedisClientError::RedisError(e))?;
+            RedisConnectionManager::new(redis_url).map_err(RedisClientError::RedisError)?;
 
         let pool = bb8::Pool::builder()
             .max_size(16)
             .min_idle(Some(4))
             .build(manager)
             .await
-            .map_err(|e| RedisClientError::ConnectionError(e.into()))?;
+            .map_err(RedisClientError::CreateConnectionManagerError)?;
 
         Ok(Self { pool })
     }
@@ -50,7 +52,7 @@ impl RedisClient {
         self.pool
             .get()
             .await
-            .map_err(RedisClientError::ConnectionError)
+            .map_err(RedisClientError::GetConnectionError)
     }
 
     async fn set<T: Serialize>(&self, key: &str, value: &T) -> Result<(), RedisClientError> {

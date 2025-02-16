@@ -1,12 +1,10 @@
+pub mod api;
 pub mod caip2;
 pub mod constants;
 pub mod evaluator;
 pub mod executor;
 pub mod order;
 pub mod pipeline;
-pub mod privy_config;
-pub mod types;
-pub mod util;
 
 use crate::engine::caip2::Caip2;
 use crate::engine::evaluator::EvaluatorError;
@@ -162,7 +160,7 @@ impl Engine {
     ) -> Result<(), EngineError> {
         if let Err(e) = self
             .redis
-            .delete_pipeline(&user_id, &pipeline_id.to_string())
+            .delete_pipeline(user_id, &pipeline_id.to_string())
             .await
         {
             return Err(EngineError::DeletePipelineError(e));
@@ -229,7 +227,7 @@ impl Engine {
                                 // TODO here deconstruct the swap order into swap instructions
                                 let privy_order = PrivyOrder {
                                     user_id: pipeline.user_id.clone(),
-                                    address: pipeline.user_address.clone(),
+                                    address: pipeline.wallet_address.clone(),
                                     caip2: Caip2::SOLANA.to_string(), // TODO parametrize this
                                     evm_transaction: None,
                                     solana_transaction: None,
@@ -238,7 +236,7 @@ impl Engine {
                                     Ok(_) => {
                                         step.status = Status::Completed;
                                         pipeline.current_steps = step.next_steps.clone();
-                                        if let Err(e) = self.redis.save_pipeline(&pipeline).await {
+                                        if let Err(e) = self.redis.save_pipeline(pipeline).await {
                                             return Err(EngineError::AddPipelineError(e));
                                         }
                                     }

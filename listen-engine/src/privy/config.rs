@@ -4,6 +4,7 @@ use anyhow::Result;
 pub struct PrivyConfig {
     pub(crate) app_id: String,
     pub(crate) app_secret: String,
+    pub(crate) verification_key: String,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -20,7 +21,14 @@ impl PrivyConfig {
         let app_secret = std::env::var("PRIVY_APP_SECRET")
             .map_err(|_| PrivyConfigError::MissingEnvVar("PRIVY_APP_SECRET"))?;
 
-        Ok(Self { app_id, app_secret })
+        let verification_key = std::env::var("PRIVY_VERIFICATION_KEY")
+            .map_err(|_| PrivyConfigError::MissingEnvVar("PRIVY_VERIFICATION_KEY"))?;
+
+        Ok(Self {
+            app_id,
+            app_secret,
+            verification_key,
+        })
     }
 }
 

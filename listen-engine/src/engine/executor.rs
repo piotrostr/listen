@@ -1,12 +1,10 @@
-use crate::engine::privy_config::PrivyConfigError;
-
-use super::order::PrivyOrder;
-use super::privy_config::PrivyConfig;
-use super::types::{SignAndSendEvmTransactionParams, SignAndSendEvmTransactionRequest};
-use super::types::{
+use crate::engine::order::PrivyOrder;
+use crate::privy::config::{PrivyConfig, PrivyConfigError};
+use crate::privy::types::{
+    SignAndSendEvmTransactionParams, SignAndSendEvmTransactionRequest,
     SignAndSendTransactionParams, SignAndSendTransactionRequest, SignAndSendTransactionResponse,
 };
-use super::util::create_http_client;
+use crate::privy::util::create_http_client;
 use anyhow::{anyhow, Result};
 
 pub struct Executor {

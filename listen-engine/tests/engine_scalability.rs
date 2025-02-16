@@ -1,16 +1,9 @@
 use anyhow::Result;
 use bb8_redis::redis::{cmd, pipe};
 use listen_engine::redis::client::{RedisClient, RedisClientError};
-use listen_engine::server::CreatePipelineRequest;
-use listen_engine::{
-    engine::{
-        pipeline::{Action, Condition, ConditionType, PipelineStep, Status},
-        EngineError,
-    },
-    redis::client::make_redis_client,
-};
+use listen_engine::{engine::EngineError, redis::client::make_redis_client};
 use reqwest::Client;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
 use tokio::time::{sleep, Duration};
@@ -18,46 +11,20 @@ use uuid::Uuid;
 
 async fn create_pipeline_via_api(
     client: &Client,
-    user_id: &str,
-    symbol: &str,
-    price_threshold: f64,
+    _symbol: &str,
+    _price_threshold: f64,
     semaphore: Arc<Semaphore>,
 ) -> Result<()> {
     // Acquire semaphore permit
     let _permit = semaphore.acquire().await.expect("Semaphore closed");
 
-    let step_id = Uuid::new_v4();
+    let _step_id = Uuid::new_v4();
 
     // Create pipeline request using the server's expected format
-    let request = CreatePipelineRequest {
-        user_id: user_id.to_string(),
-        user_address: "".to_string(),
-        current_steps: vec![step_id],
-        steps: {
-            let mut steps = HashMap::new();
-            steps.insert(
-                step_id,
-                PipelineStep {
-                    id: step_id,
-                    action: Action::Notification(listen_engine::engine::pipeline::Notification {
-                        message: format!("Price alert for {}", symbol),
-                    }),
-                    conditions: vec![Condition {
-                        condition_type: ConditionType::PriceAbove {
-                            asset: symbol.to_string(),
-                            value: price_threshold,
-                        },
-                        triggered: false,
-                        last_evaluated: None,
-                    }],
-                    next_steps: vec![],
-                    status: Status::Pending,
-                },
-            );
-            steps
-        },
-    };
-
+    let request = serde_json::json!({
+        // TODO this script has fulfilled its purpose, in the future it would be required to
+        // intereceipt privy auth header or loophole a way to insert internally
+    });
     let response = client
         .post("http://localhost:6966/api/pipeline")
         .json(&request)
@@ -167,7 +134,6 @@ async fn test_engine_scalability() -> Result<()> {
         for threshold in [100.0, 500.0, 1000.0] {
             futures.push(create_pipeline_via_api(
                 &client,
-                "test_user",
                 symbol,
                 threshold,
                 semaphore.clone(),

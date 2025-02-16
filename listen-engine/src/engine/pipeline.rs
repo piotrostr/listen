@@ -50,7 +50,8 @@ pub struct PipelineStep {
 pub struct Pipeline {
     pub id: Uuid,
     pub user_id: String,
-    pub user_address: String,
+    pub wallet_address: String,
+    pub pubkey: String,
     pub current_steps: Vec<Uuid>,
     pub steps: HashMap<Uuid, PipelineStep>,
     pub status: Status,
