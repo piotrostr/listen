@@ -4,6 +4,7 @@ version = "0.1.0"
 edition = "2021"
 authors = ["piotrostr"]
 license = "MIT"
+description = "Privy auth and transaction sending in Rust"
 
 [dependencies]
 anyhow = "1.0.95"
