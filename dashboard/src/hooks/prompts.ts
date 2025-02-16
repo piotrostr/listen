@@ -41,7 +41,11 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
     asset: string;
     value: number;
   }
-  <knowledge>
-  <context>address: ${userAddress} ${JSON.stringify(portfolio)}<context>
+
+  now when generating a pipeline, put it into <pipeline></pipeline> tags
+
+  always include the tags! otherwise the pipeline will not be executed
+  </knowledge>
+  <context>address: ${userAddress} ${JSON.stringify(portfolio)}</context>
   `;
 }

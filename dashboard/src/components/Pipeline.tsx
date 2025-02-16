@@ -181,7 +181,7 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
   );
 }
 
-interface Pipeline {
+export interface Pipeline {
   steps: PipelineStep[];
 }
 
@@ -257,6 +257,7 @@ export const mockOrderPipeline: Pipeline = {
         output_token: "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
         amount: 1000,
         percentage: null,
+        message: null,
       },
       conditions: [],
     },
@@ -267,6 +268,7 @@ export const mockOrderPipeline: Pipeline = {
         output_token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
         amount: null,
         percentage: 0.5,
+        message: null,
       },
       conditions: [
         {
