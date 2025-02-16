@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { type Message, useChat } from "../hooks/useChat";
 import { ChatContainer } from "./ChatContainer";
 import { ChatMessage, ToolMessage } from "./Messages";
-import { PipelineDisplay } from "./Pipeline";
+import { Pipeline, PipelineDisplay } from "./Pipeline";
 
 const LoadingIndicator = () => (
   <div className="bg-purple-900/20 text-purple-300 rounded px-4 py-2">...</div>
@@ -23,25 +23,28 @@ const renderMessage = (msg: Message) => {
   // Check if this is a pipeline message
   if (msg.message.includes("<pipeline>")) {
     try {
+      // Try to parse any complete steps from the partial JSON
       const pipelineContent = msg.message
         .split("<pipeline>")[1]
         ?.split("</pipeline>")[0];
+      if (pipelineContent) {
+        // Handle partial JSON by wrapping incomplete content
+        let jsonToParseStr = pipelineContent;
+        if (!pipelineContent.trim().startsWith("{")) {
+          jsonToParseStr = `{${pipelineContent}`;
+        }
+        if (!pipelineContent.trim().endsWith("}")) {
+          jsonToParseStr = `${jsonToParseStr}}`;
+        }
 
-      if (!pipelineContent) {
-        return (
-          <ChatMessage
-            key={msg.id}
-            message={msg.message}
-            direction={msg.direction}
-          />
-        );
-      }
+        try {
+          const partialPipeline = JSON.parse(jsonToParseStr);
+          const pipeline: Pipeline = {
+            steps: Array.isArray(partialPipeline.steps)
+              ? partialPipeline.steps
+              : [],
+          };
 
-      // Try to parse the pipeline content
-      try {
-        // First try to parse it as a complete pipeline
-        const pipeline = JSON.parse(pipelineContent);
-        if (Array.isArray(pipeline.steps)) {
           return (
             <div
               key={msg.id}
@@ -50,21 +53,35 @@ const renderMessage = (msg: Message) => {
               <PipelineDisplay pipeline={pipeline} />
             </div>
           );
-        }
-      } catch (e) {
-        // If parsing fails, try to extract any complete steps
-        const stepsStart = pipelineContent.indexOf('"steps"');
-        if (stepsStart !== -1) {
-          const stepsArray = pipelineContent.slice(stepsStart);
-          // Try to construct a valid JSON
-          const partialPipeline = `{"${stepsArray}`;
-          try {
-            const pipeline = JSON.parse(
-              partialPipeline.endsWith("}")
-                ? partialPipeline
-                : partialPipeline + "}"
-            );
-            if (Array.isArray(pipeline.steps)) {
+        } catch (e) {
+          console.log(pipelineContent);
+          // If we can't parse the JSON yet, try to extract any complete steps
+          const stepsMatch = pipelineContent.match(/"steps"\s*:\s*\[(.*?)\]/s);
+          if (stepsMatch) {
+            const stepsContent = stepsMatch[1];
+            const steps = [];
+            let bracketCount = 0;
+            let currentStep = "";
+
+            // Parse steps one by one
+            for (const char of stepsContent) {
+              currentStep += char;
+              if (char === "{") bracketCount++;
+              if (char === "}") bracketCount--;
+
+              if (bracketCount === 0 && currentStep.trim()) {
+                try {
+                  const step = JSON.parse(currentStep);
+                  steps.push(step);
+                  currentStep = "";
+                } catch (e) {
+                  // Skip incomplete steps
+                }
+              }
+            }
+
+            if (steps.length > 0) {
+              const pipeline: Pipeline = { steps };
               return (
                 <div
                   key={msg.id}
@@ -74,9 +91,6 @@ const renderMessage = (msg: Message) => {
                 </div>
               );
             }
-          } catch (e) {
-            // If we still can't parse it, just show the message
-            console.log("Partial pipeline content:", pipelineContent);
           }
         }
       }
