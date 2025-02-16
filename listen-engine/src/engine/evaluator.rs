@@ -40,17 +40,17 @@ impl Evaluator {
         prices: &HashMap<String, f64>,
     ) -> Result<bool, EvaluatorError> {
         match &condition.condition_type {
-            ConditionType::PriceAbove { asset, threshold } => {
+            ConditionType::PriceAbove { asset, value } => {
                 let price = prices
                     .get(asset)
                     .ok_or_else(|| EvaluatorError::MissingPriceData(asset.clone()))?;
-                Ok(price >= threshold)
+                Ok(price >= value)
             }
-            ConditionType::PriceBelow { asset, threshold } => {
+            ConditionType::PriceBelow { asset, value } => {
                 let price = prices
                     .get(asset)
                     .ok_or_else(|| EvaluatorError::MissingPriceData(asset.clone()))?;
-                Ok(price <= threshold)
+                Ok(price <= value)
             }
             ConditionType::And(sub) => sub.iter().try_fold(true, |acc, c| {
                 Ok(acc && Self::evaluate_condition(c, prices)?)
@@ -58,13 +58,6 @@ impl Evaluator {
             ConditionType::Or(sub) => sub.iter().try_fold(false, |acc, c| {
                 Ok(acc || Self::evaluate_condition(c, prices)?)
             }),
-            ConditionType::PercentageChange { asset, .. } => {
-                // Since we don't have historical data yet
-                Err(EvaluatorError::InvalidConditionType(format!(
-                    "PercentageChange not yet implemented for asset: {}",
-                    asset
-                )))
-            }
         }
     }
 }

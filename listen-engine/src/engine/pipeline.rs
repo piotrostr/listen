@@ -8,19 +8,13 @@ use super::order::Order;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ConditionType {
-    PriceAbove {
-        asset: String,
-        threshold: f64,
-    },
-    PriceBelow {
-        asset: String,
-        threshold: f64,
-    },
-    PercentageChange {
-        asset: String,
-        change: f64,
-        timeframe: u64,
-    },
+    PriceAbove { asset: String, value: f64 },
+    PriceBelow { asset: String, value: f64 },
+    // PercentageChange {
+    //     asset: String,
+    //     initial: f64,
+    //     value: f64,
+    // },
     And(Vec<Condition>),
     Or(Vec<Condition>),
 }

@@ -297,9 +297,6 @@ impl Engine {
                 ConditionType::PriceBelow { asset, .. } => {
                     assets.insert(asset.clone());
                 }
-                ConditionType::PercentageChange { asset, .. } => {
-                    assets.insert(asset.clone());
-                }
                 ConditionType::And(sub_conditions) | ConditionType::Or(sub_conditions) => {
                     stack.extend(sub_conditions.iter());
                 }
