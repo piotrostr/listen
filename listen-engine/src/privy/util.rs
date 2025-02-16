@@ -1,4 +1,4 @@
-use super::privy_config::PrivyConfig;
+use super::config::PrivyConfig;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 pub fn base64encode(data: &[u8]) -> String {

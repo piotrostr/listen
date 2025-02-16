@@ -4,23 +4,17 @@ use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use super::order::Order;
+use crate::engine::order::SwapOrder;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum ConditionType {
-    PriceAbove {
-        asset: String,
-        threshold: f64,
-    },
-    PriceBelow {
-        asset: String,
-        threshold: f64,
-    },
-    PercentageChange {
-        asset: String,
-        change: f64,
-        timeframe: u64,
-    },
+    PriceAbove { asset: String, value: f64 },
+    PriceBelow { asset: String, value: f64 },
+    // PercentageChange {
+    //     asset: String,
+    //     initial: f64,
+    //     value: f64,
+    // },
     And(Vec<Condition>),
     Or(Vec<Condition>),
 }
@@ -39,7 +33,7 @@ pub struct Notification {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum Action {
-    Order(Order),
+    Order(SwapOrder),
     Notification(Notification),
 }
 
@@ -56,6 +50,8 @@ pub struct PipelineStep {
 pub struct Pipeline {
     pub id: Uuid,
     pub user_id: String,
+    pub wallet_address: String,
+    pub pubkey: String,
     pub current_steps: Vec<Uuid>,
     pub steps: HashMap<Uuid, PipelineStep>,
     pub status: Status,

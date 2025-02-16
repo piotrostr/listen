@@ -1,14 +1,14 @@
+pub mod api;
 pub mod caip2;
 pub mod constants;
 pub mod evaluator;
 pub mod executor;
 pub mod order;
 pub mod pipeline;
-pub mod privy_config;
-pub mod types;
-pub mod util;
 
+use crate::engine::caip2::Caip2;
 use crate::engine::evaluator::EvaluatorError;
+use crate::engine::order::PrivyOrder;
 use crate::redis::client::{make_redis_client, RedisClient, RedisClientError};
 use crate::redis::subscriber::{
     make_redis_subscriber, PriceUpdate, RedisSubscriber, RedisSubscriberError,
@@ -160,7 +160,7 @@ impl Engine {
     ) -> Result<(), EngineError> {
         if let Err(e) = self
             .redis
-            .delete_pipeline(&user_id, &pipeline_id.to_string())
+            .delete_pipeline(user_id, &pipeline_id.to_string())
             .await
         {
             return Err(EngineError::DeletePipelineError(e));
@@ -223,12 +223,20 @@ impl Engine {
                 if matches!(step.status, Status::Pending) {
                     match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
                         Ok(true) => match &step.action {
-                            Action::Order(order) => {
-                                match self.executor.execute_order(order.clone()).await {
+                            Action::Order(_order) => {
+                                // TODO here deconstruct the swap order into swap instructions
+                                let privy_order = PrivyOrder {
+                                    user_id: pipeline.user_id.clone(),
+                                    address: pipeline.wallet_address.clone(),
+                                    caip2: Caip2::SOLANA.to_string(), // TODO parametrize this
+                                    evm_transaction: None,
+                                    solana_transaction: None,
+                                };
+                                match self.executor.execute_order(privy_order).await {
                                     Ok(_) => {
                                         step.status = Status::Completed;
                                         pipeline.current_steps = step.next_steps.clone();
-                                        if let Err(e) = self.redis.save_pipeline(&pipeline).await {
+                                        if let Err(e) = self.redis.save_pipeline(pipeline).await {
                                             return Err(EngineError::AddPipelineError(e));
                                         }
                                     }
@@ -295,9 +303,6 @@ impl Engine {
                     assets.insert(asset.clone());
                 }
                 ConditionType::PriceBelow { asset, .. } => {
-                    assets.insert(asset.clone());
-                }
-                ConditionType::PercentageChange { asset, .. } => {
                     assets.insert(asset.clone());
                 }
                 ConditionType::And(sub_conditions) | ConditionType::Or(sub_conditions) => {

@@ -1,21 +1,21 @@
 use actix_web::{
     middleware,
     web::{self, Data},
-    App, HttpResponse, HttpServer, Responder,
+    App, HttpRequest, HttpResponse, HttpServer, Responder,
 };
-use chrono::Utc;
-use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use std::sync::Arc;
 use tokio::sync::mpsc;
 use tokio::sync::oneshot;
 use uuid::Uuid;
 
 use crate::{
     engine::{
-        pipeline::{Pipeline, PipelineStep, Status},
+        api::{PipelineParams, WirePipeline},
+        pipeline::Pipeline,
         Engine, EngineError,
     },
     metrics::metrics_handler,
+    privy::{auth::PrivyAuth, config::PrivyConfig},
 };
 
 #[derive(Debug)]
@@ -38,6 +38,7 @@ pub enum EngineMessage {
 
 pub struct AppState {
     engine_bridge_tx: mpsc::Sender<EngineMessage>,
+    privy_auth: Arc<PrivyAuth>,
 }
 
 pub async fn run() -> std::io::Result<()> {
@@ -64,11 +65,16 @@ pub async fn run() -> std::io::Result<()> {
         }
     });
 
+    let privy_auth = Arc::new(PrivyAuth::new(PrivyConfig::from_env().map_err(|_| {
+        std::io::Error::new(std::io::ErrorKind::Other, "Failed to create privy config")
+    })?));
+
     // Main application server with metrics endpoint
     let server = HttpServer::new(move || {
         App::new()
             .app_data(Data::new(AppState {
                 engine_bridge_tx: tx.clone(),
+                privy_auth: privy_auth.clone(),
             }))
             .wrap(middleware::Logger::default())
             .service(
@@ -109,34 +115,43 @@ async fn healthz() -> impl Responder {
     }))
 }
 
-#[derive(Debug, Deserialize, Serialize)]
-pub struct CreatePipelineRequest {
-    pub user_id: String,
-    pub current_steps: Vec<Uuid>,
-    pub steps: HashMap<Uuid, PipelineStep>,
-}
-
-impl From<CreatePipelineRequest> for Pipeline {
-    fn from(req: CreatePipelineRequest) -> Self {
-        Self {
-            id: Uuid::new_v4(),
-            user_id: req.user_id,
-            current_steps: req.current_steps,
-            steps: req.steps,
-            status: Status::Pending,
-            created_at: Utc::now(),
-        }
-    }
-}
-
 async fn create_pipeline(
     state: Data<AppState>,
-    req: web::Json<CreatePipelineRequest>,
+    req: HttpRequest,
+    wire: web::Json<WirePipeline>,
 ) -> impl Responder {
     let start = std::time::Instant::now();
+
+    let auth_token = req.headers().get("Authorization").unwrap();
+    let auth_token = auth_token.to_str().unwrap();
+    let auth_token = auth_token.split(" ").nth(1).unwrap();
+
+    let user = match state
+        .privy_auth
+        .authenticate_user(auth_token)
+        .await
+        .map_err(|_| HttpResponse::Unauthorized())
+    {
+        Ok(user) => user,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "status": "error",
+                "message": "Unauthorized"
+            }));
+        }
+    };
+
     metrics::counter!("pipeline_creation_attempts", 1);
 
-    let pipeline: Pipeline = req.into_inner().into();
+    let pipeline: Pipeline = (
+        wire.into_inner(),
+        PipelineParams {
+            user_id: user.user_id,
+            wallet_address: user.wallet_address,
+            pubkey: user.pubkey,
+        },
+    )
+        .into();
 
     // Create oneshot channel for response
     let (response_tx, response_rx) = oneshot::channel();
