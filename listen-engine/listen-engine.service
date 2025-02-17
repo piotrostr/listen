@@ -1,0 +1,18 @@
+[Unit]
+Description=Listen Engine Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=listen-engine
+Group=listen-engine
+Restart=always
+RestartSec=1
+Environment=IS_SYSTEMD_SERVICE=1
+EnvironmentFile=/etc/listen-engine/environment
+WorkingDirectory=/opt/listen-engine
+ExecStart=/usr/local/bin/engine
+
+[Install]
+WantedBy=multi-user.target
