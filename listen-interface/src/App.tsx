@@ -1,14 +1,14 @@
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { PrivyProvider, usePrivy } from "@privy-io/react-auth";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { arbitrum } from "viem/chains";
+import { createConfig, http, WagmiProvider } from "wagmi";
 import { GettingStarted } from "./components/GettingStarted";
 import { Layout } from "./components/Layout";
+import { LoggedInView } from "./components/LoggedInView";
 import {
   userHasDelegatedEvmWallet,
   userHasDelegatedSolanaWallet,
 } from "./hooks/util";
-import { LoggedInView } from "./components/LoggedInView";
-import { createConfig, http, WagmiProvider } from "wagmi";
-import { arbitrum } from "viem/chains";
 
 const config = createConfig({
   chains: [arbitrum],
