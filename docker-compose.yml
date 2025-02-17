@@ -91,24 +91,19 @@ services:
       retries: 5
       start_period: 10s
 
-  preview:
-    build:
-      context: ./preview
-      dockerfile: Dockerfile
-    environment:
-      - REDIS_URL=redis://redis:6379
-    ports:
-      - 3000:3000
-    depends_on:
-      redis:
-        condition: service_healthy
-      
   grafana:
     image: grafana/grafana-oss
     ports:
       - 3001:3000
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+
+  prometheus:
+    image: prom/prometheus
+    ports:
+      - 9090:9090
+    volumes:
+      - ./listen-engine/prometheus.yml:/etc/prometheus/prometheus.yml
 
 volumes:
   redis-data:
