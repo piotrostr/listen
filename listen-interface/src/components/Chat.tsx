@@ -130,6 +130,13 @@ export function Chat() {
         }
       }
 
+      // Handle cmd/ctrl + backspace to clear entire text
+      if ((e.metaKey || e.ctrlKey) && e.key === "Backspace") {
+        setInputMessage("");
+        e.preventDefault();
+        return;
+      }
+
       if (e.key === "Enter") {
         if (inputMessage.trim() === "clear") {
           setMessages([]);
