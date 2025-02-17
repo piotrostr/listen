@@ -135,7 +135,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
                   <img
                     src={metadata.mpl.ipfs_metadata.image}
                     alt={token.name}
-                    className="object-cover"
+                    className="w-full h-full object-cover"
                   />
                 </div>
               )}
