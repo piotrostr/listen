@@ -1,4 +1,5 @@
 pub mod auth;
+pub mod caip2;
 pub mod config;
 pub mod tx;
 pub mod types;

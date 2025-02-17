@@ -154,16 +154,18 @@ impl Privy {
 
 #[cfg(test)]
 mod tests {
-    use crate::engine::caip2::Caip2;
-    use crate::engine::constants::*;
-    use crate::engine::executor::Executor;
-    use crate::engine::order::PrivyOrder;
+    use crate::caip2::Caip2;
+    use crate::config::PrivyConfig;
+
+    use super::*;
+
+    const TEST_ADDRESS_EVM: &str = "0x123"; // fill in
 
     #[tokio::test]
     #[ignore = "change the TEST_ADDRESS_EVM based on your environment before running"]
     async fn test_execute_order_eth() {
-        let engine = Executor::from_env().unwrap();
-        let order = PrivyOrder {
+        let privy = Privy::new(PrivyConfig::from_env().unwrap());
+        let privy_transaction = PrivyTransaction {
             user_id: "-".to_string(),
             address: TEST_ADDRESS_EVM.to_string(),
             caip2: Caip2::ARBITRUM.to_string(),
@@ -174,7 +176,7 @@ mod tests {
             })),
             solana_transaction: None,
         };
-        let result = engine.execute_order(order).await.unwrap();
+        let result = privy.execute_transaction(privy_transaction).await.unwrap();
         assert_eq!(result.len(), 66);
     }
 }
