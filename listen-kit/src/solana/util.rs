@@ -180,3 +180,28 @@ where
     .await
     .map_err(|e| anyhow!("{:#?}", e))
 }
+
+pub async fn execute_solana_transaction_with_tip<F, Fut>(
+    ix_creator: F,
+    tip_lamports: u64,
+) -> Result<String>
+where
+    F: FnOnce(Pubkey) -> Fut + Send + 'static,
+    Fut: Future<Output = Result<Vec<Instruction>>> + Send + 'static,
+{
+    let signer = SignerContext::current().await;
+    let owner = Pubkey::from_str(&signer.pubkey())?;
+    tracing::info!("signer: {:?}", owner.to_string());
+
+    let mut ix = wrap_unsafe(move || async move { ix_creator(owner).await })
+        .await
+        .map_err(|e| anyhow!("{:#?}", e))?;
+
+    wrap_unsafe(move || async move {
+        signer
+            .sign_and_send_solana_transaction_with_tip(&mut ix, tip_lamports)
+            .await
+    })
+    .await
+    .map_err(|e| anyhow!("{:#?}", e))
+}
