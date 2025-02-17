@@ -71,7 +71,7 @@ impl Privy {
         }
     }
 
-    async fn execute_evm_transaction(
+    pub async fn execute_evm_transaction(
         &self,
         address: String,
         transaction: serde_json::Value,
@@ -110,7 +110,7 @@ impl Privy {
         Ok(result.data.hash)
     }
 
-    async fn execute_solana_transaction(
+    pub async fn execute_solana_transaction(
         &self,
         address: String,
         transaction: String,
