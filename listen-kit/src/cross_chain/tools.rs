@@ -5,7 +5,7 @@ use crate::common::wrap_unsafe;
 use crate::signer::SignerContext;
 
 use super::approvals::{create_approval_transaction, get_allowance};
-use super::lifi::LiFi;
+use lifi::LiFi;
 
 // TODO support sponsored transactions here
 // it would save a lot of gas if we could drip on any chain,

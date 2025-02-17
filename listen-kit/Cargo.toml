@@ -55,6 +55,7 @@ serde_with = "3.12.0"
 async-trait = "0.1.85"
 ctor = "0.2.0"
 futures-util = { version = "0.3" }
+lifi = { path = "../lifi" }
 
 # evm
 alloy = { version = "0.9", features = ["full"], optional = true }
