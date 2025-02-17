@@ -110,12 +110,24 @@ export function Chat() {
   const [inputMessage, setInputMessage] = useState("");
 
   useEffect(() => {
-    const handleKeyPress = (e: KeyboardEvent) => {
+    const handleKeyPress = async (e: KeyboardEvent) => {
       if (
         e.target instanceof HTMLInputElement ||
         e.target instanceof HTMLTextAreaElement
       ) {
         return;
+      }
+
+      // Handle paste with cmd/ctrl + v
+      if ((e.metaKey || e.ctrlKey) && e.key === "v") {
+        try {
+          const text = await navigator.clipboard.readText();
+          setInputMessage((prev) => prev + text);
+          e.preventDefault();
+          return;
+        } catch (err) {
+          console.error("Failed to read clipboard:", err);
+        }
       }
 
       if (e.key === "Enter") {
