@@ -1,5 +1,4 @@
 import { TokenData, TokenMetadata } from "@/app/types";
-import Image from "next/image";
 import { useEffect, useState } from "react";
 import { FaCheck, FaGlobe, FaTelegram, FaXTwitter } from "react-icons/fa6";
 import { IoBarChart } from "react-icons/io5";
@@ -15,7 +14,7 @@ function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
     <div className="flex flex-row gap-2">
       {tokenMetadata?.mpl.ipfs_metadata?.twitter && (
         <a
-          href={`https://twitter.com/${tokenMetadata?.mpl.ipfs_metadata?.twitter}`}
+          href={tokenMetadata?.mpl.ipfs_metadata?.twitter}
           target="_blank"
           rel="noopener noreferrer"
           className="hover:text-blue-500"
@@ -25,7 +24,7 @@ function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
       )}
       {tokenMetadata?.mpl.ipfs_metadata?.telegram && (
         <a
-          href={`https://t.me/${tokenMetadata?.mpl.ipfs_metadata?.telegram}`}
+          href={tokenMetadata?.mpl.ipfs_metadata?.telegram}
           target="_blank"
           rel="noopener noreferrer"
           className="hover:text-blue-500"
@@ -35,7 +34,7 @@ function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
       )}
       {tokenMetadata?.mpl.ipfs_metadata?.website && (
         <a
-          href={`https://${tokenMetadata?.mpl.ipfs_metadata?.website}`}
+          href={tokenMetadata?.mpl.ipfs_metadata?.website}
           target="_blank"
           rel="noopener noreferrer"
           className="hover:text-blue-500"
@@ -133,10 +132,9 @@ export function TokenTile({ token, index }: TokenTileProps) {
             {metadata?.mpl.ipfs_metadata?.image &&
               metadata.mpl.ipfs_metadata.image.startsWith("https://") && (
                 <div className="w-8 h-8 relative rounded-full overflow-hidden">
-                  <Image
+                  <img
                     src={metadata.mpl.ipfs_metadata.image}
                     alt={token.name}
-                    fill
                     className="object-cover"
                   />
                 </div>
