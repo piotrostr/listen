@@ -21,6 +21,7 @@ use std::time::Duration;
 #[derive(Deserialize)]
 pub struct ChatRequest {
     prompt: String,
+    #[serde(deserialize_with = "deserialize_messages")]
     chat_history: Vec<Message>,
     #[serde(default)]
     chain: Option<String>,
@@ -108,6 +109,8 @@ async fn stream(
             content: OneOrMany::one(UserContent::text(prompt)),
         });
 
+        println!("initial_messages: {:?}", initial_messages);
+
         // Create a channel for the reasoning loop to send responses
         let (internal_tx, mut internal_rx) = tokio::sync::mpsc::channel(32);
 
@@ -187,4 +190,55 @@ async fn auth(req: HttpRequest) -> Result<HttpResponse, Error> {
         "status": "ok",
         "wallet_address": user_session.wallet_address,
     })))
+}
+
+fn deserialize_messages<'de, D>(
+    deserializer: D,
+) -> Result<Vec<Message>, D::Error>
+where
+    D: serde::Deserializer<'de>,
+{
+    #[derive(Deserialize)]
+    struct RawMessage {
+        role: String,
+        content: serde_json::Value,
+    }
+
+    let raw_messages: Vec<RawMessage> = Vec::deserialize(deserializer)?;
+
+    raw_messages
+        .into_iter()
+        .map(|raw| {
+            let content = match raw.role.as_str() {
+                "user" => {
+                    let content = match raw.content {
+                        serde_json::Value::String(s) => {
+                            OneOrMany::one(UserContent::Text(s.into()))
+                        }
+                        _ => {
+                            return Err(serde::de::Error::custom(
+                                "Invalid user content format",
+                            ))
+                        }
+                    };
+                    Message::User { content }
+                }
+                "assistant" => {
+                    let content = match raw.content {
+                        serde_json::Value::String(s) => {
+                            OneOrMany::one(s.into())
+                        }
+                        _ => {
+                            return Err(serde::de::Error::custom(
+                                "Invalid assistant content format",
+                            ))
+                        }
+                    };
+                    Message::Assistant { content }
+                }
+                _ => return Err(serde::de::Error::custom("Invalid role")),
+            };
+            Ok(content)
+        })
+        .collect()
 }

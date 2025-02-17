@@ -4,9 +4,7 @@ use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletio
 
 use crate::{
     common::{claude_agent_builder, PREAMBLE_COMMON},
-    cross_chain::tools::{
-        ApproveToken, CheckApproval, GetMultichainQuote, MultichainSwap,
-    },
+    cross_chain::tools::{ApproveToken, CheckApproval, GetQuote, Swap},
     dexscreener::tools::SearchOnDexScreener,
 };
 
@@ -18,8 +16,8 @@ pub async fn create_cross_chain_agent(
             "you are a cross-chain trading agent", PREAMBLE_COMMON,
         ))
         .tool(SearchOnDexScreener)
-        .tool(GetMultichainQuote)
-        .tool(MultichainSwap)
+        .tool(GetQuote)
+        .tool(Swap)
         .tool(ApproveToken)
         .tool(CheckApproval)
         .build())
