@@ -97,10 +97,8 @@ async fn stream(
     let prompt = request.prompt.clone();
     let messages = request.chat_history.clone();
 
-    let signer: Arc<dyn TransactionSigner> = Arc::new(PrivySigner::new(
-        state.wallet_manager.clone(),
-        user_session.clone(),
-    ));
+    let signer: Arc<dyn TransactionSigner> =
+        Arc::new(PrivySigner::new(state.privy.clone(), user_session.clone()));
 
     spawn_with_signer(signer, || async move {
         let reasoning_loop = ReasoningLoop::new(agent).with_stdout(false);

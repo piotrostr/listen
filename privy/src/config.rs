@@ -2,9 +2,9 @@ use anyhow::Result;
 
 #[derive(Clone)]
 pub struct PrivyConfig {
-    pub(crate) app_id: String,
-    pub(crate) app_secret: String,
-    pub(crate) verification_key: String,
+    pub app_id: String,
+    pub app_secret: String,
+    pub verification_key: String,
 }
 
 #[derive(Debug, thiserror::Error)]

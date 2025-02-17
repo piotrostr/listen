@@ -3653,11 +3653,11 @@ dependencies = [
 
 [[package]]
 name = "jsonwebtoken"
-version = "9.3.0"
+version = "9.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b9ae10193d25051e74945f1ea2d0b42e03cc3b890f7e4cc5faa44997d808193f"
+checksum = "5a87cc7a48537badeae96744432de36f4be2b4a34a05a5ef32e9dd8a1c169dde"
 dependencies = [
- "base64 0.21.7",
+ "base64 0.22.1",
  "js-sys",
  "pem 3.0.4",
  "ring",
@@ -3771,6 +3771,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "lifi"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "reqwest 0.12.12",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.11",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "linux-raw-sys"
 version = "0.4.15"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3797,8 +3810,10 @@ dependencies = [
  "futures-util",
  "hex",
  "jsonwebtoken",
+ "lifi",
  "log",
  "once_cell",
+ "privy",
  "rand 0.8.5",
  "redis",
  "reqwest 0.12.12",
@@ -4508,6 +4523,23 @@ dependencies = [
  "fixed-hash",
  "impl-codec",
  "uint",
+]
+
+[[package]]
+name = "privy"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9c9451b4a2de7d15a5581f92642cb44c9dfbc26576c3e44d2a3ed0a6ef336524"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "jsonwebtoken",
+ "reqwest 0.12.12",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.11",
+ "tracing",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -5528,9 +5560,9 @@ dependencies = [
 
 [[package]]
 name = "serde_json"
-version = "1.0.137"
+version = "1.0.138"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "930cfb6e6abf99298aaad7d29abbef7a9999a9a8806a40088f55f0dcec03146b"
+checksum = "d434192e7da787e94a6ea7e9670b26a036d0ca41e0b7efb2676dd32bae872949"
 dependencies = [
  "itoa",
  "memchr",

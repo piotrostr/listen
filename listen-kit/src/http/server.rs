@@ -1,7 +1,7 @@
-use crate::wallet_manager::WalletManager;
 use actix_cors::Cors;
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{web, App, HttpServer};
+use privy::Privy;
 use rig::agent::Agent;
 use rig::providers::anthropic::completion::CompletionModel;
 
@@ -11,10 +11,10 @@ use super::state::AppState;
 pub async fn run_server(
     #[cfg(feature = "solana")] solana_agent: Agent<CompletionModel>,
     #[cfg(feature = "evm")] evm_agent: Agent<CompletionModel>,
-    wallet_manager: WalletManager,
+    privy: Privy,
     omni_agent: Agent<CompletionModel>,
 ) -> std::io::Result<()> {
-    let mut builder = AppState::builder().with_wallet_manager(wallet_manager);
+    let mut builder = AppState::builder().with_privy(privy);
 
     builder = builder.with_omni_agent(omni_agent);
 

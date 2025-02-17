@@ -3,26 +3,28 @@ use async_trait::async_trait;
 
 #[cfg(feature = "solana")]
 use crate::solana::blockhash::BLOCKHASH_CACHE;
-use crate::wallet_manager::{UserSession, WalletManager};
+use privy::{auth::UserSession, caip2::Caip2, util::base64encode, Privy};
 use std::sync::Arc;
 
 use super::TransactionSigner;
 
 pub struct PrivySigner {
-    wallet_manager: Arc<WalletManager>,
+    privy: Arc<Privy>,
     session: UserSession,
 }
 
 impl PrivySigner {
-    pub fn new(
-        wallet_manager: Arc<WalletManager>,
-        session: UserSession,
-    ) -> Self {
-        Self {
-            wallet_manager,
-            session,
-        }
+    pub fn new(privy: Arc<Privy>, session: UserSession) -> Self {
+        Self { privy, session }
     }
+}
+
+#[cfg(feature = "solana")]
+pub fn transaction_to_base64(
+    transaction: &solana_sdk::transaction::Transaction,
+) -> anyhow::Result<String> {
+    let serialized = bincode::serialize(transaction)?;
+    Ok(base64encode(&serialized))
 }
 
 #[async_trait]
@@ -40,12 +42,23 @@ impl TransactionSigner for PrivySigner {
         &self,
         tx: &mut solana_sdk::transaction::Transaction,
     ) -> Result<String> {
+        use privy::caip2::Caip2;
+
         tx.message.recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
-        let tx_hash = self
-            .wallet_manager
-            .sign_and_send_solana_transaction(self.pubkey(), tx)
-            .await?;
-        Ok(tx_hash)
+
+        self.privy
+            .execute_solana_transaction(
+                self.pubkey(),
+                transaction_to_base64(tx)?,
+                Caip2::SOLANA.to_string(),
+            )
+            .await
+            .map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to sign and send solana transaction: {}",
+                    e
+                )
+            })
     }
 
     #[cfg(feature = "evm")]
@@ -53,31 +66,56 @@ impl TransactionSigner for PrivySigner {
         &self,
         tx: alloy::rpc::types::TransactionRequest,
     ) -> Result<String> {
-        let tx_hash = self
-            .wallet_manager
-            .sign_and_send_evm_transaction(self.address(), tx)
-            .await?;
-        Ok(tx_hash)
+        self.privy
+            .execute_evm_transaction(
+                self.address(),
+                serde_json::to_value(tx)?,
+                Caip2::ARBITRUM.to_string(), // TODO paramterize
+            )
+            .await
+            .map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to sign and send evm transaction: {}",
+                    e
+                )
+            })
     }
 
     async fn sign_and_send_encoded_solana_transaction(
         &self,
         encoded_transaction: String,
     ) -> Result<String> {
-        self.wallet_manager
-            .sign_and_send_encoded_solana_transaction(
+        self.privy
+            .execute_solana_transaction(
                 self.pubkey(),
                 encoded_transaction,
+                Caip2::SOLANA.to_string(),
             )
             .await
+            .map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to sign and send encoded solana transaction: {}",
+                    e
+                )
+            })
     }
 
     async fn sign_and_send_json_evm_transaction(
         &self,
         tx: serde_json::Value,
     ) -> Result<String> {
-        self.wallet_manager
-            .sign_and_send_json_evm_transaction(self.address(), tx)
+        self.privy
+            .execute_evm_transaction(
+                self.address(),
+                tx,
+                Caip2::ARBITRUM.to_string(), // TODO paramterize
+            )
             .await
+            .map_err(|e| {
+                anyhow::anyhow!(
+                    "Failed to sign and send json evm transaction: {}",
+                    e
+                )
+            })
     }
 }

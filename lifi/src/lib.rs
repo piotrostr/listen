@@ -13,10 +13,18 @@ use connections::ConnectionsResponse;
 use tokens::{Token, TokensResponse};
 use tools::ToolsResponse;
 
+use crate::client::LiFiClientError;
+
 use self::quote::{Order, QuoteResponse};
 
 pub struct LiFi {
     client: LiFiClient,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum LiFiError {
+    #[error("LiFi client error: {0}")]
+    ClientError(LiFiClientError),
 }
 
 impl LiFi {
@@ -26,17 +34,21 @@ impl LiFi {
         }
     }
 
-    pub async fn get_chains(&self) -> Result<ChainsResponse> {
-        self.client.get("/chains", &[]).await
+    pub async fn get_chains(&self) -> Result<ChainsResponse, LiFiError> {
+        self.client
+            .get("/chains", &[])
+            .await
+            .map_err(LiFiError::ClientError)
     }
 
     pub async fn get_tools(
         &self,
         chains: &[String], // TODO possibly an enum here
-    ) -> Result<ToolsResponse> {
+    ) -> Result<ToolsResponse, LiFiError> {
         self.client
             .get("/tools", &[("chains", &chains.join(","))])
             .await
+            .map_err(LiFiError::ClientError)
     }
 
     pub async fn get_tokens(
@@ -44,7 +56,7 @@ impl LiFi {
         chains: &str,
         chain_types: Option<&str>,
         min_price_usd: Option<f64>,
-    ) -> Result<TokensResponse> {
+    ) -> Result<TokensResponse, LiFiError> {
         let mut params = vec![("chains", chains)];
         if let Some(chain_types) = chain_types {
             params.push(("chainTypes", chain_types));
@@ -54,13 +66,17 @@ impl LiFi {
             price_string = price.to_string();
             params.push(("minPriceUSD", &price_string));
         }
-        self.client.get("/tokens", &params).await
+        self.client
+            .get("/tokens", &params)
+            .await
+            .map_err(LiFiError::ClientError)
     }
 
-    pub async fn get_token(&self, chain: &str, token: &str) -> Result<Token> {
+    pub async fn get_token(&self, chain: &str, token: &str) -> Result<Token, LiFiError> {
         self.client
             .get("/token", &[("chain", chain), ("token", token)])
             .await
+            .map_err(LiFiError::ClientError)
     }
 
     // TODO some params were ommited for brevity
@@ -70,7 +86,7 @@ impl LiFi {
         to_chain: Option<&str>,
         from_token: Option<&str>,
         to_token: Option<&str>,
-    ) -> Result<ConnectionsResponse> {
+    ) -> Result<ConnectionsResponse, LiFiError> {
         let mut params = vec![];
         if let Some(from_chain) = from_chain {
             params.push(("fromChain", from_chain));
@@ -84,7 +100,10 @@ impl LiFi {
         if let Some(to_token) = to_token {
             params.push(("toToken", to_token));
         }
-        self.client.get("/connections", &params).await
+        self.client
+            .get("/connections", &params)
+            .await
+            .map_err(LiFiError::ClientError)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -97,7 +116,7 @@ impl LiFi {
         from_address: &str,
         to_address: &str,
         from_amount_with_decimals: &str,
-    ) -> Result<QuoteResponse> {
+    ) -> Result<QuoteResponse, LiFiError> {
         let order = Order::Fastest.to_string();
         let params = vec![
             ("fromChain", from_chain),
@@ -110,7 +129,10 @@ impl LiFi {
             ("order", &order),
         ];
 
-        self.client.get("/quote", &params).await
+        self.client
+            .get("/quote", &params)
+            .await
+            .map_err(LiFiError::ClientError)
     }
 }
 
@@ -159,12 +181,7 @@ mod tests {
     async fn test_get_connections() {
         let lifi = LiFi::new(None);
         let connections = lifi
-            .get_connections(
-                Some("sol"),
-                Some("eth"),
-                Some("USDC"),
-                Some("ETH"),
-            )
+            .get_connections(Some("sol"), Some("eth"), Some("USDC"), Some("ETH"))
             .await;
         assert!(connections.is_ok(), "{:?}", connections);
     }

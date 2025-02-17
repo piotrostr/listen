@@ -7,9 +7,6 @@ pub mod solana;
 #[cfg(feature = "evm")]
 pub mod evm;
 
-#[cfg(feature = "http")]
-pub mod wallet_manager;
-
 pub mod common;
 pub mod cross_chain;
 pub mod dexscreener;
