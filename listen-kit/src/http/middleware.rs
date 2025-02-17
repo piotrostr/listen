@@ -1,6 +1,6 @@
-use crate::wallet_manager::UserSession;
 use actix_web::{web, HttpRequest};
 use anyhow::Result;
+use privy::auth::UserSession;
 
 use super::state::AppState;
 
@@ -17,7 +17,7 @@ pub async fn verify_auth(req: &HttpRequest) -> Result<UserSession> {
         .ok_or_else(|| anyhow::anyhow!("App state not found"))?;
 
     state
-        .wallet_manager
+        .privy
         .authenticate_user(token)
         .await
         .map_err(|e| anyhow::anyhow!("Invalid token: {}", e))

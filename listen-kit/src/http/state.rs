@@ -1,4 +1,4 @@
-use crate::wallet_manager::WalletManager;
+use privy::Privy;
 use rig::agent::Agent;
 use rig::providers::anthropic::completion::CompletionModel;
 use std::sync::Arc;
@@ -8,7 +8,7 @@ pub struct AppState {
     pub(crate) solana_agent: Arc<Agent<CompletionModel>>,
     #[cfg(feature = "evm")]
     pub(crate) evm_agent: Arc<Agent<CompletionModel>>,
-    pub(crate) wallet_manager: Arc<WalletManager>,
+    pub(crate) privy: Arc<Privy>,
     pub(crate) omni_agent: Arc<Agent<CompletionModel>>,
 }
 
@@ -17,7 +17,7 @@ pub struct AppStateBuilder {
     solana_agent: Option<Agent<CompletionModel>>,
     #[cfg(feature = "evm")]
     evm_agent: Option<Agent<CompletionModel>>,
-    wallet_manager: Option<WalletManager>,
+    privy: Option<Privy>,
     omni_agent: Option<Agent<CompletionModel>>,
 }
 
@@ -34,9 +34,14 @@ impl AppStateBuilder {
             solana_agent: None,
             #[cfg(feature = "evm")]
             evm_agent: None,
-            wallet_manager: None,
+            privy: None,
             omni_agent: None,
         }
+    }
+
+    pub fn with_privy(mut self, privy: Privy) -> Self {
+        self.privy = Some(privy);
+        self
     }
 
     #[cfg(feature = "solana")]
@@ -51,14 +56,6 @@ impl AppStateBuilder {
     #[cfg(feature = "evm")]
     pub fn with_evm_agent(mut self, agent: Agent<CompletionModel>) -> Self {
         self.evm_agent = Some(agent);
-        self
-    }
-
-    pub fn with_wallet_manager(
-        mut self,
-        wallet_manager: WalletManager,
-    ) -> Self {
-        self.wallet_manager = Some(wallet_manager);
         self
     }
 
@@ -77,9 +74,7 @@ impl AppStateBuilder {
             evm_agent: Arc::new(self.evm_agent.ok_or(
                 "EVM agent is required when evm feature is enabled",
             )?),
-            wallet_manager: Arc::new(
-                self.wallet_manager.ok_or("Wallet manager is required")?,
-            ),
+            privy: Arc::new(self.privy.ok_or("Privy is required")?),
             omni_agent: Arc::new(
                 self.omni_agent
                     .expect("omni agent is required with http feature"),
