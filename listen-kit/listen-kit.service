@@ -1,0 +1,18 @@
+[Unit]
+Description=Listen Kit Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=listen-kit
+Group=listen-kit
+Restart=always
+RestartSec=1
+Environment=IS_SYSTEMD_SERVICE=1
+EnvironmentFile=/etc/listen-kit/environment
+WorkingDirectory=/opt/listen-kit
+ExecStart=/usr/local/bin/kit
+
+[Install]
+WantedBy=multi-user.target
