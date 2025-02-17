@@ -9,6 +9,9 @@ export function PriceUpdates() {
   const [latestUpdate, setLatestUpdate] = useState<PriceUpdate | null>(null);
   const [tokenMap, setTokenMap] = useState<Map<string, TokenData>>(new Map());
   const [marketCapFilter, setMarketCapFilter] = useState<string>("all");
+  const [volumeFilter, setVolumeFilter] = useState<"bought" | "sold" | "all">(
+    "all"
+  );
 
   useEffect(() => {
     const ws = new WebSocket("wss://api.listen-rs.com/ws");
@@ -91,9 +94,33 @@ export function PriceUpdates() {
     }
   };
 
-  const topTokens = filterTokensByMarketCap(Array.from(tokenMap.values()))
-    .sort((a, b) => b.buyVolume - a.buyVolume)
-    .slice(0, 20);
+  const filterAndSortTokens = (tokens: TokenData[]) => {
+    const marketCapFiltered = filterTokensByMarketCap(tokens);
+
+    switch (volumeFilter) {
+      case "bought":
+        return marketCapFiltered.sort((a, b) => {
+          const netVolumeA = a.buyVolume - a.sellVolume;
+          const netVolumeB = b.buyVolume - b.sellVolume;
+          return netVolumeB - netVolumeA;
+        });
+      case "sold":
+        return marketCapFiltered.sort((a, b) => {
+          const netVolumeA = a.sellVolume - a.buyVolume;
+          const netVolumeB = b.sellVolume - b.buyVolume;
+          return netVolumeB - netVolumeA;
+        });
+      default:
+        return marketCapFiltered.sort(
+          (a, b) => b.buyVolume + b.sellVolume - (a.buyVolume + a.sellVolume)
+        );
+    }
+  };
+
+  const topTokens = filterAndSortTokens(Array.from(tokenMap.values())).slice(
+    0,
+    20
+  );
 
   return (
     <div className="h-[calc(100vh-6rem)] flex flex-col space-y-2 overflow-hidden p-2 max-w-7xl mx-auto px-4">
@@ -130,22 +157,50 @@ export function PriceUpdates() {
       {/* Top Tokens Section */}
       <div className="bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl shadow-lg flex-1 overflow-hidden flex flex-col min-h-0">
         <div className="p-4 border-b border-purple-500/20 flex justify-between items-center">
-          <h2 className="text-lg font-semibold text-purple-100">
-            Top Tokens by Volume
-          </h2>
-          <div className="flex items-center space-x-2">
-            <span className="text-purple-100">MC:</span>
-            <select
-              value={marketCapFilter}
-              onChange={(e) => setMarketCapFilter(e.target.value)}
-              className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-3 py-1 text-sm focus:outline-none focus:border-purple-500"
-            >
-              <option value="all">All Market Caps</option>
-              <option value="under1m">Under $1M</option>
-              <option value="1mTo10m">$1M - $10M</option>
-              <option value="10mTo100m">$10M - $100M</option>
-              <option value="over100m">Over $100M</option>
-            </select>
+          <div className="flex justify-between space-x-4 w-full">
+            {/* Volume Filter */}
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                onClick={() =>
+                  setVolumeFilter(volumeFilter === "bought" ? "all" : "bought")
+                }
+                className={`px-3 py-1 rounded-lg text-sm ${
+                  volumeFilter === "bought"
+                    ? "bg-purple-500/20 border-2 border-purple-500"
+                    : "bg-black/40 border-2 border-purple-500/30"
+                } hover:bg-purple-500/10 transition-all`}
+              >
+                🟢
+              </button>
+              <button
+                onClick={() =>
+                  setVolumeFilter(volumeFilter === "sold" ? "all" : "sold")
+                }
+                className={`px-3 py-1 rounded-lg text-sm ${
+                  volumeFilter === "sold"
+                    ? "bg-purple-500/20 border-2 border-purple-500"
+                    : "bg-black/40 border-2 border-purple-500/30"
+                } hover:bg-purple-500/10 transition-all`}
+              >
+                🔴
+              </button>
+            </div>
+
+            {/* Market Cap Filter */}
+            <div className="flex items-center space-x-2">
+              <span className="text-purple-100">MC:</span>
+              <select
+                value={marketCapFilter}
+                onChange={(e) => setMarketCapFilter(e.target.value)}
+                className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-3 py-1 text-sm focus:outline-none focus:border-purple-500"
+              >
+                <option value="all">All Market Caps</option>
+                <option value="under1m">Under $1M</option>
+                <option value="1mTo10m">$1M - $10M</option>
+                <option value="10mTo100m">$10M - $100M</option>
+                <option value="over100m">Over $100M</option>
+              </select>
+            </div>
           </div>
         </div>
         <div className="divide-y divide-purple-500/20 overflow-y-auto">

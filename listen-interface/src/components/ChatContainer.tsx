@@ -6,7 +6,7 @@ export function ChatContainer({
   inputMessage: string;
 }) {
   return (
-    <div className="flex flex-col gap-4 h-[85vh] w-full max-w-4xl mx-auto px-4 font-mono">
+    <div className="flex flex-col gap-4 h-[85vh] w-full font-mono">
       <div className="flex-1 overflow-hidden">
         <div className="h-full border-2 border-purple-500/30 rounded-lg overflow-hidden bg-black/40 backdrop-blur-sm">
           <div className="h-full flex flex-col">
