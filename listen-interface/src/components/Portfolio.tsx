@@ -88,8 +88,8 @@ export function Portfolio() {
     chatType === "omni"
       ? [...(solanaAssets ?? []), ...(evmAssets ?? [])]
       : chatType === "solana"
-      ? solanaAssets
-      : evmAssets;
+        ? solanaAssets
+        : evmAssets;
 
   return (
     <div className="h-full font-mono">

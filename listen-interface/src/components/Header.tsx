@@ -73,6 +73,12 @@ export const Header = () => {
               >
                 Screener
               </Link>
+              <Link
+                to="/portfolio"
+                className="text-gray-300 hover:text-white [&.active]:text-white"
+              >
+                Portfolio
+              </Link>
             </div>
           </div>
 
