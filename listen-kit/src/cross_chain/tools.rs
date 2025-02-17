@@ -39,7 +39,7 @@ Supported to_chains:
 - sol
 - arb
 ")]
-pub async fn get_multichain_quote(
+pub async fn get_quote(
     from_token_symbol: String,
     to_token_symbol: String,
     amount: String,
@@ -109,7 +109,7 @@ Supported to_chains:
 - sol
 - arb
 ")]
-pub async fn multichain_swap(
+pub async fn swap(
     from_token_symbol: String,
     to_token_symbol: String,
     amount: String,
