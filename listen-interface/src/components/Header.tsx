@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { Address } from "viem";
 import { useBalance, UseBalanceReturnType } from "wagmi";
 import ethereumIcon from "../assets/icons/ethereum.svg";
+import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSolBalance } from "../hooks/useSolBalance";
 
@@ -48,6 +49,8 @@ export const Header = () => {
   });
   const { user, logout } = usePrivy();
 
+  const { isAuthenticated } = useIsAuthenticated();
+
   return (
     <nav className="fixed top-0 left-0 right-0 z-50 bg-transparent backdrop-blur border-b border-purple-500/30">
       <div className="max-w-7xl mx-auto px-4">
@@ -84,10 +87,12 @@ export const Header = () => {
 
           {/* Right side */}
           <div className="flex items-center space-x-4">
-            <Balance
-              solanaBalance={solanaBalance}
-              ethereumBalance={balanceToUI(ethereumBalance)}
-            />
+            {isAuthenticated && (
+              <Balance
+                solanaBalance={solanaBalance}
+                ethereumBalance={balanceToUI(ethereumBalance)}
+              />
+            )}
             {/* Documentation Link */}
             <div className="items-center space-x-4">
               <a
