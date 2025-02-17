@@ -3,7 +3,6 @@ import { useCallback, useState } from "react";
 import { z } from "zod";
 import { config } from "../config";
 import { introPrompt } from "./prompts";
-import { useChatType } from "./useChatType";
 import { useEvmPortfolio } from "./useEvmPortfolio";
 import { useSolanaPortfolio } from "./useSolanaPortfolio";
 
@@ -34,7 +33,6 @@ export function useChat() {
   const { user } = usePrivy();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { chatType } = useChatType();
   const { getAccessToken } = usePrivy();
 
   const updateAssistantMessage = useCallback(
@@ -108,7 +106,7 @@ export function useChat() {
         const body = JSON.stringify({
           prompt: userMessage,
           chat_history: chat_history,
-          chain: chatType,
+          chain: "omni",
         });
 
         const response = await fetch(config.API_BASE_URL + "/v1/stream", {
@@ -220,7 +218,6 @@ export function useChat() {
       solanaPortfolio,
       evmPortfolio,
       user,
-      chatType,
     ]
   );
 

@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { z } from "zod";
+import { imageMap } from "./util";
 
 const IpfsMetadataSchema = z.object({
   createdOn: z.string().nullable().optional(),
@@ -34,11 +35,6 @@ export const TokenMetadataSchema = z.object({
   spl: SplTokenMetadataSchema,
 });
 
-const imageMap = {
-  EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:
-    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
-};
-
 export type TokenMetadata = z.infer<typeof TokenMetadataSchema>;
 
 async function getSolanaTokenMetadata(mint: string): Promise<TokenMetadata> {
@@ -64,31 +60,34 @@ export const useSolanaTokens = (mints: string[]) => {
     queryKey: ["solana-tokens", mints],
     queryFn: async () => {
       const tokens = await Promise.all(mints.map(getSolanaTokenMetadata));
-      return tokens.reduce((acc, token) => {
-        // Create a deep copy of the token to avoid mutating the original
-        const tokenWithFallback = { ...token };
+      return tokens.reduce(
+        (acc, token) => {
+          // Create a deep copy of the token to avoid mutating the original
+          const tokenWithFallback = { ...token };
 
-        // Initialize ipfs_metadata if it doesn't exist
-        if (!tokenWithFallback.mpl.ipfs_metadata) {
-          tokenWithFallback.mpl.ipfs_metadata = {
-            name: token.mpl.name,
-            symbol: token.mpl.symbol,
-            image: null,
-          };
-        }
+          // Initialize ipfs_metadata if it doesn't exist
+          if (!tokenWithFallback.mpl.ipfs_metadata) {
+            tokenWithFallback.mpl.ipfs_metadata = {
+              name: token.mpl.name,
+              symbol: token.mpl.symbol,
+              image: null,
+            };
+          }
 
-        // Apply fallback image if needed
-        if (
-          !tokenWithFallback.mpl.ipfs_metadata.image &&
-          token.mint in imageMap
-        ) {
-          tokenWithFallback.mpl.ipfs_metadata.image =
-            imageMap[token.mint as keyof typeof imageMap];
-        }
+          // Apply fallback image if needed
+          if (
+            !tokenWithFallback.mpl.ipfs_metadata.image &&
+            token.mint in imageMap
+          ) {
+            tokenWithFallback.mpl.ipfs_metadata.image =
+              imageMap[token.mint as keyof typeof imageMap];
+          }
 
-        acc[token.mint] = tokenWithFallback;
-        return acc;
-      }, {} as Record<string, TokenMetadata>);
+          acc[token.mint] = tokenWithFallback;
+          return acc;
+        },
+        {} as Record<string, TokenMetadata>
+      );
     },
   });
 

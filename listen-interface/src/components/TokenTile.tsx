@@ -1,7 +1,7 @@
-import { TokenData, TokenMetadata } from "@/app/types";
 import { useEffect, useState } from "react";
 import { FaCheck, FaGlobe, FaTelegram, FaXTwitter } from "react-icons/fa6";
 import { IoBarChart } from "react-icons/io5";
+import { TokenData, TokenMetadata } from "../types/metadata";
 import { Chart } from "./Chart";
 
 interface TokenTileProps {

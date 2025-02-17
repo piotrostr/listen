@@ -6,6 +6,7 @@ import ethereumIcon from "../assets/icons/ethereum.svg";
 import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSolBalance } from "../hooks/useSolBalance";
+import { imageMap } from "../hooks/util";
 
 const Balance = ({
   solanaBalance,
@@ -17,11 +18,7 @@ const Balance = ({
   return (
     <div className="flex flex-row gap-1">
       <div className="flex items-center gap-2 mr-4">
-        <img
-          src="https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png"
-          alt="SOL"
-          className="w-6 h-6 rounded-full"
-        />
+        <img src={imageMap.solana} alt="SOL" className="w-6 h-6 rounded-full" />
         <span className="text-sm text-gray-300">
           {solanaBalance?.toFixed(2) || "0.00"}
         </span>

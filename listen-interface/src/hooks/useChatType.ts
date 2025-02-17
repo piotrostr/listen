@@ -9,7 +9,7 @@ export const useChatType = () => {
 
   const { data: chatType = null } = useQuery<ChatType>({
     queryKey: CHAT_TYPE_KEY,
-    initialData: "solana",
+    initialData: "omni", // hard set to omni, does all evm/sol does
   });
 
   const setChatType = (newChatType: ChatType) => {

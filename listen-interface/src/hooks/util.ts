@@ -36,7 +36,7 @@ export const userHasDelegatedSolanaWallet = (user: User | null) => {
     (account): account is WalletWithMetadata =>
       account.type === "wallet" &&
       account.delegated &&
-      account.chainType === "solana",
+      account.chainType === "solana"
   );
 };
 
@@ -45,6 +45,17 @@ export const userHasDelegatedEvmWallet = (user: User | null) => {
     (account): account is WalletWithMetadata =>
       account.type === "wallet" &&
       account.delegated &&
-      account.chainType === "ethereum",
+      account.chainType === "ethereum"
   );
+};
+
+export const imageMap = {
+  EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:
+    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
+  So11111111111111111111111111111111111111112:
+    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+  solana:
+    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+  eth: "",
+  arb: "https://arbiscan.io/assets/arbitrum/images/svg/logos/chain-light.svg?v=25.1.4.0",
 };
