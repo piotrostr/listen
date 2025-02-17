@@ -1,9 +1,10 @@
-import { defineConfig } from "vite";
+import { TanStackRouterVite } from "@tanstack/router-plugin/vite";
 import react from "@vitejs/plugin-react";
-import { VitePWA } from "vite-plugin-pwa";
 import { visualizer } from "rollup-plugin-visualizer";
-import compression from "vite-plugin-compression";
 import type { Plugin } from "vite";
+import { defineConfig } from "vite";
+import compression from "vite-plugin-compression";
+import { VitePWA } from "vite-plugin-pwa";
 
 const handlePureAnnotations: Plugin = {
   name: "handle-pure-annotations",
@@ -20,6 +21,7 @@ const handlePureAnnotations: Plugin = {
 export default defineConfig({
   plugins: [
     handlePureAnnotations,
+    TanStackRouterVite(),
     react(),
     VitePWA({
       registerType: "autoUpdate",

@@ -1,4 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
+import { Link } from "@tanstack/react-router";
 import { Address } from "viem";
 import { useBalance, UseBalanceReturnType } from "wagmi";
 import ethereumIcon from "../assets/icons/ethereum.svg";
@@ -59,6 +60,20 @@ export const Header = () => {
               className="w-8 h-8 rounded"
             />
             <span className="font-bold text-xl">listen-rs</span>
+            <div className="flex items-center space-x-4 ml-8">
+              <Link
+                to="/chat"
+                className="text-gray-300 hover:text-white [&.active]:text-white"
+              >
+                Chat
+              </Link>
+              <Link
+                to="/screener"
+                className="text-gray-300 hover:text-white [&.active]:text-white"
+              >
+                Screener
+              </Link>
+            </div>
           </div>
 
           {/* Right side */}
