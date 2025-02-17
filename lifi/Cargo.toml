@@ -3,6 +3,7 @@ name = "lifi"
 version = "0.1.0"
 edition = "2021"
 description = "LiFi API implementation in Rust"
+license = "MIT"
 
 [dependencies]
 anyhow = "1.0.95"
