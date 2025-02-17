@@ -105,6 +105,11 @@
         src: ../listen-adapter/.env
         dest: /{{ ansible_user }}/{{ github_repo }}/listen-adapter/.env
 
+    - name: Copy listen-engine .env file
+      copy:
+        src: ../listen-engine/.env
+        dest: /{{ ansible_user }}/{{ github_repo }}/listen-engine/.env
+
     - name: Print SSH instructions
       debug:
         msg: "Setup complete! Connect using: ssh {{ ansible_user }}@{{ inventory_hostname }}"
