@@ -23,9 +23,13 @@ export function ChatContainer({
 
 export function ChatInput({ inputMessage }: { inputMessage: string }) {
   return (
-    <div className="h-12 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3">
-      <span className="text-white whitespace-pre">{inputMessage}</span>
-      <span className="w-2 h-5 bg-white terminal-blink ml-[1px]" />
+    <div className="min-h-12 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm px-3 py-3">
+      <div className="inline">
+        <span className="text-white whitespace-pre-wrap break-words">
+          {inputMessage}
+        </span>
+        <span className="w-2 h-5 bg-white terminal-blink ml-[1px] inline-block align-middle" />
+      </div>
     </div>
   );
 }

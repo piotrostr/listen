@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { type Message, useChat } from "../hooks/useChat";
+import { Pipeline } from "../types/pipeline";
 import { ChatContainer } from "./ChatContainer";
 import { ChatMessage, ToolMessage } from "./Messages";
-import { Pipeline, PipelineDisplay } from "./Pipeline";
+import { PipelineDisplay } from "./Pipeline";
 
 const LoadingIndicator = () => (
   <div className="bg-purple-900/20 text-purple-300 rounded px-4 py-2">...</div>
