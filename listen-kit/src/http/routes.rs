@@ -110,8 +110,6 @@ async fn stream(
             content: OneOrMany::one(UserContent::text(prompt)),
         });
 
-        println!("initial_messages: {:?}", initial_messages);
-
         // Create a channel for the reasoning loop to send responses
         let (internal_tx, mut internal_rx) = tokio::sync::mpsc::channel(32);
 

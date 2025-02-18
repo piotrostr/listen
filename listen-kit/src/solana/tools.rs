@@ -99,7 +99,6 @@ pub async fn get_public_key() -> Result<String> {
 #[tool]
 pub async fn get_sol_balance() -> Result<u64> {
     let signer = SignerContext::current().await.clone();
-    println!("Signer: {}", signer.pubkey());
     let owner = Pubkey::from_str(&signer.pubkey())?;
 
     wrap_unsafe(move || async move {
