@@ -39,7 +39,7 @@ export type TokenMetadata = z.infer<typeof TokenMetadataSchema>;
 
 async function getSolanaTokenMetadata(mint: string): Promise<TokenMetadata> {
   const response = await fetch(
-    `https://api.listen-rs.com/metadata?mint=${mint}`
+    `https://api.listen-rs.com/v1/adapter/metadata?mint=${mint}`
   );
   const data = await response.json();
   return TokenMetadataSchema.parse(data);

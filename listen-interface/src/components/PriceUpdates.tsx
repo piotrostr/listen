@@ -14,7 +14,7 @@ export function PriceUpdates() {
   );
 
   useEffect(() => {
-    const ws = new WebSocket("wss://api.listen-rs.com/ws");
+    const ws = new WebSocket("wss://api.listen-rs.com/v1/adapter/ws");
 
     ws.onmessage = (event) => {
       try {

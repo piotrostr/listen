@@ -108,7 +108,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
   };
 
   useEffect(() => {
-    fetch(`https://api.listen-rs.com/metadata?mint=${token.pubkey}`)
+    fetch(`https://api.listen-rs.com/v1/adapter/metadata?mint=${token.pubkey}`)
       .then(async (res) => {
         if (!res.ok) {
           const text = await res.text();
