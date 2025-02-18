@@ -77,7 +77,13 @@ pub async fn run() -> std::io::Result<()> {
                 engine_bridge_tx: tx.clone(),
                 privy: privy.clone(),
             }))
-            .wrap(Cors::default().allow_any_origin())
+            .wrap(
+                Cors::default()
+                    .allow_any_origin()
+                    .allow_any_method()
+                    .allow_any_header()
+                    .max_age(3600),
+            )
             .wrap(middleware::Logger::default())
             .route("/healthz", web::get().to(healthz))
             .route("/pipeline", web::post().to(create_pipeline))
