@@ -30,6 +30,8 @@ pub async fn verify_auth(req: &HttpRequest) -> Result<UserSession> {
         state.privy.config.verification_key.len()
     );
 
+    tracing::info!("token is: {}", token);
+
     // Add more detailed logging
     tracing::info!("Attempting to authenticate token...");
 
@@ -50,13 +52,6 @@ pub async fn verify_auth(req: &HttpRequest) -> Result<UserSession> {
                 state.privy.config.verification_key.len()
             );
             tracing::error!("{}", state.privy.config.verification_key);
-
-            // Check if PRIVY_PUBLIC_KEY is set
-            if std::env::var("PRIVY_PUBLIC_KEY").is_err() {
-                tracing::error!(
-                    "PRIVY_PUBLIC_KEY environment variable is not set"
-                );
-            }
 
             Err(anyhow::anyhow!("Authentication failed: {}", e))
         }
