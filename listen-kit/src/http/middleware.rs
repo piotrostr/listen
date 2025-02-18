@@ -16,7 +16,8 @@ pub async fn verify_auth(req: &HttpRequest) -> Result<UserSession> {
 
     let token = auth_header
         .and_then(|s| s.split(" ").nth(1))
-        .ok_or_else(|| anyhow::anyhow!("Missing authorization header"))?;
+        .ok_or_else(|| anyhow::anyhow!("Missing authorization header"))?
+        .trim();
 
     println!("Extracted token: {}", token);
 
