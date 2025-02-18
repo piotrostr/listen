@@ -119,7 +119,7 @@ async fn create_pipeline(
 ) -> impl Responder {
     let start = std::time::Instant::now();
 
-    let auth_token = req.headers().get("Authorization").unwrap();
+    let auth_token = req.headers().get("authorization").unwrap();
     let auth_token = auth_token.to_str().unwrap();
     let auth_token = auth_token.split(" ").nth(1).unwrap();
 

@@ -5,10 +5,9 @@ use privy::auth::UserSession;
 use super::state::AppState;
 
 pub async fn verify_auth(req: &HttpRequest) -> Result<UserSession> {
-    println!("headers: {:?}", req.headers());
     let token = req
         .headers()
-        .get("Authorization")
+        .get("authorization")
         .and_then(|h| h.to_str().ok())
         .and_then(|s| s.strip_prefix("Bearer "))
         .ok_or_else(|| anyhow::anyhow!("Missing authorization header"))?;
