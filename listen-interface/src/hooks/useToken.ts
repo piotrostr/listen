@@ -54,13 +54,37 @@ export const useSolanaToken = (mint: string) => {
   return { data, isLoading, error };
 };
 
+// special case
+const solanaToken = (): TokenMetadata => ({
+  mint: "So11111111111111111111111111111111111111112",
+  mpl: {
+    symbol: "SOL",
+    name: "Solana",
+    uri: imageMap.solana,
+  },
+  spl: {
+    mint_authority: null,
+    supply: 0,
+    decimals: 9,
+    is_initialized: true,
+    freeze_authority: null,
+  },
+});
+
 // dirty, wont cache this good but its cached server-side
 export const useSolanaTokens = (mints: string[]) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["solana-tokens", mints],
     queryFn: async () => {
-      const tokens = await Promise.all(mints.map(getSolanaTokenMetadata));
-      return tokens.reduce(
+      // Filter out SOL mint to handle separately
+      const nonSolMints = mints.filter(
+        (mint) => mint !== "So11111111111111111111111111111111111111112"
+      );
+
+      // Fetch non-SOL tokens
+      const tokens = await Promise.all(nonSolMints.map(getSolanaTokenMetadata));
+
+      const tokenMap = tokens.reduce(
         (acc, token) => {
           // Create a deep copy of the token to avoid mutating the original
           const tokenWithFallback = { ...token };
@@ -88,6 +112,13 @@ export const useSolanaTokens = (mints: string[]) => {
         },
         {} as Record<string, TokenMetadata>
       );
+
+      // Add SOL token if it's in the requested mints
+      if (mints.includes("So11111111111111111111111111111111111111112")) {
+        tokenMap["So11111111111111111111111111111111111111112"] = solanaToken();
+      }
+
+      return tokenMap;
     },
   });
 

@@ -1,4 +1,6 @@
+import { usePrivy } from "@privy-io/react-auth";
 import { useState } from "react";
+import { config } from "../config";
 import { useSolanaTokens } from "../hooks/useToken";
 import {
   Pipeline,
@@ -57,6 +59,8 @@ export const SwapPipelineStep = ({ index, step }: SwapPipelineStepProps) => {
   if (step.action.type !== PipelineActionType.SwapOrder) {
     throw new Error("SwapPipelineStep received non-swap action type");
   }
+
+  console.log(step);
 
   const { data: tokens } = useSolanaTokens([
     step.action.input_token,
@@ -163,16 +167,33 @@ export const NotificationPipelineStep = ({
 };
 
 export function PipelineDisplay({ pipeline }: PipelineProps) {
+  const { getAccessToken } = usePrivy(); // TODO useAccessToken hook, those live for like 60 min
   const [status, setStatus] = useState<
     "loading" | "pending" | "approved" | "rejected"
   >("pending");
 
-  const sendPipelineForExecution = () => {
-    // TODO: Implement pipeline execution
-    setStatus("loading");
-    setTimeout(() => {
-      setStatus("approved");
-    }, 1000);
+  const sendPipelineForExecution = async () => {
+    const token = await getAccessToken();
+    console.log(pipeline);
+    const res = await fetch(config.API_BASE_URL + "/v1/engine/pipeline", {
+      method: "POST",
+      body: JSON.stringify(pipeline),
+      headers: {
+        Authorization: `Bearer ${token}`,
+        "Content-Type": "application/json",
+      },
+    });
+
+    if (!res.ok) {
+      alert("Failed to send pipeline for execution"); // TODO toast
+      return;
+    }
+
+    const data = await res.json();
+
+    alert(JSON.stringify(data));
+
+    setStatus("approved");
   };
 
   if (status === "rejected") {
