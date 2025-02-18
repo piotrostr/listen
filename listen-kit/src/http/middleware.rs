@@ -5,7 +5,7 @@ use privy::auth::UserSession;
 use super::state::AppState;
 
 pub async fn verify_auth(req: &HttpRequest) -> Result<UserSession> {
-    tracing::info!("headers: {:#?}", req.headers());
+    println!("headers: {:#?}", req.headers());
 
     let token = req
         .headers()
@@ -23,37 +23,13 @@ pub async fn verify_auth(req: &HttpRequest) -> Result<UserSession> {
         .app_data::<web::Data<AppState>>()
         .ok_or_else(|| anyhow::anyhow!("App state not found"))?;
 
-    // Log Privy configuration
-    tracing::info!(
-        "Privy Configuration - App ID: {}, Public Key Length: {}",
-        state.privy.config.app_id,
-        state.privy.config.verification_key.len()
+    println!(
+        "App ID: {}\n\n Public Key Length: {}\n\n Token: {}\n\n",
+        state.privy.config.app_id, state.privy.config.verification_key, token
     );
 
-    tracing::info!("token is: {}", token);
-
-    // Add more detailed logging
-    tracing::info!("Attempting to authenticate token...");
-
     match state.privy.authenticate_user(token).await {
-        Ok(session) => {
-            tracing::info!(
-                "Authentication successful for user: {}",
-                session.user_id
-            );
-            Ok(session)
-        }
-        Err(e) => {
-            // Log the detailed error and configuration context
-            tracing::error!(
-                "Authentication failed: {:?}\nApp ID: {}\nPublic Key Length: {}", 
-                e,
-                state.privy.config.app_id,
-                state.privy.config.verification_key.len()
-            );
-            tracing::error!("{}", state.privy.config.verification_key);
-
-            Err(anyhow::anyhow!("Authentication failed: {}", e))
-        }
+        Ok(session) => Ok(session),
+        Err(e) => Err(anyhow::anyhow!("Authentication failed: {}", e)),
     }
 }
