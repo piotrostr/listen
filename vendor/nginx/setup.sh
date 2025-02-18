@@ -17,9 +17,14 @@ else
     echo "Nginx user already exists"
 fi
 
-# Check if nginx.conf exists in current directory
+# Check if required files exist in current directory
 if [ ! -f "./nginx.conf" ]; then
     echo "Error: nginx.conf not found in current directory"
+    exit 1
+fi
+
+if [ ! -f "./cors_headers.include" ]; then
+    echo "Error: cors_headers.include not found in current directory"
     exit 1
 fi
 
@@ -29,8 +34,13 @@ if sudo systemctl is-active --quiet nginx; then
     sudo systemctl stop nginx
 fi
 
-echo "Copying nginx configuration..."
+echo "Copying configuration files..."
 sudo cp ./nginx.conf /etc/nginx/nginx.conf
+sudo cp ./cors_headers.include /etc/nginx/cors_headers.include
+
+echo "Setting proper permissions..."
+sudo chown nginx:nginx /etc/nginx/cors_headers.include
+sudo chmod 644 /etc/nginx/cors_headers.include
 
 echo "Validating nginx configuration..."
 if ! sudo nginx -t; then
