@@ -1,3 +1,4 @@
+*.pem
 .vite
 .DS_Store
 terraform.tfvars
