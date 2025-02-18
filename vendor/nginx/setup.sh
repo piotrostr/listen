@@ -23,11 +23,6 @@ if [ ! -f "./nginx.conf" ]; then
     exit 1
 fi
 
-if [ ! -f "./cors_headers.include" ]; then
-    echo "Error: cors_headers.include not found in current directory"
-    exit 1
-fi
-
 # Stop nginx if it's running
 if sudo systemctl is-active --quiet nginx; then
     echo "Stopping nginx service..."
@@ -36,11 +31,6 @@ fi
 
 echo "Copying configuration files..."
 sudo cp ./nginx.conf /etc/nginx/nginx.conf
-sudo cp ./cors_headers.include /etc/nginx/cors_headers.include
-
-echo "Setting proper permissions..."
-sudo chown nginx:nginx /etc/nginx/cors_headers.include
-sudo chmod 644 /etc/nginx/cors_headers.include
 
 echo "Validating nginx configuration..."
 if ! sudo nginx -t; then
