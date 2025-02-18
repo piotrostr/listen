@@ -7,17 +7,13 @@ use super::state::AppState;
 pub async fn verify_auth(req: &HttpRequest) -> Result<UserSession> {
     println!("headers: {:#?}", req.headers());
 
-    // Log the full authorization header
-    let auth_header = req
+    let token = req
         .headers()
         .get("authorization")
-        .and_then(|h| h.to_str().ok());
-    println!("Authorization header: {:?}", auth_header);
+        .and_then(|h| h.to_str().ok())
+        .unwrap_or_default();
 
-    let token = auth_header
-        .and_then(|s| s.split(" ").nth(1))
-        .ok_or_else(|| anyhow::anyhow!("Missing authorization header"))?
-        .trim();
+    let token = token.split(" ").nth(1).unwrap_or_default();
 
     println!("Extracted token: {}", token);
 
