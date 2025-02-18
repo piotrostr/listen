@@ -50,12 +50,13 @@ async fn stream(
 ) -> impl Responder {
     let user_session = match verify_auth(&req).await {
         Ok(s) => s,
-        Err(_) => {
+        Err(e) => {
             let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
             let error_event = sse::Event::Data(sse::Data::new(
-                serde_json::to_string(&StreamResponse::Error(
-                    "Error: unauthorized".to_string(),
-                ))
+                serde_json::to_string(&StreamResponse::Error(format!(
+                    "Error: unauthorized: {}",
+                    e
+                )))
                 .unwrap(),
             ));
             let _ = tx.send(error_event).await;

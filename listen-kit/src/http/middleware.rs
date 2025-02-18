@@ -9,7 +9,7 @@ pub async fn verify_auth(req: &HttpRequest) -> Result<UserSession> {
         .headers()
         .get("authorization")
         .and_then(|h| h.to_str().ok())
-        .and_then(|s| s.strip_prefix("Bearer "))
+        .and_then(|s| s.split(" ").nth(1))
         .ok_or_else(|| anyhow::anyhow!("Missing authorization header"))?;
 
     let state = req
