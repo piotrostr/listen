@@ -4,6 +4,7 @@ pub mod redis_client;
 pub mod redis_subscriber;
 pub mod routes;
 pub mod state;
+#[cfg(feature = "tls")]
 pub mod tls;
 pub mod websocket;
 

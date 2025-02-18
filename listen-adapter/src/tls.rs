@@ -1,7 +1,11 @@
+#[cfg(feature = "tls")]
 use rustls::{pki_types::PrivateKeyDer, ServerConfig};
+#[cfg(feature = "tls")]
 use rustls_pemfile::{certs, pkcs8_private_keys};
+#[cfg(feature = "tls")]
 use std::{fs::File, io::BufReader};
 
+#[cfg(feature = "tls")]
 pub fn load_rustls_config() -> std::io::Result<ServerConfig> {
     // Install the AWS-LC crypto provider as the default
     rustls::crypto::aws_lc_rs::default_provider()
@@ -37,4 +41,9 @@ pub fn load_rustls_config() -> std::io::Result<ServerConfig> {
         .expect("Failed to create SSL config");
 
     Ok(config)
+}
+
+#[cfg(not(feature = "tls"))]
+pub fn load_rustls_config() -> std::io::Result<()> {
+    unimplemented!("TLS support is not enabled")
 }

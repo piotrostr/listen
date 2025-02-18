@@ -78,7 +78,7 @@ pub async fn run() -> std::io::Result<()> {
             }))
             .wrap(middleware::Logger::default())
             .service(
-                web::scope("/api")
+                web::scope("/v1/engine")
                     .route("/healthz", web::get().to(healthz))
                     .route("/pipeline", web::post().to(create_pipeline)),
             )
