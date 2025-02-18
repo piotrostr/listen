@@ -4527,9 +4527,9 @@ dependencies = [
 
 [[package]]
 name = "privy"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9c9451b4a2de7d15a5581f92642cb44c9dfbc26576c3e44d2a3ed0a6ef336524"
+checksum = "720d8a22a06f5181882ce12b19c344ea95db9adbd91ae88650ae0166ad574313"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
