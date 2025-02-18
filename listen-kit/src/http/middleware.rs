@@ -5,6 +5,7 @@ use privy::auth::UserSession;
 use super::state::AppState;
 
 pub async fn verify_auth(req: &HttpRequest) -> Result<UserSession> {
+    println!("headers: {:#?}", req.headers());
     let token = req
         .headers()
         .get("authorization")
