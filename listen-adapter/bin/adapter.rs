@@ -41,15 +41,12 @@ async fn main() -> std::io::Result<()> {
             .wrap(Logger::default())
             .wrap(Cors::default().allow_any_origin())
             .app_data(app_data.clone())
-            .service(
-                web::scope("/v1/adapter")
-                    .route("/ws", web::get().to(ws_route))
-                    .route("/healthz", web::get().to(health_check))
-                    .route("/top-tokens", web::get().to(top_tokens))
-                    .route("/candlesticks", web::get().to(get_candlesticks))
-                    .route("/metadata", web::get().to(get_metadata))
-                    .route("/query", web::post().to(query_db)),
-            )
+            .route("/ws", web::get().to(ws_route))
+            .route("/healthz", web::get().to(health_check))
+            .route("/top-tokens", web::get().to(top_tokens))
+            .route("/candlesticks", web::get().to(get_candlesticks))
+            .route("/metadata", web::get().to(get_metadata))
+            .route("/query", web::post().to(query_db))
     };
 
     let port = 6968;
@@ -60,10 +57,7 @@ async fn main() -> std::io::Result<()> {
         .run()
         .await?;
 
-    info!(
-        "WebSocket server running at ws://{}:{}/v1/adapter/ws",
-        host, port
-    );
+    info!("WebSocket server running at ws://{}:{}", host, port);
 
     Ok(())
 }
