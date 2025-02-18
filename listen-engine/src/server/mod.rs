@@ -77,11 +77,8 @@ pub async fn run() -> std::io::Result<()> {
                 privy: privy.clone(),
             }))
             .wrap(middleware::Logger::default())
-            .service(
-                web::scope("/v1/engine")
-                    .route("/healthz", web::get().to(healthz))
-                    .route("/pipeline", web::post().to(create_pipeline)),
-            )
+            .route("/healthz", web::get().to(healthz))
+            .route("/pipeline", web::post().to(create_pipeline))
             .route("/metrics", web::get().to(metrics_handler))
     })
     .bind(("0.0.0.0", 6966))?
