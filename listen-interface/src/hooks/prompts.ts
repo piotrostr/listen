@@ -21,15 +21,15 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
 
   const SwapOrderActionSchema = z.object({
     type: z.literal(PipelineActionType.SwapOrder),
-    input_token_address: z.string(), // address or mint
-    output_token_address: z.string(), // address or mint
+    input_token: z.string(), // address or mint
+    output_token: z.string(), // address or mint
     amount: z.number().nullable(),
     percentage: z.number().nullable(),
   });
 
   const NotificationActionSchema = z.object({
     type: z.literal(PipelineActionType.Notification),
-    input_token_address: z.string(), // address or mint
+    input_token: z.string(), // address or mint
     message: z.string(),
   });
 
@@ -40,7 +40,7 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
 
   const PipelineConditionSchema = z.object({
     type: z.nativeEnum(PipelineConditionType),
-    asset_address: z.string(), // address or mint
+    asset: z.string(), // address or mint
     value: z.number(),
   });
 

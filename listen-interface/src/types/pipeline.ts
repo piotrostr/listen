@@ -13,15 +13,15 @@ export enum PipelineConditionType {
 
 export const SwapOrderActionSchema = z.object({
   type: z.literal(PipelineActionType.SwapOrder),
-  input_token_address: z.string(),
-  output_token_address: z.string(),
+  input_token: z.string(),
+  output_token: z.string(),
   amount: z.number().nullable(),
   percentage: z.number().nullable(),
 });
 
 export const NotificationActionSchema = z.object({
   type: z.literal(PipelineActionType.Notification),
-  input_token_address: z.string(),
+  input_token: z.string(),
   message: z.string(),
 });
 
@@ -32,7 +32,7 @@ export const PipelineActionSchema = z.discriminatedUnion("type", [
 
 export const PipelineConditionSchema = z.object({
   type: z.nativeEnum(PipelineConditionType),
-  asset_address: z.string(),
+  asset: z.string(),
   value: z.number(),
 });
 

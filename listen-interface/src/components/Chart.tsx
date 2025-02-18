@@ -168,6 +168,7 @@ export function Chart({ mint, interval = "1m" }: ChartProps) {
     };
 
     fetchData();
+    // @ts-ignore
     chartRef.current = chart;
 
     const handleResize = () => {

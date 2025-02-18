@@ -1,11 +1,12 @@
 import {
+  useCreateWallet,
+  useDelegatedActions,
   usePrivy,
   useSolanaWallets,
-  useDelegatedActions,
-  type WalletWithMetadata,
   useWallets,
-  useCreateWallet,
+  type WalletWithMetadata,
 } from "@privy-io/react-auth";
+import { useState } from "react";
 
 export function DelegateActionButton() {
   const { user } = usePrivy();
@@ -18,28 +19,38 @@ export function DelegateActionButton() {
   const { createWallet: createEvmWallet } = useCreateWallet();
   const { delegateWallet } = useDelegatedActions();
 
+  const [isCreatingSolana, setIsCreatingSolana] = useState(false);
+  const [isCreatingEvm, setIsCreatingEvm] = useState(false);
+
   const onCreateWallet = async () => {
     try {
+      setIsCreatingSolana(true);
       const solanaWallet = await createSolanaWallet();
       console.log(solanaWallet);
     } catch (error) {
       console.error("Error creating Solana wallet:", error);
+    } finally {
+      setIsCreatingSolana(false);
     }
+
     try {
+      setIsCreatingEvm(true);
       const evmWallet = await createEvmWallet();
       console.log(evmWallet);
     } catch (error) {
       console.error("Error creating EVM wallet:", error);
+    } finally {
+      setIsCreatingEvm(false);
     }
   };
 
   // Find both Solana and EVM embedded wallets to delegate
   const solanaWalletToDelegate = solanaWallets.find(
-    (wallet) => wallet.walletClientType === "privy",
+    (wallet) => wallet.walletClientType === "privy"
   );
 
   const evmWalletToDelegate = evmWallets.find(
-    (wallet) => wallet.walletClientType === "privy",
+    (wallet) => wallet.walletClientType === "privy"
   );
 
   // Check delegation status for each chain type
@@ -47,28 +58,35 @@ export function DelegateActionButton() {
     (account): account is WalletWithMetadata =>
       account.type === "wallet" &&
       account.delegated &&
-      account.chainType === "solana",
+      account.chainType === "solana"
   );
 
   const isEvmDelegated = user?.linkedAccounts.some(
     (account): account is WalletWithMetadata =>
       account.type === "wallet" &&
       account.delegated &&
-      account.chainType === "ethereum",
+      account.chainType === "ethereum"
   );
 
-  // Show create wallet button if either wallet is missing
   if (
     (solanaReady && !solanaWalletToDelegate) ||
     (evmReady && !evmWalletToDelegate)
   ) {
     return (
       <button
-        disabled={!solanaReady || !evmReady}
+        disabled={
+          !solanaReady || !evmReady || isCreatingSolana || isCreatingEvm
+        }
         onClick={onCreateWallet}
         className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
       >
-        Create wallets
+        {isCreatingSolana || isCreatingEvm ? (
+          <span>Creating wallet...</span>
+        ) : (
+          <span>
+            Create {solanaReady ? "Solana" : ""} {evmReady ? "EVM" : ""} wallet
+          </span>
+        )}
       </button>
     );
   }

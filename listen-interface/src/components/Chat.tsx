@@ -116,9 +116,7 @@ export function Chat() {
   if (IS_DISABLED) {
     return (
       <ChatContainer inputMessage="">
-        <div className="text-purple-300 px-4 py-2">
-          Chat is currently disabled
-        </div>
+        <div className="text-purple-300 px-4 py-2">disabled</div>
       </ChatContainer>
     );
   }
