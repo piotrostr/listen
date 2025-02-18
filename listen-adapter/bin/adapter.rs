@@ -11,9 +11,6 @@ use listen_adapter::{
     state::AppState,
 };
 
-#[cfg(feature = "tls")]
-use listen_adapter::tls::load_rustls_config;
-
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
@@ -39,7 +36,6 @@ async fn main() -> std::io::Result<()> {
     };
     let app_data = web::Data::new(app_state);
 
-    // Create the base app factory
     let app_factory = move || {
         App::new()
             .wrap(Logger::default())
@@ -56,47 +52,18 @@ async fn main() -> std::io::Result<()> {
             )
     };
 
-    #[cfg(feature = "tls")]
-    let has_ssl = std::env::var("SSL_CERT_PATH").is_ok() && std::env::var("SSL_KEY_PATH").is_ok();
-    #[cfg(not(feature = "tls"))]
-    let has_ssl = false;
+    let port = 6968;
+    info!("Starting WebSocket server on port {}", port);
 
-    if has_ssl {
-        #[cfg(feature = "tls")]
-        {
-            info!("SSL certificates found, starting HTTP/HTTPS servers");
+    HttpServer::new(app_factory)
+        .bind((host.clone(), port))?
+        .run()
+        .await?;
 
-            let http_server = HttpServer::new(app_factory.clone()).bind((host.clone(), 80))?;
-
-            let rustls_config = load_rustls_config()?;
-            let https_server = HttpServer::new(app_factory)
-                .bind_rustls_0_23((host.clone(), 443), rustls_config)?;
-
-            info!("Starting WebSocket servers:");
-            info!("ws://{}:80/v1/adapter/ws", host);
-            info!("wss://{}:443/v1/adapter/ws", host);
-
-            futures::future::try_join(http_server.run(), https_server.run()).await?;
-        }
-
-        #[cfg(not(feature = "tls"))]
-        {
-            unreachable!("TLS support is not enabled");
-        }
-    } else {
-        let port = 6968;
-        info!("Starting WebSocket server on port {}", port);
-
-        HttpServer::new(app_factory)
-            .bind((host.clone(), port))?
-            .run()
-            .await?;
-
-        info!(
-            "WebSocket server running at ws://{}:{}/v1/adapter/ws",
-            host, port
-        );
-    }
+    info!(
+        "WebSocket server running at ws://{}:{}/v1/adapter/ws",
+        host, port
+    );
 
     Ok(())
 }
