@@ -82,7 +82,12 @@ pub async fn run() -> std::io::Result<()> {
                     .allow_any_origin()
                     .allow_any_method()
                     .allow_any_header()
-                    .max_age(3600),
+                    .supports_credentials()
+                    .expose_headers(["content-type", "authorization"])
+                    .max_age(3600)
+                    // Ensure specific headers are handled correctly
+                    .allowed_header(http::header::CONTENT_TYPE)
+                    .allowed_header(http::header::AUTHORIZATION),
             )
             .wrap(middleware::Logger::default())
             .route("/healthz", web::get().to(healthz))
