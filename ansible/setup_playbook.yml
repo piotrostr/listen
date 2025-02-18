@@ -26,7 +26,7 @@
           - gpg
         state: present
 
-    # 1) Install Clickhouse
+    # 1) Install Clickhouse - manually for now
     # - name: Download Clickhouse install script
     #   get_url:
     #     url: https://clickhouse.com/
@@ -37,27 +37,6 @@
     #   shell: /tmp/clickhouse_install.sh
     #   args:
     #     creates: /usr/bin/clickhouse
-
-    # 2) Install Redis
-    - name: Download Redis GPG key
-      shell: curl -fsSL https://packages.redis.io/gpg | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
-
-    - name: Set Redis keyring permissions
-      file:
-        path: /usr/share/keyrings/redis-archive-keyring.gpg
-        mode: "0644"
-
-    - name: Add Redis repository
-      shell: echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/redis.list
-
-    - name: Update apt cache after adding Redis repo
-      apt:
-        update_cache: yes
-
-    - name: Install Redis
-      apt:
-        name: redis
-        state: present
 
     # 3) Update CA certificates
     - name: Update CA certificates
@@ -89,10 +68,10 @@
         repo: "https://github.com/{{ github_username }}/{{ github_repo }}.git"
         dest: /{{ ansible_user }}/{{ github_repo }}
 
-    - name: Copy listen-data-service .env file
+    - name: Copy listen-data .env file
       copy:
-        src: ../listen-data-service/.env
-        dest: /{{ ansible_user }}/{{ github_repo }}/listen-data-service/.env
+        src: ../listen-data/.env
+        dest: /{{ ansible_user }}/{{ github_repo }}/listen-data/.env
 
     - name: Copy listen-adapter .env file
       copy:
@@ -108,6 +87,27 @@
       copy:
         src: ../listen-kit/.env
         dest: /{{ ansible_user }}/{{ github_repo }}/listen-kit/.env
+
+    # 2) Install Redis
+    - name: Download Redis GPG key
+      shell: curl -fsSL https://packages.redis.io/gpg | gpg --dearmor -o /usr/share/keyrings/redis-archive-keyring.gpg
+
+    - name: Set Redis keyring permissions
+      file:
+        path: /usr/share/keyrings/redis-archive-keyring.gpg
+        mode: "0644"
+
+    - name: Add Redis repository
+      shell: echo "deb [signed-by=/usr/share/keyrings/redis-archive-keyring.gpg] https://packages.redis.io/deb $(lsb_release -cs) main" | tee /etc/apt/sources.list.d/redis.list
+
+    - name: Update apt cache after adding Redis repo
+      apt:
+        update_cache: yes
+
+    - name: Install Redis
+      apt:
+        name: redis
+        state: present
 
     - name: Print SSH instructions
       debug:
