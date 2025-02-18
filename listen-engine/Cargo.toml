@@ -25,6 +25,7 @@ metrics-exporter-prometheus = "0.12"
 once_cell = "1.18"
 bb8-redis = "0.20.0"
 privy = { path = "../privy" }
+actix-cors = "0.7.0"
 
 [[bin]]
 name = "engine"

@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{
     middleware,
     web::{self, Data},
@@ -76,6 +77,7 @@ pub async fn run() -> std::io::Result<()> {
                 engine_bridge_tx: tx.clone(),
                 privy: privy.clone(),
             }))
+            .wrap(Cors::default())
             .wrap(middleware::Logger::default())
             .route("/healthz", web::get().to(healthz))
             .route("/pipeline", web::post().to(create_pipeline))
