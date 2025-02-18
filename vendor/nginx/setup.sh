@@ -23,7 +23,6 @@ if [ ! -f "./nginx.conf" ]; then
     exit 1
 fi
 
-
 # Stop nginx if it's running
 if sudo systemctl is-active --quiet nginx; then
     echo "Stopping nginx service..."
@@ -32,6 +31,12 @@ fi
 
 echo "Copying nginx configuration..."
 sudo cp ./nginx.conf /etc/nginx/nginx.conf
+
+echo "Validating nginx configuration..."
+if ! sudo nginx -t; then
+    echo "Error: Invalid nginx configuration"
+    exit 1
+fi
 
 echo "Enabling and starting nginx service..."
 sudo systemctl enable nginx
