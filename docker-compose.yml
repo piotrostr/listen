@@ -105,6 +105,18 @@ services:
     volumes:
       - ./listen-engine/prometheus.yml:/etc/prometheus/prometheus.yml
 
+  # this is not ran, would require tweaking the config
+  nginx:
+    image: nginx
+    ports:
+      - 6000:80
+      - 6001:443
+    volumes:
+      - ./vendor/nginx/nginx.conf:/etc/nginx/nginx.conf
+      - ./cert.pem:/etc/letsencrypt/live/api.listen-rs.com/fullchain.pem:ro
+      - ./privkey.pem:/etc/letsencrypt/live/api.listen-rs.com/privkey.pem:ro
+    network_mode: host
+
 volumes:
   redis-data:
   clickhouse-data:
