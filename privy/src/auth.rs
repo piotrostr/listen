@@ -17,7 +17,7 @@ pub struct UserSession {
 #[derive(Debug, thiserror::Error)]
 pub enum PrivyAuthError {
     #[error("[Privy] Failed to validate access token")]
-    ValidateAccessTokenError(#[from] jsonwebtoken::errors::Error),
+    ValidateAccessTokenError(jsonwebtoken::errors::Error),
     #[error("[Privy] Failed to get user by id")]
     GetUserByIdRequestError(#[from] reqwest::Error),
     #[error("[Privy] Failed to get user by id")]
@@ -26,6 +26,9 @@ pub enum PrivyAuthError {
     ParseUserError(#[from] serde_json::Error),
     #[error("[Privy] Failed to find wallet")]
     FindWalletError(anyhow::Error),
+
+    #[error("[Privy] Failed to read decoding key")]
+    ReadDecodingKeyError(jsonwebtoken::errors::Error),
 }
 
 impl Privy {
@@ -61,7 +64,7 @@ impl Privy {
         validation.set_audience(&[self.config.app_id.clone()]);
 
         let key = DecodingKey::from_ec_pem(self.config.verification_key.as_bytes())
-            .map_err(PrivyAuthError::ValidateAccessTokenError)?;
+            .map_err(PrivyAuthError::ReadDecodingKeyError)?;
 
         let token_data = decode::<PrivyClaims>(access_token, &key, &validation)
             .map_err(PrivyAuthError::ValidateAccessTokenError)?;
