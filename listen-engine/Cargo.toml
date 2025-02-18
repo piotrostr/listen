@@ -27,5 +27,5 @@ bb8-redis = "0.20.0"
 privy = { path = "../privy" }
 
 [[bin]]
-name = "listen-engine"
+name = "engine"
 path = "bin/engine.rs"
