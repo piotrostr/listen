@@ -59,12 +59,6 @@
         name: redis
         state: present
 
-    - name: Enable and start Redis
-      systemd:
-        name: redis-server
-        enabled: yes
-        state: started
-
     # 3) Update CA certificates
     - name: Update CA certificates
       shell: update-ca-certificates --fresh
@@ -109,6 +103,11 @@
       copy:
         src: ../listen-engine/.env
         dest: /{{ ansible_user }}/{{ github_repo }}/listen-engine/.env
+
+    - name: Copy listen-kit .env file
+      copy:
+        src: ../listen-kit/.env
+        dest: /{{ ansible_user }}/{{ github_repo }}/listen-kit/.env
 
     - name: Print SSH instructions
       debug:
