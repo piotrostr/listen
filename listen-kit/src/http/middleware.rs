@@ -5,8 +5,7 @@ use privy::auth::UserSession;
 use super::state::AppState;
 
 pub async fn verify_auth(req: &HttpRequest) -> Result<UserSession> {
-    // Log headers at debug level instead of printing
-    tracing::debug!("headers: {:#?}", req.headers());
+    tracing::info!("headers: {:#?}", req.headers());
 
     let token = req
         .headers()
