@@ -234,9 +234,13 @@ impl Engine {
                     match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
                         Ok(true) => match &step.action {
                             Action::Order(order) => {
+                                let address = match order.is_evm() {
+                                    true => pipeline.wallet_address.clone(),
+                                    false => pipeline.pubkey.clone(),
+                                };
                                 let mut privy_transaction = PrivyTransaction {
                                     user_id: pipeline.user_id.clone(),
-                                    address: pipeline.wallet_address.clone(),
+                                    address,
                                     from_chain_caip2: order.from_chain_caip2.clone(),
                                     to_chain_caip2: order.to_chain_caip2.clone(),
                                     evm_transaction: None,

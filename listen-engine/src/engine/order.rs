@@ -36,6 +36,12 @@ pub fn is_evm(caip2: &str) -> bool {
     caip2.starts_with("eip155:")
 }
 
+impl SwapOrder {
+    pub fn is_evm(&self) -> bool {
+        is_evm(&self.from_chain_caip2)
+    }
+}
+
 // Map of CAIP2 identifiers to LiFi chain IDs
 static CHAIN_ID_MAP: Lazy<HashMap<&'static str, u64>> = Lazy::new(|| {
     let mut m = HashMap::new();
