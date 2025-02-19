@@ -62,7 +62,6 @@ const CopyIcon = () => (
 export function TokenTile({ token, index }: TokenTileProps) {
   const { openChart } = useModal();
   const [metadata, setMetadata] = useState<TokenMetadata | null>(null);
-  const [showChart, setShowChart] = useState(false);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
