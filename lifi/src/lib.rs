@@ -218,5 +218,27 @@ mod tests {
             )
             .await;
         assert!(quote.is_ok(), "{:?}", quote);
+        println!("{:#?}", quote.unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_display_quote() {
+        let lifi = LiFi::new(None);
+        let quote = lifi
+            .get_quote(
+                "arb",
+                "sol",
+                "USDC",
+                "USDC",
+                "0x2fAA30d5EdDF1e4fa126aEdA79159878D58A2438",
+                "aiamaErRMjbeNmf2b8BMZWFR3ofxrnZEf2mLKp935fM",
+                "1000000000",
+            )
+            .await;
+        assert!(quote.is_ok(), "{:?}", quote);
+        let quote = quote.unwrap();
+        let summary = quote.summary();
+        println!("{:#?}", summary);
+        println!("{:#?}", quote);
     }
 }

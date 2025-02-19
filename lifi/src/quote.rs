@@ -39,60 +39,57 @@ impl QuoteResponse {
         let estimate = &self.estimate;
         let action = &self.action;
 
-        // Calculate total gas costs in USD
-        let total_gas_usd: f64 = estimate
-            .gas_costs
-            .as_ref()
-            .map(|costs| {
-                costs
-                    .iter()
-                    .filter_map(|cost| {
-                        cost.amount_usd
-                            .as_ref()
-                            .and_then(|amount| amount.parse::<f64>().ok())
-                    })
-                    .sum()
-            })
-            .unwrap_or(0.0);
+        // Group costs by token
+        let mut token_costs: std::collections::HashMap<String, String> =
+            std::collections::HashMap::new();
 
-        // Calculate total fee costs in USD
-        let total_fees_usd: f64 = estimate
-            .fee_costs
-            .as_ref()
-            .map(|costs| {
-                costs
-                    .iter()
-                    .filter_map(|cost| {
-                        cost.amount_usd
-                            .as_ref()
-                            .and_then(|amount| amount.parse::<f64>().ok())
-                    })
-                    .sum()
-            })
-            .unwrap_or(0.0);
+        // Add fee costs
+        if let Some(fees) = &estimate.fee_costs {
+            for fee in fees {
+                if let Some(amount) = &fee.amount {
+                    let entry = token_costs
+                        .entry(fee.token.symbol.clone())
+                        .or_insert_with(|| "0".to_string());
+                    // Sum up amounts as strings to handle large numbers
+                    *entry = (amount.parse::<u64>().unwrap_or(0)
+                        + entry.parse::<u64>().unwrap_or(0))
+                    .to_string();
+                }
+            }
+        }
+
+        // Add gas costs
+        if let Some(gas_costs) = &estimate.gas_costs {
+            for cost in gas_costs {
+                let entry = token_costs
+                    .entry(cost.token.symbol.clone())
+                    .or_insert_with(|| "0".to_string());
+                // Sum up amounts as strings to handle large numbers
+                *entry = (cost.amount.parse::<u64>().unwrap_or(0)
+                    + entry.parse::<u64>().unwrap_or(0))
+                .to_string();
+            }
+        }
 
         serde_json::json!({
             "from": {
                 "token": action.from_token.symbol,
+                "address": action.from_token.address,
+                "decimals": action.from_token.decimals,
                 "amount": estimate.from_amount,
-                "amount_usd": estimate.from_amount_usd,
                 "chain_id": action.from_chain_id,
             },
             "to": {
                 "token": action.to_token.symbol,
+                "address": action.to_token.address,
+                "decimals": action.to_token.decimals,
                 "amount": estimate.to_amount,
                 "amount_min": estimate.to_amount_min,
-                "amount_usd": estimate.to_amount_usd,
                 "chain_id": action.to_chain_id,
             },
-            "costs": {
-                "gas_usd": total_gas_usd,
-                "fees_usd": total_fees_usd,
-                "total_usd": total_gas_usd + total_fees_usd
-            },
+            "costs": token_costs,
             "execution_time_seconds": estimate.execution_duration,
             "slippage_percent": action.slippage.unwrap_or(0.0),
-            "transaction_request": self.transaction_request.as_ref().map(|r| r.is_evm().then(|| r.to_json_rpc().unwrap())),
         })
     }
 }
