@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { FaCheck, FaGlobe, FaTelegram, FaXTwitter } from "react-icons/fa6";
 import { IoBarChart } from "react-icons/io5";
+import { useModal } from "../contexts/ModalContext";
 import { TokenData, TokenMetadata } from "../types/metadata";
-import { Chart } from "./Chart";
 
 interface TokenTileProps {
   token: TokenData;
@@ -46,38 +46,6 @@ function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
   );
 }
 
-function ChartModal({
-  isOpen,
-  onClose,
-  mint,
-}: {
-  isOpen: boolean;
-  onClose: () => void;
-  mint: string;
-}) {
-  if (!isOpen) return null;
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      <div
-        className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-        onClick={onClose}
-      />
-      <div className="relative bg-black/40 border border-purple-500/20 w-[90vw] h-[80vh] rounded-xl p-6 backdrop-blur-sm">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-purple-300/70 hover:text-purple-100 transition-colors"
-        >
-          ✕
-        </button>
-        <div className="w-full h-full">
-          <Chart mint={mint} />
-        </div>
-      </div>
-    </div>
-  );
-}
-
 const CopyIcon = () => (
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -92,6 +60,7 @@ const CopyIcon = () => (
 );
 
 export function TokenTile({ token, index }: TokenTileProps) {
+  const { openChart } = useModal();
   const [metadata, setMetadata] = useState<TokenMetadata | null>(null);
   const [showChart, setShowChart] = useState(false);
   const [copied, setCopied] = useState(false);
@@ -168,7 +137,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
                     )}
                   </button>
                   <button
-                    onClick={() => setShowChart(true)}
+                    onClick={() => openChart(token.pubkey)}
                     className="ml-1 sm:ml-2 hover:text-blue-500"
                   >
                     <IoBarChart size={14} className="sm:text-base" />
@@ -201,11 +170,6 @@ export function TokenTile({ token, index }: TokenTileProps) {
           </div>
         </div>
       </div>
-      <ChartModal
-        isOpen={showChart}
-        onClose={() => setShowChart(false)}
-        mint={token.pubkey}
-      />
     </div>
   );
 }
