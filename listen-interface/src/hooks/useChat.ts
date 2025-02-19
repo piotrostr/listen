@@ -13,6 +13,7 @@ export interface Message {
   message: string;
   direction: MessageDirection;
   timestamp: Date;
+  isToolCall: boolean;
 }
 
 const ToolOutputSchema = z.object({
@@ -64,6 +65,7 @@ export function useChat() {
         message: userMessage,
         direction: "outgoing",
         timestamp: new Date(),
+        isToolCall: false,
       };
 
       setMessages((prev) => [...prev, userChatMessage]);
@@ -82,6 +84,7 @@ export function useChat() {
             message: "",
             direction: "incoming",
             timestamp: new Date(),
+            isToolCall: false,
           },
         ]);
 
@@ -158,6 +161,7 @@ export function useChat() {
                         message: `Tool ${toolOutput.name}: ${toolOutput.result}`,
                         direction: "incoming",
                         timestamp: new Date(),
+                        isToolCall: true,
                       },
                     ]);
                     // Start a new assistant message after tool call
@@ -169,6 +173,7 @@ export function useChat() {
                         message: "",
                         direction: "incoming",
                         timestamp: new Date(),
+                        isToolCall: false,
                       },
                     ]);
                     break;
@@ -183,6 +188,7 @@ export function useChat() {
                         message: `Error: ${data.content}`,
                         direction: "incoming",
                         timestamp: new Date(),
+                        isToolCall: false,
                       },
                     ]);
                     break;
@@ -205,6 +211,7 @@ export function useChat() {
             }`,
             direction: "incoming",
             timestamp: new Date(),
+            isToolCall: false,
           },
         ]);
       } finally {
