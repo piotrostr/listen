@@ -171,7 +171,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
               </div>
               <Socials tokenMetadata={metadata} />
               <div className="text-sm text-gray-500">
-                Price: ${token.lastPrice.toFixed(5)}
+                ${token.lastPrice.toFixed(5)}
               </div>
             </div>
           </div>

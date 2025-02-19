@@ -11,7 +11,8 @@ import { useSolBalance } from "../hooks/useSolBalance";
 import { imageMap } from "../hooks/util";
 import { Background } from "./Background";
 
-import { RxDashboard } from "react-icons/rx";
+import { IoMenu } from "react-icons/io5";
+import { RxCross2, RxDashboard } from "react-icons/rx";
 
 function balanceToUI(balance: UseBalanceReturnType["data"]) {
   if (!balance?.value || !balance?.decimals) return 0;
@@ -32,14 +33,103 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <div className="relative min-h-screen text-white">
       <Background />
 
-      <div className="relative z-10 flex h-screen">
-        {/* Sidebar */}
-        <div
-          className={`${
-            isSidebarOpen ? "w-64" : "w-16"
-          } border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex flex-col transition-all duration-300 group relative`}
+      {/* Mobile Header */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-black/40 backdrop-blur-sm border-b border-purple-500/30 flex items-center justify-between px-4">
+        <div className="flex items-center space-x-3">
+          <img src="/listen-more.png" alt="Logo" className="w-8 h-8 rounded" />
+          <span className="font-bold text-xl">listen-rs</span>
+        </div>
+        <button
+          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+          className="p-2 rounded-lg hover:bg-purple-500/10 transition-colors"
         >
-          {/* Hover Toggle Button */}
+          {isSidebarOpen ? (
+            <RxCross2 className="w-6 h-6" />
+          ) : (
+            <IoMenu className="w-6 h-6" />
+          )}
+        </button>
+      </div>
+
+      {/* Mobile Sidebar Overlay */}
+      <div
+        className={`lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+          isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+        }`}
+      >
+        <div
+          className={`w-64 h-full bg-black/60 backdrop-blur-sm transition-transform duration-300 ${
+            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          }`}
+        >
+          <div className="p-4 pt-20">
+            <nav className="space-y-1">
+              <Link
+                to="/screener"
+                className="flex items-center h-10 rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 [&.active]:bg-purple-500/20 [&.active]:text-white transition-colors"
+              >
+                <div className="flex items-center h-full px-4 w-full">
+                  <RxDashboard className="w-5 h-5 min-w-[20px]" />
+                  <span className="ml-3">Screener</span>
+                </div>
+              </Link>
+              <Link
+                to="/portfolio"
+                className="flex items-center h-10 rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 [&.active]:bg-purple-500/20 [&.active]:text-white transition-colors"
+              >
+                <div className="flex items-center h-full px-4 w-full">
+                  <IoWalletOutline className="w-5 h-5 min-w-[20px]" />
+                  <span className="ml-3">Portfolio</span>
+                </div>
+              </Link>
+              <Link
+                to="/chat"
+                className="flex items-center h-10 rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 [&.active]:bg-purple-500/20 [&.active]:text-white transition-colors"
+              >
+                <div className="flex items-center h-full px-4 w-full">
+                  <IoChatboxOutline className="w-5 h-5 min-w-[20px]" />
+                  <span className="ml-3">Chat</span>
+                </div>
+              </Link>
+            </nav>
+
+            {/* Balance Display */}
+            {isAuthenticated && (
+              <div className="mt-8 space-y-1">
+                <div className="flex items-center h-10 px-4">
+                  <img
+                    src={imageMap.solana}
+                    alt="SOL"
+                    className="w-6 h-6 rounded-full"
+                  />
+                  <span className="ml-3 text-sm text-gray-300">
+                    {solanaBalance?.toFixed(2) || "0.00"}
+                  </span>
+                </div>
+                <div className="flex items-center h-10 px-4">
+                  <img
+                    src={ethereumIcon}
+                    alt="ETH"
+                    className="w-6 h-6 rounded-full"
+                  />
+                  <span className="ml-3 text-sm text-gray-300">
+                    {balanceToUI(ethereumBalance)?.toFixed(4) || "0.0000"}
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="relative z-10 flex h-screen">
+        {/* Desktop Sidebar - Hidden on mobile */}
+        <div
+          className={`hidden lg:flex ${
+            isSidebarOpen ? "w-64" : "w-16"
+          } border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex-col transition-all duration-300 group relative`}
+        >
+          {/* Desktop Toggle Button */}
           <div
             className={`absolute ${
               isSidebarOpen ? "right-0" : "left-0"
@@ -68,7 +158,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </button>
           </div>
 
-          {/* Top section */}
+          {/* Logo section */}
           <div className="p-4">
             <div className="flex items-center mb-8">
               <div
@@ -85,7 +175,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 )}
               </div>
             </div>
+          </div>
 
+          {/* Navigation */}
+          <div className="p-4">
             <nav className="space-y-1">
               <Link
                 to="/screener"
@@ -159,7 +252,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* Bottom section */}
           <div className="mt-auto p-4 space-y-1">
-            {/* External Links */}
             <a
               href="https://docs.listen-rs.com"
               className="flex items-center h-10 rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
@@ -200,8 +292,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {isSidebarOpen && <span className="ml-3">GitHub</span>}
               </div>
             </a>
-
-            {/* Logout Button */}
             {user && (
               <button
                 onClick={() => logout()}
@@ -232,7 +322,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Main Content */}
-        <div className="flex-1 flex">
+        <div className="flex-1 flex mt-16 lg:mt-0">
           <div className="flex-1 overflow-auto">{children}</div>
         </div>
       </div>
