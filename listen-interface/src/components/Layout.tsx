@@ -37,21 +37,53 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <div
           className={`${
             isSidebarOpen ? "w-64" : "w-16"
-          } border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex flex-col transition-all duration-300`}
+          } border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex flex-col transition-all duration-300 group relative`}
         >
+          {/* Hover Toggle Button */}
+          <div
+            className={`absolute ${
+              isSidebarOpen ? "right-0" : "left-0"
+            } top-0 h-12 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center`}
+          >
+            <button
+              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              className="p-1.5 bg-black/40 backdrop-blur-sm hover:bg-purple-500/10 rounded-lg transition-colors"
+            >
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                style={{
+                  transform: `rotate(${isSidebarOpen ? "180deg" : "0deg"})`,
+                  transition: "transform 300ms ease-in-out",
+                }}
+              >
+                <path d="M15 18l-6-6 6-6" />
+              </svg>
+            </button>
+          </div>
+
           {/* Top section */}
           <div className="p-4">
-            <div
-              className={`flex items-center mb-8 ${isSidebarOpen ? "px-2" : "justify-center"}`}
-            >
-              <img
-                src="/listen-more.png"
-                alt="Logo"
-                className="w-8 h-8 rounded"
-              />
-              {isSidebarOpen && (
-                <span className="ml-3 font-bold text-xl">listen-rs</span>
-              )}
+            <div className="flex items-center mb-8">
+              <div
+                className={`flex items-center ${isSidebarOpen ? "px-2" : "justify-center"}`}
+              >
+                <img
+                  src="/listen-more.png"
+                  alt="Logo"
+                  className="w-8 h-8 rounded cursor-pointer"
+                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                />
+                {isSidebarOpen && (
+                  <span className="ml-3 font-bold text-xl">listen-rs</span>
+                )}
+              </div>
             </div>
 
             <nav className="space-y-1">
@@ -198,33 +230,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
           </div>
         </div>
-
-        {/* Toggle Button */}
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="absolute left-0 top-6 z-50 p-2 bg-black/40 backdrop-blur-sm border border-purple-500/30 rounded-r-lg hover:bg-purple-500/10 transition-colors"
-          style={{
-            transform: `translateX(${isSidebarOpen ? "256px" : "64px"})`,
-            transition: "transform 300ms ease-in-out",
-          }}
-        >
-          <svg
-            width="20"
-            height="20"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            style={{
-              transform: `rotate(${isSidebarOpen ? "180deg" : "0deg"})`,
-              transition: "transform 300ms ease-in-out",
-            }}
-          >
-            <path d="M15 18l-6-6 6-6" />
-          </svg>
-        </button>
 
         {/* Main Content */}
         <div className="flex-1 flex">
