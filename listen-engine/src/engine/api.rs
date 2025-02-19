@@ -15,10 +15,12 @@ pub enum WireActionType {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub enum WireConditionType {
+    #[serde(rename = "PriceAbove")]
     PriceAbove,
+    #[serde(rename = "PriceBelow")]
     PriceBelow,
+    #[serde(rename = "Now")]
     Now,
 }
 
