@@ -1,4 +1,5 @@
 import { PortfolioData } from "./types";
+import { caip2Map } from "./util";
 
 export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
   return `
@@ -25,7 +26,8 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
     output_token: z.string(), // address or mint
     // accounting for decimals, e.g. 1 sol = 10^9 lamports, 1 eth = 10^18 wei
     amount: z.string().nullable(), 
-    percentage: z.number().nullable(),
+    from_chain_caip2: z.string(),
+    to_chain_caip2: z.string(),
   });
 
   const NotificationActionSchema = z.object({
@@ -61,5 +63,8 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
   <context>address: ${userAddress} ${JSON.stringify(
     portfolio
   )} (prices in USD)</context>
+  <chain_caip2_map>
+  ${JSON.stringify(caip2Map)}
+  </chain_caip2_map>
   `;
 }

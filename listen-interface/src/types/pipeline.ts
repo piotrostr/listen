@@ -17,6 +17,8 @@ export const SwapOrderActionSchema = z.object({
   output_token: z.string(),
   amount: z.string().nullable(),
   percentage: z.number().nullable(),
+  from_chain_caip2: z.string(),
+  to_chain_caip2: z.string(),
 });
 
 export const NotificationActionSchema = z.object({

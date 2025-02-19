@@ -301,8 +301,10 @@ export const mockOrderPipeline: Pipeline = {
         type: PipelineActionType.SwapOrder,
         input_token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
         output_token: "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
-        amount: 1000,
+        amount: "1000000000000000000",
         percentage: null,
+        from_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        to_chain_caip2: "eip155:1",
       },
       conditions: [],
     },
@@ -311,8 +313,10 @@ export const mockOrderPipeline: Pipeline = {
         type: PipelineActionType.SwapOrder,
         input_token: "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
         output_token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-        amount: null,
+        amount: "1000000000000000000",
         percentage: 0.3,
+        from_chain_caip2: "eip155:1",
+        to_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
       },
       conditions: [
         {
