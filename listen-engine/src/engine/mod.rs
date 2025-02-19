@@ -232,6 +232,7 @@ impl Engine {
                     match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
                         Ok(true) => match &step.action {
                             Action::Order(_order) => {
+                                println!("would be executing here: {:#?}", _order);
                                 // TODO here deconstruct the swap order into swap instructions
                                 let privy_transaction = PrivyTransaction {
                                     user_id: pipeline.user_id.clone(),
