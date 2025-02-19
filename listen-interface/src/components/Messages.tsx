@@ -8,7 +8,9 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
   // If it's a dexscreener response, parse and display it
   if (toolOutput.name === "search_on_dex_screener") {
     try {
-      const parsed = DexScreenerResponseSchema.parse(toolOutput.result);
+      const parsed = DexScreenerResponseSchema.parse(
+        JSON.parse(toolOutput.result)
+      );
       return (
         <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
           <DexscreenerDisplay pairs={parsed.pairs} />
