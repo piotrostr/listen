@@ -15,8 +15,10 @@ export const SwapOrderActionSchema = z.object({
   type: z.literal(PipelineActionType.SwapOrder),
   input_token: z.string(),
   output_token: z.string(),
-  amount: z.number().nullable(),
+  amount: z.string().nullable(),
   percentage: z.number().nullable(),
+  from_chain_caip2: z.string(),
+  to_chain_caip2: z.string(),
 });
 
 export const NotificationActionSchema = z.object({

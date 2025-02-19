@@ -1593,6 +1593,25 @@ dependencies = [
 ]
 
 [[package]]
+name = "blockhash-cache"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "bincode",
+ "bs58",
+ "hex",
+ "once_cell",
+ "reqwest 0.11.27",
+ "serde",
+ "serde_json",
+ "solana-sdk",
+ "thiserror 2.0.11",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "blst"
 version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3801,6 +3820,7 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "bincode",
+ "blockhash-cache",
  "borsh 1.5.5",
  "chrono",
  "ctor",

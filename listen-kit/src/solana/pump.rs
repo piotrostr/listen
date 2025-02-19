@@ -1,5 +1,6 @@
+use blockhash_cache::BLOCKHASH_CACHE;
+
 use crate::solana::{
-    blockhash::BLOCKHASH_CACHE,
     constants::{
         ASSOCIATED_TOKEN_PROGRAM, EVENT_AUTHORITY, PUMP_BUY_METHOD,
         PUMP_FEE_ADDRESS, PUMP_FUN_PROGRAM, PUMP_GLOBAL_ADDRESS,

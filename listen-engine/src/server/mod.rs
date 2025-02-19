@@ -162,6 +162,8 @@ async fn create_pipeline(
     )
         .into();
 
+    println!("Pipeline: {:#?}", pipeline);
+
     // Create oneshot channel for response
     let (response_tx, response_rx) = oneshot::channel();
 

@@ -10,40 +10,38 @@ use super::pipeline::{
 
 #[derive(Debug, Deserialize)]
 pub enum WireActionType {
+    #[serde(rename = "SwapOrder")]
     SwapOrder,
+    #[serde(rename = "Notification")]
     Notification,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub enum WireConditionType {
+    #[serde(rename = "PriceAbove")]
     PriceAbove,
+    #[serde(rename = "PriceBelow")]
     PriceBelow,
+    #[serde(rename = "Now")]
     Now,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct WireSwapOrder {
-    pub r#type: WireActionType,
-    pub input_token: String,
-    pub output_token: String,
-    pub amount: String,
-    pub percentage: Option<f64>,
-}
-
-#[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct WireNotification {
-    pub r#type: WireActionType,
-    pub input_token: String,
-    pub message: String,
-}
-
-#[derive(Debug, Deserialize)]
+#[serde(tag = "type")]
 pub enum WireAction {
-    SwapOrder(WireSwapOrder),
-    Notification(WireNotification),
+    #[serde(rename = "SwapOrder")]
+    SwapOrder {
+        input_token: String,
+        output_token: String,
+        amount: String,
+        from_chain_caip2: String,
+        to_chain_caip2: String,
+    },
+    #[serde(rename = "Notification")]
+    Notification {
+        input_token: String,
+        message: String,
+    },
 }
 
 #[derive(Debug, Deserialize)]
@@ -120,13 +118,21 @@ impl From<&WireStep> for PipelineStep {
 impl From<&WireAction> for Action {
     fn from(wire: &WireAction) -> Self {
         match wire {
-            WireAction::SwapOrder(swap) => Action::Order(SwapOrder {
-                input_token: swap.input_token.clone(),
-                output_token: swap.output_token.clone(),
-                amount: swap.amount.clone(),
+            WireAction::SwapOrder {
+                input_token,
+                output_token,
+                amount,
+                from_chain_caip2,
+                to_chain_caip2,
+            } => Action::Order(SwapOrder {
+                input_token: input_token.clone(),
+                output_token: output_token.clone(),
+                amount: amount.clone(),
+                from_chain_caip2: from_chain_caip2.clone(),
+                to_chain_caip2: to_chain_caip2.clone(),
             }),
-            WireAction::Notification(notif) => Action::Notification(Notification {
-                message: notif.message.clone(),
+            WireAction::Notification { message, .. } => Action::Notification(Notification {
+                message: message.clone(),
             }),
         }
     }

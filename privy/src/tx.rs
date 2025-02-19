@@ -13,14 +13,15 @@ use serde::{Deserialize, Serialize};
 pub struct PrivyTransaction {
     pub user_id: String,
     pub address: String,
-    pub caip2: String,
+    pub from_chain_caip2: String,
+    pub to_chain_caip2: String,
     pub evm_transaction: Option<serde_json::Value>,
     pub solana_transaction: Option<String>, // base64
 }
 
 impl PrivyTransaction {
     pub fn is_solana(&self) -> bool {
-        self.caip2.starts_with("solana")
+        self.from_chain_caip2.starts_with("solana")
     }
 }
 
@@ -53,7 +54,7 @@ impl Privy {
             self.execute_solana_transaction(
                 transaction.address,
                 transaction.solana_transaction.unwrap(),
-                transaction.caip2,
+                transaction.from_chain_caip2,
             )
             .await
         } else {
@@ -65,7 +66,7 @@ impl Privy {
             self.execute_evm_transaction(
                 transaction.address,
                 transaction.evm_transaction.unwrap(),
-                transaction.caip2,
+                transaction.from_chain_caip2,
             )
             .await
         }
@@ -168,7 +169,8 @@ mod tests {
         let privy_transaction = PrivyTransaction {
             user_id: "-".to_string(),
             address: TEST_ADDRESS_EVM.to_string(),
-            caip2: Caip2::ARBITRUM.to_string(),
+            from_chain_caip2: Caip2::ARBITRUM.to_string(),
+            to_chain_caip2: Caip2::ARBITRUM.to_string(),
             evm_transaction: Some(serde_json::json!({
                 "from": TEST_ADDRESS_EVM,
                 "to": TEST_ADDRESS_EVM,

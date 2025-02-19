@@ -57,6 +57,9 @@ async-trait = "0.1.85"
 ctor = "0.2.0"
 futures-util = { version = "0.3" }
 lifi = { path = "../lifi" }
+# TODO this brings solana sdk dependency, worth trying to go to non-native blockahsh
+# injection, otherwise this is required for privy + lifi
+blockhash-cache = { path = "../blockhash-cache" }
 
 # evm
 alloy = { version = "0.9", features = ["full"], optional = true }
