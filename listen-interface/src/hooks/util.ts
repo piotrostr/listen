@@ -94,3 +94,25 @@ export const caip2Map = {
   mantle: "eip155:5000",
   berachain: "eip155:80094",
 };
+
+// add more here, the stuff that is not easily searchable and needs to be spot on
+export const addressBook = {
+  solana: {
+    solana: "So11111111111111111111111111111111111111112",
+    usdc: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    bonk: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+  },
+  ethereum: {
+    usdc: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    pepe: "0x25d887Ce7a35172C62FeBFD67a1856F20FaEbB00",
+  },
+  arbitrum: {
+    usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+  },
+  base: {
+    usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  },
+  avalanche: {
+    usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+  },
+};

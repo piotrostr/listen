@@ -95,9 +95,7 @@ export function Portfolio() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold">
-                      ${asset.price?.toLocaleString()}
-                    </p>
+                    <p className="font-bold">${asset.price?.toFixed(6)}</p>
                     <p className="text-sm text-gray-400">
                       ${(asset.price * asset.amount).toFixed(2)}
                     </p>

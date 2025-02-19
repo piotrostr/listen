@@ -1,5 +1,5 @@
 import { PortfolioData } from "./types";
-import { caip2Map } from "./util";
+import { addressBook, caip2Map } from "./util";
 
 export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
   return `
@@ -66,5 +66,8 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
   <chain_caip2_map>
   ${JSON.stringify(caip2Map)}
   </chain_caip2_map>
+  <address_book>
+  ${JSON.stringify(addressBook)}
+  </address_book>
   `;
 }

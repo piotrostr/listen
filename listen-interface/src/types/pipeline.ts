@@ -15,8 +15,7 @@ export const SwapOrderActionSchema = z.object({
   type: z.literal(PipelineActionType.SwapOrder),
   input_token: z.string(),
   output_token: z.string(),
-  amount: z.string().nullable(),
-  percentage: z.number().nullable(),
+  amount: z.string(),
   from_chain_caip2: z.string(),
   to_chain_caip2: z.string(),
 });
