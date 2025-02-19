@@ -90,7 +90,17 @@ function NavLink({
 }
 
 // Bottom Link Component
-function BottomLink({ href, icon: Icon, label, isSidebarOpen = true }) {
+function BottomLink({
+  href,
+  icon: Icon,
+  label,
+  isSidebarOpen = true,
+}: {
+  href: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  isSidebarOpen?: boolean;
+}) {
   return (
     <a
       href={href}
@@ -111,7 +121,15 @@ function BottomLink({ href, icon: Icon, label, isSidebarOpen = true }) {
 }
 
 // Balance Display Component
-function BalanceDisplay({ isSidebarOpen, solanaBalance, ethereumBalance }) {
+function BalanceDisplay({
+  isSidebarOpen,
+  solanaBalance,
+  ethereumBalance,
+}: {
+  isSidebarOpen: boolean;
+  solanaBalance?: number;
+  ethereumBalance?: UseBalanceReturnType["data"];
+}) {
   return (
     <div className="mt-8 space-y-1">
       <div
