@@ -23,7 +23,6 @@ pub enum WireConditionType {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct WireSwapOrder {
     pub r#type: WireActionType,
     pub input_token: String,
@@ -33,7 +32,6 @@ pub struct WireSwapOrder {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct WireNotification {
     pub r#type: WireActionType,
     pub input_token: String,
