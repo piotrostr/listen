@@ -142,59 +142,55 @@ export function useChat() {
           for (const line of lines) {
             if (line.startsWith("data: ")) {
               const jsonStr = line.slice(6);
-              try {
-                const data: StreamResponse = JSON.parse(jsonStr);
+              const data: StreamResponse = JSON.parse(jsonStr);
 
-                switch (data.type) {
-                  case "Message":
-                    updateAssistantMessage(
-                      currentAssistantMessageId,
-                      data.content as string
-                    );
-                    break;
-                  case "ToolCall": {
-                    const toolOutput = ToolOutputSchema.parse(data.content);
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: crypto.randomUUID(),
-                        message: `Tool ${toolOutput.name}: ${toolOutput.result}`,
-                        direction: "incoming",
-                        timestamp: new Date(),
-                        isToolCall: true,
-                      },
-                    ]);
-                    // Start a new assistant message after tool call
-                    currentAssistantMessageId = crypto.randomUUID();
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: currentAssistantMessageId,
-                        message: "",
-                        direction: "incoming",
-                        timestamp: new Date(),
-                        isToolCall: false,
-                      },
-                    ]);
-                    break;
-                  }
-                  case "Error":
-                    console.error("Stream error:", data.content);
-                    // Optionally add error as a message
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: crypto.randomUUID(),
-                        message: `Error: ${data.content}`,
-                        direction: "incoming",
-                        timestamp: new Date(),
-                        isToolCall: false,
-                      },
-                    ]);
-                    break;
+              switch (data.type) {
+                case "Message":
+                  updateAssistantMessage(
+                    currentAssistantMessageId,
+                    data.content as string
+                  );
+                  break;
+                case "ToolCall": {
+                  const toolOutput = ToolOutputSchema.parse(data.content);
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: crypto.randomUUID(),
+                      message: `Tool ${toolOutput.name}: ${toolOutput.result}`,
+                      direction: "incoming",
+                      timestamp: new Date(),
+                      isToolCall: true,
+                    },
+                  ]);
+                  // Start a new assistant message after tool call
+                  currentAssistantMessageId = crypto.randomUUID();
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: currentAssistantMessageId,
+                      message: "",
+                      direction: "incoming",
+                      timestamp: new Date(),
+                      isToolCall: false,
+                    },
+                  ]);
+                  break;
                 }
-              } catch (e) {
-                console.error("Failed to parse SSE data:", e);
+                case "Error":
+                  console.error("Stream error:", data.content);
+                  // Optionally add error as a message
+                  setMessages((prev) => [
+                    ...prev,
+                    {
+                      id: crypto.randomUUID(),
+                      message: `Error: ${data.content}`,
+                      direction: "incoming",
+                      timestamp: new Date(),
+                      isToolCall: false,
+                    },
+                  ]);
+                  break;
               }
             }
           }
