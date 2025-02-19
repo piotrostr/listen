@@ -146,13 +146,17 @@ pub async fn swap_order_to_transaction(
 mod tests {
     use crate::engine::constants::{TEST_ADDRESS_EVM, TEST_ADDRESS_SOL};
 
+    use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
+
     use super::*;
 
     #[tokio::test]
     async fn test_swap_from_swap_order() {
+        dotenv::dotenv().ok();
+        tracing_subscriber::fmt::init();
         let swap_order = SwapOrder {
-            amount: (10e6 * 1.0).to_string(), // 1 usdc
-            input_token: "So11111111111111111111111111111111111111112".to_string(),
+            amount: "1000000".to_string(),
+            input_token: "11111111111111111111111111111111".to_string(),
             output_token: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831".to_string(), // usdc arbitrum
             from_chain_caip2: Caip2::SOLANA.to_string(),
             to_chain_caip2: Caip2::ARBITRUM.to_string(),
@@ -163,20 +167,36 @@ mod tests {
             swap_order_to_transaction(&swap_order, &lifi, TEST_ADDRESS_EVM, TEST_ADDRESS_SOL)
                 .await
                 .unwrap();
-        match transaction {
+        let encoded_tx = match transaction {
             SwapOrderTransaction::Solana(transaction) => {
                 println!("transaction: {:#?}", transaction);
+                transaction
             }
             _ => panic!("Invalid transaction type"),
-        }
+        };
+
+        let privy = privy::Privy::new(privy::config::PrivyConfig::from_env().unwrap());
+        let res = privy
+            .execute_transaction(privy::tx::PrivyTransaction {
+                user_id: "did:privy:cm6cxky3i00ondmuatkemmffm".to_string(),
+                address: TEST_ADDRESS_SOL.to_string(),
+                from_chain_caip2: swap_order.from_chain_caip2,
+                to_chain_caip2: swap_order.to_chain_caip2,
+                evm_transaction: None,
+                solana_transaction: Some(encoded_tx),
+            })
+            .await
+            .unwrap();
+        println!("res: {:#?}", res);
     }
 
     #[tokio::test]
+    // TODO fix this too
     async fn test_swap_from_swap_order_evm() {
         let swap_order = SwapOrder {
-            amount: (10e6 * 1.0).to_string(), // 1 usdc
+            amount: "100000".to_string(),
             input_token: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831".to_string(), // usdc arbitrum
-            output_token: "So11111111111111111111111111111111111111112".to_string(), // usdc solana
+            output_token: "11111111111111111111111111111111".to_string(),          // usdc solana
             from_chain_caip2: Caip2::ARBITRUM.to_string(),
             to_chain_caip2: Caip2::SOLANA.to_string(),
         };
@@ -186,34 +206,73 @@ mod tests {
             swap_order_to_transaction(&swap_order, &lifi, TEST_ADDRESS_EVM, TEST_ADDRESS_SOL)
                 .await
                 .unwrap();
-        match transaction {
+        let serialized_tx = match transaction {
             SwapOrderTransaction::Evm(transaction) => {
                 println!("transaction: {:#?}", transaction);
+                transaction
             }
             _ => panic!("Invalid transaction type"),
-        }
+        };
+
+        dotenv::dotenv().ok();
+        let privy = privy::Privy::new(privy::config::PrivyConfig::from_env().unwrap());
+
+        let res = privy
+            .execute_transaction(privy::tx::PrivyTransaction {
+                user_id: "did:privy:cm6cxky3i00ondmuatkemmffm".to_string(),
+                address: TEST_ADDRESS_EVM.to_string(),
+                from_chain_caip2: swap_order.from_chain_caip2,
+                to_chain_caip2: swap_order.to_chain_caip2,
+                evm_transaction: Some(serialized_tx),
+                solana_transaction: None,
+            })
+            .await
+            .unwrap();
+        println!("res: {:#?}", res);
     }
 
     #[tokio::test]
     async fn test_sol_to_sol() {
+        tracing_subscriber::fmt::init();
         let swap_order = SwapOrder {
-            amount: (10e6 * 1.0).to_string(), // 1 usdc
-            input_token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(), // usdc solana
-            output_token: "So11111111111111111111111111111111111111112".to_string(), // solana
+            amount: "10000".to_string(),
+            input_token: "11111111111111111111111111111111".to_string(),
+            output_token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(),
             from_chain_caip2: Caip2::SOLANA.to_string(),
             to_chain_caip2: Caip2::SOLANA.to_string(),
         };
 
+        let address = TEST_ADDRESS_SOL;
+
         let lifi = lifi::LiFi::new(None);
-        let transaction =
-            swap_order_to_transaction(&swap_order, &lifi, TEST_ADDRESS_SOL, TEST_ADDRESS_SOL)
-                .await
-                .unwrap();
-        match transaction {
+        let transaction = swap_order_to_transaction(&swap_order, &lifi, TEST_ADDRESS_EVM, address)
+            .await
+            .unwrap();
+        let encoded_tx = match transaction {
             SwapOrderTransaction::Solana(transaction) => {
                 println!("transaction: {:#?}", transaction);
+                transaction
             }
             _ => panic!("Invalid transaction type"),
-        }
+        };
+
+        dotenv::dotenv().ok();
+        let privy = privy::Privy::new(privy::config::PrivyConfig::from_env().unwrap());
+        let privy_tx = privy::tx::PrivyTransaction {
+            user_id: "did:privy:cm6cxky3i00ondmuatkemmffm".to_string(),
+            address: TEST_ADDRESS_SOL.to_string(),
+            from_chain_caip2: swap_order.from_chain_caip2.clone(),
+            to_chain_caip2: swap_order.to_chain_caip2.clone(),
+            evm_transaction: None,
+            solana_transaction: Some(
+                inject_blockhash_into_encoded_tx(
+                    &encoded_tx,
+                    &BLOCKHASH_CACHE.get_blockhash().await.unwrap(),
+                )
+                .unwrap(),
+            ),
+        };
+        println!("privy_tx: {:#?}", privy_tx);
+        privy.execute_transaction(privy_tx).await.unwrap();
     }
 }

@@ -27,6 +27,7 @@ bb8-redis = "0.20.0"
 privy = { path = "../privy" }
 actix-cors = "0.7.0"
 lifi = { path = "../lifi" }
+blockhash-cache = { path = "../blockhash-cache" }
 
 [[bin]]
 name = "engine"

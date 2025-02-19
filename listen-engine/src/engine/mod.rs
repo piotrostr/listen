@@ -12,6 +12,7 @@ use crate::redis::subscriber::{
     make_redis_subscriber, PriceUpdate, RedisSubscriber, RedisSubscriberError,
 };
 use anyhow::Result;
+use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
 use metrics::{counter, gauge, histogram};
 use privy::config::PrivyConfig;
 use privy::tx::PrivyTransaction;
@@ -61,6 +62,12 @@ pub enum EngineError {
 
     #[error("[Engine] Privy error: {0}")]
     PrivyError(PrivyError),
+
+    #[error("[Engine] Blockhash cache error: {0}")]
+    BlockhashCacheError(blockhash_cache::BlockhashCacheError),
+
+    #[error("[Engine] Inject blockhash error: {0}")]
+    InjectBlockhashError(anyhow::Error),
 }
 
 pub struct Engine {
@@ -259,7 +266,17 @@ impl Engine {
                                         privy_transaction.evm_transaction = Some(transaction);
                                     }
                                     SwapOrderTransaction::Solana(transaction) => {
-                                        privy_transaction.solana_transaction = Some(transaction);
+                                        let latest_blockhash = BLOCKHASH_CACHE
+                                            .get_blockhash()
+                                            .await
+                                            .map_err(EngineError::BlockhashCacheError)?;
+                                        let fresh_blockhash_tx = inject_blockhash_into_encoded_tx(
+                                            &transaction,
+                                            &latest_blockhash,
+                                        )
+                                        .map_err(EngineError::InjectBlockhashError)?;
+                                        privy_transaction.solana_transaction =
+                                            Some(fresh_blockhash_tx);
                                     }
                                 };
 
