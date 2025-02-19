@@ -272,7 +272,7 @@ impl Engine {
                                             .map_err(EngineError::BlockhashCacheError)?;
                                         let fresh_blockhash_tx = inject_blockhash_into_encoded_tx(
                                             &transaction,
-                                            &latest_blockhash,
+                                            &latest_blockhash.to_string(),
                                         )
                                         .map_err(EngineError::InjectBlockhashError)?;
                                         privy_transaction.solana_transaction =
