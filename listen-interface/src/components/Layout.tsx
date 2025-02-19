@@ -11,6 +11,7 @@ import { useSolBalance } from "../hooks/useSolBalance";
 import { imageMap } from "../hooks/util";
 import { Background } from "./Background";
 
+import { FaXTwitter } from "react-icons/fa6";
 import { IoMenu } from "react-icons/io5";
 import { RxCross2, RxDashboard } from "react-icons/rx";
 
@@ -38,6 +39,11 @@ const BOTTOM_ITEMS = [
       </svg>
     ),
     label: "GitHub",
+  },
+  {
+    href: "https://x.com/listenonsol",
+    icon: () => <FaXTwitter />,
+    label: "Twitter",
   },
 ] as const;
 
