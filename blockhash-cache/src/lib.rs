@@ -42,7 +42,7 @@ pub static BLOCKHASH_CACHE: Lazy<BlockhashCache> = Lazy::new(|| {
 });
 
 pub struct BlockhashCache {
-    blockhash: Arc<RwLock<String>>,
+    blockhash: Arc<RwLock<solana_sdk::hash::Hash>>,
     client: reqwest::Client,
     rpc_url: String,
 }
@@ -50,7 +50,7 @@ pub struct BlockhashCache {
 impl BlockhashCache {
     pub fn new(rpc_url: &str) -> Self {
         let client = reqwest::Client::new();
-        let blockhash = Arc::new(RwLock::new(String::default()));
+        let blockhash = Arc::new(RwLock::new(solana_sdk::hash::Hash::default()));
         let rpc_url = rpc_url.to_string();
 
         let cache = Self {
@@ -88,7 +88,7 @@ impl BlockhashCache {
     async fn fetch_blockhash(
         client: &reqwest::Client,
         rpc_url: &str,
-    ) -> Result<String, BlockhashCacheError> {
+    ) -> Result<solana_sdk::hash::Hash, BlockhashCacheError> {
         let request_body = serde_json::json!({
             "jsonrpc": "2.0",
             "id": 1,
@@ -109,14 +109,16 @@ impl BlockhashCache {
 
         // Convert the base58 string to our Hash type
         let blockhash = response_json.result.value.blockhash;
-        Ok(blockhash)
+        let hash = solana_sdk::hash::Hash::from_str(&blockhash)
+            .map_err(|_| BlockhashCacheError::HashConversionError)?;
+        Ok(hash)
     }
 
-    pub async fn get_blockhash(&self) -> Result<String, BlockhashCacheError> {
+    pub async fn get_blockhash(&self) -> Result<solana_sdk::hash::Hash, BlockhashCacheError> {
         let current_hash = self.blockhash.read().await.clone();
 
         // If we have a valid blockhash (not default), return it
-        if current_hash != String::default() {
+        if current_hash != solana_sdk::hash::Hash::default() {
             return Ok(current_hash);
         }
 
@@ -178,7 +180,7 @@ mod tests {
     async fn test_blockhash_cache() {
         dotenv::dotenv().ok();
         let blockhash = super::BLOCKHASH_CACHE.get_blockhash().await.unwrap();
-        assert_ne!(blockhash, String::default());
+        assert_ne!(blockhash, solana_sdk::hash::Hash::default());
     }
 
     #[test]
