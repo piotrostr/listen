@@ -123,48 +123,48 @@ export function PriceUpdates() {
   );
 
   return (
-    <div className="h-full flex flex-col gap-4 p-4">
+    <div className="h-full flex flex-col gap-2 p-2 sm:p-4 overflow-hidden">
       {/* Latest Update Section */}
-      <div className="bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl p-4">
-        <div className="flex items-center justify-between">
-          {latestUpdate ? (
-            <>
-              <span className="text-purple-50 font-medium w-48 truncate">
-                {latestUpdate.name}
+      <div className="h-[52px] bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl p-3 flex items-center">
+        {latestUpdate ? (
+          <div className="flex flex-row w-full text-sm">
+            <span className="text-purple-300/70 w-18 text-left mr-2">
+              {latestUpdate.slot}
+            </span>
+            <span className="text-white w-28 text-left">
+              {latestUpdate.name.slice(0, 10)}
+            </span>
+            <span className="text-blue-200 w-16 text-left mr-2">
+              ${latestUpdate.price.toFixed(5)}
+            </span>
+            {latestUpdate.is_buy ? (
+              <span className="text-green-500 w-16 text-right">
+                +${latestUpdate.swap_amount.toFixed(2)}
               </span>
-              <span className="text-blue-200 w-32 text-right">
-                ${latestUpdate.price.toFixed(5)}
+            ) : (
+              <span className="text-red-500 w-16 text-right">
+                -${latestUpdate.swap_amount.toFixed(2)}
               </span>
-              {latestUpdate.is_buy ? (
-                <span className="text-green-500 w-32 text-right">
-                  ${latestUpdate.swap_amount.toFixed(2)}
-                </span>
-              ) : (
-                <span className="text-red-500 w-32 text-right">
-                  ${latestUpdate.swap_amount.toFixed(2)}
-                </span>
-              )}
-              <span className="text-sm text-purple-300/70 w-24 text-right">
-                {new Date(latestUpdate.timestamp * 1000).toLocaleTimeString()}
-              </span>
-            </>
-          ) : (
-            <span className="text-purple-300/70">Waiting for updates...</span>
-          )}
-        </div>
+            )}
+          </div>
+        ) : (
+          <span className="text-purple-300/70 text-sm w-full text-center">
+            Waiting for updates...
+          </span>
+        )}
       </div>
 
       {/* Top Tokens Section */}
       <div className="flex-1 bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl shadow-lg flex flex-col min-h-0">
-        <div className="p-4 border-b border-purple-500/20 flex justify-between items-center">
-          <div className="flex justify-between space-x-4 w-full">
+        <div className="h-[64px] shrink-0 p-3 border-b border-purple-500/20">
+          <div className="flex items-center justify-between gap-2 h-full">
             {/* Volume Filter */}
-            <div className="grid grid-cols-2 gap-2">
+            <div className="flex gap-2">
               <button
                 onClick={() =>
                   setVolumeFilter(volumeFilter === "bought" ? "all" : "bought")
                 }
-                className={`px-3 py-1 rounded-lg text-sm ${
+                className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center ${
                   volumeFilter === "bought"
                     ? "bg-purple-500/20 border-2 border-purple-500"
                     : "bg-black/40 border-2 border-purple-500/30"
@@ -176,7 +176,7 @@ export function PriceUpdates() {
                 onClick={() =>
                   setVolumeFilter(volumeFilter === "sold" ? "all" : "sold")
                 }
-                className={`px-3 py-1 rounded-lg text-sm ${
+                className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center ${
                   volumeFilter === "sold"
                     ? "bg-purple-500/20 border-2 border-purple-500"
                     : "bg-black/40 border-2 border-purple-500/30"
@@ -187,23 +187,25 @@ export function PriceUpdates() {
             </div>
 
             {/* Market Cap Filter */}
-            <div className="flex items-center space-x-2">
-              <span className="text-purple-100">MC:</span>
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-purple-100 text-sm hidden sm:inline">
+                MC:
+              </span>
               <select
                 value={marketCapFilter}
                 onChange={(e) => setMarketCapFilter(e.target.value)}
-                className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-3 py-1 text-sm focus:outline-none focus:border-purple-500"
+                className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-purple-500 w-full max-w-[140px] sm:max-w-none"
               >
-                <option value="all">All Market Caps</option>
-                <option value="under1m">Under $1M</option>
-                <option value="1mTo10m">$1M - $10M</option>
-                <option value="10mTo100m">$10M - $100M</option>
-                <option value="over100m">Over $100M</option>
+                <option value="all">All MC</option>
+                <option value="under1m">&lt;$1M</option>
+                <option value="1mTo10m">$1M-$10M</option>
+                <option value="10mTo100m">$10M-$100M</option>
+                <option value="over100m">&gt;$100M</option>
               </select>
             </div>
           </div>
         </div>
-        <div className="divide-y divide-purple-500/20 overflow-y-auto">
+        <div className="divide-y divide-purple-500/20 overflow-y-auto flex-1">
           {topTokens.map((token, index) => (
             <TokenTile key={token.pubkey} token={token} index={index} />
           ))}

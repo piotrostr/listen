@@ -38,22 +38,32 @@ export function Portfolio() {
   return (
     <div className="h-full font-mono">
       <div className="h-[85vh] border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm overflow-hidden flex flex-col">
-        <div className="flex flex-row justify-between items-center p-4">
-          <h2 className="text-xl font-bold">Portfolio</h2>
-          <div className="flex items-center gap-2">
-            <div>
+        <div className="flex lg:flex-row flex-col lg:justify-between lg:items-center p-4">
+          <h2 className="text-xl font-bold lg:mb-0 mb-2">Portfolio</h2>
+          <div className="flex lg:flex-row flex-col lg:items-center gap-2">
+            <div className="flex items-center gap-2">
+              <img
+                src={imageMap["solana"]}
+                alt="Solana"
+                className="w-4 h-4 rounded-full"
+              />
               {wallets?.solanaWallet?.toString().slice(0, 4)}...
               {wallets?.solanaWallet?.toString().slice(-5)}
+              <div onClick={handleClickCopySolana} className="cursor-pointer">
+                {clickedSolana ? <div> ✅</div> : <CopyIcon />}
+              </div>
             </div>
-            <div onClick={handleClickCopySolana} className="cursor-pointer">
-              {clickedSolana ? <div> ✅</div> : <CopyIcon />}
-            </div>
-            <div>
+            <div className="flex items-center gap-2">
+              <img
+                src={imageMap["eth"]}
+                alt="Ethereum"
+                className="w-4 h-4 rounded-full"
+              />
               {wallets?.evmWallet?.toString().slice(0, 4)}...
               {wallets?.evmWallet?.toString().slice(-5)}
-            </div>
-            <div onClick={handleClickCopyEvm} className="cursor-pointer">
-              {clickedEvm ? <div> ✅</div> : <CopyIcon />}
+              <div onClick={handleClickCopyEvm} className="cursor-pointer">
+                {clickedEvm ? <div> ✅</div> : <CopyIcon />}
+              </div>
             </div>
           </div>
         </div>

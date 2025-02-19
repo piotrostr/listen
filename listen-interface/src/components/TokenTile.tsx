@@ -11,7 +11,7 @@ interface TokenTileProps {
 
 function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
   return (
-    <div className="flex flex-row gap-2">
+    <div className="flex flex-row gap-1 sm:gap-2">
       {tokenMetadata?.mpl.ipfs_metadata?.twitter && (
         <a
           href={tokenMetadata?.mpl.ipfs_metadata?.twitter}
@@ -19,7 +19,7 @@ function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
           rel="noopener noreferrer"
           className="hover:text-blue-500"
         >
-          <FaXTwitter />
+          <FaXTwitter size={12} className="sm:text-base" />
         </a>
       )}
       {tokenMetadata?.mpl.ipfs_metadata?.telegram && (
@@ -29,7 +29,7 @@ function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
           rel="noopener noreferrer"
           className="hover:text-blue-500"
         >
-          <FaTelegram />
+          <FaTelegram size={12} className="sm:text-base" />
         </a>
       )}
       {tokenMetadata?.mpl.ipfs_metadata?.website && (
@@ -39,7 +39,7 @@ function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
           rel="noopener noreferrer"
           className="hover:text-blue-500"
         >
-          <FaGlobe />
+          <FaGlobe size={12} className="sm:text-base" />
         </a>
       )}
     </div>
@@ -125,13 +125,15 @@ export function TokenTile({ token, index }: TokenTileProps) {
 
   return (
     <div>
-      <div className="p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800">
-        <div className="flex items-center space-x-4">
-          <span className="text-gray-500 w-6">{index + 1}.</span>
-          <div className="flex items-center space-x-3">
+      <div className="p-3 sm:p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800">
+        <div className="flex items-center space-x-2 sm:space-x-4">
+          <span className="text-gray-500 text-sm sm:text-base w-4 sm:w-6">
+            {index + 1}.
+          </span>
+          <div className="flex items-center space-x-2 sm:space-x-3">
             {metadata?.mpl.ipfs_metadata?.image &&
               metadata.mpl.ipfs_metadata.image.startsWith("https://") && (
-                <div className="w-8 h-8 relative rounded-full overflow-hidden">
+                <div className="w-6 h-6 sm:w-8 sm:h-8 relative rounded-full overflow-hidden">
                   <img
                     src={metadata.mpl.ipfs_metadata.image}
                     alt={token.name}
@@ -141,36 +143,42 @@ export function TokenTile({ token, index }: TokenTileProps) {
               )}
             <div>
               <div className="font-medium">
-                <span className="inline-flex items-center">
+                <span className="inline-flex items-center text-sm sm:text-base">
                   <a
                     href={`https://solscan.io/address/${token.pubkey}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="hover:text-blue-500"
+                    className="hover:text-blue-500 truncate max-w-[120px] sm:max-w-none"
                   >
                     {token.name}
                   </a>
                   {metadata?.mpl.symbol && (
-                    <span className="ml-2 text-sm text-gray-500">
+                    <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-gray-500">
                       {metadata.mpl.symbol}
                     </span>
                   )}
                   <button
                     onClick={handleCopy}
-                    className="ml-2 hover:text-blue-500"
+                    className="ml-1 sm:ml-2 hover:text-blue-500"
                   >
-                    {copied ? <FaCheck /> : <CopyIcon />}
+                    {copied ? (
+                      <FaCheck size={12} className="sm:text-base" />
+                    ) : (
+                      <CopyIcon />
+                    )}
                   </button>
                   <button
                     onClick={() => setShowChart(true)}
-                    className="ml-2 hover:text-blue-500"
+                    className="ml-1 sm:ml-2 hover:text-blue-500"
                   >
-                    <IoBarChart />
+                    <IoBarChart size={14} className="sm:text-base" />
                   </button>
                 </span>
               </div>
-              <Socials tokenMetadata={metadata} />
-              <div className="text-sm text-gray-500">
+              <div className="hidden sm:block">
+                <Socials tokenMetadata={metadata} />
+              </div>
+              <div className="text-xs sm:text-sm text-gray-500">
                 ${token.lastPrice.toFixed(5)}
               </div>
             </div>
@@ -178,17 +186,17 @@ export function TokenTile({ token, index }: TokenTileProps) {
         </div>
         <div className="text-right">
           <div className="flex flex-col">
-            <span className="text-green-500 font-medium">
+            <span className="text-green-500 font-medium text-xs sm:text-base">
               +${token.buyVolume.toLocaleString()}
             </span>
-            <span className="text-red-500 font-medium">
+            <span className="text-red-500 font-medium text-xs sm:text-base">
               -${token.sellVolume.toLocaleString()}
             </span>
           </div>
-          <div className="text-sm text-gray-500">
+          <div className="text-xs sm:text-sm text-gray-500">
             MC: ${(token.marketCap / 1e6).toFixed(1)}M
           </div>
-          <div className="text-xs text-gray-400">
+          <div className="text-[10px] sm:text-xs text-gray-400">
             {token.uniqueAddresses.size} traders
           </div>
         </div>

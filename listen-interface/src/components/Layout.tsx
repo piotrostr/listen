@@ -37,7 +37,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-black/40 backdrop-blur-sm border-b border-purple-500/30 flex items-center justify-between px-4">
         <div className="flex items-center space-x-3">
           <img src="/listen-more.png" alt="Logo" className="w-8 h-8 rounded" />
-          <span className="font-bold text-xl">listen-rs</span>
+          <span className="font-bold text-md lg:text-xl">listen-rs</span>
         </div>
         <button
           onClick={() => setIsSidebarOpen(!isSidebarOpen)}

@@ -1,5 +1,6 @@
 import { User, WalletWithMetadata } from "@privy-io/react-auth";
 import { PublicKey } from "@solana/web3.js";
+import ethLogo from "../assets/icons/ethereum.svg";
 
 interface RawAccount {
   mint: PublicKey;
@@ -56,6 +57,6 @@ export const imageMap = {
     "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
   solana:
     "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
-  eth: "",
+  eth: ethLogo,
   arb: "https://arbiscan.io/assets/arbitrum/images/svg/logos/chain-light.svg?v=25.1.4.0",
 };
