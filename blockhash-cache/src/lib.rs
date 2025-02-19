@@ -118,25 +118,35 @@ pub fn inject_blockhash_into_encoded_tx(base64_tx: &str, blockhash: &str) -> Res
     // Decode base64 transaction into bytes
     let tx_bytes = STANDARD.decode(base64_tx)?;
 
-    // Deserialize into VersionedTransaction
-    let mut transaction = bincode::deserialize::<VersionedTransaction>(&tx_bytes)?;
+    // Try to deserialize as VersionedTransaction first
+    let updated_tx_bytes = match bincode::deserialize::<VersionedTransaction>(&tx_bytes) {
+        Ok(mut transaction) => {
+            // Handle versioned transaction
+            let blockhash = solana_sdk::hash::Hash::from_str(&blockhash)
+                .map_err(|_| anyhow::anyhow!("Invalid blockhash format"))?;
 
-    // Convert blockhash string to Hash
-    let blockhash = solana_sdk::hash::Hash::from_str(&blockhash)
-        .map_err(|_| anyhow::anyhow!("Invalid blockhash format"))?;
-
-    // Update the blockhash
-    match &mut transaction.message {
-        solana_sdk::message::VersionedMessage::Legacy(message) => {
-            message.recent_blockhash = blockhash;
+            match &mut transaction.message {
+                solana_sdk::message::VersionedMessage::Legacy(message) => {
+                    message.recent_blockhash = blockhash;
+                }
+                solana_sdk::message::VersionedMessage::V0(message) => {
+                    message.recent_blockhash = blockhash;
+                }
+            }
+            bincode::serialize(&transaction)?
         }
-        solana_sdk::message::VersionedMessage::V0(message) => {
-            message.recent_blockhash = blockhash;
-        }
-    }
+        Err(_) => {
+            // Try as standard Transaction
+            let mut transaction =
+                bincode::deserialize::<solana_sdk::transaction::Transaction>(&tx_bytes)?;
 
-    // Serialize back to bytes
-    let updated_tx_bytes = bincode::serialize(&transaction)?;
+            let blockhash = solana_sdk::hash::Hash::from_str(&blockhash)
+                .map_err(|_| anyhow::anyhow!("Invalid blockhash format"))?;
+
+            transaction.message.recent_blockhash = blockhash;
+            bincode::serialize(&transaction)?
+        }
+    };
 
     // Encode to base64
     Ok(STANDARD.encode(updated_tx_bytes))
@@ -144,10 +154,46 @@ pub fn inject_blockhash_into_encoded_tx(base64_tx: &str, blockhash: &str) -> Res
 
 #[cfg(test)]
 mod tests {
+    use super::*;
+    use solana_sdk::{
+        message::Message,
+        pubkey::Pubkey,
+        signature::{Keypair, Signer},
+        system_instruction,
+        transaction::Transaction,
+    };
+
     #[tokio::test]
     async fn test_blockhash_cache() {
         dotenv::dotenv().ok();
         let blockhash = super::BLOCKHASH_CACHE.get_blockhash().await.unwrap();
         assert_ne!(blockhash, String::default());
+    }
+
+    #[test]
+    fn test_inject_blockhash_standard_transaction() {
+        // Create a simple standard transaction
+        let payer = Keypair::new();
+        let to = Pubkey::new_unique();
+        let instruction = system_instruction::transfer(&payer.pubkey(), &to, 1000);
+        let message = Message::new(&[instruction], Some(&payer.pubkey()));
+        let tx = Transaction::new_unsigned(message);
+
+        // Serialize and encode the transaction
+        let tx_bytes = bincode::serialize(&tx).unwrap();
+        let base64_tx = STANDARD.encode(&tx_bytes);
+
+        // Test injecting a new blockhash
+        let new_blockhash = "CkqVVMoo6LUqzqKSQVFNL4Yxv3TXyTh1NQxTSG2Z9gTq";
+        let result = inject_blockhash_into_encoded_tx(&base64_tx, new_blockhash).unwrap();
+
+        // Decode and deserialize the result
+        let updated_bytes = STANDARD.decode(result).unwrap();
+        let updated_tx: Transaction = bincode::deserialize(&updated_bytes).unwrap();
+
+        assert_eq!(
+            updated_tx.message.recent_blockhash.to_string(),
+            new_blockhash
+        );
     }
 }
