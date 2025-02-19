@@ -23,7 +23,8 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
     type: z.literal(PipelineActionType.SwapOrder),
     input_token: z.string(), // address or mint
     output_token: z.string(), // address or mint
-    amount: z.number().nullable(),
+    // accounting for decimals, e.g. 1 sol = 10^9 lamports, 1 eth = 10^18 wei
+    amount: z.string().nullable(), 
     percentage: z.number().nullable(),
   });
 

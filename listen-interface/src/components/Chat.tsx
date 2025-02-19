@@ -4,7 +4,7 @@ import { ChatContainer } from "./ChatContainer";
 import { ChatMessage, ToolMessage } from "./Messages";
 import { PipelineDisplay } from "./Pipeline";
 
-const IS_DISABLED = true;
+const IS_DISABLED = process.env.NODE_ENV === "production";
 
 const LoadingIndicator = () => (
   <div className="bg-purple-900/20 text-purple-300 rounded px-4 py-2">...</div>
