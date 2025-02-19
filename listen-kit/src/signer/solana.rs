@@ -4,8 +4,8 @@ use solana_sdk::signature::Keypair;
 use solana_sdk::signer::Signer;
 use std::sync::Arc;
 
-use crate::solana::blockhash::BLOCKHASH_CACHE;
 use crate::solana::transaction::send_tx;
+use blockhash_cache::BLOCKHASH_CACHE;
 
 use super::TransactionSigner;
 

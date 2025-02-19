@@ -2,7 +2,7 @@ use anyhow::Result;
 use async_trait::async_trait;
 
 #[cfg(feature = "solana")]
-use crate::solana::blockhash::BLOCKHASH_CACHE;
+use blockhash_cache::BLOCKHASH_CACHE;
 use privy::{auth::UserSession, caip2::Caip2, util::base64encode, Privy};
 use std::sync::Arc;
 

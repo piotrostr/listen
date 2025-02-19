@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
 use rig_tool_macro::tool;
 
 use crate::common::wrap_unsafe;
@@ -153,10 +154,14 @@ pub async fn swap(
         Some(transaction_request) => {
             wrap_unsafe(move || async move {
                 if transaction_request.is_solana() {
+                    let latest_blockhash =
+                        BLOCKHASH_CACHE.get_blockhash().await?.to_string();
+                    let encoded_tx = inject_blockhash_into_encoded_tx(
+                        &transaction_request.data,
+                        &latest_blockhash,
+                    )?;
                     signer
-                        .sign_and_send_encoded_solana_transaction(
-                            transaction_request.data,
-                        )
+                        .sign_and_send_encoded_solana_transaction(encoded_tx)
                         .await
                 } else {
                     signer
