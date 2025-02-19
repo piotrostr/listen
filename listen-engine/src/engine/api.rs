@@ -34,7 +34,8 @@ pub enum WireAction {
         input_token: String,
         output_token: String,
         amount: String,
-        percentage: Option<f64>,
+        from_chain_caip2: String,
+        to_chain_caip2: String,
     },
     #[serde(rename = "Notification")]
     Notification {
@@ -121,11 +122,14 @@ impl From<&WireAction> for Action {
                 input_token,
                 output_token,
                 amount,
-                ..
+                from_chain_caip2,
+                to_chain_caip2,
             } => Action::Order(SwapOrder {
                 input_token: input_token.clone(),
                 output_token: output_token.clone(),
                 amount: amount.clone(),
+                from_chain_caip2: from_chain_caip2.clone(),
+                to_chain_caip2: to_chain_caip2.clone(),
             }),
             WireAction::Notification { message, .. } => Action::Notification(Notification {
                 message: message.clone(),

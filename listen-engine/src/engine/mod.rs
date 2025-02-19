@@ -1,13 +1,12 @@
 pub mod api;
-pub mod caip2;
 pub mod constants;
 pub mod evaluator;
 pub mod executor;
 pub mod order;
 pub mod pipeline;
 
-use crate::engine::caip2::Caip2;
 use crate::engine::evaluator::EvaluatorError;
+use crate::engine::order::{swap_order_to_transaction, SwapOrderTransaction};
 use crate::redis::client::{make_redis_client, RedisClient, RedisClientError};
 use crate::redis::subscriber::{
     make_redis_subscriber, PriceUpdate, RedisSubscriber, RedisSubscriberError,
@@ -50,6 +49,9 @@ pub enum EngineError {
 
     #[error("[Engine] Transaction error: {0}")]
     TransactionError(privy::tx::PrivyTransactionError),
+
+    #[error("[Engine] Swap order error: {0}")]
+    SwapOrderError(order::SwapOrderError),
 
     #[error("[Engine] Redis client error: {0}")]
     RedisClientError(RedisClientError),
@@ -231,16 +233,32 @@ impl Engine {
                 if matches!(step.status, Status::Pending) {
                     match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
                         Ok(true) => match &step.action {
-                            Action::Order(_order) => {
-                                println!("would be executing here: {:#?}", _order);
-                                // TODO here deconstruct the swap order into swap instructions
-                                let privy_transaction = PrivyTransaction {
+                            Action::Order(order) => {
+                                let mut privy_transaction = PrivyTransaction {
                                     user_id: pipeline.user_id.clone(),
                                     address: pipeline.wallet_address.clone(),
-                                    caip2: Caip2::SOLANA.to_string(), // TODO parametrize this
+                                    from_chain_caip2: order.from_chain_caip2.clone(),
+                                    to_chain_caip2: order.to_chain_caip2.clone(),
                                     evm_transaction: None,
                                     solana_transaction: None,
                                 };
+                                match swap_order_to_transaction(
+                                    order,
+                                    &lifi::LiFi::new(None),
+                                    &pipeline.wallet_address,
+                                    &pipeline.pubkey,
+                                )
+                                .await
+                                .map_err(EngineError::SwapOrderError)?
+                                {
+                                    SwapOrderTransaction::Evm(transaction) => {
+                                        privy_transaction.evm_transaction = Some(transaction);
+                                    }
+                                    SwapOrderTransaction::Solana(transaction) => {
+                                        privy_transaction.solana_transaction = Some(transaction);
+                                    }
+                                };
+
                                 match self.privy.execute_transaction(privy_transaction).await {
                                     Ok(_) => {
                                         step.status = Status::Completed;
