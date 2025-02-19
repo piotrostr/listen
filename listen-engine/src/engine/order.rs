@@ -135,3 +135,79 @@ pub async fn swap_order_to_transaction(
         None => Err(SwapOrderError::NoTransactionRequest),
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use crate::engine::constants::{TEST_ADDRESS_EVM, TEST_ADDRESS_SOL};
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_swap_from_swap_order() {
+        let swap_order = SwapOrder {
+            amount: (10e6 * 1.0).to_string(), // 1 usdc
+            input_token: "So11111111111111111111111111111111111111112".to_string(),
+            output_token: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831".to_string(), // usdc arbitrum
+            from_chain_caip2: Caip2::SOLANA.to_string(),
+            to_chain_caip2: Caip2::ARBITRUM.to_string(),
+        };
+
+        let lifi = lifi::LiFi::new(None);
+        let transaction =
+            swap_order_to_transaction(&swap_order, &lifi, TEST_ADDRESS_EVM, TEST_ADDRESS_SOL)
+                .await
+                .unwrap();
+        match transaction {
+            SwapOrderTransaction::Solana(transaction) => {
+                println!("transaction: {:#?}", transaction);
+            }
+            _ => panic!("Invalid transaction type"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_swap_from_swap_order_evm() {
+        let swap_order = SwapOrder {
+            amount: (10e6 * 1.0).to_string(), // 1 usdc
+            input_token: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831".to_string(), // usdc arbitrum
+            output_token: "So11111111111111111111111111111111111111112".to_string(), // usdc solana
+            from_chain_caip2: Caip2::ARBITRUM.to_string(),
+            to_chain_caip2: Caip2::SOLANA.to_string(),
+        };
+
+        let lifi = lifi::LiFi::new(None);
+        let transaction =
+            swap_order_to_transaction(&swap_order, &lifi, TEST_ADDRESS_EVM, TEST_ADDRESS_SOL)
+                .await
+                .unwrap();
+        match transaction {
+            SwapOrderTransaction::Evm(transaction) => {
+                println!("transaction: {:#?}", transaction);
+            }
+            _ => panic!("Invalid transaction type"),
+        }
+    }
+
+    #[tokio::test]
+    async fn test_sol_to_sol() {
+        let swap_order = SwapOrder {
+            amount: (10e6 * 1.0).to_string(), // 1 usdc
+            input_token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v".to_string(), // usdc solana
+            output_token: "So11111111111111111111111111111111111111112".to_string(), // solana
+            from_chain_caip2: Caip2::SOLANA.to_string(),
+            to_chain_caip2: Caip2::SOLANA.to_string(),
+        };
+
+        let lifi = lifi::LiFi::new(None);
+        let transaction =
+            swap_order_to_transaction(&swap_order, &lifi, TEST_ADDRESS_SOL, TEST_ADDRESS_SOL)
+                .await
+                .unwrap();
+        match transaction {
+            SwapOrderTransaction::Solana(transaction) => {
+                println!("transaction: {:#?}", transaction);
+            }
+            _ => panic!("Invalid transaction type"),
+        }
+    }
+}
