@@ -38,7 +38,8 @@ pub async fn run_server(
             .wrap(Cors::permissive())
             .app_data(state.clone())
             .service(healthz)
-            .service(web::scope("/v1").service(stream).service(auth))
+            .service(stream)
+            .service(auth)
     })
     .bind("0.0.0.0:6969")?
     .run()

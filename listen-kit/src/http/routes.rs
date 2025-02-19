@@ -50,12 +50,13 @@ async fn stream(
 ) -> impl Responder {
     let user_session = match verify_auth(&req).await {
         Ok(s) => s,
-        Err(_) => {
+        Err(e) => {
             let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
             let error_event = sse::Event::Data(sse::Data::new(
-                serde_json::to_string(&StreamResponse::Error(
-                    "Error: unauthorized".to_string(),
-                ))
+                serde_json::to_string(&StreamResponse::Error(format!(
+                    "Error: unauthorized: {}",
+                    e
+                )))
                 .unwrap(),
             ));
             let _ = tx.send(error_event).await;
@@ -108,8 +109,6 @@ async fn stream(
         initial_messages.push(Message::User {
             content: OneOrMany::one(UserContent::text(prompt)),
         });
-
-        println!("initial_messages: {:?}", initial_messages);
 
         // Create a channel for the reasoning loop to send responses
         let (internal_tx, mut internal_rx) = tokio::sync::mpsc::channel(32);

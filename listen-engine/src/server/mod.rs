@@ -1,3 +1,4 @@
+use actix_cors::Cors;
 use actix_web::{
     middleware,
     web::{self, Data},
@@ -76,12 +77,20 @@ pub async fn run() -> std::io::Result<()> {
                 engine_bridge_tx: tx.clone(),
                 privy: privy.clone(),
             }))
-            .wrap(middleware::Logger::default())
-            .service(
-                web::scope("/api")
-                    .route("/healthz", web::get().to(healthz))
-                    .route("/pipeline", web::post().to(create_pipeline)),
+            .wrap(
+                Cors::default()
+                    .allow_any_origin()
+                    .allow_any_method()
+                    .allow_any_header()
+                    .supports_credentials()
+                    .expose_headers(["content-type", "authorization"])
+                    .max_age(3600)
+                    .allowed_header(actix_web::http::header::CONTENT_TYPE)
+                    .allowed_header(actix_web::http::header::AUTHORIZATION),
             )
+            .wrap(middleware::Logger::default())
+            .route("/healthz", web::get().to(healthz))
+            .route("/pipeline", web::post().to(create_pipeline))
             .route("/metrics", web::get().to(metrics_handler))
     })
     .bind(("0.0.0.0", 6966))?
@@ -122,7 +131,7 @@ async fn create_pipeline(
 ) -> impl Responder {
     let start = std::time::Instant::now();
 
-    let auth_token = req.headers().get("Authorization").unwrap();
+    let auth_token = req.headers().get("authorization").unwrap();
     let auth_token = auth_token.to_str().unwrap();
     let auth_token = auth_token.split(" ").nth(1).unwrap();
 

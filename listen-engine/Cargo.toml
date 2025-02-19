@@ -2,7 +2,7 @@
 name = "listen-engine"
 version = "0.1.0"
 edition = "2021"
-default-run = "listen-engine"
+default-run = "engine"
 
 [dependencies]
 anyhow = "1.0.95"
@@ -25,7 +25,8 @@ metrics-exporter-prometheus = "0.12"
 once_cell = "1.18"
 bb8-redis = "0.20.0"
 privy = { path = "../privy" }
+actix-cors = "0.7.0"
 
 [[bin]]
-name = "listen-engine"
+name = "engine"
 path = "bin/engine.rs"

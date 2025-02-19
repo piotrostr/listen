@@ -1,6 +1,6 @@
 [package]
 name = "privy"
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 authors = ["piotrostr"]
 license = "MIT"
@@ -8,7 +8,7 @@ description = "Privy auth and transaction sending in Rust"
 
 [dependencies]
 anyhow = "1.0.95"
-jsonwebtoken = "9.3.1"
+jsonwebtoken = "9.3.0"
 serde = { version = "1.0.217", features = ["derive"] }
 reqwest = { version = "0.12.12", features = ["json"] }
 serde_json = "1.0.138"
@@ -18,4 +18,5 @@ tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 
 [dev-dependencies]
+dotenv = "0.15.0"
 tokio = { version = "1.43.0", features = ["full"] }

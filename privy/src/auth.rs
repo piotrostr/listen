@@ -17,7 +17,7 @@ pub struct UserSession {
 #[derive(Debug, thiserror::Error)]
 pub enum PrivyAuthError {
     #[error("[Privy] Failed to validate access token")]
-    ValidateAccessTokenError(#[from] jsonwebtoken::errors::Error),
+    ValidateAccessTokenError(jsonwebtoken::errors::Error),
     #[error("[Privy] Failed to get user by id")]
     GetUserByIdRequestError(#[from] reqwest::Error),
     #[error("[Privy] Failed to get user by id")]
@@ -26,6 +26,9 @@ pub enum PrivyAuthError {
     ParseUserError(#[from] serde_json::Error),
     #[error("[Privy] Failed to find wallet")]
     FindWalletError(anyhow::Error),
+
+    #[error("[Privy] Failed to read decoding key")]
+    ReadDecodingKeyError(jsonwebtoken::errors::Error),
 }
 
 impl Privy {
@@ -61,7 +64,7 @@ impl Privy {
         validation.set_audience(&[self.config.app_id.clone()]);
 
         let key = DecodingKey::from_ec_pem(self.config.verification_key.as_bytes())
-            .map_err(PrivyAuthError::ValidateAccessTokenError)?;
+            .map_err(PrivyAuthError::ReadDecodingKeyError)?;
 
         let token_data = decode::<PrivyClaims>(access_token, &key, &validation)
             .map_err(PrivyAuthError::ValidateAccessTokenError)?;
@@ -111,4 +114,18 @@ fn find_wallet<'a>(
             _ => None,
         })
         .ok_or_else(|| anyhow!("Could not find a delegated {} wallet", chain_type))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_validate_access_token() {
+        dotenv::dotenv().ok();
+        let privy = Privy::new(crate::config::PrivyConfig::from_env().unwrap());
+        let claims = privy.validate_access_token("eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkNPbGxUWHB2R3Jua3hXUThpbDA4V0paVjhvU3Y5c3g1dG5jNHMxS3libW8ifQ.eyJzaWQiOiJjbTc5Ymg0MDkwMXN6MTNqMTdnamtsd254IiwiaXNzIjoicHJpdnkuaW8iLCJpYXQiOjE3Mzk4OTUzNTUsImF1ZCI6ImNtNmM3aWZxZDAwYXI1Mm0xcXhmZ2Jra24iLCJzdWIiOiJkaWQ6cHJpdnk6Y202Y3hreTNpMDBvbmRtdWF0a2VtbWZmbSIsImV4cCI6MTczOTg5ODk1NX0.6XEndM7e1ZBLrLm6mZxor2OJZVtqNYqVHwogYxN14Lv9hEpXcbGktmfBOby1VMa3NIbecFEsMbciW9uAHR384g");
+        println!("claims: {:?}", claims);
+        assert!(claims.is_ok());
+    }
 }

@@ -38,7 +38,7 @@ export default defineConfig({
         ],
       },
       workbox: {
-        maximumFileSizeToCacheInBytes: 3000000,
+        maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
     }),
     visualizer(),
@@ -49,44 +49,44 @@ export default defineConfig({
     minify: "esbuild",
     sourcemap: false,
     chunkSizeWarningLimit: 1000,
-    rollupOptions: {
-      output: {
-        manualChunks(id) {
-          if (id.includes("node_modules")) {
-            if (id.includes("react")) {
-              return "vendor-react";
-            }
-            if (id.includes("@privy-io")) {
-              return "vendor-privy";
-            }
-            if (id.includes("@coinbase")) {
-              return "vendor-coinbase";
-            }
-            if (id.includes("viem")) {
-              return "vendor-viem";
-            }
-            if (id.includes("@walletconnect")) {
-              return "vendor-walletconnect";
-            }
-            if (id.includes("@ethersproject")) {
-              return "vendor-etheresproject";
-            }
-            if (id.includes("@noble")) {
-              return "vendor-noble";
-            }
-            if (id.includes("lodash")) {
-              return "vendor-lodash";
-            }
-            if (id.includes("@solana")) {
-              return "vendor-solana";
-            }
-            if (id.includes("@tanstack")) {
-              return "vendor-tanstack";
-            }
-            return "vendor";
-          }
-        },
-      },
-    },
+    // rollupOptions: {
+    //   output: {
+    //     manualChunks(id) {
+    //       if (id.includes("node_modules")) {
+    //         if (id.includes("react")) {
+    //           return "vendor-react";
+    //         }
+    //         if (id.includes("@privy-io")) {
+    //           return "vendor-privy";
+    //         }
+    //         if (id.includes("@coinbase")) {
+    //           return "vendor-coinbase";
+    //         }
+    //         if (id.includes("viem")) {
+    //           return "vendor-viem";
+    //         }
+    //         if (id.includes("@walletconnect")) {
+    //           return "vendor-walletconnect";
+    //         }
+    //         // if (id.includes("@ethersproject")) {
+    //         //   return "vendor-etheresproject";
+    //         // }
+    //         if (id.includes("@noble")) {
+    //           return "vendor-noble";
+    //         }
+    //         if (id.includes("lodash")) {
+    //           return "vendor-lodash";
+    //         }
+    //         if (id.includes("@solana")) {
+    //           return "vendor-solana";
+    //         }
+    //         if (id.includes("@tanstack")) {
+    //           return "vendor-tanstack";
+    //         }
+    //         return "vendor";
+    //       }
+    //     },
+    //   },
+    // },
   },
 });

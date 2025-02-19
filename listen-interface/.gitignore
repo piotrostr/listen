@@ -28,3 +28,4 @@ dist-ssr
 *.sw?
 !package.json
 !tsconfig.json
+.vercel

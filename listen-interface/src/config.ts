@@ -1,6 +1,4 @@
 export const config = {
-  API_BASE_URL:
-    import.meta?.env?.NODE_ENV === "production"
-      ? "https://api.listen-rs.com"
-      : "http://localhost:6969",
+  API_BASE_URL: "https://api.listen-rs.com",
+  // API_BASE_URL: "http://localhost:6969",
 };

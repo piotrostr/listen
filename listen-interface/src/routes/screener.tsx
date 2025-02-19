@@ -7,7 +7,7 @@ export const Route = createFileRoute("/screener")({
 
 function ScreenerPage() {
   return (
-    <div className="max-w-7xl mx-auto px-4">
+    <div className="flex-1 overflow-hidden">
       <PriceUpdates />
     </div>
   );

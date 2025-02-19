@@ -6,7 +6,6 @@ import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 export const Route = createRootRoute({
   component: RootComponent,
   beforeLoad: async ({ location }) => {
-    // Skip auth check for the root path since it redirects to /chat
     if (location.pathname === "/") {
       return;
     }
