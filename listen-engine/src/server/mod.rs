@@ -152,6 +152,9 @@ async fn create_pipeline(
 
     metrics::counter!("pipeline_creation_attempts", 1);
 
+    println!("Creating pipeline for user: {}", user.user_id);
+    println!("Wire: {:#?}", wire);
+
     let pipeline: Pipeline = (
         wire.into_inner(),
         PipelineParams {
@@ -161,6 +164,8 @@ async fn create_pipeline(
         },
     )
         .into();
+
+    println!("Pipeline: {:#?}", pipeline);
 
     // Create oneshot channel for response
     let (response_tx, response_rx) = oneshot::channel();
