@@ -9,7 +9,6 @@ use super::pipeline::{
 };
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub enum WireActionType {
     SwapOrder,
     Notification,
@@ -42,14 +41,12 @@ pub struct WireNotification {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase", tag = "type")]
 pub enum WireAction {
     SwapOrder(WireSwapOrder),
     Notification(WireNotification),
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct WireCondition {
     pub r#type: WireConditionType,
     pub asset: String,
@@ -57,14 +54,12 @@ pub struct WireCondition {
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct WireStep {
     pub action: WireAction,
     pub conditions: Vec<WireCondition>,
 }
 
 #[derive(Debug, Deserialize)]
-#[serde(rename_all = "camelCase")]
 pub struct WirePipeline {
     pub steps: Vec<WireStep>,
 }
