@@ -64,7 +64,6 @@ export function Chat() {
 
   useEffect(() => {
     if (IS_DISABLED) return;
-
     const handleKeyPress = async (e: KeyboardEvent) => {
       if (
         e.target instanceof HTMLInputElement ||
@@ -114,11 +113,9 @@ export function Chat() {
   }, [inputMessage, sendMessage, setMessages]);
 
   if (IS_DISABLED) {
-    return (
-      <ChatContainer inputMessage="">
-        <div className="text-purple-300 px-4 py-2">disabled</div>
-      </ChatContainer>
-    );
+    <ChatContainer inputMessage="">
+      <div className="text-purple-300 px-4 py-2">disabled</div>
+    </ChatContainer>;
   }
 
   return (

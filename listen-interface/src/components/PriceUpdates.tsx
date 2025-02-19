@@ -123,10 +123,10 @@ export function PriceUpdates() {
   );
 
   return (
-    <div className="h-[calc(100vh-6rem)] flex flex-col space-y-2 overflow-hidden p-2 max-w-7xl mx-auto px-4">
+    <div className="h-full flex flex-col gap-4 p-4">
       {/* Latest Update Section */}
-      <div className="bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl flex-shrink-0">
-        <div className="flex items-center">
+      <div className="bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl p-4">
+        <div className="flex items-center justify-between">
           {latestUpdate ? (
             <>
               <span className="text-purple-50 font-medium w-48 truncate">
@@ -155,7 +155,7 @@ export function PriceUpdates() {
       </div>
 
       {/* Top Tokens Section */}
-      <div className="bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl shadow-lg flex-1 overflow-hidden flex flex-col min-h-0">
+      <div className="flex-1 bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl shadow-lg flex flex-col min-h-0">
         <div className="p-4 border-b border-purple-500/20 flex justify-between items-center">
           <div className="flex justify-between space-x-4 w-full">
             {/* Volume Filter */}
