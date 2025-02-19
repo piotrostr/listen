@@ -28,10 +28,10 @@ struct BlockhashValue {
 #[derive(Debug, thiserror::Error)]
 pub enum BlockhashCacheError {
     #[error("[BlockhashCache] Failed to fetch blockhash")]
-    FetchError(#[from] reqwest::Error),
+    FetchError(reqwest::Error),
 
     #[error("[BlockhashCache] Failed to parse blockhash")]
-    ParseError(#[from] bs58::decode::Error),
+    ParseError(reqwest::Error),
 
     #[error("[BlockhashCache] Failed to convert blockhash to Hash")]
     HashConversionError,
@@ -85,7 +85,10 @@ impl BlockhashCache {
         });
     }
 
-    async fn fetch_blockhash(client: &reqwest::Client, rpc_url: &str) -> Result<String> {
+    async fn fetch_blockhash(
+        client: &reqwest::Client,
+        rpc_url: &str,
+    ) -> Result<String, BlockhashCacheError> {
         let request_body = serde_json::json!({
             "jsonrpc": "2.0",
             "id": 1,
@@ -93,15 +96,23 @@ impl BlockhashCache {
             "params": [{"commitment": "finalized"}]
         });
 
-        let response = client.post(rpc_url).json(&request_body).send().await?;
-        let response_json: RpcResponse = response.json().await?;
+        let response = client
+            .post(rpc_url)
+            .json(&request_body)
+            .send()
+            .await
+            .map_err(BlockhashCacheError::FetchError)?;
+        let response_json: RpcResponse = response
+            .json()
+            .await
+            .map_err(BlockhashCacheError::ParseError)?;
 
         // Convert the base58 string to our Hash type
         let blockhash = response_json.result.value.blockhash;
         Ok(blockhash)
     }
 
-    pub async fn get_blockhash(&self) -> Result<String> {
+    pub async fn get_blockhash(&self) -> Result<String, BlockhashCacheError> {
         let current_hash = self.blockhash.read().await.clone();
 
         // If we have a valid blockhash (not default), return it
