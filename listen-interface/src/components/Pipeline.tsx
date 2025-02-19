@@ -3,6 +3,7 @@ import { useState } from "react";
 import { config } from "../config";
 import { useToast } from "../contexts/ToastContext";
 import { useSolanaToken } from "../hooks/useToken";
+import { formatAmount } from "../hooks/util";
 import {
   Pipeline,
   PipelineActionType,
@@ -70,11 +71,6 @@ export const SwapPipelineStep = ({ index, step }: SwapPipelineStepProps) => {
   const outputImage = outputToken.data?.logoURI;
   const inputName = inputToken.data?.symbol;
   const outputName = outputToken.data?.symbol;
-
-  const formatAmount = (amount: string, decimals: number) => {
-    const amountNum = parseFloat(amount);
-    return (amountNum / Math.pow(10, decimals)).toString();
-  };
 
   return (
     <PipelineStepContainer index={index} conditions={step.conditions}>

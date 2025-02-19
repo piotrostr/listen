@@ -51,6 +51,8 @@ export const userHasDelegatedEvmWallet = (user: User | null) => {
 };
 
 export const imageMap = {
+  "0xaf88d065e77c8cc2239327c5edb3a432268e5831":
+    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
   EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:
     "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
   So11111111111111111111111111111111111111112:
@@ -59,6 +61,8 @@ export const imageMap = {
     "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
   eth: ethLogo,
   arb: "https://arbiscan.io/assets/arbitrum/images/svg/logos/chain-light.svg?v=25.1.4.0",
+  "11111111111111111111111111111111":
+    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
 };
 
 export const caip2Map = {
@@ -115,4 +119,9 @@ export const addressBook = {
   avalanche: {
     usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
   },
+};
+
+export const formatAmount = (amount: string, decimals: number) => {
+  const amountNum = parseFloat(amount);
+  return (amountNum / Math.pow(10, decimals)).toString();
 };
