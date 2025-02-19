@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { createContext, useContext, useState } from "react";
 import { IoChatboxOutline, IoWalletOutline } from "react-icons/io5";
 import { Address } from "viem";
 import { useBalance, UseBalanceReturnType } from "wagmi";
@@ -47,11 +47,29 @@ function balanceToUI(balance: UseBalanceReturnType["data"]) {
 }
 
 // Navigation Link Component
-function NavLink({ to, icon: Icon, label, isSidebarOpen = true }) {
+function NavLink({
+  to,
+  icon: Icon,
+  label,
+  isSidebarOpen = true,
+}: {
+  to: string;
+  icon: React.ComponentType<{ className?: string }>;
+  label: string;
+  isSidebarOpen?: boolean;
+}) {
+  const setIsSidebarOpen = useContext(SidebarContext);
+
   return (
     <Link
       to={to}
       className="flex items-center h-10 rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 [&.active]:bg-purple-500/20 [&.active]:text-white transition-colors"
+      onClick={() => {
+        // Close sidebar on mobile only
+        if (window.innerWidth < 1024) {
+          setIsSidebarOpen(false);
+        }
+      }}
     >
       <div
         className={`flex items-center h-full ${
@@ -118,6 +136,9 @@ function BalanceDisplay({ isSidebarOpen, solanaBalance, ethereumBalance }) {
   );
 }
 
+// Add this near the top of the file, after imports
+const SidebarContext = createContext<(open: boolean) => void>(() => {});
+
 export function Layout({ children }: { children: React.ReactNode }) {
   const { isAuthenticated } = useIsAuthenticated();
   const { user, logout } = usePrivy();
@@ -126,213 +147,219 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { data: ethereumBalance } = useBalance({
     address: wallets?.evmWallet as Address,
   });
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
 
   return (
-    <div className="relative min-h-screen text-white">
-      <Background />
+    <SidebarContext.Provider value={setIsSidebarOpen}>
+      <div className="relative min-h-screen text-white">
+        <Background />
 
-      {/* Mobile Header */}
-      <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-black/40 backdrop-blur-sm border-b border-purple-500/30 flex items-center justify-between px-4">
-        <div className="flex items-center space-x-3">
-          <img src="/listen-more.png" alt="Logo" className="w-8 h-8 rounded" />
-          <span className="font-bold text-md lg:text-xl">listen-rs</span>
+        {/* Mobile Header */}
+        <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-black/40 backdrop-blur-sm border-b border-purple-500/30 flex items-center justify-between px-4">
+          <div className="flex items-center space-x-3">
+            <img
+              src="/listen-more.png"
+              alt="Logo"
+              className="w-8 h-8 rounded"
+            />
+            <span className="font-bold text-md lg:text-xl">listen-rs</span>
+          </div>
+          <button
+            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            className="p-2 rounded-lg hover:bg-purple-500/10 transition-colors"
+          >
+            {isSidebarOpen ? (
+              <RxCross2 className="w-6 h-6" />
+            ) : (
+              <IoMenu className="w-6 h-6" />
+            )}
+          </button>
         </div>
-        <button
-          onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-          className="p-2 rounded-lg hover:bg-purple-500/10 transition-colors"
-        >
-          {isSidebarOpen ? (
-            <RxCross2 className="w-6 h-6" />
-          ) : (
-            <IoMenu className="w-6 h-6" />
-          )}
-        </button>
-      </div>
 
-      {/* Mobile Sidebar Overlay */}
-      <div
-        className={`lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
-          isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-        }`}
-      >
+        {/* Mobile Sidebar Overlay */}
         <div
-          className={`w-64 h-full bg-black/60 backdrop-blur-sm transition-transform duration-300 ${
-            isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+          className={`lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
+            isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
         >
-          <div className="p-4 pt-20">
-            <nav className="space-y-1">
-              {NAV_ITEMS.map((item) => (
-                <NavLink key={item.to} {...item} />
-              ))}
-            </nav>
-
-            {/* Balance Display */}
-            {isAuthenticated && (
-              <BalanceDisplay
-                isSidebarOpen={true}
-                solanaBalance={solanaBalance}
-                ethereumBalance={ethereumBalance}
-              />
-            )}
-          </div>
-
-          {/* Bottom Items */}
-          <div className="absolute bottom-0 left-0 right-0 mb-4 space-y-1">
-            {BOTTOM_ITEMS.map((item) => (
-              <BottomLink key={item.href} {...item} />
-            ))}
-            {user && (
-              <button
-                onClick={() => logout()}
-                className="flex items-center h-10 w-full rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
-              >
-                <div className="flex items-center h-full px-4 w-full">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                    <path d="M16 17l5-5-5-5" />
-                    <path d="M21 12H9" />
-                  </svg>
-                  <span className="ml-3">Logout</span>
-                </div>
-              </button>
-            )}
-          </div>
-        </div>
-      </div>
-
-      <div className="relative z-10 flex h-screen">
-        {/* Desktop Sidebar - Hidden on mobile */}
-        <div
-          className={`hidden lg:flex ${
-            isSidebarOpen ? "w-64" : "w-16"
-          } border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex-col transition-all duration-300 group relative`}
-        >
-          {/* Desktop Toggle Button */}
           <div
-            className={`absolute ${
-              isSidebarOpen ? "right-0" : "left-0"
-            } top-0 h-12 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center`}
+            className={`w-64 h-full bg-black/60 backdrop-blur-sm transition-transform duration-300 ${
+              isSidebarOpen ? "translate-x-0" : "-translate-x-full"
+            }`}
           >
-            <button
-              onClick={() => setIsSidebarOpen(!isSidebarOpen)}
-              className="p-1.5 bg-black/40 backdrop-blur-sm hover:bg-purple-500/10 rounded-lg transition-colors"
-            >
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                style={{
-                  transform: `rotate(${isSidebarOpen ? "180deg" : "0deg"})`,
-                  transition: "transform 300ms ease-in-out",
-                }}
-              >
-                <path d="M15 18l-6-6 6-6" />
-              </svg>
-            </button>
-          </div>
+            <div className="p-4 pt-20">
+              <nav className="space-y-1">
+                {NAV_ITEMS.map((item) => (
+                  <NavLink key={item.to} {...item} />
+                ))}
+              </nav>
 
-          {/* Logo section */}
-          <div className="p-4">
-            <div className="flex items-center mb-8">
-              <div
-                className={`flex items-center ${isSidebarOpen ? "px-2" : "justify-center"}`}
-              >
-                <img
-                  src="/listen-more.png"
-                  alt="Logo"
-                  className="w-8 h-8 rounded cursor-pointer"
-                  onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+              {/* Balance Display */}
+              {isAuthenticated && (
+                <BalanceDisplay
+                  isSidebarOpen={true}
+                  solanaBalance={solanaBalance}
+                  ethereumBalance={ethereumBalance}
                 />
-                {isSidebarOpen && (
-                  <span className="ml-3 font-bold text-xl">listen-rs</span>
-                )}
-              </div>
+              )}
+            </div>
+
+            {/* Bottom Items */}
+            <div className="absolute bottom-0 left-0 right-0 mb-4 space-y-1">
+              {BOTTOM_ITEMS.map((item) => (
+                <BottomLink key={item.href} {...item} />
+              ))}
+              {user && (
+                <button
+                  onClick={() => logout()}
+                  className="flex items-center h-10 w-full rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
+                >
+                  <div className="flex items-center h-full px-4 w-full">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                      <path d="M16 17l5-5-5-5" />
+                      <path d="M21 12H9" />
+                    </svg>
+                    <span className="ml-3">Logout</span>
+                  </div>
+                </button>
+              )}
             </div>
           </div>
+        </div>
 
-          {/* Navigation */}
-          <div className="p-4">
-            <nav className="space-y-1">
-              {NAV_ITEMS.map((item) => (
-                <NavLink
-                  key={item.to}
+        <div className="relative z-10 flex h-screen">
+          {/* Desktop Sidebar - Hidden on mobile */}
+          <div
+            className={`hidden lg:flex ${
+              isSidebarOpen ? "w-64" : "w-16"
+            } border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex-col transition-all duration-300 group relative`}
+          >
+            {/* Desktop Toggle Button */}
+            <div
+              className={`absolute ${
+                isSidebarOpen ? "right-0" : "left-0"
+              } top-0 h-12 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center`}
+            >
+              <button
+                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                className="p-1.5 bg-black/40 backdrop-blur-sm hover:bg-purple-500/10 rounded-lg transition-colors"
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  style={{
+                    transform: `rotate(${isSidebarOpen ? "180deg" : "0deg"})`,
+                    transition: "transform 300ms ease-in-out",
+                  }}
+                >
+                  <path d="M15 18l-6-6 6-6" />
+                </svg>
+              </button>
+            </div>
+
+            {/* Logo section */}
+            <div className="p-4">
+              <div className="flex items-center mb-8">
+                <div
+                  className={`flex items-center ${isSidebarOpen ? "px-2" : "justify-center"}`}
+                >
+                  <img
+                    src="/listen-more.png"
+                    alt="Logo"
+                    className="w-8 h-8 rounded cursor-pointer"
+                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                  />
+                  {isSidebarOpen && (
+                    <span className="ml-3 font-bold text-xl">listen-rs</span>
+                  )}
+                </div>
+              </div>
+            </div>
+
+            {/* Navigation */}
+            <div className="p-4">
+              <nav className="space-y-1">
+                {NAV_ITEMS.map((item) => (
+                  <NavLink
+                    key={item.to}
+                    {...item}
+                    isSidebarOpen={isSidebarOpen}
+                  />
+                ))}
+              </nav>
+
+              {/* Balance Display */}
+              {isAuthenticated && (
+                <BalanceDisplay
+                  isSidebarOpen={isSidebarOpen}
+                  solanaBalance={solanaBalance}
+                  ethereumBalance={ethereumBalance}
+                />
+              )}
+            </div>
+
+            {/* Bottom section */}
+            <div className="mt-auto p-4 space-y-1">
+              {BOTTOM_ITEMS.map((item) => (
+                <BottomLink
+                  key={item.href}
                   {...item}
                   isSidebarOpen={isSidebarOpen}
                 />
               ))}
-            </nav>
-
-            {/* Balance Display */}
-            {isAuthenticated && (
-              <BalanceDisplay
-                isSidebarOpen={isSidebarOpen}
-                solanaBalance={solanaBalance}
-                ethereumBalance={ethereumBalance}
-              />
-            )}
-          </div>
-
-          {/* Bottom section */}
-          <div className="mt-auto p-4 space-y-1">
-            {BOTTOM_ITEMS.map((item) => (
-              <BottomLink
-                key={item.href}
-                {...item}
-                isSidebarOpen={isSidebarOpen}
-              />
-            ))}
-            {user && (
-              <button
-                onClick={() => logout()}
-                className="flex items-center h-10 w-full rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
-              >
-                <div
-                  className={`flex items-center h-full ${
-                    isSidebarOpen ? "px-4 w-full" : "justify-center w-16"
-                  }`}
+              {user && (
+                <button
+                  onClick={() => logout()}
+                  className="flex items-center h-10 w-full rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
                 >
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
+                  <div
+                    className={`flex items-center h-full ${
+                      isSidebarOpen ? "px-4 w-full" : "justify-center w-16"
+                    }`}
                   >
-                    <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                    <path d="M16 17l5-5-5-5" />
-                    <path d="M21 12H9" />
-                  </svg>
-                  {isSidebarOpen && <span className="ml-3">Logout</span>}
-                </div>
-              </button>
-            )}
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
+                      <path d="M16 17l5-5-5-5" />
+                      <path d="M21 12H9" />
+                    </svg>
+                    {isSidebarOpen && <span className="ml-3">Logout</span>}
+                  </div>
+                </button>
+              )}
+            </div>
           </div>
-        </div>
 
-        {/* Main Content */}
-        <div className="flex-1 flex mt-16 lg:mt-0">
-          <div className="flex-1 overflow-auto">{children}</div>
+          {/* Main Content */}
+          <div className="flex-1 flex mt-16 lg:mt-0">
+            <div className="flex-1 overflow-auto">{children}</div>
+          </div>
         </div>
       </div>
-    </div>
+    </SidebarContext.Provider>
   );
 }

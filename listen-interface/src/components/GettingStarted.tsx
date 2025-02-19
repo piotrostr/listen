@@ -5,17 +5,19 @@ export function GettingStarted() {
   const { login, ready, user } = usePrivy();
 
   return (
-    <div className="flex flex-col items-center gap-4">
-      <h2 className="text-2xl font-bold">how it works</h2>
-      <p>
+    <div className="flex flex-col items-center gap-4 p-2">
+      <h2 className="text-xl lg:text-2xl font-bold mt-5">how it works</h2>
+      <p className="text-sm lg:text-base">
         listen is your single stop for on-chain trading with natural language
       </p>
-      <p>1. create an account, you can use your email or wallet</p>
-      <p>
+      <p className="text-sm lg:text-base">
+        1. create an account, you can use your email or wallet
+      </p>
+      <p className="text-sm lg:text-base">
         2. initialize a wallet for your AI agent, deposit funds and delegate
         access
       </p>
-      <p>3. go wild!</p>
+      <p className="text-sm lg:text-base">3. go wild!</p>
       <br />
       {!user ? (
         <button
@@ -28,7 +30,7 @@ export function GettingStarted() {
       ) : (
         <DelegateActionButton />
       )}
-      <p className="text-sm max-w-md text-center">
+      <p className="text-sm max-w-md text-center mt-3">
         should you have any questions - ask the agent directly - Listen
         understands the tools it has access to and has a view of the portfolio
         its managing
