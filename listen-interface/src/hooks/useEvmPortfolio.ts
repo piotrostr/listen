@@ -9,7 +9,7 @@ const alchemy = new Alchemy({
   network: Network.ARB_MAINNET,
 });
 
-async function getTokensMetadata(
+export async function getTokensMetadata(
   addresses: string[]
 ): Promise<Map<string, TokenMetadata>> {
   try {
@@ -57,7 +57,9 @@ async function getTokensMetadata(
   }
 }
 
-async function getTokenHoldings(address: string): Promise<PortfolioItem[]> {
+export async function getTokenHoldings(
+  address: string
+): Promise<PortfolioItem[]> {
   try {
     // Get token balances
     const { tokenBalances } = await alchemy.core.getTokenBalances(address);
