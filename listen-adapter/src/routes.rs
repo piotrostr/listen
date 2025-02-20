@@ -89,6 +89,25 @@ pub async fn get_metadata(
 }
 
 #[derive(Deserialize)]
+pub struct PriceQuery {
+    pub mint: String,
+}
+
+pub async fn get_price(
+    state: web::Data<AppState>,
+    query: web::Query<PriceQuery>,
+) -> Result<HttpResponse, Error> {
+    let price = state.redis_client.get_price(&query.mint).await;
+    match price {
+        Ok(price) => Ok(HttpResponse::Ok().json(price)),
+        Err(e) => {
+            error!("Error getting price: {}", e);
+            Err(InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR).into())
+        }
+    }
+}
+
+#[derive(Deserialize)]
 pub struct QueryParams {
     pub sql: String,
 }

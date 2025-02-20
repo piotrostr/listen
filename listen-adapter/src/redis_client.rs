@@ -43,6 +43,27 @@ impl RedisClient {
     fn make_metadata_key(&self, mint: &str) -> String {
         format!("solana:metadata:{}", mint)
     }
+    fn make_price_key(&self, mint: &str) -> String {
+        format!("solana:price:{}", mint)
+    }
+
+    pub async fn get_price(&self, mint: &str) -> Result<serde_json::Value> {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .context("Failed to get Redis connection")?;
+
+        let key = self.make_price_key(mint);
+        let value: Option<String> = cmd("GET")
+            .arg(key)
+            .query_async(&mut *conn)
+            .await
+            .with_context(|| format!("Failed to get price for mint: {}", mint))?;
+
+        serde_json::from_str(&value.unwrap())
+            .with_context(|| format!("Failed to deserialize price for mint: {}", mint))
+    }
 
     pub async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>> {
         let mut conn = self
