@@ -343,26 +343,40 @@ impl Engine {
             .map(|pipeline_lock| {
                 let engine = self.clone();
                 tokio::spawn(async move {
-                    // Add timeout to prevent deadlocks
-                    if let Ok(mut pipeline) = tokio::time::timeout(
-                        std::time::Duration::from_secs(5),
-                        pipeline_lock.write(),
-                    )
-                    .await
-                    {
-                        if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
-                            tracing::error!("Failed to evaluate pipeline: {}", e);
+                    // Implement exponential backoff for lock acquisition
+                    let mut backoff = tokio::time::Duration::from_millis(10);
+                    let max_attempts = 3;
+                    let mut attempts = 0;
+
+                    while attempts < max_attempts {
+                        match pipeline_lock.try_write() {
+                            Ok(mut pipeline) => {
+                                if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
+                                    tracing::error!("Failed to evaluate pipeline: {}", e);
+                                }
+                                return;
+                            }
+                            Err(_) => {
+                                attempts += 1;
+                                if attempts < max_attempts {
+                                    tokio::time::sleep(backoff).await;
+                                    backoff *= 2; // Exponential backoff
+                                } else {
+                                    tracing::warn!(
+                                        "Failed to acquire pipeline lock after {} attempts",
+                                        max_attempts
+                                    );
+                                }
+                            }
                         }
-                    } else {
-                        tracing::warn!("Timeout while acquiring pipeline lock");
                     }
                 })
             })
             .collect();
 
-        // Wait for all evaluations with timeout
+        // Wait for all evaluations with a longer timeout since we have retries
         let _ = tokio::time::timeout(
-            std::time::Duration::from_secs(10),
+            std::time::Duration::from_secs(15), // Increased timeout
             futures_util::future::join_all(futures),
         )
         .await;
