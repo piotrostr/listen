@@ -29,7 +29,6 @@ actix-cors = "0.7.0"
 lifi = { path = "../lifi" }
 blockhash-cache = { path = "../blockhash-cache" }
 dashmap = "6.1.0"
-moka = { version = "0.12.10", features = ["future"] }
 parking_lot = "0.12.3"
 
 [[bin]]

@@ -14,13 +14,12 @@ use crate::redis::subscriber::{make_redis_subscriber, PriceUpdate, RedisSubscrib
 use anyhow::Result;
 use dashmap::DashMap;
 use metrics::{counter, histogram};
-use moka::future::Cache;
 use privy::config::PrivyConfig;
 use privy::Privy;
 use std::collections::HashMap;
 use std::collections::HashSet;
 use std::sync::Arc;
-use std::time::{Duration, Instant};
+use std::time::Instant;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
@@ -38,7 +37,6 @@ pub struct Engine {
     price_cache: Arc<RwLock<HashMap<String, f64>>>,
     processing_pipelines: Arc<Mutex<HashSet<String>>>,
     active_pipelines: Arc<DashMap<String, HashSet<String>>>, // asset -> pipeline ids
-    pipeline_cache: Cache<String, Pipeline>,
 }
 
 impl Clone for Engine {
@@ -50,7 +48,6 @@ impl Clone for Engine {
             price_cache: self.price_cache.clone(),
             processing_pipelines: self.processing_pipelines.clone(),
             active_pipelines: self.active_pipelines.clone(),
-            pipeline_cache: self.pipeline_cache.clone(),
         }
     }
 }
@@ -58,10 +55,6 @@ impl Clone for Engine {
 impl Engine {
     pub async fn from_env() -> Result<(Self, mpsc::Receiver<PriceUpdate>), EngineError> {
         let (tx, rx) = mpsc::channel(1000);
-        let pipeline_cache = Cache::builder()
-            .max_capacity(10_000)
-            .time_to_live(Duration::from_secs(30))
-            .build();
 
         Ok((
             Self {
@@ -75,7 +68,6 @@ impl Engine {
                 price_cache: Arc::new(RwLock::new(HashMap::new())),
                 processing_pipelines: Arc::new(Mutex::new(HashSet::new())),
                 active_pipelines: Arc::new(DashMap::new()),
-                pipeline_cache,
             },
             rx,
         ))
