@@ -296,11 +296,21 @@ impl Engine {
 
         // Get pipeline IDs without holding the lock for too long
         let pipeline_ids = {
+            let keys = self
+                .active_pipelines
+                .iter()
+                .map(|ref_multi| ref_multi.key().clone())
+                .collect::<Vec<String>>();
             if let Some(active_pipelines) = self.active_pipelines.get(&asset.to_string()) {
                 let count = active_pipelines.len();
                 // Clone the IDs while minimizing lock time
                 let ids = active_pipelines.iter().cloned().collect::<Vec<String>>();
                 tracing::info!("Processing {} pipelines for asset {}", count, asset);
+                if ids.len() > 0 {
+                    println!("pipeline_ids: {:?}", ids);
+                    println!("pipeline_ids.len(): {:?}", ids.len());
+                    println!("keys: {:?}", keys);
+                }
                 ids
             } else {
                 tracing::debug!("No active pipelines for asset {}", asset);
@@ -326,15 +336,7 @@ impl Engine {
             }
 
             let pipelines: Vec<Option<Pipeline>> = self.redis.execute_redis_pipe(pipe).await?;
-            let pipeline_count = pipelines.iter().filter(|p| p.is_some()).count();
-            tracing::info!(
-                "Fetched {} active pipelines: {:?}",
-                pipeline_count,
-                chunk
-                    .iter()
-                    .map(|id| format!("{}", id))
-                    .collect::<Vec<String>>()
-            );
+            tracing::info!("Fetched from redis");
 
             // Process the fetched pipelines concurrently
             for (pipeline_id, maybe_pipeline) in chunk.iter().zip(pipelines) {
