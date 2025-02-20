@@ -148,21 +148,33 @@ impl Engine {
                             EngineMessage::AddPipeline { pipeline, response_tx } => {
                                 let result = async {
                                     let pipeline_id = pipeline.id;
+                                    tracing::info!("Starting pipeline addition process for id: {}", pipeline_id);
 
-                                    println!("Saving pipeline to Redis");
+                                    tracing::info!("Saving pipeline to Redis");
                                     engine.redis.save_pipeline(&pipeline)
                                         .await
-                                        .map_err(EngineError::SavePipelineError)?;
+                                        .map_err(|e| {
+                                            tracing::error!("Failed to save pipeline to Redis: {}", e);
+                                            EngineError::SavePipelineError(e)
+                                        })?;
 
+                                    // Extract assets before taking any locks
+                                    tracing::info!("Starting asset extraction");
+                                    let assets = engine.extract_assets(&pipeline).await;
+
+                                    // Minimize lock duration by preparing the pipeline wrapper outside
+                                    let pipeline_lock = Arc::new(RwLock::new(pipeline.clone()));
+
+                                    // Take locks only when needed and release quickly
                                     {
-                                        println!("Adding pipeline to active pipelines");
+                                        tracing::info!("Adding pipeline to active pipelines");
                                         let mut active_pipelines = engine.active_pipelines.write().await;
-                                        active_pipelines.insert(pipeline_id, Arc::new(RwLock::new(pipeline.clone())));
+                                        active_pipelines.insert(pipeline_id, pipeline_lock);
+                                        tracing::info!("Successfully added to active pipelines");
                                     }
 
                                     {
-                                        println!("Extracting assets");
-                                        let assets = engine.extract_assets(&pipeline).await;
+                                        tracing::info!("Updating asset subscriptions");
                                         let mut asset_subscriptions = engine.asset_subscriptions.write().await;
                                         for asset in assets {
                                             asset_subscriptions
@@ -170,19 +182,23 @@ impl Engine {
                                                 .or_default()
                                                 .insert(pipeline_id);
                                         }
+                                        tracing::info!("Successfully updated asset subscriptions");
                                     }
 
-                                    println!("Evaluating pipeline");
+                                    tracing::info!("Starting pipeline evaluation");
                                     if let Ok(mut pipeline) = engine.get_pipeline(&pipeline.user_id, pipeline.id).await {
                                         if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
                                             tracing::error!("Failed to evaluate pipeline: {}", e);
                                         }
                                     }
 
+                                    tracing::info!("Successfully completed pipeline addition process");
                                     Ok::<_, EngineError>(())
                                 }.await;
 
-                                let _ = response_tx.send(result);
+                                if let Err(e) = response_tx.send(result) {
+                                    tracing::error!("Failed to send response for pipeline addition: {:?}", e);
+                                }
                             },
                             EngineMessage::DeletePipeline { user_id, pipeline_id, response_tx } => {
                                 let result = engine.delete_pipeline(&user_id, pipeline_id).await;
