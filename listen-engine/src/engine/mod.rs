@@ -163,6 +163,7 @@ impl Engine {
                                 let _ = response_tx.send(result);
                             },
                             EngineMessage::GetPipeline { user_id, pipeline_id, response_tx } => {
+                                println!("[command] getting pipeline for user: {}", user_id);
                                 let result = engine.get_pipeline(&user_id, pipeline_id).await;
                                 let _ = response_tx.send(result);
                             },
