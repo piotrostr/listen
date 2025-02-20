@@ -243,6 +243,7 @@ impl Engine {
     pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
         let start = Instant::now();
         counter!("price_updates_processed", 1);
+        println!("{}: {}", asset, price);
 
         {
             // TODO price cache can pull from redis too
