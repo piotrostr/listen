@@ -276,8 +276,7 @@ async fn create_pipeline(
         }));
     }
 
-    // Wait for response with timeout
-    let result = match tokio::time::timeout(std::time::Duration::from_secs(5), response_rx).await {
+    let result = match tokio::time::timeout(std::time::Duration::from_secs(30), response_rx).await {
         Ok(response) => match response {
             Ok(Ok(_)) => {
                 metrics::counter!("pipeline_creation_success", 1);

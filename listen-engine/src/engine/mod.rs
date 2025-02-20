@@ -192,6 +192,7 @@ impl Engine {
                             Ok(true) => match &step.action {
                                 Action::Order(order) => {
                                     let order = order.clone();
+                                    tracing::info!(%step_id, ?order, "Executing order");
                                     match self.execute_order(pipeline, step_id, &order).await {
                                         Ok(_) => {
                                             // Next steps are already set in execute_order
