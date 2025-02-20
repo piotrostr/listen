@@ -109,7 +109,19 @@ impl Engine {
     }
 
     pub async fn run(&mut self, mut command_rx: mpsc::Receiver<EngineMessage>) -> Result<()> {
-        let pipelines = self.redis.get_all_pipelines().await?;
+        tracing::info!("Engine starting up");
+
+        let pipelines = match self.redis.get_all_pipelines().await {
+            Ok(p) => {
+                tracing::info!("Loaded {} pipelines from Redis", p.len());
+                p
+            }
+            Err(e) => {
+                tracing::error!("Failed to load pipelines from Redis: {}", e);
+                return Err(e.into());
+            }
+        };
+
         let total_pipelines = pipelines.len();
         for pipeline in pipelines {
             self.add_pipeline(pipeline).await?;
@@ -121,6 +133,7 @@ impl Engine {
         loop {
             tokio::select! {
                 Some(msg) = command_rx.recv() => {
+                    tracing::debug!("Received engine message: {:?}", msg);
                     match msg {
                         EngineMessage::AddPipeline { pipeline, response_tx } => {
                             let result = self.add_pipeline(pipeline).await;
@@ -135,9 +148,15 @@ impl Engine {
                             let _ = response_tx.send(result);
                         },
                         EngineMessage::GetAllPipelinesByUser { user_id, response_tx } => {
+                            tracing::debug!("Getting pipelines for user {}", user_id);
                             let result = self.get_all_pipelines_by_user(&user_id).await;
-                            println!("result: {:#?}", result);
-                            let _ = response_tx.send(result);
+                            match &result {
+                                Ok(pipelines) => tracing::debug!("Found {} pipelines for user", pipelines.len()),
+                                Err(e) => tracing::error!("Error getting pipelines: {}", e),
+                            }
+                            if response_tx.send(result).is_err() {
+                                tracing::error!("Failed to send response - channel closed");
+                            }
                         },
                     }
                 }
@@ -146,7 +165,7 @@ impl Engine {
                         tracing::error!("Error handling price update: {}", e);
                     }
                 }
-                else => break,
+                else => break
             }
         }
 

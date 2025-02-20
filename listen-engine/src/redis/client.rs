@@ -101,28 +101,37 @@ impl RedisClient {
     ) -> Result<Vec<Pipeline>, RedisClientError> {
         let mut conn = self.pool.get().await?;
 
+        tracing::debug!("Fetching pipeline keys for user {}", user_id);
         let keys: Vec<String> = cmd("KEYS")
             .arg(format!("pipeline:{}:*", user_id))
             .query_async(&mut *conn)
             .await?;
 
-        println!("keys: {:#?}", keys);
+        tracing::debug!("Found {} pipeline keys", keys.len());
 
-        let mut pipe = pipe();
-        for key in &keys {
-            pipe.get(key);
-        }
+        let mut pipelines = Vec::with_capacity(keys.len());
 
-        let results: Vec<Option<String>> = pipe.query_async(&mut *conn).await?;
+        // Process in batches of 100
+        for chunk in keys.chunks(100) {
+            let mut pipe = pipe();
+            for key in chunk {
+                pipe.get(key);
+            }
 
-        let mut pipelines = Vec::with_capacity(results.len());
-        for json_str in results.into_iter().flatten() {
-            match serde_json::from_str(&json_str) {
-                Ok(pipeline) => pipelines.push(pipeline),
-                Err(e) => warn!("Failed to deserialize pipeline: {}", e),
+            let results: Vec<Option<String>> = pipe.query_async(&mut *conn).await?;
+
+            for json_str in results.into_iter().flatten() {
+                match serde_json::from_str(&json_str) {
+                    Ok(pipeline) => pipelines.push(pipeline),
+                    Err(e) => {
+                        tracing::warn!("Failed to deserialize pipeline: {}", e);
+                        continue;
+                    }
+                }
             }
         }
 
+        tracing::debug!("Successfully loaded {} pipelines", pipelines.len());
         Ok(pipelines)
     }
 

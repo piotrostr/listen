@@ -48,6 +48,7 @@ pub struct AppState {
 
 pub async fn run() -> std::io::Result<()> {
     let (tx, rx) = mpsc::channel(1000);
+    tracing::info!("Created channel with capacity 1000");
     let mut engine = match Engine::from_env().await {
         Ok(engine) => engine,
         Err(e) => {
@@ -162,25 +163,43 @@ async fn get_pipelines(state: Data<AppState>, req: HttpRequest) -> impl Responde
     );
 
     let (response_tx, response_rx) = oneshot::channel();
-    let _ = state
+    tracing::debug!("Sending GetAllPipelinesByUser message to engine");
+    match state
         .engine_bridge_tx
         .send(EngineMessage::GetAllPipelinesByUser {
-            user_id: user.user_id,
+            user_id: user.user_id.clone(),
             response_tx,
-        });
+        })
+        .await
+    {
+        Ok(_) => tracing::debug!("Successfully sent message to engine"),
+        Err(e) => {
+            tracing::error!("Failed to send message to engine: {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "status": "error",
+                "message": "Engine communication error"
+            }));
+        }
+    };
 
+    tracing::debug!("Waiting for response from engine");
     let pipelines = match response_rx.await {
-        Ok(Ok(pipelines)) => pipelines,
+        Ok(Ok(pipelines)) => {
+            tracing::debug!("Received {} pipelines from engine", pipelines.len());
+            pipelines
+        }
         Ok(Err(e)) => {
+            tracing::error!("Engine error: {}", e);
             return HttpResponse::InternalServerError().json(serde_json::json!({
                 "status": "error",
                 "message": format!("Failed to get pipelines: {}", e)
             }));
         }
         Err(e) => {
+            tracing::error!("Channel closed: {}", e);
             return HttpResponse::InternalServerError().json(serde_json::json!({
                 "status": "error",
-                "message": format!("Failed to get pipelines: {}", e)
+                "message": "Internal communication error"
             }));
         }
     };
