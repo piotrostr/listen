@@ -35,6 +35,10 @@ pub enum EngineMessage {
         pipeline_id: Uuid,
         response_tx: oneshot::Sender<Result<(), EngineError>>,
     },
+    GetAllPipelinesByUser {
+        user_id: String,
+        response_tx: oneshot::Sender<Result<Vec<Pipeline>, EngineError>>,
+    },
 }
 
 pub struct AppState {
@@ -91,6 +95,7 @@ pub async fn run() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .route("/healthz", web::get().to(healthz))
             .route("/pipeline", web::post().to(create_pipeline))
+            .route("/pipeline", web::get().to(get_pipeline))
             .route("/metrics", web::get().to(metrics_handler))
     })
     .bind(("0.0.0.0", 6966))?
@@ -121,6 +126,56 @@ pub async fn run() -> std::io::Result<()> {
 async fn healthz() -> impl Responder {
     HttpResponse::Ok().json(serde_json::json!({
         "status": "healthy"
+    }))
+}
+
+async fn get_pipeline(state: Data<AppState>, req: HttpRequest) -> impl Responder {
+    let auth_token = req.headers().get("authorization").unwrap();
+    let auth_token = auth_token.to_str().unwrap();
+    let auth_token = auth_token.split(" ").nth(1).unwrap();
+
+    let user = match state
+        .privy
+        .authenticate_user(auth_token)
+        .await
+        .map_err(|_| HttpResponse::Unauthorized())
+    {
+        Ok(user) => user,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "status": "error",
+                "message": "Unauthorized"
+            }));
+        }
+    };
+
+    let (response_tx, response_rx) = oneshot::channel();
+    let _ = state
+        .engine_bridge_tx
+        .send(EngineMessage::GetAllPipelinesByUser {
+            user_id: user.user_id,
+            response_tx,
+        });
+
+    let pipelines = match response_rx.await {
+        Ok(Ok(pipelines)) => pipelines,
+        Ok(Err(e)) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "status": "error",
+                "message": format!("Failed to get pipelines: {}", e)
+            }));
+        }
+        Err(e) => {
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "status": "error",
+                "message": format!("Failed to get pipelines: {}", e)
+            }));
+        }
+    };
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "status": "success",
+        "pipelines": pipelines
     }))
 }
 

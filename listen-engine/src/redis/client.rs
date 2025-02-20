@@ -95,6 +95,35 @@ impl RedisClient {
         .await
     }
 
+    pub async fn get_all_pipelines_for_user(
+        &self,
+        user_id: &str,
+    ) -> Result<Vec<Pipeline>, RedisClientError> {
+        let mut conn = self.pool.get().await?;
+
+        let keys: Vec<String> = cmd("KEYS")
+            .arg(format!("pipeline:{}:*", user_id))
+            .query_async(&mut *conn)
+            .await?;
+
+        let mut pipe = pipe();
+        for key in &keys {
+            pipe.get(key);
+        }
+
+        let results: Vec<Option<String>> = pipe.query_async(&mut *conn).await?;
+
+        let mut pipelines = Vec::with_capacity(results.len());
+        for json_str in results.into_iter().flatten() {
+            match serde_json::from_str(&json_str) {
+                Ok(pipeline) => pipelines.push(pipeline),
+                Err(e) => warn!("Failed to deserialize pipeline: {}", e),
+            }
+        }
+
+        Ok(pipelines)
+    }
+
     pub async fn get_all_pipelines(&self) -> Result<Vec<Pipeline>, RedisClientError> {
         let mut conn = self.pool.get().await?;
 

@@ -134,6 +134,10 @@ impl Engine {
                             let result = self.get_pipeline(&user_id, pipeline_id).await;
                             let _ = response_tx.send(result);
                         },
+                        EngineMessage::GetAllPipelinesByUser { user_id, response_tx } => {
+                            let result = self.get_all_pipelines_by_user(&user_id).await;
+                            let _ = response_tx.send(result);
+                        },
                     }
                 }
                 Some(price_update) = self.receiver.recv() => {
@@ -249,6 +253,18 @@ impl Engine {
         active_pipelines.get(&pipeline_id).cloned().ok_or_else(|| {
             EngineError::GetPipelineError(format!("Pipeline not found: {}", pipeline_id))
         })
+    }
+
+    pub async fn get_all_pipelines_by_user(
+        &self,
+        user_id: &str,
+    ) -> Result<Vec<Pipeline>, EngineError> {
+        let pipelines = self
+            .redis
+            .get_all_pipelines_for_user(user_id)
+            .await
+            .map_err(EngineError::RedisClientError)?;
+        Ok(pipelines)
     }
 
     pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
