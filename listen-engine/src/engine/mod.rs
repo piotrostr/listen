@@ -13,6 +13,7 @@ use crate::redis::subscriber::{
     make_redis_subscriber, PriceUpdate, RedisSubscriber, RedisSubscriberError,
 };
 use anyhow::Result;
+use dashmap::DashMap;
 use metrics::{counter, gauge, histogram};
 use privy::config::PrivyConfig;
 use privy::{Privy, PrivyError};
@@ -78,10 +79,10 @@ pub struct Engine {
     pub privy: Arc<Privy>,
 
     // Active pipelines indexed by UUID
-    active_pipelines: Arc<RwLock<HashMap<Uuid, Arc<RwLock<Pipeline>>>>>,
+    active_pipelines: Arc<DashMap<Uuid, Arc<RwLock<Pipeline>>>>,
 
     // Asset to pipeline index for efficient updates
-    asset_subscriptions: Arc<RwLock<HashMap<String, HashSet<Uuid>>>>,
+    asset_subscriptions: Arc<DashMap<String, HashSet<Uuid>>>,
 
     // Current market state
     price_cache: Arc<RwLock<HashMap<String, f64>>>,
@@ -100,8 +101,8 @@ impl Engine {
                     .await
                     .map_err(EngineError::RedisClientError)?,
                 redis_sub: make_redis_subscriber(tx).map_err(EngineError::RedisSubscriberError)?,
-                active_pipelines: Arc::new(RwLock::new(HashMap::new())),
-                asset_subscriptions: Arc::new(RwLock::new(HashMap::new())),
+                active_pipelines: Arc::new(DashMap::new()),
+                asset_subscriptions: Arc::new(DashMap::new()),
                 price_cache: Arc::new(RwLock::new(HashMap::new())),
             },
             rx,
@@ -150,6 +151,10 @@ impl Engine {
                                     let pipeline_id = pipeline.id;
                                     tracing::info!("Starting pipeline addition process for id: {}", pipeline_id);
 
+                                    // Extract assets before taking any locks
+                                    let assets = engine.extract_assets(&pipeline).await;
+
+                                    // Save to Redis first (can be done without locks)
                                     tracing::info!("Saving pipeline to Redis");
                                     engine.redis.save_pipeline(&pipeline)
                                         .await
@@ -158,34 +163,24 @@ impl Engine {
                                             EngineError::SavePipelineError(e)
                                         })?;
 
-                                    // Extract assets before taking any locks
-                                    tracing::info!("Starting asset extraction");
-                                    let assets = engine.extract_assets(&pipeline).await;
-
-                                    // Minimize lock duration by preparing the pipeline wrapper outside
+                                    // Prepare the pipeline wrapper
                                     let pipeline_lock = Arc::new(RwLock::new(pipeline.clone()));
 
-                                    // Take locks only when needed and release quickly
+                                    // Replace the lock acquisition with DashMap operations
                                     {
                                         tracing::info!("Adding pipeline to active pipelines");
-                                        let mut active_pipelines = engine.active_pipelines.write().await;
-                                        active_pipelines.insert(pipeline_id, pipeline_lock);
-                                        tracing::info!("Successfully added to active pipelines");
-                                    }
+                                        engine.active_pipelines.insert(pipeline_id, pipeline_lock);
 
-                                    {
                                         tracing::info!("Updating asset subscriptions");
-                                        let mut asset_subscriptions = engine.asset_subscriptions.write().await;
                                         for asset in assets {
-                                            asset_subscriptions
+                                            engine.asset_subscriptions
                                                 .entry(asset)
-                                                .or_default()
+                                                .or_insert_with(HashSet::new)
                                                 .insert(pipeline_id);
                                         }
-                                        tracing::info!("Successfully updated asset subscriptions");
                                     }
 
-                                    tracing::info!("Starting pipeline evaluation");
+                                    // Evaluate pipeline after releasing locks
                                     if let Ok(mut pipeline) = engine.get_pipeline(&pipeline.user_id, pipeline.id).await {
                                         if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
                                             tracing::error!("Failed to evaluate pipeline: {}", e);
@@ -325,46 +320,63 @@ impl Engine {
         let start = Instant::now();
         counter!("price_updates_processed", 1);
 
+        // Update price cache
         {
             let mut cache = self.price_cache.write().await;
             cache.insert(asset.to_string(), price);
         }
 
-        // Get affected pipelines
-        let subscriptions = self.asset_subscriptions.read().await;
-        if let Some(pipeline_ids) = subscriptions.get(asset) {
-            let pipeline_ids = pipeline_ids.clone();
-            drop(subscriptions);
-
-            let active_pipelines = self.active_pipelines.read().await;
-
-            // Process all affected pipelines concurrently
-            let futures: Vec<_> = pipeline_ids
+        // Get affected pipeline IDs and locks without global lock
+        let pipeline_locks = if let Some(pipeline_ids) = self.asset_subscriptions.get(asset) {
+            pipeline_ids
+                .value()
                 .iter()
-                .filter_map(|pipeline_id| active_pipelines.get(pipeline_id))
-                .map(|pipeline_lock| {
-                    let pipeline_lock = pipeline_lock.clone();
-                    let engine = self.clone();
-                    tokio::spawn(async move {
-                        let mut pipeline = pipeline_lock.write().await;
+                .filter_map(|id| self.active_pipelines.get(id).map(|r| r.value().clone()))
+                .collect::<Vec<_>>()
+        } else {
+            Vec::new()
+        };
+
+        // Process pipelines without holding the main locks
+        let futures: Vec<_> = pipeline_locks
+            .into_iter()
+            .map(|pipeline_lock| {
+                let engine = self.clone();
+                tokio::spawn(async move {
+                    // Add timeout to prevent deadlocks
+                    if let Ok(mut pipeline) = tokio::time::timeout(
+                        std::time::Duration::from_secs(5),
+                        pipeline_lock.write(),
+                    )
+                    .await
+                    {
                         if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
                             tracing::error!("Failed to evaluate pipeline: {}", e);
                         }
-                    })
+                    } else {
+                        tracing::warn!("Timeout while acquiring pipeline lock");
+                    }
                 })
-                .collect();
+            })
+            .collect();
 
-            // Wait for all evaluations to complete
-            for future in futures {
-                let _ = future.await;
-            }
-        }
+        // Wait for all evaluations with timeout
+        let _ = tokio::time::timeout(
+            std::time::Duration::from_secs(10),
+            futures_util::future::join_all(futures),
+        )
+        .await;
 
         histogram!("price_update_duration", start.elapsed());
-        gauge!(
-            "active_pipelines",
-            self.active_pipelines.read().await.len() as f64
-        );
+
+        // Move gauge update outside the critical path
+        tokio::spawn({
+            let engine = self.clone();
+            async move {
+                gauge!("active_pipelines", engine.active_pipelines.len() as f64);
+            }
+        });
+
         Ok(())
     }
 }

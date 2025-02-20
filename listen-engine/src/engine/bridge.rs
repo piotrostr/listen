@@ -6,16 +6,12 @@ use uuid::Uuid;
 
 impl Engine {
     pub async fn add_pipeline(&self, pipeline: Pipeline) -> Result<(), EngineError> {
-        // Add to engine's state
-        let mut active_pipelines = self.active_pipelines.write().await;
-        let mut asset_subscriptions = self.asset_subscriptions.write().await;
-
         // Extract all assets mentioned in pipeline conditions
         let assets = self.extract_assets(&pipeline).await;
 
         // Update asset subscriptions
         for asset in assets {
-            asset_subscriptions
+            self.asset_subscriptions
                 .entry(asset)
                 .or_default()
                 .insert(pipeline.id);
@@ -23,8 +19,8 @@ impl Engine {
 
         // Clone pipeline before inserting
         let mut pipeline_clone = pipeline.clone();
-        active_pipelines.insert(pipeline.id, Arc::new(RwLock::new(pipeline)));
-        drop(active_pipelines); // Release the write lock
+        self.active_pipelines
+            .insert(pipeline.id, Arc::new(RwLock::new(pipeline)));
 
         // Execute any immediate steps
         self.evaluate_pipeline(&mut pipeline_clone).await?;
@@ -44,8 +40,7 @@ impl Engine {
         {
             return Err(EngineError::DeletePipelineError(e));
         }
-        let mut active_pipelines = self.active_pipelines.write().await;
-        active_pipelines.remove(&pipeline_id);
+        self.active_pipelines.remove(&pipeline_id);
 
         Ok(())
     }
@@ -55,8 +50,7 @@ impl Engine {
         _user_id: &str,
         pipeline_id: Uuid,
     ) -> Result<Pipeline, EngineError> {
-        let active_pipelines = self.active_pipelines.read().await;
-        let pipeline = active_pipelines.get(&pipeline_id).cloned();
+        let pipeline = self.active_pipelines.get(&pipeline_id);
         let pipeline = match pipeline {
             Some(pipeline) => pipeline.read().await.clone(),
             None => {
