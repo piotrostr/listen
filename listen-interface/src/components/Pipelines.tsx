@@ -47,13 +47,15 @@ export function Pipelines() {
   }
 
   return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-2xl font-bold text-white mb-6">Pipelines</h1>
+    <div className="container mx-auto lg:px-4 py-8">
+      <h1 className="text-2xl font-bold text-white mb-6 lg:text-left text-center">
+        Pipelines
+      </h1>
       <div className="space-y-6">
         {data?.pipelines.map((pipeline: ExtendedPipeline, index: number) => (
           <div
             key={`pipeline-${index}`}
-            className="bg-black/40 backdrop-blur-sm border border-purple-500/30 rounded-lg p-6"
+            className="bg-black/40 backdrop-blur-sm border border-purple-500/30 rounded-lg lg:p-6 p-2 py-4"
           >
             <ExtendedPipelineDisplay pipeline={pipeline} />
           </div>

@@ -12,9 +12,11 @@ export const PipelineStepContainer = ({
   conditions,
 }: PipelineStepContainerProps) => {
   return (
-    <div className="border border-purple-500/30 rounded-lg p-4 bg-black/40 backdrop-blur-sm">
+    <div className="border border-purple-500/30 rounded-lg lg:p-4 p-4 bg-black/40 backdrop-blur-sm">
       <div className="flex items-center gap-4">
-        <div className="text-sm text-purple-300">{index + 1}</div>
+        <div className="text-sm text-purple-300 lg:inline hidden">
+          {index + 1}
+        </div>
         {children}
       </div>
 
@@ -23,7 +25,10 @@ export const PipelineStepContainer = ({
         <div className="mt-3 pt-3 border-t border-purple-500/30">
           <div className="text-sm text-purple-300">Conditions:</div>
           {conditions.map((condition, index) => (
-            <div key={index} className="mt-1 text-sm text-purple-200">
+            <div
+              key={index}
+              className="mt-1 lg:text-sm text-xs text-purple-200"
+            >
               {condition.type === PipelineConditionType.Now
                 ? "Execute immediately"
                 : condition.type === PipelineConditionType.PriceAbove

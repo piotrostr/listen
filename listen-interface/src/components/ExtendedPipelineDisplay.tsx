@@ -48,15 +48,20 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
     throw new Error(`Unknown condition type: ${JSON.stringify(condType)}`);
   };
   return (
-    <div className="space-y-4 p-4 rounded-lg">
+    <div className="lg:space-y-4 lg:p-4 rounded-lg">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="text-white text-lg font-bold">{pipeline.status}</div>
-          <div className="text-purple-300 text-sm">ID: {pipeline.id}</div>
+      <div className="flex lg:items-center justify-between flex-col lg:flex-row">
+        <div className="flex lg:items-center gap-2 flex-col lg:flex-row">
+          <div className="text-white text-base sm:text-lg font-bold">
+            {pipeline.status}
+          </div>
+          <div className="text-purple-300 text-xs sm:text-sm">
+            <span className="font-bold">ID:</span> {pipeline.id}
+          </div>
         </div>
-        <div className="text-purple-300 text-sm">
-          Created: {new Date(pipeline.created_at).toLocaleString()}
+        <div className="text-purple-300 text-xs sm:text-sm">
+          <span className="font-bold">Created:</span>{" "}
+          {new Date(pipeline.created_at).toLocaleString()}
         </div>
       </div>
 
@@ -106,13 +111,6 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
           return null;
         })}
       </div>
-
-      {/* Current Steps */}
-      {pipeline.current_steps.length > 0 && (
-        <div className="text-purple-300 text-sm">
-          Active steps: {pipeline.current_steps.join(", ")}
-        </div>
-      )}
     </div>
   );
 }

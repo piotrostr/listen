@@ -78,11 +78,6 @@ export const usePipelines = () => {
 
   useEffect(() => {
     fetchPipelines();
-
-    // Set up polling interval
-    const intervalId = setInterval(fetchPipelines, 30000);
-
-    return () => clearInterval(intervalId);
   }, [ready, isAuthenticated]);
 
   return {
