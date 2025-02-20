@@ -129,7 +129,7 @@ impl Engine {
 
         let total_pipelines = pipelines.len();
         for pipeline in pipelines {
-            if let Err(e) = self.add_pipeline(pipeline).await {
+            if let Err(e) = self.add_pipeline(&pipeline).await {
                 tracing::error!("Failed to add pipeline during startup: {}", e);
                 continue;
             }
@@ -138,62 +138,24 @@ impl Engine {
 
         self.redis_sub.start_listening().await?;
 
+        let engine = self.clone();
         loop {
             tokio::select! {
                 Some(msg) = command_rx.recv() => {
-                    let engine = self.clone();
                     tracing::debug!("Processing engine message: {:?}", msg);
-
-                    tokio::spawn(async move {
-                        match msg {
-                            EngineMessage::AddPipeline { pipeline, response_tx } => {
-                                let result = async {
-                                    let pipeline_id = pipeline.id;
-                                    tracing::info!("Starting pipeline addition process for id: {}", pipeline_id);
-
-                                    // Extract assets before taking any locks
-                                    let assets = engine.extract_assets(&pipeline).await;
-
-                                    // Save to Redis first (can be done without locks)
-                                    tracing::info!("Saving pipeline to Redis");
-                                    engine.redis.save_pipeline(&pipeline)
-                                        .await
-                                        .map_err(|e| {
-                                            tracing::error!("Failed to save pipeline to Redis: {}", e);
-                                            EngineError::SavePipelineError(e)
-                                        })?;
-
-                                    // Prepare the pipeline wrapper
-                                    let pipeline_lock = Arc::new(RwLock::new(pipeline.clone()));
-
-                                    // Replace the lock acquisition with DashMap operations
-                                    {
-                                        tracing::info!("Adding pipeline to active pipelines");
-                                        engine.active_pipelines.insert(pipeline_id, pipeline_lock);
-
-                                        tracing::info!("Updating asset subscriptions");
-                                        for asset in assets {
-                                            engine.asset_subscriptions
-                                                .entry(asset)
-                                                .or_insert_with(HashSet::new)
-                                                .insert(pipeline_id);
-                                        }
+                    match msg {
+                        EngineMessage::AddPipeline { pipeline, response_tx } => {
+                                let result = engine.add_pipeline(&pipeline).await;
+                                println!("added pipeline");
+                                let _ = response_tx.send(result);
+                                let engine = engine.clone();
+                                let mut pipeline = pipeline.clone();
+                                tokio::spawn(async move {
+                                    println!("evaluating pipeline");
+                                    if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
+                                        tracing::error!("Failed to evaluate pipeline: {}", e);
                                     }
-
-                                    // Evaluate pipeline after releasing locks
-                                    if let Ok(mut pipeline) = engine.get_pipeline(&pipeline.user_id, pipeline.id).await {
-                                        if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
-                                            tracing::error!("Failed to evaluate pipeline: {}", e);
-                                        }
-                                    }
-
-                                    tracing::info!("Successfully completed pipeline addition process");
-                                    Ok::<_, EngineError>(())
-                                }.await;
-
-                                if let Err(e) = response_tx.send(result) {
-                                    tracing::error!("Failed to send response for pipeline addition: {:?}", e);
-                                }
+                                });
                             },
                             EngineMessage::DeletePipeline { user_id, pipeline_id, response_tx } => {
                                 let result = engine.delete_pipeline(&user_id, pipeline_id).await;
@@ -213,17 +175,14 @@ impl Engine {
                                 if response_tx.send(result).is_err() {
                                     tracing::error!("Failed to send response - channel closed");
                                 }
-                            },
-                        }
-                    });
+                        },
+                    }
                 }
                 Some(price_update) = price_rx.recv() => {
-                    let engine = self.clone();
-                    tokio::spawn(async move {
-                        if let Err(e) = engine.handle_price_update(&price_update.pubkey, price_update.price).await {
-                            tracing::error!("Error handling price update: {}", e);
-                        }
-                    });
+                    let engine = engine.clone();
+                    if let Err(e) = engine.handle_price_update(&price_update.pubkey, price_update.price).await {
+                        tracing::error!("Error handling price update: {}", e);
+                    }
                 }
                 else => break
             }

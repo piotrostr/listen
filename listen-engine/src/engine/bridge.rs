@@ -5,9 +5,9 @@ use tokio::sync::RwLock;
 use uuid::Uuid;
 
 impl Engine {
-    pub async fn add_pipeline(&self, pipeline: Pipeline) -> Result<(), EngineError> {
+    pub async fn add_pipeline(&self, pipeline: &Pipeline) -> Result<(), EngineError> {
         // Extract all assets mentioned in pipeline conditions
-        let assets = self.extract_assets(&pipeline).await;
+        let assets = self.extract_assets(pipeline).await;
 
         // Update asset subscriptions
         for asset in assets {
@@ -18,12 +18,8 @@ impl Engine {
         }
 
         // Clone pipeline before inserting
-        let mut pipeline_clone = pipeline.clone();
         self.active_pipelines
-            .insert(pipeline.id, Arc::new(RwLock::new(pipeline)));
-
-        // Execute any immediate steps
-        self.evaluate_pipeline(&mut pipeline_clone).await?;
+            .insert(pipeline.id, Arc::new(RwLock::new(pipeline.clone())));
 
         Ok(())
     }
