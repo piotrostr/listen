@@ -410,27 +410,28 @@ impl Engine {
         };
 
         // Update pipeline state after transaction execution
-        let step = pipeline.steps.get_mut(&step_id).unwrap();
-        match transaction_result {
-            Ok(_) => {
-                step.status = Status::Completed;
-                pipeline.current_steps = step.next_steps.clone();
-            }
-            Err(e) => {
-                step.status = Status::Failed;
-                pipeline.status = Status::Failed;
-                self.redis
-                    .save_pipeline(pipeline)
-                    .await
-                    .map_err(EngineError::SavePipelineError)?;
-                return Err(EngineError::TransactionError(e));
+        if let Some(step) = pipeline.steps.get_mut(&step_id) {
+            match transaction_result {
+                Ok(_) => {
+                    step.status = Status::Completed;
+                    pipeline.current_steps = step.next_steps.clone();
+                    self.redis
+                        .save_pipeline(pipeline)
+                        .await
+                        .map_err(EngineError::SavePipelineError)?;
+                }
+                Err(e) => {
+                    step.status = Status::Failed;
+                    pipeline.status = Status::Failed;
+                    self.redis
+                        .save_pipeline(pipeline)
+                        .await
+                        .map_err(EngineError::SavePipelineError)?;
+                    return Err(EngineError::TransactionError(e));
+                }
             }
         }
 
-        self.redis
-            .save_pipeline(pipeline)
-            .await
-            .map_err(EngineError::SavePipelineError)?;
         Ok(())
     }
 }
