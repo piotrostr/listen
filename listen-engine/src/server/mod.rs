@@ -48,10 +48,12 @@ pub struct AppState {
 }
 
 pub async fn run() -> std::io::Result<()> {
-    let (tx, rx) = mpsc::channel(1000);
+    let (server_tx, server_rx) = mpsc::channel(1000);
     tracing::info!("Created channel with capacity 1000");
-    let mut engine = match Engine::from_env().await {
-        Ok(engine) => engine,
+
+    // Create engine and get price update receiver
+    let (engine, price_rx) = match Engine::from_env().await {
+        Ok((engine, rx)) => (engine, rx),
         Err(e) => {
             tracing::error!("Failed to create engine: {}", e);
             return Err(std::io::Error::new(
@@ -60,6 +62,7 @@ pub async fn run() -> std::io::Result<()> {
             ));
         }
     };
+    let engine = Arc::new(engine);
 
     // Create a shutdown signal handler
     let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
@@ -80,7 +83,7 @@ pub async fn run() -> std::io::Result<()> {
     let server = HttpServer::new(move || {
         App::new()
             .app_data(Data::new(AppState {
-                engine_bridge_tx: tx.clone(),
+                engine_bridge_tx: server_tx.clone(),
                 privy: privy.clone(),
             }))
             .wrap(
@@ -110,7 +113,7 @@ pub async fn run() -> std::io::Result<()> {
                 tracing::error!("Server error: {}", e);
             }
         }
-        result = engine.run(rx) => {
+        result = Engine::run(engine.clone(), price_rx, server_rx) => {
             let _ = shutdown_tx.send(()).await;
             if let Err(e) = result {
                 tracing::error!("Engine error: {}", e);

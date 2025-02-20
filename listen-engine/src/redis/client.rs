@@ -34,16 +34,8 @@ pub enum RedisClientError {
 
 impl RedisClient {
     pub async fn new(redis_url: &str) -> Result<Self, RedisClientError> {
-        let manager =
-            RedisConnectionManager::new(redis_url).map_err(RedisClientError::RedisError)?;
-
-        let pool = bb8::Pool::builder()
-            .max_size(16)
-            .min_idle(Some(4))
-            .build(manager)
-            .await
-            .map_err(RedisClientError::CreateConnectionManagerError)?;
-
+        let manager = RedisConnectionManager::new(redis_url)?;
+        let pool = bb8::Pool::builder().max_size(64).build(manager).await?;
         Ok(Self { pool })
     }
 
@@ -273,6 +265,27 @@ impl RedisClient {
             .await
             .map_err(RedisClientError::RedisError)?;
         Ok(members)
+    }
+
+    pub async fn execute_redis_pipe(
+        &self,
+        pipe: bb8_redis::redis::Pipeline,
+    ) -> Result<Vec<Option<Pipeline>>, RedisClientError> {
+        let mut conn = self.get_connection().await?;
+        let results: Vec<Option<String>> = pipe.query_async(&mut *conn).await?;
+
+        let mut pipelines = Vec::with_capacity(results.len());
+        for json_str in results.into_iter().flatten() {
+            match serde_json::from_str(&json_str) {
+                Ok(pipeline) => pipelines.push(Some(pipeline)),
+                Err(e) => {
+                    tracing::warn!("Failed to deserialize pipeline: {}", e);
+                    pipelines.push(None);
+                }
+            }
+        }
+
+        Ok(pipelines)
     }
 }
 

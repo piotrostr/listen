@@ -1,9 +1,9 @@
-use privy::PrivyError;
-
 use crate::engine::evaluator::EvaluatorError;
 use crate::engine::order::SwapOrderError;
 use crate::redis::client::RedisClientError;
 use crate::redis::subscriber::RedisSubscriberError;
+use privy::config::PrivyConfigError;
+use privy::PrivyError;
 
 #[derive(Debug, thiserror::Error)]
 pub enum EngineError {
@@ -42,6 +42,9 @@ pub enum EngineError {
 
     #[error("[Engine] Privy error: {0}")]
     PrivyError(PrivyError),
+
+    #[error("[Engine] Privy config error: {0}")]
+    PrivyConfigError(PrivyConfigError),
 
     #[error("[Engine] Blockhash cache error: {0}")]
     BlockhashCacheError(blockhash_cache::BlockhashCacheError),
