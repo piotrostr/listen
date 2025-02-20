@@ -1,12 +1,11 @@
 pub mod api;
 pub mod constants;
 pub mod evaluator;
-pub mod executor;
 pub mod order;
 pub mod pipeline;
 
 use crate::engine::evaluator::EvaluatorError;
-use crate::engine::order::{swap_order_to_transaction, SwapOrderTransaction};
+use crate::engine::order::{swap_order_to_transaction, SwapOrder, SwapOrderTransaction};
 use crate::redis::client::{make_redis_client, RedisClient, RedisClientError};
 use crate::redis::subscriber::{
     make_redis_subscriber, PriceUpdate, RedisSubscriber, RedisSubscriberError,
@@ -32,6 +31,9 @@ use crate::server::EngineMessage;
 pub enum EngineError {
     #[error("[Engine] Failed to add pipeline: {0}")]
     AddPipelineError(RedisClientError),
+
+    #[error("[Engine] Failed to save pipeline: {0}")]
+    SavePipelineError(RedisClientError),
 
     #[error("[Engine] Failed to delete pipeline: {0}")]
     DeletePipelineError(RedisClientError),
@@ -166,7 +168,57 @@ impl Engine {
                 .insert(pipeline.id);
         }
 
+        // Clone pipeline before inserting to evaluate "Now" conditions
+        let mut pipeline_clone = pipeline.clone();
         active_pipelines.insert(pipeline.id, pipeline);
+        drop(active_pipelines); // Release the write lock
+
+        // Check for and evaluate any "Now" conditions immediately
+        let price_cache = self.price_cache.read().await.clone();
+        let current_step_ids = pipeline_clone.current_steps.clone();
+
+        for step_id in current_step_ids {
+            if let Some(step) = pipeline_clone.steps.get_mut(&step_id) {
+                if matches!(step.status, Status::Pending) {
+                    // Check if this step has any "Now" conditions
+                    let has_now_condition = step.conditions.iter().any(|condition| {
+                        matches!(condition.condition_type, ConditionType::Now { .. })
+                    });
+
+                    if has_now_condition {
+                        if let Ok(true) =
+                            Evaluator::evaluate_conditions(&step.conditions, &price_cache)
+                        {
+                            // Update the actual pipeline in active_pipelines
+                            if let Some(actual_pipeline) = self
+                                .active_pipelines
+                                .write()
+                                .await
+                                .get_mut(&pipeline_clone.id)
+                            {
+                                let step_action = actual_pipeline
+                                    .steps
+                                    .get(&step_id)
+                                    .map(|s| (s.id, s.action.clone()));
+
+                                if let Some((step_id, Action::Order(order))) = step_action {
+                                    if let Err(e) =
+                                        self.execute_order(actual_pipeline, step_id, &order).await
+                                    {
+                                        tracing::error!(%step_id, error = %e, "Failed to execute immediate order");
+                                    }
+                                } else if let Some((step_id, Action::Notification(notification))) =
+                                    step_action
+                                {
+                                    tracing::info!(%step_id, ?notification, "TODO: Immediate notification");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
         Ok(())
     }
 
@@ -231,71 +283,19 @@ impl Engine {
 
     async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<(), EngineError> {
         let start = Instant::now();
-
         let current_step_ids = pipeline.current_steps.clone();
         let price_cache = self.price_cache.read().await.clone();
 
         for step_id in current_step_ids {
-            if let Some(step) = pipeline.steps.get_mut(&step_id) {
+            if let Some(step) = pipeline.steps.get(&step_id) {
                 if matches!(step.status, Status::Pending) {
                     match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
                         Ok(true) => match &step.action {
                             Action::Order(order) => {
-                                let address = match order.is_evm() {
-                                    true => pipeline.wallet_address.clone(),
-                                    false => pipeline.pubkey.clone(),
-                                };
-                                let mut privy_transaction = PrivyTransaction {
-                                    user_id: pipeline.user_id.clone(),
-                                    address,
-                                    from_chain_caip2: order.from_chain_caip2.clone(),
-                                    to_chain_caip2: order.to_chain_caip2.clone(),
-                                    evm_transaction: None,
-                                    solana_transaction: None,
-                                };
-                                match swap_order_to_transaction(
-                                    order,
-                                    &lifi::LiFi::new(None),
-                                    &pipeline.wallet_address,
-                                    &pipeline.pubkey,
-                                )
-                                .await
-                                .map_err(EngineError::SwapOrderError)?
+                                let order = order.clone();
+                                if let Err(e) = self.execute_order(pipeline, step_id, &order).await
                                 {
-                                    SwapOrderTransaction::Evm(transaction) => {
-                                        privy_transaction.evm_transaction = Some(transaction);
-                                    }
-                                    SwapOrderTransaction::Solana(transaction) => {
-                                        let latest_blockhash = BLOCKHASH_CACHE
-                                            .get_blockhash()
-                                            .await
-                                            .map_err(EngineError::BlockhashCacheError)?;
-                                        let fresh_blockhash_tx = inject_blockhash_into_encoded_tx(
-                                            &transaction,
-                                            &latest_blockhash.to_string(),
-                                        )
-                                        .map_err(EngineError::InjectBlockhashError)?;
-                                        privy_transaction.solana_transaction =
-                                            Some(fresh_blockhash_tx);
-                                    }
-                                };
-
-                                match self.privy.execute_transaction(privy_transaction).await {
-                                    Ok(_) => {
-                                        step.status = Status::Completed;
-                                        pipeline.current_steps = step.next_steps.clone();
-                                        if let Err(e) = self.redis.save_pipeline(pipeline).await {
-                                            return Err(EngineError::AddPipelineError(e));
-                                        }
-                                    }
-                                    Err(e) => {
-                                        step.status = Status::Failed;
-                                        pipeline.status = Status::Failed;
-                                        if let Err(e) = self.redis.save_pipeline(pipeline).await {
-                                            return Err(EngineError::AddPipelineError(e));
-                                        }
-                                        tracing::error!(%step_id, error = %e, "Order execution failed");
-                                    }
+                                    tracing::error!(%step_id, error = %e, "Failed to execute order");
                                 }
                             }
                             Action::Notification(notification) => {
@@ -361,5 +361,76 @@ impl Engine {
                 }
             }
         }
+    }
+
+    async fn execute_order(
+        &self,
+        pipeline: &mut Pipeline,
+        step_id: Uuid,
+        order: &SwapOrder,
+    ) -> Result<(), EngineError> {
+        // Execute transaction first
+        let address = match order.is_evm() {
+            true => pipeline.wallet_address.clone(),
+            false => pipeline.pubkey.clone(),
+        };
+        let mut privy_transaction = PrivyTransaction {
+            user_id: pipeline.user_id.clone(),
+            address,
+            from_chain_caip2: order.from_chain_caip2.clone(),
+            to_chain_caip2: order.to_chain_caip2.clone(),
+            evm_transaction: None,
+            solana_transaction: None,
+        };
+
+        let transaction_result = match swap_order_to_transaction(
+            order,
+            &lifi::LiFi::new(None),
+            &pipeline.wallet_address,
+            &pipeline.pubkey,
+        )
+        .await
+        .map_err(EngineError::SwapOrderError)?
+        {
+            SwapOrderTransaction::Evm(transaction) => {
+                privy_transaction.evm_transaction = Some(transaction);
+                self.privy.execute_transaction(privy_transaction).await
+            }
+            SwapOrderTransaction::Solana(transaction) => {
+                let latest_blockhash = BLOCKHASH_CACHE
+                    .get_blockhash()
+                    .await
+                    .map_err(EngineError::BlockhashCacheError)?;
+                let fresh_blockhash_tx =
+                    inject_blockhash_into_encoded_tx(&transaction, &latest_blockhash.to_string())
+                        .map_err(EngineError::InjectBlockhashError)?;
+                privy_transaction.solana_transaction = Some(fresh_blockhash_tx);
+                self.privy.execute_transaction(privy_transaction).await
+            }
+        };
+
+        // Update pipeline state after transaction execution
+        let step = pipeline.steps.get_mut(&step_id).unwrap();
+        match transaction_result {
+            Ok(_) => {
+                step.status = Status::Completed;
+                pipeline.current_steps = step.next_steps.clone();
+            }
+            Err(e) => {
+                step.status = Status::Failed;
+                pipeline.status = Status::Failed;
+                self.redis
+                    .save_pipeline(pipeline)
+                    .await
+                    .map_err(EngineError::SavePipelineError)?;
+                return Err(EngineError::TransactionError(e));
+            }
+        }
+
+        self.redis
+            .save_pipeline(pipeline)
+            .await
+            .map_err(EngineError::SavePipelineError)?;
+        Ok(())
     }
 }
