@@ -111,6 +111,7 @@ impl From<&WireStep> for PipelineStep {
             conditions: wire.conditions.iter().map(Into::into).collect(),
             next_steps: Vec::new(),
             status: Status::Pending,
+            transaction_hash: None,
         }
     }
 }

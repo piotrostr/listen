@@ -12,15 +12,14 @@ use crate::engine::error::EngineError;
 use crate::redis::client::{make_redis_client, RedisClient};
 use crate::redis::subscriber::{make_redis_subscriber, PriceUpdate, RedisSubscriber};
 use anyhow::Result;
-use metrics::{counter, gauge, histogram};
+use metrics::{counter, histogram};
 use privy::config::PrivyConfig;
 use privy::{Privy, PrivyError};
-use std::collections::{HashMap, HashSet};
+use std::collections::HashMap;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::mpsc;
 use tokio::sync::RwLock;
-use uuid::Uuid;
 
 use self::evaluator::Evaluator;
 use self::pipeline::{Action, Pipeline, Status};
@@ -57,9 +56,9 @@ impl Engine {
     pub async fn run(&mut self, mut command_rx: mpsc::Receiver<EngineMessage>) -> Result<()> {
         tracing::info!("Engine starting up");
 
-        let pipelines = match self.redis.get_all_pipelines().await {
+        match self.redis.get_all_pipelines().await {
             Ok(p) => {
-                tracing::info!("Loaded {} pipelines from Redis", p.len());
+                tracing::info!("{} pipelines from Redis", p.len());
                 p
             }
             Err(e) => {
@@ -67,15 +66,6 @@ impl Engine {
                 return Err(e.into());
             }
         };
-
-        let total_pipelines = pipelines.len();
-        for pipeline in pipelines {
-            if let Err(e) = self.add_pipeline(pipeline).await {
-                tracing::error!("Failed to add pipeline during startup: {}", e);
-                continue;
-            }
-        }
-        tracing::info!("Added {} pipelines", total_pipelines);
 
         self.redis_sub.start_listening().await?;
 
@@ -85,19 +75,18 @@ impl Engine {
                     tracing::debug!("Received engine message: {:?}", msg);
                     match msg {
                         EngineMessage::AddPipeline { pipeline, response_tx } => {
-                            let result = self.add_pipeline(pipeline).await;
+                            let result = self.register_pipeline(&pipeline).await;
                             let _ = response_tx.send(result);
                         },
                         EngineMessage::DeletePipeline { user_id, pipeline_id, response_tx } => {
-                            let result = self.delete_pipeline(&user_id, pipeline_id).await;
-                            let _ = response_tx.send(result);
+                            panic!("DeletePipeline not implemented");
+                            // let result = self.delete_pipeline(&user_id, pipeline_id).await;
+                            // let _ = response_tx.send(result);
                         },
                         EngineMessage::GetPipeline { user_id, pipeline_id, response_tx } => {
-                            let result = self.get_pipeline(&user_id, pipeline_id).await;
-                            let _ = response_tx.send(result);
+                            panic!("GetPipeline not implemented");
                         },
                         EngineMessage::GetAllPipelinesByUser { user_id, response_tx } => {
-                            tracing::debug!("Getting pipelines for user {}", user_id);
                             let result = self.get_all_pipelines_by_user(&user_id).await;
                             match &result {
                                 Ok(pipelines) => tracing::debug!("Found {} pipelines for user", pipelines.len()),
@@ -157,38 +146,31 @@ impl Engine {
                                         Ok(transaction_hash) => {
                                             step.status = Status::Completed;
                                             step.transaction_hash = Some(transaction_hash);
-                                            pipeline.current_steps.remove(0);
-                                            if let Some(step) = pipeline.steps.get(&current_step_id)
-                                            {
-                                                pipeline
-                                                    .current_steps
-                                                    .extend(step.next_steps.clone());
-                                            }
+                                            continue;
                                         }
                                         Err(e) => {
                                             tracing::error!(%current_step_id, error = %e, "Failed to execute order");
                                             step.status = Status::Failed;
                                             step.transaction_hash = None;
-                                            pipeline.current_steps.remove(0);
+                                            continue;
                                         }
                                     }
                                 }
                                 Action::Notification(notification) => {
                                     tracing::info!(%current_step_id, ?notification, "TODO: Notification");
-                                    if let Some(step) = pipeline.steps.get_mut(&current_step_id) {
-                                        step.status = Status::Completed;
-                                    }
-                                    pipeline.current_steps.remove(0);
-                                    if let Some(step) = pipeline.steps.get(&current_step_id) {
-                                        pipeline.current_steps.extend(step.next_steps.clone());
-                                    }
+                                    step.status = Status::Completed;
+                                    continue;
                                 }
                             },
                             Ok(false) => {
-                                // Condition not met, stop processing
-                                return Ok(false);
+                                break; // just pending, we'll check again next time
                             }
                             Err(e) => {
+                                // if it went wrong (no pricing etc), save pipeline to redis and return
+                                self.redis
+                                    .save_pipeline(pipeline)
+                                    .await
+                                    .map_err(EngineError::RedisClientError)?;
                                 return Err(EngineError::EvaluatePipelineError(e));
                             }
                         }
@@ -197,21 +179,13 @@ impl Engine {
                         // If any step is failed, mark the pipeline as failed
                         pipeline.status = Status::Failed;
                         pipeline.current_steps.clear(); // Clear remaining steps
-                        self.redis
-                            .save_pipeline(pipeline)
-                            .await
-                            .map_err(EngineError::SavePipelineError)?;
-                        return Ok(true);
+                        break;
                     }
                     Status::Cancelled => {
                         // If any step is cancelled, mark the pipeline as cancelled
                         pipeline.status = Status::Cancelled;
                         pipeline.current_steps.clear(); // Clear remaining steps
-                        self.redis
-                            .save_pipeline(pipeline)
-                            .await
-                            .map_err(EngineError::SavePipelineError)?;
-                        return Ok(true);
+                        break;
                     }
                 }
             } else {
@@ -273,29 +247,16 @@ impl Engine {
         }
 
         // Get affected pipelines
-        let subscriptions = self.asset_subscriptions.read().await;
-        if let Some(pipeline_ids) = subscriptions.get(asset) {
-            for pipeline_id in pipeline_ids {
-                if let Some(pipeline) = self.active_pipelines.write().await.get_mut(pipeline_id) {
-                    if self.evaluate_pipeline(pipeline).await? {
-                        self.active_pipelines.write().await.remove(pipeline_id);
-                        self.asset_subscriptions
-                            .write()
-                            .await
-                            .entry(asset.to_string())
-                            .or_insert(HashSet::new())
-                            .remove(pipeline_id);
-                    };
+        let subscriptions = self.redis.get_pipeline_subscriptions(asset).await?;
+        for pipeline_id in subscriptions {
+            if let Some(mut pipeline) = self.redis.get_pipeline_by_id(&pipeline_id).await? {
+                if self.evaluate_pipeline(&mut pipeline).await? {
+                    self.unregister_pipeline(&pipeline).await?;
                 }
             }
         }
 
         histogram!("price_update_duration", start.elapsed());
-
-        gauge!(
-            "active_pipelines",
-            self.active_pipelines.read().await.len() as f64
-        );
 
         Ok(())
     }

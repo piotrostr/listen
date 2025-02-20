@@ -8,6 +8,7 @@ use bb8_redis::{
     RedisConnectionManager,
 };
 use serde::{de::DeserializeOwned, Serialize};
+use std::collections::HashSet;
 use std::sync::Arc;
 use tracing::{debug, warn};
 
@@ -77,6 +78,13 @@ impl RedisClient {
             Some(json_str) => Ok(Some(serde_json::from_str(&json_str)?)),
             None => Ok(None),
         }
+    }
+
+    pub async fn get_pipeline_by_id(
+        &self,
+        pipeline_id: &str,
+    ) -> Result<Option<Pipeline>, RedisClientError> {
+        self.get(&format!("pipeline:{}", pipeline_id)).await
     }
 
     pub async fn get_pipeline(
@@ -221,6 +229,95 @@ impl RedisClient {
             .arg(format!("pipeline:{}:{}", user_id, id))
             .query_async(&mut *conn)
             .await?;
+        Ok(())
+    }
+
+    pub async fn register_pipeline_subscription(
+        &self,
+        pipeline_id: &str,
+        asset_id: &str,
+    ) -> Result<(), RedisClientError> {
+        let mut conn = self.get_connection().await?;
+        let _: () = cmd("SADD")
+            .arg(format!("asset_subscriptions:{}", asset_id))
+            .arg(pipeline_id)
+            .query_async(&mut *conn)
+            .await
+            .map_err(RedisClientError::RedisError)?;
+        Ok(())
+    }
+
+    pub async fn unregister_pipeline_subscription(
+        &self,
+        pipeline_id: &str,
+        asset_id: &str,
+    ) -> Result<(), RedisClientError> {
+        let mut conn = self.get_connection().await?;
+        let _: () = cmd("SREM")
+            .arg(format!("asset_subscriptions:{}", asset_id))
+            .arg(pipeline_id)
+            .query_async(&mut *conn)
+            .await
+            .map_err(RedisClientError::RedisError)?;
+        Ok(())
+    }
+
+    pub async fn get_pipeline_subscriptions(
+        &self,
+        asset_id: &str,
+    ) -> Result<HashSet<String>, RedisClientError> {
+        let mut conn = self.get_connection().await?;
+        let members: HashSet<String> = cmd("SMEMBERS")
+            .arg(format!("asset_subscriptions:{}", asset_id))
+            .query_async(&mut *conn)
+            .await
+            .map_err(RedisClientError::RedisError)?;
+        Ok(members)
+    }
+
+    pub async fn register_pipeline(
+        &self,
+        pipeline: &Pipeline,
+        asset_ids: &[String],
+    ) -> Result<(), RedisClientError> {
+        // Save the pipeline
+        self.save_pipeline(pipeline).await?;
+
+        // Register all asset subscriptions
+        let mut conn = self.get_connection().await?;
+        let pipeline_id = pipeline.id.to_string();
+
+        for asset_id in asset_ids {
+            let _: () = cmd("SADD")
+                .arg(format!("asset_subscriptions:{}", asset_id))
+                .arg(&pipeline_id)
+                .query_async(&mut *conn)
+                .await
+                .map_err(RedisClientError::RedisError)?;
+        }
+
+        Ok(())
+    }
+
+    pub async fn unregister_pipeline(
+        &self,
+        pipeline_id: &str,
+        asset_ids: &[String],
+    ) -> Result<(), RedisClientError> {
+        let mut conn = self.get_connection().await?;
+
+        // Remove all asset subscriptions
+        for asset_id in asset_ids {
+            let _: () = cmd("SREM")
+                .arg(format!("asset_subscriptions:{}", asset_id))
+                .arg(pipeline_id)
+                .query_async(&mut *conn)
+                .await
+                .map_err(RedisClientError::RedisError)?;
+        }
+        // Delete the pipeline
+        self.delete_pipeline("", pipeline_id).await?;
+
         Ok(())
     }
 }

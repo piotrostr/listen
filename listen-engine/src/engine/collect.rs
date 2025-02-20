@@ -4,13 +4,13 @@ use std::collections::HashSet;
 
 impl Engine {
     /// Extract all unique assets mentioned in pipeline conditions
-    pub async fn extract_assets(&self, pipeline: &Pipeline) -> HashSet<String> {
+    pub async fn extract_assets(&self, pipeline: &Pipeline) -> Vec<String> {
         let mut assets = HashSet::new();
         for step in pipeline.steps.values() {
             self.collect_assets_from_condition(&step.conditions, &mut assets)
                 .await;
         }
-        assets
+        assets.into_iter().collect()
     }
 
     pub async fn collect_assets_from_condition(
