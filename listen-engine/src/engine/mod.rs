@@ -88,7 +88,7 @@ impl Engine {
     ) -> Result<()> {
         tracing::info!("Engine starting up");
 
-        match engine.redis.get_all_pipelines().await {
+        let existing_pipelines = match engine.redis.get_all_pipelines().await {
             Ok(p) => {
                 tracing::info!("{} pipelines from Redis", p.len());
                 p
@@ -98,6 +98,18 @@ impl Engine {
                 return Err(e.into());
             }
         };
+
+        // load existing pipelines into active pipelines
+        for pipeline in existing_pipelines {
+            let asset_ids = engine.extract_assets(&pipeline).await;
+            for asset_id in asset_ids {
+                engine
+                    .active_pipelines
+                    .entry(asset_id.clone())
+                    .or_insert_with(HashSet::new)
+                    .insert(format!("{}:{}", pipeline.user_id, pipeline.id));
+            }
+        }
 
         engine.redis_sub.start_listening().await?;
 
@@ -278,7 +290,7 @@ impl Engine {
         Ok(false)
     }
 
-    pub async fn handle_price_update(&self, asset: &str, price: f64, slot: u64) -> Result<()> {
+    pub async fn handle_price_update(&self, asset: &str, price: f64, _slot: u64) -> Result<()> {
         let start = Instant::now();
         counter!("price_updates_processed", 1);
 
@@ -366,7 +378,7 @@ impl Engine {
         }
 
         histogram!("price_update_duration", start.elapsed());
-        println!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
+        // println!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
         Ok(())
     }
 }
