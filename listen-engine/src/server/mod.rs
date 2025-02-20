@@ -130,8 +130,15 @@ async fn healthz() -> impl Responder {
 }
 
 async fn get_pipelines(state: Data<AppState>, req: HttpRequest) -> impl Responder {
-    let auth_token = req.headers().get("authorization").unwrap();
-    let auth_token = auth_token.to_str().unwrap();
+    let auth_token = match req.headers().get("authorization") {
+        Some(auth_token) => auth_token.to_str().unwrap(),
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "status": "error",
+                "message": "Authorization header is required"
+            }));
+        }
+    };
     let auth_token = auth_token.split(" ").nth(1).unwrap();
 
     let user = match state
@@ -186,8 +193,15 @@ async fn create_pipeline(
 ) -> impl Responder {
     let start = std::time::Instant::now();
 
-    let auth_token = req.headers().get("authorization").unwrap();
-    let auth_token = auth_token.to_str().unwrap();
+    let auth_token = match req.headers().get("authorization") {
+        Some(auth_token) => auth_token.to_str().unwrap(),
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "status": "error",
+                "message": "Authorization header is required"
+            }));
+        }
+    };
     let auth_token = auth_token.split(" ").nth(1).unwrap();
 
     let user = match state
