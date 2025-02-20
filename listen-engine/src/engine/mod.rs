@@ -327,7 +327,14 @@ impl Engine {
 
             let pipelines: Vec<Option<Pipeline>> = self.redis.execute_redis_pipe(pipe).await?;
             let pipeline_count = pipelines.iter().filter(|p| p.is_some()).count();
-            tracing::info!("Fetched {} active pipelines", pipeline_count);
+            tracing::info!(
+                "Fetched {} active pipelines: {:?}",
+                pipeline_count,
+                chunk
+                    .iter()
+                    .map(|id| format!("{}", id))
+                    .collect::<Vec<String>>()
+            );
 
             // Process the fetched pipelines concurrently
             for (pipeline_id, maybe_pipeline) in chunk.iter().zip(pipelines) {
@@ -340,8 +347,13 @@ impl Engine {
                     let can_process = {
                         let mut processing = self_clone.processing_pipelines.lock().await;
                         if processing.contains(&pipeline_id) {
+                            tracing::info!("Pipeline {} already being processed", pipeline_id);
                             false
                         } else {
+                            tracing::info!(
+                                "Pipeline {} not being processed, processing",
+                                pipeline_id
+                            );
                             processing.insert(pipeline_id.clone());
                             true
                         }
@@ -350,6 +362,7 @@ impl Engine {
                     if can_process {
                         futures.push(tokio::spawn(async move {
                             let result = async {
+                                tracing::info!("Evaluating pipeline: {}", pipeline_id);
                                 let is_complete =
                                     self_clone.evaluate_pipeline(&mut pipeline).await?;
 
@@ -385,7 +398,7 @@ impl Engine {
         }
 
         histogram!("price_update_duration", start.elapsed());
-        tracing::debug!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
+        tracing::info!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
         Ok(())
     }
 }
