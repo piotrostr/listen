@@ -12,8 +12,9 @@ use uuid::Uuid;
 use crate::{
     engine::{
         api::{PipelineParams, WirePipeline},
+        error::EngineError,
         pipeline::Pipeline,
-        Engine, EngineError,
+        Engine,
     },
     metrics::metrics_handler,
 };

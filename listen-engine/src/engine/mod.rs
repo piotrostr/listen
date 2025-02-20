@@ -2,16 +2,15 @@ pub mod api;
 pub mod bridge;
 pub mod collect;
 pub mod constants;
+pub mod error;
 pub mod evaluator;
 pub mod execute;
 pub mod order;
 pub mod pipeline;
 
-use crate::engine::evaluator::EvaluatorError;
-use crate::redis::client::{make_redis_client, RedisClient, RedisClientError};
-use crate::redis::subscriber::{
-    make_redis_subscriber, PriceUpdate, RedisSubscriber, RedisSubscriberError,
-};
+use crate::engine::error::EngineError;
+use crate::redis::client::{make_redis_client, RedisClient};
+use crate::redis::subscriber::{make_redis_subscriber, PriceUpdate, RedisSubscriber};
 use anyhow::Result;
 use metrics::{counter, gauge, histogram};
 use privy::config::PrivyConfig;
@@ -26,51 +25,6 @@ use uuid::Uuid;
 use self::evaluator::Evaluator;
 use self::pipeline::{Action, Pipeline, Status};
 use crate::server::EngineMessage;
-
-#[derive(Debug, thiserror::Error)]
-pub enum EngineError {
-    #[error("[Engine] Failed to add pipeline: {0}")]
-    AddPipelineError(RedisClientError),
-
-    #[error("[Engine] Failed to save pipeline: {0}")]
-    SavePipelineError(RedisClientError),
-
-    #[error("[Engine] Failed to delete pipeline: {0}")]
-    DeletePipelineError(RedisClientError),
-
-    #[error("[Engine] Failed to get pipeline: {0}")]
-    GetPipelineError(String),
-
-    #[error("[Engine] Failed to evaluate pipeline: {0}")]
-    EvaluatePipelineError(EvaluatorError),
-
-    #[error("[Engine] Failed to extract assets: {0}")]
-    ExtractAssetsError(anyhow::Error),
-
-    #[error("[Engine] Failed to handle price update: {0}")]
-    HandlePriceUpdateError(anyhow::Error),
-
-    #[error("[Engine] Transaction error: {0}")]
-    TransactionError(privy::tx::PrivyTransactionError),
-
-    #[error("[Engine] Swap order error: {0}")]
-    SwapOrderError(order::SwapOrderError),
-
-    #[error("[Engine] Redis client error: {0}")]
-    RedisClientError(RedisClientError),
-
-    #[error("[Engine] Redis subscriber error: {0}")]
-    RedisSubscriberError(RedisSubscriberError),
-
-    #[error("[Engine] Privy error: {0}")]
-    PrivyError(PrivyError),
-
-    #[error("[Engine] Blockhash cache error: {0}")]
-    BlockhashCacheError(blockhash_cache::BlockhashCacheError),
-
-    #[error("[Engine] Inject blockhash error: {0}")]
-    InjectBlockhashError(anyhow::Error),
-}
 
 pub struct Engine {
     pub redis: Arc<RedisClient>,

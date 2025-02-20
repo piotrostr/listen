@@ -1,7 +1,7 @@
 use anyhow::Result;
 use bb8_redis::redis::{cmd, pipe};
 use listen_engine::redis::client::{RedisClient, RedisClientError};
-use listen_engine::{engine::EngineError, redis::client::make_redis_client};
+use listen_engine::{engine::error::EngineError, redis::client::make_redis_client};
 use reqwest::Client;
 use std::collections::HashSet;
 use std::sync::Arc;
