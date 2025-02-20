@@ -296,11 +296,6 @@ impl Engine {
 
         // Get pipeline IDs without holding the lock for too long
         let pipeline_ids = {
-            let keys = self
-                .active_pipelines
-                .iter()
-                .map(|ref_multi| ref_multi.key().clone())
-                .collect::<Vec<String>>();
             if let Some(active_pipelines) = self.active_pipelines.get(&asset.to_string()) {
                 let count = active_pipelines.len();
                 // Clone the IDs while minimizing lock time
@@ -309,7 +304,8 @@ impl Engine {
                 if ids.len() > 0 {
                     println!("pipeline_ids: {:?}", ids);
                     println!("pipeline_ids.len(): {:?}", ids.len());
-                    println!("keys: {:?}", keys);
+                    // log the entire map (development only)
+                    println!("active_pipelines: {:?}", self.active_pipelines);
                 }
                 ids
             } else {
