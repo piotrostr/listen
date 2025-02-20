@@ -378,7 +378,7 @@ impl Engine {
         }
 
         histogram!("price_update_duration", start.elapsed());
-        // println!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
+        println!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
         Ok(())
     }
 }
