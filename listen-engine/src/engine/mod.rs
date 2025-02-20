@@ -294,54 +294,61 @@ impl Engine {
         let start = Instant::now();
         counter!("price_updates_processed", 1);
 
-        // Update price cache
+        // Get active pipelines first
+        let pipeline_ids =
+            if let Some(active_pipelines) = self.active_pipelines.get(&asset.to_string()) {
+                tracing::info!(
+                    "Processing {} pipelines for asset {}",
+                    active_pipelines.len(),
+                    asset
+                );
+                active_pipelines.iter().cloned().collect::<Vec<String>>()
+            } else {
+                tracing::debug!("No active pipelines for asset {}", asset);
+                Vec::new()
+            };
+
+        // Now update price cache after getting pipeline IDs
         {
             let mut cache = self.price_cache.write().await;
             cache.insert(asset.to_string(), price);
         }
 
-        let asset = asset.to_string();
+        // Process in chunks to limit concurrent Redis connections
+        for chunk in pipeline_ids.chunks(10) {
+            let mut futures = Vec::new();
+            let asset = asset.to_string(); // Clone for each chunk
 
-        // Add debug logging
-        if let Some(active_pipelines) = self.active_pipelines.get(&asset) {
-            tracing::info!(
-                "Processing {} pipelines for asset {}",
-                active_pipelines.len(),
-                asset
-            );
-            // Get affected pipelines and process in batches
-            let pipeline_ids: Vec<String> = active_pipelines.iter().cloned().collect();
+            // First, batch fetch pipelines from Redis
+            let mut pipe = bb8_redis::redis::pipe();
+            for id in chunk {
+                pipe.get(format!("pipeline:{}", id));
+            }
 
-            // Process in chunks to limit concurrent Redis connections
-            for chunk in pipeline_ids.chunks(10) {
-                let mut futures = Vec::new();
-                let asset = asset.clone(); // Clone for each chunk
+            let pipelines: Vec<Option<Pipeline>> = self.redis.execute_redis_pipe(pipe).await?;
 
-                // First, batch fetch pipelines from Redis
-                let mut pipe = bb8_redis::redis::pipe();
-                for id in chunk {
-                    pipe.get(format!("pipeline:{}", id));
-                }
+            tracing::info!("Fetched {} pipelines", pipelines.len());
 
-                let pipelines: Vec<Option<Pipeline>> = self.redis.execute_redis_pipe(pipe).await?;
+            // Now process the fetched pipelines concurrently
+            for (pipeline_id, maybe_pipeline) in chunk.iter().zip(pipelines) {
+                if let Some(mut pipeline) = maybe_pipeline {
+                    let self_clone = self.clone();
+                    let pipeline_id = pipeline_id.clone();
+                    let asset = asset.clone();
 
-                tracing::info!("Fetched {} pipelines", pipelines.len());
-
-                // Now process the fetched pipelines concurrently
-                for (pipeline_id, maybe_pipeline) in chunk.iter().zip(pipelines) {
-                    if let Some(mut pipeline) = maybe_pipeline {
-                        let self_clone = self.clone();
-                        let pipeline_id = pipeline_id.clone();
-                        let asset = asset.clone();
-                        futures.push(tokio::spawn(async move {
-                            // Try to acquire lock for this pipeline
-                            let mut processing = self_clone.processing_pipelines.lock().await;
-                            if processing.contains(&pipeline_id) {
-                                return Ok(());
-                            }
+                    // Move lock acquisition outside of the task
+                    let can_process = {
+                        let mut processing = self_clone.processing_pipelines.lock().await;
+                        if processing.contains(&pipeline_id) {
+                            false
+                        } else {
                             processing.insert(pipeline_id.clone());
-                            drop(processing);
+                            true
+                        }
+                    };
 
+                    if can_process {
+                        futures.push(tokio::spawn(async move {
                             let result = async {
                                 let is_complete =
                                     self_clone.evaluate_pipeline(&mut pipeline).await?;
@@ -359,26 +366,23 @@ impl Engine {
                             // Remove pipeline from processing set
                             let mut processing = self_clone.processing_pipelines.lock().await;
                             processing.remove(&pipeline_id);
-                            drop(processing);
 
                             result
                         }));
                     }
                 }
+            }
 
-                // Wait for this batch to complete
-                for future in futures {
-                    if let Err(e) = future.await? {
-                        tracing::error!("Error processing pipeline: {}", e);
-                    }
+            // Wait for this batch to complete
+            for future in futures {
+                if let Err(e) = future.await? {
+                    tracing::error!("Error processing pipeline: {}", e);
                 }
             }
-        } else {
-            tracing::debug!("No active pipelines for asset {}", asset);
         }
 
         histogram!("price_update_duration", start.elapsed());
-        println!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
+        tracing::debug!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
         Ok(())
     }
 }
