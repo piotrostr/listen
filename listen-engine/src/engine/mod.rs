@@ -335,24 +335,22 @@ impl Engine {
         let start = Instant::now();
         counter!("price_updates_processed", 1);
 
-        // Get pipeline IDs without holding the lock for too long
+        // Add debug logging
+        tracing::info!("Checking active pipelines for asset: {}", asset);
+        tracing::info!(
+            "Current active_pipelines state: {:?}",
+            self.active_pipelines
+        );
+
         let pipeline_ids = {
-            if let Some(active_pipelines) = self.active_pipelines.get(&asset.to_string()) {
-                let count = active_pipelines.len();
-                // Clone the IDs while minimizing lock time
-                let ids = active_pipelines.iter().cloned().collect::<Vec<String>>();
-                tracing::info!("Processing {} pipelines for asset {}", count, asset);
-                if ids.len() > 0 {
-                    println!("pipeline_ids: {:?}", ids);
-                    println!("pipeline_ids.len(): {:?}", ids.len());
-                    // log the entire map (development only)
-                    println!("active_pipelines: {:?}", self.active_pipelines);
-                }
-                ids
-            } else {
-                tracing::debug!("No active pipelines for asset {}", asset);
-                Vec::new()
+            let mut res = Vec::new();
+            if let Some(now_pipeline_ids) = self.active_pipelines.get(&"NOW".to_string()) {
+                res.extend(now_pipeline_ids.iter().cloned());
             }
+            if let Some(active_pipelines) = self.active_pipelines.get(&asset.to_string()) {
+                res.extend(active_pipelines.iter().cloned());
+            }
+            res
         };
 
         // Update price cache after getting pipeline IDs

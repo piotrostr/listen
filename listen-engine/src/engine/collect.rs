@@ -32,8 +32,8 @@ impl Engine {
                 ConditionType::And(sub_conditions) | ConditionType::Or(sub_conditions) => {
                     stack.extend(sub_conditions.iter());
                 }
-                ConditionType::Now { asset } => {
-                    assets.insert(asset.clone());
+                ConditionType::Now { .. } => {
+                    assets.insert("NOW".to_string());
                 }
             }
         }
