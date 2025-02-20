@@ -3,10 +3,6 @@ use uuid::Uuid;
 
 impl Engine {
     pub async fn add_pipeline(&self, pipeline: Pipeline) -> Result<(), EngineError> {
-        if let Err(e) = self.redis.save_pipeline(&pipeline).await {
-            return Err(EngineError::AddPipelineError(e));
-        }
-
         // Add to engine's state
         let mut active_pipelines = self.active_pipelines.write().await;
         let mut asset_subscriptions = self.asset_subscriptions.write().await;
