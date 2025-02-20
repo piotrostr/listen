@@ -95,7 +95,7 @@ pub async fn run() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .route("/healthz", web::get().to(healthz))
             .route("/pipeline", web::post().to(create_pipeline))
-            .route("/pipeline", web::get().to(get_pipeline))
+            .route("/pipelines", web::get().to(get_pipelines))
             .route("/metrics", web::get().to(metrics_handler))
     })
     .bind(("0.0.0.0", 6966))?
@@ -129,7 +129,7 @@ async fn healthz() -> impl Responder {
     }))
 }
 
-async fn get_pipeline(state: Data<AppState>, req: HttpRequest) -> impl Responder {
+async fn get_pipelines(state: Data<AppState>, req: HttpRequest) -> impl Responder {
     let auth_token = req.headers().get("authorization").unwrap();
     let auth_token = auth_token.to_str().unwrap();
     let auth_token = auth_token.split(" ").nth(1).unwrap();
