@@ -106,6 +106,8 @@ impl RedisClient {
             .query_async(&mut *conn)
             .await?;
 
+        println!("keys: {:#?}", keys);
+
         let mut pipe = pipe();
         for key in &keys {
             pipe.get(key);
