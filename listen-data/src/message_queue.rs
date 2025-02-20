@@ -16,6 +16,7 @@ pub trait MessageQueue: Send + Sync + 'static {
 }
 
 // Redis implementation of MessageQueue
+#[derive(Debug)]
 pub struct RedisMessageQueue {
     pool: bb8::Pool<RedisConnectionManager>,
 }
