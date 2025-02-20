@@ -12,6 +12,7 @@ use crate::engine::error::EngineError;
 use crate::redis::client::{make_redis_client, RedisClient};
 use crate::redis::subscriber::{make_redis_subscriber, PriceUpdate, RedisSubscriber};
 use anyhow::Result;
+use dashmap::DashMap;
 use metrics::{counter, histogram};
 use privy::config::PrivyConfig;
 use privy::{Privy, PrivyError};
@@ -37,6 +38,7 @@ pub struct Engine {
     // Current market state
     price_cache: RwLock<HashMap<String, f64>>,
     processing_pipelines: Arc<Mutex<HashSet<String>>>,
+    active_pipelines: Arc<DashMap<String, HashSet<String>>>, // asset -> pipeline ids
 }
 
 impl Engine {
@@ -54,6 +56,7 @@ impl Engine {
             receiver: rx,
             price_cache: RwLock::new(HashMap::new()),
             processing_pipelines: Arc::new(Mutex::new(HashSet::new())),
+            active_pipelines: Arc::new(DashMap::new()),
         })
     }
 
@@ -79,8 +82,13 @@ impl Engine {
                     tracing::debug!("Received engine message: {:?}", msg);
                     match msg {
                         EngineMessage::AddPipeline { pipeline, response_tx } => {
-                            let result = self.register_pipeline(&pipeline).await;
-                            let _ = response_tx.send(result);
+                            // get assets here and do the full register
+                            let asset_ids = self.extract_assets(&pipeline).await;
+                            for asset_id in asset_ids {
+                                self.active_pipelines.entry(asset_id.clone()).or_insert_with(HashSet::new).insert(pipeline.id.to_string());
+                                self.redis.save_pipeline(&pipeline).await?;
+                            }
+                            let _ = response_tx.send(Ok(()));
                         },
                         EngineMessage::DeletePipeline { .. } => {
                             panic!("DeletePipeline not implemented");
@@ -252,33 +260,37 @@ impl Engine {
         }
 
         // Get affected pipelines
-        let subscriptions = self.redis.get_pipeline_subscriptions(asset).await?;
-
-        for pipeline_id in subscriptions {
-            // Try to acquire lock for this pipeline
-            let mut processing = self.processing_pipelines.lock().await;
-            if processing.contains(&pipeline_id) {
-                tracing::debug!(
-                    "Pipeline {} is already being processed, skipping",
-                    pipeline_id
-                );
-                continue;
-            }
-            processing.insert(pipeline_id.clone());
-            drop(processing); // Release the lock early
-
-            // Process the pipeline
-            if let Some(mut pipeline) = self.redis.get_pipeline_by_id(&pipeline_id).await? {
-                let is_complete = self.evaluate_pipeline(&mut pipeline).await?;
-                if is_complete {
-                    self.unregister_pipeline(&pipeline).await?;
+        if let Some(active_pipelines) = self.active_pipelines.get(asset) {
+            for pipeline_id in active_pipelines.iter() {
+                // Try to acquire lock for this pipeline
+                let mut processing = self.processing_pipelines.lock().await;
+                if processing.contains(pipeline_id.as_str()) {
+                    tracing::debug!(
+                        "Pipeline {} is already being processed, skipping",
+                        pipeline_id
+                    );
+                    continue;
                 }
-            }
+                processing.insert(pipeline_id.clone());
+                drop(processing); // Release the lock early
 
-            // Remove pipeline from processing set
-            let mut processing = self.processing_pipelines.lock().await;
-            processing.remove(&pipeline_id);
-            drop(processing);
+                // Process the pipeline
+                if let Some(mut pipeline) = self.redis.get_pipeline_by_id(&pipeline_id).await? {
+                    let is_complete = self.evaluate_pipeline(&mut pipeline).await?;
+                    if is_complete {
+                        self.active_pipelines
+                            .entry(asset.to_string())
+                            .and_modify(|pipelines| {
+                                pipelines.remove(pipeline_id);
+                            });
+                    }
+                }
+
+                // Remove pipeline from processing set
+                let mut processing = self.processing_pipelines.lock().await;
+                processing.remove(pipeline_id.as_str());
+                drop(processing);
+            }
         }
 
         histogram!("price_update_duration", start.elapsed());
