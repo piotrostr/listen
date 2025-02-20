@@ -217,6 +217,7 @@ async fn create_pipeline(
     wire: web::Json<WirePipeline>,
 ) -> impl Responder {
     let start = std::time::Instant::now();
+    tracing::debug!("Starting pipeline creation");
 
     let auth_token = match req.headers().get("authorization") {
         Some(auth_token) => auth_token.to_str().unwrap(),

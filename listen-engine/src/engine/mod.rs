@@ -141,40 +141,43 @@ impl Engine {
             tokio::select! {
                 Some(msg) = command_rx.recv() => {
                     let engine = self.clone();
+                    tracing::debug!("Processing engine message: {:?}", msg);
+
                     tokio::spawn(async move {
-                        tracing::debug!("Received engine message: {:?}", msg);
                         match msg {
                             EngineMessage::AddPipeline { pipeline, response_tx } => {
-                                // First save to Redis and add to active pipelines
                                 let result = async {
-                                    let mut active_pipelines = engine.active_pipelines.write().await;
-                                    let mut asset_subscriptions = engine.asset_subscriptions.write().await;
+                                    let pipeline_id = pipeline.id;
 
-                                    // Extract all assets mentioned in pipeline conditions
-                                    let assets = engine.extract_assets(&pipeline).await;
+                                    engine.redis.save_pipeline(&pipeline)
+                                        .await
+                                        .map_err(EngineError::SavePipelineError)?;
 
-                                    // Update asset subscriptions
-                                    for asset in assets {
-                                        asset_subscriptions
-                                            .entry(asset)
-                                            .or_default()
-                                            .insert(pipeline.id);
+                                    {
+                                        let mut active_pipelines = engine.active_pipelines.write().await;
+                                        active_pipelines.insert(pipeline_id, pipeline.clone());
                                     }
 
-                                    // Save to Redis first
-                                    engine.redis.save_pipeline(&pipeline).await.map_err(EngineError::SavePipelineError)?;
-
-                                    // Add to active pipelines
-                                    active_pipelines.insert(pipeline.id, pipeline.clone());
+                                    {
+                                        let assets = engine.extract_assets(&pipeline).await;
+                                        let mut asset_subscriptions = engine.asset_subscriptions.write().await;
+                                        for asset in assets {
+                                            asset_subscriptions
+                                                .entry(asset)
+                                                .or_default()
+                                                .insert(pipeline_id);
+                                        }
+                                    }
 
                                     Ok::<_, EngineError>(())
                                 }.await;
 
                                 let _ = response_tx.send(result);
 
-                                let mut pipeline = pipeline.clone();
-                                if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
-                                    tracing::error!("Failed to evaluate pipeline: {}", e);
+                                if let Ok(mut pipeline) = engine.get_pipeline(&pipeline.user_id, pipeline.id).await {
+                                    if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
+                                        tracing::error!("Failed to evaluate pipeline: {}", e);
+                                    }
                                 }
                             },
                             EngineMessage::DeletePipeline { user_id, pipeline_id, response_tx } => {
