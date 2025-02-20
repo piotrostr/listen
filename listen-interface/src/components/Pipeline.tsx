@@ -2,167 +2,14 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useState } from "react";
 import { config } from "../config";
 import { useToast } from "../contexts/ToastContext";
-import { useSolanaToken } from "../hooks/useToken";
-import { formatAmount } from "../hooks/util";
-import {
-  Pipeline,
-  PipelineActionType,
-  PipelineCondition,
-  PipelineConditionType,
-  PipelineSchema,
-  PipelineStep,
-} from "../types/pipeline";
+import { Pipeline, PipelineActionType } from "../types/pipeline";
+import { NotificationPipelineStep } from "./NotificationPipelineStep";
 import { Spinner } from "./Spinner";
+import { SwapPipelineStep } from "./SwapPipelineStep";
 
 interface PipelineProps {
   pipeline: Pipeline;
 }
-
-interface SwapPipelineStepProps {
-  index: number;
-  step: PipelineStep;
-}
-
-interface PipelineStepContainerProps {
-  index: number;
-  children: React.ReactNode;
-  conditions: PipelineCondition[];
-}
-
-const PipelineStepContainer = ({
-  index,
-  children,
-  conditions,
-}: PipelineStepContainerProps) => {
-  return (
-    <div className="border border-purple-500/30 rounded-lg p-4 bg-black/40 backdrop-blur-sm">
-      <div className="flex items-center gap-4">
-        <div className="text-sm text-purple-300">{index + 1}</div>
-        {children}
-      </div>
-
-      {/* Conditions */}
-      {conditions.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-purple-500/30">
-          <div className="text-sm text-purple-300">Conditions:</div>
-          {conditions.map((condition, index) => (
-            <div key={index} className="mt-1 text-sm text-purple-200">
-              {condition.type === PipelineConditionType.Now
-                ? "Execute immediately"
-                : condition.type === PipelineConditionType.PriceAbove
-                  ? `Price above ${condition.value} for ${condition.asset}`
-                  : `Price below ${condition.value} for ${condition.asset}`}
-            </div>
-          ))}
-        </div>
-      )}
-    </div>
-  );
-};
-
-export const SwapPipelineStep = ({ index, step }: SwapPipelineStepProps) => {
-  if (step.action.type !== PipelineActionType.SwapOrder) {
-    throw new Error("SwapPipelineStep received non-swap action type");
-  }
-
-  console.log(step);
-
-  const inputToken = useSolanaToken(step.action.input_token);
-  const outputToken = useSolanaToken(step.action.output_token);
-
-  const inputImage = inputToken.data?.logoURI;
-  const outputImage = outputToken.data?.logoURI;
-  const inputName = inputToken.data?.symbol;
-  const outputName = outputToken.data?.symbol;
-
-  return (
-    <PipelineStepContainer index={index} conditions={step.conditions}>
-      {/* Input Token */}
-      <div className="flex-1">
-        <div className="flex items-center gap-3">
-          {inputImage && (
-            <img
-              src={inputImage}
-              alt={inputName}
-              className="w-8 h-8 rounded-full"
-            />
-          )}
-          <div>
-            <div className="font-bold text-purple-100">{inputName}</div>
-            <div className="text-sm text-purple-300">
-              Amount:{" "}
-              {inputToken.data
-                ? formatAmount(step.action.amount, inputToken.data.decimals)
-                : step.action.amount}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Arrow */}
-      <div className="text-purple-500">
-        <svg
-          xmlns="http://www.w3.org/2000/svg"
-          fill="none"
-          viewBox="0 0 24 24"
-          strokeWidth={1.5}
-          stroke="currentColor"
-          className="w-6 h-6"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M13.5 4.5L21 12m0 0l-7.5 7.5M21 12H3"
-          />
-        </svg>
-      </div>
-
-      {/* Output Token */}
-      <div className="flex-1">
-        <div className="flex items-center gap-3">
-          {outputImage && (
-            <img
-              src={outputImage}
-              alt={outputName}
-              className="w-8 h-8 rounded-full"
-            />
-          )}
-          <div className="font-bold text-purple-100">{outputName}</div>
-        </div>
-      </div>
-    </PipelineStepContainer>
-  );
-};
-
-export const NotificationPipelineStep = ({
-  index,
-  step,
-}: SwapPipelineStepProps) => {
-  const inputToken = useSolanaToken(step.action.input_token);
-  if (!inputToken.data) return <Spinner />;
-
-  const tokenImage = inputToken.data?.logoURI;
-  const tokenName = inputToken.data?.symbol;
-
-  return (
-    <PipelineStepContainer index={index} conditions={step.conditions}>
-      <div className="flex-1">
-        <div className="flex items-center gap-3">
-          {tokenImage && (
-            <img
-              src={tokenImage}
-              alt={tokenName}
-              className="w-8 h-8 rounded-full"
-            />
-          )}
-          <div>
-            <div className="font-bold text-purple-100">Send a notification</div>
-          </div>
-        </div>
-      </div>
-    </PipelineStepContainer>
-  );
-};
 
 export function PipelineDisplay({ pipeline }: PipelineProps) {
   const { getAccessToken } = usePrivy();
@@ -187,9 +34,6 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
       if (!res.ok) {
         throw new Error("Failed to send pipeline for execution");
       }
-
-      const data = await res.json();
-      console.log(data);
 
       showToast("Pipeline scheduled for execution", "success");
       setStatus("approved");
@@ -302,45 +146,3 @@ function PipelineMenu({
       );
   }
 }
-
-export function serializePipeline(pipeline: Pipeline): string {
-  return JSON.stringify(pipeline);
-}
-
-export function deserializePipeline(serialized: string): Pipeline {
-  const parsed = JSON.parse(serialized);
-  return PipelineSchema.parse(parsed);
-}
-
-export const mockOrderPipeline: Pipeline = {
-  steps: [
-    {
-      action: {
-        type: PipelineActionType.SwapOrder,
-        input_token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-        output_token: "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
-        amount: "1000000000000000000",
-        from_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-        to_chain_caip2: "eip155:1",
-      },
-      conditions: [],
-    },
-    {
-      action: {
-        type: PipelineActionType.SwapOrder,
-        input_token: "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
-        output_token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-        amount: "1000000000000000000",
-        from_chain_caip2: "eip155:1",
-        to_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-      },
-      conditions: [
-        {
-          type: PipelineConditionType.PriceAbove,
-          asset: "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
-          value: 0.052,
-        },
-      ],
-    },
-  ],
-};
