@@ -47,10 +47,8 @@ pub struct AppState {
 }
 
 pub async fn run() -> std::io::Result<()> {
-    let (tx, rx) = mpsc::channel(1000);
-    tracing::info!("Created channel with capacity 1000");
-    let mut engine = match Engine::from_env().await {
-        Ok(engine) => engine,
+    let (engine, price_rx) = match Engine::from_env().await {
+        Ok((engine, rx)) => (Arc::new(engine), rx),
         Err(e) => {
             tracing::error!("Failed to create engine: {}", e);
             return Err(std::io::Error::new(
@@ -59,6 +57,9 @@ pub async fn run() -> std::io::Result<()> {
             ));
         }
     };
+
+    let (tx, rx) = mpsc::channel(1000);
+    tracing::info!("Created channel with capacity 1000");
 
     // Create a shutdown signal handler
     let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
@@ -109,7 +110,7 @@ pub async fn run() -> std::io::Result<()> {
                 tracing::error!("Server error: {}", e);
             }
         }
-        result = engine.run(rx) => {
+        result = engine.run(rx, price_rx) => {
             let _ = shutdown_tx.send(()).await;
             if let Err(e) = result {
                 tracing::error!("Engine error: {}", e);

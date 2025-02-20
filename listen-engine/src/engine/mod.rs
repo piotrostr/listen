@@ -77,38 +77,42 @@ pub struct Engine {
     pub redis_sub: Arc<RedisSubscriber>,
     pub privy: Arc<Privy>,
 
-    receiver: mpsc::Receiver<PriceUpdate>,
-
     // Active pipelines indexed by UUID
-    active_pipelines: RwLock<HashMap<Uuid, Pipeline>>,
+    active_pipelines: Arc<RwLock<HashMap<Uuid, Pipeline>>>,
 
     // Asset to pipeline index for efficient updates
-    asset_subscriptions: RwLock<HashMap<String, HashSet<Uuid>>>,
+    asset_subscriptions: Arc<RwLock<HashMap<String, HashSet<Uuid>>>>,
 
     // Current market state
-    price_cache: RwLock<HashMap<String, f64>>,
+    price_cache: Arc<RwLock<HashMap<String, f64>>>,
 }
 
 impl Engine {
-    pub async fn from_env() -> Result<Self, EngineError> {
+    pub async fn from_env() -> Result<(Self, mpsc::Receiver<PriceUpdate>), EngineError> {
         let (tx, rx) = mpsc::channel(1000);
-        Ok(Self {
-            privy: Arc::new(Privy::new(
-                PrivyConfig::from_env()
-                    .map_err(|e| EngineError::PrivyError(PrivyError::Config(e)))?,
-            )),
-            redis: make_redis_client()
-                .await
-                .map_err(EngineError::RedisClientError)?,
-            redis_sub: make_redis_subscriber(tx).map_err(EngineError::RedisSubscriberError)?,
-            receiver: rx,
-            active_pipelines: RwLock::new(HashMap::new()),
-            asset_subscriptions: RwLock::new(HashMap::new()),
-            price_cache: RwLock::new(HashMap::new()),
-        })
+        Ok((
+            Self {
+                privy: Arc::new(Privy::new(
+                    PrivyConfig::from_env()
+                        .map_err(|e| EngineError::PrivyError(PrivyError::Config(e)))?,
+                )),
+                redis: make_redis_client()
+                    .await
+                    .map_err(EngineError::RedisClientError)?,
+                redis_sub: make_redis_subscriber(tx).map_err(EngineError::RedisSubscriberError)?,
+                active_pipelines: Arc::new(RwLock::new(HashMap::new())),
+                asset_subscriptions: Arc::new(RwLock::new(HashMap::new())),
+                price_cache: Arc::new(RwLock::new(HashMap::new())),
+            },
+            rx,
+        ))
     }
 
-    pub async fn run(&mut self, mut command_rx: mpsc::Receiver<EngineMessage>) -> Result<()> {
+    pub async fn run(
+        self: Arc<Self>,
+        mut command_rx: mpsc::Receiver<EngineMessage>,
+        mut price_rx: mpsc::Receiver<PriceUpdate>,
+    ) -> Result<()> {
         tracing::info!("Engine starting up");
 
         let pipelines = match self.redis.get_all_pipelines().await {
@@ -136,37 +140,72 @@ impl Engine {
         loop {
             tokio::select! {
                 Some(msg) = command_rx.recv() => {
-                    tracing::debug!("Received engine message: {:?}", msg);
-                    match msg {
-                        EngineMessage::AddPipeline { pipeline, response_tx } => {
-                            let result = self.add_pipeline(pipeline).await;
-                            let _ = response_tx.send(result);
-                        },
-                        EngineMessage::DeletePipeline { user_id, pipeline_id, response_tx } => {
-                            let result = self.delete_pipeline(&user_id, pipeline_id).await;
-                            let _ = response_tx.send(result);
-                        },
-                        EngineMessage::GetPipeline { user_id, pipeline_id, response_tx } => {
-                            let result = self.get_pipeline(&user_id, pipeline_id).await;
-                            let _ = response_tx.send(result);
-                        },
-                        EngineMessage::GetAllPipelinesByUser { user_id, response_tx } => {
-                            tracing::debug!("Getting pipelines for user {}", user_id);
-                            let result = self.get_all_pipelines_by_user(&user_id).await;
-                            match &result {
-                                Ok(pipelines) => tracing::debug!("Found {} pipelines for user", pipelines.len()),
-                                Err(e) => tracing::error!("Error getting pipelines: {}", e),
-                            }
-                            if response_tx.send(result).is_err() {
-                                tracing::error!("Failed to send response - channel closed");
-                            }
-                        },
-                    }
+                    let engine = self.clone();
+                    tokio::spawn(async move {
+                        tracing::debug!("Received engine message: {:?}", msg);
+                        match msg {
+                            EngineMessage::AddPipeline { pipeline, response_tx } => {
+                                // First save to Redis and add to active pipelines
+                                let result = async {
+                                    let mut active_pipelines = engine.active_pipelines.write().await;
+                                    let mut asset_subscriptions = engine.asset_subscriptions.write().await;
+
+                                    // Extract all assets mentioned in pipeline conditions
+                                    let assets = engine.extract_assets(&pipeline).await;
+
+                                    // Update asset subscriptions
+                                    for asset in assets {
+                                        asset_subscriptions
+                                            .entry(asset)
+                                            .or_default()
+                                            .insert(pipeline.id);
+                                    }
+
+                                    // Save to Redis first
+                                    engine.redis.save_pipeline(&pipeline).await.map_err(EngineError::SavePipelineError)?;
+
+                                    // Add to active pipelines
+                                    active_pipelines.insert(pipeline.id, pipeline.clone());
+
+                                    Ok::<_, EngineError>(())
+                                }.await;
+
+                                let _ = response_tx.send(result);
+
+                                let mut pipeline = pipeline.clone();
+                                if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
+                                    tracing::error!("Failed to evaluate pipeline: {}", e);
+                                }
+                            },
+                            EngineMessage::DeletePipeline { user_id, pipeline_id, response_tx } => {
+                                let result = engine.delete_pipeline(&user_id, pipeline_id).await;
+                                let _ = response_tx.send(result);
+                            },
+                            EngineMessage::GetPipeline { user_id, pipeline_id, response_tx } => {
+                                let result = engine.get_pipeline(&user_id, pipeline_id).await;
+                                let _ = response_tx.send(result);
+                            },
+                            EngineMessage::GetAllPipelinesByUser { user_id, response_tx } => {
+                                tracing::debug!("Getting pipelines for user {}", user_id);
+                                let result = engine.get_all_pipelines_by_user(&user_id).await;
+                                match &result {
+                                    Ok(pipelines) => tracing::debug!("Found {} pipelines for user", pipelines.len()),
+                                    Err(e) => tracing::error!("Error getting pipelines: {}", e),
+                                }
+                                if response_tx.send(result).is_err() {
+                                    tracing::error!("Failed to send response - channel closed");
+                                }
+                            },
+                        }
+                    });
                 }
-                Some(price_update) = self.receiver.recv() => {
-                    if let Err(e) = self.handle_price_update(&price_update.pubkey, price_update.price).await {
-                        tracing::error!("Error handling price update: {}", e);
-                    }
+                Some(price_update) = price_rx.recv() => {
+                    let engine = self.clone();
+                    tokio::spawn(async move {
+                        if let Err(e) = engine.handle_price_update(&price_update.pubkey, price_update.price).await {
+                            tracing::error!("Error handling price update: {}", e);
+                        }
+                    });
                 }
                 else => break
             }
@@ -251,7 +290,6 @@ impl Engine {
 
     pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
         let start = Instant::now();
-
         counter!("price_updates_processed", 1);
 
         {
@@ -263,19 +301,25 @@ impl Engine {
         let subscriptions = self.asset_subscriptions.read().await;
         if let Some(pipeline_ids) = subscriptions.get(asset) {
             for pipeline_id in pipeline_ids {
-                if let Some(pipeline) = self.active_pipelines.write().await.get_mut(pipeline_id) {
-                    self.evaluate_pipeline(pipeline).await?;
+                // Use clone to avoid holding the lock
+                let pipeline = {
+                    let pipelines = self.active_pipelines.read().await;
+                    pipelines.get(pipeline_id).cloned()
+                };
+
+                if let Some(mut pipeline) = pipeline {
+                    if let Err(e) = self.evaluate_pipeline(&mut pipeline).await {
+                        tracing::error!("Failed to evaluate pipeline: {}", e);
+                    }
                 }
             }
         }
 
         histogram!("price_update_duration", start.elapsed());
-
         gauge!(
             "active_pipelines",
             self.active_pipelines.read().await.len() as f64
         );
-
         Ok(())
     }
 }
