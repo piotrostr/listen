@@ -352,41 +352,68 @@ impl Engine {
 
     async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<(), EngineError> {
         let start = Instant::now();
-        let current_step_ids = pipeline.current_steps.clone();
         let price_cache = self.price_cache.read().await.clone();
 
-        for step_id in current_step_ids {
-            if let Some(step) = pipeline.steps.get(&step_id) {
-                if matches!(step.status, Status::Pending) {
-                    match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
-                        Ok(true) => match &step.action {
-                            Action::Order(order) => {
-                                let order = order.clone();
-                                if let Err(e) = self.execute_order(pipeline, step_id, &order).await
-                                {
-                                    tracing::error!(%step_id, error = %e, "Failed to execute order");
+        // Keep evaluating steps until no more steps are found
+        while !pipeline.current_steps.is_empty() {
+            let current_step_ids = pipeline.current_steps.clone();
+            let mut next_steps = Vec::new();
+
+            for step_id in current_step_ids {
+                if let Some(step) = pipeline.steps.get(&step_id) {
+                    if matches!(step.status, Status::Pending) {
+                        match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
+                            Ok(true) => match &step.action {
+                                Action::Order(order) => {
+                                    let order = order.clone();
+                                    match self.execute_order(pipeline, step_id, &order).await {
+                                        Ok(_) => {
+                                            // Next steps are already set in execute_order
+                                            // Just need to continue processing them
+                                        }
+                                        Err(e) => {
+                                            tracing::error!(%step_id, error = %e, "Failed to execute order");
+                                        }
+                                    }
                                 }
+                                Action::Notification(notification) => {
+                                    tracing::info!(%step_id, ?notification, "TODO: Notification");
+                                    // For notifications, we need to manually set next steps
+                                    if let Some(step) = pipeline.steps.get_mut(&step_id) {
+                                        step.status = Status::Completed;
+                                        next_steps.extend(step.next_steps.clone());
+                                    }
+                                }
+                            },
+                            Ok(false) => {
+                                // If condition isn't met, keep the step in current_steps
+                                next_steps.push(step_id);
                             }
-                            Action::Notification(notification) => {
-                                tracing::info!(%step_id, ?notification, "TODO: Notification");
+                            Err(e) => {
+                                return Err(EngineError::EvaluatePipelineError(e));
                             }
-                        },
-                        Ok(false) => {
-                            // don't do anything
-                        }
-                        Err(e) => {
-                            return Err(EngineError::EvaluatePipelineError(e));
                         }
                     }
                 }
             }
+
+            // Update current_steps with any new steps
+            pipeline.current_steps = next_steps;
+
+            // Save pipeline state after each iteration
+            self.redis
+                .save_pipeline(pipeline)
+                .await
+                .map_err(EngineError::SavePipelineError)?;
         }
 
-        if pipeline.current_steps.is_empty() {
+        // Only mark as completed if there are no more steps and status isn't Failed
+        if pipeline.current_steps.is_empty() && !matches!(pipeline.status, Status::Failed) {
             pipeline.status = Status::Completed;
-            if let Err(e) = self.redis.save_pipeline(pipeline).await {
-                return Err(EngineError::AddPipelineError(e));
-            }
+            self.redis
+                .save_pipeline(pipeline)
+                .await
+                .map_err(EngineError::SavePipelineError)?;
         }
 
         let duration = start.elapsed();
