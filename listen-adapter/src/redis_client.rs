@@ -61,8 +61,14 @@ impl RedisClient {
             .await
             .with_context(|| format!("Failed to get price for mint: {}", mint))?;
 
-        serde_json::from_str(&value.unwrap())
-            .with_context(|| format!("Failed to deserialize price for mint: {}", mint))
+        match value {
+            Some(price_str) => serde_json::from_str(&price_str)
+                .with_context(|| format!("Failed to deserialize price for mint: {}", mint)),
+            None => {
+                debug!(mint, "No price found");
+                Err(anyhow::anyhow!("No price found for mint: {}", mint))
+            }
+        }
     }
 
     pub async fn get_metadata(&self, mint: &str) -> Result<Option<TokenMetadata>> {
