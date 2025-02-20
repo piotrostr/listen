@@ -78,12 +78,12 @@ impl Engine {
                             let result = self.register_pipeline(&pipeline).await;
                             let _ = response_tx.send(result);
                         },
-                        EngineMessage::DeletePipeline { user_id, pipeline_id, response_tx } => {
+                        EngineMessage::DeletePipeline { .. } => {
                             panic!("DeletePipeline not implemented");
                             // let result = self.delete_pipeline(&user_id, pipeline_id).await;
                             // let _ = response_tx.send(result);
                         },
-                        EngineMessage::GetPipeline { user_id, pipeline_id, response_tx } => {
+                        EngineMessage::GetPipeline { .. } => {
                             panic!("GetPipeline not implemented");
                         },
                         EngineMessage::GetAllPipelinesByUser { user_id, response_tx } => {
