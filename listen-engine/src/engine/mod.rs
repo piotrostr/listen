@@ -294,21 +294,21 @@ impl Engine {
         let start = Instant::now();
         counter!("price_updates_processed", 1);
 
-        // Get active pipelines first
-        let pipeline_ids =
+        // Get pipeline IDs without holding the lock for too long
+        let pipeline_ids = {
             if let Some(active_pipelines) = self.active_pipelines.get(&asset.to_string()) {
-                tracing::info!(
-                    "Processing {} pipelines for asset {}",
-                    active_pipelines.len(),
-                    asset
-                );
-                active_pipelines.iter().cloned().collect::<Vec<String>>()
+                let count = active_pipelines.len();
+                // Clone the IDs while minimizing lock time
+                let ids = active_pipelines.iter().cloned().collect::<Vec<String>>();
+                tracing::info!("Processing {} pipelines for asset {}", count, asset);
+                ids
             } else {
                 tracing::debug!("No active pipelines for asset {}", asset);
                 Vec::new()
-            };
+            }
+        };
 
-        // Now update price cache after getting pipeline IDs
+        // Update price cache after getting pipeline IDs
         {
             let mut cache = self.price_cache.write().await;
             cache.insert(asset.to_string(), price);
@@ -317,26 +317,26 @@ impl Engine {
         // Process in chunks to limit concurrent Redis connections
         for chunk in pipeline_ids.chunks(10) {
             let mut futures = Vec::new();
-            let asset = asset.to_string(); // Clone for each chunk
+            let asset = asset.to_string();
 
-            // First, batch fetch pipelines from Redis
+            // Batch fetch pipelines from Redis
             let mut pipe = bb8_redis::redis::pipe();
             for id in chunk {
                 pipe.get(format!("pipeline:{}", id));
             }
 
             let pipelines: Vec<Option<Pipeline>> = self.redis.execute_redis_pipe(pipe).await?;
+            let pipeline_count = pipelines.iter().filter(|p| p.is_some()).count();
+            tracing::info!("Fetched {} active pipelines", pipeline_count);
 
-            tracing::info!("Fetched {} pipelines", pipelines.len());
-
-            // Now process the fetched pipelines concurrently
+            // Process the fetched pipelines concurrently
             for (pipeline_id, maybe_pipeline) in chunk.iter().zip(pipelines) {
                 if let Some(mut pipeline) = maybe_pipeline {
                     let self_clone = self.clone();
                     let pipeline_id = pipeline_id.clone();
                     let asset = asset.clone();
 
-                    // Move lock acquisition outside of the task
+                    // Quick check and acquire of processing lock
                     let can_process = {
                         let mut processing = self_clone.processing_pipelines.lock().await;
                         if processing.contains(&pipeline_id) {
@@ -352,18 +352,21 @@ impl Engine {
                             let result = async {
                                 let is_complete =
                                     self_clone.evaluate_pipeline(&mut pipeline).await?;
+
+                                // Only modify active_pipelines if the pipeline is complete
                                 if is_complete {
-                                    self_clone.active_pipelines.entry(asset).and_modify(
-                                        |pipelines| {
-                                            pipelines.remove(&pipeline_id);
-                                        },
-                                    );
+                                    // Minimize time holding the DashMap lock
+                                    if let Some(mut pipelines) =
+                                        self_clone.active_pipelines.get_mut(&asset)
+                                    {
+                                        pipelines.remove(&pipeline_id);
+                                    }
                                 }
                                 Ok::<_, EngineError>(())
                             }
                             .await;
 
-                            // Remove pipeline from processing set
+                            // Always release the processing lock
                             let mut processing = self_clone.processing_pipelines.lock().await;
                             processing.remove(&pipeline_id);
 
