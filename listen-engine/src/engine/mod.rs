@@ -23,6 +23,7 @@ use std::time::Instant;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
 use tokio::sync::RwLock;
+use uuid::Uuid;
 
 use self::evaluator::Evaluator;
 use self::pipeline::{Action, Pipeline, Status};
@@ -159,6 +160,54 @@ impl Engine {
         let price_cache = self.price_cache.read().await.clone();
 
         let mut save_needed = false;
+
+        // If current_steps is empty but there are pending steps, populate it from next_steps
+        if pipeline.current_steps.is_empty() {
+            // Find all steps that are pending and have no previous steps pointing to them
+            let root_steps: HashSet<Uuid> = pipeline.steps.keys().cloned().collect();
+            let referenced_steps: HashSet<Uuid> = pipeline
+                .steps
+                .values()
+                .flat_map(|step| step.next_steps.clone())
+                .collect();
+
+            let entry_steps: Vec<Uuid> =
+                root_steps.difference(&referenced_steps).cloned().collect();
+
+            // Add entry steps that are still pending
+            for step_id in entry_steps {
+                if let Some(step) = pipeline.steps.get(&step_id) {
+                    if matches!(step.status, Status::Pending) {
+                        pipeline.current_steps.push(step_id);
+                        save_needed = true;
+                    }
+                }
+            }
+
+            // Also add any steps that come after completed steps
+            for step in pipeline.steps.values() {
+                if matches!(step.status, Status::Completed) {
+                    for next_step_id in &step.next_steps {
+                        if let Some(next_step) = pipeline.steps.get(next_step_id) {
+                            // Only add pending steps if there are no failed/cancelled dependencies
+                            let has_failed_dependencies = pipeline
+                                .steps
+                                .values()
+                                .filter(|s| s.next_steps.contains(next_step_id))
+                                .any(|s| matches!(s.status, Status::Failed | Status::Cancelled));
+
+                            if matches!(next_step.status, Status::Pending)
+                                && !pipeline.current_steps.contains(next_step_id)
+                                && !has_failed_dependencies
+                            {
+                                pipeline.current_steps.push(next_step_id.clone());
+                                save_needed = true;
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
         // Process one step at a time
         while let Some(&current_step_id) = pipeline.current_steps.first() {
