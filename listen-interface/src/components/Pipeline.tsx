@@ -47,8 +47,11 @@ const PipelineStepContainer = ({
           <div className="text-sm text-purple-300">Conditions:</div>
           {conditions.map((condition, index) => (
             <div key={index} className="mt-1 text-sm text-purple-200">
-              {condition.type === "PriceAbove" ? "Price above" : "Price below"}{" "}
-              {condition.value} for {condition.asset}
+              {condition.type === PipelineConditionType.Now
+                ? "Execute immediately"
+                : condition.type === PipelineConditionType.PriceAbove
+                  ? `Price above ${condition.value} for ${condition.asset}`
+                  : `Price below ${condition.value} for ${condition.asset}`}
             </div>
           ))}
         </div>

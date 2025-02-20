@@ -44,7 +44,7 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
   const PipelineConditionSchema = z.object({
     type: z.nativeEnum(PipelineConditionType),
     asset: z.string(), // address or mint
-    value: z.number(),
+    value: z.number(), // Now can take any value, its not used
   });
 
   const PipelineStepSchema = z.object({
