@@ -149,16 +149,19 @@ impl Engine {
                                 let result = async {
                                     let pipeline_id = pipeline.id;
 
+                                    println!("Saving pipeline to Redis");
                                     engine.redis.save_pipeline(&pipeline)
                                         .await
                                         .map_err(EngineError::SavePipelineError)?;
 
                                     {
+                                        println!("Adding pipeline to active pipelines");
                                         let mut active_pipelines = engine.active_pipelines.write().await;
                                         active_pipelines.insert(pipeline_id, pipeline.clone());
                                     }
 
                                     {
+                                        println!("Extracting assets");
                                         let assets = engine.extract_assets(&pipeline).await;
                                         let mut asset_subscriptions = engine.asset_subscriptions.write().await;
                                         for asset in assets {
@@ -174,6 +177,7 @@ impl Engine {
 
                                 let _ = response_tx.send(result);
 
+                                println!("Evaluating pipeline");
                                 if let Ok(mut pipeline) = engine.get_pipeline(&pipeline.user_id, pipeline.id).await {
                                     if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
                                         tracing::error!("Failed to evaluate pipeline: {}", e);
