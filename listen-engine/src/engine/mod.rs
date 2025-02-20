@@ -124,7 +124,10 @@ impl Engine {
 
         let total_pipelines = pipelines.len();
         for pipeline in pipelines {
-            self.add_pipeline(pipeline).await?;
+            if let Err(e) = self.add_pipeline(pipeline).await {
+                tracing::error!("Failed to add pipeline during startup: {}", e);
+                continue;
+            }
         }
         tracing::info!("Added {} pipelines", total_pipelines);
 
