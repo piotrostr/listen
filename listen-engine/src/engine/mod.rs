@@ -398,7 +398,7 @@ impl Engine {
         }
 
         histogram!("price_update_duration", start.elapsed());
-        tracing::info!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
+        tracing::debug!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
         Ok(())
     }
 }
