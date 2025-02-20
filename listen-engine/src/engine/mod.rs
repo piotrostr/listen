@@ -199,48 +199,75 @@ impl Engine {
 
         // Check for and evaluate any "Now" conditions immediately
         let price_cache = self.price_cache.read().await.clone();
-        let current_step_ids = pipeline_clone.current_steps.clone();
 
-        for step_id in current_step_ids {
-            if let Some(step) = pipeline_clone.steps.get_mut(&step_id) {
-                if matches!(step.status, Status::Pending) {
-                    // Check if this step has any "Now" conditions
-                    let has_now_condition = step.conditions.iter().any(|condition| {
-                        matches!(condition.condition_type, ConditionType::Now { .. })
-                    });
+        // Keep evaluating steps until no more immediate steps are found
+        while !pipeline_clone.current_steps.is_empty() {
+            let current_step_ids = pipeline_clone.current_steps.clone();
+            let mut next_steps = Vec::new();
 
-                    if has_now_condition {
-                        if let Ok(true) =
-                            Evaluator::evaluate_conditions(&step.conditions, &price_cache)
-                        {
-                            // Update the actual pipeline in active_pipelines
-                            if let Some(actual_pipeline) = self
-                                .active_pipelines
-                                .write()
-                                .await
-                                .get_mut(&pipeline_clone.id)
+            for step_id in current_step_ids {
+                if let Some(step) = pipeline_clone.steps.get(&step_id) {
+                    if matches!(step.status, Status::Pending) {
+                        // Check if this step has any "Now" conditions
+                        let has_now_condition = step.conditions.iter().any(|condition| {
+                            matches!(condition.condition_type, ConditionType::Now { .. })
+                        });
+
+                        if has_now_condition {
+                            if let Ok(true) =
+                                Evaluator::evaluate_conditions(&step.conditions, &price_cache)
                             {
-                                let step_action = actual_pipeline
-                                    .steps
-                                    .get(&step_id)
-                                    .map(|s| (s.id, s.action.clone()));
-
-                                if let Some((step_id, Action::Order(order))) = step_action {
-                                    if let Err(e) =
-                                        self.execute_order(actual_pipeline, step_id, &order).await
-                                    {
-                                        tracing::error!(%step_id, error = %e, "Failed to execute immediate order");
-                                    }
-                                } else if let Some((step_id, Action::Notification(notification))) =
-                                    step_action
+                                // Update the actual pipeline in active_pipelines
+                                if let Some(actual_pipeline) = self
+                                    .active_pipelines
+                                    .write()
+                                    .await
+                                    .get_mut(&pipeline_clone.id)
                                 {
-                                    tracing::info!(%step_id, ?notification, "TODO: Immediate notification");
+                                    let step_action = actual_pipeline
+                                        .steps
+                                        .get(&step_id)
+                                        .map(|s| (s.id, s.action.clone()));
+
+                                    if let Some((step_id, Action::Order(order))) = step_action {
+                                        match self
+                                            .execute_order(actual_pipeline, step_id, &order)
+                                            .await
+                                        {
+                                            Ok(_) => {
+                                                // Add next steps to be processed
+                                                if let Some(step) =
+                                                    actual_pipeline.steps.get(&step_id)
+                                                {
+                                                    next_steps.extend(step.next_steps.clone());
+                                                }
+                                                // Update pipeline_clone to match actual_pipeline
+                                                pipeline_clone = actual_pipeline.clone();
+                                            }
+                                            Err(e) => {
+                                                tracing::error!(%step_id, error = %e, "Failed to execute immediate order");
+                                            }
+                                        }
+                                    } else if let Some((
+                                        step_id,
+                                        Action::Notification(notification),
+                                    )) = step_action
+                                    {
+                                        tracing::info!(%step_id, ?notification, "TODO: Immediate notification");
+                                        // Add next steps even for notifications
+                                        if let Some(step) = actual_pipeline.steps.get(&step_id) {
+                                            next_steps.extend(step.next_steps.clone());
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
                 }
             }
+
+            // Update current_steps with the next steps to be processed
+            pipeline_clone.current_steps = next_steps;
         }
 
         Ok(())
