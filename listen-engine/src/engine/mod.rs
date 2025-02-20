@@ -145,6 +145,7 @@ impl Engine {
                     tracing::debug!("Processing engine message: {:?}", msg);
                     match msg {
                         EngineMessage::AddPipeline { pipeline, response_tx } => {
+                                println!("adding pipeline");
                                 let result = engine.add_pipeline(&pipeline).await;
                                 println!("added pipeline");
                                 let _ = response_tx.send(result);

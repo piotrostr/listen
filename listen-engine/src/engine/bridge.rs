@@ -63,6 +63,7 @@ impl Engine {
         &self,
         user_id: &str,
     ) -> Result<Vec<Pipeline>, EngineError> {
+        println!("getting all pipelines for user: {}", user_id);
         match self
             .redis
             .get_all_pipelines_for_user(user_id)
