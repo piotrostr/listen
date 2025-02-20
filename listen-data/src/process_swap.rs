@@ -276,11 +276,22 @@ async fn process_two_token_swap(
         }
     }
 
-    match message_queue.publish_price_update(price_update).await {
+    match message_queue
+        .publish_price_update(price_update.clone())
+        .await
+    {
         Ok(_) => metrics.increment_message_send_success(),
         Err(e) => {
             metrics.increment_message_send_failure();
             return Err(e.into());
+        }
+    }
+
+    match kv_store.insert_price(&price_update).await {
+        Ok(_) => metrics.increment_kv_insert_success(),
+        Err(e) => {
+            metrics.increment_kv_insert_failure();
+            return Err(e);
         }
     }
 

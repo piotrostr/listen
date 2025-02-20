@@ -16,6 +16,8 @@ pub struct SwapMetrics {
     pub db_insert_success: AtomicU64,
     pub db_insert_failure: AtomicU64,
     pub multi_hop_swap: AtomicU64,
+    pub kv_insert_success: AtomicU64,
+    pub kv_insert_failure: AtomicU64,
 }
 
 impl SwapMetrics {
@@ -79,6 +81,14 @@ impl SwapMetrics {
         self.multi_hop_swap.fetch_add(1, Ordering::Relaxed);
     }
 
+    pub fn increment_kv_insert_success(&self) {
+        self.kv_insert_success.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn increment_kv_insert_failure(&self) {
+        self.kv_insert_failure.fetch_add(1, Ordering::Relaxed);
+    }
+
     fn log_metrics(&self) {
         let total = self.total_swaps_processed.load(Ordering::Relaxed);
         let successful = self.successful_swaps.load(Ordering::Relaxed);
@@ -97,6 +107,8 @@ impl SwapMetrics {
         let db_insert_success = self.db_insert_success.load(Ordering::Relaxed);
         let db_insert_failure = self.db_insert_failure.load(Ordering::Relaxed);
         let multi_hop = self.multi_hop_swap.load(Ordering::Relaxed);
+        let kv_insert_success = self.kv_insert_success.load(Ordering::Relaxed);
+        let kv_insert_failure = self.kv_insert_failure.load(Ordering::Relaxed);
 
         let success_rate = if total > 0 {
             (successful as f64 / total as f64) * 100.0
@@ -118,7 +130,9 @@ impl SwapMetrics {
              Message Send Failure: {}\n\
              DB Insert Success: {}\n\
              DB Insert Failure: {}\n\
-             Multi-hop Swaps: {}",
+             Multi-hop Swaps: {}\n\
+             KV Insert Success: {}\n\
+             KV Insert Failure: {}",
             total,
             successful,
             success_rate,
@@ -133,6 +147,8 @@ impl SwapMetrics {
             db_insert_success,
             db_insert_failure,
             multi_hop,
+            kv_insert_success,
+            kv_insert_failure,
         );
     }
 }
