@@ -136,6 +136,7 @@ impl Engine {
                         },
                         EngineMessage::GetAllPipelinesByUser { user_id, response_tx } => {
                             let result = self.get_all_pipelines_by_user(&user_id).await;
+                            println!("result: {:#?}", result);
                             let _ = response_tx.send(result);
                         },
                     }
