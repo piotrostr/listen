@@ -136,7 +136,7 @@ impl Engine {
                     }
                 }
                 Some(price_update) = receiver.recv() => {
-                    if let Err(e) = engine.handle_price_update(&price_update.pubkey, price_update.price).await {
+                    if let Err(e) = engine.handle_price_update(&price_update.pubkey, price_update.price, price_update.slot).await {
                         tracing::error!("Error handling price update: {}", e);
                     }
                 }
@@ -279,10 +279,9 @@ impl Engine {
         Ok(false)
     }
 
-    pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
+    pub async fn handle_price_update(&self, asset: &str, price: f64, slot: u64) -> Result<()> {
         let start = Instant::now();
         counter!("price_updates_processed", 1);
-        println!("{}: {}", asset, price);
 
         // Update price cache
         {
@@ -358,7 +357,7 @@ impl Engine {
         }
 
         histogram!("price_update_duration", start.elapsed());
-        println!("Price update duration: {:?}", start.elapsed());
+        println!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
         Ok(())
     }
 }
