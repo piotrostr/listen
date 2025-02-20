@@ -260,12 +260,18 @@ impl Engine {
         &self,
         user_id: &str,
     ) -> Result<Vec<Pipeline>, EngineError> {
-        let pipelines = self
+        match self
             .redis
             .get_all_pipelines_for_user(user_id)
             .await
-            .map_err(EngineError::RedisClientError)?;
-        Ok(pipelines)
+            .map_err(EngineError::RedisClientError)
+        {
+            Ok(pipelines) => Ok(pipelines),
+            Err(e) => {
+                tracing::error!("Error getting all pipelines for user: {}", e);
+                Err(e)
+            }
+        }
     }
 
     pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
