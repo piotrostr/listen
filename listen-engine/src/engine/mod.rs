@@ -358,6 +358,7 @@ impl Engine {
         }
 
         histogram!("price_update_duration", start.elapsed());
+        println!("Price update duration: {:?}", start.elapsed());
         Ok(())
     }
 }
