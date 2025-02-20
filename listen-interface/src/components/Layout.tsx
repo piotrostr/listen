@@ -11,6 +11,7 @@ import { useSolBalance } from "../hooks/useSolBalance";
 import { imageMap } from "../hooks/util";
 import { Background } from "./Background";
 
+import { BsLink } from "react-icons/bs";
 import { FaXTwitter } from "react-icons/fa6";
 import { IoMenu } from "react-icons/io5";
 import { RxCross2, RxDashboard } from "react-icons/rx";
@@ -18,6 +19,7 @@ import { RxCross2, RxDashboard } from "react-icons/rx";
 const NAV_ITEMS = [
   { to: "/screener", icon: RxDashboard, label: "Screener" },
   { to: "/portfolio", icon: IoWalletOutline, label: "Portfolio" },
+  { to: "/pipelines", icon: BsLink, label: "Pipelines" },
   { to: "/chat", icon: IoChatboxOutline, label: "Chat" },
 ] as const;
 
