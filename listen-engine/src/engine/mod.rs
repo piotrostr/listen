@@ -337,59 +337,40 @@ impl Engine {
             Vec::new()
         };
 
-        // Process pipelines without holding the main locks
-        let futures: Vec<_> = pipeline_locks
-            .into_iter()
-            .map(|pipeline_lock| {
-                let engine = self.clone();
-                tokio::spawn(async move {
-                    // Implement exponential backoff for lock acquisition
-                    let mut backoff = tokio::time::Duration::from_millis(10);
-                    let max_attempts = 3;
-                    let mut attempts = 0;
+        // Process pipelines sequentially
+        for pipeline_lock in pipeline_locks {
+            let mut backoff = tokio::time::Duration::from_millis(10);
+            let max_attempts = 3;
+            let mut attempts = 0;
 
-                    while attempts < max_attempts {
-                        match pipeline_lock.try_write() {
-                            Ok(mut pipeline) => {
-                                if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
-                                    tracing::error!("Failed to evaluate pipeline: {}", e);
-                                }
-                                return;
-                            }
-                            Err(_) => {
-                                attempts += 1;
-                                if attempts < max_attempts {
-                                    tokio::time::sleep(backoff).await;
-                                    backoff *= 2; // Exponential backoff
-                                } else {
-                                    tracing::warn!(
-                                        "Failed to acquire pipeline lock after {} attempts",
-                                        max_attempts
-                                    );
-                                }
-                            }
+            while attempts < max_attempts {
+                match pipeline_lock.try_write() {
+                    Ok(mut pipeline) => {
+                        if let Err(e) = self.evaluate_pipeline(&mut pipeline).await {
+                            tracing::error!("Failed to evaluate pipeline: {}", e);
+                        }
+                        break;
+                    }
+                    Err(_) => {
+                        attempts += 1;
+                        if attempts < max_attempts {
+                            tokio::time::sleep(backoff).await;
+                            backoff *= 2; // Exponential backoff
+                        } else {
+                            tracing::warn!(
+                                "Failed to acquire pipeline lock after {} attempts",
+                                max_attempts
+                            );
                         }
                     }
-                })
-            })
-            .collect();
-
-        // Wait for all evaluations with a longer timeout since we have retries
-        let _ = tokio::time::timeout(
-            std::time::Duration::from_secs(15), // Increased timeout
-            futures_util::future::join_all(futures),
-        )
-        .await;
+                }
+            }
+        }
 
         histogram!("price_update_duration", start.elapsed());
 
-        // Move gauge update outside the critical path
-        tokio::spawn({
-            let engine = self.clone();
-            async move {
-                gauge!("active_pipelines", engine.active_pipelines.len() as f64);
-            }
-        });
+        // Update metrics
+        gauge!("active_pipelines", self.active_pipelines.len() as f64);
 
         Ok(())
     }
