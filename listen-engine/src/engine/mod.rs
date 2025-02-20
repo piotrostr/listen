@@ -107,10 +107,9 @@ impl Engine {
                     tracing::debug!("Received engine message: {:?}", msg);
                     match msg {
                         EngineMessage::AddPipeline { pipeline, response_tx } => {
-                            // get assets here and do the full register
                             let asset_ids = engine.extract_assets(&pipeline).await;
                             for asset_id in asset_ids {
-                                engine.active_pipelines.entry(asset_id.clone()).or_insert_with(HashSet::new).insert(pipeline.id.to_string());
+                                engine.active_pipelines.entry(asset_id.clone()).or_insert_with(HashSet::new).insert(format!("{}:{}", pipeline.user_id, pipeline.id));
                                 engine.redis.save_pipeline(&pipeline).await?;
                             }
                             let _ = response_tx.send(Ok(()));
@@ -289,10 +288,16 @@ impl Engine {
             cache.insert(asset.to_string(), price);
         }
 
-        let asset = asset.to_string(); // Clone at the start
+        let asset = asset.to_string();
 
-        // Get affected pipelines and process in batches
+        // Add debug logging
         if let Some(active_pipelines) = self.active_pipelines.get(&asset) {
+            tracing::info!(
+                "Processing {} pipelines for asset {}",
+                active_pipelines.len(),
+                asset
+            );
+            // Get affected pipelines and process in batches
             let pipeline_ids: Vec<String> = active_pipelines.iter().cloned().collect();
 
             // Process in chunks to limit concurrent Redis connections
@@ -307,6 +312,8 @@ impl Engine {
                 }
 
                 let pipelines: Vec<Option<Pipeline>> = self.redis.execute_redis_pipe(pipe).await?;
+
+                tracing::info!("Fetched {} pipelines", pipelines.len());
 
                 // Now process the fetched pipelines concurrently
                 for (pipeline_id, maybe_pipeline) in chunk.iter().zip(pipelines) {
@@ -354,6 +361,8 @@ impl Engine {
                     }
                 }
             }
+        } else {
+            tracing::debug!("No active pipelines for asset {}", asset);
         }
 
         histogram!("price_update_duration", start.elapsed());
