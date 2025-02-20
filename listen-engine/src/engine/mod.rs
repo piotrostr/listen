@@ -16,9 +16,11 @@ use metrics::{counter, histogram};
 use privy::config::PrivyConfig;
 use privy::{Privy, PrivyError};
 use std::collections::HashMap;
+use std::collections::HashSet;
 use std::sync::Arc;
 use std::time::Instant;
 use tokio::sync::mpsc;
+use tokio::sync::Mutex;
 use tokio::sync::RwLock;
 
 use self::evaluator::Evaluator;
@@ -34,6 +36,7 @@ pub struct Engine {
 
     // Current market state
     price_cache: RwLock<HashMap<String, f64>>,
+    processing_pipelines: Arc<Mutex<HashSet<String>>>,
 }
 
 impl Engine {
@@ -50,6 +53,7 @@ impl Engine {
             redis_sub: make_redis_subscriber(tx).map_err(EngineError::RedisSubscriberError)?,
             receiver: rx,
             price_cache: RwLock::new(HashMap::new()),
+            processing_pipelines: Arc::new(Mutex::new(HashSet::new())),
         })
     }
 
@@ -238,26 +242,45 @@ impl Engine {
 
     pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
         let start = Instant::now();
-
         counter!("price_updates_processed", 1);
 
         {
+            // TODO price cache can pull from redis too
             let mut cache = self.price_cache.write().await;
             cache.insert(asset.to_string(), price);
         }
 
         // Get affected pipelines
         let subscriptions = self.redis.get_pipeline_subscriptions(asset).await?;
+
         for pipeline_id in subscriptions {
+            // Try to acquire lock for this pipeline
+            let mut processing = self.processing_pipelines.lock().await;
+            if processing.contains(&pipeline_id) {
+                tracing::debug!(
+                    "Pipeline {} is already being processed, skipping",
+                    pipeline_id
+                );
+                continue;
+            }
+            processing.insert(pipeline_id.clone());
+            drop(processing); // Release the lock early
+
+            // Process the pipeline
             if let Some(mut pipeline) = self.redis.get_pipeline_by_id(&pipeline_id).await? {
-                if self.evaluate_pipeline(&mut pipeline).await? {
+                let is_complete = self.evaluate_pipeline(&mut pipeline).await?;
+                if is_complete {
                     self.unregister_pipeline(&pipeline).await?;
                 }
             }
+
+            // Remove pipeline from processing set
+            let mut processing = self.processing_pipelines.lock().await;
+            processing.remove(&pipeline_id);
+            drop(processing);
         }
 
         histogram!("price_update_duration", start.elapsed());
-
         Ok(())
     }
 }
