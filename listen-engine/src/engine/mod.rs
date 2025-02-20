@@ -1,20 +1,20 @@
 pub mod api;
+pub mod bridge;
+pub mod collect;
 pub mod constants;
 pub mod evaluator;
+pub mod execute;
 pub mod order;
 pub mod pipeline;
 
 use crate::engine::evaluator::EvaluatorError;
-use crate::engine::order::{swap_order_to_transaction, SwapOrder, SwapOrderTransaction};
 use crate::redis::client::{make_redis_client, RedisClient, RedisClientError};
 use crate::redis::subscriber::{
     make_redis_subscriber, PriceUpdate, RedisSubscriber, RedisSubscriberError,
 };
 use anyhow::Result;
-use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
 use metrics::{counter, gauge, histogram};
 use privy::config::PrivyConfig;
-use privy::tx::PrivyTransaction;
 use privy::{Privy, PrivyError};
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
@@ -24,7 +24,7 @@ use tokio::sync::RwLock;
 use uuid::Uuid;
 
 use self::evaluator::Evaluator;
-use self::pipeline::{Action, Condition, ConditionType, Pipeline, Status};
+use self::pipeline::{Action, Pipeline, Status};
 use crate::server::EngineMessage;
 
 #[derive(Debug, thiserror::Error)]
@@ -172,184 +172,7 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn add_pipeline(&self, pipeline: Pipeline) -> Result<(), EngineError> {
-        if let Err(e) = self.redis.save_pipeline(&pipeline).await {
-            return Err(EngineError::AddPipelineError(e));
-        }
-
-        // Then add to engine
-        let mut active_pipelines = self.active_pipelines.write().await;
-        let mut asset_subscriptions = self.asset_subscriptions.write().await;
-
-        // Extract all assets mentioned in pipeline conditions
-        let assets = self.extract_assets(&pipeline).await;
-
-        // Update asset subscriptions
-        for asset in assets {
-            asset_subscriptions
-                .entry(asset)
-                .or_default()
-                .insert(pipeline.id);
-        }
-
-        // Clone pipeline before inserting to evaluate "Now" conditions
-        let mut pipeline_clone = pipeline.clone();
-        active_pipelines.insert(pipeline.id, pipeline);
-        drop(active_pipelines); // Release the write lock
-
-        // Check for and evaluate any "Now" conditions immediately
-        let price_cache = self.price_cache.read().await.clone();
-
-        // Keep evaluating steps until no more immediate steps are found
-        while !pipeline_clone.current_steps.is_empty() {
-            let current_step_ids = pipeline_clone.current_steps.clone();
-            let mut next_steps = Vec::new();
-
-            for step_id in current_step_ids {
-                if let Some(step) = pipeline_clone.steps.get(&step_id) {
-                    if matches!(step.status, Status::Pending) {
-                        // Check if this step has any "Now" conditions
-                        let has_now_condition = step.conditions.iter().any(|condition| {
-                            matches!(condition.condition_type, ConditionType::Now { .. })
-                        });
-
-                        if has_now_condition {
-                            if let Ok(true) =
-                                Evaluator::evaluate_conditions(&step.conditions, &price_cache)
-                            {
-                                // Update the actual pipeline in active_pipelines
-                                if let Some(actual_pipeline) = self
-                                    .active_pipelines
-                                    .write()
-                                    .await
-                                    .get_mut(&pipeline_clone.id)
-                                {
-                                    let step_action = actual_pipeline
-                                        .steps
-                                        .get(&step_id)
-                                        .map(|s| (s.id, s.action.clone()));
-
-                                    if let Some((step_id, Action::Order(order))) = step_action {
-                                        match self
-                                            .execute_order(actual_pipeline, step_id, &order)
-                                            .await
-                                        {
-                                            Ok(_) => {
-                                                // Add next steps to be processed
-                                                if let Some(step) =
-                                                    actual_pipeline.steps.get(&step_id)
-                                                {
-                                                    next_steps.extend(step.next_steps.clone());
-                                                }
-                                                // Update pipeline_clone to match actual_pipeline
-                                                pipeline_clone = actual_pipeline.clone();
-                                            }
-                                            Err(e) => {
-                                                tracing::error!(%step_id, error = %e, "Failed to execute immediate order");
-                                            }
-                                        }
-                                    } else if let Some((
-                                        step_id,
-                                        Action::Notification(notification),
-                                    )) = step_action
-                                    {
-                                        tracing::info!(%step_id, ?notification, "TODO: Immediate notification");
-                                        // Add next steps even for notifications
-                                        if let Some(step) = actual_pipeline.steps.get(&step_id) {
-                                            next_steps.extend(step.next_steps.clone());
-                                        }
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-
-            // Update current_steps with the next steps to be processed
-            pipeline_clone.current_steps = next_steps;
-        }
-
-        Ok(())
-    }
-
-    pub async fn delete_pipeline(
-        &self,
-        user_id: &str,
-        pipeline_id: Uuid,
-    ) -> Result<(), EngineError> {
-        if let Err(e) = self
-            .redis
-            .delete_pipeline(user_id, &pipeline_id.to_string())
-            .await
-        {
-            return Err(EngineError::DeletePipelineError(e));
-        }
-        let mut active_pipelines = self.active_pipelines.write().await;
-        active_pipelines.remove(&pipeline_id);
-
-        Ok(())
-    }
-
-    pub async fn get_pipeline(
-        &self,
-        _user_id: &str,
-        pipeline_id: Uuid,
-    ) -> Result<Pipeline, EngineError> {
-        let active_pipelines = self.active_pipelines.read().await;
-        active_pipelines.get(&pipeline_id).cloned().ok_or_else(|| {
-            EngineError::GetPipelineError(format!("Pipeline not found: {}", pipeline_id))
-        })
-    }
-
-    pub async fn get_all_pipelines_by_user(
-        &self,
-        user_id: &str,
-    ) -> Result<Vec<Pipeline>, EngineError> {
-        match self
-            .redis
-            .get_all_pipelines_for_user(user_id)
-            .await
-            .map_err(EngineError::RedisClientError)
-        {
-            Ok(pipelines) => Ok(pipelines),
-            Err(e) => {
-                tracing::error!("Error getting all pipelines for user: {}", e);
-                Err(e)
-            }
-        }
-    }
-
-    pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
-        let start = Instant::now();
-
-        counter!("price_updates_processed", 1);
-
-        {
-            let mut cache = self.price_cache.write().await;
-            cache.insert(asset.to_string(), price);
-        }
-
-        // Get affected pipelines
-        let subscriptions = self.asset_subscriptions.read().await;
-        if let Some(pipeline_ids) = subscriptions.get(asset) {
-            for pipeline_id in pipeline_ids {
-                if let Some(pipeline) = self.active_pipelines.write().await.get_mut(pipeline_id) {
-                    self.evaluate_pipeline(pipeline).await?;
-                }
-            }
-        }
-
-        histogram!("price_update_duration", start.elapsed());
-
-        gauge!(
-            "active_pipelines",
-            self.active_pipelines.read().await.len() as f64
-        );
-
-        Ok(())
-    }
-
+    /// Common logic for evaluating and executing pipeline steps
     async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<(), EngineError> {
         let start = Instant::now();
         let price_cache = self.price_cache.read().await.clone();
@@ -378,7 +201,6 @@ impl Engine {
                                 }
                                 Action::Notification(notification) => {
                                     tracing::info!(%step_id, ?notification, "TODO: Notification");
-                                    // For notifications, we need to manually set next steps
                                     if let Some(step) = pipeline.steps.get_mut(&step_id) {
                                         step.status = Status::Completed;
                                         next_steps.extend(step.next_steps.clone());
@@ -423,110 +245,32 @@ impl Engine {
         Ok(())
     }
 
-    /// Extract all unique assets mentioned in pipeline conditions
-    async fn extract_assets(&self, pipeline: &Pipeline) -> HashSet<String> {
-        let mut assets = HashSet::new();
-        for step in pipeline.steps.values() {
-            self.collect_assets_from_condition(&step.conditions, &mut assets)
-                .await;
-        }
-        assets
-    }
+    pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
+        let start = Instant::now();
 
-    async fn collect_assets_from_condition(
-        &self,
-        conditions: &[Condition],
-        assets: &mut HashSet<String>,
-    ) {
-        let mut stack = Vec::new();
-        stack.extend(conditions.iter());
+        counter!("price_updates_processed", 1);
 
-        while let Some(condition) = stack.pop() {
-            match &condition.condition_type {
-                ConditionType::PriceAbove { asset, .. } => {
-                    assets.insert(asset.clone());
-                }
-                ConditionType::PriceBelow { asset, .. } => {
-                    assets.insert(asset.clone());
-                }
-                ConditionType::And(sub_conditions) | ConditionType::Or(sub_conditions) => {
-                    stack.extend(sub_conditions.iter());
-                }
-                ConditionType::Now { asset } => {
-                    assets.insert(asset.clone());
-                }
-            }
-        }
-    }
-
-    async fn execute_order(
-        &self,
-        pipeline: &mut Pipeline,
-        step_id: Uuid,
-        order: &SwapOrder,
-    ) -> Result<(), EngineError> {
-        // Execute transaction first
-        let address = match order.is_evm() {
-            true => pipeline.wallet_address.clone(),
-            false => pipeline.pubkey.clone(),
-        };
-        let mut privy_transaction = PrivyTransaction {
-            user_id: pipeline.user_id.clone(),
-            address,
-            from_chain_caip2: order.from_chain_caip2.clone(),
-            to_chain_caip2: order.to_chain_caip2.clone(),
-            evm_transaction: None,
-            solana_transaction: None,
-        };
-
-        let transaction_result = match swap_order_to_transaction(
-            order,
-            &lifi::LiFi::new(None),
-            &pipeline.wallet_address,
-            &pipeline.pubkey,
-        )
-        .await
-        .map_err(EngineError::SwapOrderError)?
         {
-            SwapOrderTransaction::Evm(transaction) => {
-                privy_transaction.evm_transaction = Some(transaction);
-                self.privy.execute_transaction(privy_transaction).await
-            }
-            SwapOrderTransaction::Solana(transaction) => {
-                let latest_blockhash = BLOCKHASH_CACHE
-                    .get_blockhash()
-                    .await
-                    .map_err(EngineError::BlockhashCacheError)?;
-                let fresh_blockhash_tx =
-                    inject_blockhash_into_encoded_tx(&transaction, &latest_blockhash.to_string())
-                        .map_err(EngineError::InjectBlockhashError)?;
-                privy_transaction.solana_transaction = Some(fresh_blockhash_tx);
-                self.privy.execute_transaction(privy_transaction).await
-            }
-        };
+            let mut cache = self.price_cache.write().await;
+            cache.insert(asset.to_string(), price);
+        }
 
-        // Update pipeline state after transaction execution
-        if let Some(step) = pipeline.steps.get_mut(&step_id) {
-            match transaction_result {
-                Ok(_) => {
-                    step.status = Status::Completed;
-                    pipeline.current_steps = step.next_steps.clone();
-                    self.redis
-                        .save_pipeline(pipeline)
-                        .await
-                        .map_err(EngineError::SavePipelineError)?;
-                }
-                Err(e) => {
-                    step.status = Status::Failed;
-                    pipeline.status = Status::Failed;
-                    self.redis
-                        .save_pipeline(pipeline)
-                        .await
-                        .map_err(EngineError::SavePipelineError)?;
-                    return Err(EngineError::TransactionError(e));
+        // Get affected pipelines
+        let subscriptions = self.asset_subscriptions.read().await;
+        if let Some(pipeline_ids) = subscriptions.get(asset) {
+            for pipeline_id in pipeline_ids {
+                if let Some(pipeline) = self.active_pipelines.write().await.get_mut(pipeline_id) {
+                    self.evaluate_pipeline(pipeline).await?;
                 }
             }
         }
+
+        histogram!("price_update_duration", start.elapsed());
+
+        gauge!(
+            "active_pipelines",
+            self.active_pipelines.read().await.len() as f64
+        );
 
         Ok(())
     }
