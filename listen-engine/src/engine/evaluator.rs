@@ -58,6 +58,7 @@ impl Evaluator {
             ConditionType::Or(sub) => sub.iter().try_fold(false, |acc, c| {
                 Ok(acc || Self::evaluate_condition(c, prices)?)
             }),
+            ConditionType::Now { .. } => Ok(true),
         }
     }
 }

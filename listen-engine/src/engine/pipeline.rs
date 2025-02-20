@@ -10,6 +10,7 @@ use crate::engine::order::SwapOrder;
 pub enum ConditionType {
     PriceAbove { asset: String, value: f64 },
     PriceBelow { asset: String, value: f64 },
+    Now { asset: String },
     // PercentageChange {
     //     asset: String,
     //     initial: f64,
