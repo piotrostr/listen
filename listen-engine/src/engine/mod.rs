@@ -33,12 +33,6 @@ pub struct Engine {
 
     receiver: mpsc::Receiver<PriceUpdate>,
 
-    // Active pipelines indexed by UUID
-    active_pipelines: RwLock<HashMap<Uuid, Pipeline>>,
-
-    // Asset to pipeline index for efficient updates
-    asset_subscriptions: RwLock<HashMap<String, HashSet<Uuid>>>,
-
     // Current market state
     price_cache: RwLock<HashMap<String, f64>>,
 }
@@ -56,8 +50,6 @@ impl Engine {
                 .map_err(EngineError::RedisClientError)?,
             redis_sub: make_redis_subscriber(tx).map_err(EngineError::RedisSubscriberError)?,
             receiver: rx,
-            active_pipelines: RwLock::new(HashMap::new()),
-            asset_subscriptions: RwLock::new(HashMap::new()),
             price_cache: RwLock::new(HashMap::new()),
         })
     }
@@ -130,76 +122,144 @@ impl Engine {
     }
 
     /// Common logic for evaluating and executing pipeline steps
-    async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<(), EngineError> {
+    /// Returns true if the pipeline is done (success or failure/cancelled),
+    /// false if the pipeline is not complete meaning it should be evaluated
+    /// again
+    async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<bool, EngineError> {
         let start = Instant::now();
         let price_cache = self.price_cache.read().await.clone();
 
-        // Keep evaluating steps until no more steps are found
-        while !pipeline.current_steps.is_empty() {
-            let current_step_ids = pipeline.current_steps.clone();
-            let mut next_steps = Vec::new();
-
-            for step_id in current_step_ids {
-                if let Some(step) = pipeline.steps.get(&step_id) {
-                    if matches!(step.status, Status::Pending) {
+        // Process one step at a time
+        while let Some(&current_step_id) = pipeline.current_steps.first() {
+            if let Some(step) = pipeline.steps.get_mut(&current_step_id) {
+                match step.status {
+                    Status::Completed => {
+                        // Step is complete, remove it and add next steps
+                        pipeline.current_steps.remove(0);
+                        if let Some(step) = pipeline.steps.get(&current_step_id) {
+                            pipeline.current_steps.extend(step.next_steps.clone());
+                        }
+                    }
+                    Status::Pending => {
                         match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
                             Ok(true) => match &step.action {
                                 Action::Order(order) => {
                                     let order = order.clone();
-                                    match self.execute_order(pipeline, step_id, &order).await {
-                                        Ok(_) => {
-                                            // Next steps are already set in execute_order
-                                            // Just need to continue processing them
+                                    match self
+                                        .execute_order(
+                                            &order,
+                                            &pipeline.user_id,
+                                            &pipeline.wallet_address,
+                                            &pipeline.pubkey,
+                                        )
+                                        .await
+                                    {
+                                        Ok(transaction_hash) => {
+                                            step.status = Status::Completed;
+                                            step.transaction_hash = Some(transaction_hash);
+                                            pipeline.current_steps.remove(0);
+                                            if let Some(step) = pipeline.steps.get(&current_step_id)
+                                            {
+                                                pipeline
+                                                    .current_steps
+                                                    .extend(step.next_steps.clone());
+                                            }
                                         }
                                         Err(e) => {
-                                            tracing::error!(%step_id, error = %e, "Failed to execute order");
+                                            tracing::error!(%current_step_id, error = %e, "Failed to execute order");
+                                            step.status = Status::Failed;
+                                            step.transaction_hash = None;
+                                            pipeline.current_steps.remove(0);
                                         }
                                     }
                                 }
                                 Action::Notification(notification) => {
-                                    tracing::info!(%step_id, ?notification, "TODO: Notification");
-                                    if let Some(step) = pipeline.steps.get_mut(&step_id) {
+                                    tracing::info!(%current_step_id, ?notification, "TODO: Notification");
+                                    if let Some(step) = pipeline.steps.get_mut(&current_step_id) {
                                         step.status = Status::Completed;
-                                        next_steps.extend(step.next_steps.clone());
+                                    }
+                                    pipeline.current_steps.remove(0);
+                                    if let Some(step) = pipeline.steps.get(&current_step_id) {
+                                        pipeline.current_steps.extend(step.next_steps.clone());
                                     }
                                 }
                             },
                             Ok(false) => {
-                                // If condition isn't met, keep the step in current_steps
-                                next_steps.push(step_id);
+                                // Condition not met, stop processing
+                                return Ok(false);
                             }
                             Err(e) => {
                                 return Err(EngineError::EvaluatePipelineError(e));
                             }
                         }
                     }
+                    Status::Failed => {
+                        // If any step is failed, mark the pipeline as failed
+                        pipeline.status = Status::Failed;
+                        pipeline.current_steps.clear(); // Clear remaining steps
+                        self.redis
+                            .save_pipeline(pipeline)
+                            .await
+                            .map_err(EngineError::SavePipelineError)?;
+                        return Ok(true);
+                    }
+                    Status::Cancelled => {
+                        // If any step is cancelled, mark the pipeline as cancelled
+                        pipeline.status = Status::Cancelled;
+                        pipeline.current_steps.clear(); // Clear remaining steps
+                        self.redis
+                            .save_pipeline(pipeline)
+                            .await
+                            .map_err(EngineError::SavePipelineError)?;
+                        return Ok(true);
+                    }
                 }
+            } else {
+                // Step not found, remove it
+                pipeline.current_steps.remove(0);
             }
 
-            // Update current_steps with any new steps
-            pipeline.current_steps = next_steps;
-
-            // Save pipeline state after each iteration
+            // Save pipeline state after each step
             self.redis
                 .save_pipeline(pipeline)
                 .await
                 .map_err(EngineError::SavePipelineError)?;
         }
 
-        // Only mark as completed if there are no more steps and status isn't Failed
-        if pipeline.current_steps.is_empty() && !matches!(pipeline.status, Status::Failed) {
+        // Check if all steps in the pipeline are complete
+        let all_steps_complete = pipeline
+            .steps
+            .values()
+            .all(|step| matches!(step.status, Status::Completed));
+
+        let any_of_steps_failed = pipeline
+            .steps
+            .values()
+            .any(|step| matches!(step.status, Status::Failed | Status::Cancelled));
+
+        if any_of_steps_failed {
+            pipeline.status = Status::Failed;
+            self.redis
+                .save_pipeline(pipeline)
+                .await
+                .map_err(EngineError::SavePipelineError)?;
+            return Ok(true);
+        }
+
+        if all_steps_complete {
             pipeline.status = Status::Completed;
             self.redis
                 .save_pipeline(pipeline)
                 .await
                 .map_err(EngineError::SavePipelineError)?;
+            return Ok(true);
         }
 
         let duration = start.elapsed();
         counter!("pipeline_evaluations", 1);
         histogram!("pipeline_evaluation_duration", duration);
 
-        Ok(())
+        Ok(false)
     }
 
     pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
@@ -217,7 +277,15 @@ impl Engine {
         if let Some(pipeline_ids) = subscriptions.get(asset) {
             for pipeline_id in pipeline_ids {
                 if let Some(pipeline) = self.active_pipelines.write().await.get_mut(pipeline_id) {
-                    self.evaluate_pipeline(pipeline).await?;
+                    if self.evaluate_pipeline(pipeline).await? {
+                        self.active_pipelines.write().await.remove(pipeline_id);
+                        self.asset_subscriptions
+                            .write()
+                            .await
+                            .entry(asset.to_string())
+                            .or_insert(HashSet::new())
+                            .remove(pipeline_id);
+                    };
                 }
             }
         }
