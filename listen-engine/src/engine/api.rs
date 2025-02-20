@@ -150,7 +150,9 @@ impl From<&WireCondition> for Condition {
                 asset: wire.asset.clone(),
                 value: wire.value,
             },
-            WireConditionType::Now => ConditionType::Now,
+            WireConditionType::Now => ConditionType::Now {
+                asset: wire.asset.clone(),
+            },
         };
 
         Condition {

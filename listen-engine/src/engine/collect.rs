@@ -32,10 +32,8 @@ impl Engine {
                 ConditionType::And(sub_conditions) | ConditionType::Or(sub_conditions) => {
                     stack.extend(sub_conditions.iter());
                 }
-                ConditionType::Now => {
-                    assets.insert("So11111111111111111111111111111111111111112".to_string());
-                    // use solana mint for "now" actions, socket streams a new update every second
-                    // this could be a special type, something to consider later
+                ConditionType::Now { asset } => {
+                    assets.insert(asset.clone());
                 }
             }
         }
