@@ -290,7 +290,7 @@ impl Engine {
         Ok(false)
     }
 
-    pub async fn handle_price_update(&self, asset: &str, price: f64, _slot: u64) -> Result<()> {
+    pub async fn handle_price_update(&self, asset: &str, price: f64, slot: u64) -> Result<()> {
         let start = Instant::now();
         counter!("price_updates_processed", 1);
 
