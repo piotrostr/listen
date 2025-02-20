@@ -1,4 +1,7 @@
+use std::sync::Arc;
+
 use crate::engine::{Engine, EngineError, Pipeline};
+use tokio::sync::RwLock;
 use uuid::Uuid;
 
 impl Engine {
@@ -20,7 +23,7 @@ impl Engine {
 
         // Clone pipeline before inserting
         let mut pipeline_clone = pipeline.clone();
-        active_pipelines.insert(pipeline.id, pipeline);
+        active_pipelines.insert(pipeline.id, Arc::new(RwLock::new(pipeline)));
         drop(active_pipelines); // Release the write lock
 
         // Execute any immediate steps
@@ -53,9 +56,17 @@ impl Engine {
         pipeline_id: Uuid,
     ) -> Result<Pipeline, EngineError> {
         let active_pipelines = self.active_pipelines.read().await;
-        active_pipelines.get(&pipeline_id).cloned().ok_or_else(|| {
-            EngineError::GetPipelineError(format!("Pipeline not found: {}", pipeline_id))
-        })
+        let pipeline = active_pipelines.get(&pipeline_id).cloned();
+        let pipeline = match pipeline {
+            Some(pipeline) => pipeline.read().await.clone(),
+            None => {
+                return Err(EngineError::GetPipelineError(format!(
+                    "Pipeline not found: {}",
+                    pipeline_id
+                )))
+            }
+        };
+        Ok(pipeline)
     }
 
     pub async fn get_all_pipelines_by_user(

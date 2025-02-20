@@ -78,7 +78,7 @@ pub struct Engine {
     pub privy: Arc<Privy>,
 
     // Active pipelines indexed by UUID
-    active_pipelines: Arc<RwLock<HashMap<Uuid, Pipeline>>>,
+    active_pipelines: Arc<RwLock<HashMap<Uuid, Arc<RwLock<Pipeline>>>>>,
 
     // Asset to pipeline index for efficient updates
     asset_subscriptions: Arc<RwLock<HashMap<String, HashSet<Uuid>>>>,
@@ -157,7 +157,7 @@ impl Engine {
                                     {
                                         println!("Adding pipeline to active pipelines");
                                         let mut active_pipelines = engine.active_pipelines.write().await;
-                                        active_pipelines.insert(pipeline_id, pipeline.clone());
+                                        active_pipelines.insert(pipeline_id, Arc::new(RwLock::new(pipeline.clone())));
                                     }
 
                                     {
@@ -172,17 +172,17 @@ impl Engine {
                                         }
                                     }
 
+                                    println!("Evaluating pipeline");
+                                    if let Ok(mut pipeline) = engine.get_pipeline(&pipeline.user_id, pipeline.id).await {
+                                        if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
+                                            tracing::error!("Failed to evaluate pipeline: {}", e);
+                                        }
+                                    }
+
                                     Ok::<_, EngineError>(())
                                 }.await;
 
                                 let _ = response_tx.send(result);
-
-                                println!("Evaluating pipeline");
-                                if let Ok(mut pipeline) = engine.get_pipeline(&pipeline.user_id, pipeline.id).await {
-                                    if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
-                                        tracing::error!("Failed to evaluate pipeline: {}", e);
-                                    }
-                                }
                             },
                             EngineMessage::DeletePipeline { user_id, pipeline_id, response_tx } => {
                                 let result = engine.delete_pipeline(&user_id, pipeline_id).await;
@@ -232,29 +232,39 @@ impl Engine {
             let mut next_steps = Vec::new();
 
             for step_id in current_step_ids {
-                if let Some(step) = pipeline.steps.get(&step_id) {
+                // Get mutable reference to step to update status
+                if let Some(step) = pipeline.steps.get_mut(&step_id) {
                     if matches!(step.status, Status::Pending) {
                         match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
                             Ok(true) => match &step.action {
                                 Action::Order(order) => {
                                     let order = order.clone();
                                     tracing::info!(%step_id, ?order, "Executing order");
-                                    match self.execute_order(pipeline, step_id, &order).await {
+                                    match self
+                                        .execute_order(
+                                            &pipeline.user_id,
+                                            &pipeline.wallet_address,
+                                            &pipeline.pubkey,
+                                            &order,
+                                        )
+                                        .await
+                                    {
                                         Ok(_) => {
-                                            // Next steps are already set in execute_order
-                                            // Just need to continue processing them
+                                            // Update step status here since execute_order succeeded
+                                            step.status = Status::Completed;
+                                            next_steps.extend(step.next_steps.clone());
                                         }
                                         Err(e) => {
                                             tracing::error!(%step_id, error = %e, "Failed to execute order");
+                                            step.status = Status::Failed;
+                                            pipeline.status = Status::Failed;
                                         }
                                     }
                                 }
                                 Action::Notification(notification) => {
                                     tracing::info!(%step_id, ?notification, "TODO: Notification");
-                                    if let Some(step) = pipeline.steps.get_mut(&step_id) {
-                                        step.status = Status::Completed;
-                                        next_steps.extend(step.next_steps.clone());
-                                    }
+                                    step.status = Status::Completed;
+                                    next_steps.extend(step.next_steps.clone());
                                 }
                             },
                             Ok(false) => {
@@ -295,7 +305,7 @@ impl Engine {
         Ok(())
     }
 
-    pub async fn handle_price_update(&self, asset: &str, price: f64) -> Result<()> {
+    pub async fn handle_price_update(self: Arc<Self>, asset: &str, price: f64) -> Result<()> {
         let start = Instant::now();
         counter!("price_updates_processed", 1);
 
@@ -307,18 +317,30 @@ impl Engine {
         // Get affected pipelines
         let subscriptions = self.asset_subscriptions.read().await;
         if let Some(pipeline_ids) = subscriptions.get(asset) {
-            for pipeline_id in pipeline_ids {
-                // Use clone to avoid holding the lock
-                let pipeline = {
-                    let pipelines = self.active_pipelines.read().await;
-                    pipelines.get(pipeline_id).cloned()
-                };
+            let pipeline_ids = pipeline_ids.clone();
+            drop(subscriptions);
 
-                if let Some(mut pipeline) = pipeline {
-                    if let Err(e) = self.evaluate_pipeline(&mut pipeline).await {
-                        tracing::error!("Failed to evaluate pipeline: {}", e);
-                    }
-                }
+            let active_pipelines = self.active_pipelines.read().await;
+
+            // Process all affected pipelines concurrently
+            let futures: Vec<_> = pipeline_ids
+                .iter()
+                .filter_map(|pipeline_id| active_pipelines.get(pipeline_id))
+                .map(|pipeline_lock| {
+                    let pipeline_lock = pipeline_lock.clone();
+                    let engine = self.clone();
+                    tokio::spawn(async move {
+                        let mut pipeline = pipeline_lock.write().await;
+                        if let Err(e) = engine.evaluate_pipeline(&mut pipeline).await {
+                            tracing::error!("Failed to evaluate pipeline: {}", e);
+                        }
+                    })
+                })
+                .collect();
+
+            // Wait for all evaluations to complete
+            for future in futures {
+                let _ = future.await;
             }
         }
 
