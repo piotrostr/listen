@@ -16,8 +16,8 @@ pub enum LiFiClientError {
     #[error("[LiFi] Parse body error: {0}")]
     ParseBodyError(reqwest::Error),
 
-    #[error("[LiFi] Invalid status code: {0}")]
-    InvalidStatusCode(reqwest::StatusCode),
+    #[error("[LiFi] Invalid status code: {0}, response: {1}")]
+    InvalidStatusCode(reqwest::StatusCode, serde_json::Value),
 
     #[error("[LiFi] Deserialize error: {0}")]
     DeserializeError(serde_json::Error),
@@ -53,14 +53,16 @@ impl LiFiClient {
             .await
             .map_err(LiFiClientError::RequestFailed)?;
         let status = response.status();
-        tracing::debug!(?status, "GET {}", endpoint);
-        if !status.is_success() {
-            return Err(LiFiClientError::InvalidStatusCode(status));
-        }
+        tracing::info!(?status, "GET {}, {}", endpoint, status);
+
         let res: serde_json::Value = response
             .json()
             .await
             .map_err(LiFiClientError::ParseBodyError)?;
+
+        if !status.is_success() {
+            return Err(LiFiClientError::InvalidStatusCode(status, res));
+        }
 
         serde_json::from_value(res).map_err(LiFiClientError::DeserializeError)
     }
@@ -83,14 +85,16 @@ impl LiFiClient {
             .await
             .map_err(LiFiClientError::RequestFailed)?;
         let status = response.status();
-        if !status.is_success() {
-            return Err(LiFiClientError::InvalidStatusCode(status));
-        }
-        tracing::debug!(?status, "POST {}", endpoint);
+
         let res: serde_json::Value = response
             .json()
             .await
             .map_err(LiFiClientError::ParseBodyError)?;
+
+        if !status.is_success() {
+            return Err(LiFiClientError::InvalidStatusCode(status, res));
+        }
+        tracing::debug!(?status, "POST {}", endpoint);
 
         serde_json::from_value(res).map_err(LiFiClientError::DeserializeError)
     }

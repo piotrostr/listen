@@ -239,6 +239,25 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_arb_to_base() {
+        tracing_subscriber::fmt::init();
+        let lifi = LiFi::new(None);
+        let quote = lifi
+            .get_quote(
+                "42161",                                      // arb
+                "8453",                                       // base
+                "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // usdc
+                "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // usdc
+                "0x2fAA30d5EdDF1e4fa126aEdA79159878D58A2438",
+                "0x2fAA30d5EdDF1e4fa126aEdA79159878D58A2438",
+                "1000000000",
+            )
+            .await;
+
+        assert!(quote.is_ok(), "{:?}", quote);
+    }
+
+    #[tokio::test]
     async fn test_display_quote() {
         let lifi = LiFi::new(None);
         let quote = lifi
