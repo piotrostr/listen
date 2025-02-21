@@ -41,6 +41,7 @@ pub struct PipelineStep {
     pub next_steps: Vec<Uuid>,
     pub status: Status,
     pub transaction_hash: Option<String>,
+    pub error: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

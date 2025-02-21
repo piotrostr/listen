@@ -243,6 +243,7 @@ impl Engine {
                                             tracing::error!(%current_step_id, error = %e, "Failed to execute order");
                                             step.status = Status::Failed;
                                             step.transaction_hash = None;
+                                            step.error = Some(e.to_string());
                                             continue;
                                         }
                                     }
@@ -269,7 +270,6 @@ impl Engine {
                     Status::Failed => {
                         // If any step is failed, mark the pipeline as failed and cancel downstream steps
                         pipeline.status = Status::Failed;
-
                         // Cancel all downstream steps
                         let mut to_cancel = step.next_steps.clone();
                         while let Some(next_step_id) = to_cancel.pop() {

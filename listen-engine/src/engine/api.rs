@@ -112,6 +112,7 @@ impl From<&WireStep> for PipelineStep {
             next_steps: Vec::new(),
             status: Status::Pending,
             transaction_hash: None,
+            error: None,
         }
     }
 }
