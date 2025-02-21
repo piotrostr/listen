@@ -347,8 +347,6 @@ impl Engine {
         let start = Instant::now();
         counter!("price_updates_processed", 1);
 
-        // Add debug logging
-        tracing::info!("Checking active pipelines for asset: {}", asset);
         tracing::info!(
             "Current active_pipelines state: {:?}",
             self.active_pipelines
@@ -391,6 +389,11 @@ impl Engine {
                     let self_clone = self.clone();
                     let pipeline_id = pipeline_id.clone();
                     let asset = asset.clone();
+
+                    if !matches!(pipeline.status, Status::Pending) {
+                        // skip the non-pending pipelines
+                        continue;
+                    }
 
                     // Quick check and acquire of processing lock
                     let can_process = {
