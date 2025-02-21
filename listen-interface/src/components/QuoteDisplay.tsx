@@ -1,4 +1,4 @@
-import { useSolanaToken } from "../hooks/useToken";
+import { useToken } from "../hooks/useToken";
 import { formatAmount, imageMap } from "../hooks/util";
 import { QuoteResponse } from "../types/quote";
 
@@ -33,8 +33,11 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
   const outputTokenDecimals = quote.to.decimals;
 
   // Fetch token metadata for images
-  const inputToken = useSolanaToken(quote.from.address);
-  const outputToken = useSolanaToken(quote.to.address);
+  const inputToken = useToken(
+    quote.from.address,
+    quote.from.chain_id.toString()
+  );
+  const outputToken = useToken(quote.to.address, quote.to.chain_id.toString());
 
   const inputImage = inputToken.data?.logoURI;
   const outputImage =

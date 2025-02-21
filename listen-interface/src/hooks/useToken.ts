@@ -5,9 +5,14 @@ import { caip2ToLifiChainId } from "./util";
 
 export async function getAnyToken(
   token: string,
-  caip2: string
+  chainIdOrCaip2: string
 ): Promise<LifiToken | null> {
-  const chainId = caip2ToLifiChainId(caip2);
+  let chainId: number | null = null;
+  if (chainIdOrCaip2.includes(":")) {
+    chainId = caip2ToLifiChainId(chainIdOrCaip2);
+  } else {
+    chainId = parseInt(chainIdOrCaip2);
+  }
   try {
     const res = await fetch(
       `https://li.quest/v1/token?token=${token}&chain=${chainId}`,

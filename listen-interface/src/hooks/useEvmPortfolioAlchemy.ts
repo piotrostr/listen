@@ -4,13 +4,24 @@ import { tokenMetadataCache } from "./cache";
 import { PortfolioItem, TokenMetadata } from "./types";
 import { usePrivyWallets } from "./usePrivyWallet";
 
-const alchemy = new Alchemy({
-  apiKey: import.meta.env.VITE_ALCHEMY_API_KEY,
-  network: Network.ARB_MAINNET,
-});
+const SUPPORTED_NETWORKS = [
+  { network: Network.ARB_MAINNET, chain: "arb" },
+  { network: Network.BNB_MAINNET, chain: "bsc" },
+  { network: Network.BASE_MAINNET, chain: "base" },
+] as const;
+
+const alchemyClients = SUPPORTED_NETWORKS.map(({ network, chain }) => ({
+  client: new Alchemy({
+    apiKey: import.meta.env.VITE_ALCHEMY_API_KEY,
+    network,
+  }),
+  chain,
+  network,
+}));
 
 export async function getTokensMetadata(
-  addresses: string[]
+  addresses: string[],
+  client: Alchemy
 ): Promise<Map<string, TokenMetadata>> {
   try {
     const metadataMap = new Map<string, TokenMetadata>();
@@ -32,17 +43,21 @@ export async function getTokensMetadata(
     }
 
     const metadataResults = await Promise.all(
-      addressesToFetch.map((address) => alchemy.core.getTokenMetadata(address))
+      addressesToFetch.map((address) => client.core.getTokenMetadata(address))
     );
 
     addressesToFetch.forEach(async (address, index) => {
       const metadata = metadataResults[index];
+      if (!metadata.decimals) {
+        console.error(`No decimals found for ${address}`);
+        return;
+      }
 
       const tokenMetadata: TokenMetadata = {
         address,
         name: metadata.name || "",
         symbol: metadata.symbol || "",
-        decimals: metadata.decimals || 18,
+        decimals: metadata.decimals,
         logoURI: metadata.logo || "",
       };
 
@@ -61,54 +76,64 @@ export async function getTokenHoldings(
   address: string
 ): Promise<PortfolioItem[]> {
   try {
-    // Get token balances
-    const { tokenBalances } = await alchemy.core.getTokenBalances(address);
+    const allTokens: PortfolioItem[] = [];
 
-    // Filter out zero balances
-    const nonZeroBalances = tokenBalances.filter((token) => {
-      if (!token.tokenBalance) return false;
-      const balance = BigInt(token.tokenBalance);
-      return balance !== BigInt(0);
-    });
+    await Promise.all(
+      alchemyClients.map(async (alchemy) => {
+        const { network, chain, client } = alchemy;
 
-    // Batch fetch metadata for all tokens
-    const tokenAddresses = nonZeroBalances.map(
-      (token) => token.contractAddress
+        try {
+          const { tokenBalances } = await client.core.getTokenBalances(address);
+
+          const nonZeroBalances = tokenBalances.filter((token) => {
+            if (!token.tokenBalance) return false;
+            const balance = BigInt(token.tokenBalance);
+            return balance !== BigInt(0);
+          });
+
+          const tokenAddresses = nonZeroBalances.map(
+            (token) => token.contractAddress
+          );
+          const metadataMap = await getTokensMetadata(tokenAddresses, client);
+
+          const priceData = await client.prices.getTokenPriceByAddress(
+            tokenAddresses.map((address) => ({
+              address,
+              network,
+            }))
+          );
+
+          const tokens = nonZeroBalances.map((token) => {
+            const metadata = metadataMap.get(token.contractAddress);
+            if (!metadata) return null;
+
+            const price =
+              priceData.data.find((p) => p.address === token.contractAddress)
+                ?.prices[0]?.value || "0";
+
+            const rawBalance = BigInt(token.tokenBalance!);
+            const amount = Number(rawBalance) / Math.pow(10, metadata.decimals);
+
+            const portfolioItem: PortfolioItem = {
+              ...metadata,
+              price: Number(price),
+              amount,
+              chain,
+            };
+
+            return portfolioItem;
+          });
+
+          allTokens.push(
+            ...tokens.filter((token): token is PortfolioItem => token !== null)
+          );
+        } catch (error) {
+          console.error(`Error fetching tokens for ${chain}:`, error);
+        }
+      })
     );
-    const metadataMap = await getTokensMetadata(tokenAddresses);
 
-    // Batch fetch prices
-    const priceData = await alchemy.prices.getTokenPriceByAddress(
-      tokenAddresses.map((address) => ({
-        address,
-        network: Network.ARB_MAINNET,
-      }))
-    );
-
-    const tokens = nonZeroBalances.map((token) => {
-      const metadata = metadataMap.get(token.contractAddress);
-      if (!metadata) return null;
-
-      const price =
-        priceData.data.find((p) => p.address === token.contractAddress)
-          ?.prices[0]?.value || "0";
-
-      // Convert hex balance to decimal
-      const rawBalance = BigInt(token.tokenBalance!);
-      const amount = Number(rawBalance) / Math.pow(10, metadata.decimals);
-
-      const portfolioItem: PortfolioItem = {
-        ...metadata,
-        price: Number(price),
-        amount,
-        chain: "arb",
-      };
-
-      return portfolioItem;
-    });
-
-    // Filter out null values and return
-    return tokens.filter((token): token is PortfolioItem => token !== null);
+    return allTokens;
   } catch (error) {
     console.error("Error fetching token holdings:", error);
     throw error;

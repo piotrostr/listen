@@ -57,6 +57,7 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
                 index={index}
                 step={step}
                 transactionHash={null}
+                error={null}
               />
             );
           case PipelineActionType.Notification:

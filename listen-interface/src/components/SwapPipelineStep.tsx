@@ -10,6 +10,7 @@ interface SwapPipelineStepProps {
   step: PipelineStep;
   status?: "Pending" | "Completed" | "Failed" | "Cancelled";
   transactionHash: string | null;
+  error: string | null;
 }
 
 export const SwapPipelineStep = ({
@@ -17,6 +18,7 @@ export const SwapPipelineStep = ({
   step,
   status,
   transactionHash,
+  error,
 }: SwapPipelineStepProps) => {
   if (step.action.type !== PipelineActionType.SwapOrder) {
     throw new Error("SwapPipelineStep received non-swap action type");
@@ -46,6 +48,7 @@ export const SwapPipelineStep = ({
       conditions={step.conditions}
       status={status}
       transactionHash={transactionHash}
+      error={error}
     >
       <div className="flex-1">
         {inputTokenLoading ? (

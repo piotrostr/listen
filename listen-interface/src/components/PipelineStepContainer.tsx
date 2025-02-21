@@ -1,6 +1,7 @@
 import {
   FaBan,
   FaCheckCircle,
+  FaExclamationTriangle,
   FaExternalLinkAlt,
   FaSpinner,
   FaTimesCircle,
@@ -13,6 +14,7 @@ interface PipelineStepContainerProps {
   conditions: PipelineCondition[];
   status?: "Pending" | "Completed" | "Failed" | "Cancelled";
   transactionHash: string | null;
+  error: string | null;
 }
 
 export const PipelineStepContainer = ({
@@ -21,6 +23,7 @@ export const PipelineStepContainer = ({
   conditions,
   status,
   transactionHash,
+  error,
 }: PipelineStepContainerProps) => {
   return (
     <div className="border border-purple-500/30 rounded-lg lg:p-4 p-4 bg-black/40 backdrop-blur-sm">
@@ -52,7 +55,11 @@ export const PipelineStepContainer = ({
       {status && (
         <div className="mt-3 pt-3 border-t border-purple-500/30">
           <div className="text-sm text-purple-300">Status:</div>
-          <TransactionLink status={status} transactionHash={transactionHash} />
+          <TransactionLink
+            status={status}
+            transactionHash={transactionHash}
+            error={error}
+          />
         </div>
       )}
     </div>
@@ -91,9 +98,11 @@ const renderStatus = (status: string) => {
 const TransactionLink = ({
   status,
   transactionHash,
+  error,
 }: {
   status: string;
   transactionHash: string | null;
+  error: string | null;
 }) => {
   return (
     <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-1 mt-2">
@@ -109,6 +118,11 @@ const TransactionLink = ({
             {transactionHash.slice(0, 6)}...{transactionHash.slice(-4)}
             <FaExternalLinkAlt size={10} />
           </a>
+        </span>
+      )}
+      {error && (
+        <span className="text-red-300 flex items-center gap-1">
+          <FaExclamationTriangle /> Error: {error}
         </span>
       )}
     </div>

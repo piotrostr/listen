@@ -23,6 +23,7 @@ export const NotificationPipelineStep = ({
       index={index}
       conditions={step.conditions}
       transactionHash={null}
+      error={null}
     >
       <div className="flex-1">
         <div className="flex items-center gap-3">
