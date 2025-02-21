@@ -119,8 +119,8 @@ pub async fn swap_order_to_transaction(
             &to_chain_id.to_string(),
             &order.input_token,
             &order.output_token,
-            &from_address,
-            &to_address,
+            from_address,
+            to_address,
             &order.amount,
         )
         .await
@@ -169,7 +169,7 @@ mod tests {
                 .unwrap();
         let encoded_tx = match transaction {
             SwapOrderTransaction::Solana(transaction) => {
-                println!("transaction: {:#?}", transaction);
+                tracing::info!("transaction: {:#?}", transaction);
                 transaction
             }
             _ => panic!("Invalid transaction type"),
@@ -187,7 +187,7 @@ mod tests {
             })
             .await
             .unwrap();
-        println!("res: {:#?}", res);
+        tracing::info!("res: {:#?}", res);
     }
 
     #[tokio::test]
@@ -208,7 +208,7 @@ mod tests {
                 .unwrap();
         let serialized_tx = match transaction {
             SwapOrderTransaction::Evm(transaction) => {
-                println!("transaction: {:#?}", transaction);
+                tracing::info!("transaction: {:#?}", transaction);
                 transaction
             }
             _ => panic!("Invalid transaction type"),
@@ -228,7 +228,7 @@ mod tests {
             })
             .await
             .unwrap();
-        println!("res: {:#?}", res);
+        tracing::info!("res: {:#?}", res);
     }
 
     #[tokio::test]
@@ -250,7 +250,7 @@ mod tests {
             .unwrap();
         let encoded_tx = match transaction {
             SwapOrderTransaction::Solana(transaction) => {
-                println!("transaction: {:#?}", transaction);
+                tracing::info!("transaction: {:#?}", transaction);
                 transaction
             }
             _ => panic!("Invalid transaction type"),
@@ -272,7 +272,7 @@ mod tests {
                 .unwrap(),
             ),
         };
-        println!("privy_tx: {:#?}", privy_tx);
+        tracing::info!("privy_tx: {:#?}", privy_tx);
         privy.execute_transaction(privy_tx).await.unwrap();
     }
 }

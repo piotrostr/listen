@@ -99,7 +99,7 @@ impl Engine {
                 engine
                     .active_pipelines
                     .entry(asset_id.clone())
-                    .or_insert_with(HashSet::new)
+                    .or_default()
                     .insert(format!("{}:{}", pipeline.user_id, pipeline.id));
             }
         }
@@ -114,7 +114,7 @@ impl Engine {
                         EngineMessage::AddPipeline { pipeline, response_tx } => {
                             let asset_ids = engine.extract_assets(&pipeline).await;
                             for asset_id in asset_ids {
-                                engine.active_pipelines.entry(asset_id.clone()).or_insert_with(HashSet::new).insert(format!("{}:{}", pipeline.user_id, pipeline.id));
+                                engine.active_pipelines.entry(asset_id.clone()).or_default().insert(format!("{}:{}", pipeline.user_id, pipeline.id));
                                 engine.redis.save_pipeline(&pipeline).await?;
                             }
                             let _ = response_tx.send(Ok(()));
@@ -200,7 +200,7 @@ impl Engine {
                                 && !pipeline.current_steps.contains(next_step_id)
                                 && !has_failed_dependencies
                             {
-                                pipeline.current_steps.push(next_step_id.clone());
+                                pipeline.current_steps.push(*next_step_id);
                                 save_needed = true;
                             }
                         }
@@ -371,7 +371,7 @@ impl Engine {
             }
 
             let pipelines: Vec<Option<Pipeline>> = self.redis.execute_redis_pipe(pipe).await?;
-            tracing::info!("Fetched from redis");
+            tracing::debug!("Fetched {} from redis", pipelines.len());
 
             // Process the fetched pipelines concurrently
             for (pipeline_id, maybe_pipeline) in chunk.iter().zip(pipelines) {
@@ -384,13 +384,9 @@ impl Engine {
                     let can_process = {
                         let mut processing = self_clone.processing_pipelines.lock().await;
                         if processing.contains(&pipeline_id) {
-                            tracing::info!("Pipeline {} already being processed", pipeline_id);
+                            tracing::warn!("Pipeline {} already being processed", pipeline_id); // TODO remove warn
                             false
                         } else {
-                            tracing::info!(
-                                "Pipeline {} not being processed, processing",
-                                pipeline_id
-                            );
                             processing.insert(pipeline_id.clone());
                             true
                         }
