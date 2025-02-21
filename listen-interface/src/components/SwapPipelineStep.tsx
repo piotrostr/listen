@@ -1,4 +1,4 @@
-import { useEvmToken, useSolanaToken } from "../hooks/useToken";
+import { useToken } from "../hooks/useToken";
 import { caip2ToChainId, formatAmount } from "../hooks/util";
 import { PipelineActionType, PipelineStep } from "../types/pipeline";
 import { PipelineStepContainer } from "./PipelineStepContainer";
@@ -7,7 +7,7 @@ interface SwapPipelineStepProps {
   index: number;
   step: PipelineStep;
   status?: "Pending" | "Completed" | "Failed" | "Cancelled";
-  transactionHash?: string;
+  transactionHash: string | null;
 }
 
 export const SwapPipelineStep = ({
@@ -20,15 +20,17 @@ export const SwapPipelineStep = ({
     throw new Error("SwapPipelineStep received non-swap action type");
   }
 
-  const inputToken = step.action.input_token.startsWith("0x")
-    ? useEvmToken(step.action.input_token)
-    : useSolanaToken(step.action.input_token);
-  const outputToken = step.action.output_token.startsWith("0x")
-    ? useEvmToken(step.action.output_token)
-    : useSolanaToken(step.action.output_token);
+  const inputToken = useToken(
+    step.action.input_token,
+    step.action.from_chain_caip2
+  );
+  const outputToken = useToken(
+    step.action.output_token,
+    step.action.to_chain_caip2
+  );
 
-  const inputImage = inputToken.data?.logoURI;
-  const outputImage = outputToken.data?.logoURI;
+  const inputImage = inputToken.data?.logo_uri;
+  const outputImage = outputToken.data?.logo_uri;
   const inputName = inputToken.data?.symbol;
   const outputName = outputToken.data?.symbol;
 

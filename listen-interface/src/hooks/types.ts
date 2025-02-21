@@ -1,3 +1,18 @@
+import { z } from "zod";
+
+// this is the same pretty much as PortfolioItem - nice!
+export const LifiTokenSchema = z.object({
+  address: z.string(),
+  name: z.string(),
+  symbol: z.string(),
+  decimals: z.number(),
+  logo_uri: z.string().nullable(),
+  chain_id: z.number(),
+  price_usd: z.string().nullable(),
+});
+
+export type LifiToken = z.infer<typeof LifiTokenSchema>;
+
 export type PortfolioItem = {
   address: string;
   name: string;

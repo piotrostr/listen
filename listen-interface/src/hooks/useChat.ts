@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import { z } from "zod";
 import { config } from "../config";
 import { introPrompt } from "./prompts";
-import { useEvmPortfolio } from "./useEvmPortfolio";
+import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
 import { useSolanaPortfolio } from "./useSolanaPortfolio";
 
 export type MessageDirection = "incoming" | "outgoing";

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { useEvmPortfolio } from "../hooks/useEvmPortfolio";
+import { useEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
 import { imageMap } from "../hooks/util";

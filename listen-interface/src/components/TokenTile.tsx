@@ -2,14 +2,18 @@ import { useEffect, useState } from "react";
 import { FaCheck, FaGlobe, FaTelegram, FaXTwitter } from "react-icons/fa6";
 import { IoBarChart } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
-import { TokenData, TokenMetadata } from "../types/metadata";
+import { TokenMarketData, TokenMetadataRaw } from "../types/metadata";
 
 interface TokenTileProps {
-  token: TokenData;
+  token: TokenMarketData;
   index: number;
 }
 
-function Socials({ tokenMetadata }: { tokenMetadata: TokenMetadata | null }) {
+function Socials({
+  tokenMetadata,
+}: {
+  tokenMetadata: TokenMetadataRaw | null;
+}) {
   return (
     <div className="flex flex-row gap-1 sm:gap-2">
       {tokenMetadata?.mpl.ipfs_metadata?.twitter && (
@@ -61,7 +65,7 @@ const CopyIcon = () => (
 
 export function TokenTile({ token, index }: TokenTileProps) {
   const { openChart } = useModal();
-  const [metadata, setMetadata] = useState<TokenMetadata | null>(null);
+  const [metadata, setMetadata] = useState<TokenMetadataRaw | null>(null);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
