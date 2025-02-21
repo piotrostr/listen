@@ -13,7 +13,7 @@ import { Background } from "./Background";
 
 import { BsLink } from "react-icons/bs";
 import { FaXTwitter } from "react-icons/fa6";
-import { IoMenu } from "react-icons/io5";
+import { IoMenu, IoSettingsOutline } from "react-icons/io5";
 import { RxCross2, RxDashboard } from "react-icons/rx";
 
 const NAV_ITEMS = [
@@ -21,6 +21,7 @@ const NAV_ITEMS = [
   { to: "/portfolio", icon: IoWalletOutline, label: "Portfolio" },
   { to: "/pipelines", icon: BsLink, label: "Pipelines" },
   { to: "/chat", icon: IoChatboxOutline, label: "Chat" },
+  { to: "/settings", icon: IoSettingsOutline, label: "Settings" },
 ] as const;
 
 const BOTTOM_ITEMS = [
