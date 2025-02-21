@@ -1,4 +1,4 @@
-import { usePrivy, User } from "@privy-io/react-auth";
+import { usePrivy, User, useSolanaWallets } from "@privy-io/react-auth";
 import { FaEnvelope, FaGoogle, FaPhone, FaXTwitter } from "react-icons/fa6";
 import { imageMap } from "../hooks/util";
 import { ConnectedAccount } from "./ConnectedAccount";
@@ -11,6 +11,12 @@ export function ConnectedAccounts({ user }: ConnectedAccountsProps) {
   const { linkEmail, linkGoogle, linkPhone, linkTwitter, connectWallet } =
     usePrivy();
 
+  const { wallets: solanaWallets } = useSolanaWallets();
+
+  const injectedSolanaWallets = solanaWallets.filter(
+    (wallet) => wallet.connectorType !== "embedded"
+  );
+
   const accounts = [
     {
       icon: (
@@ -19,6 +25,14 @@ export function ConnectedAccounts({ user }: ConnectedAccountsProps) {
       isConnected: !!user.wallet,
       onConnect: connectWallet,
       value: user.wallet?.address || "",
+    },
+    {
+      icon: (
+        <img src={imageMap.solana} alt="SOL" className="w-4 h-4 rounded-full" />
+      ),
+      isConnected: !!injectedSolanaWallets[0],
+      onConnect: connectWallet,
+      value: injectedSolanaWallets[0]?.address || "",
     },
     {
       icon: <FaXTwitter className="w-4 h-4" />,

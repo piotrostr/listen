@@ -1,4 +1,5 @@
 import { PrivyProvider } from "@privy-io/react-auth";
+import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { StrictMode } from "react";
@@ -31,7 +32,20 @@ declare module "@tanstack/react-router" {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <PrivyProvider appId={"cm6c7ifqd00ar52m1qxfgbkkn"} config={{}}>
+    <PrivyProvider
+      appId={"cm6c7ifqd00ar52m1qxfgbkkn"}
+      config={{
+        appearance: {
+          theme: "dark",
+          walletChainType: "ethereum-and-solana",
+        },
+        externalWallets: {
+          solana: {
+            connectors: toSolanaWalletConnectors({ shouldAutoConnect: true }),
+          },
+        },
+      }}
+    >
       <ToastProvider>
         <WagmiProvider config={config}>
           <QueryClientProvider client={new QueryClient()}>
