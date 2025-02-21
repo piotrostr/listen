@@ -19,12 +19,8 @@ This might be required in case the user wonders how much it would cost to
 perform a swap or bridge. It is also good in case you would like to validate the
 token addresses and other params with the user before executing
 
-from_token_symbol is the symbol of the token to swap from.
-to_token_symbol is the symbol of the token to swap to.
-amount is the amount of tokens to swap.
-
-the from_token_symbol and to_token_symbol can either be a solana public key, evm
-address or a symbol.
+The from_token_address and to_token_address can either be a solana public key, evm
+address or a symbol, try to prioritize the address over the symbol
 
 The amount has to be a string to avoid precision loss. The amount is accounting
 for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
@@ -45,8 +41,8 @@ Supported to_chains:
 - base: 8453
 ")]
 pub async fn get_quote(
-    from_token_symbol: String,
-    to_token_symbol: String,
+    from_token_address: String,
+    to_token_address: String,
     amount: String,
     from_chain: String,
     to_chain: String,
@@ -54,13 +50,17 @@ pub async fn get_quote(
     let signer = SignerContext::current().await;
     let lifi = LiFi::new(None);
 
-    let from_address = if from_chain == "sol" {
+    let from_address = if from_chain == "1151111081099710"
+        || from_chain.to_lowercase() == "sol"
+    {
         signer.pubkey()
     } else {
         signer.address()
     };
 
-    let to_address = if to_chain == "sol" {
+    let to_address = if to_chain == "1151111081099710"
+        || to_chain.to_lowercase() == "sol"
+    {
         signer.pubkey()
     } else {
         signer.address()
@@ -70,8 +70,8 @@ pub async fn get_quote(
         .get_quote(
             &from_chain,
             &to_chain,
-            &from_token_symbol,
-            &to_token_symbol,
+            &from_token_address,
+            &to_token_address,
             &from_address,
             &to_address,
             &amount,
@@ -99,9 +99,8 @@ chains, or would like to bridge the tokens
 Don't use this in case you are not certain about all of the params, use the
 get_multichain_quote tool instead to validate the params in that case.
 
-from_token_symbol is the symbol of the token to bridge from.
-to_token_symbol is the symbol of the token to bridge to.
-amount is the amount of tokens to bridge.
+The from_token_address and to_token_address can either be a solana public key, evm
+address or a symbol, try to prioritize the address over the symbol
 
 The amount has to be a string to avoid precision loss. The amount is accounting
 for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
@@ -119,8 +118,8 @@ Supported to_chains:
 - base: 8453
 ")]
 pub async fn swap(
-    from_token_symbol: String,
-    to_token_symbol: String,
+    from_token_address: String,
+    to_token_address: String,
     amount: String,
     from_chain: String,
     to_chain: String,
@@ -128,13 +127,17 @@ pub async fn swap(
     let signer = SignerContext::current().await;
     let lifi = LiFi::new(None);
 
-    let from_address = if from_chain == "sol" {
+    let from_address = if from_chain == "1151111081099710"
+        || from_chain.to_lowercase() == "sol"
+    {
         signer.pubkey()
     } else {
         signer.address()
     };
 
-    let to_address = if to_chain == "sol" {
+    let to_address = if to_chain == "1151111081099710"
+        || to_chain.to_lowercase() == "sol"
+    {
         signer.pubkey()
     } else {
         signer.address()
@@ -144,8 +147,8 @@ pub async fn swap(
         .get_quote(
             &from_chain,
             &to_chain,
-            &from_token_symbol,
-            &to_token_symbol,
+            &from_token_address,
+            &to_token_address,
             &from_address,
             &to_address,
             &amount,
@@ -185,6 +188,8 @@ pub async fn swap(
     }
 }
 
+// TODO here is important to ensure we can approve on any chain, parametrizing
+// the Caip2 is crucial
 #[tool(description = "
 Check if a token has enough approval for a spender.
 
