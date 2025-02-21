@@ -204,14 +204,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_get_quote() {
+    async fn test_get_quote_sol() {
         let lifi = LiFi::new(None);
         let quote = lifi
             .get_quote(
-                "sol",
-                "arb",
-                "USDC",
-                "USDC",
+                "1151111081099710", // sol
+                "42161",            // arb
+                "SOL",
+                "ETH",
                 "aiamaErRMjbeNmf2b8BMZWFR3ofxrnZEf2mLKp935fM",
                 "0x2fAA30d5EdDF1e4fa126aEdA79159878D58A2438",
                 "1000000000",
