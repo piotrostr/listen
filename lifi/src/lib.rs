@@ -187,6 +187,23 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn test_get_quote_base() {
+        let lifi = LiFi::new(None);
+        let quote = lifi
+            .get_quote(
+                "arb",
+                "8453",
+                "USDC",
+                "USDC",
+                "0x2fAA30d5EdDF1e4fa126aEdA79159878D58A2438",
+                "0x2fAA30d5EdDF1e4fa126aEdA79159878D58A2438",
+                "1000000000",
+            )
+            .await;
+        assert!(quote.is_ok(), "{:?}", quote);
+    }
+
+    #[tokio::test]
     async fn test_get_quote() {
         let lifi = LiFi::new(None);
         let quote = lifi
