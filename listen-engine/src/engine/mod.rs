@@ -267,8 +267,20 @@ impl Engine {
                         }
                     }
                     Status::Failed => {
-                        // If any step is failed, mark the pipeline as failed
+                        // If any step is failed, mark the pipeline as failed and cancel downstream steps
                         pipeline.status = Status::Failed;
+
+                        // Cancel all downstream steps
+                        let mut to_cancel = step.next_steps.clone();
+                        while let Some(next_step_id) = to_cancel.pop() {
+                            if let Some(next_step) = pipeline.steps.get_mut(&next_step_id) {
+                                if !matches!(next_step.status, Status::Failed | Status::Cancelled) {
+                                    next_step.status = Status::Cancelled;
+                                    to_cancel.extend(next_step.next_steps.clone());
+                                }
+                            }
+                        }
+
                         pipeline.current_steps.clear(); // Clear remaining steps
                         break;
                     }

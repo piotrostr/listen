@@ -80,7 +80,7 @@ const ExtendedPipelineStepSchema = z.object({
   id: z.string().uuid(),
   next_steps: z.array(z.string().uuid()),
   status: StatusSchema,
-  transaction_hash: z.string().optional(),
+  transaction_hash: z.string().nullable(),
 });
 
 // Update pipeline schema

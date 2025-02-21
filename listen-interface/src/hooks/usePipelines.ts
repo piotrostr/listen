@@ -62,6 +62,8 @@ export const usePipelines = () => {
         );
       });
 
+      console.log(pipelines);
+
       setData({
         pipelines: pipelines,
         status: responseData.status,
