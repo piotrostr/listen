@@ -87,6 +87,8 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
                       renderCondition(condition)
                     ),
                   }}
+                  status={step.status}
+                  transactionHash={step.transaction_hash}
                 />
               </div>
             );

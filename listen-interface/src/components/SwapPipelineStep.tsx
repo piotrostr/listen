@@ -6,9 +6,16 @@ import { PipelineStepContainer } from "./PipelineStepContainer";
 interface SwapPipelineStepProps {
   index: number;
   step: PipelineStep;
+  status?: "Pending" | "Completed" | "Failed" | "Cancelled";
+  transactionHash?: string;
 }
 
-export const SwapPipelineStep = ({ index, step }: SwapPipelineStepProps) => {
+export const SwapPipelineStep = ({
+  index,
+  step,
+  status,
+  transactionHash,
+}: SwapPipelineStepProps) => {
   if (step.action.type !== PipelineActionType.SwapOrder) {
     throw new Error("SwapPipelineStep received non-swap action type");
   }
@@ -29,7 +36,12 @@ export const SwapPipelineStep = ({ index, step }: SwapPipelineStepProps) => {
   const toChain = caip2ToChainId(step.action.to_chain_caip2);
 
   return (
-    <PipelineStepContainer index={index} conditions={step.conditions}>
+    <PipelineStepContainer
+      index={index}
+      conditions={step.conditions}
+      status={status}
+      transactionHash={transactionHash}
+    >
       {/* Input Token */}
       <div className="flex-1">
         <div className="flex items-center gap-3">
@@ -61,7 +73,7 @@ export const SwapPipelineStep = ({ index, step }: SwapPipelineStepProps) => {
                 ? formatAmount(step.action.amount, inputToken.data.decimals)
                 : step.action.amount}
             </div>
-            <div className="text-xs sm:text-sm text-gray-400">
+            <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-1">
               {inputToken.data?.address.slice(0, 4)}...
               {inputToken.data?.address.slice(-4)}
             </div>
