@@ -1,3 +1,4 @@
+test-req.sh
 *.pem
 .vite
 .DS_Store
