@@ -13,8 +13,8 @@ const LoadingIndicator = () => (
 const renderMessage = (msg: Message) => {
   if (!msg.message) return null;
 
-  const isToolOutput = msg.message.startsWith("Tool ");
-  if (isToolOutput) {
+  if (msg.isToolCall) {
+    console.log("tool call!", msg.message);
     const toolOutput = {
       name: msg.message.split(": ")[0].replace("Tool ", ""),
       result: msg.message.split(": ").slice(1).join(": "),
@@ -61,7 +61,6 @@ const renderMessage = (msg: Message) => {
 export function Chat() {
   const { messages, isLoading, sendMessage, setMessages } = useChat();
   const [inputMessage, setInputMessage] = useState("");
-
   useEffect(() => {
     if (IS_DISABLED) return;
     const handleKeyPress = async (e: KeyboardEvent) => {

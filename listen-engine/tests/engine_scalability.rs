@@ -1,12 +1,13 @@
 use anyhow::Result;
 use bb8_redis::redis::{cmd, pipe};
 use listen_engine::redis::client::{RedisClient, RedisClientError};
-use listen_engine::{engine::EngineError, redis::client::make_redis_client};
+use listen_engine::{engine::error::EngineError, redis::client::make_redis_client};
 use reqwest::Client;
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::Semaphore;
 use tokio::time::{sleep, Duration};
+use tracing::info;
 use uuid::Uuid;
 
 async fn create_pipeline_via_api(
@@ -32,7 +33,7 @@ async fn create_pipeline_via_api(
         .await?;
 
     if !response.status().is_success() {
-        println!(
+        info!(
             "Response: {:?}",
             response.json::<serde_json::Value>().await?
         );
@@ -122,7 +123,7 @@ async fn test_engine_scalability() -> Result<()> {
     // Get top volume tokens from ClickHouse
     let symbols = get_top_volume_tokens().await?;
 
-    println!("Found {} active tokens", symbols.len());
+    info!("Found {} active tokens", symbols.len());
     assert!(!symbols.is_empty(), "No active tokens found");
 
     // Create a semaphore to limit concurrent requests
@@ -141,14 +142,14 @@ async fn test_engine_scalability() -> Result<()> {
         }
     }
 
-    println!("Launching {} pipeline creation requests...", futures.len());
+    info!("Launching {} pipeline creation requests...", futures.len());
     let results = futures_util::future::join_all(futures).await;
     let pipeline_count = results.len();
     for result in results {
         result?;
     }
 
-    println!("Created {} pipelines", pipeline_count);
+    info!("Created {} pipelines", pipeline_count);
 
     // Let it run for 30 seconds
     sleep(Duration::from_secs(30)).await;

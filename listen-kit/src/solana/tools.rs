@@ -62,7 +62,15 @@ pub async fn perform_jupiter_swap(
     .await
 }
 
-#[tool]
+#[tool(description = "
+Transfers SOL from the current signer to the given address
+
+This function is dangerous, as it can lead to loss of funds if the address is incorrect
+
+ALWAYS double check the to address with the user before calling this function
+
+amount is denoted in lamports, 1 SOL = 10^9 lamports
+")]
 pub async fn transfer_sol(to: String, amount: u64) -> Result<String> {
     execute_solana_transaction(move |owner| async move {
         create_transfer_sol_tx(&Pubkey::from_str(&to)?, amount, &owner).await
@@ -72,7 +80,16 @@ pub async fn transfer_sol(to: String, amount: u64) -> Result<String> {
 
 /// param amount is token amount, accounting for decimals
 /// e.g. 1 Fartcoin = 1 * 10^6 (6 decimals)
-#[tool]
+#[tool(description = "
+Transfers SPL token from the current signer to the given address
+
+This function is dangerous, as it can lead to loss of funds if the address is incorrect
+
+ALWAYS double check the to address with the user before calling this function
+
+amount is denoted in the token amount, accounting for decimals, if you are unsure
+about the decimals, use get_spl_token_balance to get the amount and decimals
+")]
 pub async fn transfer_spl_token(
     to: String,
     amount: u64,
@@ -110,9 +127,10 @@ pub async fn get_sol_balance() -> Result<u64> {
     .await
 }
 
-/// get_token_balance returns the amount as String and the decimals as u8
-/// in order to convert to UI amount: amount / 10^decimals
-#[tool]
+#[tool(description = "
+get_token_balance returns the amount as String and the decimals as u8
+in order to convert to UI amount: amount / 10^decimals
+")]
 pub async fn get_spl_token_balance(mint: String) -> Result<(String, u8)> {
     let signer = SignerContext::current().await;
     let owner = Pubkey::from_str(&signer.pubkey())?;
@@ -132,7 +150,14 @@ pub async fn get_spl_token_balance(mint: String) -> Result<(String, u8)> {
     Ok((balance.amount, balance.decimals))
 }
 
-#[tool]
+#[tool(description = "
+PumpFun is a launchpad where anyone can launch a token for around ~$2-3
+
+All of the parameters are required, but for twitter, website, telegram, image_url,
+if the user doesnt provide those they can be left as empty strings
+
+dev_buy is denoted in lamports - 1 solana is 10^9 lamports
+")]
 #[allow(clippy::too_many_arguments)]
 pub async fn deploy_pump_fun_token(
     name: String,
@@ -163,12 +188,22 @@ pub async fn deploy_pump_fun_token(
     .await
 }
 
-#[tool]
+#[tool(description = "
+Fetches the price of a token from the Jup.ag API that provides latest prices for Solana tokens
+")]
 pub async fn fetch_token_price(mint: String) -> Result<f64> {
     crate::solana::price::fetch_token_price(mint, &Client::new()).await
 }
 
-#[tool]
+#[tool(description = "
+use this function to buy PumpFun token with SOL
+
+Not every token ending with address Asdf...pump is on pump.fun - first you should try to use the
+regular swap function and if it fails with the token being not found, only then try to purchase it
+directly on pump
+
+Also, if the user specifically requests to buy on pump.fun, use this method
+")]
 pub async fn buy_pump_fun_token(
     mint: String,
     sol_amount: f64,
@@ -187,7 +222,15 @@ pub async fn buy_pump_fun_token(
     .await
 }
 
-#[tool]
+#[tool(description = "
+use this function to sell PumpFun token for SOL
+
+Not every token ending with address Asdf...pump is on pump.fun - first you should try to use the
+regular swap function and if it fails with the token being not found, only then try to sell it
+directly on pump
+
+Also, if the user specifically requests to sell on pump.fun, use this method
+")]
 pub async fn sell_pump_fun_token(
     mint: String,
     token_amount: u64,
@@ -198,7 +241,12 @@ pub async fn sell_pump_fun_token(
     .await
 }
 
-#[tool]
+#[tool(description = "
+Returns the portfolio of the user, including the amounts, addresses, prices etc
+
+Mostly, the portfolio context will be passed in but this function can be called 
+to pull the portfolio again it goes out of the chat context
+")]
 pub async fn get_portfolio() -> Result<Vec<PortfolioItem>> {
     let owner = Pubkey::from_str(&SignerContext::current().await.pubkey())?;
     let holdings = wrap_unsafe(move || async move {

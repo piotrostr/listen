@@ -8,6 +8,7 @@ use bb8_redis::{
     RedisConnectionManager,
 };
 use serde::{de::DeserializeOwned, Serialize};
+use std::collections::HashSet;
 use std::sync::Arc;
 use tracing::{debug, warn};
 
@@ -33,16 +34,8 @@ pub enum RedisClientError {
 
 impl RedisClient {
     pub async fn new(redis_url: &str) -> Result<Self, RedisClientError> {
-        let manager =
-            RedisConnectionManager::new(redis_url).map_err(RedisClientError::RedisError)?;
-
-        let pool = bb8::Pool::builder()
-            .max_size(16)
-            .min_idle(Some(4))
-            .build(manager)
-            .await
-            .map_err(RedisClientError::CreateConnectionManagerError)?;
-
+        let manager = RedisConnectionManager::new(redis_url)?;
+        let pool = bb8::Pool::builder().max_size(64).build(manager).await?;
         Ok(Self { pool })
     }
 
@@ -79,6 +72,13 @@ impl RedisClient {
         }
     }
 
+    pub async fn get_pipeline_by_id(
+        &self,
+        pipeline_id: &str,
+    ) -> Result<Option<Pipeline>, RedisClientError> {
+        self.get(&format!("pipeline:{}", pipeline_id)).await
+    }
+
     pub async fn get_pipeline(
         &self,
         user_id: &str,
@@ -93,6 +93,46 @@ impl RedisClient {
             pipeline,
         )
         .await
+    }
+
+    pub async fn get_all_pipelines_for_user(
+        &self,
+        user_id: &str,
+    ) -> Result<Vec<Pipeline>, RedisClientError> {
+        let mut conn = self.pool.get().await?;
+
+        tracing::debug!("Fetching pipeline keys for user {}", user_id);
+        let keys: Vec<String> = cmd("KEYS")
+            .arg(format!("pipeline:{}:*", user_id))
+            .query_async(&mut *conn)
+            .await?;
+
+        tracing::debug!("Found {} pipeline keys", keys.len());
+
+        let mut pipelines = Vec::with_capacity(keys.len());
+
+        // Process in batches of 100
+        for chunk in keys.chunks(100) {
+            let mut pipe = pipe();
+            for key in chunk {
+                pipe.get(key);
+            }
+
+            let results: Vec<Option<String>> = pipe.query_async(&mut *conn).await?;
+
+            for json_str in results.into_iter().flatten() {
+                match serde_json::from_str(&json_str) {
+                    Ok(pipeline) => pipelines.push(pipeline),
+                    Err(e) => {
+                        tracing::warn!("Failed to deserialize pipeline: {}", e);
+                        continue;
+                    }
+                }
+            }
+        }
+
+        tracing::debug!("Successfully loaded {} pipelines", pipelines.len());
+        Ok(pipelines)
     }
 
     pub async fn get_all_pipelines(&self) -> Result<Vec<Pipeline>, RedisClientError> {
@@ -182,6 +222,70 @@ impl RedisClient {
             .query_async(&mut *conn)
             .await?;
         Ok(())
+    }
+
+    pub async fn register_pipeline_subscription(
+        &self,
+        pipeline_id: &str,
+        asset_id: &str,
+    ) -> Result<(), RedisClientError> {
+        let mut conn = self.get_connection().await?;
+        let _: () = cmd("SADD")
+            .arg(format!("asset_subscriptions:{}", asset_id))
+            .arg(pipeline_id)
+            .query_async(&mut *conn)
+            .await
+            .map_err(RedisClientError::RedisError)?;
+        Ok(())
+    }
+
+    pub async fn unregister_pipeline_subscription(
+        &self,
+        pipeline_id: &str,
+        asset_id: &str,
+    ) -> Result<(), RedisClientError> {
+        let mut conn = self.get_connection().await?;
+        let _: () = cmd("SREM")
+            .arg(format!("asset_subscriptions:{}", asset_id))
+            .arg(pipeline_id)
+            .query_async(&mut *conn)
+            .await
+            .map_err(RedisClientError::RedisError)?;
+        Ok(())
+    }
+
+    pub async fn get_pipeline_subscriptions(
+        &self,
+        asset_id: &str,
+    ) -> Result<HashSet<String>, RedisClientError> {
+        let mut conn = self.get_connection().await?;
+        let members: HashSet<String> = cmd("SMEMBERS")
+            .arg(format!("asset_subscriptions:{}", asset_id))
+            .query_async(&mut *conn)
+            .await
+            .map_err(RedisClientError::RedisError)?;
+        Ok(members)
+    }
+
+    pub async fn execute_redis_pipe(
+        &self,
+        pipe: bb8_redis::redis::Pipeline,
+    ) -> Result<Vec<Option<Pipeline>>, RedisClientError> {
+        let mut conn = self.get_connection().await?;
+        let results: Vec<Option<String>> = pipe.query_async(&mut *conn).await?;
+
+        let mut pipelines = Vec::with_capacity(results.len());
+        for json_str in results.into_iter().flatten() {
+            match serde_json::from_str(&json_str) {
+                Ok(pipeline) => pipelines.push(Some(pipeline)),
+                Err(e) => {
+                    tracing::warn!("Failed to deserialize pipeline: {}", e);
+                    pipelines.push(None);
+                }
+            }
+        }
+
+        Ok(pipelines)
     }
 }
 

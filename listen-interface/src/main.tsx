@@ -6,6 +6,7 @@ import { createRoot } from "react-dom/client";
 import { arbitrum } from "viem/chains";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { ModalProvider } from "./contexts/ModalContext";
+import { ToastProvider } from "./contexts/ToastContext";
 import "./index.css";
 
 // Import the generated route tree
@@ -31,13 +32,15 @@ declare module "@tanstack/react-router" {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <PrivyProvider appId={"cm6c7ifqd00ar52m1qxfgbkkn"} config={{}}>
-      <WagmiProvider config={config}>
-        <QueryClientProvider client={new QueryClient()}>
-          <ModalProvider>
-            <RouterProvider router={router} />
-          </ModalProvider>
-        </QueryClientProvider>
-      </WagmiProvider>
+      <ToastProvider>
+        <WagmiProvider config={config}>
+          <QueryClientProvider client={new QueryClient()}>
+            <ModalProvider>
+              <RouterProvider router={router} />
+            </ModalProvider>
+          </QueryClientProvider>
+        </WagmiProvider>
+      </ToastProvider>
     </PrivyProvider>
   </StrictMode>
 );

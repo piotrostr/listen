@@ -10,11 +10,7 @@ use crate::engine::order::SwapOrder;
 pub enum ConditionType {
     PriceAbove { asset: String, value: f64 },
     PriceBelow { asset: String, value: f64 },
-    // PercentageChange {
-    //     asset: String,
-    //     initial: f64,
-    //     value: f64,
-    // },
+    Now { asset: String },
     And(Vec<Condition>),
     Or(Vec<Condition>),
 }
@@ -44,6 +40,7 @@ pub struct PipelineStep {
     pub conditions: Vec<Condition>,
     pub next_steps: Vec<Uuid>,
     pub status: Status,
+    pub transaction_hash: Option<String>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

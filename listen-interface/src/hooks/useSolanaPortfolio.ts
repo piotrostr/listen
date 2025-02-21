@@ -1,21 +1,21 @@
-import { useQuery } from "@tanstack/react-query";
 import { AccountInfo, Connection, PublicKey } from "@solana/web3.js";
-import { usePrivyWallets } from "./usePrivyWallet";
-import { Holding, TokenMetadata, PriceResponse } from "./types";
+import { useQuery } from "@tanstack/react-query";
 import { tokenMetadataCache } from "./cache";
+import { Holding, PriceResponse, TokenMetadata } from "./types";
+import { usePrivyWallets } from "./usePrivyWallet";
 import { decodeTokenAccount } from "./util";
 
 const TOKEN_PROGRAM_ID = new PublicKey(
-  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
 );
 
 const connection = new Connection(
-  import.meta.env?.VITE_RPC_URL ?? "https://api.mainnet-beta.solana.com",
+  import.meta.env?.VITE_RPC_URL ?? "https://api.mainnet-beta.solana.com"
 );
 
 async function getHoldings(
   connection: Connection,
-  owner: PublicKey,
+  owner: PublicKey
 ): Promise<Holding[]> {
   const atas = await connection.getTokenAccountsByOwner(owner, {
     programId: TOKEN_PROGRAM_ID,
@@ -48,7 +48,7 @@ function parseHolding(ata: {
   }
 }
 
-async function fetchTokenMetadata(mint: string): Promise<TokenMetadata> {
+export async function fetchTokenMetadata(mint: string): Promise<TokenMetadata> {
   try {
     // First check IndexedDB cache
     const cachedMetadata = await tokenMetadataCache.get(mint);
@@ -76,7 +76,7 @@ async function fetchTokenMetadata(mint: string): Promise<TokenMetadata> {
 async function fetchPrices(mints: string[]): Promise<PriceResponse> {
   try {
     const response = await fetch(
-      `https://api.jup.ag/price/v2?ids=${mints.join(",")}`,
+      `https://api.jup.ag/price/v2?ids=${mints.join(",")}`
     );
     if (!response.ok) {
       throw new Error("Failed to fetch prices");
@@ -97,7 +97,7 @@ export const useSolanaPortfolio = () => {
       // Get holdings
       const holdings = await getHoldings(
         connection,
-        new PublicKey(wallets!.solanaWallet),
+        new PublicKey(wallets!.solanaWallet)
       );
       const mints = holdings.map((h) => h.mint);
 

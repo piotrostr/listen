@@ -28,6 +28,8 @@ privy = { path = "../privy" }
 actix-cors = "0.7.0"
 lifi = { path = "../lifi" }
 blockhash-cache = { path = "../blockhash-cache" }
+dashmap = "6.1.0"
+parking_lot = "0.12.3"
 
 [[bin]]
 name = "engine"

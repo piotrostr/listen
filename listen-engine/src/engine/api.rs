@@ -111,6 +111,7 @@ impl From<&WireStep> for PipelineStep {
             conditions: wire.conditions.iter().map(Into::into).collect(),
             next_steps: Vec::new(),
             status: Status::Pending,
+            transaction_hash: None,
         }
     }
 }
@@ -149,9 +150,8 @@ impl From<&WireCondition> for Condition {
                 asset: wire.asset.clone(),
                 value: wire.value,
             },
-            WireConditionType::Now => ConditionType::PriceAbove {
+            WireConditionType::Now => ConditionType::Now {
                 asset: wire.asset.clone(),
-                value: 0.0, // Now condition is always true
             },
         };
 

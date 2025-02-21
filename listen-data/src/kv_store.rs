@@ -4,7 +4,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use tracing::{debug, info};
 
 use crate::metadata::TokenMetadata;
-use crate::price::Price;
+use crate::price::PriceUpdate;
 use crate::util::create_redis_pool;
 
 pub struct RedisKVStore {
@@ -82,25 +82,21 @@ impl RedisKVStore {
         Ok(exists)
     }
 
-    fn make_price_key(&self, coin_mint: &str, pc_mint: &str) -> String {
-        format!("solana:price:{}:{}", coin_mint, pc_mint)
+    fn make_price_key(&self, mint: &str) -> String {
+        format!("solana:price:{}", mint)
     }
 
     fn make_metadata_key(&self, mint: &str) -> String {
         format!("solana:metadata:{}", mint)
     }
 
-    pub async fn insert_price(&self, price: &Price) -> Result<()> {
-        let key = self.make_price_key(&price.coin_mint, &price.pc_mint);
+    pub async fn insert_price(&self, price: &PriceUpdate) -> Result<()> {
+        let key = self.make_price_key(&price.pubkey);
         self.set(&key, price).await
     }
 
-    pub async fn get_price(
-        &self,
-        coin_mint: &str,
-        pc_mint: &str,
-    ) -> Result<Option<Price>> {
-        let key = self.make_price_key(coin_mint, pc_mint);
+    pub async fn get_price(&self, pubkey: &str) -> Result<Option<PriceUpdate>> {
+        let key = self.make_price_key(pubkey);
         self.get(&key).await
     }
 

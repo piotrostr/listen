@@ -7,7 +7,9 @@ use listen_adapter::{
     db::make_db,
     redis_client::make_redis_client,
     redis_subscriber::create_redis_subscriber,
-    routes::{get_candlesticks, get_metadata, health_check, query_db, top_tokens, ws_route},
+    routes::{
+        get_candlesticks, get_metadata, get_price, health_check, query_db, top_tokens, ws_route,
+    },
     state::AppState,
 };
 
@@ -47,6 +49,7 @@ async fn main() -> std::io::Result<()> {
             .route("/candlesticks", web::get().to(get_candlesticks))
             .route("/metadata", web::get().to(get_metadata))
             .route("/query", web::post().to(query_db))
+            .route("/price", web::get().to(get_price))
     };
 
     let port = 6968;

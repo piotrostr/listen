@@ -16,11 +16,11 @@ use super::trade::{check_allowance, create_approve_tx, create_trade_tx};
 use super::transfer::{create_transfer_erc20_tx, create_transfer_eth_tx};
 use super::util::{execute_evm_transaction, make_provider};
 
-// TODO it is worth to include description of the function, possibly using
-// docstring for the model to understand what is going on stuff like lamports
-// vs ether decimals vs pump decimals and so on etc models can do but need
-// to be explicitly stated
-#[tool]
+#[tool(description = "
+Use this function to verify if a given token has swap router allowance
+
+On EVM, before swapping a token, this function has to be called to verify swap would be successful
+")]
 pub async fn verify_swap_router_has_allowance(
     token_address: String,
 ) -> Result<bool> {
@@ -42,7 +42,12 @@ pub async fn verify_swap_router_has_allowance(
     .await
 }
 
-#[tool]
+#[tool(description = "
+Use this function to approve a token for swap router spend
+
+If the verify_swap_router_has_allowance tool returns false, or the swap fails with 
+allowance error, call this function to approve the token for swap router spend
+")]
 pub async fn approve_token_for_router_spend(
     input_token_address: String,
 ) -> Result<String> {
@@ -68,7 +73,11 @@ pub async fn approve_token_for_router_spend(
     .await
 }
 
-#[tool]
+#[tool(description = "
+Use this function to swap any tokens on EVM using Uniswap
+
+The function supports tokens that are on the same chain
+")]
 pub async fn trade(
     input_token_address: String,
     input_amount: String,
@@ -92,7 +101,14 @@ pub async fn trade(
     .await
 }
 
-#[tool]
+#[tool(description = "
+Transfer ETH to a given address
+
+This function is dangerous, as transfers are irreversible
+
+Before calling this function, the recipient address has to ALWAYS be 
+double-checked with the user 
+")]
 pub async fn transfer_eth(
     recipient: String,
     amount: String,
@@ -104,7 +120,14 @@ pub async fn transfer_eth(
     .await
 }
 
-#[tool]
+#[tool(description = "
+Transfer ERC20 tokens to a given address
+
+This function is dangerous, as transfers are irreversible
+
+Before calling this function, the recipient address has to ALWAYS be 
+double-checked with the user 
+")]
 pub async fn transfer_erc20(
     recipient: String,
     token_address: String,
@@ -123,7 +146,9 @@ pub async fn transfer_erc20(
     .await
 }
 
-#[tool]
+#[tool(description = "
+This function returns the ethereum wallet address you are currently using
+")]
 pub async fn wallet_address() -> Result<String> {
     Ok(SignerContext::current().await.address())
 }

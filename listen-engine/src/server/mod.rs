@@ -12,8 +12,9 @@ use uuid::Uuid;
 use crate::{
     engine::{
         api::{PipelineParams, WirePipeline},
+        error::EngineError,
         pipeline::Pipeline,
-        Engine, EngineError,
+        Engine,
     },
     metrics::metrics_handler,
 };
@@ -23,7 +24,7 @@ use privy::{config::PrivyConfig, Privy};
 pub enum EngineMessage {
     AddPipeline {
         pipeline: Pipeline,
-        response_tx: oneshot::Sender<Result<(), EngineError>>,
+        response_tx: oneshot::Sender<Result<String, EngineError>>,
     },
     GetPipeline {
         user_id: String,
@@ -35,6 +36,10 @@ pub enum EngineMessage {
         pipeline_id: Uuid,
         response_tx: oneshot::Sender<Result<(), EngineError>>,
     },
+    GetAllPipelinesByUser {
+        user_id: String,
+        response_tx: oneshot::Sender<Result<Vec<Pipeline>, EngineError>>,
+    },
 }
 
 pub struct AppState {
@@ -43,9 +48,12 @@ pub struct AppState {
 }
 
 pub async fn run() -> std::io::Result<()> {
-    let (tx, rx) = mpsc::channel(1000);
-    let mut engine = match Engine::from_env().await {
-        Ok(engine) => engine,
+    let (server_tx, server_rx) = mpsc::channel(1000);
+    tracing::info!("Created channel with capacity 1000");
+
+    // Create engine and get price update receiver
+    let (engine, price_rx) = match Engine::from_env().await {
+        Ok((engine, rx)) => (engine, rx),
         Err(e) => {
             tracing::error!("Failed to create engine: {}", e);
             return Err(std::io::Error::new(
@@ -54,6 +62,7 @@ pub async fn run() -> std::io::Result<()> {
             ));
         }
     };
+    let engine = Arc::new(engine);
 
     // Create a shutdown signal handler
     let (shutdown_tx, mut shutdown_rx) = mpsc::channel(1);
@@ -74,7 +83,7 @@ pub async fn run() -> std::io::Result<()> {
     let server = HttpServer::new(move || {
         App::new()
             .app_data(Data::new(AppState {
-                engine_bridge_tx: tx.clone(),
+                engine_bridge_tx: server_tx.clone(),
                 privy: privy.clone(),
             }))
             .wrap(
@@ -91,6 +100,7 @@ pub async fn run() -> std::io::Result<()> {
             .wrap(middleware::Logger::default())
             .route("/healthz", web::get().to(healthz))
             .route("/pipeline", web::post().to(create_pipeline))
+            .route("/pipelines", web::get().to(get_pipelines))
             .route("/metrics", web::get().to(metrics_handler))
     })
     .bind(("0.0.0.0", 6966))?
@@ -103,7 +113,7 @@ pub async fn run() -> std::io::Result<()> {
                 tracing::error!("Server error: {}", e);
             }
         }
-        result = engine.run(rx) => {
+        result = Engine::run(engine.clone(), price_rx, server_rx) => {
             let _ = shutdown_tx.send(()).await;
             if let Err(e) = result {
                 tracing::error!("Engine error: {}", e);
@@ -124,6 +134,86 @@ async fn healthz() -> impl Responder {
     }))
 }
 
+async fn get_pipelines(state: Data<AppState>, req: HttpRequest) -> impl Responder {
+    let auth_token = match req.headers().get("authorization") {
+        Some(auth_token) => auth_token.to_str().unwrap(),
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "status": "error",
+                "message": "Authorization header is required"
+            }));
+        }
+    };
+    let auth_token = auth_token.split(" ").nth(1).unwrap();
+
+    let user = match state
+        .privy
+        .authenticate_user(auth_token)
+        .await
+        .map_err(|_| HttpResponse::Unauthorized())
+    {
+        Ok(user) => user,
+        Err(_) => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "status": "error",
+                "message": "Unauthorized"
+            }));
+        }
+    };
+
+    println!(
+        "user: {}, {}, {}",
+        user.user_id, user.wallet_address, user.pubkey
+    );
+
+    let (response_tx, response_rx) = oneshot::channel();
+    tracing::debug!("Sending GetAllPipelinesByUser message to engine");
+    match state
+        .engine_bridge_tx
+        .send(EngineMessage::GetAllPipelinesByUser {
+            user_id: user.user_id.clone(),
+            response_tx,
+        })
+        .await
+    {
+        Ok(_) => tracing::debug!("Successfully sent message to engine"),
+        Err(e) => {
+            tracing::error!("Failed to send message to engine: {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "status": "error",
+                "message": "Engine communication error"
+            }));
+        }
+    };
+
+    tracing::debug!("Waiting for response from engine");
+    let pipelines = match response_rx.await {
+        Ok(Ok(pipelines)) => {
+            tracing::debug!("Received {} pipelines from engine", pipelines.len());
+            pipelines
+        }
+        Ok(Err(e)) => {
+            tracing::error!("Engine error: {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "status": "error",
+                "message": format!("Failed to get pipelines: {}", e)
+            }));
+        }
+        Err(e) => {
+            tracing::error!("Channel closed: {}", e);
+            return HttpResponse::InternalServerError().json(serde_json::json!({
+                "status": "error",
+                "message": "Internal communication error"
+            }));
+        }
+    };
+
+    HttpResponse::Ok().json(serde_json::json!({
+        "status": "success",
+        "pipelines": pipelines
+    }))
+}
+
 async fn create_pipeline(
     state: Data<AppState>,
     req: HttpRequest,
@@ -131,8 +221,15 @@ async fn create_pipeline(
 ) -> impl Responder {
     let start = std::time::Instant::now();
 
-    let auth_token = req.headers().get("authorization").unwrap();
-    let auth_token = auth_token.to_str().unwrap();
+    let auth_token = match req.headers().get("authorization") {
+        Some(auth_token) => auth_token.to_str().unwrap(),
+        None => {
+            return HttpResponse::Unauthorized().json(serde_json::json!({
+                "status": "error",
+                "message": "Authorization header is required"
+            }));
+        }
+    };
     let auth_token = auth_token.split(" ").nth(1).unwrap();
 
     let user = match state
@@ -186,11 +283,12 @@ async fn create_pipeline(
     // Wait for response with timeout
     let result = match tokio::time::timeout(std::time::Duration::from_secs(5), response_rx).await {
         Ok(response) => match response {
-            Ok(Ok(_)) => {
+            Ok(Ok(id)) => {
                 metrics::counter!("pipeline_creation_success", 1);
                 HttpResponse::Created().json(serde_json::json!({
                     "status": "success",
-                    "message": "Pipeline created successfully"
+                    "message": "Pipeline created successfully",
+                    "id": id
                 }))
             }
             Ok(Err(e)) => {

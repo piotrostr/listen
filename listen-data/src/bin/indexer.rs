@@ -2,9 +2,10 @@ use anyhow::Result;
 use clap::Parser;
 use listen_data::{
     geyser::make_raydium_geyser_instruction_pipeline,
-    sol_price_stream::SOL_PRICE_CACHE,
+    sol_price_stream::SolPriceCache,
     util::{make_db, make_kv_store, make_message_queue},
 };
+use std::sync::Arc;
 use tracing::{error, info};
 
 #[derive(Parser)]
@@ -18,17 +19,16 @@ async fn main() -> Result<()> {
     }
     info!("Starting geyser indexer...");
 
-    // Initialize price cache for cold starts
-    info!("Solana price: {}", SOL_PRICE_CACHE.get_price().await);
-
     let db = make_db().await?;
     let kv_store = make_kv_store().await?;
     let message_queue = make_message_queue().await?;
+    let price_cache = SolPriceCache::with_message_queue(message_queue.clone());
+    let price_cache = Arc::new(price_cache);
+
+    info!("Solana price: {}", price_cache.get_price().await);
 
     let mut pipeline =
         make_raydium_geyser_instruction_pipeline(kv_store, message_queue, db)?;
-
-    let price_cache = SOL_PRICE_CACHE.clone();
 
     tokio::spawn(async move {
         if let Err(e) = price_cache.start_price_stream().await {

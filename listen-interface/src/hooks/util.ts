@@ -1,6 +1,12 @@
 import { User, WalletWithMetadata } from "@privy-io/react-auth";
 import { PublicKey } from "@solana/web3.js";
 import ethLogo from "../assets/icons/ethereum.svg";
+import {
+  Pipeline,
+  PipelineActionType,
+  PipelineConditionType,
+  PipelineSchema,
+} from "../types/pipeline";
 
 interface RawAccount {
   mint: PublicKey;
@@ -51,6 +57,8 @@ export const userHasDelegatedEvmWallet = (user: User | null) => {
 };
 
 export const imageMap = {
+  "0xaf88d065e77c8cc2239327c5edb3a432268e5831":
+    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
   EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v:
     "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v/logo.png",
   So11111111111111111111111111111111111111112:
@@ -59,6 +67,8 @@ export const imageMap = {
     "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
   eth: ethLogo,
   arb: "https://arbiscan.io/assets/arbitrum/images/svg/logos/chain-light.svg?v=25.1.4.0",
+  "11111111111111111111111111111111":
+    "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
 };
 
 export const caip2Map = {
@@ -93,4 +103,113 @@ export const caip2Map = {
   world: "eip155:480",
   mantle: "eip155:5000",
   berachain: "eip155:80094",
+};
+
+// add more here, the stuff that is not easily searchable and needs to be spot on
+export const addressBook = {
+  solana: {
+    solana: "So11111111111111111111111111111111111111112",
+    usdc: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+    bonk: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+  },
+  ethereum: {
+    usdc: "0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48",
+    pepe: "0x25d887Ce7a35172C62FeBFD67a1856F20FaEbB00",
+  },
+  arbitrum: {
+    usdc: "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+  },
+  base: {
+    usdc: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  },
+  avalanche: {
+    usdc: "0xB97EF9Ef8734C71904D8002F8b6Bc66Dd9c48a6E",
+  },
+};
+
+export const formatAmount = (amount: string, decimals: number) => {
+  const amountNum = parseFloat(amount);
+  return (amountNum / Math.pow(10, decimals)).toString();
+};
+
+export function serializePipeline(pipeline: Pipeline): string {
+  return JSON.stringify(pipeline);
+}
+
+export function deserializePipeline(serialized: string): Pipeline {
+  const parsed = JSON.parse(serialized);
+  return PipelineSchema.parse(parsed);
+}
+
+export const mockOrderPipeline: Pipeline = {
+  steps: [
+    {
+      action: {
+        type: PipelineActionType.SwapOrder,
+        input_token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        output_token: "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+        amount: "1000000000000000000",
+        from_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+        to_chain_caip2: "eip155:1",
+      },
+      conditions: [],
+    },
+    {
+      action: {
+        type: PipelineActionType.SwapOrder,
+        input_token: "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+        output_token: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+        amount: "1000000000000000000",
+        from_chain_caip2: "eip155:1",
+        to_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      },
+      conditions: [
+        {
+          type: PipelineConditionType.PriceAbove,
+          asset: "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+          value: 0.052,
+        },
+      ],
+    },
+  ],
+};
+
+export const caip2ToChainId = (caip2: string) => {
+  const map = {
+    "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": "solana",
+    "eip155:1": "ethereum",
+    "eip155:56": "bsc",
+    "eip155:42161": "arbitrum",
+    "eip155:8453": "base",
+    "eip155:81457": "blast",
+    "eip155:43114": "avalanche",
+    "eip155:137": "polygon",
+    "eip155:534352": "scroll",
+    "eip155:10": "optimism",
+    "eip155:59144": "linea",
+    "eip155:100": "gnosis",
+    "eip155:250": "fantom",
+    "eip155:1285": "moonriver",
+    "eip155:1284": "moonbeam",
+    "eip155:288": "boba",
+    "eip155:34443": "mode",
+    "eip155:1088": "metis",
+    "eip155:1135": "lisk",
+    "eip155:1313161554": "aurora",
+    "eip155:1329": "sei",
+    "eip155:13371": "immutability",
+    "eip155:1625": "gravity",
+    "eip155:167000": "taiko",
+    "eip155:25": "cronos",
+    "eip155:252": "fraxtal",
+    "eip155:2741": "abstract",
+    "eip155:42220": "celo",
+    "eip155:480": "world",
+    "eip155:5000": "manta",
+    "eip155:80094": "berachain",
+  };
+  if (caip2 in map) {
+    return map[caip2 as keyof typeof map];
+  }
+  return null;
 };

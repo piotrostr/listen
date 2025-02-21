@@ -62,16 +62,19 @@ pub struct TickerResponse {
 pub async fn search_ticker(ticker: String) -> Result<DexScreenerResponse> {
     let client = Client::new();
     let url = format!(
-        "https://api.dexscreener.com/latest/dex/search/?q={}",
+        "https://api.dexscreener.com/latest/dex/search/?q={}&limit=8",
         ticker
     );
 
-    let response = client
+    let mut response = client
         .get(&url)
         .send()
         .await?
         .json::<DexScreenerResponse>()
         .await?;
+
+    // trim up to 8
+    response.pairs.truncate(8);
 
     Ok(response)
 }

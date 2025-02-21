@@ -13,6 +13,7 @@ export interface Message {
   message: string;
   direction: MessageDirection;
   timestamp: Date;
+  isToolCall: boolean;
 }
 
 const ToolOutputSchema = z.object({
@@ -25,6 +26,35 @@ export type ToolOutput = z.infer<typeof ToolOutputSchema>;
 export interface StreamResponse {
   type: "Message" | "ToolCall" | "Error";
   content: string | ToolOutput;
+}
+
+class JsonChunkReader {
+  private buffer = "";
+
+  append(chunk: string): StreamResponse[] {
+    this.buffer += chunk;
+    const messages: StreamResponse[] = [];
+    const lines = this.buffer.split("\n");
+
+    // Keep the last line in the buffer if it doesn't end with newline
+    this.buffer = lines[lines.length - 1];
+
+    // Process all complete lines except the last one
+    for (let i = 0; i < lines.length - 1; i++) {
+      const line = lines[i];
+      if (line.startsWith("data: ")) {
+        try {
+          const jsonStr = line.slice(6);
+          const data = JSON.parse(jsonStr);
+          messages.push(data);
+        } catch (e) {
+          console.warn("Failed to parse JSON from line:", line, e);
+        }
+      }
+    }
+
+    return messages;
+  }
 }
 
 export function useChat() {
@@ -64,6 +94,7 @@ export function useChat() {
         message: userMessage,
         direction: "outgoing",
         timestamp: new Date(),
+        isToolCall: false,
       };
 
       setMessages((prev) => [...prev, userChatMessage]);
@@ -82,6 +113,7 @@ export function useChat() {
             message: "",
             direction: "incoming",
             timestamp: new Date(),
+            isToolCall: false,
           },
         ]);
 
@@ -126,70 +158,62 @@ export function useChat() {
         if (!reader) throw new Error("No reader available");
 
         const decoder = new TextDecoder();
+        const jsonReader = new JsonChunkReader();
 
         while (true) {
           const { done, value } = await reader.read();
           if (done) break;
 
           const chunk = decoder.decode(value);
-          const lines = chunk.split("\n");
+          const messages = jsonReader.append(chunk);
 
-          console.log(chunk);
-
-          for (const line of lines) {
-            if (line.startsWith("data: ")) {
-              const jsonStr = line.slice(6);
-              try {
-                const data: StreamResponse = JSON.parse(jsonStr);
-
-                switch (data.type) {
-                  case "Message":
-                    updateAssistantMessage(
-                      currentAssistantMessageId,
-                      data.content as string
-                    );
-                    break;
-                  case "ToolCall": {
-                    const toolOutput = ToolOutputSchema.parse(data.content);
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: crypto.randomUUID(),
-                        message: `Tool ${toolOutput.name}: ${toolOutput.result}`,
-                        direction: "incoming",
-                        timestamp: new Date(),
-                      },
-                    ]);
-                    // Start a new assistant message after tool call
-                    currentAssistantMessageId = crypto.randomUUID();
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: currentAssistantMessageId,
-                        message: "",
-                        direction: "incoming",
-                        timestamp: new Date(),
-                      },
-                    ]);
-                    break;
-                  }
-                  case "Error":
-                    console.error("Stream error:", data.content);
-                    // Optionally add error as a message
-                    setMessages((prev) => [
-                      ...prev,
-                      {
-                        id: crypto.randomUUID(),
-                        message: `Error: ${data.content}`,
-                        direction: "incoming",
-                        timestamp: new Date(),
-                      },
-                    ]);
-                    break;
-                }
-              } catch (e) {
-                console.error("Failed to parse SSE data:", e);
+          for (const data of messages) {
+            switch (data.type) {
+              case "Message":
+                updateAssistantMessage(
+                  currentAssistantMessageId,
+                  data.content as string
+                );
+                break;
+              case "ToolCall": {
+                const toolOutput = ToolOutputSchema.parse(data.content);
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: crypto.randomUUID(),
+                    message: `Tool ${toolOutput.name}: ${toolOutput.result}`,
+                    direction: "incoming",
+                    timestamp: new Date(),
+                    isToolCall: true,
+                  },
+                ]);
+                // Start a new assistant message after tool call
+                currentAssistantMessageId = crypto.randomUUID();
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: currentAssistantMessageId,
+                    message: "",
+                    direction: "incoming",
+                    timestamp: new Date(),
+                    isToolCall: false,
+                  },
+                ]);
+                break;
               }
+              case "Error":
+                console.error("Stream error:", data.content);
+                setMessages((prev) => [
+                  ...prev,
+                  {
+                    id: crypto.randomUUID(),
+                    message: `Error: ${data.content}`,
+                    direction: "incoming",
+                    timestamp: new Date(),
+                    isToolCall: false,
+                  },
+                ]);
+                break;
             }
           }
         }
@@ -205,6 +229,7 @@ export function useChat() {
             }`,
             direction: "incoming",
             timestamp: new Date(),
+            isToolCall: false,
           },
         ]);
       } finally {

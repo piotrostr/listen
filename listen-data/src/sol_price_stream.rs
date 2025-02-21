@@ -1,4 +1,9 @@
+use crate::{
+    message_queue::{MessageQueue, RedisMessageQueue},
+    price::PriceUpdate,
+};
 use anyhow::Result;
+use chrono::Utc;
 use futures_util::StreamExt;
 use once_cell::sync::Lazy;
 use serde::Deserialize;
@@ -24,6 +29,7 @@ struct BinancePrice {
 #[derive(Debug, Clone)]
 pub struct SolPriceCache {
     price: Arc<RwLock<f64>>,
+    message_queue: Option<Arc<RedisMessageQueue>>,
 }
 
 impl Default for SolPriceCache {
@@ -36,7 +42,37 @@ impl SolPriceCache {
     pub fn new() -> Self {
         Self {
             price: Arc::new(RwLock::new(0.0)),
+            message_queue: None,
         }
+    }
+
+    pub fn with_message_queue(message_queue: Arc<RedisMessageQueue>) -> Self {
+        Self {
+            price: Arc::new(RwLock::new(0.0)),
+            message_queue: Some(message_queue),
+        }
+    }
+
+    async fn publish_price_update(&self, new_price: f64) -> Result<()> {
+        if let Some(mq) = &self.message_queue {
+            let price_update = PriceUpdate {
+                name: "Solana".to_string(),
+                pubkey: crate::constants::WSOL_MINT_KEY_STR.to_string(),
+                price: new_price,
+                market_cap: 0.0, // Could calculate if we had supply
+                timestamp: Utc::now().timestamp() as u64,
+                slot: 0,          // Not applicable for Binance price
+                swap_amount: 0.0, // Not applicable
+                owner: "binance".to_string(),
+                signature: "binance_websocket".to_string(),
+                multi_hop: false,
+                is_buy: false,
+                is_pump: false,
+            };
+
+            mq.publish_price_update(price_update).await?;
+        }
+        Ok(())
     }
 
     pub async fn set_price(&self, price: f64) {
@@ -72,7 +108,7 @@ impl SolPriceCache {
     pub async fn start_price_stream(&self) -> Result<()> {
         let url = Url::parse("wss://stream.binance.com:9443/ws/solusdt@trade")?;
         let (ws_stream, _) = connect_async(url).await?;
-        let price = self.price.clone();
+        let price_cache = self.clone();
         info!("WebSocket connected to Binance SOL/USDT stream");
 
         let (_, mut read) = ws_stream.split();
@@ -83,7 +119,26 @@ impl SolPriceCache {
                     match serde_json::from_str::<TradeData>(&text) {
                         Ok(trade) => {
                             if let Ok(new_price) = trade.p.parse::<f64>() {
-                                *price.write().await = new_price;
+                                let current_price =
+                                    price_cache.get_price().await;
+                                if current_price != new_price {
+                                    price_cache.set_price(new_price).await;
+                                    let price_cache = price_cache.clone();
+                                    tokio::spawn(async move {
+                                        println!(
+                                            "Publishing price update: {}",
+                                            new_price
+                                        );
+                                        if let Err(e) = price_cache
+                                            .publish_price_update(new_price)
+                                            .await
+                                        {
+                                            error!("Failed to publish price update: {}", e);
+                                        }
+                                    });
+                                }
+                            } else {
+                                error!("Failed to parse price: {}", text);
                             }
                         }
                         Err(e) => error!("Error parsing JSON: {}", e),
