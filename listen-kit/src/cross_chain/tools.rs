@@ -33,16 +33,16 @@ Note that sometimes the quote will return a transaction request, with an address
 In that case, you can use the approve_token tool to approve the token.
 
 Supported from_chains:
-- sol (solana)
-- arb (arbitrum)
-- bsc (binance smart chain)
-- base (base chain)
+- solana: 1151111081099710
+- arbitrum: 42161
+- binance smart chain (BSC or BNB): 56
+- base: 8453
 
 Supported to_chains:
-- sol (solana)
-- arb (arbitrum)
-- bsc (binance smart chain)
-- base (base chain)
+- sol: 1151111081099710
+- arb: 42161
+- binance smart chain (BSC or BNB): 56
+- base: 8453
 ")]
 pub async fn get_quote(
     from_token_symbol: String,
@@ -107,16 +107,16 @@ The amount has to be a string to avoid precision loss. The amount is accounting
 for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
 
 Supported from_chains:
-- sol (solana)
-- arb (arbitrum)
-- bsc (binance smart chain)
-- base (base chain)
+- solana: 1151111081099710
+- arbitrum: 42161
+- binance smart chain (BSC or BNB): 56
+- base: 8453
 
 Supported to_chains:
-- sol (solana)
-- arb (arbitrum)
-- bsc (binance smart chain)
-- base (base chain)
+- sol: 1151111081099710
+- arb: 42161
+- binance smart chain (BSC or BNB): 56
+- base: 8453
 ")]
 pub async fn swap(
     from_token_symbol: String,
