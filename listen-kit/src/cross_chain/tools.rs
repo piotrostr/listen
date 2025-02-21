@@ -33,12 +33,16 @@ Note that sometimes the quote will return a transaction request, with an address
 In that case, you can use the approve_token tool to approve the token.
 
 Supported from_chains:
-- sol
-- arb
+- sol (solana)
+- arb (arbitrum)
+- bsc (binance smart chain)
+- base (base chain)
 
 Supported to_chains:
-- sol
-- arb
+- sol (solana)
+- arb (arbitrum)
+- bsc (binance smart chain)
+- base (base chain)
 ")]
 pub async fn get_quote(
     from_token_symbol: String,
@@ -103,12 +107,16 @@ The amount has to be a string to avoid precision loss. The amount is accounting
 for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
 
 Supported from_chains:
-- sol
-- arb
+- sol (solana)
+- arb (arbitrum)
+- bsc (binance smart chain)
+- base (base chain)
 
 Supported to_chains:
-- sol
-- arb
+- sol (solana)
+- arb (arbitrum)
+- bsc (binance smart chain)
+- base (base chain)
 ")]
 pub async fn swap(
     from_token_symbol: String,
@@ -204,6 +212,8 @@ pub async fn check_approval(
     Ok((allowance >= amount).to_string())
 }
 
+// TODO here is important to ensure we can approve on any chain, parametrizing
+// the Caip2 is crucial
 #[tool(description = "
 Approve a token for a spender.
 
