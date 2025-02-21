@@ -59,8 +59,8 @@ pub fn make_db() -> Result<Arc<ClickhouseDb>> {
         true => ClickhouseDb::new("http://localhost:8123", "default", "default", "default"),
         false => ClickhouseDb::new(
             must_get_env("CLICKHOUSE_URL").as_str(),
-            must_get_env("CLICKHOUSE_USER").as_str(),
             must_get_env("CLICKHOUSE_PASSWORD").as_str(),
+            must_get_env("CLICKHOUSE_USER").as_str(),
             must_get_env("CLICKHOUSE_DATABASE").as_str(),
         ),
     };
