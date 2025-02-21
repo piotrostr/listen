@@ -1,13 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { TokenData } from "../types/metadata";
+import type { TokenMarketData } from "../types/metadata";
 import type { PriceUpdate } from "../types/price";
 import { TokenTile } from "./TokenTile";
 
 export function PriceUpdates() {
   const [latestUpdate, setLatestUpdate] = useState<PriceUpdate | null>(null);
-  const [tokenMap, setTokenMap] = useState<Map<string, TokenData>>(new Map());
+  const [tokenMap, setTokenMap] = useState<Map<string, TokenMarketData>>(
+    new Map()
+  );
   const [marketCapFilter, setMarketCapFilter] = useState<string>("all");
   const [volumeFilter, setVolumeFilter] = useState<"bought" | "sold" | "all">(
     "all"
@@ -73,7 +75,7 @@ export function PriceUpdates() {
     };
   }, []);
 
-  const filterTokensByMarketCap = (tokens: TokenData[]) => {
+  const filterTokensByMarketCap = (tokens: TokenMarketData[]) => {
     switch (marketCapFilter) {
       case "under1m":
         return tokens.filter((token) => token.marketCap < 1_000_000);
@@ -94,7 +96,7 @@ export function PriceUpdates() {
     }
   };
 
-  const filterAndSortTokens = (tokens: TokenData[]) => {
+  const filterAndSortTokens = (tokens: TokenMarketData[]) => {
     const marketCapFiltered = filterTokensByMarketCap(tokens);
 
     switch (volumeFilter) {

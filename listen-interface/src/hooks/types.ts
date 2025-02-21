@@ -18,6 +18,7 @@ export interface TokenMetadata {
   decimals: number;
   logoURI: string;
   volume24h?: number;
+  chainId?: number;
 }
 
 export interface PriceResponse {
