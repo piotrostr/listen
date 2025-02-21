@@ -28,24 +28,28 @@ pub struct PairInfo {
     #[serde(rename = "priceNative")]
     pub price_native: String,
     #[serde(rename = "priceUsd")]
-    pub price_usd: String,
-    pub liquidity: Liquidity,
-    pub volume: Volume,
+    pub price_usd: Option<String>,
+    pub liquidity: Option<Liquidity>,
+    pub volume: Option<Volume>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Liquidity {
-    pub usd: f64,
-    pub base: f64,
-    pub quote: f64,
+    pub usd: Option<f64>,
+    pub base: Option<f64>,
+    pub quote: Option<f64>,
 }
 
-#[derive(Debug, Serialize, Deserialize, Clone)]
+#[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Volume {
-    pub h24: f64,
-    pub h6: f64,
-    pub h1: f64,
-    pub m5: f64,
+    #[serde(default)]
+    pub h24: Option<f64>,
+    #[serde(default)]
+    pub h6: Option<f64>,
+    #[serde(default)]
+    pub h1: Option<f64>,
+    #[serde(default)]
+    pub m5: Option<f64>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -66,22 +70,30 @@ pub async fn search_ticker(ticker: String) -> Result<DexScreenerResponse> {
         ticker
     );
 
-    let mut response = client
-        .get(&url)
-        .send()
-        .await?
-        .json::<DexScreenerResponse>()
-        .await?;
+    let response = client.get(&url).send().await?;
+
+    let data: serde_json::Value = response.json().await?;
+
+    println!("{:#?}", data);
+
+    let mut dex_response: DexScreenerResponse = serde_json::from_value(data)?;
 
     // trim up to 8
-    response.pairs.truncate(8);
+    dex_response.pairs.truncate(8);
 
-    Ok(response)
+    Ok(dex_response)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[tokio::test]
+    async fn test_search_ticker_base() {
+        let response = search_ticker("brett".to_string()).await.unwrap();
+        assert_eq!(response.schema_version, "1.0.0");
+        println!("{:?}", response);
+    }
 
     #[tokio::test]
     async fn test_search_ticker() {
