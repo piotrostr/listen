@@ -6,9 +6,9 @@ export const LifiTokenSchema = z.object({
   name: z.string(),
   symbol: z.string(),
   decimals: z.number(),
-  logo_uri: z.string().nullable(),
-  chain_id: z.number(),
-  price_usd: z.string().nullable(),
+  logoURI: z.string().nullable(),
+  chainId: z.number(),
+  priceUSD: z.string().nullable(),
 });
 
 export type LifiToken = z.infer<typeof LifiTokenSchema>;

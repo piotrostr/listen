@@ -1,14 +1,16 @@
 import { useQuery } from "@tanstack/react-query";
 import { LifiToken, LifiTokenSchema, TokenMetadata } from "./types";
 import { fetchTokenMetadata } from "./useSolanaPortfolio";
+import { caip2ToLifiChainId } from "./util";
 
 export async function getAnyToken(
   token: string,
-  chainId: string
+  caip2: string
 ): Promise<LifiToken | null> {
+  const chainId = caip2ToLifiChainId(caip2);
   try {
     const res = await fetch(
-      `https://li.quest/v1/token?mint=${token}&chainId=${chainId}`,
+      `https://li.quest/v1/token?token=${token}&chain=${chainId}`,
       {
         method: "GET",
         headers: {
@@ -17,8 +19,11 @@ export async function getAnyToken(
         },
       }
     );
-    return LifiTokenSchema.parse(await res.json());
+    const data = await res.json();
+    console.log(data);
+    return LifiTokenSchema.parse(data);
   } catch (error) {
+    console.error(error);
     return null;
   }
 }
@@ -55,6 +60,7 @@ export const useToken = (address: string, chainId: string) => {
     queryKey: ["token", address, chainId],
     queryFn: async () => {
       const token = await getAnyToken(address, chainId);
+      console.log(token);
       if (token) {
         return token;
       }
