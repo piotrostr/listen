@@ -48,23 +48,21 @@ export function ConnectedAccounts({ user }: ConnectedAccountsProps) {
 
   return (
     <div>
-      <div className="border border-purple-500/30 rounded-lg p-4 bg-black/40 backdrop-blur-sm">
+      <div className="flex flex-col gap-2">
         <div className="flex flex-col gap-2">
-          <div className="flex flex-col gap-2">
-            {accounts
-              .filter((account) => account.isConnected)
-              .map((account, i) => (
-                <ConnectedAccount key={i} {...account} />
-              ))}
-          </div>
+          {accounts
+            .filter((account) => account.isConnected)
+            .map((account, i) => (
+              <ConnectedAccount key={i} {...account} />
+            ))}
+        </div>
 
-          <div className="flex flex-row gap-2 flex-wrap justify-center">
-            {accounts
-              .filter((account) => !account.isConnected)
-              .map((account, i) => (
-                <ConnectedAccount key={i} {...account} />
-              ))}
-          </div>
+        <div className="flex flex-row gap-2 flex-wrap justify-center">
+          {accounts
+            .filter((account) => !account.isConnected)
+            .map((account, i) => (
+              <ConnectedAccount key={i} {...account} />
+            ))}
         </div>
       </div>
     </div>

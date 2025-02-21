@@ -1,6 +1,6 @@
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 
-export type ChatType = "evm" | "solana" | "omni";
+export type ChatType = "solana" | "omni";
 
 const CHAT_TYPE_KEY = ["chatType"];
 
@@ -9,11 +9,12 @@ export const useChatType = () => {
 
   const { data: chatType = null } = useQuery<ChatType>({
     queryKey: CHAT_TYPE_KEY,
-    initialData: "omni", // hard set to omni, does all evm/sol does
+    initialData: (localStorage.getItem("chatType") as ChatType) || "solana",
   });
 
   const setChatType = (newChatType: ChatType) => {
     queryClient.setQueryData(CHAT_TYPE_KEY, newChatType);
+    localStorage.setItem("chatType", newChatType);
   };
 
   return {

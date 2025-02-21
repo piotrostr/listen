@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { z } from "zod";
 import { config } from "../config";
 import { introPrompt } from "./prompts";
+import { useChatType } from "./useChatType";
 import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
 import { useSolanaPortfolio } from "./useSolanaPortfolio";
 
@@ -64,6 +65,7 @@ export function useChat() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const { getAccessToken } = usePrivy();
+  const { chatType } = useChatType();
 
   const updateAssistantMessage = useCallback(
     (assistantMessageId: string, newContent: string) => {
@@ -138,7 +140,7 @@ export function useChat() {
         const body = JSON.stringify({
           prompt: userMessage,
           chat_history: chat_history,
-          chain: "omni",
+          chain: chatType,
         });
 
         const response = await fetch(config.API_BASE_URL + "/v1/kit/stream", {
