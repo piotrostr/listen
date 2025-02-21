@@ -404,7 +404,8 @@ impl Engine {
                         }
                     };
 
-                    if can_process {
+                    if can_process && !matches!(pipeline.status, Status::Failed | Status::Cancelled)
+                    {
                         futures.push(tokio::spawn(async move {
                             let result = async {
                                 tracing::info!("Evaluating pipeline: {}", pipeline_id);
