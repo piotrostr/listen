@@ -117,7 +117,7 @@ impl Engine {
                                 engine.active_pipelines.entry(asset_id.clone()).or_default().insert(format!("{}:{}", pipeline.user_id, pipeline.id));
                                 engine.redis.save_pipeline(&pipeline).await?;
                             }
-                            let _ = response_tx.send(Ok(()));
+                            let _ = response_tx.send(Ok(pipeline.id.to_string()));
                         },
                         EngineMessage::DeletePipeline { .. } => {
                             panic!("DeletePipeline not implemented");

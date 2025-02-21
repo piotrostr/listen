@@ -24,7 +24,7 @@ use privy::{config::PrivyConfig, Privy};
 pub enum EngineMessage {
     AddPipeline {
         pipeline: Pipeline,
-        response_tx: oneshot::Sender<Result<(), EngineError>>,
+        response_tx: oneshot::Sender<Result<String, EngineError>>,
     },
     GetPipeline {
         user_id: String,
@@ -283,11 +283,12 @@ async fn create_pipeline(
     // Wait for response with timeout
     let result = match tokio::time::timeout(std::time::Duration::from_secs(5), response_rx).await {
         Ok(response) => match response {
-            Ok(Ok(_)) => {
+            Ok(Ok(id)) => {
                 metrics::counter!("pipeline_creation_success", 1);
                 HttpResponse::Created().json(serde_json::json!({
                     "status": "success",
-                    "message": "Pipeline created successfully"
+                    "message": "Pipeline created successfully",
+                    "id": id
                 }))
             }
             Ok(Err(e)) => {
