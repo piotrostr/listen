@@ -1,27 +1,32 @@
 import { useQuery } from "@tanstack/react-query";
 import { Alchemy, Network } from "alchemy-sdk";
+import { getAddress } from "viem";
 import { tokenMetadataCache } from "./cache";
 import { PortfolioItem, TokenMetadata } from "./types";
 import { usePrivyWallets } from "./usePrivyWallet";
+import { getAnyToken } from "./useToken";
 
 const SUPPORTED_NETWORKS = [
-  { network: Network.ARB_MAINNET, chain: "arb" },
-  { network: Network.BNB_MAINNET, chain: "bsc" },
-  { network: Network.BASE_MAINNET, chain: "base" },
+  { network: Network.ARB_MAINNET, chainId: "42161", chain: "arbitrum" },
+  { network: Network.BNB_MAINNET, chainId: "56", chain: "bsc" },
+  { network: Network.BASE_MAINNET, chainId: "8453", chain: "base" },
 ] as const;
 
-const alchemyClients = SUPPORTED_NETWORKS.map(({ network, chain }) => ({
-  client: new Alchemy({
-    apiKey: import.meta.env.VITE_ALCHEMY_API_KEY,
+const alchemyClients = SUPPORTED_NETWORKS.map(
+  ({ network, chainId, chain }) => ({
+    client: new Alchemy({
+      apiKey: import.meta.env.VITE_ALCHEMY_API_KEY,
+      network,
+    }),
+    chainId,
+    chain,
     network,
-  }),
-  chain,
-  network,
-}));
+  })
+);
 
 export async function getTokensMetadata(
   addresses: string[],
-  client: Alchemy
+  chainId: string
 ): Promise<Map<string, TokenMetadata>> {
   try {
     const metadataMap = new Map<string, TokenMetadata>();
@@ -30,7 +35,7 @@ export async function getTokensMetadata(
     await Promise.all(
       addresses.map(async (address) => {
         const cachedMetadata = await tokenMetadataCache.get(address);
-        if (cachedMetadata) {
+        if (cachedMetadata && cachedMetadata.logoURI) {
           metadataMap.set(address, cachedMetadata);
         } else {
           addressesToFetch.push(address);
@@ -42,12 +47,19 @@ export async function getTokensMetadata(
       return metadataMap;
     }
 
-    const metadataResults = await Promise.all(
-      addressesToFetch.map((address) => client.core.getTokenMetadata(address))
-    );
+    const tokenPromises = addressesToFetch.map((address) => {
+      return getAnyToken(getAddress(address), chainId);
+    });
+
+    const tokenResults = await Promise.all(tokenPromises);
 
     addressesToFetch.forEach(async (address, index) => {
-      const metadata = metadataResults[index];
+      const metadata = tokenResults[index];
+      if (!metadata) {
+        console.error(`No metadata found for ${address}`);
+        return;
+      }
+
       if (!metadata.decimals) {
         console.error(`No decimals found for ${address}`);
         return;
@@ -58,7 +70,7 @@ export async function getTokensMetadata(
         name: metadata.name || "",
         symbol: metadata.symbol || "",
         decimals: metadata.decimals,
-        logoURI: metadata.logo || "",
+        logoURI: metadata.logoURI || "",
       };
 
       metadataMap.set(address, tokenMetadata);
@@ -80,7 +92,7 @@ export async function getTokenHoldings(
 
     await Promise.all(
       alchemyClients.map(async (alchemy) => {
-        const { network, chain, client } = alchemy;
+        const { chainId, chain, client, network } = alchemy;
 
         try {
           const { tokenBalances } = await client.core.getTokenBalances(address);
@@ -94,7 +106,7 @@ export async function getTokenHoldings(
           const tokenAddresses = nonZeroBalances.map(
             (token) => token.contractAddress
           );
-          const metadataMap = await getTokensMetadata(tokenAddresses, client);
+          const metadataMap = await getTokensMetadata(tokenAddresses, chainId);
 
           const priceData = await client.prices.getTokenPriceByAddress(
             tokenAddresses.map((address) => ({
@@ -132,6 +144,8 @@ export async function getTokenHoldings(
         }
       })
     );
+
+    console.log(allTokens);
 
     return allTokens;
   } catch (error) {

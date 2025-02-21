@@ -86,7 +86,11 @@ export function Portfolio() {
                       <h3 className="font-bold flex items-center gap-2">
                         {asset.name}{" "}
                         <img
-                          src={imageMap[asset.chain as keyof typeof imageMap]}
+                          src={
+                            "https://dd.dexscreener.com/ds-data/chains/" +
+                            asset.chain.toLowerCase() +
+                            ".png"
+                          }
                           className="w-6 h-6"
                           alt={asset.chain}
                         />

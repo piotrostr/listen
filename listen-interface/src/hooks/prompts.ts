@@ -60,6 +60,11 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
 
   always include the tags! otherwise the pipeline will not be executed
   </knowledge>
+  <guidelines>
+  Often, there will be tokens on other chains that mimick the "original" token, even in the user portfolio.
+  The original token is the one with highest liquidity and volume.
+  Always assume the user wants the OG token, unless specified otherwise.
+  </guidelines>
   <context>address: ${userAddress} ${JSON.stringify(
     portfolio
   )} (prices in USD)</context>
