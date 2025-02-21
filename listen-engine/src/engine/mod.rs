@@ -347,11 +347,6 @@ impl Engine {
         let start = Instant::now();
         counter!("price_updates_processed", 1);
 
-        tracing::info!(
-            "Current active_pipelines state: {:?}",
-            self.active_pipelines
-        );
-
         let pipeline_ids = {
             let mut res = Vec::new();
             if let Some(now_pipeline_ids) = self.active_pipelines.get(&"NOW".to_string()) {
