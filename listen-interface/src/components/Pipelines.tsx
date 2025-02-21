@@ -1,5 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useState } from "react";
+import { IoRefreshOutline } from "react-icons/io5";
 import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 import { usePipelines } from "../hooks/usePipelines";
 import { ExtendedPipeline } from "../types/api";
@@ -9,8 +10,15 @@ import { Spinner } from "./Spinner";
 export function Pipelines() {
   const { ready } = usePrivy();
   const { isAuthenticated } = useIsAuthenticated();
-  const { data, isLoading, error } = usePipelines();
+  const { data, isLoading, error, refetch } = usePipelines();
   const [statusFilter, setStatusFilter] = useState<string>("All");
+  const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    await refetch();
+    setIsRefreshing(false);
+  };
 
   if (!ready) {
     return (
@@ -61,15 +69,27 @@ export function Pipelines() {
         <h1 className="lg:text-2xl text-xl font-bold text-white lg:text-left text-center">
           Pipelines
         </h1>
-        <select
-          value={statusFilter}
-          onChange={(e) => setStatusFilter(e.target.value)}
-          className="bg-black/40 text-white border border-purple-500/30 rounded-lg px-4 py-2"
-        >
-          <option value="Pending">Pending</option>
-          <option value="Completed">Completed</option>
-          <option value="Failed">Failed</option>
-        </select>
+        <div className="flex items-center gap-2">
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="bg-black/40 text-white border border-purple-500/30 rounded-lg px-4 py-2"
+          >
+            <option value="All">All</option>
+            <option value="Pending">Pending</option>
+            <option value="Completed">Completed</option>
+            <option value="Failed">Failed</option>
+          </select>
+          <button
+            onClick={handleRefresh}
+            disabled={isRefreshing}
+            className="bg-black/40 text-white border border-purple-500/30 rounded-lg p-2 hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+          >
+            <IoRefreshOutline
+              className={`w-6 h-6 ${isRefreshing ? "animate-spin" : ""}`}
+            />
+          </button>
+        </div>
       </div>
       <div className="space-y-6">
         {filteredPipelines?.map((pipeline: ExtendedPipeline, index: number) => (
