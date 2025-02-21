@@ -33,7 +33,7 @@ export const TokenMetadataSchema = z.object({
   spl: SplTokenMetadataSchema,
 });
 
-export type TokenMetadata = z.infer<typeof TokenMetadataSchema>;
+export type TokenMetadataRaw = z.infer<typeof TokenMetadataSchema>;
 
 export interface TokenMarketData {
   name: string;

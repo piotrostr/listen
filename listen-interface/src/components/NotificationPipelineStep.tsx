@@ -19,7 +19,11 @@ export const NotificationPipelineStep = ({
   const tokenName = inputToken.data?.symbol;
 
   return (
-    <PipelineStepContainer index={index} conditions={step.conditions}>
+    <PipelineStepContainer
+      index={index}
+      conditions={step.conditions}
+      transactionHash={null}
+    >
       <div className="flex-1">
         <div className="flex items-center gap-3">
           {tokenImage && (

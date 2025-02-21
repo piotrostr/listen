@@ -1,7 +1,32 @@
 import { useQuery } from "@tanstack/react-query";
-import { TokenMetadata } from "./types";
-import { getTokensMetadata } from "./useEvmPortfolio";
+import { LifiToken, LifiTokenSchema, TokenMetadata } from "./types";
 import { fetchTokenMetadata } from "./useSolanaPortfolio";
+import { caip2ToLifiChainId } from "./util";
+
+export async function getAnyToken(
+  token: string,
+  caip2: string
+): Promise<LifiToken | null> {
+  const chainId = caip2ToLifiChainId(caip2);
+  try {
+    const res = await fetch(
+      `https://li.quest/v1/token?token=${token}&chain=${chainId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
+    );
+    const data = await res.json();
+    console.log(data);
+    return LifiTokenSchema.parse(data);
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
 
 async function getSolanaTokenMetadata(mint: string): Promise<TokenMetadata> {
   return fetchTokenMetadata(mint);
@@ -18,12 +43,28 @@ export const useSolanaToken = (mint: string) => {
   return { data, isLoading, error };
 };
 
-export const useEvmToken = (address: string) => {
+export const useEvmToken = (address: string, chainId: string) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["evm-token", address],
     queryFn: async () => {
-      const tokens = await getTokensMetadata([address]);
-      return tokens.get(address);
+      const token = await getAnyToken(address, chainId);
+      return token;
+    },
+  });
+
+  return { data, isLoading, error };
+};
+
+export const useToken = (address: string, chainId: string) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["token", address, chainId],
+    queryFn: async () => {
+      const token = await getAnyToken(address, chainId);
+      console.log(token);
+      if (token) {
+        return token;
+      }
+      return null;
     },
   });
 

@@ -56,6 +56,7 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
                 key={`swap-${index}`}
                 index={index}
                 step={step}
+                transactionHash={null}
               />
             );
           case PipelineActionType.Notification:

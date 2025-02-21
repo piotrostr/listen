@@ -12,7 +12,7 @@ interface PipelineStepContainerProps {
   children: React.ReactNode;
   conditions: PipelineCondition[];
   status?: "Pending" | "Completed" | "Failed" | "Cancelled";
-  transactionHash?: string;
+  transactionHash: string | null;
 }
 
 export const PipelineStepContainer = ({
@@ -93,7 +93,7 @@ const TransactionLink = ({
   transactionHash,
 }: {
   status: string;
-  transactionHash?: string;
+  transactionHash: string | null;
 }) => {
   return (
     <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-1 mt-2">
