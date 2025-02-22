@@ -34,6 +34,7 @@ impl Engine {
             {
                 SwapOrderTransaction::Evm(transaction) => {
                     privy_transaction.evm_transaction = Some(transaction);
+                    println!("Executing EVM transaction: {:#?}", privy_transaction);
                     self.privy.execute_transaction(privy_transaction).await
                 }
                 SwapOrderTransaction::Solana(transaction) => {
