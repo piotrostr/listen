@@ -137,9 +137,9 @@ impl TransactionRequest {
             "to": self.to,
             "data": self.data,
             "chain_id": self.chain_id,
-            "gas_limit": self.gas_limit.as_ref().map(|s| format!("0x{}", s.trim_start_matches("0x"))),
-            "gas_price": self.gas_price.as_ref().map(|s| format!("0x{}", s.trim_start_matches("0x"))),
-            "value": self.value.as_ref().map(|s| format!("0x{}", s.trim_start_matches("0x"))),
+            "gas_limit": self.gas_limit,
+            "gas_price": self.gas_price,
+            "value": self.value,
         }))
     }
 }
@@ -229,4 +229,28 @@ pub struct IncludedStep {
     pub action: Action,
     pub estimate: Estimate,
     pub data: Option<Value>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::TransactionRequest;
+
+    #[test]
+    fn test_serialize_to_jsonrpc() {
+        let tx_request = serde_json::json!({
+          "value": "0x0",
+          "to": "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE",
+          "data": "not relevant",
+          "chainId": 56,
+          "gasPrice": "0x3b9aca00",
+          "gasLimit": "0x55535",
+          "from": "0x552008c0f6870c2f77e5cC1d2eb9bdff03e30Ea0"
+        });
+        let parsed: TransactionRequest = serde_json::from_value(tx_request.clone()).unwrap();
+        assert!(parsed.is_evm());
+
+        dbg!(&parsed);
+
+        dbg!(parsed.to_json_rpc().unwrap());
+    }
 }
