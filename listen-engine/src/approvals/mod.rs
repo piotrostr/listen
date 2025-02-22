@@ -79,8 +79,8 @@ pub fn create_approval_transaction(
         "to": token_address,
         "data": approve_data,
         "chain_id": chain_id,
-        "gas_limit": null,
-        "gas_price": null,
+        // "gas_limit": null,
+        // "gas_price": null,
         "value": "0x0"
     })
 }
