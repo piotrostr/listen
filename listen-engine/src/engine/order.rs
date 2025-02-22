@@ -267,7 +267,7 @@ mod tests {
             solana_transaction: Some(
                 inject_blockhash_into_encoded_tx(
                     &encoded_tx,
-                    &BLOCKHASH_CACHE.get_blockhash().await.unwrap(),
+                    &BLOCKHASH_CACHE.get_blockhash().await.unwrap().to_string(),
                 )
                 .unwrap(),
             ),

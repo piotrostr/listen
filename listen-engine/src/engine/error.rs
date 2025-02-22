@@ -51,4 +51,7 @@ pub enum EngineError {
 
     #[error("[Engine] Inject blockhash error: {0}")]
     InjectBlockhashError(anyhow::Error),
+
+    #[error("[Engine] Approvals error: {0}")]
+    ApprovalsError(crate::approvals::error::ApprovalsError),
 }
