@@ -136,9 +136,9 @@ impl TransactionRequest {
             "from": self.from,
             "to": self.to,
             "data": self.data,
-            "chainId": self.chain_id,
-            "gas": self.gas_limit.as_ref().map(|s| format!("0x{}", s.trim_start_matches("0x"))),
-            "gasPrice": self.gas_price.as_ref().map(|s| format!("0x{}", s.trim_start_matches("0x"))),
+            "chain_id": self.chain_id,
+            "gas_limit": self.gas_limit.as_ref().map(|s| format!("0x{}", s.trim_start_matches("0x"))),
+            "gas_price": self.gas_price.as_ref().map(|s| format!("0x{}", s.trim_start_matches("0x"))),
             "value": self.value.as_ref().map(|s| format!("0x{}", s.trim_start_matches("0x"))),
         }))
     }

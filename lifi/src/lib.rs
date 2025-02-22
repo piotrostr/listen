@@ -1,9 +1,9 @@
-mod chains;
-mod client;
-mod connections;
-mod quote;
-mod tokens;
-mod tools;
+pub mod chains;
+pub mod client;
+pub mod connections;
+pub mod quote;
+pub mod tokens;
+pub mod tools;
 
 use anyhow::Result;
 
@@ -194,13 +194,14 @@ mod tests {
                 "arb",
                 "8453",
                 "USDC",
-                "USDC",
-                "0x2fAA30d5EdDF1e4fa126aEdA79159878D58A2438",
-                "0x2fAA30d5EdDF1e4fa126aEdA79159878D58A2438",
+                "0x532f27101965dd16442E59d40670FaF5eBB142E4",
+                "0xCCC48877a33a2C14e40c82da843Cf4c607ABF770",
+                "0xCCC48877a33a2C14e40c82da843Cf4c607ABF770",
                 "1000000000",
             )
             .await;
         assert!(quote.is_ok(), "{:?}", quote);
+        println!("{:#?}", quote.unwrap());
     }
 
     #[tokio::test]
