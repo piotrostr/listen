@@ -12,7 +12,7 @@ function ChatOption({ id, iconPaths, isSelected, onClick }: ChatOptionProps) {
   return (
     <button
       onClick={() => onClick(id)}
-      disabled={id === "omni"}
+      disabled={process.env.NODE_ENV === "production"}
       className={`p-4 border-2 ${
         isSelected
           ? "border-purple-500 bg-purple-500/20"
