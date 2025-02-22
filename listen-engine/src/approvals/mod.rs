@@ -57,15 +57,110 @@ pub async fn get_allowance(
     Ok(allowance)
 }
 
-pub fn create_approval_transaction(
+pub async fn estimate_gas_params(
     token_address: &str,
     spender_address: &str,
     amount: u128,
     from_address: &str,
     chain_id: &str,
-) -> serde_json::Value {
+) -> Result<(u64, u64), ApprovalsError> {
+    let rpc_url = chain_id_to_ethereum_rpc_url(chain_id)?;
+    let client = reqwest::Client::new();
+
+    // Construct approval data for gas estimation
+    let amount_hex = format!("{:064x}", amount);
+    let approve_data = format!(
+        "0x095ea7b3{:0>64}{}",
+        spender_address.trim_start_matches("0x"),
+        amount_hex
+    );
+
+    // Estimate gas limit
+    let gas_estimate_request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "eth_estimateGas",
+        "params": [{
+            "from": from_address,
+            "to": token_address,
+            "data": approve_data,
+            "value": "0x0"
+        }, "latest"],
+        "id": 1
+    });
+
+    let res = client
+        .post(&rpc_url)
+        .json(&gas_estimate_request)
+        .send()
+        .await
+        .map_err(|e| ApprovalsError::FailedToEstimateGas(e.to_string()))?;
+
+    let response: serde_json::Value = res
+        .json()
+        .await
+        .map_err(|e| ApprovalsError::FailedToEstimateGas(e.to_string()))?;
+
+    let gas_limit = if let Some(result) = response.get("result") {
+        u64::from_str_radix(
+            result.as_str().unwrap_or("0x0").trim_start_matches("0x"),
+            16,
+        )
+        .unwrap_or(21000)
+    } else {
+        21000 // fallback gas limit
+    };
+
+    // Get current gas price
+    let gas_price_request = serde_json::json!({
+        "jsonrpc": "2.0",
+        "method": "eth_gasPrice",
+        "params": [],
+        "id": 1
+    });
+
+    let res = client
+        .post(&rpc_url)
+        .json(&gas_price_request)
+        .send()
+        .await
+        .map_err(|e| ApprovalsError::FailedToEstimateGas(e.to_string()))?;
+
+    let response: serde_json::Value = res
+        .json()
+        .await
+        .map_err(|e| ApprovalsError::FailedToEstimateGas(e.to_string()))?;
+
+    let gas_price = if let Some(result) = response.get("result") {
+        u64::from_str_radix(
+            result.as_str().unwrap_or("0x0").trim_start_matches("0x"),
+            16,
+        )
+        .unwrap_or(1_000_000_000) // 1 gwei fallback
+    } else {
+        1_000_000_000 // 1 gwei fallback
+    };
+
+    Ok((gas_limit, gas_price))
+}
+
+pub async fn create_approval_transaction(
+    token_address: &str,
+    spender_address: &str,
+    amount: u128,
+    from_address: &str,
+    chain_id: &str,
+) -> Result<serde_json::Value, ApprovalsError> {
+    // Get gas parameters
+    let (gas_limit, gas_price) = estimate_gas_params(
+        token_address,
+        spender_address,
+        amount,
+        from_address,
+        chain_id,
+    )
+    .await?;
+
     // Construct the approve function call data
-    // approve(address,uint256) function selector is 0x095ea7b3
     let amount_hex = format!("{:064x}", amount);
     let approve_data = format!(
         "0x095ea7b3{:0>64}{}",
@@ -74,13 +169,18 @@ pub fn create_approval_transaction(
     );
 
     // Construct the JSON-RPC transaction format
-    serde_json::json!({
+    let res = serde_json::json!({
         "from": from_address,
         "to": token_address,
         "data": approve_data,
-        "chain_id": chain_id.parse::<u64>().unwrap(), // TODO no unwrap
-        // "gas_limit": null,
-        // "gas_price": null,
+        "chainId": format!("0x{:x}", chain_id.parse::<u64>().map_err(|e| ApprovalsError::InvalidChainId(e.to_string()))?),
+        "gasLimit": format!("0x{:x}", gas_limit),
+        "gasPrice": format!("0x{:x}", gas_price),
         "value": "0x0"
-    })
+    });
+
+    // TODO debug instead of info
+    tracing::info!("Approval transaction: {:?}", res);
+
+    Ok(res)
 }

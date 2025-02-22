@@ -52,7 +52,9 @@ impl Engine {
                             order.amount.parse::<u128>().unwrap(),
                             &privy_transaction.address,
                             caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
-                        );
+                        )
+                        .await
+                        .map_err(EngineError::ApprovalsError)?;
                         let mut approval_privy_tx = privy_transaction.clone();
                         approval_privy_tx.evm_transaction = Some(approval_transaction);
                         self.privy

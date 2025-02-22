@@ -11,4 +11,10 @@ pub enum ApprovalsError {
 
     #[error("Failed to get allowance: {0}")]
     FailedToGetAllowance(reqwest::Error),
+
+    #[error("Failed to estimate gas: {0}")]
+    FailedToEstimateGas(String),
+
+    #[error("Invalid chain ID: {0}")]
+    InvalidChainId(String),
 }
