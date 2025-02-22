@@ -78,7 +78,7 @@ pub fn create_approval_transaction(
         "from": from_address,
         "to": token_address,
         "data": approve_data,
-        "chain_id": chain_id,
+        "chain_id": chain_id.parse::<u64>().unwrap(), // TODO no unwrap
         // "gas_limit": null,
         // "gas_price": null,
         "value": "0x0"
