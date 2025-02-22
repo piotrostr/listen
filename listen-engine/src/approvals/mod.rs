@@ -169,7 +169,7 @@ pub async fn create_approval_transaction(
     );
 
     // Construct the JSON-RPC transaction format
-    Ok(serde_json::json!({
+    let res = serde_json::json!({
         "from": from_address,
         "to": token_address,
         "data": approve_data,
@@ -177,5 +177,10 @@ pub async fn create_approval_transaction(
         "gasLimit": format!("0x{:x}", gas_limit),
         "gasPrice": format!("0x{:x}", gas_price),
         "value": "0x0"
-    }))
+    });
+
+    // TODO debug instead of info
+    tracing::info!("Approval transaction: {:?}", res);
+
+    Ok(res)
 }
