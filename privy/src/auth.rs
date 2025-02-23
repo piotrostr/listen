@@ -89,6 +89,7 @@ impl Privy {
             )));
         }
         let text = response.text().await?;
+        println!("user data: {}", text);
         Ok(serde_json::from_str(&text)?)
     }
 }
