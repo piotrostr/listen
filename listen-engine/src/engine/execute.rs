@@ -1,9 +1,6 @@
-use crate::{
-    approvals::{self, chain_id::caip2_to_chain_id},
-    engine::{
-        order::{swap_order_to_transaction, SwapOrder, SwapOrderTransaction},
-        Engine, EngineError,
-    },
+use crate::engine::{
+    order::{swap_order_to_transaction, SwapOrder, SwapOrderTransaction},
+    Engine, EngineError,
 };
 use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
 use privy::tx::PrivyTransaction;
@@ -40,18 +37,18 @@ impl Engine {
                     let allowance = approvals::get_allowance(
                         &order.input_token,
                         &privy_transaction.address,
-                        &spender_address,
-                        caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
+                        spender_address,
+                        approvals::caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
                     )
                     .await
                     .map_err(EngineError::ApprovalsError)?;
                     if allowance < order.amount.parse::<u128>().unwrap() {
                         let approval_transaction = approvals::create_approval_transaction(
                             &order.input_token,
-                            &spender_address,
+                            spender_address,
                             order.amount.parse::<u128>().unwrap(),
                             &privy_transaction.address,
-                            caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
+                            approvals::caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
                         )
                         .await
                         .map_err(EngineError::ApprovalsError)?;

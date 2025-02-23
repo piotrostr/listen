@@ -30,6 +30,7 @@ lifi = { path = "../lifi" }
 blockhash-cache = { path = "../blockhash-cache" }
 dashmap = "6.1.0"
 parking_lot = "0.12.3"
+approvals = { path = "../approvals" }
 
 [[bin]]
 name = "engine"

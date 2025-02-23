@@ -5,8 +5,8 @@ use anyhow::Result;
 pub mod chain_id;
 pub mod error;
 
-use chain_id::chain_id_to_ethereum_rpc_url;
-use error::ApprovalsError;
+pub use chain_id::*;
+pub use error::*;
 
 pub async fn get_allowance(
     token_address: &str,
