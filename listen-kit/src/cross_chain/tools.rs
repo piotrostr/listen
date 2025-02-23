@@ -5,7 +5,6 @@ use rig_tool_macro::tool;
 use crate::common::wrap_unsafe;
 use crate::signer::SignerContext;
 
-use super::approvals::{create_approval_transaction, get_allowance};
 use lifi::LiFi;
 
 // TODO support sponsored transactions here
@@ -188,8 +187,6 @@ pub async fn swap(
     }
 }
 
-// TODO here is important to ensure we can approve on any chain, parametrizing
-// the Caip2 is crucial
 #[tool(description = "
 Check if a token has enough approval for a spender.
 
@@ -203,13 +200,18 @@ pub async fn check_approval(
     token_address: String,
     spender_address: String,
     amount: String,
+    from_chain_caip2: String,
 ) -> Result<String> {
     let signer = SignerContext::current().await;
     let owner_address = signer.address();
 
-    let allowance =
-        get_allowance(&token_address, &owner_address, &spender_address)
-            .await?;
+    let allowance = approvals::get_allowance(
+        &token_address,
+        &owner_address,
+        &spender_address,
+        approvals::caip2_to_chain_id(&from_chain_caip2)?,
+    )
+    .await?;
     let amount = amount
         .parse::<u128>()
         .map_err(|_| anyhow!("Invalid amount"))?;
@@ -217,8 +219,6 @@ pub async fn check_approval(
     Ok((allowance >= amount).to_string())
 }
 
-// TODO here is important to ensure we can approve on any chain, parametrizing
-// the Caip2 is crucial
 #[tool(description = "
 Approve a token for a spender.
 
@@ -230,16 +230,19 @@ pub async fn approve_token(
     token_address: String,
     spender_address: String,
     amount: String,
+    from_chain_caip2: String,
 ) -> Result<String> {
     let signer = SignerContext::current().await;
     let owner_address = signer.address();
 
-    let transaction = create_approval_transaction(
+    let transaction = approvals::create_approval_transaction(
         &token_address,
         &spender_address,
         amount.parse::<u128>()?,
         &owner_address,
-    )?;
+        approvals::caip2_to_chain_id(&from_chain_caip2)?,
+    )
+    .await?;
 
     wrap_unsafe(move || async move {
         signer
