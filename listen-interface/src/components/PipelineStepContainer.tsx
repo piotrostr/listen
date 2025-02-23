@@ -110,7 +110,11 @@ const TransactionLink = ({
       {transactionHash && (
         <span className="flex items-center gap-1 inline-flex">
           <a
-            href={`https://solscan.io/tx/${transactionHash}`}
+            href={
+              transactionHash.startsWith("0x")
+                ? `https://blockscan.com/tx/${transactionHash}`
+                : `https://solscan.io/tx/${transactionHash}`
+            }
             target="_blank"
             rel="noopener noreferrer"
             className="text-blue-400 hover:text-blue-300 inline-flex items-center gap-1"
