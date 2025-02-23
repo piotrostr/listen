@@ -37,7 +37,7 @@ export async function getTokensMetadata(
         const cacheKey = `${address}-${chainId}`;
         const cachedMetadata = await tokenMetadataCache.get(cacheKey);
         if (cachedMetadata && cachedMetadata.logoURI) {
-          metadataMap.set(address, cachedMetadata);
+          metadataMap.set(cacheKey, cachedMetadata);
         } else {
           addressesToFetch.push(address);
         }
@@ -95,75 +95,69 @@ export async function getTokenHoldings(
 
     await Promise.all(
       alchemyClients.map(async ({ chainId, chain, client, network }) => {
-        try {
-          // Get token balances
-          const { tokenBalances } = await client.core.getTokenBalances(address);
+        const { tokenBalances } = await client.core.getTokenBalances(address);
 
-          // Get native token balance
-          const nativeBalance = await client.core.getBalance(address);
+        // Get native token balance
+        const nativeBalance = await client.core.getBalance(address);
 
-          // Filter non-zero token balances
-          const nonZeroBalances = tokenBalances.filter((token) => {
-            const balance = BigInt(token.tokenBalance || "0");
-            return balance > BigInt(0);
+        // Filter non-zero token balances
+        const nonZeroBalances = tokenBalances.filter((token) => {
+          const balance = BigInt(token.tokenBalance || "0");
+          return balance > BigInt(0);
+        });
+
+        // Add native token if balance > 0
+        if (nativeBalance.toBigInt() > BigInt(0)) {
+          nonZeroBalances.push({
+            contractAddress: "0x0000000000000000000000000000000000000000",
+            tokenBalance: nativeBalance.toString(),
+            error: null,
           });
-
-          // Add native token if balance > 0
-          if (nativeBalance.toBigInt() > BigInt(0)) {
-            nonZeroBalances.push({
-              contractAddress: "0x0000000000000000000000000000000000000000",
-              tokenBalance: nativeBalance.toString(),
-              error: null,
-            });
-          }
-
-          // Get all token addresses including native token
-          const tokenAddresses = nonZeroBalances.map(
-            (token) => token.contractAddress
-          );
-
-          // Get metadata for all tokens
-          const metadataMap = await getTokensMetadata(tokenAddresses, chainId);
-
-          // Get prices for all tokens
-          const priceData = await client.prices.getTokenPriceByAddress(
-            tokenAddresses.map((address) => ({
-              address,
-              network,
-            }))
-          );
-
-          // Process all tokens including native
-          const tokens = nonZeroBalances
-            .map((token) => {
-              // Create the same compound key format used in caching
-              const metadataKey = `${token.contractAddress}-${chainId}`;
-              const metadata = metadataMap.get(metadataKey);
-              if (!metadata) return null;
-
-              const price =
-                priceData.data.find((p) => p.address === token.contractAddress)
-                  ?.prices[0]?.value || 0;
-
-              const rawBalance = BigInt(token.tokenBalance!);
-              const amount =
-                Number(rawBalance) / Math.pow(10, metadata.decimals);
-
-              const portfolioItem: PortfolioItem = {
-                ...metadata,
-                price: Number(price),
-                amount,
-                chain,
-              };
-
-              return portfolioItem;
-            })
-            .filter((token): token is PortfolioItem => token !== null);
-
-          allTokens.push(...tokens);
-        } catch (error) {
-          console.error(`Error fetching tokens for ${chain}:`, error);
         }
+
+        // Get all token addresses including native token
+        const tokenAddresses = nonZeroBalances.map(
+          (token) => token.contractAddress
+        );
+
+        // Get metadata for all tokens
+        const metadataMap = await getTokensMetadata(tokenAddresses, chainId);
+
+        // Get prices for all tokens
+        const priceData = await client.prices.getTokenPriceByAddress(
+          tokenAddresses.map((address) => ({
+            address,
+            network,
+          }))
+        );
+
+        // Process all tokens including native
+        const tokens = nonZeroBalances
+          .map((token) => {
+            // Create the same compound key format used in caching
+            const metadataKey = `${token.contractAddress}-${chainId}`;
+            const metadata = metadataMap.get(metadataKey);
+            if (!metadata) return null;
+
+            const price =
+              priceData.data.find((p) => p.address === token.contractAddress)
+                ?.prices[0]?.value || 0;
+
+            const rawBalance = BigInt(token.tokenBalance!);
+            const amount = Number(rawBalance) / Math.pow(10, metadata.decimals);
+
+            const portfolioItem: PortfolioItem = {
+              ...metadata,
+              price: Number(price),
+              amount,
+              chain,
+            };
+
+            return portfolioItem;
+          })
+          .filter((token): token is PortfolioItem => token !== null);
+
+        allTokens.push(...tokens);
       })
     );
 

@@ -7,6 +7,7 @@ export async function getAnyToken(
   token: string,
   chainIdOrCaip2: string
 ): Promise<LifiToken | null> {
+  console.info("getAnyToken", token, chainIdOrCaip2);
   let chainId: number | null = null;
   if (chainIdOrCaip2.includes(":")) {
     chainId = caip2ToLifiChainId(chainIdOrCaip2);
@@ -24,8 +25,11 @@ export async function getAnyToken(
         },
       }
     );
+    if (!res.ok) {
+      console.error(res);
+      return null;
+    }
     const data = await res.json();
-    console.log(data);
     return LifiTokenSchema.parse(data);
   } catch (error) {
     console.error(error);
@@ -65,7 +69,6 @@ export const useToken = (address: string, chainId: string) => {
     queryKey: ["token", address, chainId],
     queryFn: async () => {
       const token = await getAnyToken(address, chainId);
-      console.log(token);
       if (token) {
         return token;
       }
