@@ -36,7 +36,14 @@ const renderMessage = (msg: Message) => {
       if (pipeline && pipeline.steps) {
         return (
           <div key={msg.id} className="mb-6 border-b border-purple-500/30 pb-6">
-            <PipelineDisplay pipeline={pipeline} />
+            <ChatMessage
+              key={`${msg.id}-message`}
+              message={msg.message.replace(pipelineRegex, "").trim()}
+              direction={msg.direction}
+            />
+            <div className="mt-4">
+              <PipelineDisplay pipeline={pipeline} />
+            </div>
           </div>
         );
       }
