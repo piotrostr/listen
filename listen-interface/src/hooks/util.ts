@@ -133,7 +133,7 @@ export const addressBook = {
 
 export const formatAmount = (amount: string, decimals: number) => {
   const amountNum = parseFloat(amount);
-  return (amountNum / Math.pow(10, decimals)).toString();
+  return (amountNum / Math.pow(10, decimals)).toFixed(5).toString();
 };
 
 export function serializePipeline(pipeline: Pipeline): string {
@@ -178,80 +178,91 @@ export const mockOrderPipeline: Pipeline = {
   ],
 };
 
+export const caip2ToChainIdMap = {
+  "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": "solana",
+  "eip155:1": "ethereum",
+  "eip155:56": "bsc",
+  "eip155:42161": "arbitrum",
+  "eip155:8453": "base",
+  "eip155:81457": "blast",
+  "eip155:43114": "avalanche",
+  "eip155:137": "polygon",
+  "eip155:534352": "scroll",
+  "eip155:10": "optimism",
+  "eip155:59144": "linea",
+  "eip155:100": "gnosis",
+  "eip155:250": "fantom",
+  "eip155:1285": "moonriver",
+  "eip155:1284": "moonbeam",
+  "eip155:288": "boba",
+  "eip155:34443": "mode",
+  "eip155:1088": "metis",
+  "eip155:1135": "lisk",
+  "eip155:1313161554": "aurora",
+  "eip155:1329": "sei",
+  "eip155:13371": "immutability",
+  "eip155:1625": "gravity",
+  "eip155:167000": "taiko",
+  "eip155:25": "cronos",
+  "eip155:252": "fraxtal",
+  "eip155:2741": "abstract",
+  "eip155:42220": "celo",
+  "eip155:480": "world",
+  "eip155:5000": "manta",
+  "eip155:80094": "berachain",
+};
+
 export const caip2ToChainId = (caip2: string) => {
-  const map = {
-    "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": "solana",
-    "eip155:1": "ethereum",
-    "eip155:56": "bsc",
-    "eip155:42161": "arbitrum",
-    "eip155:8453": "base",
-    "eip155:81457": "blast",
-    "eip155:43114": "avalanche",
-    "eip155:137": "polygon",
-    "eip155:534352": "scroll",
-    "eip155:10": "optimism",
-    "eip155:59144": "linea",
-    "eip155:100": "gnosis",
-    "eip155:250": "fantom",
-    "eip155:1285": "moonriver",
-    "eip155:1284": "moonbeam",
-    "eip155:288": "boba",
-    "eip155:34443": "mode",
-    "eip155:1088": "metis",
-    "eip155:1135": "lisk",
-    "eip155:1313161554": "aurora",
-    "eip155:1329": "sei",
-    "eip155:13371": "immutability",
-    "eip155:1625": "gravity",
-    "eip155:167000": "taiko",
-    "eip155:25": "cronos",
-    "eip155:252": "fraxtal",
-    "eip155:2741": "abstract",
-    "eip155:42220": "celo",
-    "eip155:480": "world",
-    "eip155:5000": "manta",
-    "eip155:80094": "berachain",
-  };
-  if (caip2 in map) {
-    return map[caip2 as keyof typeof map];
+  if (caip2 in caip2ToChainIdMap) {
+    return caip2ToChainIdMap[caip2 as keyof typeof caip2ToChainIdMap];
   }
   return null;
 };
 
-export const caip2ToLifiChainId = (caip2: string) => {
-  const chainIdMap: { [key: string]: number } = {
-    "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": 1151111081099710,
-    "eip155:1": 1, // ethereum
-    "eip155:56": 56, // bsc
-    "eip155:42161": 42161, // arbitrum
-    "eip155:8453": 8453, // base
-    "eip155:81457": 81457, // blast
-    "eip155:43114": 43114, // avalanche
-    "eip155:137": 137, // polygon
-    "eip155:534352": 534352, // scroll
-    "eip155:10": 10, // optimism
-    "eip155:59144": 59144, // linea
-    "eip155:100": 100, // gnosis
-    "eip155:250": 250, // fantom
-    "eip155:1285": 1285, // moonriver
-    "eip155:1284": 1284, // moonbeam
-    "eip155:288": 288, // boba
-    "eip155:34443": 34443, // mode
-    "eip155:1088": 1088, // metis
-    "eip155:1135": 1135, // lisk
-    "eip155:1313161554": 1313161554, // aurora
-    "eip155:1329": 1329, // sei
-    "eip155:13371": 13371, // immutable
-    "eip155:1625": 1625, // gravity
-    "eip155:167000": 167000, // taiko
-    "eip155:25": 25, // cronos
-    "eip155:252": 252, // fraxtal
-    "eip155:2741": 2741, // abstract
-    "eip155:42220": 42220, // celo
-    "eip155:480": 480, // world
-    "eip155:5000": 5000, // mantle
-    "eip155:80094": 80094, // berachain
-  };
+export const caip2ToChainIdNumericMap: { [key: string]: number } = {
+  "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": 1151111081099710,
+  "eip155:1": 1, // ethereum
+  "eip155:56": 56, // bsc
+  "eip155:42161": 42161, // arbitrum
+  "eip155:8453": 8453, // base
+  "eip155:81457": 81457, // blast
+  "eip155:43114": 43114, // avalanche
+  "eip155:137": 137, // polygon
+  "eip155:534352": 534352, // scroll
+  "eip155:10": 10, // optimism
+  "eip155:59144": 59144, // linea
+  "eip155:100": 100, // gnosis
+  "eip155:250": 250, // fantom
+  "eip155:1285": 1285, // moonriver
+  "eip155:1284": 1284, // moonbeam
+  "eip155:288": 288, // boba
+  "eip155:34443": 34443, // mode
+  "eip155:1088": 1088, // metis
+  "eip155:1135": 1135, // lisk
+  "eip155:1313161554": 1313161554, // aurora
+  "eip155:1329": 1329, // sei
+  "eip155:13371": 13371, // immutable
+  "eip155:1625": 1625, // gravity
+  "eip155:167000": 167000, // taiko
+  "eip155:25": 25, // cronos
+  "eip155:252": 252, // fraxtal
+  "eip155:2741": 2741, // abstract
+  "eip155:42220": 42220, // celo
+  "eip155:480": 480, // world
+  "eip155:5000": 5000, // mantle
+  "eip155:80094": 80094, // berachain
+};
 
-  return chainIdMap[caip2];
+export const caip2ToLifiChainId = (caip2: string): number => {
+  return caip2ToChainIdNumericMap[
+    caip2 as keyof typeof caip2ToChainIdNumericMap
+  ];
+};
+
+export const chainIdNumericToChainId = (chainId: number): string => {
+  if (chainId === 1151111081099710) {
+    return "solana";
+  }
+  const key = `eip155:${chainId}`;
+  return caip2ToChainIdMap[key as keyof typeof caip2ToChainIdMap];
 };

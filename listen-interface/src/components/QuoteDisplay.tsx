@@ -1,5 +1,5 @@
 import { useToken } from "../hooks/useToken";
-import { formatAmount, imageMap } from "../hooks/util";
+import { chainIdNumericToChainId, formatAmount, imageMap } from "../hooks/util";
 import { QuoteResponse } from "../types/quote";
 
 interface QuoteDisplayProps {
@@ -32,6 +32,10 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
   const inputTokenDecimals = quote.from.decimals;
   const outputTokenDecimals = quote.to.decimals;
 
+  // Get chain IDs
+  const fromChain = chainIdNumericToChainId(quote.from.chain_id);
+  const toChain = chainIdNumericToChainId(quote.to.chain_id);
+
   // Fetch token metadata for images
   const inputToken = useToken(
     quote.from.address,
@@ -62,8 +66,13 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
               </div>
             )}
             <div>
-              <div className="font-bold text-purple-100">
+              <div className="font-bold text-purple-100 flex items-center gap-2">
                 {quote.from.token}
+                <img
+                  src={`https://dd.dexscreener.com/ds-data/chains/${fromChain}.png`}
+                  alt={fromChain}
+                  className="w-4 h-4 rounded-full"
+                />
               </div>
               <div className="text-sm text-purple-300">
                 {formatAmount(inputAmount, inputTokenDecimals)}
@@ -109,7 +118,14 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
               </div>
             )}
             <div>
-              <div className="font-bold text-purple-100">{quote.to.token}</div>
+              <div className="font-bold text-purple-100 flex items-center gap-2">
+                {quote.to.token}
+                <img
+                  src={`https://dd.dexscreener.com/ds-data/chains/${toChain}.png`}
+                  alt={toChain}
+                  className="w-4 h-4 rounded-full"
+                />
+              </div>
               <div className="text-sm text-purple-300">
                 {formatAmount(outputAmount, outputTokenDecimals)}
               </div>
