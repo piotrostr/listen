@@ -89,7 +89,8 @@ pub struct EmailAccount {
 #[derive(Serialize, Deserialize)]
 pub struct WalletAccount {
     pub address: String,
-    pub chain_id: String, // Can be either "eip155:1" or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp" format
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub chain_id: Option<String>, // Can be either "eip155:1" or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp" format
     pub chain_type: String, // Can be "ethereum" or "solana"
     pub connector_type: String,
     pub first_verified_at: u64,
@@ -110,4 +111,114 @@ pub struct WalletAccount {
     pub wallet_index: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn test_deserialize_user_with_solana_wallets() {
+        let json = r#"{
+            "id": "did:privy:cm7fb598p00zh10hue8hoiciy",
+            "created_at": 1740174800,
+            "linked_accounts": [
+                {
+                    "type": "wallet",
+                    "address": "aiamaErRMjbeNmf2b8BMZWFR3ofxrnZEf2mLKp935fM",
+                    "chain_type": "solana",
+                    "wallet_client": "unknown",
+                    "wallet_client_type": "phantom",
+                    "connector_type": "solana_adapter",
+                    "verified_at": 1740174800,
+                    "first_verified_at": 1740174800,
+                    "latest_verified_at": 1740304046
+                },
+                {
+                    "type": "wallet",
+                    "wallet_index": 0,
+                    "wallet_client": "privy",
+                    "wallet_client_type": "privy",
+                    "connector_type": "embedded",
+                    "imported": false,
+                    "recovery_method": "privy",
+                    "verified_at": 1740304050,
+                    "first_verified_at": 1740304050,
+                    "latest_verified_at": 1740304050,
+                    "address": "0xfe86bbcA0048262853432e66c33F33dCAC331428",
+                    "chain_id": "eip155:1",
+                    "chain_type": "ethereum",
+                    "delegated": true,
+                    "id": "h11wchcq9jvks7xc48utw3xu"
+                },
+                {
+                    "type": "wallet",
+                    "wallet_index": 0,
+                    "wallet_client": "privy",
+                    "wallet_client_type": "privy",
+                    "connector_type": "embedded",
+                    "imported": false,
+                    "recovery_method": "privy",
+                    "verified_at": 1740304050,
+                    "first_verified_at": 1740304050,
+                    "latest_verified_at": 1740304050,
+                    "address": "9zKvecYDKAW7G1mVLjY4ACjGLYpXAGGndUiGtPzodEoT",
+                    "public_key": "9zKvecYDKAW7G1mVLjY4ACjGLYpXAGGndUiGtPzodEoT",
+                    "chain_type": "solana",
+                    "chain_id": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+                    "delegated": true,
+                    "id": "atyh5yflm0h2pzqzv7islxun"
+                }
+            ],
+            "mfa_methods": [],
+            "has_accepted_terms": false,
+            "is_guest": false
+        }"#;
+
+        let user: User = serde_json::from_str(json).expect("Should deserialize user data");
+
+        assert_eq!(user.id, "did:privy:cm7fb598p00zh10hue8hoiciy");
+        assert_eq!(user.linked_accounts.len(), 3);
+
+        // Test first wallet (Phantom Solana wallet)
+        if let LinkedAccount::Wallet(wallet) = &user.linked_accounts[0] {
+            assert_eq!(
+                wallet.address,
+                "aiamaErRMjbeNmf2b8BMZWFR3ofxrnZEf2mLKp935fM"
+            );
+            assert_eq!(wallet.chain_type, "solana");
+            assert_eq!(wallet.wallet_client_type, "phantom");
+            assert!(wallet.chain_id.is_none()); // First wallet has no chain_id
+        } else {
+            panic!("First account should be a wallet");
+        }
+
+        // Test second wallet (Ethereum wallet)
+        if let LinkedAccount::Wallet(wallet) = &user.linked_accounts[1] {
+            assert_eq!(wallet.address, "0xfe86bbcA0048262853432e66c33F33dCAC331428");
+            assert_eq!(wallet.chain_type, "ethereum");
+            assert_eq!(wallet.chain_id.as_ref().unwrap(), "eip155:1");
+        } else {
+            panic!("Second account should be a wallet");
+        }
+
+        // Test third wallet (Privy Solana wallet)
+        if let LinkedAccount::Wallet(wallet) = &user.linked_accounts[2] {
+            assert_eq!(
+                wallet.address,
+                "9zKvecYDKAW7G1mVLjY4ACjGLYpXAGGndUiGtPzodEoT"
+            );
+            assert_eq!(wallet.chain_type, "solana");
+            assert_eq!(
+                wallet.chain_id.as_ref().unwrap(),
+                "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+            );
+            assert_eq!(
+                wallet.public_key.as_ref().unwrap(),
+                "9zKvecYDKAW7G1mVLjY4ACjGLYpXAGGndUiGtPzodEoT"
+            );
+        } else {
+            panic!("Third account should be a wallet");
+        }
+    }
 }
