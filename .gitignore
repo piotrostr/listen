@@ -1,3 +1,4 @@
+listen-redis
 test-req.sh
 *.pem
 .vite
