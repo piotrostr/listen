@@ -69,46 +69,50 @@ export function Portfolio() {
 
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
         <div className="p-4 pt-0 space-y-4">
-          {assets?.map((asset) => (
-            <div
-              key={asset.address}
-              className="border border-purple-500/30 rounded-lg p-3 hover:bg-purple-900/20 transition-colors"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <div className="flex items-center gap-3">
-                  <img
-                    src={asset.logoURI}
-                    alt={asset.symbol}
-                    className="w-8 h-8 rounded-full"
-                  />
-                  <div>
-                    <h3 className="font-bold flex items-center gap-2">
-                      {asset.name}{" "}
-                      <img
-                        src={
-                          "https://dd.dexscreener.com/ds-data/chains/" +
-                          asset.chain.toLowerCase() +
-                          ".png"
-                        }
-                        className="w-4 h-4"
-                        alt={asset.chain}
-                      />
-                    </h3>
-                    <p className="text-sm text-gray-400">${asset.symbol}</p>
+          {assets
+            ?.sort((a, b) => b.price * b.amount - a.price * a.amount)
+            .map((asset) => (
+              <div
+                key={asset.address}
+                className="border border-purple-500/30 rounded-lg p-3 hover:bg-purple-900/20 transition-colors"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <div className="flex items-center gap-3">
+                    <img
+                      src={asset.logoURI}
+                      alt={asset.symbol}
+                      className="w-8 h-8 rounded-full"
+                    />
+                    <div>
+                      <h3 className="font-bold flex items-center gap-2">
+                        {asset.name}{" "}
+                        <img
+                          src={
+                            "https://dd.dexscreener.com/ds-data/chains/" +
+                            asset.chain.toLowerCase() +
+                            ".png"
+                          }
+                          className="w-4 h-4"
+                          alt={asset.chain}
+                        />
+                      </h3>
+                      <p className="text-sm text-gray-400">${asset.symbol}</p>
+                    </div>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-bold">
+                      ${(asset.price * asset.amount).toFixed(2)}
+                    </p>
+                    <p className="text-sm text-gray-400">
+                      ${asset.price?.toFixed(6)}
+                    </p>
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold">${asset.price?.toFixed(6)}</p>
-                  <p className="text-sm text-gray-400">
-                    ${(asset.price * asset.amount).toFixed(2)}
-                  </p>
+                <div className="text-sm text-gray-400">
+                  Holding: {asset.amount}
                 </div>
               </div>
-              <div className="text-sm text-gray-400">
-                Holding: {asset.amount}
-              </div>
-            </div>
-          ))}
+            ))}
         </div>
       </div>
     </div>

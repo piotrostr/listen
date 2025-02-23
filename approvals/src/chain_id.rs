@@ -17,7 +17,7 @@ pub fn chain_id_to_ethereum_rpc_url(chain_id: &str) -> Result<String, ApprovalsE
             alchemy_api_key
         )),
         "56" => Ok(format!(
-            "https://bsc-mainnet.g.alchemy.com/v2/{}",
+            "https://bnb-mainnet.g.alchemy.com/v2/{}",
             alchemy_api_key
         )),
         "137" => Ok(format!(
