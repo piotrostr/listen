@@ -37,9 +37,7 @@ impl Privy {
         access_token: &str,
     ) -> Result<UserSession, PrivyAuthError> {
         let claims = self.validate_access_token(access_token)?;
-        println!("claims: {:?}", claims);
         let user = self.get_user_by_id(&claims.user_id).await?;
-        println!("user: {}", serde_json::to_string_pretty(&user).unwrap());
 
         let mut session = UserSession {
             user_id: user.id,
@@ -91,7 +89,6 @@ impl Privy {
             )));
         }
         let text = response.text().await?;
-        println!("user data: {}", text);
         Ok(serde_json::from_str(&text)?)
     }
 }
