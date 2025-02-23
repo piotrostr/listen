@@ -137,7 +137,7 @@ impl TransactionRequest {
             "to": self.to,
             "data": self.data,
             "chain_id": self.chain_id,
-            "gas_limit": self.gas_limit,
+            "gas": self.gas_limit,
             "gas_price": self.gas_price,
             "value": self.value,
         }))
