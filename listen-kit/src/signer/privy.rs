@@ -66,11 +66,15 @@ impl TransactionSigner for PrivySigner {
         &self,
         tx: alloy::rpc::types::TransactionRequest,
     ) -> Result<String> {
+        let caip2 =
+            tx.chain_id.map_or(Caip2::ARBITRUM.to_string(), |chain_id| {
+                Caip2::from_chain_id(chain_id).to_string()
+            });
         self.privy
             .execute_evm_transaction(
                 self.address(),
                 serde_json::to_value(tx)?,
-                Caip2::ARBITRUM.to_string(), // TODO paramterize
+                caip2,
             )
             .await
             .map_err(|e| {
@@ -104,12 +108,16 @@ impl TransactionSigner for PrivySigner {
         &self,
         tx: serde_json::Value,
     ) -> Result<String> {
+        let caip2 = match tx["chain_id"].as_u64() {
+            Some(chain_id) => Caip2::from_chain_id(chain_id),
+            None => {
+                return Err(anyhow::anyhow!(
+                    "Chain ID is required for EVM transactions"
+                ))
+            }
+        };
         self.privy
-            .execute_evm_transaction(
-                self.address(),
-                tx,
-                Caip2::ARBITRUM.to_string(), // TODO paramterize
-            )
+            .execute_evm_transaction(self.address(), tx, caip2.to_string())
             .await
             .map_err(|e| {
                 anyhow::anyhow!(
