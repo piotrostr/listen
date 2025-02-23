@@ -89,8 +89,8 @@ pub struct EmailAccount {
 #[derive(Serialize, Deserialize)]
 pub struct WalletAccount {
     pub address: String,
-    pub chain_id: String,
-    pub chain_type: String,
+    pub chain_id: String, // Can be either "eip155:1" or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp" format
+    pub chain_type: String, // Can be "ethereum" or "solana"
     pub connector_type: String,
     pub first_verified_at: u64,
     pub latest_verified_at: u64,
@@ -108,4 +108,6 @@ pub struct WalletAccount {
     pub recovery_method: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub wallet_index: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub id: Option<String>,
 }
