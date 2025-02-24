@@ -1,6 +1,6 @@
 import { AccountInfo, Connection, PublicKey } from "@solana/web3.js";
 import { useQuery } from "@tanstack/react-query";
-import { tokenMetadataCache } from "./cache";
+import { tokenMetadataCache } from "./localStorage";
 import { Holding, PriceResponse, TokenMetadata } from "./types";
 import { usePrivyWallets } from "./usePrivyWallet";
 import { decodeTokenAccount } from "./util";

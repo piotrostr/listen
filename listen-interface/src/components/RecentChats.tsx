@@ -1,18 +1,26 @@
 import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
-import { Chat, chatCache } from "../hooks/cache";
+import { chatCache } from "../hooks/localStorage";
+import { Chat } from "../hooks/types";
 
 export function RecentChats({ isSidebarOpen }: { isSidebarOpen: boolean }) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
+  console.log(recentChats);
 
   useEffect(() => {
     const loadRecentChats = async () => {
       const allChats = await chatCache.getAll();
-      const recent = allChats
-        .sort((a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime())
-        .slice(0, 5);
-      setRecentChats(recent);
+      if (allChats.length > 0) {
+        const recent = allChats
+          .sort(
+            (a, b) =>
+              (b.lastMessageAt.getTime() ?? 0) -
+              (a.lastMessageAt.getTime() ?? 0)
+          )
+          .slice(0, 3);
+        setRecentChats(recent);
+      }
     };
 
     loadRecentChats();
@@ -22,9 +30,16 @@ export function RecentChats({ isSidebarOpen }: { isSidebarOpen: boolean }) {
 
   return (
     <div className="space-y-1">
-      <h3 className="text-sm font-medium text-gray-400 px-4 mb-2">
-        Recent Chats
-      </h3>
+      <div className="flex justify-between items-center mb-2">
+        <h3 className="text-sm font-medium text-gray-300">Recent Chats</h3>
+        <Link
+          to="/chat-history"
+          className="text-xs text-purple-400 hover:text-purple-300"
+        >
+          View all
+        </Link>
+      </div>
+
       {recentChats.map((chat) => (
         <Link
           key={chat.id}

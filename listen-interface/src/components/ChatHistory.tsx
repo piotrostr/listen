@@ -1,25 +1,22 @@
 import { Link } from "@tanstack/react-router";
-import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
-import { Chat, chatCache } from "../hooks/cache";
+import { chatCache } from "../hooks/localStorage";
+import { Chat } from "../hooks/types";
 
 export function ChatHistory() {
   const [chats, setChats] = useState<Chat[]>([]);
 
   useEffect(() => {
-    // Load all chats from cache
     const loadChats = async () => {
-      // This is a temporary solution - we should implement a method to get all chats
       const allChats = await chatCache.getAll();
-      setChats(
-        allChats.sort(
-          (a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime()
-        )
-      );
+      console.log("ChatHistory", allChats);
+      setChats(allChats);
     };
 
     loadChats();
   }, []);
+
+  console.log("ChatHistory", chats);
 
   return (
     <div className="container mx-auto px-4 py-8">
@@ -32,32 +29,34 @@ export function ChatHistory() {
           New Chat
         </Link>
       </div>
+      {chats.length === 0 && (
+        <div className="text-gray-400">No chats found</div>
+      )}
 
       <div className="space-y-4">
-        {chats.map((chat) => {
-          const firstMessage = chat.messages[0];
+        {chats.length > 0 &&
+          chats.map((chat) => {
+            const firstMessage = chat?.messages?.[0];
 
-          return (
-            <Link
-              key={chat.id}
-              to="/chat"
-              search={{ chatId: chat.id }}
-              className="block p-4 bg-blue-900/20 rounded-lg hover:bg-blue-900/30 transition-colors"
-            >
-              <div className="flex justify-between items-start mb-2">
-                <h3 className="text-lg text-blue-300 font-medium">
-                  {chat.title || firstMessage?.message.slice(0, 50) + "..."}
-                </h3>
-                <span className="text-sm text-gray-400">
-                  {formatDistanceToNow(chat.lastMessageAt, { addSuffix: true })}
-                </span>
-              </div>
-              <p className="text-sm text-gray-300">
-                {chat.messages.length} messages
-              </p>
-            </Link>
-          );
-        })}
+            return (
+              <Link
+                key={chat.id}
+                to="/chat"
+                search={{ chatId: chat.id }}
+                className="block p-4 bg-blue-900/20 rounded-lg hover:bg-blue-900/30 transition-colors"
+              >
+                <div className="flex justify-between items-start mb-2">
+                  <h3 className="text-lg text-blue-300 font-medium">
+                    {chat.title || firstMessage?.message.slice(0, 50) + "..."}
+                  </h3>
+                  <span className="text-sm text-gray-400"></span>
+                </div>
+                <p className="text-sm text-gray-300">
+                  {chat.messages.length} messages
+                </p>
+              </Link>
+            );
+          })}
       </div>
     </div>
   );

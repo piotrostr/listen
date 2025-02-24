@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { Alchemy, Network } from "alchemy-sdk";
 import { getAddress } from "viem";
-import { tokenMetadataCache } from "./cache";
+import { tokenMetadataCache } from "./localStorage";
 import { PortfolioItem, TokenMetadata } from "./types";
 import { usePrivyWallets } from "./usePrivyWallet";
 import { getAnyToken } from "./useToken";
