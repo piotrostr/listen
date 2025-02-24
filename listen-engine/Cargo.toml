@@ -31,6 +31,7 @@ blockhash-cache = { path = "../blockhash-cache" }
 dashmap = "6.1.0"
 parking_lot = "0.12.3"
 approvals = { path = "../approvals" }
+hex = "0.4.3"
 
 [[bin]]
 name = "engine"

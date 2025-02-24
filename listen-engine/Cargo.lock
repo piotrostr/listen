@@ -2035,6 +2035,7 @@ dependencies = [
  "dashmap",
  "dotenv",
  "futures-util",
+ "hex",
  "lifi",
  "metrics",
  "metrics-exporter-prometheus",

@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use crate::engine::{
     order::{swap_order_to_transaction, SwapOrder, SwapOrderTransaction},
     Engine, EngineError,
 };
 use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
-use privy::tx::PrivyTransaction;
+use privy::{tx::PrivyTransaction, Privy};
 
 impl Engine {
     pub async fn execute_order(
@@ -34,31 +36,13 @@ impl Engine {
             {
                 SwapOrderTransaction::Evm(transaction) => {
                     let spender_address = transaction["to"].as_str().unwrap();
-                    let allowance = approvals::get_allowance(
-                        &order.input_token,
-                        &privy_transaction.address,
+                    ensure_approvals(
                         spender_address,
-                        approvals::caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
+                        order,
+                        &privy_transaction,
+                        self.privy.clone(),
                     )
-                    .await
-                    .map_err(EngineError::ApprovalsError)?;
-                    if allowance < order.amount.parse::<u128>().unwrap() {
-                        let approval_transaction = approvals::create_approval_transaction(
-                            &order.input_token,
-                            spender_address,
-                            order.amount.parse::<u128>().unwrap(),
-                            &privy_transaction.address,
-                            approvals::caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
-                        )
-                        .await
-                        .map_err(EngineError::ApprovalsError)?;
-                        let mut approval_privy_tx = privy_transaction.clone();
-                        approval_privy_tx.evm_transaction = Some(approval_transaction);
-                        self.privy
-                            .execute_transaction(approval_privy_tx)
-                            .await
-                            .map_err(EngineError::TransactionError)?;
-                    }
+                    .await?;
                     privy_transaction.evm_transaction = Some(transaction);
                     self.privy.execute_transaction(privy_transaction).await
                 }
@@ -81,11 +65,45 @@ impl Engine {
     }
 }
 
+pub async fn ensure_approvals(
+    spender_address: &str,
+    order: &SwapOrder,
+    privy_transaction: &PrivyTransaction,
+    privy: Arc<Privy>,
+) -> Result<(), EngineError> {
+    let allowance = approvals::get_allowance(
+        &order.input_token,
+        &privy_transaction.address,
+        spender_address,
+        approvals::caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
+    )
+    .await
+    .map_err(EngineError::ApprovalsError)?;
+    if allowance < order.amount.parse::<u128>().unwrap() {
+        let approval_transaction = approvals::create_approval_transaction(
+            &order.input_token,
+            spender_address,
+            &privy_transaction.address,
+            approvals::caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
+        )
+        .await
+        .map_err(EngineError::ApprovalsError)?;
+        let mut approval_privy_tx = privy_transaction.clone();
+        approval_privy_tx.evm_transaction = Some(approval_transaction);
+        privy
+            .execute_transaction(approval_privy_tx)
+            .await
+            .map_err(EngineError::TransactionError)?;
+    }
+    Ok(())
+}
+
 #[cfg(test)]
 mod tests {
     use privy::{config::PrivyConfig, tx::PrivyTransaction, Privy};
 
     #[tokio::test]
+    // TODO works but doesnt go through fully
     async fn test_tx_with_approvals() {
         let privy_tx = PrivyTransaction {
             user_id: "did:privy:cm6cxky3i00ondmuatkemmffm".to_string(),
