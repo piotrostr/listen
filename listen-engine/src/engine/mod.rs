@@ -173,7 +173,6 @@ impl Engine {
 
         // Process in chunks to limit concurrent Redis connections
         for chunk in pipeline_ids.chunks(10) {
-            let mut futures = Vec::new();
             let asset = asset.to_string();
 
             // Batch fetch pipelines from Redis
@@ -193,7 +192,6 @@ impl Engine {
                     let asset = asset.clone();
 
                     if !matches!(pipeline.status, Status::Pending) {
-                        // skip the non-pending pipelines
                         continue;
                     }
 
@@ -201,7 +199,7 @@ impl Engine {
                     let can_process = {
                         let mut processing = self_clone.processing_pipelines.lock().await;
                         if processing.contains(&pipeline_id) {
-                            tracing::warn!("Pipeline {} already being processed", pipeline_id); // TODO remove warn
+                            tracing::warn!("Pipeline {} already being processed", pipeline_id);
                             false
                         } else {
                             processing.insert(pipeline_id.clone());
@@ -211,39 +209,38 @@ impl Engine {
 
                     if can_process && !matches!(pipeline.status, Status::Failed | Status::Cancelled)
                     {
-                        futures.push(tokio::spawn(async move {
+                        // Spawn a detached task for pipeline evaluation
+                        tokio::spawn(async move {
                             let result = async {
                                 tracing::info!("Evaluating pipeline: {}", pipeline_id);
-                                let is_complete =
-                                    self_clone.evaluate_pipeline(&mut pipeline).await?;
-
-                                // Only modify active_pipelines if the pipeline is complete
-                                if is_complete {
-                                    // Minimize time holding the DashMap lock
-                                    if let Some(mut pipelines) =
-                                        self_clone.active_pipelines.get_mut(&asset)
-                                    {
-                                        pipelines.remove(&pipeline_id);
+                                match self_clone.evaluate_pipeline(&mut pipeline).await {
+                                    Ok(is_complete) => {
+                                        if is_complete {
+                                            if let Some(mut pipelines) =
+                                                self_clone.active_pipelines.get_mut(&asset)
+                                            {
+                                                pipelines.remove(&pipeline_id);
+                                            }
+                                        }
+                                        Ok(())
+                                    }
+                                    Err(e) => {
+                                        tracing::error!("Pipeline evaluation error: {}", e);
+                                        Err(e)
                                     }
                                 }
-                                Ok::<_, EngineError>(())
                             }
                             .await;
 
-                            // Always release the processing lock
+                            // Always release the processing lock, even if evaluation failed
                             let mut processing = self_clone.processing_pipelines.lock().await;
                             processing.remove(&pipeline_id);
 
-                            result
-                        }));
+                            if let Err(e) = result {
+                                tracing::error!("Error processing pipeline {}: {}", pipeline_id, e);
+                            }
+                        });
                     }
-                }
-            }
-
-            // Wait for this batch to complete
-            for future in futures {
-                if let Err(e) = future.await? {
-                    tracing::error!("Error processing pipeline: {}", e);
                 }
             }
         }
