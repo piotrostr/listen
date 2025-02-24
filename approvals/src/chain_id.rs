@@ -25,7 +25,7 @@ pub fn chain_id_to_ethereum_rpc_url(chain_id: &str) -> Result<String, ApprovalsE
             alchemy_api_key
         )),
         "42161" => Ok(format!(
-            "https://arbitrum-mainnet.g.alchemy.com/v2/{}",
+            "https://arb-mainnet.g.alchemy.com/v2/{}",
             alchemy_api_key
         )),
         "8453" => Ok(format!(

@@ -8,6 +8,9 @@ pub mod error;
 pub use chain_id::*;
 pub use error::*;
 
+pub const MAX_APPROVAL_AMOUNT: &str =
+    "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+
 pub async fn get_allowance(
     token_address: &str,
     owner_address: &str,
@@ -60,7 +63,6 @@ pub async fn get_allowance(
 pub async fn estimate_gas_params(
     token_address: &str,
     spender_address: &str,
-    amount: u128,
     from_address: &str,
     chain_id: &str,
 ) -> Result<(u64, u64), ApprovalsError> {
@@ -68,11 +70,10 @@ pub async fn estimate_gas_params(
     let client = reqwest::Client::new();
 
     // Construct approval data for gas estimation
-    let amount_hex = format!("{:064x}", amount);
     let approve_data = format!(
         "0x095ea7b3{:0>64}{}",
         spender_address.trim_start_matches("0x"),
-        amount_hex
+        MAX_APPROVAL_AMOUNT
     );
 
     // Estimate gas limit
@@ -146,26 +147,17 @@ pub async fn estimate_gas_params(
 pub async fn create_approval_transaction(
     token_address: &str,
     spender_address: &str,
-    amount: u128,
     from_address: &str,
     chain_id: &str,
 ) -> Result<serde_json::Value, ApprovalsError> {
     // Get gas parameters
-    let (gas_limit, gas_price) = estimate_gas_params(
-        token_address,
-        spender_address,
-        amount,
-        from_address,
-        chain_id,
-    )
-    .await?;
+    let (gas_limit, gas_price) =
+        estimate_gas_params(token_address, spender_address, from_address, chain_id).await?;
 
-    // Construct the approve function call data
-    let amount_hex = format!("{:064x}", amount);
     let approve_data = format!(
         "0x095ea7b3{:0>64}{}",
         spender_address.trim_start_matches("0x"),
-        amount_hex
+        MAX_APPROVAL_AMOUNT
     );
 
     // Construct the JSON-RPC transaction format
