@@ -4,9 +4,8 @@ import { useEffect, useState } from "react";
 import { chatCache } from "../hooks/localStorage";
 import { Chat } from "../hooks/types";
 
-export function RecentChats({ isSidebarOpen }: { isSidebarOpen: boolean }) {
+export function RecentChats() {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
-  console.log(recentChats);
 
   useEffect(() => {
     const loadRecentChats = async () => {
@@ -18,7 +17,7 @@ export function RecentChats({ isSidebarOpen }: { isSidebarOpen: boolean }) {
               (b.lastMessageAt.getTime() ?? 0) -
               (a.lastMessageAt.getTime() ?? 0)
           )
-          .slice(0, 3);
+          .slice(0, 5); // Show up to 5 recent chats
         setRecentChats(recent);
       }
     };
@@ -26,35 +25,33 @@ export function RecentChats({ isSidebarOpen }: { isSidebarOpen: boolean }) {
     loadRecentChats();
   }, []);
 
-  if (!isSidebarOpen) return null;
-
   return (
-    <div className="space-y-1">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-medium text-gray-300">Recent Chats</h3>
-        <Link
-          to="/chat-history"
-          className="text-xs text-purple-400 hover:text-purple-300"
-        >
-          View all
-        </Link>
-      </div>
-
+    <div className="overflow-hidden transition-all duration-300 ease-in-out">
       {recentChats.map((chat) => (
         <Link
           key={chat.id}
           to="/chat"
           search={{ chatId: chat.id }}
-          className="flex items-center h-10 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
+          className="flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
         >
-          <span className="truncate">
-            {chat.title || chat.messages[0]?.message.slice(0, 30) + "..."}
-          </span>
-          <span className="ml-auto text-xs text-gray-500">
-            {formatDistanceToNow(chat.lastMessageAt, { addSuffix: true })}
-          </span>
+          <div className="flex-1 min-w-0">
+            <div className="truncate">
+              {chat.title || chat.messages[0]?.message.slice(0, 20) + "..."}
+            </div>
+            <div className="text-xs text-gray-500">
+              {formatDistanceToNow(chat.lastMessageAt, { addSuffix: true })}
+            </div>
+          </div>
         </Link>
       ))}
+      {recentChats.length > 0 && (
+        <Link
+          to="/chat-history"
+          className="flex items-center h-10 px-4 text-sm text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 transition-colors"
+        >
+          View all chats
+        </Link>
+      )}
     </div>
   );
 }
