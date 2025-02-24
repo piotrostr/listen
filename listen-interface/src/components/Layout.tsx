@@ -205,8 +205,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
 
+  // Add this handler function
+  const handleSidebarToggle = (open: boolean) => {
+    setIsSidebarOpen(open);
+    if (!open) {
+      setIsChatDrawerOpen(false);
+    }
+  };
+
   return (
-    <SidebarContext.Provider value={setIsSidebarOpen}>
+    <SidebarContext.Provider value={handleSidebarToggle}>
       <div className="relative min-h-screen text-white">
         <Background />
 
@@ -221,7 +229,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <span className="font-bold text-md lg:text-xl">listen-rs</span>
           </div>
           <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            onClick={() => handleSidebarToggle(!isSidebarOpen)}
             className="p-2 rounded-lg hover:bg-purple-500/10 transition-colors"
           >
             {isSidebarOpen ? (
@@ -316,7 +324,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               } top-0 h-12 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center`}
             >
               <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                onClick={() => handleSidebarToggle(!isSidebarOpen)}
                 className="p-1.5 bg-black/40 backdrop-blur-sm hover:bg-purple-500/10 rounded-lg transition-colors"
               >
                 <svg
@@ -340,7 +348,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Logo section */}
             <div className="p-4">
-              <div className="flex items-center mb-8">
+              <div className="flex items-center">
                 <div
                   className={`flex items-center ${isSidebarOpen ? "px-2" : "justify-center"}`}
                 >
@@ -348,7 +356,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     src="/listen-more.png"
                     alt="Logo"
                     className="w-8 h-8 rounded cursor-pointer"
-                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    onClick={() => handleSidebarToggle(!isSidebarOpen)}
                   />
                   {isSidebarOpen && (
                     <span className="ml-3 font-bold text-xl">listen-rs</span>
@@ -379,13 +387,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </nav>
 
               {/* Balance Display */}
-              {isAuthenticated && (
+              {/*isAuthenticated && (
                 <BalanceDisplay
                   isSidebarOpen={isSidebarOpen}
                   solanaBalance={solanaBalance}
                   ethereumBalance={ethereumBalance}
                 />
-              )}
+              )*/}
             </div>
 
             {/* Bottom section */}

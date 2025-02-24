@@ -35,10 +35,10 @@ export function RecentChats() {
           className="flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
         >
           <div className="flex-1 min-w-0">
-            <div className="truncate">
+            <div className="truncate text-xs">
               {chat.title || chat.messages[0]?.message.slice(0, 20) + "..."}
             </div>
-            <div className="text-xs text-gray-500">
+            <div className="text-[10px] text-gray-500">
               {formatDistanceToNow(chat.lastMessageAt, { addSuffix: true })}
             </div>
           </div>
