@@ -1,5 +1,5 @@
 import ReactMarkdown from "react-markdown";
-import { ToolOutput } from "../hooks/useChat";
+import { type ToolOutput } from "../hooks/types";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import { QuoteResponseSchema } from "../types/quote";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
@@ -12,7 +12,7 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
   if (toolOutput.name === "search_on_dex_screener") {
     try {
       const parsed = DexScreenerResponseSchema.parse(
-        JSON.parse(toolOutput.result)
+        JSON.parse(toolOutput.result),
       );
       return (
         <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">

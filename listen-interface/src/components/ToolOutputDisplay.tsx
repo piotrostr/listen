@@ -1,4 +1,4 @@
-import { ToolOutput } from "../hooks/useChat";
+import { type ToolOutput } from "../hooks/types";
 import { useWaitForTransaction } from "../hooks/useWaitForTransaction";
 import { Spinner } from "./Spinner";
 

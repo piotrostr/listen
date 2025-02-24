@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
-import { type Message, useChat } from "../hooks/useChat";
+import { useChat } from "../hooks/useChat";
+import { type Message } from "../hooks/types";
 import { ChatContainer } from "./ChatContainer";
 import { ChatMessage, ToolMessage } from "./Messages";
 import { PipelineDisplay } from "./Pipeline";
