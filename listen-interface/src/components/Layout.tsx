@@ -15,6 +15,7 @@ import { BsLink } from "react-icons/bs";
 import { FaXTwitter } from "react-icons/fa6";
 import { IoMenu, IoSettingsOutline } from "react-icons/io5";
 import { RxCross2, RxDashboard } from "react-icons/rx";
+import { RecentChats } from "./RecentChats";
 
 const NAV_ITEMS = [
   { to: "/screener", icon: RxDashboard, label: "Screener" },
@@ -221,6 +222,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 ))}
               </nav>
 
+              {/* Add Recent Chats */}
+              <div className="mt-4 mb-4 border-t border-purple-500/20 pt-4">
+                <RecentChats isSidebarOpen={true} />
+              </div>
+
               {/* Balance Display */}
               {isAuthenticated && (
                 <BalanceDisplay
@@ -330,6 +336,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   />
                 ))}
               </nav>
+
+              {/* Add Recent Chats */}
+              <div className="mt-4 mb-4 border-t border-purple-500/20 pt-4">
+                <RecentChats isSidebarOpen={isSidebarOpen} />
+              </div>
 
               {/* Balance Display */}
               {isAuthenticated && (
