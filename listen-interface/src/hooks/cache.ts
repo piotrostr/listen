@@ -1,10 +1,12 @@
 import { TokenMetadata } from "./types";
+import { Message } from "./useChat";
 
 interface CacheStore<T> {
   get(key: string): Promise<T | null>;
   set(key: string, value: T): Promise<void>;
   delete(key: string): Promise<void>;
   clear(): Promise<void>;
+  getAll(): Promise<T[]>;
 }
 
 export class IndexedDBCache<T> implements CacheStore<T> {
@@ -103,10 +105,38 @@ export class IndexedDBCache<T> implements CacheStore<T> {
       console.error("Cache clear error:", error);
     }
   }
+
+  async getAll(): Promise<T[]> {
+    try {
+      const db = await this.getDB();
+      return new Promise((resolve, reject) => {
+        const transaction = db.transaction(this.storeName, "readonly");
+        const store = transaction.objectStore(this.storeName);
+        const request = store.getAll();
+
+        request.onerror = () => reject(request.error);
+        request.onsuccess = () => resolve(request.result || []);
+      });
+    } catch (error) {
+      console.error("Cache getAll error:", error);
+      return [];
+    }
+  }
 }
 
 // Create instances for different types of data
 export const tokenMetadataCache = new IndexedDBCache<TokenMetadata>(
   "listen-db",
-  "token-metadata",
+  "token-metadata"
 );
+
+export interface Chat {
+  id: string;
+  messages: Message[];
+  createdAt: Date;
+  lastMessageAt: Date;
+  title?: string; // Optional title derived from first message
+}
+
+// Add new cache instance for chats
+export const chatCache = new IndexedDBCache<Chat>("listen-db", "chats");

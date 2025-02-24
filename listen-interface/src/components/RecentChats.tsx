@@ -1,64 +1,45 @@
 import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
-import { Message } from "../hooks/useChat";
+import { useEffect, useState } from "react";
+import { Chat, chatCache } from "../hooks/cache";
 
-// Mock data - later this should be moved to a proper data store or context
-const MOCK_CHAT_HISTORY: Message[] = [
-  {
-    id: "1",
-    message: "How is my portfolio performing?",
-    direction: "outgoing",
-    timestamp: new Date(Date.now() - 1000 * 60 * 30), // 30 mins ago
-    isToolCall: false,
-  },
-  {
-    id: "2",
-    message: "What's the best time to buy SOL?",
-    direction: "outgoing",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 2), // 2 hours ago
-    isToolCall: false,
-  },
-  {
-    id: "3",
-    message: "Show me my recent transactions",
-    direction: "outgoing",
-    timestamp: new Date(Date.now() - 1000 * 60 * 60 * 24), // 1 day ago
-    isToolCall: false,
-  },
-];
+export function RecentChats({ isSidebarOpen }: { isSidebarOpen: boolean }) {
+  const [recentChats, setRecentChats] = useState<Chat[]>([]);
 
-interface RecentChatsProps {
-  isSidebarOpen: boolean;
-}
+  useEffect(() => {
+    const loadRecentChats = async () => {
+      const allChats = await chatCache.getAll();
+      const recent = allChats
+        .sort((a, b) => b.lastMessageAt.getTime() - a.lastMessageAt.getTime())
+        .slice(0, 5);
+      setRecentChats(recent);
+    };
 
-export function RecentChats({ isSidebarOpen }: RecentChatsProps) {
+    loadRecentChats();
+  }, []);
+
   if (!isSidebarOpen) return null;
 
   return (
-    <div className="px-4 py-2">
-      <div className="flex justify-between items-center mb-2">
-        <h3 className="text-sm font-medium text-gray-300">Recent Chats</h3>
+    <div className="space-y-1">
+      <h3 className="text-sm font-medium text-gray-400 px-4 mb-2">
+        Recent Chats
+      </h3>
+      {recentChats.map((chat) => (
         <Link
-          to="/chat-history"
-          className="text-xs text-purple-400 hover:text-purple-300"
+          key={chat.id}
+          to="/chat"
+          search={{ chatId: chat.id }}
+          className="flex items-center h-10 px-4 rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
         >
-          View all
+          <span className="truncate">
+            {chat.title || chat.messages[0]?.message.slice(0, 30) + "..."}
+          </span>
+          <span className="ml-auto text-xs text-gray-500">
+            {formatDistanceToNow(chat.lastMessageAt, { addSuffix: true })}
+          </span>
         </Link>
-      </div>
-      <div className="space-y-2">
-        {MOCK_CHAT_HISTORY.slice(0, 3).map((chat) => (
-          <Link
-            key={chat.id}
-            to="/chat"
-            className="block p-2 rounded-lg hover:bg-purple-500/10 transition-colors"
-          >
-            <p className="text-sm text-gray-300 truncate">{chat.message}</p>
-            <p className="text-xs text-gray-500 mt-1">
-              {formatDistanceToNow(chat.timestamp, { addSuffix: true })}
-            </p>
-          </Link>
-        ))}
-      </div>
+      ))}
     </div>
   );
 }
