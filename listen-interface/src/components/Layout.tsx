@@ -2,12 +2,8 @@ import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { createContext, useContext, useState } from "react";
 import { IoChatboxOutline, IoWalletOutline } from "react-icons/io5";
-import { Address } from "viem";
-import { useBalance, UseBalanceReturnType } from "wagmi";
+import { UseBalanceReturnType } from "wagmi";
 import ethereumIcon from "../assets/icons/ethereum.svg";
-import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
-import { usePrivyWallets } from "../hooks/usePrivyWallet";
-import { useSolBalance } from "../hooks/useSolBalance";
 import { imageMap } from "../hooks/util";
 import { Background } from "./Background";
 
@@ -152,7 +148,7 @@ function BottomLink({
 }
 
 // Balance Display Component
-function BalanceDisplay({
+export function BalanceDisplay({
   isSidebarOpen,
   solanaBalance,
   ethereumBalance,
@@ -195,13 +191,7 @@ function BalanceDisplay({
 const SidebarContext = createContext<(open: boolean) => void>(() => {});
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useIsAuthenticated();
   const { user, logout } = usePrivy();
-  const { data: wallets } = usePrivyWallets();
-  const { data: solanaBalance } = useSolBalance();
-  const { data: ethereumBalance } = useBalance({
-    address: wallets?.evmWallet as Address,
-  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
 
@@ -268,13 +258,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </nav>
 
               {/* Balance Display */}
-              {isAuthenticated && (
+              {/*isAuthenticated && (
                 <BalanceDisplay
                   isSidebarOpen={true}
                   solanaBalance={solanaBalance}
                   ethereumBalance={ethereumBalance}
                 />
-              )}
+              )*/}
             </div>
 
             {/* Bottom Items */}
