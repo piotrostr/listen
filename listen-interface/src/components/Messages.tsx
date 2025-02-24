@@ -12,7 +12,7 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
   if (toolOutput.name === "search_on_dex_screener") {
     try {
       const parsed = DexScreenerResponseSchema.parse(
-        JSON.parse(toolOutput.result),
+        JSON.parse(toolOutput.result)
       );
       return (
         <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
@@ -74,6 +74,7 @@ export const ChatMessage = ({
       ${direction === "incoming" ? "bg-blue-900/20 text-blue-300" : "bg-purple-900/20 text-purple-300"}
       rounded-lg px-4 py-2 my-2 backdrop-blur-sm
       border border-opacity-20
+      lg:text-md text-sm
       ${direction === "incoming" ? "border-blue-500" : "border-purple-500"}
     `}
   >

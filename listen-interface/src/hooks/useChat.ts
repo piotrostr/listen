@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { config } from "../config";
 import { chatCache } from "./localStorage";
@@ -48,6 +48,7 @@ export function useChat() {
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const abortControllerRef = useRef<AbortController | null>(null);
 
   // Load existing chat if chatId is present
   useEffect(() => {
@@ -104,6 +105,10 @@ export function useChat() {
   const sendMessage = useCallback(
     async (userMessage: string) => {
       setIsLoading(true);
+
+      // Create a new abort controller for this request
+      abortControllerRef.current = new AbortController();
+      const signal = abortControllerRef.current.signal;
 
       const userChatMessage: Message = {
         id: crypto.randomUUID(),
@@ -195,6 +200,7 @@ export function useChat() {
             Authorization: "Bearer " + (await getAccessToken()),
           },
           body,
+          signal,
         });
 
         if (!response.ok) {
@@ -277,23 +283,38 @@ export function useChat() {
           }
         }
       } catch (error) {
-        console.error("Error sending message:", error);
-        setChat((prev) => ({
-          ...prev!,
-          messages: [
-            ...prev!.messages,
-            {
-              id: crypto.randomUUID(),
-              message: `An error occurred: ${error instanceof Error ? error.message : "Unknown error"}`,
-              direction: "incoming",
-              timestamp: new Date(),
-              isToolCall: false,
-            },
-          ],
-          lastMessageAt: new Date(),
-        }));
+        // Check if this was an abort error
+        if (error instanceof DOMException && error.name === "AbortError") {
+          console.log("Request was aborted");
+          // You might want to add a message indicating the generation was stopped
+          setChat((prev) => ({
+            ...prev!,
+            messages: [
+              ...prev!.messages.slice(0, -1), // Remove the incomplete assistant message
+            ],
+            lastMessageAt: new Date(),
+          }));
+        } else {
+          // Handle other errors as before
+          console.error("Error sending message:", error);
+          setChat((prev) => ({
+            ...prev!,
+            messages: [
+              ...prev!.messages,
+              {
+                id: crypto.randomUUID(),
+                message: `An error occurred: ${error instanceof Error ? error.message : "Unknown error"}`,
+                direction: "incoming",
+                timestamp: new Date(),
+                isToolCall: false,
+              },
+            ],
+            lastMessageAt: new Date(),
+          }));
+        }
       } finally {
         setIsLoading(false);
+        abortControllerRef.current = null;
       }
     },
     [
@@ -308,6 +329,14 @@ export function useChat() {
       navigate,
     ]
   );
+
+  const stopGeneration = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+      setIsLoading(false);
+    }
+  };
 
   return {
     messages: chat?.messages || [],
@@ -329,5 +358,6 @@ export function useChat() {
               title: messages[0]?.message.slice(0, 50),
             }
       ),
+    stopGeneration,
   };
 }
