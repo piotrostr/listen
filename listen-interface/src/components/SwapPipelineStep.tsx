@@ -50,7 +50,7 @@ export const SwapPipelineStep = ({
       transactionHash={transactionHash}
       error={error}
     >
-      <div className="flex-1">
+      <div className="lg:flex-1">
         {inputTokenLoading ? (
           <Spinner />
         ) : (
@@ -87,7 +87,7 @@ export const SwapPipelineStep = ({
         </svg>
       </div>
 
-      <div className="flex-1">
+      <div className="lg:flex-1">
         {outputTokenLoading ? (
           <Spinner />
         ) : (

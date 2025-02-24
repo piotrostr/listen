@@ -3,6 +3,7 @@ import { ToolOutput } from "../hooks/useChat";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import { QuoteResponseSchema } from "../types/quote";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
+import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
 
@@ -21,6 +22,26 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
     } catch (e) {
       console.error("Failed to parse dexscreener response:", e);
       return <div>Error parsing DexScreener data</div>;
+    }
+  }
+
+  if (toolOutput.name === "swap") {
+    try {
+      // TODO standardize this output, not just string but { status: string, transactionHash: string }
+      return (
+        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
+          <div className="mb-2">
+            <TransactionLink
+              status={"Completed"}
+              transactionHash={JSON.parse(toolOutput.result)}
+              error={null}
+            />
+          </div>
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse swap response:", e);
+      return <div>Error parsing swap response</div>;
     }
   }
 

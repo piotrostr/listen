@@ -1,6 +1,6 @@
-import { Spinner } from "./Spinner";
-import { useWaitForTransaction } from "../hooks/useWaitForTransaction";
 import { ToolOutput } from "../hooks/useChat";
+import { useWaitForTransaction } from "../hooks/useWaitForTransaction";
+import { Spinner } from "./Spinner";
 
 export function ToolOutputDisplay({
   toolOutput,

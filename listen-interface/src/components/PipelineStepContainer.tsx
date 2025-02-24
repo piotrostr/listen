@@ -1,7 +1,6 @@
 import {
   FaBan,
   FaCheckCircle,
-  FaExclamationTriangle,
   FaExternalLinkAlt,
   FaSpinner,
   FaTimesCircle,
@@ -46,8 +45,8 @@ export const PipelineStepContainer = ({
               {condition.type === PipelineConditionType.Now
                 ? "Execute immediately"
                 : condition.type === PipelineConditionType.PriceAbove
-                  ? `Price above ${condition.value} for ${condition.asset}`
-                  : `Price below ${condition.value} for ${condition.asset}`}
+                  ? `Price above ${condition.value} for ${condition.asset.slice(0, 4)}...${condition.asset.slice(-4)}`
+                  : `Price below ${condition.value} for ${condition.asset.slice(0, 4)}...${condition.asset.slice(-4)}`}
             </div>
           ))}
         </div>
@@ -83,7 +82,7 @@ const renderStatus = (status: string) => {
     case "Failed":
       return (
         <span className="text-red-300 flex items-center gap-1">
-          <FaTimesCircle /> Failed
+          <FaTimesCircle /> Failed:
         </span>
       );
     case "Cancelled":
@@ -95,7 +94,26 @@ const renderStatus = (status: string) => {
   }
 };
 
-const TransactionLink = ({
+function formatError(error: string) {
+  if (error.includes("insufficient funds")) {
+    return "Insufficient balance";
+  }
+  try {
+    // Look for JSON between curly braces
+    const match = error.match(/{.*}/);
+    if (match) {
+      const parsedError = JSON.parse(match[0]);
+      if (parsedError?.error) {
+        return JSON.stringify(parsedError.error);
+      }
+    }
+    return error;
+  } catch {
+    return error;
+  }
+}
+
+export const TransactionLink = ({
   status,
   transactionHash,
   error,
@@ -105,7 +123,7 @@ const TransactionLink = ({
   error: string | null;
 }) => {
   return (
-    <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-1 mt-2">
+    <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-2 mt-2">
       {renderStatus(status)}{" "}
       {transactionHash && (
         <span className="flex items-center gap-1 inline-flex">
@@ -126,7 +144,7 @@ const TransactionLink = ({
       )}
       {error && (
         <span className="text-red-300 flex items-center gap-1">
-          <FaExclamationTriangle /> Error: {error}
+          {formatError(error)}
         </span>
       )}
     </div>
