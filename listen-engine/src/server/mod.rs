@@ -108,12 +108,14 @@ pub async fn run() -> std::io::Result<()> {
 
     tokio::select! {
         result = server => {
+            engine.shutdown().await;
             let _ = shutdown_tx.send(()).await;
             if let Err(e) = result {
                 tracing::error!("Server error: {}", e);
             }
         }
         result = Engine::run(engine.clone(), price_rx, server_rx) => {
+            engine.shutdown().await;
             let _ = shutdown_tx.send(()).await;
             if let Err(e) = result {
                 tracing::error!("Engine error: {}", e);
@@ -121,6 +123,7 @@ pub async fn run() -> std::io::Result<()> {
         }
         _ = shutdown_rx.recv() => {
             tracing::info!("Shutdown signal received, starting graceful shutdown");
+            engine.shutdown().await;
         }
     }
 

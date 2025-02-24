@@ -19,10 +19,13 @@ use privy::config::PrivyConfig;
 use privy::Privy;
 use std::collections::HashMap;
 use std::collections::HashSet;
+use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Arc;
+use std::time::Duration;
 use std::time::Instant;
 use tokio::sync::mpsc;
 use tokio::sync::Mutex;
+use tokio::sync::Notify;
 use tokio::sync::RwLock;
 
 use self::pipeline::{Pipeline, Status};
@@ -37,6 +40,8 @@ pub struct Engine {
     price_cache: Arc<RwLock<HashMap<String, f64>>>,
     processing_pipelines: Arc<Mutex<HashSet<String>>>,
     active_pipelines: Arc<DashMap<String, HashSet<String>>>, // asset -> pipeline ids
+    shutdown_signal: Arc<Notify>,                            // Used to signal shutdown
+    pending_tasks: Arc<AtomicUsize>, // Track number of running pipeline evaluations
 }
 
 impl Clone for Engine {
@@ -48,6 +53,8 @@ impl Clone for Engine {
             price_cache: self.price_cache.clone(),
             processing_pipelines: self.processing_pipelines.clone(),
             active_pipelines: self.active_pipelines.clone(),
+            shutdown_signal: self.shutdown_signal.clone(),
+            pending_tasks: self.pending_tasks.clone(),
         }
     }
 }
@@ -68,6 +75,8 @@ impl Engine {
                 price_cache: Arc::new(RwLock::new(HashMap::new())),
                 processing_pipelines: Arc::new(Mutex::new(HashSet::new())),
                 active_pipelines: Arc::new(DashMap::new()),
+                shutdown_signal: Arc::new(Notify::new()),
+                pending_tasks: Arc::new(AtomicUsize::new(0)),
             },
             rx,
         ))
@@ -195,7 +204,6 @@ impl Engine {
                         continue;
                     }
 
-                    // Quick check and acquire of processing lock
                     let can_process = {
                         let mut processing = self_clone.processing_pipelines.lock().await;
                         if processing.contains(&pipeline_id) {
@@ -209,36 +217,43 @@ impl Engine {
 
                     if can_process && !matches!(pipeline.status, Status::Failed | Status::Cancelled)
                     {
+                        // Increment pending tasks counter
+                        self_clone.pending_tasks.fetch_add(1, Ordering::SeqCst);
+
                         // Spawn a detached task for pipeline evaluation
+                        let shutdown = self_clone.shutdown_signal.clone();
                         tokio::spawn(async move {
                             let result = async {
-                                tracing::info!("Evaluating pipeline: {}", pipeline_id);
-                                match self_clone.evaluate_pipeline(&mut pipeline).await {
-                                    Ok(is_complete) => {
-                                        if is_complete {
-                                            if let Some(mut pipelines) =
-                                                self_clone.active_pipelines.get_mut(&asset)
-                                            {
-                                                pipelines.remove(&pipeline_id);
-                                            }
-                                        }
-                                        Ok(())
-                                    }
-                                    Err(e) => {
-                                        tracing::error!("Pipeline evaluation error: {}", e);
-                                        Err(e)
+                                tokio::select! {
+                                    r = self_clone.evaluate_pipeline(&mut pipeline) => r,
+                                    _ = shutdown.notified() => {
+                                        tracing::info!("Gracefully stopping pipeline evaluation for {}", pipeline_id);
+                                        Ok(false) // Don't mark as complete if interrupted
                                     }
                                 }
-                            }
-                            .await;
+                            }.await;
 
-                            // Always release the processing lock, even if evaluation failed
+                            match result {
+                                Ok(is_complete) => {
+                                    if is_complete {
+                                        if let Some(mut pipelines) =
+                                            self_clone.active_pipelines.get_mut(&asset)
+                                        {
+                                            pipelines.remove(&pipeline_id);
+                                        }
+                                    }
+                                }
+                                Err(e) => {
+                                    tracing::error!("Pipeline evaluation error: {}", e);
+                                }
+                            }
+
+                            // Always release the processing lock
                             let mut processing = self_clone.processing_pipelines.lock().await;
                             processing.remove(&pipeline_id);
 
-                            if let Err(e) = result {
-                                tracing::error!("Error processing pipeline {}: {}", pipeline_id, e);
-                            }
+                            // Decrement pending tasks counter
+                            self_clone.pending_tasks.fetch_sub(1, Ordering::SeqCst);
                         });
                     }
                 }
@@ -248,5 +263,21 @@ impl Engine {
         histogram!("price_update_duration", start.elapsed());
         tracing::debug!("{}: {} {} took {:?}", asset, price, slot, start.elapsed());
         Ok(())
+    }
+
+    pub async fn shutdown(&self) {
+        // Signal all pipeline evaluations to stop
+        self.shutdown_signal.notify_waiters();
+
+        // Wait for all pending tasks to complete
+        while self.pending_tasks.load(Ordering::SeqCst) > 0 {
+            tracing::info!(
+                "Waiting for {} pipeline evaluations to complete...",
+                self.pending_tasks.load(Ordering::SeqCst)
+            );
+            tokio::time::sleep(Duration::from_millis(100)).await;
+        }
+
+        tracing::info!("All pipeline evaluations completed");
     }
 }
