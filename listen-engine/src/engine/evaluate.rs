@@ -19,6 +19,7 @@ use crate::{
 
 impl Engine {
     pub async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<bool, EngineError> {
+        tracing::info!("Evaluating pipeline: {}", pipeline.id);
         let start = Instant::now();
         let price_cache = self.price_cache.read().await.clone();
 
