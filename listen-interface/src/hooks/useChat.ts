@@ -1,7 +1,10 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useCallback, useState } from "react";
+import { useSearch } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { z } from "zod";
 import { config } from "../config";
+import { Chat, chatCache } from "./cache";
 import { introPrompt } from "./prompts";
 import { useChatType } from "./useChatType";
 import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
@@ -37,10 +40,8 @@ class JsonChunkReader {
     const messages: StreamResponse[] = [];
     const lines = this.buffer.split("\n");
 
-    // Keep the last line in the buffer if it doesn't end with newline
     this.buffer = lines[lines.length - 1];
 
-    // Process all complete lines except the last one
     for (let i = 0; i < lines.length - 1; i++) {
       const line = lines[i];
       if (line.startsWith("data: ")) {
@@ -61,11 +62,48 @@ class JsonChunkReader {
 export function useChat() {
   const { data: solanaPortfolio } = useSolanaPortfolio();
   const { data: evmPortfolio } = useEvmPortfolio();
-  const { user } = usePrivy();
+  const { user, getAccessToken } = usePrivy();
+  const { chatType } = useChatType();
+  const { chatId } = useSearch({ from: "/chat" });
+
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const { getAccessToken } = usePrivy();
-  const { chatType } = useChatType();
+
+  // Load existing chat if chatId is present
+  useEffect(() => {
+    const loadChat = async () => {
+      if (!chatId) return;
+      const chat = await chatCache.get(chatId);
+      if (chat) {
+        setMessages(chat.messages);
+      }
+    };
+    loadChat();
+  }, [chatId]);
+
+  // Back up messages to cache whenever they change
+  useEffect(() => {
+    const backupChat = async () => {
+      if (messages.length === 0) return;
+
+      const chat: Chat = {
+        id: chatId || uuidv4(),
+        messages,
+        createdAt: messages[0].timestamp,
+        lastMessageAt: messages[messages.length - 1].timestamp,
+        title: messages[0].message.slice(0, 50),
+      };
+
+      try {
+        await chatCache.set(chat.id, chat);
+        console.log("Chat backed up successfully:", chat.id);
+      } catch (error) {
+        console.error("Failed to backup chat:", error);
+      }
+    };
+
+    backupChat();
+  }, [messages, chatId]);
 
   const updateAssistantMessage = useCallback(
     (assistantMessageId: string, newContent: string) => {
@@ -221,7 +259,6 @@ export function useChat() {
         }
       } catch (error) {
         console.error("Error sending message:", error);
-        // Add error message to chat
         setMessages((prev) => [
           ...prev,
           {
@@ -245,6 +282,7 @@ export function useChat() {
       solanaPortfolio,
       evmPortfolio,
       user,
+      chatType,
     ]
   );
 

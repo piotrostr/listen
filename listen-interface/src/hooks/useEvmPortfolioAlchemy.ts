@@ -36,9 +36,11 @@ export async function getTokensMetadata(
       addresses.map(async (address) => {
         const cacheKey = `${address}-${chainId}`;
         const cachedMetadata = await tokenMetadataCache.get(cacheKey);
-        if (cachedMetadata && cachedMetadata.logoURI) {
+        if (cachedMetadata) {
+          console.log("cache hit", cacheKey);
           metadataMap.set(cacheKey, cachedMetadata);
         } else {
+          console.log("cache miss", cacheKey);
           addressesToFetch.push(address);
         }
       })

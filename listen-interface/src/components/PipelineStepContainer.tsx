@@ -123,7 +123,7 @@ export const TransactionLink = ({
   error: string | null;
 }) => {
   return (
-    <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-2 mt-2">
+    <div className="text-xs sm:text-sm text-gray-400 flex flex-wrap items-center gap-2 mt-2">
       {renderStatus(status)}{" "}
       {transactionHash && (
         <span className="flex items-center gap-1 inline-flex">
@@ -143,7 +143,7 @@ export const TransactionLink = ({
         </span>
       )}
       {error && (
-        <span className="text-red-300 flex items-center gap-1">
+        <span className="text-red-300 break-all overflow-hidden">
           {formatError(error)}
         </span>
       )}
