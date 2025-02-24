@@ -60,7 +60,7 @@ export function useChat() {
     loadChat();
   }, [chatId]);
 
-  // Back up chat whenever it changes
+  // Modify the backup effect to only navigate on new chat creation
   useEffect(() => {
     const backupChat = async () => {
       if (!chat?.id) return;
@@ -68,15 +68,6 @@ export function useChat() {
       try {
         const timeoutId = setTimeout(async () => {
           await chatCache.set(chat.id, chat);
-
-          if (chatId !== chat.id) {
-            navigate({
-              to: "/chat",
-              search: { chatId: chat.id },
-              replace: true,
-            });
-          }
-
           console.log("Chat backed up successfully:", chat.id);
         }, 1000);
 
@@ -87,7 +78,7 @@ export function useChat() {
     };
 
     backupChat();
-  }, [chat, chatId, navigate]);
+  }, [chat]);
 
   const updateAssistantMessage = useCallback(
     (assistantMessageId: string, newContent: string) => {
@@ -138,6 +129,7 @@ export function useChat() {
         };
         setChat(newChat);
 
+        // Only navigate if this is truly a new chat (no chatId in URL)
         if (!chatId) {
           navigate({
             to: "/chat",
