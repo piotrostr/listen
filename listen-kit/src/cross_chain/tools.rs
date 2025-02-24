@@ -30,14 +30,14 @@ In that case, you can use the approve_token tool to approve the token.
 Supported from_chains:
 - solana: 1151111081099710
 - arbitrum: 42161
-- binance smart chain (BSC or BNB): 56
 - base: 8453
 
 Supported to_chains:
 - sol: 1151111081099710
 - arb: 42161
-- binance smart chain (BSC or BNB): 56
 - base: 8453
+
+if a user hits you with a chain you cannot support, let them know
 ")]
 pub async fn get_quote(
     from_token_address: String,
@@ -107,14 +107,14 @@ for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
 Supported from_chains:
 - solana: 1151111081099710
 - arbitrum: 42161
-- binance smart chain (BSC or BNB): 56
 - base: 8453
 
 Supported to_chains:
 - sol: 1151111081099710
 - arb: 42161
-- binance smart chain (BSC or BNB): 56
 - base: 8453
+
+if a user hits you with a chain you cannot support, let them know
 ")]
 pub async fn swap(
     from_token_address: String,
@@ -229,7 +229,6 @@ amount is the amount to approve (in token decimals)
 pub async fn approve_token(
     token_address: String,
     spender_address: String,
-    amount: String,
     from_chain_caip2: String,
 ) -> Result<String> {
     let signer = SignerContext::current().await;
@@ -238,7 +237,6 @@ pub async fn approve_token(
     let transaction = approvals::create_approval_transaction(
         &token_address,
         &spender_address,
-        amount.parse::<u128>()?,
         &owner_address,
         approvals::caip2_to_chain_id(&from_chain_caip2)?,
     )
