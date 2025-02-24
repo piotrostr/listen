@@ -360,7 +360,7 @@ mod tests {
         dotenv::dotenv().ok();
         tracing_subscriber::fmt::init();
 
-        let lifi = lifi::LiFi::new(None);
+        // let _lifi = lifi::LiFi::new(None);
 
         // // Get the transaction
         // let transaction =r
