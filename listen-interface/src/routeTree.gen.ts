@@ -15,6 +15,7 @@ import { Route as SettingsImport } from './routes/settings'
 import { Route as ScreenerImport } from './routes/screener'
 import { Route as PortfolioImport } from './routes/portfolio'
 import { Route as PipelinesImport } from './routes/pipelines'
+import { Route as ChatHistoryImport } from './routes/chat-history'
 import { Route as ChatImport } from './routes/chat'
 import { Route as IndexImport } from './routes/index'
 
@@ -41,6 +42,12 @@ const PortfolioRoute = PortfolioImport.update({
 const PipelinesRoute = PipelinesImport.update({
   id: '/pipelines',
   path: '/pipelines',
+  getParentRoute: () => rootRoute,
+} as any)
+
+const ChatHistoryRoute = ChatHistoryImport.update({
+  id: '/chat-history',
+  path: '/chat-history',
   getParentRoute: () => rootRoute,
 } as any)
 
@@ -72,6 +79,13 @@ declare module '@tanstack/react-router' {
       path: '/chat'
       fullPath: '/chat'
       preLoaderRoute: typeof ChatImport
+      parentRoute: typeof rootRoute
+    }
+    '/chat-history': {
+      id: '/chat-history'
+      path: '/chat-history'
+      fullPath: '/chat-history'
+      preLoaderRoute: typeof ChatHistoryImport
       parentRoute: typeof rootRoute
     }
     '/pipelines': {
@@ -110,6 +124,7 @@ declare module '@tanstack/react-router' {
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/chat-history': typeof ChatHistoryRoute
   '/pipelines': typeof PipelinesRoute
   '/portfolio': typeof PortfolioRoute
   '/screener': typeof ScreenerRoute
@@ -119,6 +134,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/chat-history': typeof ChatHistoryRoute
   '/pipelines': typeof PipelinesRoute
   '/portfolio': typeof PortfolioRoute
   '/screener': typeof ScreenerRoute
@@ -129,6 +145,7 @@ export interface FileRoutesById {
   __root__: typeof rootRoute
   '/': typeof IndexRoute
   '/chat': typeof ChatRoute
+  '/chat-history': typeof ChatHistoryRoute
   '/pipelines': typeof PipelinesRoute
   '/portfolio': typeof PortfolioRoute
   '/screener': typeof ScreenerRoute
@@ -140,16 +157,25 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/chat'
+    | '/chat-history'
     | '/pipelines'
     | '/portfolio'
     | '/screener'
     | '/settings'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/chat' | '/pipelines' | '/portfolio' | '/screener' | '/settings'
+  to:
+    | '/'
+    | '/chat'
+    | '/chat-history'
+    | '/pipelines'
+    | '/portfolio'
+    | '/screener'
+    | '/settings'
   id:
     | '__root__'
     | '/'
     | '/chat'
+    | '/chat-history'
     | '/pipelines'
     | '/portfolio'
     | '/screener'
@@ -160,6 +186,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChatRoute: typeof ChatRoute
+  ChatHistoryRoute: typeof ChatHistoryRoute
   PipelinesRoute: typeof PipelinesRoute
   PortfolioRoute: typeof PortfolioRoute
   ScreenerRoute: typeof ScreenerRoute
@@ -169,6 +196,7 @@ export interface RootRouteChildren {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChatRoute: ChatRoute,
+  ChatHistoryRoute: ChatHistoryRoute,
   PipelinesRoute: PipelinesRoute,
   PortfolioRoute: PortfolioRoute,
   ScreenerRoute: ScreenerRoute,
@@ -187,6 +215,7 @@ export const routeTree = rootRoute
       "children": [
         "/",
         "/chat",
+        "/chat-history",
         "/pipelines",
         "/portfolio",
         "/screener",
@@ -198,6 +227,9 @@ export const routeTree = rootRoute
     },
     "/chat": {
       "filePath": "chat.tsx"
+    },
+    "/chat-history": {
+      "filePath": "chat-history.tsx"
     },
     "/pipelines": {
       "filePath": "pipelines.tsx"

@@ -1,33 +1,15 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useCallback, useState } from "react";
-import { z } from "zod";
+import { useNavigate, useSearch } from "@tanstack/react-router";
+import { useCallback, useEffect, useState } from "react";
+import { v4 as uuidv4 } from "uuid";
 import { config } from "../config";
+import { chatCache } from "./localStorage";
 import { introPrompt } from "./prompts";
+import { Chat, Message, StreamResponse, ToolOutputSchema } from "./types";
 import { useChatType } from "./useChatType";
+import { useDebounce } from "./useDebounce";
 import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
 import { useSolanaPortfolio } from "./useSolanaPortfolio";
-
-export type MessageDirection = "incoming" | "outgoing";
-
-export interface Message {
-  id: string;
-  message: string;
-  direction: MessageDirection;
-  timestamp: Date;
-  isToolCall: boolean;
-}
-
-const ToolOutputSchema = z.object({
-  name: z.string(),
-  result: z.string(),
-});
-
-export type ToolOutput = z.infer<typeof ToolOutputSchema>;
-
-export interface StreamResponse {
-  type: "Message" | "ToolCall" | "Error";
-  content: string | ToolOutput;
-}
 
 class JsonChunkReader {
   private buffer = "";
@@ -37,10 +19,8 @@ class JsonChunkReader {
     const messages: StreamResponse[] = [];
     const lines = this.buffer.split("\n");
 
-    // Keep the last line in the buffer if it doesn't end with newline
     this.buffer = lines[lines.length - 1];
 
-    // Process all complete lines except the last one
     for (let i = 0; i < lines.length - 1; i++) {
       const line = lines[i];
       if (line.startsWith("data: ")) {
@@ -61,16 +41,46 @@ class JsonChunkReader {
 export function useChat() {
   const { data: solanaPortfolio } = useSolanaPortfolio();
   const { data: evmPortfolio } = useEvmPortfolio();
-  const { user } = usePrivy();
-  const [messages, setMessages] = useState<Message[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
-  const { getAccessToken } = usePrivy();
+  const { user, getAccessToken } = usePrivy();
   const { chatType } = useChatType();
+  const { chatId } = useSearch({ from: "/chat" });
+  const navigate = useNavigate();
+
+  const [chat, setChat] = useState<Chat | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  // Load existing chat if chatId is present
+  useEffect(() => {
+    const loadChat = async () => {
+      if (!chatId) return;
+      const existingChat = await chatCache.get(chatId);
+      if (existingChat) {
+        setChat(existingChat);
+      }
+    };
+    loadChat();
+  }, [chatId]);
+
+  // Replace the existing backup effect with this debounced version
+  const debouncedBackup = useDebounce(async (chatToBackup: Chat) => {
+    try {
+      await chatCache.set(chatToBackup.id, chatToBackup);
+      console.log("Chat backed up successfully:", chatToBackup.id);
+    } catch (error) {
+      console.error("Failed to backup chat:", error);
+    }
+  }, 1000); // 2 second delay
+
+  useEffect(() => {
+    if (!chat?.id) return;
+    debouncedBackup(chat);
+  }, [chat, debouncedBackup]);
 
   const updateAssistantMessage = useCallback(
     (assistantMessageId: string, newContent: string) => {
-      setMessages((prev) => {
-        const updatedMessages = [...prev];
+      setChat((prev) => {
+        if (!prev) return prev;
+        const updatedMessages = [...prev?.messages];
         const assistantMessageIndex = updatedMessages.findIndex(
           (msg) => msg.id === assistantMessageId
         );
@@ -81,7 +91,11 @@ export function useChat() {
               updatedMessages[assistantMessageIndex].message + newContent,
           };
         }
-        return updatedMessages;
+        return {
+          ...prev,
+          messages: updatedMessages,
+          lastMessageAt: new Date(),
+        };
       });
     },
     []
@@ -99,25 +113,56 @@ export function useChat() {
         isToolCall: false,
       };
 
-      setMessages((prev) => [...prev, userChatMessage]);
+      // Initialize new chat if none exists
+      if (!chat) {
+        const newChatId = chatId || uuidv4();
+        const newChat: Chat = {
+          id: newChatId,
+          messages: [userChatMessage],
+          createdAt: new Date(),
+          lastMessageAt: new Date(),
+          title: userMessage.slice(0, 50),
+        };
+        setChat(newChat);
+
+        // Only navigate if this is truly a new chat (no chatId in URL)
+        if (!chatId) {
+          navigate({
+            to: "/chat",
+            search: { chatId: newChatId },
+            replace: true,
+          });
+        }
+      } else {
+        setChat((prev) => ({
+          ...prev!,
+          messages: [...prev!.messages, userChatMessage],
+          lastMessageAt: new Date(),
+        }));
+      }
 
       try {
-        const messageHistory = messages.map((msg) => ({
-          role: msg.direction === "outgoing" ? "user" : "assistant",
-          content: msg.message,
-        }));
+        const messageHistory =
+          chat?.messages.map((msg) => ({
+            role: msg.direction === "outgoing" ? "user" : "assistant",
+            content: msg.message,
+          })) || [];
 
         let currentAssistantMessageId = crypto.randomUUID();
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: currentAssistantMessageId,
-            message: "",
-            direction: "incoming",
-            timestamp: new Date(),
-            isToolCall: false,
-          },
-        ]);
+        setChat((prev) => ({
+          ...prev!,
+          messages: [
+            ...prev!.messages,
+            {
+              id: currentAssistantMessageId,
+              message: "",
+              direction: "incoming",
+              timestamp: new Date(),
+              isToolCall: false,
+            },
+          ],
+          lastMessageAt: new Date(),
+        }));
 
         if (
           !user ||
@@ -179,79 +224,110 @@ export function useChat() {
                 break;
               case "ToolCall": {
                 const toolOutput = ToolOutputSchema.parse(data.content);
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    id: crypto.randomUUID(),
-                    message: `Tool ${toolOutput.name}: ${toolOutput.result}`,
-                    direction: "incoming",
-                    timestamp: new Date(),
-                    isToolCall: true,
-                  },
-                ]);
+                setChat((prev) => ({
+                  ...prev!,
+                  messages: [
+                    ...prev!.messages,
+                    {
+                      id: crypto.randomUUID(),
+                      message: `Tool ${toolOutput.name}: ${toolOutput.result}`,
+                      direction: "incoming",
+                      timestamp: new Date(),
+                      isToolCall: true,
+                    },
+                  ],
+                  lastMessageAt: new Date(),
+                }));
                 // Start a new assistant message after tool call
                 currentAssistantMessageId = crypto.randomUUID();
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    id: currentAssistantMessageId,
-                    message: "",
-                    direction: "incoming",
-                    timestamp: new Date(),
-                    isToolCall: false,
-                  },
-                ]);
+                setChat((prev) => ({
+                  ...prev!,
+                  messages: [
+                    ...prev!.messages,
+                    {
+                      id: currentAssistantMessageId,
+                      message: "",
+                      direction: "incoming",
+                      timestamp: new Date(),
+                      isToolCall: false,
+                    },
+                  ],
+                  lastMessageAt: new Date(),
+                }));
                 break;
               }
               case "Error":
                 console.error("Stream error:", data.content);
-                setMessages((prev) => [
-                  ...prev,
-                  {
-                    id: crypto.randomUUID(),
-                    message: `Error: ${data.content}`,
-                    direction: "incoming",
-                    timestamp: new Date(),
-                    isToolCall: false,
-                  },
-                ]);
+                setChat((prev) => ({
+                  ...prev!,
+                  messages: [
+                    ...prev!.messages,
+                    {
+                      id: crypto.randomUUID(),
+                      message: `Error: ${data.content}`,
+                      direction: "incoming",
+                      timestamp: new Date(),
+                      isToolCall: false,
+                    },
+                  ],
+                  lastMessageAt: new Date(),
+                }));
                 break;
             }
           }
         }
       } catch (error) {
         console.error("Error sending message:", error);
-        // Add error message to chat
-        setMessages((prev) => [
-          ...prev,
-          {
-            id: crypto.randomUUID(),
-            message: `An error occurred: ${
-              error instanceof Error ? error.message : "Unknown error"
-            }`,
-            direction: "incoming",
-            timestamp: new Date(),
-            isToolCall: false,
-          },
-        ]);
+        setChat((prev) => ({
+          ...prev!,
+          messages: [
+            ...prev!.messages,
+            {
+              id: crypto.randomUUID(),
+              message: `An error occurred: ${error instanceof Error ? error.message : "Unknown error"}`,
+              direction: "incoming",
+              timestamp: new Date(),
+              isToolCall: false,
+            },
+          ],
+          lastMessageAt: new Date(),
+        }));
       } finally {
         setIsLoading(false);
       }
     },
     [
-      messages,
+      chat,
+      chatId,
       updateAssistantMessage,
       getAccessToken,
       solanaPortfolio,
       evmPortfolio,
       user,
+      chatType,
+      navigate,
     ]
   );
 
   return {
-    messages,
+    messages: chat?.messages || [],
     isLoading,
     sendMessage,
-    setMessages,
+    setMessages: (messages: Message[]) =>
+      setChat((prev) =>
+        prev
+          ? {
+              ...prev,
+              messages,
+              lastMessageAt: new Date(),
+            }
+          : {
+              id: chatId || uuidv4(),
+              messages,
+              createdAt: new Date(),
+              lastMessageAt: new Date(),
+              title: messages[0]?.message.slice(0, 50),
+            }
+      ),
   };
 }

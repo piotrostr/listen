@@ -1,6 +1,11 @@
-import { AccountInfo, Connection, PublicKey } from "@solana/web3.js";
+import {
+  AccountInfo,
+  Connection,
+  LAMPORTS_PER_SOL,
+  PublicKey,
+} from "@solana/web3.js";
 import { useQuery } from "@tanstack/react-query";
-import { tokenMetadataCache } from "./cache";
+import { tokenMetadataCache } from "./localStorage";
 import { Holding, PriceResponse, TokenMetadata } from "./types";
 import { usePrivyWallets } from "./usePrivyWallet";
 import { decodeTokenAccount } from "./util";
@@ -94,12 +99,16 @@ export const useSolanaPortfolio = () => {
   return useQuery({
     queryKey: ["portfolio", wallets?.solanaWallet.toString()],
     queryFn: async () => {
-      // Get holdings
-      const holdings = await getHoldings(
-        connection,
-        new PublicKey(wallets!.solanaWallet)
-      );
-      const mints = holdings.map((h) => h.mint);
+      const pubkey = new PublicKey(wallets!.solanaWallet);
+      const WSOL_MINT = "So11111111111111111111111111111111111111112";
+
+      // Get SOL balance and token holdings in parallel
+      const [solBalance, holdings] = await Promise.all([
+        connection.getBalance(pubkey),
+        getHoldings(connection, pubkey),
+      ]);
+
+      const mints = [WSOL_MINT, ...holdings.map((h) => h.mint)];
 
       // Get metadata and prices in parallel
       const [tokenMetadata, pricesResponse] = await Promise.all([
@@ -107,9 +116,23 @@ export const useSolanaPortfolio = () => {
         fetchPrices(mints),
       ]);
 
-      // Combine data
-      return holdings.map((holding, index) => {
-        const metadata = tokenMetadata[index];
+      // Create SOL portfolio item using Jupiter metadata
+      const solMetadata = tokenMetadata[0];
+      const solPortfolioItem = {
+        address: WSOL_MINT,
+        name: "Solana",
+        symbol: "SOL",
+        decimals: solMetadata.decimals,
+        logoURI: solMetadata.logoURI,
+        price: Number(pricesResponse.data[WSOL_MINT]?.price || 0),
+        amount: solBalance / LAMPORTS_PER_SOL,
+        daily_volume: solMetadata.volume24h || 0,
+        chain: "solana",
+      };
+
+      // Combine SOL with other tokens
+      const tokenPortfolioItems = holdings.map((holding, index) => {
+        const metadata = tokenMetadata[index + 1]; // offset by 1 since SOL metadata is first
         const price = Number(pricesResponse.data[holding.mint]?.price || 0);
         const amount = Number(holding.amount) / Math.pow(10, metadata.decimals);
 
@@ -125,6 +148,8 @@ export const useSolanaPortfolio = () => {
           chain: "solana",
         };
       });
+
+      return [solPortfolioItem, ...tokenPortfolioItems];
     },
     enabled: !!wallets,
     staleTime: 10000, // 10 seconds

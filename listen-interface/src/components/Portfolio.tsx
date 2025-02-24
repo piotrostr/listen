@@ -73,7 +73,7 @@ export function Portfolio() {
             ?.sort((a, b) => b.price * b.amount - a.price * a.amount)
             .map((asset) => (
               <div
-                key={asset.address}
+                key={`${asset.address}-${asset.chain}`}
                 className="border border-purple-500/30 rounded-lg p-3 hover:bg-purple-900/20 transition-colors"
               >
                 <div className="flex justify-between items-start mb-2">

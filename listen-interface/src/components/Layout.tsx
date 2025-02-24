@@ -13,14 +13,14 @@ import { Background } from "./Background";
 
 import { BsLink } from "react-icons/bs";
 import { FaXTwitter } from "react-icons/fa6";
-import { IoMenu, IoSettingsOutline } from "react-icons/io5";
+import { IoChevronDown, IoMenu, IoSettingsOutline } from "react-icons/io5";
 import { RxCross2, RxDashboard } from "react-icons/rx";
+import { RecentChats } from "./RecentChats";
 
 const NAV_ITEMS = [
   { to: "/screener", icon: RxDashboard, label: "Screener" },
   { to: "/portfolio", icon: IoWalletOutline, label: "Portfolio" },
   { to: "/pipelines", icon: BsLink, label: "Pipelines" },
-  { to: "/chat", icon: IoChatboxOutline, label: "Chat" },
   { to: "/settings", icon: IoSettingsOutline, label: "Settings" },
 ] as const;
 
@@ -61,34 +61,62 @@ function NavLink({
   icon: Icon,
   label,
   isSidebarOpen = true,
+  isChat = false,
+  isDrawerOpen = false,
+  onToggleDrawer,
 }: {
   to: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   isSidebarOpen?: boolean;
+  isChat?: boolean;
+  isDrawerOpen?: boolean;
+  onToggleDrawer?: () => void;
 }) {
   const setIsSidebarOpen = useContext(SidebarContext);
 
   return (
-    <Link
-      to={to}
-      className="flex items-center h-10 rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 [&.active]:bg-purple-500/20 [&.active]:text-white transition-colors"
-      onClick={() => {
-        // Close sidebar on mobile only
-        if (window.innerWidth < 1024) {
-          setIsSidebarOpen(false);
-        }
-      }}
-    >
-      <div
-        className={`flex items-center h-full ${
-          isSidebarOpen ? "px-4 w-full" : "justify-center w-16"
-        }`}
+    <div className="relative">
+      <Link
+        to={to}
+        className="flex items-center h-10 rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 [&.active]:bg-purple-500/20 [&.active]:text-white transition-colors"
+        onClick={() => {
+          if (window.innerWidth < 1024) {
+            setIsSidebarOpen(false);
+          }
+        }}
       >
-        <Icon className="w-5 h-5 min-w-[20px]" />
-        {isSidebarOpen && <span className="ml-3">{label}</span>}
-      </div>
-    </Link>
+        <div
+          className={`flex items-center h-full ${
+            isSidebarOpen ? "px-4 w-full" : "justify-center w-16"
+          }`}
+        >
+          <Icon className="w-5 h-5 min-w-[20px]" />
+          {isSidebarOpen && (
+            <>
+              <span className="ml-3 flex-1">{label}</span>
+              {isChat && (
+                <button
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    onToggleDrawer?.();
+                  }}
+                  className={`transition-transform ${isDrawerOpen ? "rotate-180" : ""}`}
+                >
+                  <IoChevronDown className="w-4 h-4" />
+                </button>
+              )}
+            </>
+          )}
+        </div>
+      </Link>
+      {isChat && isDrawerOpen && (
+        <div className="mt-1">
+          <RecentChats />
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -175,9 +203,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
     address: wallets?.evmWallet as Address,
   });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
+
+  // Add this handler function
+  const handleSidebarToggle = (open: boolean) => {
+    setIsSidebarOpen(open);
+    if (!open) {
+      setIsChatDrawerOpen(false);
+    }
+  };
 
   return (
-    <SidebarContext.Provider value={setIsSidebarOpen}>
+    <SidebarContext.Provider value={handleSidebarToggle}>
       <div className="relative min-h-screen text-white">
         <Background />
 
@@ -192,7 +229,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <span className="font-bold text-md lg:text-xl">listen-rs</span>
           </div>
           <button
-            onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+            onClick={() => handleSidebarToggle(!isSidebarOpen)}
             className="p-2 rounded-lg hover:bg-purple-500/10 transition-colors"
           >
             {isSidebarOpen ? (
@@ -219,6 +256,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 {NAV_ITEMS.map((item) => (
                   <NavLink key={item.to} {...item} />
                 ))}
+                <NavLink
+                  to="/chat"
+                  icon={IoChatboxOutline}
+                  label="Chat"
+                  isSidebarOpen={true}
+                  isChat={true}
+                  isDrawerOpen={isChatDrawerOpen}
+                  onToggleDrawer={() => setIsChatDrawerOpen(!isChatDrawerOpen)}
+                />
               </nav>
 
               {/* Balance Display */}
@@ -278,7 +324,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               } top-0 h-12 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center`}
             >
               <button
-                onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                onClick={() => handleSidebarToggle(!isSidebarOpen)}
                 className="p-1.5 bg-black/40 backdrop-blur-sm hover:bg-purple-500/10 rounded-lg transition-colors"
               >
                 <svg
@@ -302,7 +348,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Logo section */}
             <div className="p-4">
-              <div className="flex items-center mb-8">
+              <div className="flex items-center">
                 <div
                   className={`flex items-center ${isSidebarOpen ? "px-2" : "justify-center"}`}
                 >
@@ -310,7 +356,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     src="/listen-more.png"
                     alt="Logo"
                     className="w-8 h-8 rounded cursor-pointer"
-                    onClick={() => setIsSidebarOpen(!isSidebarOpen)}
+                    onClick={() => handleSidebarToggle(!isSidebarOpen)}
                   />
                   {isSidebarOpen && (
                     <span className="ml-3 font-bold text-xl">listen-rs</span>
@@ -329,16 +375,25 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     isSidebarOpen={isSidebarOpen}
                   />
                 ))}
+                <NavLink
+                  to="/chat"
+                  icon={IoChatboxOutline}
+                  label="Chat"
+                  isSidebarOpen={isSidebarOpen}
+                  isChat={true}
+                  isDrawerOpen={isChatDrawerOpen}
+                  onToggleDrawer={() => setIsChatDrawerOpen(!isChatDrawerOpen)}
+                />
               </nav>
 
               {/* Balance Display */}
-              {isAuthenticated && (
+              {/*isAuthenticated && (
                 <BalanceDisplay
                   isSidebarOpen={isSidebarOpen}
                   solanaBalance={solanaBalance}
                   ethereumBalance={ethereumBalance}
                 />
-              )}
+              )*/}
             </div>
 
             {/* Bottom section */}
