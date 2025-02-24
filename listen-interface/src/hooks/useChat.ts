@@ -7,6 +7,7 @@ import { chatCache } from "./localStorage";
 import { introPrompt } from "./prompts";
 import { Chat, Message, StreamResponse, ToolOutputSchema } from "./types";
 import { useChatType } from "./useChatType";
+import { useDebounce } from "./useDebounce";
 import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
 import { useSolanaPortfolio } from "./useSolanaPortfolio";
 
@@ -60,25 +61,20 @@ export function useChat() {
     loadChat();
   }, [chatId]);
 
-  // Modify the backup effect to only navigate on new chat creation
+  // Replace the existing backup effect with this debounced version
+  const debouncedBackup = useDebounce(async (chatToBackup: Chat) => {
+    try {
+      await chatCache.set(chatToBackup.id, chatToBackup);
+      console.log("Chat backed up successfully:", chatToBackup.id);
+    } catch (error) {
+      console.error("Failed to backup chat:", error);
+    }
+  }, 1000); // 2 second delay
+
   useEffect(() => {
-    const backupChat = async () => {
-      if (!chat?.id) return;
-
-      try {
-        const timeoutId = setTimeout(async () => {
-          await chatCache.set(chat.id, chat);
-          console.log("Chat backed up successfully:", chat.id);
-        }, 1000);
-
-        return () => clearTimeout(timeoutId);
-      } catch (error) {
-        console.error("Failed to backup chat:", error);
-      }
-    };
-
-    backupChat();
-  }, [chat]);
+    if (!chat?.id) return;
+    debouncedBackup(chat);
+  }, [chat, debouncedBackup]);
 
   const updateAssistantMessage = useCallback(
     (assistantMessageId: string, newContent: string) => {
