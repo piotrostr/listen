@@ -120,8 +120,8 @@ export const useSolanaPortfolio = () => {
       const solMetadata = tokenMetadata[0];
       const solPortfolioItem = {
         address: WSOL_MINT,
-        name: solMetadata.name,
-        symbol: solMetadata.symbol,
+        name: "Solana",
+        symbol: "SOL",
         decimals: solMetadata.decimals,
         logoURI: solMetadata.logoURI,
         price: Number(pricesResponse.data[WSOL_MINT]?.price || 0),
