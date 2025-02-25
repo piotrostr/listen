@@ -1,7 +1,11 @@
 import { PortfolioData } from "./types";
 import { addressBook, caip2Map } from "./util";
 
-export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
+export function systemPrompt(
+  portfolio: PortfolioData,
+  walletAddress: string,
+  pubkey: string
+) {
   return `
   <knowledge>
   You can create pipelines that user approves with a click to execute
@@ -58,14 +62,14 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
 
   now when generating a pipeline, put it into <pipeline></pipeline> tags
 
-  always include the tags! otherwise the pipeline will not be executed
+  always include the tags! otherwise the pipeline will neither be rendered for the user to see nor executed
   </knowledge>
   <guidelines>
   Often, there will be tokens on other chains that mimick the "original" token, even in the user portfolio.
   The original token is the one with highest liquidity and volume.
   Always assume the user wants the OG token, unless specified otherwise.
   </guidelines>
-  <context>address: ${userAddress} ${JSON.stringify(
+  <context>Address EVM: ${walletAddress}; Address SOL: ${pubkey}; ${JSON.stringify(
     portfolio
   )} (prices in USD)</context>
   <chain_caip2_map>

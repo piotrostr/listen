@@ -1,5 +1,6 @@
 import { User, WalletWithMetadata } from "@privy-io/react-auth";
 import { PublicKey } from "@solana/web3.js";
+import bs58 from "bs58";
 import { getAddress } from "viem";
 import ethLogo from "../assets/icons/ethereum.svg";
 import {
@@ -265,4 +266,171 @@ export const chainIdNumericToChainId = (chainId: number): string => {
   }
   const key = `eip155:${chainId}`;
   return caip2ToChainIdMap[key as keyof typeof caip2ToChainIdMap];
+};
+
+// Validate Solana transaction signatures
+export const isValidSolanaTransactionSignature = (
+  signature: string
+): boolean => {
+  try {
+    // Check that it only contains valid base58 characters
+    const base58Regex = /^[1-9A-HJ-NP-Za-km-z]+$/;
+    if (!base58Regex.test(signature)) {
+      return false;
+    }
+
+    // Decode the base58 string to get the actual bytes
+    const bytes = bs58.decode(signature);
+
+    // Solana transaction signatures should be exactly 64 bytes
+    return bytes.length === 64;
+  } catch {
+    return false;
+  }
+};
+
+// Validate Solana addresses
+export const isValidSolanaAddress = (address: string): boolean => {
+  try {
+    new PublicKey(address);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// Validate EVM addresses
+export const isValidEvmAddress = (address: string): boolean => {
+  // EVM addresses are 42 characters long (0x + 40 hex characters)
+  const evmAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+  return evmAddressRegex.test(address);
+};
+
+// Validate EVM transaction hashes
+export const isValidEvmTransaction = (hash: string): boolean => {
+  // EVM transaction hashes are 66 characters long (0x + 64 hex characters)
+  const evmTxRegex = /^0x[a-fA-F0-9]{64}$/;
+  return evmTxRegex.test(hash);
+};
+
+// Render addresses and transaction hashes as links
+export const renderAddressOrTx = (text: string): string => {
+  if (!text) return "";
+
+  // Process the text by replacing matches with HTML links
+  let processedText = text;
+
+  // Special case for quoted transaction signatures - they need a more specific pattern
+  const quotedTxPattern = /"([1-9A-HJ-NP-Za-km-z]{87,88})"/g;
+  let quotedMatch;
+
+  while ((quotedMatch = quotedTxPattern.exec(text)) !== null) {
+    const fullMatch = quotedMatch[0]; // The entire match including quotes
+    const txSignature = quotedMatch[1]; // Just the signature part (without quotes)
+
+    if (isValidSolanaTransactionSignature(txSignature)) {
+      const url = `https://solscan.io/tx/${txSignature}`;
+
+      // Create the replacement with the link
+      const replacement = `"<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${txSignature.slice(
+        0,
+        4
+      )}..${txSignature.slice(-4)}</a>"`;
+
+      // Replace this specific occurrence
+      processedText =
+        processedText.substring(0, quotedMatch.index) +
+        replacement +
+        processedText.substring(quotedMatch.index + fullMatch.length);
+
+      // Adjust the regex lastIndex to account for the replacement
+      quotedTxPattern.lastIndex += replacement.length - fullMatch.length;
+    }
+  }
+
+  // Handle regular Solana addresses and transactions
+  const solanaPattern = /\b([1-9A-HJ-NP-Za-km-z]{32,44})\b/g;
+  let match;
+
+  // Use a while loop with exec to get all matches with their positions
+  while ((match = solanaPattern.exec(processedText)) !== null) {
+    const fullMatch = match[0]; // The entire match
+
+    // Skip if this is already inside an HTML tag (from previous replacements)
+    const prevText = processedText.substring(
+      Math.max(0, match.index - 50),
+      match.index
+    );
+    if (prevText.includes('<a href="https://solscan.io/')) {
+      continue;
+    }
+
+    // Determine if it's a Solana address or transaction
+    const isSolanaAddress = isValidSolanaAddress(fullMatch);
+    const isSolanaTx = isValidSolanaTransactionSignature(fullMatch);
+
+    if (isSolanaAddress || isSolanaTx) {
+      const url = isSolanaTx
+        ? `https://solscan.io/tx/${fullMatch}`
+        : `https://solscan.io/address/${fullMatch}`;
+
+      // Create the replacement with the link
+      const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch.slice(
+        0,
+        4
+      )}..${fullMatch.slice(-4)}</a>`;
+
+      // Replace this specific occurrence
+      processedText =
+        processedText.substring(0, match.index) +
+        replacement +
+        processedText.substring(match.index + fullMatch.length);
+
+      // Adjust the regex lastIndex to account for the replacement
+      solanaPattern.lastIndex += replacement.length - fullMatch.length;
+    }
+  }
+
+  // Now handle EVM addresses and transactions
+  const evmPattern = /\b(0x[a-fA-F0-9]{40,64})\b/g;
+
+  // Reset match for the new pattern
+  match = null;
+
+  while ((match = evmPattern.exec(processedText)) !== null) {
+    const fullMatch = match[0]; // The entire match
+
+    // Skip if this is already inside an HTML tag (from previous replacements)
+    const prevText = processedText.substring(
+      Math.max(0, match.index - 50),
+      match.index
+    );
+    if (prevText.includes('<a href="https://blockscan.com/')) {
+      continue;
+    }
+
+    // Determine if it's an EVM address or transaction
+    const isEvmAddress = isValidEvmAddress(fullMatch);
+    const isEvmTx = isValidEvmTransaction(fullMatch);
+
+    if (isEvmAddress || isEvmTx) {
+      const url = isEvmTx
+        ? `https://blockscan.com/tx/${fullMatch}`
+        : `https://blockscan.com/address/${fullMatch}`;
+
+      // Create the replacement with the link
+      const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch}</a>`;
+
+      // Replace this specific occurrence
+      processedText =
+        processedText.substring(0, match.index) +
+        replacement +
+        processedText.substring(match.index + fullMatch.length);
+
+      // Adjust the regex lastIndex to account for the replacement
+      evmPattern.lastIndex += replacement.length - fullMatch.length;
+    }
+  }
+
+  return processedText;
 };

@@ -28,8 +28,8 @@ export const DexScreenerPairSchema = z.object({
   baseToken: DexScreenerTokenSchema,
   quoteToken: DexScreenerTokenSchema,
   priceNative: z.string(),
-  priceUsd: z.string(),
-  liquidity: DexScreenerLiquiditySchema,
+  priceUsd: z.string().nullable(),
+  liquidity: DexScreenerLiquiditySchema.nullable(),
   volume: DexScreenerVolumeSchema,
 });
 

@@ -6,7 +6,9 @@ interface DexscreenerDisplayProps {
 }
 
 const formatNumber = (num: number) => {
-  if (num >= 1_000_000) {
+  if (num >= 1_000_000_000) {
+    return `$${(num / 1_000_000_000).toFixed(2)}B`;
+  } else if (num >= 1_000_000) {
     return `$${(num / 1_000_000).toFixed(2)}M`;
   } else if (num >= 1_000) {
     return `$${(num / 1_000).toFixed(2)}K`;
@@ -17,7 +19,7 @@ const formatNumber = (num: number) => {
 export const DexscreenerDisplay = ({ pairs }: DexscreenerDisplayProps) => {
   return (
     <div className="overflow-x-auto">
-      <table className="w-full min-w-[300px]">
+      <table className="w-full">
         <thead>
           <tr className="text-xs text-gray-400">
             <th className="text-left p-2 font-normal">Token</th>
@@ -71,16 +73,20 @@ export const DexscreenerDisplay = ({ pairs }: DexscreenerDisplayProps) => {
                   </div>
                 </div>
               </td>
-              <td className="p-2 text-right">
-                <div className="font-medium text-sm">
-                  {formatNumber(pair.liquidity.usd)}
-                </div>
-              </td>
-              <td className="p-2 text-right">
-                <div className="font-medium text-sm">
-                  {formatNumber(pair.volume.h24)}
-                </div>
-              </td>
+              {pair.liquidity && (
+                <td className="p-2 text-right">
+                  <div className="font-medium text-sm">
+                    {formatNumber(pair.liquidity.usd)}
+                  </div>
+                </td>
+              )}
+              {pair.volume && (
+                <td className="p-2 text-right">
+                  <div className="font-medium text-sm">
+                    {formatNumber(pair.volume.h24)}
+                  </div>
+                </td>
+              )}
             </tr>
           ))}
         </tbody>

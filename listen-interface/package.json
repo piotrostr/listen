@@ -18,6 +18,7 @@
     "@tanstack/router-vite-plugin": "^1.105.0",
     "alchemy-sdk": "^3.5.1",
     "autoprefixer": "^10.4.20",
+    "bs58": "^6.0.0",
     "idb": "^8.0.2",
     "lightweight-charts": "^5.0.2",
     "postcss": "^8.5.1",
@@ -25,13 +26,15 @@
     "react-dom": "^18.3.1",
     "react-icons": "^5.4.0",
     "react-markdown": "^9.0.3",
+    "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.0",
     "tailwind-scrollbar": "^3.1.0",
     "tailwindcss": "^3.4.17",
     "viem": "2.x",
     "vite-plugin-pwa": "^0.21.1",
     "wagmi": "^2.14.9",
-    "zod": "^3.24.2"
+    "zod": "^3.24.2",
+    "zustand": "^5.0.3"
   },
   "devDependencies": {
     "@eslint/js": "^9.17.0",

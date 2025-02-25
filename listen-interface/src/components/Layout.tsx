@@ -2,12 +2,8 @@ import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { createContext, useContext, useState } from "react";
 import { IoChatboxOutline, IoWalletOutline } from "react-icons/io5";
-import { Address } from "viem";
-import { useBalance, UseBalanceReturnType } from "wagmi";
+import { UseBalanceReturnType } from "wagmi";
 import ethereumIcon from "../assets/icons/ethereum.svg";
-import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
-import { usePrivyWallets } from "../hooks/usePrivyWallet";
-import { useSolBalance } from "../hooks/useSolBalance";
 import { imageMap } from "../hooks/util";
 import { Background } from "./Background";
 
@@ -96,16 +92,38 @@ function NavLink({
             <>
               <span className="ml-3 flex-1">{label}</span>
               {isChat && (
-                <button
-                  onClick={(e) => {
-                    e.preventDefault();
-                    e.stopPropagation();
-                    onToggleDrawer?.();
-                  }}
-                  className={`transition-transform ${isDrawerOpen ? "rotate-180" : ""}`}
-                >
-                  <IoChevronDown className="w-4 h-4" />
-                </button>
+                <div className="flex items-center space-x-2">
+                  <Link
+                    to="/chat"
+                    search={{ new: true }}
+                    className="p-1 hover:bg-purple-500/20 rounded-full transition-colors"
+                    title="New Chat"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                  </Link>
+                  <button
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      onToggleDrawer?.();
+                    }}
+                    className={`transition-transform ${isDrawerOpen ? "rotate-180" : ""}`}
+                  >
+                    <IoChevronDown className="w-4 h-4" />
+                  </button>
+                </div>
               )}
             </>
           )}
@@ -152,7 +170,7 @@ function BottomLink({
 }
 
 // Balance Display Component
-function BalanceDisplay({
+export function BalanceDisplay({
   isSidebarOpen,
   solanaBalance,
   ethereumBalance,
@@ -195,13 +213,7 @@ function BalanceDisplay({
 const SidebarContext = createContext<(open: boolean) => void>(() => {});
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useIsAuthenticated();
   const { user, logout } = usePrivy();
-  const { data: wallets } = usePrivyWallets();
-  const { data: solanaBalance } = useSolBalance();
-  const { data: ethereumBalance } = useBalance({
-    address: wallets?.evmWallet as Address,
-  });
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
 
@@ -245,11 +257,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
           className={`lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
             isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
+          onClick={() => handleSidebarToggle(false)}
         >
           <div
             className={`w-64 h-full bg-black/60 backdrop-blur-sm transition-transform duration-300 ${
               isSidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 pt-20">
               <nav className="space-y-1">
@@ -268,13 +282,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               </nav>
 
               {/* Balance Display */}
-              {isAuthenticated && (
+              {/*isAuthenticated && (
                 <BalanceDisplay
                   isSidebarOpen={true}
                   solanaBalance={solanaBalance}
                   ethereumBalance={ethereumBalance}
                 />
-              )}
+              )*/}
             </div>
 
             {/* Bottom Items */}
@@ -442,6 +456,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
       </div>
+      <head>
+        <meta
+          name="viewport"
+          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
+        />
+      </head>
     </SidebarContext.Provider>
   );
 }
