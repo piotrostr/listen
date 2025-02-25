@@ -1,128 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import type { TokenMarketData } from "../types/metadata";
-import type { PriceUpdate } from "../types/price";
+import { setupWebSocket } from "../services/websocketService";
+import { useTokenStore } from "../store/tokenStore";
 import { TokenTile } from "./TokenTile";
 
 export function PriceUpdates() {
-  const [latestUpdate, setLatestUpdate] = useState<PriceUpdate | null>(null);
-  const [tokenMap, setTokenMap] = useState<Map<string, TokenMarketData>>(
-    new Map()
-  );
+  const { latestUpdate, tokenMap, filterAndSortTokens } = useTokenStore();
   const [marketCapFilter, setMarketCapFilter] = useState<string>("all");
   const [volumeFilter, setVolumeFilter] = useState<"bought" | "sold" | "all">(
     "all"
   );
 
+  // Setup WebSocket connection
   useEffect(() => {
-    const ws = new WebSocket("wss://api.listen-rs.com/v1/adapter/ws");
-
-    ws.onmessage = (event) => {
-      try {
-        const data: PriceUpdate = JSON.parse(event.data);
-        if (!data.is_pump) return;
-        setLatestUpdate(data);
-
-        setTokenMap((prevMap) => {
-          const newMap = new Map(prevMap);
-          const existing = newMap.get(data.pubkey);
-
-          newMap.set(data.pubkey, {
-            name: data.name,
-            buyVolume:
-              (existing?.buyVolume || 0) + (data.is_buy ? data.swap_amount : 0),
-            sellVolume:
-              (existing?.sellVolume || 0) +
-              (!data.is_buy ? data.swap_amount : 0),
-            lastPrice: data.price,
-            lastUpdate: new Date(data.timestamp),
-            marketCap: data.market_cap,
-            uniqueAddresses: new Set([
-              ...(existing?.uniqueAddresses || []),
-              data.owner,
-            ]),
-            pubkey: data.pubkey,
-          });
-
-          return newMap;
-        });
-      } catch (error) {
-        alert("Error parsing message: " + JSON.stringify(error));
-      }
-    };
-
-    ws.onopen = () => {
-      ws.send(
-        JSON.stringify({
-          action: "subscribe",
-          mints: ["*"],
-        })
-      );
-      console.log("WebSocket connection opened");
-    };
-
-    ws.onerror = (error) => {
-      console.error("WebSocket failed:", error);
-    };
-
-    ws.onclose = () => {
-      console.log("WebSocket connection closed");
-    };
-
+    const ws = setupWebSocket();
     return () => {
       ws.close();
     };
   }, []);
 
-  const filterTokensByMarketCap = (tokens: TokenMarketData[]) => {
-    switch (marketCapFilter) {
-      case "under1m":
-        return tokens.filter((token) => token.marketCap < 1_000_000);
-      case "1mTo10m":
-        return tokens.filter(
-          (token) =>
-            token.marketCap >= 1_000_000 && token.marketCap < 10_000_000
-        );
-      case "10mTo100m":
-        return tokens.filter(
-          (token) =>
-            token.marketCap >= 10_000_000 && token.marketCap < 100_000_000
-        );
-      case "over100m":
-        return tokens.filter((token) => token.marketCap >= 100_000_000);
-      default:
-        return tokens;
-    }
-  };
-
-  const filterAndSortTokens = (tokens: TokenMarketData[]) => {
-    const marketCapFiltered = filterTokensByMarketCap(tokens);
-
-    switch (volumeFilter) {
-      case "bought":
-        return marketCapFiltered.sort((a, b) => {
-          const netVolumeA = a.buyVolume - a.sellVolume;
-          const netVolumeB = b.buyVolume - b.sellVolume;
-          return netVolumeB - netVolumeA;
-        });
-      case "sold":
-        return marketCapFiltered.sort((a, b) => {
-          const netVolumeA = a.sellVolume - a.buyVolume;
-          const netVolumeB = b.sellVolume - b.buyVolume;
-          return netVolumeB - netVolumeA;
-        });
-      default:
-        return marketCapFiltered.sort(
-          (a, b) => b.buyVolume + b.sellVolume - (a.buyVolume + a.sellVolume)
-        );
-    }
-  };
-
-  const topTokens = filterAndSortTokens(Array.from(tokenMap.values())).slice(
-    0,
-    20
-  );
+  const topTokens = filterAndSortTokens(
+    Array.from(tokenMap.values()),
+    marketCapFilter,
+    volumeFilter
+  ).slice(0, 20);
 
   return (
     <div className="h-full flex flex-col gap-2 p-2 sm:p-4 overflow-hidden">
