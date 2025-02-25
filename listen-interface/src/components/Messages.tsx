@@ -15,7 +15,7 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
         JSON.parse(toolOutput.result)
       );
       return (
-        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
+        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-2 py-1 lg:px-4 lg:py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
           <DexscreenerDisplay pairs={parsed.pairs} />
         </div>
       );
