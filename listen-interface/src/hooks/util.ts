@@ -315,7 +315,6 @@ export const isValidEvmTransaction = (hash: string): boolean => {
 
 // Render addresses and transaction hashes as links
 export const renderAddressOrTx = (text: string): string => {
-  console.log("text", text);
   if (!text) return "";
 
   // Process the text by replacing matches with HTML links
