@@ -84,7 +84,8 @@ export function DelegateActionButton() {
           <span>Creating wallet...</span>
         ) : (
           <span>
-            Create {solanaReady ? "Solana" : ""} {evmReady ? "EVM" : ""} wallet
+            Create {solanaReady && !solanaWalletToDelegate ? "Solana" : ""}{" "}
+            {evmReady && !evmWalletToDelegate ? "EVM" : ""} wallet
           </span>
         )}
       </button>
