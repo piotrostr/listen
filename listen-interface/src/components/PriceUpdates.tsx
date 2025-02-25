@@ -128,7 +128,7 @@ export function PriceUpdates() {
                 onChange={(e) => setMarketCapFilter(e.target.value)}
                 className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-purple-500 w-[120px]"
               >
-                <option value="all">Any Marketcap</option>
+                <option value="all">Any</option>
                 <option value="under1m">&lt;$1M</option>
                 <option value="1mTo10m">$1M-$10M</option>
                 <option value="10mTo100m">$10M-$100M</option>
