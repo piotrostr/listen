@@ -1,6 +1,5 @@
 import { User, WalletWithMetadata } from "@privy-io/react-auth";
 import { PublicKey } from "@solana/web3.js";
-import { createElement } from "react";
 import { getAddress } from "viem";
 import ethLogo from "../assets/icons/ethereum.svg";
 import {
@@ -313,87 +312,123 @@ export const isValidEvmTransaction = (hash: string): boolean => {
 };
 
 // Render addresses and transaction hashes as links
-export const renderAddressOrTx = (text: string) => {
-  // Regex for potential Solana addresses and signatures (base58 characters)
-  const solanaRegex = /\b([1-9A-HJ-NP-Za-km-z]{32,44})\b/g;
+export const renderAddressOrTx = (text: string): string => {
+  console.log("text", text);
+  if (!text) return "";
 
-  // Regex for potential EVM addresses and transaction hashes (hex with 0x prefix)
-  const evmRegex = /\b(0x[a-fA-F0-9]{40,64})\b/g;
+  // Process the text by replacing matches with HTML links
+  let processedText = text;
 
-  // Combined regex to match either Solana or EVM patterns
-  const combinedRegex = new RegExp(
-    `${solanaRegex.source}|${evmRegex.source}`,
-    "g"
-  );
+  // Special case for quoted transaction signatures - they need a more specific pattern
+  const quotedTxPattern = /"([1-9A-HJ-NP-Za-km-z]{87,88})"/g;
+  let quotedMatch;
 
-  // Split the text by potential matches
-  const parts = text.split(combinedRegex);
+  while ((quotedMatch = quotedTxPattern.exec(text)) !== null) {
+    const fullMatch = quotedMatch[0]; // The entire match including quotes
+    const txSignature = quotedMatch[1]; // Just the signature part (without quotes)
 
-  // If no matches, return the original text
-  if (parts.length === 1) return text;
+    if (isValidSolanaTransactionSignature(txSignature)) {
+      const url = `https://solscan.io/tx/${txSignature}`;
 
-  // Process each match
-  const result = [];
-  let matches = text.match(combinedRegex) || [];
+      // Create the replacement with the link
+      const replacement = `"<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${txSignature}</a>"`;
 
-  for (let i = 0; i < parts.length; i++) {
-    // Add the text before the match
-    if (parts[i]) result.push(parts[i]);
+      // Replace this specific occurrence
+      processedText =
+        processedText.substring(0, quotedMatch.index) +
+        replacement +
+        processedText.substring(quotedMatch.index + fullMatch.length);
 
-    // Add the match as a link if it exists
-    if (i < matches.length) {
-      const potentialAddress = matches[i];
-
-      // Determine what type of address/transaction it is
-      const isSolanaAddress = isValidSolanaAddress(potentialAddress);
-      const isSolanaTx = isValidSolanaTransactionSignature(potentialAddress);
-      const isEvmAddress = isValidEvmAddress(potentialAddress);
-      const isEvmTx = isValidEvmTransaction(potentialAddress);
-
-      if (isSolanaAddress || isSolanaTx) {
-        // Handle Solana addresses and transactions
-        const url = isSolanaTx
-          ? `https://solscan.io/tx/${potentialAddress}`
-          : `https://solscan.io/address/${potentialAddress}`;
-
-        result.push(
-          createElement(
-            "a",
-            {
-              key: i,
-              href: url,
-              target: "_blank",
-              rel: "noopener noreferrer",
-              className: "text-blue-400 underline",
-            },
-            potentialAddress
-          )
-        );
-      } else if (isEvmAddress || isEvmTx) {
-        // Handle EVM addresses and transactions
-        const url = isEvmTx
-          ? `https://etherscan.io/tx/${potentialAddress}`
-          : `https://etherscan.io/address/${potentialAddress}`;
-
-        result.push(
-          createElement(
-            "a",
-            {
-              key: i,
-              href: url,
-              target: "_blank",
-              rel: "noopener noreferrer",
-              className: "text-blue-400 underline",
-            },
-            potentialAddress
-          )
-        );
-      } else {
-        // Not a valid address or tx, just add the text
-        result.push(potentialAddress);
-      }
+      // Adjust the regex lastIndex to account for the replacement
+      quotedTxPattern.lastIndex += replacement.length - fullMatch.length;
     }
   }
 
-  return result;
+  // Handle regular Solana addresses and transactions
+  const solanaPattern = /\b([1-9A-HJ-NP-Za-km-z]{32,44})\b/g;
+  let match;
+
+  // Use a while loop with exec to get all matches with their positions
+  while ((match = solanaPattern.exec(processedText)) !== null) {
+    const fullMatch = match[0]; // The entire match
+
+    // Skip if this is already inside an HTML tag (from previous replacements)
+    const prevText = processedText.substring(
+      Math.max(0, match.index - 50),
+      match.index
+    );
+    if (prevText.includes('<a href="https://solscan.io/')) {
+      continue;
+    }
+
+    // Determine if it's a Solana address or transaction
+    const isSolanaAddress = isValidSolanaAddress(fullMatch);
+    const isSolanaTx = isValidSolanaTransactionSignature(fullMatch);
+
+    if (isSolanaAddress || isSolanaTx) {
+      // For EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v, we know it's an address
+      const isKnownUsdcAddress =
+        fullMatch === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+
+      const url =
+        isSolanaTx && !isKnownUsdcAddress
+          ? `https://solscan.io/tx/${fullMatch}`
+          : `https://solscan.io/address/${fullMatch}`;
+
+      // Create the replacement with the link
+      const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch}</a>`;
+
+      // Replace this specific occurrence
+      processedText =
+        processedText.substring(0, match.index) +
+        replacement +
+        processedText.substring(match.index + fullMatch.length);
+
+      // Adjust the regex lastIndex to account for the replacement
+      solanaPattern.lastIndex += replacement.length - fullMatch.length;
+    }
+  }
+
+  // Now handle EVM addresses and transactions
+  const evmPattern = /\b(0x[a-fA-F0-9]{40,64})\b/g;
+
+  // Reset match for the new pattern
+  match = null;
+
+  while ((match = evmPattern.exec(processedText)) !== null) {
+    const fullMatch = match[0]; // The entire match
+
+    // Skip if this is already inside an HTML tag (from previous replacements)
+    const prevText = processedText.substring(
+      Math.max(0, match.index - 50),
+      match.index
+    );
+    if (prevText.includes('<a href="https://etherscan.io/')) {
+      continue;
+    }
+
+    // Determine if it's an EVM address or transaction
+    const isEvmAddress = isValidEvmAddress(fullMatch);
+    const isEvmTx = isValidEvmTransaction(fullMatch);
+
+    if (isEvmAddress || isEvmTx) {
+      const url = isEvmTx
+        ? `https://etherscan.io/tx/${fullMatch}`
+        : `https://etherscan.io/address/${fullMatch}`;
+
+      // Create the replacement with the link
+      const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch}</a>`;
+
+      // Replace this specific occurrence
+      processedText =
+        processedText.substring(0, match.index) +
+        replacement +
+        processedText.substring(match.index + fullMatch.length);
+
+      // Adjust the regex lastIndex to account for the replacement
+      evmPattern.lastIndex += replacement.length - fullMatch.length;
+    }
+  }
+
+  return processedText;
 };

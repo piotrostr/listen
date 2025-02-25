@@ -70,6 +70,7 @@ export const ChatMessage = ({
   message: string;
   direction: "incoming" | "outgoing";
 }) => {
+  const embeddedMessage = renderAddressOrTx(message);
   return (
     <div
       className={`
@@ -83,78 +84,74 @@ export const ChatMessage = ({
       <ReactMarkdown
         className="markdown-content"
         components={{
-          p: ({ node, children, ...props }) => (
+          p: ({ children, ...props }) => (
             <p className="my-2" {...props}>
-              {typeof children === "string"
-                ? renderAddressOrTx(children)
-                : children}
+              {children}
             </p>
           ),
-          h1: ({ node, ...props }) => (
+          h1: ({ ...props }) => (
             <h1 className="text-xl font-bold my-3" {...props} />
           ),
-          h2: ({ node, ...props }) => (
+          h2: ({ ...props }) => (
             <h2 className="text-lg font-bold my-3" {...props} />
           ),
-          h3: ({ node, ...props }) => (
+          h3: ({ ...props }) => (
             <h3 className="text-md font-bold my-2" {...props} />
           ),
-          ul: ({ node, ...props }) => (
+          ul: ({ ...props }) => (
             <ul className="list-disc pl-6 my-2" {...props} />
           ),
-          ol: ({ node, ...props }) => (
+          ol: ({ ...props }) => (
             <ol className="list-decimal pl-6 my-2" {...props} />
           ),
-          li: ({ node, children, ...props }) => (
+          li: ({ children, ...props }) => (
             <li className="my-1" {...props}>
-              {typeof children === "string"
-                ? renderAddressOrTx(children)
-                : children}
+              {children}
             </li>
           ),
-          a: ({ node, ...props }) => (
+          a: ({ ...props }) => (
             <a className="text-blue-400 underline" {...props} />
           ),
-          blockquote: ({ node, children, ...props }) => (
+          blockquote: ({ children, ...props }) => (
             <blockquote
               className="border-l-4 border-gray-500 pl-4 my-2 italic"
               {...props}
             >
-              {typeof children === "string"
-                ? renderAddressOrTx(children)
-                : children}
+              {children}
             </blockquote>
           ),
-          code: ({ node, ...props }) => (
+          code: ({ ...props }) => (
             <code
               className="block bg-gray-800 p-2 rounded my-2 overflow-x-auto text-sm"
               {...props}
             />
           ),
-          pre: ({ node, ...props }) => (
+          pre: ({ ...props }) => (
             <pre
               className="bg-gray-800 p-3 rounded my-3 overflow-x-auto"
               {...props}
             />
           ),
-          table: ({ node, ...props }) => (
+          table: ({ ...props }) => (
             <table className="border-collapse my-3 w-full" {...props} />
           ),
-          th: ({ node, ...props }) => (
+          th: ({ ...props }) => (
             <th
               className="border border-gray-600 px-2 py-1 bg-gray-800"
               {...props}
             />
           ),
-          td: ({ node, ...props }) => (
-            <td className="border border-gray-600 px-2 py-1" {...props} />
+          td: ({ children, ...props }) => (
+            <td className="border border-gray-600 px-2 py-1" {...props}>
+              {children}
+            </td>
           ),
-          hr: ({ node, ...props }) => (
+          hr: ({ ...props }) => (
             <hr className="my-4 border-gray-600" {...props} />
           ),
         }}
       >
-        {message}
+        {embeddedMessage}
       </ReactMarkdown>
     </div>
   );
