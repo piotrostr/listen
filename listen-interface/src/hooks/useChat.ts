@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { config } from "../config";
 import { chatCache } from "./localStorage";
-import { introPrompt } from "./prompts";
+import { systemPrompt } from "./prompts";
 import { Chat, Message, StreamResponse, ToolOutputSchema } from "./types";
 import { useChatType } from "./useChatType";
 import { useDebounce } from "./useDebounce";
@@ -183,6 +183,7 @@ export function useChat() {
           solanaPortfolio === undefined ||
           evmPortfolio === undefined
         ) {
+          // TODO display "portfolio loading" and disable chat prior
           console.error("User or portfolio not available");
         }
 
@@ -190,8 +191,9 @@ export function useChat() {
         if (chat_history.length == 0) {
           userMessage +=
             " " +
-            introPrompt(
+            systemPrompt(
               [...solanaPortfolio!, ...evmPortfolio!],
+              user?.wallet?.address || "",
               user?.wallet?.address || ""
             );
         }
