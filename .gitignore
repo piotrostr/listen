@@ -19,7 +19,6 @@ instance
 out.stacks
 flame-graph.html
 flamegraph.svg
-data
 target
 .vercel
 fuck.json
