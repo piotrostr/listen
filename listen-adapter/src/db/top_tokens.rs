@@ -16,7 +16,7 @@ pub struct TopToken {
 impl ClickhouseDb {
     pub async fn get_top_tokens(
         &self,
-        limit: u32,
+        limit: usize,
         min_volume: Option<f64>,
         min_market_cap: Option<f64>,
         time_range: Option<u64>,

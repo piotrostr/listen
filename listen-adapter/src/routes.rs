@@ -31,10 +31,28 @@ pub async fn health_check() -> HttpResponse {
     }))
 }
 
-pub async fn top_tokens(state: web::Data<AppState>) -> Result<HttpResponse, Error> {
+#[derive(Deserialize)]
+pub struct TopTokensQuery {
+    pub limit: Option<usize>,
+    pub min_volume: Option<f64>,
+    pub min_market_cap: Option<f64>,
+    pub timeframe: Option<u64>,
+    pub only_pumpfun_tokens: Option<bool>,
+}
+
+pub async fn top_tokens(
+    state: web::Data<AppState>,
+    query: web::Query<TopTokensQuery>,
+) -> Result<HttpResponse, Error> {
     let tokens = state
         .clickhouse_db
-        .get_top_tokens(20, None, None, Some(60 * 5), true)
+        .get_top_tokens(
+            query.limit.unwrap_or(20),
+            query.min_volume,
+            query.min_market_cap,
+            query.timeframe,
+            query.only_pumpfun_tokens.unwrap_or(true),
+        )
         .await;
 
     match tokens {
