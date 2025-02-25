@@ -14,7 +14,7 @@ async fn main() -> Result<()> {
     let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
 
     SignerContext::with_signer(Arc::new(signer), async {
-        let trader_agent = Arc::new(create_solana_agent().await?);
+        let trader_agent = Arc::new(create_solana_agent(None).await?);
         let trader_agent = ReasoningLoop::new(trader_agent).with_stdout(true);
 
         trader_agent

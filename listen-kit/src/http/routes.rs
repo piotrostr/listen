@@ -1,10 +1,13 @@
 use super::middleware::verify_auth;
 use super::state::AppState;
 use crate::common::spawn_with_signer;
+use crate::cross_chain::agent::create_cross_chain_agent;
+use crate::evm::agent::create_evm_agent;
 use crate::reasoning_loop::LoopResponse;
 use crate::reasoning_loop::ReasoningLoop;
 use crate::signer::privy::PrivySigner;
 use crate::signer::TransactionSigner;
+use crate::solana::agent::create_solana_agent;
 use actix_web::{
     get, post, web, Error, HttpRequest, HttpResponse, Responder,
 };
@@ -25,6 +28,8 @@ pub struct ChatRequest {
     chat_history: Vec<Message>,
     #[serde(default)]
     chain: Option<String>,
+    #[serde(default)]
+    preamble: Option<String>,
 }
 
 #[derive(Serialize)]
@@ -66,13 +71,54 @@ async fn stream(
 
     let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(32);
 
-    // Select the appropriate agent based on the chain parameter
+    let preamble = request.preamble.clone();
+
+    // Select the appropriate agent based on the chain parameter and preamble
     let agent = match request.chain.as_deref() {
         #[cfg(feature = "solana")]
-        Some("solana") => state.solana_agent.clone(),
+        Some("solana") => match create_solana_agent(preamble).await {
+            Ok(agent) => Arc::new(agent),
+            Err(e) => {
+                let error_event = sse::Event::Data(sse::Data::new(
+                    serde_json::to_string(&StreamResponse::Error(format!(
+                        "Failed to create Solana agent: {}",
+                        e
+                    )))
+                    .unwrap(),
+                ));
+                let _ = tx.send(error_event).await;
+                return sse::Sse::from_infallible_receiver(rx);
+            }
+        },
         #[cfg(feature = "evm")]
-        Some("evm") => state.evm_agent.clone(),
-        Some("omni") => state.omni_agent.clone(),
+        Some("evm") => match create_evm_agent(preamble).await {
+            Ok(agent) => Arc::new(agent),
+            Err(e) => {
+                let error_event = sse::Event::Data(sse::Data::new(
+                    serde_json::to_string(&StreamResponse::Error(format!(
+                        "Failed to create EVM agent: {}",
+                        e
+                    )))
+                    .unwrap(),
+                ));
+                let _ = tx.send(error_event).await;
+                return sse::Sse::from_infallible_receiver(rx);
+            }
+        },
+        Some("omni") => match create_cross_chain_agent(preamble).await {
+            Ok(agent) => Arc::new(agent),
+            Err(e) => {
+                let error_event = sse::Event::Data(sse::Data::new(
+                    serde_json::to_string(&StreamResponse::Error(format!(
+                        "Failed to create cross-chain agent: {}",
+                        e
+                    )))
+                    .unwrap(),
+                ));
+                let _ = tx.send(error_event).await;
+                return sse::Sse::from_infallible_receiver(rx);
+            }
+        },
         Some(chain) => {
             let error_event = sse::Event::Data(sse::Data::new(
                 serde_json::to_string(&StreamResponse::Error(format!(

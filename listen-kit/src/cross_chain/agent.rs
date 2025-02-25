@@ -9,12 +9,14 @@ use crate::{
 };
 
 pub async fn create_cross_chain_agent(
+    preamble: Option<String>,
 ) -> Result<Agent<AnthropicCompletionModel>> {
+    let preamble = preamble.unwrap_or(format!(
+        "{} {}",
+        "you are a cross-chain trading agent", PREAMBLE_COMMON,
+    ));
     Ok(claude_agent_builder()
-        .preamble(&format!(
-            "{} {}",
-            "you are a cross-chain trading agent", PREAMBLE_COMMON,
-        ))
+        .preamble(&preamble)
         .tool(SearchOnDexScreener)
         .tool(GetQuote)
         .tool(Swap)
