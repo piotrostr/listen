@@ -8,12 +8,15 @@ use super::tools::{
 };
 use crate::common::{claude_agent_builder, PREAMBLE_COMMON};
 
-pub async fn create_evm_agent() -> Result<Agent<AnthropicCompletionModel>> {
+pub async fn create_evm_agent(
+    preamble: Option<String>,
+) -> Result<Agent<AnthropicCompletionModel>> {
+    let preamble = preamble.unwrap_or(format!(
+        "{} {}",
+        "you are an ethereum trading agent", PREAMBLE_COMMON
+    ));
     Ok(claude_agent_builder()
-        .preamble(&format!(
-            "{} {}",
-            "you are an ethereum trading agent", PREAMBLE_COMMON
-        ))
+        .preamble(&preamble)
         .max_tokens(1024)
         .tool(Trade)
         .tool(TransferEth)

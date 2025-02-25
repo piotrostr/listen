@@ -28,6 +28,9 @@ export class LocalStorageCache<T> implements CacheStore<T> {
     if (typeof obj !== "object") return obj;
 
     for (const key in obj) {
+      // Skip the message field since it contains strings that should not be parsed
+      if (key === "message") continue;
+
       const value = obj[key];
       if (typeof value === "string") {
         // Try to parse ISO date strings

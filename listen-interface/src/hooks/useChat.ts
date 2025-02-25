@@ -184,24 +184,21 @@ export function useChat() {
           evmPortfolio === undefined
         ) {
           // TODO display "portfolio loading" and disable chat prior
-          console.error("User or portfolio not available");
+          alert("User or portfolio not available");
         }
 
         const chat_history = messageHistory.filter((msg) => msg.content !== "");
-        if (chat_history.length == 0) {
-          userMessage +=
-            " " +
-            systemPrompt(
-              [...solanaPortfolio!, ...evmPortfolio!],
-              user?.wallet?.address || "",
-              user?.wallet?.address || ""
-            );
-        }
+        const preamble = systemPrompt(
+          [...solanaPortfolio!, ...evmPortfolio!],
+          user?.wallet?.address || "",
+          user?.wallet?.address || ""
+        );
 
         const body = JSON.stringify({
           prompt: userMessage,
           chat_history: chat_history,
           chain: chatType,
+          preamble,
         });
 
         const response = await fetch(config.API_BASE_URL + "/v1/kit/stream", {

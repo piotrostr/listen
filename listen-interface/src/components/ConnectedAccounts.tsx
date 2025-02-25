@@ -22,7 +22,7 @@ export function ConnectedAccounts({ user }: ConnectedAccountsProps) {
       icon: (
         <img src={imageMap.eth} alt="ETH" className="w-4 h-4 rounded-full" />
       ),
-      isConnected: !!user.wallet,
+      isConnected: !!user.wallet && user.wallet.chainType === "ethereum",
       onConnect: connectWallet,
       value: user.wallet?.address || "",
     },

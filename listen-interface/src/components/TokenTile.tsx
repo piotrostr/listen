@@ -139,7 +139,10 @@ export function TokenTile({ token, index }: TokenTileProps) {
               metadata.mpl.ipfs_metadata.image.startsWith("https://") && (
                 <div className="w-6 h-6 sm:w-8 sm:h-8 relative rounded-full overflow-hidden">
                   <img
-                    src={metadata.mpl.ipfs_metadata.image}
+                    src={metadata.mpl.ipfs_metadata.image.replace(
+                      "cf-ipfs.com",
+                      "ipfs.io"
+                    )}
                     alt={token.name}
                     className="w-full h-full object-cover"
                   />
