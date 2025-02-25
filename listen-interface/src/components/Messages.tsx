@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import { type ToolOutput } from "../hooks/types";
+import { renderAddressOrTx } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import { QuoteResponseSchema } from "../types/quote";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
@@ -68,16 +69,93 @@ export const ChatMessage = ({
 }: {
   message: string;
   direction: "incoming" | "outgoing";
-}) => (
-  <div
-    className={`
-      ${direction === "incoming" ? "bg-blue-900/20 text-blue-300" : "bg-purple-900/20 text-purple-300"}
-      rounded-lg px-4 py-2 my-2 backdrop-blur-sm
-      border border-opacity-20
-      lg:text-md text-sm
-      ${direction === "incoming" ? "border-blue-500" : "border-purple-500"}
-    `}
-  >
-    <ReactMarkdown>{message}</ReactMarkdown>
-  </div>
-);
+}) => {
+  return (
+    <div
+      className={`
+        ${direction === "incoming" ? "bg-blue-900/20 text-blue-300" : "bg-purple-900/20 text-purple-300"}
+        rounded-lg px-4 py-2 my-2 backdrop-blur-sm
+        border border-opacity-20
+        lg:text-md text-sm
+        ${direction === "incoming" ? "border-blue-500" : "border-purple-500"}
+      `}
+    >
+      <ReactMarkdown
+        className="markdown-content"
+        components={{
+          p: ({ node, children, ...props }) => (
+            <p className="my-2" {...props}>
+              {typeof children === "string"
+                ? renderAddressOrTx(children)
+                : children}
+            </p>
+          ),
+          h1: ({ node, ...props }) => (
+            <h1 className="text-xl font-bold my-3" {...props} />
+          ),
+          h2: ({ node, ...props }) => (
+            <h2 className="text-lg font-bold my-3" {...props} />
+          ),
+          h3: ({ node, ...props }) => (
+            <h3 className="text-md font-bold my-2" {...props} />
+          ),
+          ul: ({ node, ...props }) => (
+            <ul className="list-disc pl-6 my-2" {...props} />
+          ),
+          ol: ({ node, ...props }) => (
+            <ol className="list-decimal pl-6 my-2" {...props} />
+          ),
+          li: ({ node, children, ...props }) => (
+            <li className="my-1" {...props}>
+              {typeof children === "string"
+                ? renderAddressOrTx(children)
+                : children}
+            </li>
+          ),
+          a: ({ node, ...props }) => (
+            <a className="text-blue-400 underline" {...props} />
+          ),
+          blockquote: ({ node, children, ...props }) => (
+            <blockquote
+              className="border-l-4 border-gray-500 pl-4 my-2 italic"
+              {...props}
+            >
+              {typeof children === "string"
+                ? renderAddressOrTx(children)
+                : children}
+            </blockquote>
+          ),
+          code: ({ node, ...props }) => (
+            <code
+              className="block bg-gray-800 p-2 rounded my-2 overflow-x-auto text-sm"
+              {...props}
+            />
+          ),
+          pre: ({ node, ...props }) => (
+            <pre
+              className="bg-gray-800 p-3 rounded my-3 overflow-x-auto"
+              {...props}
+            />
+          ),
+          table: ({ node, ...props }) => (
+            <table className="border-collapse my-3 w-full" {...props} />
+          ),
+          th: ({ node, ...props }) => (
+            <th
+              className="border border-gray-600 px-2 py-1 bg-gray-800"
+              {...props}
+            />
+          ),
+          td: ({ node, ...props }) => (
+            <td className="border border-gray-600 px-2 py-1" {...props} />
+          ),
+          hr: ({ node, ...props }) => (
+            <hr className="my-4 border-gray-600" {...props} />
+          ),
+        }}
+      >
+        {message}
+      </ReactMarkdown>
+    </div>
+  );
+};

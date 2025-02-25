@@ -1,5 +1,6 @@
 import { User, WalletWithMetadata } from "@privy-io/react-auth";
 import { PublicKey } from "@solana/web3.js";
+import { createElement } from "react";
 import { getAddress } from "viem";
 import ethLogo from "../assets/icons/ethereum.svg";
 import {
@@ -265,4 +266,134 @@ export const chainIdNumericToChainId = (chainId: number): string => {
   }
   const key = `eip155:${chainId}`;
   return caip2ToChainIdMap[key as keyof typeof caip2ToChainIdMap];
+};
+
+// Validate Solana transaction signatures
+export const isValidSolanaTransactionSignature = (
+  signature: string
+): boolean => {
+  // Solana transaction signatures are 64 bytes (88 characters in base58)
+  // They follow the same character set as addresses
+  if (
+    signature.length !== 88 &&
+    signature.length !== 87 &&
+    signature.length !== 43 &&
+    signature.length !== 44
+  ) {
+    return false;
+  }
+
+  // Check if it only contains base58 characters
+  const base58Regex = /^[1-9A-HJ-NP-Za-km-z]+$/;
+  return base58Regex.test(signature);
+};
+
+// Validate Solana addresses
+export const isValidSolanaAddress = (address: string): boolean => {
+  try {
+    new PublicKey(address);
+    return true;
+  } catch {
+    return false;
+  }
+};
+
+// Validate EVM addresses
+export const isValidEvmAddress = (address: string): boolean => {
+  // EVM addresses are 42 characters long (0x + 40 hex characters)
+  const evmAddressRegex = /^0x[a-fA-F0-9]{40}$/;
+  return evmAddressRegex.test(address);
+};
+
+// Validate EVM transaction hashes
+export const isValidEvmTransaction = (hash: string): boolean => {
+  // EVM transaction hashes are 66 characters long (0x + 64 hex characters)
+  const evmTxRegex = /^0x[a-fA-F0-9]{64}$/;
+  return evmTxRegex.test(hash);
+};
+
+// Render addresses and transaction hashes as links
+export const renderAddressOrTx = (text: string) => {
+  // Regex for potential Solana addresses and signatures (base58 characters)
+  const solanaRegex = /\b([1-9A-HJ-NP-Za-km-z]{32,44})\b/g;
+
+  // Regex for potential EVM addresses and transaction hashes (hex with 0x prefix)
+  const evmRegex = /\b(0x[a-fA-F0-9]{40,64})\b/g;
+
+  // Combined regex to match either Solana or EVM patterns
+  const combinedRegex = new RegExp(
+    `${solanaRegex.source}|${evmRegex.source}`,
+    "g"
+  );
+
+  // Split the text by potential matches
+  const parts = text.split(combinedRegex);
+
+  // If no matches, return the original text
+  if (parts.length === 1) return text;
+
+  // Process each match
+  const result = [];
+  let matches = text.match(combinedRegex) || [];
+
+  for (let i = 0; i < parts.length; i++) {
+    // Add the text before the match
+    if (parts[i]) result.push(parts[i]);
+
+    // Add the match as a link if it exists
+    if (i < matches.length) {
+      const potentialAddress = matches[i];
+
+      // Determine what type of address/transaction it is
+      const isSolanaAddress = isValidSolanaAddress(potentialAddress);
+      const isSolanaTx = isValidSolanaTransactionSignature(potentialAddress);
+      const isEvmAddress = isValidEvmAddress(potentialAddress);
+      const isEvmTx = isValidEvmTransaction(potentialAddress);
+
+      if (isSolanaAddress || isSolanaTx) {
+        // Handle Solana addresses and transactions
+        const url = isSolanaTx
+          ? `https://solscan.io/tx/${potentialAddress}`
+          : `https://solscan.io/address/${potentialAddress}`;
+
+        result.push(
+          createElement(
+            "a",
+            {
+              key: i,
+              href: url,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              className: "text-blue-400 underline",
+            },
+            potentialAddress
+          )
+        );
+      } else if (isEvmAddress || isEvmTx) {
+        // Handle EVM addresses and transactions
+        const url = isEvmTx
+          ? `https://etherscan.io/tx/${potentialAddress}`
+          : `https://etherscan.io/address/${potentialAddress}`;
+
+        result.push(
+          createElement(
+            "a",
+            {
+              key: i,
+              href: url,
+              target: "_blank",
+              rel: "noopener noreferrer",
+              className: "text-blue-400 underline",
+            },
+            potentialAddress
+          )
+        );
+      } else {
+        // Not a valid address or tx, just add the text
+        result.push(potentialAddress);
+      }
+    }
+  }
+
+  return result;
 };
