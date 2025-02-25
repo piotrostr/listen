@@ -78,11 +78,19 @@ export function Portfolio() {
               >
                 <div className="flex justify-between items-start mb-2">
                   <div className="flex items-center gap-3">
-                    <img
-                      src={asset.logoURI}
-                      alt={asset.symbol}
-                      className="w-8 h-8 rounded-full"
-                    />
+                    {asset.logoURI ? (
+                      <img
+                        src={asset.logoURI}
+                        alt={asset.symbol}
+                        className="w-8 h-8 rounded-full"
+                      />
+                    ) : (
+                      <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+                        <span className="text-gray-500 dark:text-gray-400">
+                          ?
+                        </span>
+                      </div>
+                    )}
                     <div>
                       <h3 className="font-bold flex items-center gap-2">
                         {asset.name}{" "}
