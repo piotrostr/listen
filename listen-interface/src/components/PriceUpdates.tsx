@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FaPause } from "react-icons/fa6";
 import { setupWebSocket } from "../services/websocketService";
 import { useTokenStore } from "../store/tokenStore";
 import { TokenTile } from "./TokenTile";
@@ -11,6 +12,8 @@ export function PriceUpdates() {
   const [volumeFilter, setVolumeFilter] = useState<"bought" | "sold" | "all">(
     "all"
   );
+  const [isListFrozen, setIsListFrozen] = useState(false);
+  const [frozenTokens, setFrozenTokens] = useState<any[]>([]);
 
   // Setup WebSocket connection
   useEffect(() => {
@@ -20,14 +23,34 @@ export function PriceUpdates() {
     };
   }, []);
 
-  const topTokens = filterAndSortTokens(
+  // Get the current tokens based on filters
+  const currentTokens = filterAndSortTokens(
     Array.from(tokenMap.values()),
     marketCapFilter,
     volumeFilter
   ).slice(0, 20);
 
+  // Use frozen tokens when list is frozen, otherwise use current tokens
+  const topTokens = isListFrozen ? frozenTokens : currentTokens;
+
+  // Update frozen tokens when filters change or when unfreezing
+  useEffect(() => {
+    if (!isListFrozen) {
+      setFrozenTokens(currentTokens);
+    }
+  }, [currentTokens, isListFrozen]);
+
+  // Handlers for mouse events
+  const handleMouseEnter = () => {
+    setIsListFrozen(true);
+  };
+
+  const handleMouseLeave = () => {
+    setIsListFrozen(false);
+  };
+
   return (
-    <div className="h-full flex flex-col gap-2 p-2 sm:p-4 overflow-hidden">
+    <div className="flex flex-col gap-2 p-2 sm:p-4 overflow-hidden h-full">
       {/* Latest Update Section */}
       <div className="h-[52px] bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl p-3 flex items-center">
         {latestUpdate ? (
@@ -91,16 +114,21 @@ export function PriceUpdates() {
             </div>
 
             {/* Market Cap Filter */}
-            <div className="flex items-center gap-2 flex-1">
+            <div className="flex items-center gap-2 flex-1 justify-end">
+              {isListFrozen && (
+                <div className="flex items-center gap-1 bg-black/60 border border-teal-400/30 rounded px-2 py-0.5 text-xs text-teal-300">
+                  <FaPause className="text-teal-300 text-[10px]" /> PAUSED
+                </div>
+              )}
               <span className="text-purple-100 text-sm hidden sm:inline">
-                MC:
+                Market Cap:
               </span>
               <select
                 value={marketCapFilter}
                 onChange={(e) => setMarketCapFilter(e.target.value)}
-                className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-purple-500 w-full max-w-[140px] sm:max-w-none"
+                className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-purple-500 w-[120px]"
               >
-                <option value="all">All MC</option>
+                <option value="all">Any Marketcap</option>
                 <option value="under1m">&lt;$1M</option>
                 <option value="1mTo10m">$1M-$10M</option>
                 <option value="10mTo100m">$10M-$100M</option>
@@ -109,7 +137,11 @@ export function PriceUpdates() {
             </div>
           </div>
         </div>
-        <div className="divide-y divide-purple-500/20 overflow-y-auto flex-1">
+        <div
+          className="divide-y divide-purple-500/20 overflow-y-auto flex-1"
+          onMouseEnter={handleMouseEnter}
+          onMouseLeave={handleMouseLeave}
+        >
           {topTokens.map((token, index) => (
             <TokenTile key={token.pubkey} token={token} index={index} />
           ))}
