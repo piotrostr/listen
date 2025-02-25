@@ -1,4 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
+import { FaExclamationTriangle } from "react-icons/fa";
 import { DelegateActionButton } from "./DelegateActionButton";
 import { PriceUpdates } from "./PriceUpdates";
 
@@ -42,8 +43,14 @@ export function GettingStarted() {
         </p>
       </div>
 
+      <span className="text-sm my-8 mb-1 flex items-center gap-2">
+        <FaExclamationTriangle className="text-yellow-500" />
+        WARNING: listen is in early beta, things might not work as expected, use
+        at own risk
+      </span>
+
       {/* Divider */}
-      <div className="border-t border-purple-500/30 w-full max-w-4xl my-8" />
+      <div className="border-t border-purple-500/30 w-full max-w-4xl" />
 
       {/* Screener Preview Section */}
       <div className="w-full max-w-4xl mx-auto">
