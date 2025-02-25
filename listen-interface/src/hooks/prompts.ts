@@ -58,7 +58,7 @@ export function introPrompt(portfolio?: PortfolioData, userAddress?: string) {
 
   now when generating a pipeline, put it into <pipeline></pipeline> tags
 
-  always include the tags! otherwise the pipeline will not be executed
+  always include the tags! otherwise the pipeline will neither be rendered for the user to see nor executed
   </knowledge>
   <guidelines>
   Often, there will be tokens on other chains that mimick the "original" token, even in the user portfolio.

@@ -43,24 +43,33 @@ export function useChat() {
   const { data: evmPortfolio } = useEvmPortfolio();
   const { user, getAccessToken } = usePrivy();
   const { chatType } = useChatType();
-  const { chatId } = useSearch({ from: "/chat" });
+  const { chatId, new: isNewChat } = useSearch({ from: "/chat" });
   const navigate = useNavigate();
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
 
-  // Load existing chat if chatId is present
+  // Load existing chat if chatId is present and not creating a new chat
   useEffect(() => {
     const loadChat = async () => {
-      if (!chatId) return;
+      if (!chatId || isNewChat) return;
       const existingChat = await chatCache.get(chatId);
       if (existingChat) {
         setChat(existingChat);
       }
     };
     loadChat();
-  }, [chatId]);
+  }, [chatId, isNewChat]);
+
+  // If isNewChat is true, clear the current chat
+  useEffect(() => {
+    if (isNewChat) {
+      setChat(null);
+      // Remove the 'new' parameter but keep the URL at /chat
+      navigate({ to: "/chat", search: {}, replace: true });
+    }
+  }, [isNewChat, navigate]);
 
   // Replace the existing backup effect with this debounced version
   const debouncedBackup = useDebounce(async (chatToBackup: Chat) => {
