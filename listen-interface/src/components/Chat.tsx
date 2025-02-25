@@ -44,19 +44,17 @@ export function Chat() {
   }
 
   return (
-    <div className="h-screen w-full flex flex-col">
-      <ChatContainer
-        inputMessage={inputMessage}
-        isGenerating={isLoading}
-        onSendMessage={submitMessage}
-        onStopGeneration={stopGeneration}
-      >
-        {messages.map((message) => (
-          <MessageRenderer key={message.id} message={message} />
-        ))}
-        {isLoading && <LoadingIndicator />}
-        <div ref={messagesEndRef} />
-      </ChatContainer>
-    </div>
+    <ChatContainer
+      inputMessage={inputMessage}
+      isGenerating={isLoading}
+      onSendMessage={submitMessage}
+      onStopGeneration={stopGeneration}
+    >
+      {messages.map((message) => (
+        <MessageRenderer key={message.id} message={message} />
+      ))}
+      {isLoading && <LoadingIndicator />}
+      <div ref={messagesEndRef} />
+    </ChatContainer>
   );
 }
