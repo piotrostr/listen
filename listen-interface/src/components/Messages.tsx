@@ -1,4 +1,5 @@
 import ReactMarkdown from "react-markdown";
+import rehypeRaw from "rehype-raw";
 import { type ToolOutput } from "../hooks/types";
 import { renderAddressOrTx } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
@@ -70,7 +71,9 @@ export const ChatMessage = ({
   message: string;
   direction: "incoming" | "outgoing";
 }) => {
+  // Process the message to identify addresses and transactions
   const embeddedMessage = renderAddressOrTx(message);
+
   return (
     <div
       className={`
@@ -150,6 +153,8 @@ export const ChatMessage = ({
             <hr className="my-4 border-gray-600" {...props} />
           ),
         }}
+        // Add this prop to allow HTML to be rendered within the markdown
+        rehypePlugins={[rehypeRaw]}
       >
         {embeddedMessage}
       </ReactMarkdown>

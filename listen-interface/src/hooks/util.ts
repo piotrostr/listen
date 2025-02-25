@@ -1,5 +1,6 @@
 import { User, WalletWithMetadata } from "@privy-io/react-auth";
 import { PublicKey } from "@solana/web3.js";
+import bs58 from "bs58";
 import { getAddress } from "viem";
 import ethLogo from "../assets/icons/ethereum.svg";
 import {
@@ -271,20 +272,21 @@ export const chainIdNumericToChainId = (chainId: number): string => {
 export const isValidSolanaTransactionSignature = (
   signature: string
 ): boolean => {
-  // Solana transaction signatures are 64 bytes (88 characters in base58)
-  // They follow the same character set as addresses
-  if (
-    signature.length !== 88 &&
-    signature.length !== 87 &&
-    signature.length !== 43 &&
-    signature.length !== 44
-  ) {
+  try {
+    // Check that it only contains valid base58 characters
+    const base58Regex = /^[1-9A-HJ-NP-Za-km-z]+$/;
+    if (!base58Regex.test(signature)) {
+      return false;
+    }
+
+    // Decode the base58 string to get the actual bytes
+    const bytes = bs58.decode(signature);
+
+    // Solana transaction signatures should be exactly 64 bytes
+    return bytes.length === 64;
+  } catch {
     return false;
   }
-
-  // Check if it only contains base58 characters
-  const base58Regex = /^[1-9A-HJ-NP-Za-km-z]+$/;
-  return base58Regex.test(signature);
 };
 
 // Validate Solana addresses
@@ -331,7 +333,10 @@ export const renderAddressOrTx = (text: string): string => {
       const url = `https://solscan.io/tx/${txSignature}`;
 
       // Create the replacement with the link
-      const replacement = `"<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${txSignature}</a>"`;
+      const replacement = `"<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${txSignature.slice(
+        0,
+        4
+      )}..${txSignature.slice(-4)}</a>"`;
 
       // Replace this specific occurrence
       processedText =
@@ -366,17 +371,15 @@ export const renderAddressOrTx = (text: string): string => {
     const isSolanaTx = isValidSolanaTransactionSignature(fullMatch);
 
     if (isSolanaAddress || isSolanaTx) {
-      // For EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v, we know it's an address
-      const isKnownUsdcAddress =
-        fullMatch === "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-
-      const url =
-        isSolanaTx && !isKnownUsdcAddress
-          ? `https://solscan.io/tx/${fullMatch}`
-          : `https://solscan.io/address/${fullMatch}`;
+      const url = isSolanaTx
+        ? `https://solscan.io/tx/${fullMatch}`
+        : `https://solscan.io/address/${fullMatch}`;
 
       // Create the replacement with the link
-      const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch}</a>`;
+      const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch.slice(
+        0,
+        4
+      )}..${fullMatch.slice(-4)}</a>`;
 
       // Replace this specific occurrence
       processedText =
@@ -403,7 +406,7 @@ export const renderAddressOrTx = (text: string): string => {
       Math.max(0, match.index - 50),
       match.index
     );
-    if (prevText.includes('<a href="https://etherscan.io/')) {
+    if (prevText.includes('<a href="https://blockscan.com/')) {
       continue;
     }
 
@@ -413,8 +416,8 @@ export const renderAddressOrTx = (text: string): string => {
 
     if (isEvmAddress || isEvmTx) {
       const url = isEvmTx
-        ? `https://etherscan.io/tx/${fullMatch}`
-        : `https://etherscan.io/address/${fullMatch}`;
+        ? `https://blockscan.com/tx/${fullMatch}`
+        : `https://blockscan.com/address/${fullMatch}`;
 
       // Create the replacement with the link
       const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch}</a>`;
