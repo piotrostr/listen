@@ -14,10 +14,13 @@ export function Portfolio() {
   const { data: solanaAssets, isLoading: isLoadingSolana } =
     useSolanaPortfolio();
   const { data: evmAssets, isLoading: isLoadingEvm } = useEvmPortfolio();
-  const isLoading = isLoadingSolana || isLoadingEvm;
   const { data: wallets } = usePrivyWallets();
+  useSolanaFundingPlugin();
+
   const [clickedSolana, setClickedSolana] = useState(false);
   const [clickedEvm, setClickedEvm] = useState(false);
+
+  const isLoading = isLoadingSolana || isLoadingEvm;
 
   if (isLoading) {
     return <PortfolioSkeleton />;
@@ -36,8 +39,6 @@ export function Portfolio() {
     setClickedEvm(true);
     setTimeout(() => setClickedEvm(false), 1000);
   };
-
-  useSolanaFundingPlugin();
 
   const handleTopup = async () => {
     if (!wallets) return;
