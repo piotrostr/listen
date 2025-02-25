@@ -1,13 +1,15 @@
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
-import { type ToolOutput } from "../hooks/types";
+import { CandlestickDataSchema, type ToolOutput } from "../hooks/types";
 import { renderAddressOrTx } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import { QuoteResponseSchema } from "../types/quote";
+import { InnerChart } from "./Chart";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
+import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
 export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
   // If it's a dexscreener response, parse and display it
@@ -27,6 +29,30 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
     }
   }
 
+  if (toolOutput.name === "fetch_candlesticks") {
+    try {
+      const parsed = CandlestickDataSchema.parse(JSON.parse(toolOutput.result));
+      console.log(parsed);
+      return (
+        <div className="h-[300px]">
+          <InnerChart data={parsed} />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse candlestick response:", e);
+    }
+  }
+
+  if (toolOutput.name === "fetch_top_tokens") {
+    try {
+      const parsed = TopTokensResponseSchema.parse(
+        JSON.parse(toolOutput.result)
+      );
+      return <TopTokensDisplay tokens={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse top tokens response:", e);
+    }
+  }
   if (toolOutput.name === "swap") {
     try {
       // TODO standardize this output, not just string but { status: string, transactionHash: string }

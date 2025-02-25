@@ -90,3 +90,18 @@ export type PortfolioItem = z.infer<typeof PortfolioItemSchema>;
 
 export const PortfolioDataSchema = z.array(PortfolioItemSchema);
 export type PortfolioData = z.infer<typeof PortfolioDataSchema>;
+
+export const CandlestickSchema = z.object({
+  timestamp: z.number(),
+  open: z.number(),
+  high: z.number(),
+  low: z.number(),
+  close: z.number(),
+  volume: z.number(),
+});
+
+export type Candlestick = z.infer<typeof CandlestickSchema>;
+
+export const CandlestickDataSchema = z.array(CandlestickSchema);
+
+export type CandlestickData = z.infer<typeof CandlestickDataSchema>;

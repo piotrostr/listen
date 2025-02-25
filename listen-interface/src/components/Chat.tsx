@@ -28,7 +28,7 @@ const RECOMMENDED_QUESTIONS = [
   {
     question:
       "What tokens have received largest inflows/outflows in the past days?",
-    enabled: false,
+    enabled: true,
   },
 ];
 

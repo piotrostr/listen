@@ -9,7 +9,7 @@ interface TokenTileProps {
   index: number;
 }
 
-function Socials({
+export function Socials({
   tokenMetadata,
   pubkey,
   openChart,
