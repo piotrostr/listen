@@ -50,6 +50,7 @@ pub async fn top_tokens(state: web::Data<AppState>) -> Result<HttpResponse, Erro
 pub struct CandlestickParams {
     pub mint: String,
     pub interval: CandlestickInterval,
+    pub limit: Option<usize>,
 }
 
 pub async fn get_candlesticks(
@@ -59,7 +60,7 @@ pub async fn get_candlesticks(
     let params = query.into_inner();
     let candlesticks = state
         .clickhouse_db
-        .get_candlesticks(&params.mint, &params.interval.to_string())
+        .get_candlesticks(&params.mint, &params.interval.to_string(), params.limit)
         .await;
 
     match candlesticks {

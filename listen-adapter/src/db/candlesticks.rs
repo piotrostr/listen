@@ -76,7 +76,12 @@ impl<'de> serde::Deserialize<'de> for CandlestickInterval {
 }
 
 impl ClickhouseDb {
-    pub async fn get_candlesticks(&self, mint: &str, interval: &str) -> Result<Vec<Candlestick>> {
+    pub async fn get_candlesticks(
+        &self,
+        mint: &str,
+        interval: &str,
+        limit: Option<usize>,
+    ) -> Result<Vec<Candlestick>> {
         let interval_seconds = match interval {
             "15 SECOND" => 15,
             "30 SECOND" => 30,
@@ -122,6 +127,7 @@ impl ClickhouseDb {
                 close,
                 volume,
             })
+            .take(limit.unwrap_or(200))
             .collect();
 
         Ok(candlesticks)
@@ -162,6 +168,7 @@ mod tests {
             .get_candlesticks(
                 "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
                 &CandlestickInterval::OneMinute.to_string(),
+                None,
             )
             .await
             .unwrap();
