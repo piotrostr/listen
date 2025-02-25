@@ -38,8 +38,6 @@ export function Chat() {
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { new: isNewChat } = useSearch({ from: "/chat" });
 
-  console.log(messages);
-
   const { inputMessage, submitMessage, setInputMessage } = useKeyboardInput({
     onSubmit: sendMessage,
     onClear: () => setMessages([]),

@@ -9,7 +9,7 @@ export const useChatType = () => {
 
   const { data: chatType = null } = useQuery<ChatType>({
     queryKey: CHAT_TYPE_KEY,
-    initialData: (localStorage.getItem("chatType") as ChatType) || "solana",
+    initialData: (localStorage.getItem("chatType") as ChatType) || "omni",
   });
 
   const setChatType = (newChatType: ChatType) => {

@@ -1,4 +1,7 @@
+import { useFundWallet } from "@privy-io/react-auth";
+import { useSolanaFundingPlugin } from "@privy-io/react-auth/solana";
 import { useState } from "react";
+import { FaApplePay } from "react-icons/fa6";
 import { useEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
@@ -7,6 +10,7 @@ import { CopyIcon } from "./CopyIcon";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
 
 export function Portfolio() {
+  const { fundWallet } = useFundWallet();
   const { data: solanaAssets, isLoading: isLoadingSolana } =
     useSolanaPortfolio();
   const { data: evmAssets, isLoading: isLoadingEvm } = useEvmPortfolio();
@@ -31,6 +35,21 @@ export function Portfolio() {
     navigator.clipboard.writeText(wallets.evmWallet.toString());
     setClickedEvm(true);
     setTimeout(() => setClickedEvm(false), 1000);
+  };
+
+  useSolanaFundingPlugin();
+
+  const handleTopup = async () => {
+    if (!wallets) return;
+    const wallet = wallets.solanaWallet.toString();
+    console.log(wallet);
+    await fundWallet(wallet, {
+      defaultFundingMethod: "wallet",
+      asset: "native-currency",
+      config: {
+        paymentMethod: "mobile_wallet",
+      },
+    });
   };
 
   const assets = [...(solanaAssets ?? []), ...(evmAssets ?? [])];
@@ -108,12 +127,30 @@ export function Portfolio() {
                     </div>
                   </div>
                   <div className="text-right">
-                    <p className="font-bold">
-                      ${(asset.price * asset.amount).toFixed(2)}
-                    </p>
-                    <p className="text-sm text-gray-400">
-                      ${asset.price?.toFixed(6)}
-                    </p>
+                    <div className="flex items-center gap-2">
+                      {asset.address ===
+                        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" && (
+                        <button
+                          className="cursor-pointer border border-purple-500/30 rounded-full p-2 bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
+                          onClick={handleTopup}
+                          disabled={process.env.NODE_ENV === "production"}
+                        >
+                          <FaApplePay size={32} />
+                        </button>
+                      )}
+                      <div>
+                        <p className="font-bold">
+                          ${(asset.price * asset.amount).toFixed(2)}
+                        </p>
+                        <p className="text-sm text-gray-400">
+                          $
+                          {asset.address !==
+                          "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
+                            ? asset.price?.toFixed(6)
+                            : asset.price?.toFixed(2)}
+                        </p>
+                      </div>
+                    </div>
                   </div>
                 </div>
                 <div className="text-sm text-gray-400">

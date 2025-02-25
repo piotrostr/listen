@@ -12,7 +12,7 @@ function ChatOption({ id, iconPaths, isSelected, onClick }: ChatOptionProps) {
   return (
     <button
       onClick={() => onClick(id)}
-      disabled={process.env.NODE_ENV === "production"}
+      disabled={id === "solana"}
       className={`p-4 border-2 ${
         isSelected
           ? "border-purple-500 bg-purple-500/20"
@@ -48,7 +48,7 @@ const CHAT_OPTIONS = [
       "https://dd.dexscreener.com/ds-data/chains/base.png",
       "https://dd.dexscreener.com/ds-data/chains/ethereum.png",
       "https://dd.dexscreener.com/ds-data/chains/arbitrum.png",
-      "https://dd.dexscreener.com/ds-data/chains/bsc.png",
+      // "https://dd.dexscreener.com/ds-data/chains/bsc.png",
     ],
   },
 ] as const;
