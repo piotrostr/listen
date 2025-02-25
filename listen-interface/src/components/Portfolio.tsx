@@ -1,5 +1,3 @@
-import { useFundWallet } from "@privy-io/react-auth";
-import { useSolanaFundingPlugin } from "@privy-io/react-auth/solana";
 import { useState } from "react";
 import { FaApplePay } from "react-icons/fa6";
 import { useEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
@@ -10,12 +8,11 @@ import { CopyIcon } from "./CopyIcon";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
 
 export function Portfolio() {
-  const { fundWallet } = useFundWallet();
+  // const { fundWallet } = useFundWallet();
   const { data: solanaAssets, isLoading: isLoadingSolana } =
     useSolanaPortfolio();
   const { data: evmAssets, isLoading: isLoadingEvm } = useEvmPortfolio();
   const { data: wallets } = usePrivyWallets();
-  useSolanaFundingPlugin();
 
   const [clickedSolana, setClickedSolana] = useState(false);
   const [clickedEvm, setClickedEvm] = useState(false);
@@ -41,16 +38,16 @@ export function Portfolio() {
   };
 
   const handleTopup = async () => {
-    if (!wallets) return;
-    const wallet = wallets.solanaWallet.toString();
-    console.log(wallet);
-    await fundWallet(wallet, {
-      defaultFundingMethod: "wallet",
-      asset: "native-currency",
-      config: {
-        paymentMethod: "mobile_wallet",
-      },
-    });
+    // if (!wallets) return;
+    // const wallet = wallets.solanaWallet.toString();
+    // console.log(wallet);
+    // await fundWallet(wallet, {
+    //   defaultFundingMethod: "wallet",
+    //   asset: "native-currency",
+    //   config: {
+    //     paymentMethod: "mobile_wallet",
+    //   },
+    // });
   };
 
   const assets = [...(solanaAssets ?? []), ...(evmAssets ?? [])];
