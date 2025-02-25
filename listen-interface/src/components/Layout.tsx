@@ -235,11 +235,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
           className={`lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
             isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
           }`}
+          onClick={() => handleSidebarToggle(false)}
         >
           <div
             className={`w-64 h-full bg-black/60 backdrop-blur-sm transition-transform duration-300 ${
               isSidebarOpen ? "translate-x-0" : "-translate-x-full"
             }`}
+            onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 pt-20">
               <nav className="space-y-1">
