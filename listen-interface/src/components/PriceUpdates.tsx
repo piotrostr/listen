@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { FaCircle } from "react-icons/fa";
 import { FaPause } from "react-icons/fa6";
 import { setupWebSocket } from "../services/websocketService";
@@ -25,21 +25,23 @@ export function PriceUpdates() {
   }, []);
 
   // Get the current tokens based on filters
-  const currentTokens = filterAndSortTokens(
-    Array.from(tokenMap.values()),
-    marketCapFilter,
-    volumeFilter
-  ).slice(0, 20);
+  const currentTokens = useMemo(() => {
+    return filterAndSortTokens(
+      Array.from(tokenMap.values()),
+      marketCapFilter,
+      volumeFilter
+    ).slice(0, 20);
+  }, [tokenMap, marketCapFilter, volumeFilter, filterAndSortTokens]);
 
-  // Use frozen tokens when list is frozen, otherwise use current tokens
-  const topTokens = isListFrozen ? frozenTokens : currentTokens;
-
-  // Update frozen tokens when filters change or when unfreezing
+  // Keep frozen tokens updated with current tokens when not frozen
   useEffect(() => {
     if (!isListFrozen) {
       setFrozenTokens(currentTokens);
     }
   }, [currentTokens, isListFrozen]);
+
+  // Use frozen tokens when list is frozen, otherwise use current tokens
+  const topTokens = isListFrozen ? frozenTokens : currentTokens;
 
   // Handlers for mouse events
   const handleMouseEnter = () => {
