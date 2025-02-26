@@ -28,19 +28,19 @@ const API_BASE: &str = "https://api.listen-rs.com/v1/adapter";
 Fetch top tokens from the Listen API.
 
 Parameters:
-- limit (string): Optional number of tokens to return (default: 20)
-- min_volume (string): Optional minimum 24h volume filter
-- min_market_cap (string): Optional minimum market cap filter
-- timeframe (string): Optional timeframe in seconds
+- limit (u64): Optional number of tokens to return (default: 20)
+- min_volume (f64): Optional minimum 24h volume filter
+- min_market_cap (f64): Optional minimum market cap filter
+- timeframe (u64): Optional timeframe in seconds
 - only_pumpfun_tokens (bool): Optional boolean to filter only PumpFun tokens (default: true)
 
 Returns a list of top tokens with their market data.
 ")]
 pub async fn fetch_top_tokens(
-    limit: Option<String>,
-    min_volume: Option<String>,
-    min_market_cap: Option<String>,
-    timeframe: Option<String>,
+    limit: Option<u64>,
+    min_volume: Option<f64>,
+    min_market_cap: Option<f64>,
+    timeframe: Option<u64>,
     only_pumpfun_tokens: Option<bool>,
 ) -> Result<Vec<TopToken>> {
     let mut url = format!("{}/top-tokens", API_BASE);
@@ -82,8 +82,8 @@ pub async fn fetch_top_tokens(
 Fetch candlestick data for a token from the Listen API.
 
 Parameters:
-- mint: The token's mint/pubkey address
-- interval: The candlestick interval, one of:
+- mint (string): The token's mint/pubkey address
+- interval (string): The candlestick interval, one of:
   * '15s' (15 seconds)
   * '30s' (30 seconds)
   * '1m'  (1 minute)
@@ -93,7 +93,7 @@ Parameters:
   * '1h'  (1 hour)
   * '4h'  (4 hours)
   * '1d'  (1 day)
-- limit: Optional number of candlesticks to return
+- limit (u64): Optional number of candlesticks to return
 
 for tokens under 1M market cap, use the 30s interval, 200 limit
 
@@ -106,7 +106,7 @@ Returns a list of candlesticks with OHLCV data.
 pub async fn fetch_candlesticks(
     mint: String,
     interval: String,
-    limit: Option<String>,
+    limit: Option<u64>,
 ) -> Result<Vec<Candlestick>> {
     // Validate interval
     match interval.as_str() {
@@ -143,15 +143,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_top_tokens() {
-        fetch_top_tokens(
-            Some("10".to_string()),
-            None,
-            None,
-            None,
-            Some(true),
-        )
-        .await
-        .unwrap();
+        fetch_top_tokens(Some(10), None, None, None, Some(true))
+            .await
+            .unwrap();
     }
 
     #[tokio::test]
@@ -159,7 +153,7 @@ mod tests {
         let candlesticks = fetch_candlesticks(
             "So11111111111111111111111111111111111111112".to_string(),
             "5m".to_string(),
-            Some("10".to_string()),
+            Some(10),
         )
         .await;
         println!("{:?}", candlesticks);
