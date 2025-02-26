@@ -1,0 +1,19 @@
+/* Any additional custom styles can go here */
+.markdown-content ol {
+  list-style-type: decimal;
+  margin-left: 1.5rem;
+}
+
+.markdown-content li {
+  margin: 0.25rem 0;
+}
+
+/* Animation for message appearing */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.mb-6 {
+  animation: fadeIn 0.5s ease-out forwards;
+} 
