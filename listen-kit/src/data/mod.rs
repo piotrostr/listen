@@ -34,7 +34,7 @@ Parameters:
 - timeframe (string): Optional timeframe in seconds
 - only_pumpfun_tokens (string): Optional boolean to filter only PumpFun tokens (default: \"true\")
 
-If a token is below 100k market cap with high-volume, it is likely an extraction that has finished.
+Use the min_market_cap of 100k unless specified otherwise.
 
 Returns a list of top tokens with their market data.
 ")]
