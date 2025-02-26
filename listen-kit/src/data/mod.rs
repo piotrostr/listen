@@ -28,19 +28,19 @@ const API_BASE: &str = "https://api.listen-rs.com/v1/adapter";
 Fetch top tokens from the Listen API.
 
 Parameters:
-- limit: Optional number of tokens to return (default: 20)
-- min_volume: Optional minimum 24h volume filter
-- min_market_cap: Optional minimum market cap filter
-- timeframe: Optional timeframe in seconds
-- only_pumpfun_tokens: Optional boolean to filter only PumpFun tokens (default: true)
+- limit (string): Optional number of tokens to return (default: 20)
+- min_volume (string): Optional minimum 24h volume filter
+- min_market_cap (string): Optional minimum market cap filter
+- timeframe (string): Optional timeframe in seconds
+- only_pumpfun_tokens (bool): Optional boolean to filter only PumpFun tokens (default: true)
 
 Returns a list of top tokens with their market data.
 ")]
 pub async fn fetch_top_tokens(
-    limit: Option<usize>,
-    min_volume: Option<f64>,
-    min_market_cap: Option<f64>,
-    timeframe: Option<u64>,
+    limit: Option<String>,
+    min_volume: Option<String>,
+    min_market_cap: Option<String>,
+    timeframe: Option<String>,
     only_pumpfun_tokens: Option<bool>,
 ) -> Result<Vec<TopToken>> {
     let mut url = format!("{}/top-tokens", API_BASE);
@@ -106,7 +106,7 @@ Returns a list of candlesticks with OHLCV data.
 pub async fn fetch_candlesticks(
     mint: String,
     interval: String,
-    limit: Option<usize>,
+    limit: Option<String>,
 ) -> Result<Vec<Candlestick>> {
     // Validate interval
     match interval.as_str() {
@@ -143,9 +143,15 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_top_tokens() {
-        let tokens =
-            fetch_top_tokens(Some(10), None, None, None, Some(true)).await;
-        println!("{:?}", tokens);
+        fetch_top_tokens(
+            Some("10".to_string()),
+            None,
+            None,
+            None,
+            Some(true),
+        )
+        .await
+        .unwrap();
     }
 
     #[tokio::test]
@@ -153,7 +159,7 @@ mod tests {
         let candlesticks = fetch_candlesticks(
             "So11111111111111111111111111111111111111112".to_string(),
             "5m".to_string(),
-            Some(10),
+            Some("10".to_string()),
         )
         .await;
         println!("{:?}", candlesticks);
