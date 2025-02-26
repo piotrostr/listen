@@ -13,9 +13,9 @@ const App = () => {
       {/* Main content with grid layout */}
       <div className="container mx-auto px-4 mt-10 grid grid-cols-1 gap-4 min-[1000px]:grid-cols-2">
         {/* Left side - Hero content */}
-        <div className="flex items-center min-h-[97vh] w-full py-6">
-          <div className="flex flex-col h-full w-full items-center justify-between min-[1000px]:items-start">
-            <div className="">
+        <div className="flex items-center justify-center min-h-[97vh] w-full py-6">
+          <div className="flex flex-col h-full w-full items-center justify-center">
+            <div className="max-w-md">
               <h1 className="text-2xl lg:text-5xl font-bold mb-6">
                 Trade any token, <br />
                 with words
