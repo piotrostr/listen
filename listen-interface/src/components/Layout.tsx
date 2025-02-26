@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { createContext, useContext, useState } from "react";
+import { createContext, memo, useContext, useMemo, useState } from "react";
 import { IoChatboxOutline, IoWalletOutline } from "react-icons/io5";
 import { UseBalanceReturnType } from "wagmi";
 import ethereumIcon from "../assets/icons/ethereum.svg";
@@ -9,7 +9,7 @@ import { Background } from "./Background";
 
 import { BsLink } from "react-icons/bs";
 import { FaXTwitter } from "react-icons/fa6";
-import { IoChevronDown, IoMenu, IoSettingsOutline } from "react-icons/io5";
+import { IoMenu, IoSettingsOutline } from "react-icons/io5";
 import { RxCross2, RxDashboard } from "react-icons/rx";
 import { RecentChats } from "./RecentChats";
 
@@ -51,23 +51,19 @@ function balanceToUI(balance: UseBalanceReturnType["data"]) {
   return Number(balance?.value) / 10 ** balance?.decimals;
 }
 
-// Navigation Link Component
-function NavLink({
+// Memoize the NavLink component
+const MemoizedNavLink = memo(function NavLink({
   to,
   icon: Icon,
   label,
   isSidebarOpen = true,
   isChat = false,
-  isDrawerOpen = false,
-  onToggleDrawer,
 }: {
   to: string;
   icon: React.ComponentType<{ className?: string }>;
   label: string;
   isSidebarOpen?: boolean;
   isChat?: boolean;
-  isDrawerOpen?: boolean;
-  onToggleDrawer?: () => void;
 }) {
   const setIsSidebarOpen = useContext(SidebarContext);
 
@@ -92,54 +88,42 @@ function NavLink({
             <>
               <span className="ml-3 flex-1">{label}</span>
               {isChat && (
-                <div className="flex items-center space-x-2">
-                  <Link
-                    to="/chat"
-                    search={{ new: true }}
-                    className="p-1 hover:bg-purple-500/20 rounded-full transition-colors"
-                    title="New Chat"
+                <Link
+                  to="/chat"
+                  search={{ new: true }}
+                  className="p-1 hover:bg-purple-500/20 rounded-full transition-colors"
+                  title="New Chat"
+                >
+                  <svg
+                    width="16"
+                    height="16"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
                   >
-                    <svg
-                      width="16"
-                      height="16"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <line x1="12" y1="5" x2="12" y2="19"></line>
-                      <line x1="5" y1="12" x2="19" y2="12"></line>
-                    </svg>
-                  </Link>
-                  <button
-                    onClick={(e) => {
-                      e.preventDefault();
-                      e.stopPropagation();
-                      onToggleDrawer?.();
-                    }}
-                    className={`transition-transform ${isDrawerOpen ? "rotate-180" : ""}`}
-                  >
-                    <IoChevronDown className="w-4 h-4" />
-                  </button>
-                </div>
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                </Link>
               )}
             </>
           )}
         </div>
       </Link>
-      {isChat && isDrawerOpen && (
-        <div className={`mt-1 ${!isSidebarOpen && "hidden"}`}>
+      {isChat && isSidebarOpen && (
+        <div className="mt-1">
           <RecentChats />
         </div>
       )}
     </div>
   );
-}
+});
 
-// Bottom Link Component
-function BottomLink({
+// Memoize the BottomLink component
+const MemoizedBottomLink = memo(function BottomLink({
   href,
   icon: Icon,
   label,
@@ -167,7 +151,7 @@ function BottomLink({
       </div>
     </a>
   );
-}
+});
 
 // Balance Display Component
 export function BalanceDisplay({
@@ -215,12 +199,36 @@ const SidebarContext = createContext<(open: boolean) => void>(() => {});
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = usePrivy();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isChatDrawerOpen, setIsChatDrawerOpen] = useState(false);
 
-  // Add this handler function
   const handleSidebarToggle = (open: boolean) => {
     setIsSidebarOpen(open);
   };
+
+  // Memoize the nav items
+  const memoizedNavItems = useMemo(
+    () =>
+      NAV_ITEMS.map((item) => (
+        <MemoizedNavLink
+          key={item.to}
+          {...item}
+          isSidebarOpen={isSidebarOpen}
+        />
+      )),
+    [isSidebarOpen]
+  );
+
+  // Memoize the bottom items
+  const memoizedBottomItems = useMemo(
+    () =>
+      BOTTOM_ITEMS.map((item) => (
+        <MemoizedBottomLink
+          key={item.href}
+          {...item}
+          isSidebarOpen={isSidebarOpen}
+        />
+      )),
+    [isSidebarOpen]
+  );
 
   return (
     <SidebarContext.Provider value={handleSidebarToggle}>
@@ -264,17 +272,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
           >
             <div className="p-4 pt-20">
               <nav className="space-y-1">
-                {NAV_ITEMS.map((item) => (
-                  <NavLink key={item.to} {...item} />
-                ))}
-                <NavLink
+                {memoizedNavItems}
+                <MemoizedNavLink
                   to="/chat"
                   icon={IoChatboxOutline}
                   label="Chat"
                   isSidebarOpen={true}
                   isChat={true}
-                  isDrawerOpen={isChatDrawerOpen}
-                  onToggleDrawer={() => setIsChatDrawerOpen(!isChatDrawerOpen)}
                 />
               </nav>
 
@@ -290,9 +294,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Bottom Items */}
             <div className="absolute bottom-0 left-0 right-0 mb-4 space-y-1">
-              {BOTTOM_ITEMS.map((item) => (
-                <BottomLink key={item.href} {...item} />
-              ))}
+              {memoizedBottomItems}
               {user && (
                 <button
                   onClick={() => logout()}
@@ -327,36 +329,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
             className={`hidden lg:flex ${
               isSidebarOpen ? "w-64" : "w-16"
             } border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex-col transition-all duration-300 group relative`}
+            onMouseEnter={() => handleSidebarToggle(true)}
+            onMouseLeave={() => handleSidebarToggle(false)}
           >
-            {/* Desktop Toggle Button */}
-            <div
-              className={`absolute ${
-                isSidebarOpen ? "right-0" : "left-0"
-              } top-0 h-12 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center`}
-            >
-              <button
-                onClick={() => handleSidebarToggle(!isSidebarOpen)}
-                className="p-1.5 bg-black/40 backdrop-blur-sm hover:bg-purple-500/10 rounded-lg transition-colors"
-              >
-                <svg
-                  width="14"
-                  height="14"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  style={{
-                    transform: `rotate(${isSidebarOpen ? "180deg" : "0deg"})`,
-                    transition: "transform 300ms ease-in-out",
-                  }}
-                >
-                  <path d="M15 18l-6-6 6-6" />
-                </svg>
-              </button>
-            </div>
-
             {/* Logo section */}
             <div className="p-4">
               <div className="flex items-center">
@@ -366,8 +341,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   <img
                     src="/listen-more.png"
                     alt="Logo"
-                    className="w-8 h-8 rounded cursor-pointer"
-                    onClick={() => handleSidebarToggle(!isSidebarOpen)}
+                    className="w-8 h-8 rounded"
                   />
                   {isSidebarOpen && (
                     <span className="ml-3 font-bold text-xl">listen-rs</span>
@@ -379,21 +353,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Navigation */}
             <div className="p-4">
               <nav className="space-y-1">
-                {NAV_ITEMS.map((item) => (
-                  <NavLink
-                    key={item.to}
-                    {...item}
-                    isSidebarOpen={isSidebarOpen}
-                  />
-                ))}
-                <NavLink
+                {memoizedNavItems}
+                <MemoizedNavLink
                   to="/chat"
                   icon={IoChatboxOutline}
                   label="Chat"
                   isSidebarOpen={isSidebarOpen}
                   isChat={true}
-                  isDrawerOpen={isChatDrawerOpen}
-                  onToggleDrawer={() => setIsChatDrawerOpen(!isChatDrawerOpen)}
                 />
               </nav>
 
@@ -409,13 +375,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Bottom section */}
             <div className="mt-auto p-4 space-y-1">
-              {BOTTOM_ITEMS.map((item) => (
-                <BottomLink
-                  key={item.href}
-                  {...item}
-                  isSidebarOpen={isSidebarOpen}
-                />
-              ))}
+              {memoizedBottomItems}
               {user && (
                 <button
                   onClick={() => logout()}
