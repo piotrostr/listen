@@ -3,7 +3,7 @@ import "./MultichainSwapDemo.css";
 
 const MultichainSwapDemo: React.FC = () => {
   const [visibleMessages, setVisibleMessages] = useState<number>(0);
-  const [approved, setApproved] = useState<boolean | null>(null);
+  const [approved, _] = useState<boolean | null>(null);
 
   const messages = [
     {
