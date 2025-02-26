@@ -98,46 +98,7 @@ const MultichainSwapDemo: React.FC = () => {
                 "https://strapi.jumper.exchange/uploads/brett_ca2d328cc8.jpeg",
             }}
           />
-
-          <div className="flex gap-2">
-            <button
-              className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg transition-colors"
-              onClick={() => setApproved(true)}
-            >
-              Approve
-            </button>
-            <button
-              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg transition-colors"
-              onClick={() => setApproved(false)}
-            >
-              Reject
-            </button>
-          </div>
         </div>
-      ),
-    },
-    {
-      type: "assistant",
-      content: (
-        <>
-          <p className="my-2">I've created a pipeline that will:</p>
-          <ol className="list-decimal pl-6 my-2">
-            <li className="my-1">Swap ~33.33 USDC to BONK on Solana</li>
-            <li className="my-1">
-              Bridge and swap ~33.33 USDC to PEPE on Ethereum
-            </li>
-            <li className="my-1">
-              Bridge and swap ~33.33 USDC to BRETT on Base
-            </li>
-          </ol>
-          <p className="my-2">
-            The amounts are in USDC decimals (6), so 33333333 = 33.333333 USDC.
-          </p>
-          <p className="my-2">
-            You can execute this pipeline with a single click. Would you like to
-            proceed?
-          </p>
-        </>
       ),
     },
   ];
