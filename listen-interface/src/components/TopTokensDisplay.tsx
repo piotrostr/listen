@@ -77,12 +77,11 @@ const TokenTile = ({ token }: { token: TopToken }) => {
             >
               {metadata?.mpl?.symbol || token.name}
             </a>
-            <Socials
-              tokenMetadata={metadata}
-              pubkey={token.pubkey}
-              openChart={() => {}}
-            />
-            <button onClick={handleCopy} className="hover:text-blue-400">
+            <Socials tokenMetadata={metadata} pubkey={token.pubkey} />
+            <button
+              onClick={handleCopy}
+              className="hover:text-blue-400 hidden lg:block"
+            >
               {copied ? (
                 <FaCheck size={12} />
               ) : (

@@ -16,7 +16,7 @@ export function Socials({
 }: {
   tokenMetadata: TokenMetadataRaw | null;
   pubkey: string;
-  openChart: (pubkey: string) => void;
+  openChart?: (pubkey: string) => void;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -71,12 +71,14 @@ export function Socials({
             <CopyIcon />
           )}
         </button>
-        <button
-          onClick={() => openChart(pubkey)}
-          className="hover:text-blue-500"
-        >
-          <IoBarChart size={14} className="sm:text-base" />
-        </button>
+        {openChart && (
+          <button
+            onClick={() => openChart(pubkey)}
+            className="hover:text-blue-500"
+          >
+            <IoBarChart size={14} className="sm:text-base" />
+          </button>
+        )}
       </div>
     </div>
   );
