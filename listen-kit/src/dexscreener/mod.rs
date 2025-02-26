@@ -72,9 +72,13 @@ pub async fn search_ticker(ticker: String) -> Result<DexScreenerResponse> {
 
     let response = client.get(&url).send().await?;
 
-    let data: serde_json::Value = response.json().await?;
+    if response.status().is_client_error() {
+        let res = response.text().await?;
+        tracing::error!("Error: {:?}", res);
+        return Err(anyhow::anyhow!("Error: {:?}", res));
+    }
 
-    println!("{:#?}", data);
+    let data: serde_json::Value = response.json().await?;
 
     let mut dex_response: DexScreenerResponse = serde_json::from_value(data)?;
 
