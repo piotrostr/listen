@@ -5,7 +5,7 @@ import { useKeyboardInput } from "../hooks/useKeyboardInput";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
 
-const IS_DISABLED = process.env.NODE_ENV === "production";
+const IS_DISABLED = false;
 
 const LoadingIndicator = () => (
   <div className="bg-purple-900/20 text-purple-300 rounded px-4 py-2">...</div>
