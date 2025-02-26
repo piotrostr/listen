@@ -7,13 +7,6 @@
   color-scheme: dark;
 }
 
-/* Base styles */
-html,
-body {
-  background-color: black;
-  color: white;
-}
-
 @font-face {
   font-family: "SF Mono Nerd Font";
   src: url("/sf-mono.otf") format("opentype");
