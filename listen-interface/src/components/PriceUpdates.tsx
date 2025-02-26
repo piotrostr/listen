@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { FaCircle } from "react-icons/fa";
 import { FaPause } from "react-icons/fa6";
 import { setupWebSocket } from "../services/websocketService";
 import { useTokenStore } from "../store/tokenStore";
@@ -97,7 +98,7 @@ export function PriceUpdates() {
                     : "bg-black/40 border-2 border-purple-500/30"
                 } hover:bg-purple-500/10 transition-all`}
               >
-                🟢
+                <FaCircle className="text-green-500" />
               </button>
               <button
                 onClick={() =>
@@ -109,7 +110,7 @@ export function PriceUpdates() {
                     : "bg-black/40 border-2 border-purple-500/30"
                 } hover:bg-purple-500/10 transition-all`}
               >
-                🔴
+                <FaCircle className="text-red-500" />
               </button>
             </div>
 
