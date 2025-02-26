@@ -155,6 +155,7 @@ const MultichainSwapDemo: React.FC = () => {
   return (
     <div className="flex-grow overflow-y-auto max-h-[80vh] pb-4 space-y-4 scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
       <div className="p-3">
+        {/* Visible messages */}
         {messages.slice(0, visibleMessages).map((message, index) => (
           <div key={index} className="mb-4">
             {message.type === "user" && (
@@ -178,6 +179,33 @@ const MultichainSwapDemo: React.FC = () => {
             )}
           </div>
         ))}
+
+        {/* Hidden placeholder to reserve space */}
+        <div className="invisible" aria-hidden="true">
+          {messages.slice(visibleMessages).map((message, index) => (
+            <div key={index} className="mb-4">
+              {message.type === "user" && (
+                <div className="bg-purple-900/20 text-purple-300 rounded-lg px-3 py-2 my-2 backdrop-blur-sm border border-opacity-20 text-sm border-purple-500">
+                  <div className="markdown-content">
+                    <p className="my-1">{message.content}</p>
+                  </div>
+                </div>
+              )}
+
+              {message.type === "assistant" && (
+                <div className="bg-blue-900/20 text-blue-300 rounded-lg px-3 py-2 my-2 backdrop-blur-sm border border-opacity-20 text-sm border-blue-500">
+                  <div className="markdown-content">{message.content}</div>
+                </div>
+              )}
+
+              {message.type === "pipeline" && (
+                <div className="my-3 border-b border-purple-500/30 pb-3">
+                  {message.content}
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
 
         {approved === true && (
           <div className="bg-green-900/20 text-green-300 rounded-lg px-3 py-2 my-2 backdrop-blur-sm border border-opacity-20 text-sm border-green-500">
