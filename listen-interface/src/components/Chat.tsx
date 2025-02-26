@@ -1,7 +1,6 @@
 import { useSearch } from "@tanstack/react-router";
-import { useEffect, useRef } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useChat } from "../hooks/useChat";
-import { useKeyboardInput } from "../hooks/useKeyboardInput";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
 
@@ -37,14 +36,19 @@ export function Chat() {
     useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { new: isNewChat } = useSearch({ from: "/chat" });
+  const [inputMessage, setInputMessage] = useState("");
 
-  const { inputMessage, submitMessage, setInputMessage } = useKeyboardInput({
-    onSubmit: sendMessage,
-    onClear: () => setMessages([]),
-    onStopGeneration: stopGeneration,
-    isGenerating: isLoading,
-    isDisabled: IS_DISABLED,
-  });
+  const handleSendMessage = useCallback(
+    (message: string) => {
+      if (message.trim() === "clear") {
+        setMessages([]);
+      } else {
+        sendMessage(message);
+      }
+      setInputMessage("");
+    },
+    [sendMessage, setMessages]
+  );
 
   // Auto-scroll to bottom when messages change
   useEffect(() => {
@@ -61,8 +65,6 @@ export function Chat() {
   // Focus the input field when creating a new chat
   useEffect(() => {
     if (isNewChat) {
-      // This will focus the input field in ChatContainer
-      // You might need to expose a method from ChatContainer to focus the input
       const inputElement = document.querySelector(".chat-input");
       if (inputElement instanceof HTMLTextAreaElement) {
         inputElement.focus();
@@ -72,7 +74,7 @@ export function Chat() {
 
   const handleQuestionClick = (question: string) => {
     setInputMessage(question);
-    submitMessage();
+    handleSendMessage(question);
   };
 
   if (IS_DISABLED) {
@@ -87,7 +89,8 @@ export function Chat() {
     <ChatContainer
       inputMessage={inputMessage}
       isGenerating={isLoading}
-      onSendMessage={submitMessage}
+      onSendMessage={handleSendMessage}
+      onInputChange={setInputMessage}
       onStopGeneration={stopGeneration}
     >
       {messages.length === 0 && (

@@ -5,6 +5,7 @@ interface ChatContainerProps {
   inputMessage: string;
   isGenerating?: boolean;
   onSendMessage?: (message: string) => void;
+  onInputChange?: (message: string) => void;
   onStopGeneration?: () => void;
   children: ReactNode;
 }
@@ -13,6 +14,7 @@ export function ChatContainer({
   inputMessage,
   isGenerating = false,
   onSendMessage = () => {},
+  onInputChange = () => {},
   onStopGeneration = () => {},
   children,
 }: ChatContainerProps) {
@@ -26,6 +28,7 @@ export function ChatContainer({
           inputMessage={inputMessage}
           isGenerating={isGenerating}
           onSendMessage={onSendMessage}
+          onInputChange={onInputChange}
           onStopGeneration={onStopGeneration}
         />
       </div>
@@ -37,6 +40,7 @@ interface ChatInputProps {
   inputMessage: string;
   isGenerating: boolean;
   onSendMessage: (message: string) => void;
+  onInputChange: (message: string) => void;
   onStopGeneration: () => void;
 }
 
@@ -44,6 +48,7 @@ export function ChatInput({
   inputMessage,
   isGenerating,
   onSendMessage,
+  onInputChange,
   onStopGeneration,
 }: ChatInputProps) {
   const [isFocused, setIsFocused] = useState(false);
@@ -58,17 +63,35 @@ export function ChatInput({
     <div
       className={`min-h-12 border-2 ${isFocused ? "border-purple-500/60" : "border-purple-500/30"} 
                  rounded-lg bg-black/40 backdrop-blur-sm px-3 py-3 flex items-center`}
-      onClick={() => setIsFocused(true)}
-      onBlur={() => setIsFocused(false)}
-      tabIndex={0}
     >
-      <div className="flex-grow">
-        <span className="text-white whitespace-pre-wrap break-words">
-          {inputMessage}
-        </span>
-        {!isGenerating && (
-          <span className="w-2 h-5 bg-white terminal-blink ml-[1px] inline-block align-middle" />
-        )}
+      <div className="flex-grow relative">
+        <textarea
+          value={inputMessage}
+          onChange={(e) => onInputChange(e.target.value)}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) {
+              e.preventDefault();
+              if (isGenerating) {
+                onStopGeneration();
+              } else {
+                handleSend();
+              }
+            }
+            if (e.key === "Escape" && isGenerating) {
+              e.preventDefault();
+              onStopGeneration();
+            }
+          }}
+          rows={1}
+          className="w-full bg-transparent text-white outline-none resize-none chat-input"
+          placeholder="Type your message..."
+          style={{
+            minHeight: "20px",
+            maxHeight: "200px",
+          }}
+        />
       </div>
 
       <div className="flex-shrink-0 ml-2">
