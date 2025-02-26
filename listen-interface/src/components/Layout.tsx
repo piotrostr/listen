@@ -130,7 +130,7 @@ function NavLink({
         </div>
       </Link>
       {isChat && isDrawerOpen && (
-        <div className="mt-1">
+        <div className={`mt-1 ${!isSidebarOpen && "hidden"}`}>
           <RecentChats />
         </div>
       )}
@@ -220,9 +220,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   // Add this handler function
   const handleSidebarToggle = (open: boolean) => {
     setIsSidebarOpen(open);
-    if (!open) {
-      setIsChatDrawerOpen(false);
-    }
   };
 
   return (
