@@ -4,10 +4,11 @@ use crate::{
 };
 use anyhow::Result;
 use chrono::Utc;
-use futures_util::StreamExt;
+use futures_util::{SinkExt, StreamExt};
 use once_cell::sync::Lazy;
 use serde::Deserialize;
 use std::sync::Arc;
+use tokio::sync::Mutex;
 use tokio::sync::RwLock;
 use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use tracing::{error, info};
@@ -106,54 +107,98 @@ impl SolPriceCache {
     }
 
     pub async fn start_price_stream(&self) -> Result<()> {
-        let url = Url::parse("wss://stream.binance.com:9443/ws/solusdt@trade")?;
-        let (ws_stream, _) = connect_async(url).await?;
-        let price_cache = self.clone();
-        info!("WebSocket connected to Binance SOL/USDT stream");
-
-        let (_, mut read) = ws_stream.split();
-
-        while let Some(message) = read.next().await {
-            match message {
-                Ok(Message::Text(text)) => {
-                    match serde_json::from_str::<TradeData>(&text) {
-                        Ok(trade) => {
-                            if let Ok(new_price) = trade.p.parse::<f64>() {
-                                let current_price =
-                                    price_cache.get_price().await;
-                                if current_price != new_price {
-                                    price_cache.set_price(new_price).await;
-                                    let price_cache = price_cache.clone();
-                                    tokio::spawn(async move {
-                                        println!(
-                                            "Publishing price update: {}",
-                                            new_price
-                                        );
-                                        if let Err(e) = price_cache
-                                            .publish_price_update(new_price)
-                                            .await
-                                        {
-                                            error!("Failed to publish price update: {}", e);
-                                        }
-                                    });
-                                }
-                            } else {
-                                error!("Failed to parse price: {}", text);
-                            }
-                        }
-                        Err(e) => error!("Error parsing JSON: {}", e),
-                    }
+        loop {
+            info!("Connecting to Binance WebSocket...");
+            match self.connect_and_stream().await {
+                Ok(_) => {
+                    info!("WebSocket stream ended gracefully");
+                    // Optional delay before reconnecting on graceful close
+                    tokio::time::sleep(tokio::time::Duration::from_secs(1))
+                        .await;
                 }
-                Ok(Message::Ping(_)) => {}
                 Err(e) => {
-                    error!("WebSocket error: {}", e);
-                    break;
+                    error!("WebSocket stream error: {}. Reconnecting in 5 seconds...", e);
+                    tokio::time::sleep(tokio::time::Duration::from_secs(5))
+                        .await;
                 }
-                _ => {}
             }
         }
+    }
 
-        Ok(())
+    async fn connect_and_stream(&self) -> Result<()> {
+        let url = Url::parse("wss://fstream.binance.com/ws/solusdt@aggTrade")?;
+        let (ws_stream, _) = connect_async(url).await?;
+        let price_cache = self.clone();
+        info!("WebSocket connected to Binance SOL/USDT futures stream");
+
+        let (write, mut read) = ws_stream.split();
+        let write = Arc::new(Mutex::new(write));
+        let write_clone = write.clone();
+
+        // Spawn a task to handle pong responses
+        let pong_task = tokio::spawn(async move {
+            loop {
+                tokio::time::sleep(tokio::time::Duration::from_secs(60)).await;
+                if let Err(e) =
+                    write_clone.lock().await.send(Message::Pong(vec![])).await
+                {
+                    error!("Failed to send pong: {}", e);
+                    break;
+                }
+            }
+        });
+
+        let result = async {
+            while let Some(message) = read.next().await {
+                match message {
+                    Ok(Message::Text(text)) => {
+                        match serde_json::from_str::<TradeData>(&text) {
+                            Ok(trade) => {
+                                if let Ok(new_price) = trade.p.parse::<f64>() {
+                                    let current_price =
+                                        price_cache.get_price().await;
+                                    if current_price != new_price {
+                                        price_cache.set_price(new_price).await;
+                                        let price_cache = price_cache.clone();
+                                        tokio::spawn(async move {
+                                            if let Err(e) = price_cache
+                                                .publish_price_update(new_price)
+                                                .await
+                                            {
+                                                error!("Failed to publish price update: {}", e);
+                                            }
+                                        });
+                                    }
+                                } else {
+                                    error!("Failed to parse price: {}", text);
+                                }
+                            }
+                            Err(e) => error!("Error parsing JSON: {}", e),
+                        }
+                    }
+                    Ok(Message::Ping(_)) => {
+                        if let Err(e) = write.lock().await.send(Message::Pong(vec![])).await {
+                            error!("Failed to send pong: {}", e);
+                            return Err(anyhow::anyhow!("Pong send error: {}", e));
+                        }
+                    }
+                    Ok(Message::Close(frame)) => {
+                        info!("WebSocket closed by server: {:?}", frame);
+                        return Ok(());
+                    }
+                    Err(e) => {
+                        return Err(anyhow::anyhow!("WebSocket error: {}", e));
+                    }
+                    _ => {}
+                }
+            }
+            Ok(())
+        }
+        .await;
+
+        // Cancel the pong task when the main loop exits
+        pong_task.abort();
+        result
     }
 }
 
