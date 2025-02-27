@@ -22,7 +22,7 @@ export const SwapOrderActionSchema = z.object({
 
 export const NotificationActionSchema = z.object({
   type: z.literal(PipelineActionType.Notification),
-  input_token: z.string(),
+  input_token: z.string().optional().nullable(),
   message: z.string(),
 });
 
