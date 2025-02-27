@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { ReactNode, useState } from "react";
 import { FiSend, FiStopCircle } from "react-icons/fi";
+import { usePrivyWallets } from "../hooks/usePrivyWallet";
 
 interface ChatContainerProps {
   inputMessage: string;
@@ -59,6 +60,11 @@ export function ChatInput({
       onSendMessage(inputMessage);
     }
   };
+
+  const { data: wallets } = usePrivyWallets();
+
+  const walletsReady =
+    wallets?.evmWallet !== undefined && wallets?.solanaWallet !== undefined;
 
   return (
     <div
@@ -134,9 +140,9 @@ export function ChatInput({
               e.stopPropagation();
               handleSend();
             }}
-            disabled={!inputMessage.trim()}
+            disabled={!inputMessage.trim() || !walletsReady}
             className={`p-2 rounded-full ${
-              inputMessage.trim()
+              inputMessage.trim() && walletsReady
                 ? "bg-purple-500/20 hover:bg-purple-500/40 text-purple-300"
                 : "bg-gray-500/10 text-gray-500"
             } transition-colors`}
