@@ -1,4 +1,5 @@
 use crate::{
+    kv_store::RedisKVStore,
     message_queue::{MessageQueue, RedisMessageQueue},
     price::PriceUpdate,
 };
@@ -15,7 +16,8 @@ use tracing::{error, info};
 use url::Url;
 
 // Global SOL price cache
-pub static SOL_PRICE_CACHE: Lazy<SolPriceCache> = Lazy::new(SolPriceCache::new);
+pub static SOL_PRICE_CACHE: Lazy<SolPriceCache> =
+    Lazy::new(|| SolPriceCache::new(None, None));
 
 #[derive(Debug, Deserialize)]
 struct TradeData {
@@ -31,46 +33,40 @@ struct BinancePrice {
 pub struct SolPriceCache {
     price: Arc<RwLock<f64>>,
     message_queue: Option<Arc<RedisMessageQueue>>,
-}
-
-impl Default for SolPriceCache {
-    fn default() -> Self {
-        Self::new()
-    }
+    kv_store: Option<Arc<RedisKVStore>>,
 }
 
 impl SolPriceCache {
-    pub fn new() -> Self {
+    pub fn new(
+        kv_store: Option<Arc<RedisKVStore>>,
+        message_queue: Option<Arc<RedisMessageQueue>>,
+    ) -> Self {
         Self {
             price: Arc::new(RwLock::new(0.0)),
-            message_queue: None,
-        }
-    }
-
-    pub fn with_message_queue(message_queue: Arc<RedisMessageQueue>) -> Self {
-        Self {
-            price: Arc::new(RwLock::new(0.0)),
-            message_queue: Some(message_queue),
+            message_queue,
+            kv_store,
         }
     }
 
     async fn publish_price_update(&self, new_price: f64) -> Result<()> {
+        let price_update = PriceUpdate {
+            name: "Solana".to_string(),
+            pubkey: crate::constants::WSOL_MINT_KEY_STR.to_string(),
+            price: new_price,
+            market_cap: 0.0, // Could calculate if we had supply
+            timestamp: Utc::now().timestamp() as u64,
+            slot: 0,          // Not applicable for Binance price
+            swap_amount: 0.0, // Not applicable
+            owner: "binance".to_string(),
+            signature: "binance_websocket".to_string(),
+            multi_hop: false,
+            is_buy: false,
+            is_pump: false,
+        };
+        if let Some(kv_store) = &self.kv_store {
+            kv_store.insert_price(&price_update).await?;
+        }
         if let Some(mq) = &self.message_queue {
-            let price_update = PriceUpdate {
-                name: "Solana".to_string(),
-                pubkey: crate::constants::WSOL_MINT_KEY_STR.to_string(),
-                price: new_price,
-                market_cap: 0.0, // Could calculate if we had supply
-                timestamp: Utc::now().timestamp() as u64,
-                slot: 0,          // Not applicable for Binance price
-                swap_amount: 0.0, // Not applicable
-                owner: "binance".to_string(),
-                signature: "binance_websocket".to_string(),
-                multi_hop: false,
-                is_buy: false,
-                is_pump: false,
-            };
-
             mq.publish_price_update(price_update).await?;
         }
         Ok(())
@@ -209,7 +205,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_sol_price_cache() {
-        let price_cache = SolPriceCache::new();
+        let price_cache = SolPriceCache::new(None, None);
         let price_cache_clone = price_cache.clone();
 
         // Spawn the price stream in a separate task
@@ -229,7 +225,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_rest_fallback() {
-        let price_cache = SolPriceCache::new();
+        let price_cache = SolPriceCache::new(None, None);
 
         // Test initial state (should trigger REST fallback)
         let price = price_cache.get_price().await;

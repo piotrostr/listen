@@ -22,7 +22,8 @@ async fn main() -> Result<()> {
     let db = make_db().await?;
     let kv_store = make_kv_store().await?;
     let message_queue = make_message_queue().await?;
-    let price_cache = SolPriceCache::with_message_queue(message_queue.clone());
+    let price_cache =
+        SolPriceCache::new(Some(kv_store.clone()), Some(message_queue.clone()));
     let price_cache = Arc::new(price_cache);
 
     info!("Solana price: {}", price_cache.get_price().await);
