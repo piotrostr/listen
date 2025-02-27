@@ -2,6 +2,8 @@
 name = "approvals"
 version = "0.1.0"
 edition = "2021"
+description = "send EVM approvals with no heavy deps"
+license = "MIT"
 
 [dependencies]
 serde = { version = "1.0.217", features = ["derive"] }
