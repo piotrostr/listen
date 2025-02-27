@@ -1,7 +1,6 @@
 import { useSolanaToken } from "../hooks/useToken";
-import { PipelineStep } from "../types/pipeline";
+import { PipelineActionType, PipelineStep } from "../types/pipeline";
 import { PipelineStepContainer } from "./PipelineStepContainer";
-import { Spinner } from "./Spinner";
 
 interface NotificationPipelineStepProps {
   index: number;
@@ -12,11 +11,16 @@ export const NotificationPipelineStep = ({
   index,
   step,
 }: NotificationPipelineStepProps) => {
-  const inputToken = useSolanaToken(step.action.input_token);
-  if (!inputToken.data) return <Spinner />;
+  if (step.action.type !== PipelineActionType.Notification) {
+    return null;
+  }
 
-  const tokenImage = inputToken.data?.logoURI;
-  const tokenName = inputToken.data?.symbol;
+  const inputToken = step.action.input_token
+    ? useSolanaToken(step.action.input_token)
+    : null;
+
+  const tokenImage = inputToken?.data?.logoURI;
+  const tokenName = inputToken?.data?.symbol;
 
   return (
     <PipelineStepContainer
@@ -36,6 +40,7 @@ export const NotificationPipelineStep = ({
           )}
           <div>
             <div className="font-bold text-purple-100">Send a notification</div>
+            <div className="text-purple-300 text-sm">{step.action.message}</div>
           </div>
         </div>
       </div>
