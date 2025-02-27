@@ -9,6 +9,7 @@ import { Chat, Message, StreamResponse, ToolOutputSchema } from "./types";
 import { useChatType } from "./useChatType";
 import { useDebounce } from "./useDebounce";
 import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
+import { usePrivyWallets } from "./usePrivyWallet";
 import { useSolanaPortfolio } from "./useSolanaPortfolio";
 
 class JsonChunkReader {
@@ -41,10 +42,11 @@ class JsonChunkReader {
 export function useChat() {
   const { data: solanaPortfolio } = useSolanaPortfolio();
   const { data: evmPortfolio } = useEvmPortfolio();
-  const { user, getAccessToken } = usePrivy();
+  const { getAccessToken } = usePrivy();
   const { chatType } = useChatType();
   const { chatId, new: isNewChat } = useSearch({ from: "/chat" });
   const navigate = useNavigate();
+  const { data: wallets } = usePrivyWallets();
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -178,20 +180,36 @@ export function useChat() {
           lastMessageAt: new Date(),
         }));
 
-        if (
-          !user ||
-          solanaPortfolio === undefined ||
-          evmPortfolio === undefined
-        ) {
-          // TODO display "portfolio loading" and disable chat prior
-          alert("User or portfolio not available");
+        const portfolio = [];
+        if (solanaPortfolio) {
+          for (const token of solanaPortfolio) {
+            portfolio.push({
+              chain: token.chain,
+              address: token.address,
+              amount: token.amount.toString(),
+              name: token.name,
+              symbol: token.symbol,
+              decimals: token.decimals,
+            });
+          }
         }
-
+        if (evmPortfolio) {
+          for (const token of evmPortfolio) {
+            portfolio.push({
+              chain: token.chain,
+              address: token.address,
+              amount: token.amount.toString(),
+              name: token.name,
+              symbol: token.symbol,
+              decimals: token.decimals,
+            });
+          }
+        }
         const chat_history = messageHistory.filter((msg) => msg.content !== "");
         const preamble = systemPrompt(
-          [...solanaPortfolio!, ...evmPortfolio!],
-          user?.wallet?.address || "",
-          user?.wallet?.address || ""
+          portfolio,
+          wallets?.evmWallet.toString() || "",
+          wallets?.solanaWallet.toString() || ""
         );
 
         const body = JSON.stringify({
@@ -332,7 +350,7 @@ export function useChat() {
       getAccessToken,
       solanaPortfolio,
       evmPortfolio,
-      user,
+      wallets,
       chatType,
       navigate,
     ]

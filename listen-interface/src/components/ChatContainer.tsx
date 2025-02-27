@@ -1,3 +1,4 @@
+import { Link } from "@tanstack/react-router";
 import { ReactNode, useState } from "react";
 import { FiSend, FiStopCircle } from "react-icons/fi";
 
@@ -94,7 +95,28 @@ export function ChatInput({
         />
       </div>
 
-      <div className="flex-shrink-0 ml-2">
+      <div className="flex-shrink-0 ml-2 flex items-center gap-2">
+        <Link
+          to="/chat"
+          search={{ new: true }}
+          className={`p-2 rounded-full bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 transition-colors`}
+          title="New Chat"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          >
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </Link>
+
         {isGenerating ? (
           <button
             onClick={(e) => {

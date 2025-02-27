@@ -1,8 +1,14 @@
-import { PortfolioData } from "./types";
 import { addressBook, caip2Map } from "./util";
 
 export function systemPrompt(
-  portfolio: PortfolioData,
+  portfolio: {
+    chain: string;
+    address: string;
+    amount: string;
+    name: string;
+    symbol: string;
+    decimals: number;
+  }[],
   walletAddress: string,
   pubkey: string
 ) {
