@@ -15,9 +15,9 @@ use tokio_tungstenite::{connect_async, tungstenite::protocol::Message};
 use tracing::{error, info};
 use url::Url;
 
-// Global SOL price cache
-pub static SOL_PRICE_CACHE: Lazy<SolPriceCache> =
-    Lazy::new(|| SolPriceCache::new(None, None));
+// Change the global cache to be just the price without Redis connections
+pub static SOL_PRICE_CACHE: Lazy<Arc<RwLock<f64>>> =
+    Lazy::new(|| Arc::new(RwLock::new(0.0)));
 
 #[derive(Debug, Deserialize)]
 struct TradeData {
@@ -42,7 +42,7 @@ impl SolPriceCache {
         message_queue: Option<Arc<RedisMessageQueue>>,
     ) -> Self {
         Self {
-            price: Arc::new(RwLock::new(0.0)),
+            price: SOL_PRICE_CACHE.clone(), // Use the global price cache
             message_queue,
             kv_store,
         }
@@ -196,6 +196,11 @@ impl SolPriceCache {
         pong_task.abort();
         result
     }
+}
+
+// Add a convenience function for getting the global price
+pub async fn get_sol_price() -> f64 {
+    *SOL_PRICE_CACHE.read().await
 }
 
 #[cfg(test)]

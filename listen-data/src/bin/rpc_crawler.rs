@@ -15,7 +15,7 @@ async fn main() -> Result<()> {
             account_pipeline::make_raydium_rpc_accounts_pipeline,
             instruction_pipeline::make_raydium_rpc_instruction_pipeline,
         },
-        sol_price_stream::SOL_PRICE_CACHE,
+        sol_price_stream::get_sol_price,
         util::{make_db, make_kv_store, make_message_queue},
     };
     use tracing::{error, info};
@@ -27,7 +27,7 @@ async fn main() -> Result<()> {
     info!("Starting RPC service...");
 
     // Initialize price cache for cold starts
-    info!("Solana price: {}", SOL_PRICE_CACHE.get_price().await);
+    info!("Solana price: {}", get_sol_price().await);
 
     let db = make_db().await?;
     let kv_store = make_kv_store()?;
