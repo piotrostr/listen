@@ -113,6 +113,7 @@ export const addressBook = {
     solana: "So11111111111111111111111111111111111111112",
     usdc: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
     bonk: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
+    listen: "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump",
   },
   ethereum: {
     usdc: getAddress("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
