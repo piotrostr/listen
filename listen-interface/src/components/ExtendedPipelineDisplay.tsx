@@ -89,7 +89,7 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
                   }}
                   status={step.status}
                   transactionHash={step.transaction_hash}
-                  error={step.error}
+                  error={step.error ?? null}
                 />
               </div>
             );

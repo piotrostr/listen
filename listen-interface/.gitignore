@@ -1,3 +1,4 @@
+debug-*
 stats.html
 dist/*.gz
 dist/stats.html

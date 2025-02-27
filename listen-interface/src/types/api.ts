@@ -62,7 +62,7 @@ const OrderActionSchema = z.object({
 
 const NotificationActionSchema = z.object({
   Notification: z.object({
-    input_token: z.string(),
+    input_token: z.string().optional().nullable(),
     message: z.string(),
   }),
 });
@@ -81,7 +81,7 @@ const ExtendedPipelineStepSchema = z.object({
   next_steps: z.array(z.string().uuid()),
   status: StatusSchema,
   transaction_hash: z.string().nullable(),
-  error: z.string().nullable(),
+  error: z.string().nullable().optional(),
 });
 
 // Update pipeline schema
