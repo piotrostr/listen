@@ -11,7 +11,7 @@ use crate::{
     metadata::get_token_metadata,
     metrics::SwapMetrics,
     price::PriceUpdate,
-    sol_price_stream::SOL_PRICE_CACHE,
+    sol_price_stream::get_sol_price,
 };
 use anyhow::{Context, Result};
 use carbon_core::transaction::TransactionMetadata;
@@ -50,7 +50,7 @@ pub async fn process_swap(
         return Ok(());
     }
 
-    let sol_price = SOL_PRICE_CACHE.get_price().await;
+    let sol_price = get_sol_price().await;
 
     if diffs.len() > 3 || diffs.len() < 2 {
         debug!(

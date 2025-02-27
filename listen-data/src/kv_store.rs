@@ -7,6 +7,7 @@ use crate::metadata::TokenMetadata;
 use crate::price::PriceUpdate;
 use crate::util::create_redis_pool;
 
+#[derive(Debug, Clone)]
 pub struct RedisKVStore {
     pool: bb8::Pool<RedisConnectionManager>,
 }
