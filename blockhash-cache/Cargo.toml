@@ -2,6 +2,8 @@
 name = "blockhash-cache"
 version = "0.1.0"
 edition = "2021"
+description = "minimal Solana blockhash cache"
+license = "MIT"
 
 [dependencies]
 anyhow = "1.0.95"
