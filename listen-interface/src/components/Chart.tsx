@@ -189,6 +189,26 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
 
   const { data: metadata } = useListenMetadata(mint);
 
+  // Calculate percentage change from the data
+  const percentChange = useMemo(() => {
+    if (
+      !dataCache[selectedInterval] ||
+      dataCache[selectedInterval].length < 2
+    ) {
+      return null;
+    }
+
+    const sortedData = [...dataCache[selectedInterval]].sort(
+      (a, b) => a.timestamp - b.timestamp
+    );
+    const firstCandle = sortedData[0];
+    const lastCandle = sortedData[sortedData.length - 1];
+
+    const change =
+      ((lastCandle.close - firstCandle.open) / firstCandle.open) * 100;
+    return change;
+  }, [dataCache, selectedInterval]);
+
   // Fetch data when mint or selected interval changes
   useEffect(() => {
     isDisposed.current = false;
@@ -250,40 +270,50 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
 
   return (
     <div className="flex flex-col w-full h-full">
-      {/* Token information */}
-      {metadata && (
-        <div className="flex items-center justify-between mb-2 p-2 bg-gray-800 rounded">
-          <div className="flex items-center space-x-2">
-            {metadata.mpl.symbol && (
-              <span className="font-bold">{metadata.mpl.symbol}</span>
-            )}
-            {metadata.mpl.name && (
-              <span className="text-gray-400">{metadata.mpl.name}</span>
-            )}
-            {metadata.mint && (
-              <span className="text-xs text-gray-500" title={metadata.mint}>
-                {formattedPubkey}
-              </span>
-            )}
-          </div>
-        </div>
-      )}
+      {/* Token information and interval selection in a single row */}
+      <div className="flex items-center justify-between mb-2 p-2 bg-gray-800 rounded">
+        <div className="flex items-center space-x-2">
+          {metadata?.mpl.symbol && (
+            <span className="font-bold text-white">{metadata.mpl.symbol}</span>
+          )}
+          {metadata?.mpl.name && (
+            <span className="text-gray-300 ml-2">{metadata.mpl.name}</span>
+          )}
+          {metadata?.mint && (
+            <span className="text-xs text-gray-400 ml-2" title={metadata.mint}>
+              ({formattedPubkey})
+            </span>
+          )}
 
-      {/* Interval selection buttons */}
-      <div className="flex space-x-1 mb-2">
-        {INTERVALS.map((interval) => (
-          <button
-            key={interval}
-            onClick={() => handleIntervalChange(interval)}
-            className={`px-2 py-1 text-xs rounded ${
-              selectedInterval === interval
-                ? "bg-blue-600 text-white"
-                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
-            }`}
-          >
-            {interval}
-          </button>
-        ))}
+          {/* Percentage change indicator */}
+          {percentChange !== null && (
+            <span
+              className={`ml-3 font-medium ${
+                percentChange >= 0 ? "text-green-400" : "text-red-400"
+              }`}
+            >
+              {percentChange >= 0 ? "+" : ""}
+              {percentChange.toFixed(2)}%
+            </span>
+          )}
+        </div>
+
+        {/* Interval selection buttons moved to the right */}
+        <div className="flex space-x-1">
+          {INTERVALS.map((interval) => (
+            <button
+              key={interval}
+              onClick={() => handleIntervalChange(interval)}
+              className={`px-2 py-1 text-xs rounded ${
+                selectedInterval === interval
+                  ? "bg-blue-600 text-white"
+                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+              }`}
+            >
+              {interval}
+            </button>
+          ))}
+        </div>
       </div>
 
       {/* Chart */}
