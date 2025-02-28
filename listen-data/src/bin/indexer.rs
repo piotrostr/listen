@@ -7,23 +7,20 @@ use listen_data::{
 };
 use std::sync::Arc;
 use tracing::{error, info};
-use tracing_subscriber::{
-    filter::EnvFilter, layer::SubscriberExt, util::SubscriberInitExt,
-};
 
 #[derive(Parser)]
 pub struct Args {}
 
-#[tokio::main]
-async fn main() -> Result<()> {
-    let is_systemd = std::env::var("IS_SYSTEMD_SERVICE").is_ok();
-
+pub fn setup_tracing() {
+    use tracing_subscriber::{
+        filter::EnvFilter, layer::SubscriberExt, util::SubscriberInitExt,
+    };
     // Create an EnvFilter that reads from RUST_LOG with INFO as default
     let env_filter = EnvFilter::try_from_default_env()
         .unwrap_or_else(|_| EnvFilter::new("info"));
 
     // Configure logging based on environment
-    if is_systemd {
+    if std::env::var("IS_SYSTEMD_SERVICE").is_ok() {
         // Use systemd formatting when running as a service
         let journald_layer =
             tracing_journald::layer().expect("Failed to create journald layer");
@@ -39,8 +36,12 @@ async fn main() -> Result<()> {
             .with_env_filter(env_filter)
             .init();
     }
+}
 
-    if !is_systemd {
+#[tokio::main]
+async fn main() -> Result<()> {
+    setup_tracing();
+    if !std::env::var("IS_SYSTEMD_SERVICE").is_ok() {
         dotenv::dotenv().expect("Failed to load .env file");
     }
     info!("Starting geyser indexer...");
