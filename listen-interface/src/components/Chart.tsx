@@ -180,34 +180,25 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
   const [selectedInterval, setSelectedInterval] =
     useState<(typeof INTERVALS)[number]>(defaultInterval);
   const [isLoading, setIsLoading] = useState(true);
+  const [data, setData] = useState<CandlestickData>([]);
   const isDisposed = useRef(false);
-
-  // Cache for storing data for different intervals
-  const [dataCache, setDataCache] = useState<Record<string, CandlestickData>>(
-    {}
-  );
 
   const { data: metadata } = useListenMetadata(mint);
 
   // Calculate percentage change from the data
   const percentChange = useMemo(() => {
-    if (
-      !dataCache[selectedInterval] ||
-      dataCache[selectedInterval].length < 2
-    ) {
+    if (!data || data.length < 2) {
       return null;
     }
 
-    const sortedData = [...dataCache[selectedInterval]].sort(
-      (a, b) => a.timestamp - b.timestamp
-    );
+    const sortedData = [...data].sort((a, b) => a.timestamp - b.timestamp);
     const firstCandle = sortedData[0];
     const lastCandle = sortedData[sortedData.length - 1];
 
     const change =
       ((lastCandle.close - firstCandle.open) / firstCandle.open) * 100;
     return change;
-  }, [dataCache, selectedInterval]);
+  }, [data]);
 
   // Fetch data when mint or selected interval changes
   useEffect(() => {
@@ -217,12 +208,6 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
     const fetchData = async () => {
       if (isDisposed.current) return;
 
-      // Check if we already have cached data for this interval
-      if (dataCache[selectedInterval]) {
-        setIsLoading(false);
-        return;
-      }
-
       try {
         const response = await fetch(
           `https://api.listen-rs.com/v1/adapter/candlesticks?mint=${mint}&interval=${selectedInterval}`
@@ -230,11 +215,7 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
         const responseData = CandlestickDataSchema.parse(await response.json());
 
         if (!isDisposed.current) {
-          // Update the cache with the new data
-          setDataCache((prevCache) => ({
-            ...prevCache,
-            [selectedInterval]: responseData,
-          }));
+          setData(responseData);
           setIsLoading(false);
         }
       } catch (error) {
@@ -271,16 +252,35 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
   return (
     <div className="flex flex-col w-full h-full">
       {/* Token information and interval selection in a single row */}
-      <div className="flex items-center justify-between mb-2 p-2 bg-gray-800 rounded">
+      <div className="flex items-center justify-between mb-2 p-3 backdrop-blur-sm">
         <div className="flex items-center space-x-2">
+          {/* Add token image */}
+          {metadata?.mpl.ipfs_metadata?.image && (
+            <div className="w-8 h-8 relative rounded-full overflow-hidden">
+              <img
+                src={metadata.mpl.ipfs_metadata.image.replace(
+                  "cf-ipfs.com",
+                  "ipfs.io"
+                )}
+                alt={metadata?.mpl.symbol || "Token"}
+                className="w-full h-full object-cover"
+              />
+            </div>
+          )}
+
           {metadata?.mpl.symbol && (
-            <span className="font-bold text-white">{metadata.mpl.symbol}</span>
+            <span className="font-bold text-purple-100">
+              {metadata.mpl.symbol}
+            </span>
           )}
           {metadata?.mpl.name && (
-            <span className="text-gray-300 ml-2">{metadata.mpl.name}</span>
+            <span className="text-purple-300 ml-2">{metadata.mpl.name}</span>
           )}
           {metadata?.mint && (
-            <span className="text-xs text-gray-400 ml-2" title={metadata.mint}>
+            <span
+              className="text-xs text-purple-300/70 ml-2"
+              title={metadata.mint}
+            >
               ({formattedPubkey})
             </span>
           )}
@@ -306,8 +306,8 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
               onClick={() => handleIntervalChange(interval)}
               className={`px-2 py-1 text-xs rounded ${
                 selectedInterval === interval
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+                  ? "bg-purple-500/50 text-white hover:bg-purple-500/70"
+                  : "bg-transparent text-purple-200 hover:bg-purple-900/30"
               }`}
             >
               {interval}
@@ -319,13 +319,11 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
       {/* Chart */}
       <div className="flex-grow">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full">
+          <div className="flex items-center justify-center h-full text-purple-300">
             Loading...
           </div>
         ) : (
-          dataCache[selectedInterval] && (
-            <InnerChart data={dataCache[selectedInterval]} />
-          )
+          data && <InnerChart data={data} />
         )}
       </div>
     </div>
