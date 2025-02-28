@@ -68,7 +68,7 @@ impl RedisSubscriber {
         let handle = tokio::spawn(async move {
             let mut msg_stream = pubsub.on_message();
             let mut consecutive_errors = 0;
-            let mut last_message_time = Instant::now();
+            let last_message_time = Instant::now();
             let mut metrics_interval = tokio::time::interval(Duration::from_secs(1));
 
             while let Some(msg) = msg_stream.next().await {
