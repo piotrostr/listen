@@ -37,6 +37,8 @@ Supported to_chains:
 - arb: 42161
 - base: 8453
 
+special case: from_token_address/to_token_address for solana is just \"sol\", for ethereum (any chain) is just \"eth\"
+
 if a user hits you with a chain you cannot support, let them know
 ")]
 pub async fn get_quote(
