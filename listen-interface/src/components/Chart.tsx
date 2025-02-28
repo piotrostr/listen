@@ -227,7 +227,6 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
 
   // Subscribe to token store updates
   const latestUpdate = useTokenStore((state) => state.latestUpdate);
-  const tokenData = useTokenStore((state) => state.tokenMap.get(mint));
 
   const { data: metadata } = useListenMetadata(mint);
 
