@@ -63,14 +63,12 @@ export function TokenTile({ token, index }: TokenTileProps) {
             <div>
               <div className="font-medium">
                 <span className="inline-flex items-center text-sm sm:text-base">
-                  <a
-                    href={`https://solscan.io/address/${token.pubkey}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="hover:text-blue-500 truncate max-w-[120px] sm:max-w-none"
+                  <div
+                    className="hover:text-blue-500 truncate max-w-[120px] sm:max-w-none cursor-pointer"
+                    onClick={() => openChart(token.pubkey)}
                   >
                     {token.name}
-                  </a>
+                  </div>
                   {metadata?.mpl.symbol && (
                     <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-gray-500">
                       {metadata.mpl.symbol}

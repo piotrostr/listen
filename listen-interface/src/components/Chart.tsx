@@ -10,6 +10,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CandlestickData, CandlestickDataSchema } from "../hooks/types";
 import { useListenMetadata } from "../hooks/useListenMetadata";
 import { useTokenStore } from "../store/tokenStore";
+import { Socials } from "./Socials";
 
 // Props for the inner chart component that receives data directly
 interface InnerChartProps {
@@ -402,10 +403,10 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
     <div className="flex flex-col w-full h-full">
       {/* Token information and interval selection in a single row */}
       <div className="flex items-center justify-between mb-2 p-3 backdrop-blur-sm">
-        <div className="flex items-center space-x-2">
-          {/* Add token image */}
+        <div className="flex items-center">
+          {/* Add token image with proper spacing */}
           {metadata?.mpl.ipfs_metadata?.image && (
-            <div className="w-8 h-8 relative rounded-full overflow-hidden">
+            <div className="w-8 h-8 relative rounded-full overflow-hidden mr-3">
               <img
                 src={metadata.mpl.ipfs_metadata.image.replace(
                   "cf-ipfs.com",
@@ -416,41 +417,45 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
               />
             </div>
           )}
+          <div className="flex flex-col">
+            <div className="flex items-center space-x-2">
+              {metadata?.mpl.symbol && (
+                <span className="font-bold text-purple-100">
+                  {metadata.mpl.symbol}
+                </span>
+              )}
+              {metadata?.mpl.name && (
+                <span className="text-purple-300 ml-2 hidden lg:block">
+                  {metadata.mpl.name}
+                </span>
+              )}
+              {metadata?.mint && (
+                <span
+                  className="text-xs text-purple-300/70 ml-2 hidden lg:block"
+                  title={metadata.mint}
+                >
+                  ({formattedPubkey})
+                </span>
+              )}
 
-          {metadata?.mpl.symbol && (
-            <span className="font-bold text-purple-100">
-              {metadata.mpl.symbol}
-            </span>
-          )}
-          {metadata?.mpl.name && (
-            <span className="text-purple-300 ml-2 hidden lg:block">
-              {metadata.mpl.name}
-            </span>
-          )}
-          {metadata?.mint && (
-            <span
-              className="text-xs text-purple-300/70 ml-2 hidden lg:block"
-              title={metadata.mint}
-            >
-              ({formattedPubkey})
-            </span>
-          )}
-
-          {/* Percentage change indicator */}
-          {percentChange !== null && (
-            <span
-              className={`ml-3 font-medium ${
-                percentChange >= 0 ? "text-green-400" : "text-red-400"
-              }`}
-            >
-              {percentChange >= 0 ? "+" : ""}
-              {percentChange.toFixed(2)}%
-            </span>
-          )}
+              {/* Percentage change indicator */}
+              {percentChange !== null && (
+                <span
+                  className={`ml-3 font-medium ${
+                    percentChange >= 0 ? "text-green-400" : "text-red-400"
+                  }`}
+                >
+                  {percentChange >= 0 ? "+" : ""}
+                  {percentChange.toFixed(2)}%
+                </span>
+              )}
+            </div>
+            <Socials tokenMetadata={metadata ?? null} pubkey={mint} />
+          </div>
         </div>
 
-        {/* Interval selection - buttons for desktop, dropdown for mobile */}
-        <div className="flex space-x-1">
+        {/* Interval selection moved to the right */}
+        <div className="flex space-x-1 ml-auto">
           {/* Mobile dropdown */}
           <div className="md:hidden">
             <select
