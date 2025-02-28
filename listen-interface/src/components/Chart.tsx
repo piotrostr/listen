@@ -254,20 +254,91 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
 
       const newData = [...prevData];
       const lastCandle = newData[newData.length - 1];
-      // const timestamp = Math.floor(Date.now() / 1000); // Current timestamp in seconds
+      const currentTimestamp = Math.floor(Date.now() / 1000); // Current timestamp in seconds
 
-      const updatedCandle = {
-        ...lastCandle,
-        close: latestUpdate.price,
-        high: Math.max(lastCandle.high, latestUpdate.price),
-        low: Math.min(lastCandle.low, latestUpdate.price),
-        volume: lastCandle.volume + latestUpdate.swap_amount,
+      // Simple function to check if we need a new candle based on interval
+      const needsNewCandle = () => {
+        const lastCandleTime = new Date(lastCandle.timestamp * 1000);
+        const currentTime = new Date(currentTimestamp * 1000);
+
+        switch (selectedInterval) {
+          case "30s":
+            return (
+              Math.floor(lastCandleTime.getTime() / 30000) !==
+              Math.floor(currentTime.getTime() / 30000)
+            );
+          case "1m":
+            return (
+              lastCandleTime.getUTCMinutes() !== currentTime.getUTCMinutes() ||
+              lastCandleTime.getUTCHours() !== currentTime.getUTCHours() ||
+              lastCandleTime.getUTCDate() !== currentTime.getUTCDate()
+            );
+          case "5m":
+            return (
+              Math.floor(lastCandleTime.getUTCMinutes() / 5) !==
+                Math.floor(currentTime.getUTCMinutes() / 5) ||
+              lastCandleTime.getUTCHours() !== currentTime.getUTCHours() ||
+              lastCandleTime.getUTCDate() !== currentTime.getUTCDate()
+            );
+          case "15m":
+            return (
+              Math.floor(lastCandleTime.getUTCMinutes() / 15) !==
+                Math.floor(currentTime.getUTCMinutes() / 15) ||
+              lastCandleTime.getUTCHours() !== currentTime.getUTCHours() ||
+              lastCandleTime.getUTCDate() !== currentTime.getUTCDate()
+            );
+          case "30m":
+            return (
+              Math.floor(lastCandleTime.getUTCMinutes() / 30) !==
+                Math.floor(currentTime.getUTCMinutes() / 30) ||
+              lastCandleTime.getUTCHours() !== currentTime.getUTCHours() ||
+              lastCandleTime.getUTCDate() !== currentTime.getUTCDate()
+            );
+          case "1h":
+            return (
+              lastCandleTime.getUTCHours() !== currentTime.getUTCHours() ||
+              lastCandleTime.getUTCDate() !== currentTime.getUTCDate()
+            );
+          case "4h":
+            return (
+              Math.floor(lastCandleTime.getUTCHours() / 4) !==
+                Math.floor(currentTime.getUTCHours() / 4) ||
+              lastCandleTime.getUTCDate() !== currentTime.getUTCDate()
+            );
+          case "1d":
+            return lastCandleTime.getUTCDate() !== currentTime.getUTCDate();
+          default:
+            return false;
+        }
       };
 
-      newData[newData.length - 1] = updatedCandle;
-      return newData;
+      // Check if we need a new candle
+      if (needsNewCandle()) {
+        // Create a new candle
+        const newCandle = {
+          timestamp: currentTimestamp,
+          open: latestUpdate.price,
+          high: latestUpdate.price,
+          low: latestUpdate.price,
+          close: latestUpdate.price,
+          volume: latestUpdate.swap_amount,
+        };
+        return [...newData, newCandle];
+      } else {
+        // Update the existing candle
+        const updatedCandle = {
+          ...lastCandle,
+          close: latestUpdate.price,
+          high: Math.max(lastCandle.high, latestUpdate.price),
+          low: Math.min(lastCandle.low, latestUpdate.price),
+          volume: lastCandle.volume + latestUpdate.swap_amount,
+        };
+
+        newData[newData.length - 1] = updatedCandle;
+        return newData;
+      }
     });
-  }, [latestUpdate, mint]);
+  }, [latestUpdate, mint, selectedInterval]);
 
   // Fetch data when mint or selected interval changes
   useEffect(() => {
