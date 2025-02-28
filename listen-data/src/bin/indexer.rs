@@ -36,7 +36,7 @@ async fn main() -> Result<()> {
         tracing_subscriber::fmt()
             .with_ansi(true)
             .with_target(true)
-            .with(env_filter)
+            .with_env_filter(env_filter)
             .init();
     }
 
