@@ -3,16 +3,17 @@
 //! false if the pipeline is not complete meaning it should be evaluated
 //! again
 
-use std::{collections::HashSet, time::Instant};
+use std::{collections::HashSet, str::FromStr, time::Instant};
 
 use metrics::{counter, histogram};
+use solana_sdk::pubkey::Pubkey;
 use uuid::Uuid;
 
 use crate::{
     engine::{
         error::EngineError,
         evaluator::Evaluator,
-        pipeline::{Action, Pipeline, Status},
+        pipeline::{Action, Pipeline, PipelineStep, Status},
     },
     Engine,
 };
@@ -33,6 +34,63 @@ impl Engine {
             .iter()
             .filter(|asset| !price_cache.contains_key(*asset) && *asset != "NOW")
             .collect();
+
+        // Validate that all assets are valid Solana pubkeys
+        for asset in &needed_assets {
+            if *asset != "NOW" && !self.is_valid_solana_asset(asset) {
+                // First identify which steps use the invalid asset
+                let mut failed_steps = Vec::new();
+                let mut steps_to_cancel = Vec::new();
+
+                // Collect steps that use the invalid asset
+                for (step_id, step) in &pipeline.steps {
+                    if self.step_uses_asset(step, asset).await {
+                        failed_steps.push(*step_id);
+                        steps_to_cancel.extend(step.next_steps.clone());
+                    }
+                }
+
+                // Now mark steps as failed and collect downstream steps to cancel
+                let mut all_cancelled = Vec::new();
+                while !steps_to_cancel.is_empty() {
+                    let mut next_to_cancel = Vec::new();
+
+                    for step_id in &steps_to_cancel {
+                        if let Some(step) = pipeline.steps.get(step_id) {
+                            if !matches!(step.status, Status::Failed | Status::Cancelled) {
+                                all_cancelled.push(*step_id);
+                                next_to_cancel.extend(step.next_steps.clone());
+                            }
+                        }
+                    }
+
+                    steps_to_cancel = next_to_cancel;
+                }
+
+                // Now update all the steps
+                for step_id in failed_steps {
+                    if let Some(step) = pipeline.steps.get_mut(&step_id) {
+                        step.status = Status::Failed;
+                        step.error =
+                            Some("Only Solana assets with specific mints supported".to_string());
+                    }
+                }
+
+                for step_id in all_cancelled {
+                    if let Some(step) = pipeline.steps.get_mut(&step_id) {
+                        step.status = Status::Cancelled;
+                    }
+                }
+
+                // Mark the pipeline as failed
+                pipeline.status = Status::Failed;
+                self.redis
+                    .save_pipeline(pipeline)
+                    .await
+                    .map_err(EngineError::SavePipelineError)?;
+                return Ok(true);
+            }
+        }
 
         if !missing_assets.is_empty() {
             tracing::debug!(
@@ -160,12 +218,22 @@ impl Engine {
                         pipeline.status = Status::Failed;
                         // Cancel all downstream steps
                         let mut to_cancel = step.next_steps.clone();
+                        let mut cancelled_steps = Vec::new();
+
                         while let Some(next_step_id) = to_cancel.pop() {
-                            if let Some(next_step) = pipeline.steps.get_mut(&next_step_id) {
+                            // First collect all steps that need to be cancelled
+                            if let Some(next_step) = pipeline.steps.get(&next_step_id) {
                                 if !matches!(next_step.status, Status::Failed | Status::Cancelled) {
-                                    next_step.status = Status::Cancelled;
+                                    cancelled_steps.push(next_step_id);
                                     to_cancel.extend(next_step.next_steps.clone());
                                 }
+                            }
+                        }
+
+                        // Then update them in a separate loop to avoid multiple mutable borrows
+                        for step_id in cancelled_steps {
+                            if let Some(next_step) = pipeline.steps.get_mut(&step_id) {
+                                next_step.status = Status::Cancelled;
                             }
                         }
 
@@ -249,5 +317,18 @@ impl Engine {
 
         metrics::counter!("redis_price_fallback_misses", 1);
         None
+    }
+
+    // Helper method to check if an asset is a valid Solana pubkey
+    fn is_valid_solana_asset(&self, asset: &str) -> bool {
+        Pubkey::from_str(asset).is_ok()
+    }
+
+    // Helper method to check if a step uses a specific asset
+    async fn step_uses_asset(&self, step: &PipelineStep, asset: &str) -> bool {
+        let mut assets = HashSet::new();
+        self.collect_assets_from_condition(&step.conditions, &mut assets)
+            .await;
+        assets.contains(asset)
     }
 }
