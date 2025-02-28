@@ -1,6 +1,6 @@
 use std::sync::Arc;
-use std::sync::Mutex;
 use std::time::{Duration, Instant};
+use tokio::sync::Mutex;
 
 use anyhow::Result;
 use futures_util::StreamExt;
@@ -74,15 +74,13 @@ impl RedisSubscriber {
             while let Some(msg) = msg_stream.next().await {
                 metrics::counter!("redis_messages_received", 1);
 
-                if metrics_interval.poll_ready().is_ready() {
+                if metrics_interval.tick().await.elapsed().is_zero() {
                     metrics::gauge!(
                         "redis_subscriber_last_message_age_seconds",
                         last_message_time.elapsed().as_secs_f64()
                     );
 
-                    if let Ok(capacity) = tx.capacity() {
-                        metrics::gauge!("price_update_channel_capacity", capacity as f64);
-                    }
+                    metrics::gauge!("price_update_channel_capacity", tx.capacity() as f64);
                 }
 
                 match msg.get_payload::<String>() {
@@ -102,10 +100,10 @@ impl RedisSubscriber {
                                     Ok(_) => {
                                         metrics::counter!("price_updates_sent", 1);
                                     }
-                                    Err(e) => {
-                                        if e.is_full() {
+                                    Err(e) => match e {
+                                        tokio::sync::mpsc::error::TrySendError::Full(update) => {
                                             metrics::counter!("price_update_channel_full", 1);
-                                            if let Err(e) = tx.blocking_send(e.into_inner()) {
+                                            if let Err(e) = tx.blocking_send(update) {
                                                 error!(
                                                     "Failed to send price update (blocking): {}",
                                                     e
@@ -118,15 +116,16 @@ impl RedisSubscriber {
                                                     break;
                                                 }
                                             }
-                                        } else {
-                                            error!("Failed to send price update: {}", e);
+                                        }
+                                        tokio::sync::mpsc::error::TrySendError::Closed(e) => {
+                                            error!("Failed to send price update: {}", e.signature);
                                             metrics::counter!("price_updates_send_errors", 1);
                                             if tx.is_closed() {
                                                 error!("Channel closed, stopping subscriber task");
                                                 break;
                                             }
                                         }
-                                    }
+                                    },
                                 }
                             }
                             Err(e) => {

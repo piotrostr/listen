@@ -295,20 +295,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
 
 [[package]]
-name = "approvals"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "dotenv",
- "reqwest 0.12.12",
- "serde",
- "serde_json",
- "thiserror 2.0.11",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "arc-swap"
 version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1199,6 +1185,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "evm-approvals"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dotenv",
+ "reqwest 0.12.12",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.11",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2003,7 +2003,7 @@ dependencies = [
 
 [[package]]
 name = "lifi"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "reqwest 0.12.12",
@@ -2027,13 +2027,13 @@ dependencies = [
  "actix-cors",
  "actix-web",
  "anyhow",
- "approvals",
  "bb8-redis",
  "blockhash-cache",
  "chrono",
  "ctor",
  "dashmap",
  "dotenv",
+ "evm-approvals",
  "futures-util",
  "hex",
  "lifi",

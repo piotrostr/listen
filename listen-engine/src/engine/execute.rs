@@ -5,6 +5,7 @@ use crate::engine::{
     Engine, EngineError,
 };
 use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
+use evm_approvals::{caip2_to_chain_id, create_approval_transaction, get_allowance};
 use privy::{tx::PrivyTransaction, Privy};
 
 impl Engine {
@@ -71,20 +72,20 @@ pub async fn ensure_approvals(
     privy_transaction: &PrivyTransaction,
     privy: Arc<Privy>,
 ) -> Result<(), EngineError> {
-    let allowance = approvals::get_allowance(
+    let allowance = get_allowance(
         &order.input_token,
         &privy_transaction.address,
         spender_address,
-        approvals::caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
+        caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
     )
     .await
     .map_err(EngineError::ApprovalsError)?;
     if allowance < order.amount.parse::<u128>().unwrap() {
-        let approval_transaction = approvals::create_approval_transaction(
+        let approval_transaction = create_approval_transaction(
             &order.input_token,
             spender_address,
             &privy_transaction.address,
-            approvals::caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
+            caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
         )
         .await
         .map_err(EngineError::ApprovalsError)?;
