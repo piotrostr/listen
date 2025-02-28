@@ -17,6 +17,7 @@ ExecStart=/usr/local/bin/engine
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=listen-engine
+LogExtraFields=COMPONENT_NAME=listen-engine COMPONENT_TYPE=service
 
 [Install]
 WantedBy=multi-user.target
