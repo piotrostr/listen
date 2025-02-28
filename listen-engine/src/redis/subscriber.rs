@@ -1,4 +1,6 @@
 use std::sync::Arc;
+use std::sync::Mutex;
+use std::time::{Duration, Instant};
 
 use anyhow::Result;
 use futures_util::StreamExt;
@@ -41,6 +43,7 @@ pub enum RedisSubscriberError {
 pub struct RedisSubscriber {
     client: redis::Client,
     tx: mpsc::Sender<PriceUpdate>,
+    task_handle: Arc<Mutex<Option<tokio::task::JoinHandle<()>>>>,
 }
 
 impl RedisSubscriber {
@@ -49,7 +52,11 @@ impl RedisSubscriber {
         tx: mpsc::Sender<PriceUpdate>,
     ) -> Result<Self, RedisSubscriberError> {
         let client = redis::Client::open(redis_url)?;
-        Ok(Self { client, tx })
+        Ok(Self {
+            client,
+            tx,
+            task_handle: Arc::new(Mutex::new(None)),
+        })
     }
 
     pub async fn start_listening(&self) -> Result<(), RedisSubscriberError> {
@@ -58,28 +65,120 @@ impl RedisSubscriber {
         pubsub.subscribe("price_updates").await?;
         let tx = self.tx.clone();
 
-        tokio::spawn(async move {
+        let handle = tokio::spawn(async move {
             let mut msg_stream = pubsub.on_message();
+            let mut consecutive_errors = 0;
+            let mut last_message_time = Instant::now();
+            let mut metrics_interval = tokio::time::interval(Duration::from_secs(1));
 
             while let Some(msg) = msg_stream.next().await {
-                match msg.get_payload::<String>() {
-                    Ok(payload) => match serde_json::from_str::<PriceUpdate>(&payload) {
-                        Ok(update) => {
-                            if let Err(e) = tx.send(update).await {
-                                error!("Failed to send price update: {}", e);
-                            }
-                        }
-                        Err(e) => {
-                            error!("Failed to parse price update: {}", e);
-                        }
-                    },
-                    Err(e) => {
-                        error!("Failed to get message payload: {}", e);
+                metrics::counter!("redis_messages_received", 1);
+
+                if metrics_interval.poll_ready().is_ready() {
+                    metrics::gauge!(
+                        "redis_subscriber_last_message_age_seconds",
+                        last_message_time.elapsed().as_secs_f64()
+                    );
+
+                    if let Ok(capacity) = tx.capacity() {
+                        metrics::gauge!("price_update_channel_capacity", capacity as f64);
                     }
                 }
+
+                match msg.get_payload::<String>() {
+                    Ok(payload) => {
+                        consecutive_errors = 0;
+                        match serde_json::from_str::<PriceUpdate>(&payload) {
+                            Ok(update) => {
+                                metrics::counter!("price_updates_parsed", 1);
+                                tracing::debug!(
+                                    "Processing price update: asset={}, price={}, timestamp={}",
+                                    update.name,
+                                    update.price,
+                                    update.timestamp
+                                );
+
+                                match tx.try_send(update) {
+                                    Ok(_) => {
+                                        metrics::counter!("price_updates_sent", 1);
+                                    }
+                                    Err(e) => {
+                                        if e.is_full() {
+                                            metrics::counter!("price_update_channel_full", 1);
+                                            if let Err(e) = tx.blocking_send(e.into_inner()) {
+                                                error!(
+                                                    "Failed to send price update (blocking): {}",
+                                                    e
+                                                );
+                                                metrics::counter!("price_updates_send_errors", 1);
+                                                if tx.is_closed() {
+                                                    error!(
+                                                        "Channel closed, stopping subscriber task"
+                                                    );
+                                                    break;
+                                                }
+                                            }
+                                        } else {
+                                            error!("Failed to send price update: {}", e);
+                                            metrics::counter!("price_updates_send_errors", 1);
+                                            if tx.is_closed() {
+                                                error!("Channel closed, stopping subscriber task");
+                                                break;
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                            Err(e) => {
+                                error!("Failed to parse price update: {}", e);
+                                metrics::counter!("price_updates_parse_errors", 1);
+                                consecutive_errors += 1;
+                            }
+                        }
+                    }
+                    Err(e) => {
+                        error!("Failed to get message payload: {}", e);
+                        metrics::counter!("redis_payload_errors", 1);
+                        consecutive_errors += 1;
+                    }
+                }
+
+                if consecutive_errors > 10 {
+                    error!("Too many consecutive errors, reconnecting...");
+                    metrics::counter!("redis_reconnection_attempts", 1);
+                    break;
+                }
             }
+
+            metrics::counter!("redis_subscriber_exits", 1);
         });
 
+        let mut task_handle = self.task_handle.lock().await;
+        *task_handle = Some(handle);
+
+        Ok(())
+    }
+
+    pub async fn check_health(&self) -> bool {
+        let task_handle = self.task_handle.lock().await;
+        if let Some(handle) = &*task_handle {
+            !handle.is_finished()
+        } else {
+            false
+        }
+    }
+
+    pub async fn ensure_running(&self) -> Result<(), RedisSubscriberError> {
+        let task_handle = self.task_handle.lock().await;
+        if let Some(handle) = &*task_handle {
+            if handle.is_finished() {
+                drop(task_handle);
+                self.start_listening().await?;
+            }
+        } else {
+            drop(task_handle);
+            self.start_listening().await?;
+        }
         Ok(())
     }
 }

@@ -89,6 +89,10 @@ impl Engine {
     ) -> Result<()> {
         tracing::info!("Engine starting up");
 
+        // Add health check interval
+        let mut health_check_interval = tokio::time::interval(Duration::from_secs(60));
+        let mut last_price_update = Instant::now();
+
         let existing_pipelines = match engine.redis.get_all_pipelines().await {
             Ok(p) => {
                 tracing::info!("{} pipelines from Redis", p.len());
@@ -116,7 +120,32 @@ impl Engine {
 
         loop {
             tokio::select! {
+                _ = health_check_interval.tick() => {
+                    // Check Redis subscriber health
+                    if !engine.redis_sub.check_health().await {
+                        tracing::warn!("Redis subscriber not healthy, attempting restart");
+                        metrics::counter!("redis_subscriber_restarts", 1);
+                        if let Err(e) = engine.redis_sub.ensure_running().await {
+                            tracing::error!("Failed to restart Redis subscriber: {}", e);
+                        }
+                    }
+
+                    // Add metrics for monitoring
+                    metrics::gauge!("redis_subscriber_healthy",
+                        if engine.redis_sub.check_health().await { 1.0 } else { 0.0 });
+
+                    // Track time since last price update
+                    metrics::gauge!("engine_last_price_update_age_seconds",
+                        last_price_update.elapsed().as_secs_f64());
+
+                    // Log status if no updates for too long
+                    if last_price_update.elapsed() > Duration::from_secs(300) {
+                        tracing::warn!("No price updates received for {} seconds",
+                            last_price_update.elapsed().as_secs());
+                    }
+                }
                 Some(msg) = command_rx.recv() => {
+                    metrics::counter!("engine_commands_received", 1);
                     tracing::debug!("Received engine message: {:?}", msg);
                     match msg {
                         EngineMessage::AddPipeline { pipeline, response_tx } => {
@@ -148,8 +177,11 @@ impl Engine {
                     }
                 }
                 Some(price_update) = receiver.recv() => {
+                    last_price_update = Instant::now();
+                    metrics::counter!("engine_price_updates_received", 1);
                     if let Err(e) = engine.handle_price_update(&price_update.pubkey, price_update.price, price_update.slot).await {
                         tracing::error!("Error handling price update: {}", e);
+                        metrics::counter!("engine_price_update_errors", 1);
                     }
                 }
                 else => break
@@ -207,7 +239,6 @@ impl Engine {
                     let can_process = {
                         let mut processing = self_clone.processing_pipelines.lock().await;
                         if processing.contains(&pipeline_id) {
-                            tracing::warn!("Pipeline {} already being processed", pipeline_id);
                             false
                         } else {
                             processing.insert(pipeline_id.clone());
