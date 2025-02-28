@@ -15,6 +15,10 @@ EnvironmentFile=/etc/listen-engine/environment
 WorkingDirectory=/opt/listen-engine
 ExecStart=/usr/local/bin/engine
 
+# Make sure the directory exists before starting the service
+ExecStartPre=/bin/mkdir -p /var/log/listen-engine
+ExecStartPre=/bin/chown listen-engine:listen-engine /var/log/listen-engine
+
 StandardOutput=append:/var/log/listen-engine/output.log
 StandardError=append:/var/log/listen-engine/error.log
 
