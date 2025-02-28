@@ -11,5 +11,5 @@ pub mod websocket;
 fn init() {
     dotenv::dotenv().ok();
     std::env::set_var("RUST_LOG", "debug");
-    let _ = tracing_subscriber::fmt::try_init();
+    listen_tracing::setup_tracing();
 }

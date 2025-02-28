@@ -1,6 +1,7 @@
 use actix_cors::Cors;
 use actix_web::{middleware::Logger, web, App, HttpServer};
 use dotenv::dotenv;
+use listen_tracing::setup_tracing;
 use tracing::info;
 
 use listen_adapter::{
@@ -16,7 +17,7 @@ use listen_adapter::{
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     dotenv().ok();
-    tracing_subscriber::fmt::init();
+    setup_tracing();
 
     let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
     let host = std::env::var("HOST").unwrap_or_else(|_| "0.0.0.0".to_string());

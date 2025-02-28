@@ -1,0 +1,11 @@
+[package]
+name = "listen-tracing"
+version = "0.1.0"
+edition = "2021"
+description = "systemd-compat tracing setup"
+license = "MIT"
+
+[dependencies]
+tracing-journald = "0.3.1"
+tracing = "0.1.41"
+tracing-subscriber = { version = "0.3.19", features = ["env-filter"] }

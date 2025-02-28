@@ -55,4 +55,58 @@ pub fn init_metrics() {
         "Time taken to evaluate pipelines"
     );
     metrics::describe_gauge!("active_pipelines", "Number of active pipelines");
+    metrics::describe_gauge!(
+        "redis_subscriber_healthy",
+        "Whether the Redis subscriber is running"
+    );
+    metrics::describe_counter!(
+        "redis_reconnection_attempts",
+        "Number of times the Redis subscriber attempted to reconnect"
+    );
+    metrics::describe_counter!(
+        "price_updates_received",
+        "Number of price updates received from Redis"
+    );
+    metrics::describe_counter!(
+        "price_updates_parse_errors",
+        "Number of price update parsing errors"
+    );
+
+    // New detailed Redis subscriber metrics
+    metrics::describe_counter!(
+        "redis_messages_received",
+        "Number of raw messages received from Redis"
+    );
+    metrics::describe_counter!(
+        "price_updates_parsed",
+        "Number of price updates successfully parsed"
+    );
+    metrics::describe_counter!(
+        "price_updates_sent",
+        "Number of price updates sent to channel"
+    );
+    metrics::describe_counter!(
+        "price_update_channel_full",
+        "Number of times the price update channel was full"
+    );
+    metrics::describe_counter!(
+        "price_updates_send_errors",
+        "Number of errors sending price updates"
+    );
+    metrics::describe_counter!(
+        "redis_payload_errors",
+        "Number of Redis payload parsing errors"
+    );
+    metrics::describe_counter!(
+        "redis_subscriber_exits",
+        "Number of times the Redis subscriber task has exited"
+    );
+    metrics::describe_gauge!(
+        "redis_subscriber_last_message_age_seconds",
+        "Seconds since last message was received"
+    );
+    metrics::describe_gauge!(
+        "price_update_channel_capacity",
+        "Available capacity in the price update channel"
+    );
 }

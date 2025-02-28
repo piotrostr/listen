@@ -1,6 +1,6 @@
 // TODO! this should be a listen-redis create (the base) and each tenant can add
 // their own commands to proc
-use crate::engine::pipeline::Pipeline;
+use crate::{engine::pipeline::Pipeline, redis::subscriber::PriceUpdate};
 use anyhow::Result;
 use bb8_redis::{
     bb8::{self, PooledConnection},
@@ -8,11 +8,8 @@ use bb8_redis::{
     RedisConnectionManager,
 };
 use serde::{de::DeserializeOwned, Serialize};
-use std::collections::HashSet;
 use std::sync::Arc;
-use tracing::{debug, warn};
-
-const PIPELINE_BATCH_SIZE: usize = 1000;
+use tracing::warn;
 
 pub struct RedisClient {
     pool: bb8::Pool<RedisConnectionManager>,
@@ -30,6 +27,8 @@ pub enum RedisClientError {
     DeserializeError(serde_json::Error),
     #[error("[Redis] Redis error: {0}")]
     RedisError(bb8_redis::redis::RedisError),
+    #[error("[Redis] Key not found: {0}")]
+    KeyNotFound(String),
 }
 
 impl RedisClient {
@@ -192,29 +191,6 @@ impl RedisClient {
         Ok(pipelines)
     }
 
-    pub async fn save_all_pipelines(
-        &self,
-        user_id: &str,
-        pipelines: &[Pipeline],
-    ) -> Result<(), RedisClientError> {
-        let mut conn = self.pool.get().await?;
-
-        for chunk in pipelines.chunks(PIPELINE_BATCH_SIZE) {
-            let mut pipe = pipe();
-
-            for pipeline in chunk {
-                let key = format!("pipeline:{}:{}", user_id, pipeline.id);
-                let value = serde_json::to_string(pipeline)?;
-                pipe.set(key, value);
-            }
-
-            let _: () = pipe.query_async(&mut *conn).await?;
-            debug!("Saved batch of {} pipelines", chunk.len());
-        }
-
-        Ok(())
-    }
-
     pub async fn delete_pipeline(&self, user_id: &str, id: &str) -> Result<(), RedisClientError> {
         let mut conn = self.pool.get().await?;
         let _: () = cmd("DEL")
@@ -222,49 +198,6 @@ impl RedisClient {
             .query_async(&mut *conn)
             .await?;
         Ok(())
-    }
-
-    pub async fn register_pipeline_subscription(
-        &self,
-        pipeline_id: &str,
-        asset_id: &str,
-    ) -> Result<(), RedisClientError> {
-        let mut conn = self.get_connection().await?;
-        let _: () = cmd("SADD")
-            .arg(format!("asset_subscriptions:{}", asset_id))
-            .arg(pipeline_id)
-            .query_async(&mut *conn)
-            .await
-            .map_err(RedisClientError::RedisError)?;
-        Ok(())
-    }
-
-    pub async fn unregister_pipeline_subscription(
-        &self,
-        pipeline_id: &str,
-        asset_id: &str,
-    ) -> Result<(), RedisClientError> {
-        let mut conn = self.get_connection().await?;
-        let _: () = cmd("SREM")
-            .arg(format!("asset_subscriptions:{}", asset_id))
-            .arg(pipeline_id)
-            .query_async(&mut *conn)
-            .await
-            .map_err(RedisClientError::RedisError)?;
-        Ok(())
-    }
-
-    pub async fn get_pipeline_subscriptions(
-        &self,
-        asset_id: &str,
-    ) -> Result<HashSet<String>, RedisClientError> {
-        let mut conn = self.get_connection().await?;
-        let members: HashSet<String> = cmd("SMEMBERS")
-            .arg(format!("asset_subscriptions:{}", asset_id))
-            .query_async(&mut *conn)
-            .await
-            .map_err(RedisClientError::RedisError)?;
-        Ok(members)
     }
 
     pub async fn execute_redis_pipe(
@@ -286,6 +219,15 @@ impl RedisClient {
         }
 
         Ok(pipelines)
+    }
+
+    pub async fn get_price(&self, asset: &str) -> Result<f64, RedisClientError> {
+        let price_key = format!("solana:price:{}", asset);
+        let price: Option<PriceUpdate> = self.get(&price_key).await?;
+        match price {
+            Some(price) => Ok(price.price),
+            None => Err(RedisClientError::KeyNotFound(price_key)),
+        }
     }
 }
 

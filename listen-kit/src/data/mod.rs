@@ -112,9 +112,7 @@ pub async fn fetch_candlesticks(
 ) -> Result<Vec<Candlestick>> {
     // Validate interval
     match interval.as_str() {
-        "15s" | "30s" | "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d" => {
-            ()
-        }
+        "15s" | "30s" | "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d" => {}
         _ => return Err(anyhow!("Invalid interval: {}", interval)),
     }
 

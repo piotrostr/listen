@@ -36,8 +36,8 @@ serde_json = "1.0.138"
 mpl-token-metadata = "5.1.0"
 spl-token = "5.0.2"
 clap = { version = "4.5.28", features = ["derive"] }
-tracing-subscriber = "0.3.19"
 tracing = "0.1.41"
+listen-tracing = { path = "../listen-tracing" }
 chrono = "0.4.39"
 futures-util = "0.3.30"
 url = "2.5.4"
@@ -55,6 +55,7 @@ yellowstone-grpc-proto = { version = "=2.0.0", git = "https://github.com/rpcpool
 clickhouse = { version = "0.13.1", features = ["native-tls", "inserter"] }
 bb8-redis = "0.20.0"
 thiserror = "2.0.11"
+tracing-subscriber = "0.3.19"
 
 
 [patch.crates-io.curve25519-dalek]

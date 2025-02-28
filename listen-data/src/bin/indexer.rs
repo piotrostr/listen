@@ -13,8 +13,8 @@ pub struct Args {}
 
 #[tokio::main]
 async fn main() -> Result<()> {
-    tracing_subscriber::fmt().init();
-    if std::env::var("IS_SYSTEMD_SERVICE").is_err() {
+    listen_tracing::setup_tracing();
+    if !std::env::var("IS_SYSTEMD_SERVICE").is_ok() {
         dotenv::dotenv().expect("Failed to load .env file");
     }
     info!("Starting geyser indexer...");

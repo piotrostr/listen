@@ -1060,20 +1060,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "34ac096ce696dc2fcabef30516bb13c0a68a11d30131d3df6f04711467681b04"
 
 [[package]]
-name = "approvals"
-version = "0.1.0"
-dependencies = [
- "anyhow",
- "dotenv",
- "reqwest 0.12.12",
- "serde",
- "serde_json",
- "thiserror 2.0.11",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
 name = "arc-swap"
 version = "1.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2680,6 +2666,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "evm-approvals"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "dotenv",
+ "reqwest 0.12.12",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.11",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "fastrand"
 version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3805,7 +3805,7 @@ dependencies = [
 
 [[package]]
 name = "lifi"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "reqwest 0.12.12",
@@ -3831,7 +3831,6 @@ dependencies = [
  "actix-web-lab",
  "alloy",
  "anyhow",
- "approvals",
  "async-trait",
  "base64 0.22.1",
  "bincode",
@@ -3841,11 +3840,13 @@ dependencies = [
  "ctor",
  "dotenv",
  "env_logger",
+ "evm-approvals",
  "futures",
  "futures-util",
  "hex",
  "jsonwebtoken",
  "lifi",
+ "listen-tracing",
  "log",
  "once_cell",
  "privy",
@@ -3868,9 +3869,17 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tracing",
- "tracing-subscriber",
  "uniswap-sdk-core",
  "uniswap-v3-sdk",
+]
+
+[[package]]
+name = "listen-tracing"
+version = "0.1.0"
+dependencies = [
+ "tracing",
+ "tracing-journald",
+ "tracing-subscriber",
 ]
 
 [[package]]
@@ -4562,7 +4571,7 @@ dependencies = [
 
 [[package]]
 name = "privy"
-version = "0.5.0"
+version = "0.6.0"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -8184,6 +8193,17 @@ checksum = "e672c95779cf947c5311f83787af4fa8fffd12fb27e4993211a84bdfd9610f9c"
 dependencies = [
  "once_cell",
  "valuable",
+]
+
+[[package]]
+name = "tracing-journald"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fc0b4143302cf1022dac868d521e36e8b27691f72c84b3311750d5188ebba657"
+dependencies = [
+ "libc",
+ "tracing-core",
+ "tracing-subscriber",
 ]
 
 [[package]]

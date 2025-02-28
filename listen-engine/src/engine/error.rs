@@ -53,5 +53,5 @@ pub enum EngineError {
     InjectBlockhashError(anyhow::Error),
 
     #[error("[Engine] Approvals error: {0}")]
-    ApprovalsError(approvals::ApprovalsError),
+    ApprovalsError(evm_approvals::ApprovalsError),
 }

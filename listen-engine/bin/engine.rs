@@ -1,10 +1,8 @@
+use listen_tracing::setup_tracing;
+
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    tracing_subscriber::fmt::init();
-    if std::env::var("IS_SYSTEMD_SERVICE").is_err() {
-        dotenv::dotenv().ok();
-    }
-    listen_engine::metrics::init_metrics();
+    setup_tracing();
 
     tracing::info!("Starting listen-engine...");
 
