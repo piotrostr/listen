@@ -5,7 +5,7 @@ import {
   HistogramSeries,
   UTCTimestamp,
 } from "lightweight-charts";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CandlestickData, CandlestickDataSchema } from "../hooks/types";
 
 // Props for the inner chart component that receives data directly
@@ -16,8 +16,14 @@ interface InnerChartProps {
 // Props for the outer chart component that can either fetch or receive data
 export interface ChartProps {
   mint: string;
-  interval?: "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d";
+  interval?: "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d" | "30s";
+  name?: string;
+  symbol?: string;
+  pubkey?: string;
 }
+
+// Available time intervals for the chart
+const INTERVALS = ["30s", "1m", "5m", "15m", "30m", "1h", "4h", "1d"] as const;
 
 // Add TradingView color constants
 const TV_COLORS = {
@@ -168,28 +174,56 @@ export function InnerChart({ data }: InnerChartProps) {
   );
 }
 
-export function Chart({ mint, interval = "1m" }: ChartProps) {
-  const [fetchedData, setFetchedData] = useState<CandlestickData | null>(null);
+export function Chart({
+  mint,
+  interval: defaultInterval = "30s",
+  name,
+  symbol,
+  pubkey,
+}: ChartProps) {
+  // State to track the currently selected interval
+  const [selectedInterval, setSelectedInterval] =
+    useState<(typeof INTERVALS)[number]>(defaultInterval);
+  const [isLoading, setIsLoading] = useState(true);
   const isDisposed = useRef(false);
 
+  // Cache for storing data for different intervals
+  const [dataCache, setDataCache] = useState<Record<string, CandlestickData>>(
+    {}
+  );
+
+  // Fetch data when mint or selected interval changes
   useEffect(() => {
     isDisposed.current = false;
+    setIsLoading(true);
 
     const fetchData = async () => {
       if (isDisposed.current) return;
 
+      // Check if we already have cached data for this interval
+      if (dataCache[selectedInterval]) {
+        setIsLoading(false);
+        return;
+      }
+
       try {
         const response = await fetch(
-          `https://api.listen-rs.com/v1/adapter/candlesticks?mint=${mint}&interval=${interval}`
+          `https://api.listen-rs.com/v1/adapter/candlesticks?mint=${mint}&interval=${selectedInterval}`
         );
         const responseData = CandlestickDataSchema.parse(await response.json());
 
         if (!isDisposed.current) {
-          setFetchedData(responseData);
+          // Update the cache with the new data
+          setDataCache((prevCache) => ({
+            ...prevCache,
+            [selectedInterval]: responseData,
+          }));
+          setIsLoading(false);
         }
       } catch (error) {
         if (!isDisposed.current) {
           console.error("Failed to fetch chart data:", error);
+          setIsLoading(false);
         }
       }
     };
@@ -199,11 +233,70 @@ export function Chart({ mint, interval = "1m" }: ChartProps) {
     return () => {
       isDisposed.current = true;
     };
-  }, [mint, interval]);
+  }, [mint, selectedInterval]);
 
-  if (!fetchedData) {
-    return <div>Loading...</div>; // You might want to add a proper loading state
-  }
+  // Handle interval change
+  const handleIntervalChange = useCallback(
+    (interval: (typeof INTERVALS)[number]) => {
+      setSelectedInterval(interval);
+    },
+    []
+  );
 
-  return <InnerChart data={fetchedData} />;
+  // Format pubkey for display
+  const formattedPubkey = useMemo(() => {
+    if (!pubkey) return "";
+    return pubkey.length > 12
+      ? `${pubkey.slice(0, 6)}...${pubkey.slice(-6)}`
+      : pubkey;
+  }, [pubkey]);
+
+  return (
+    <div className="flex flex-col w-full h-full">
+      {/* Token information */}
+      {(name || symbol || pubkey) && (
+        <div className="flex items-center justify-between mb-2 p-2 bg-gray-800 rounded">
+          <div className="flex items-center space-x-2">
+            {symbol && <span className="font-bold">{symbol}</span>}
+            {name && <span className="text-gray-400">{name}</span>}
+            {pubkey && (
+              <span className="text-xs text-gray-500" title={pubkey}>
+                {formattedPubkey}
+              </span>
+            )}
+          </div>
+        </div>
+      )}
+
+      {/* Interval selection buttons */}
+      <div className="flex space-x-1 mb-2">
+        {INTERVALS.map((interval) => (
+          <button
+            key={interval}
+            onClick={() => handleIntervalChange(interval)}
+            className={`px-2 py-1 text-xs rounded ${
+              selectedInterval === interval
+                ? "bg-blue-600 text-white"
+                : "bg-gray-700 text-gray-300 hover:bg-gray-600"
+            }`}
+          >
+            {interval}
+          </button>
+        ))}
+      </div>
+
+      {/* Chart */}
+      <div className="flex-grow">
+        {isLoading ? (
+          <div className="flex items-center justify-center h-full">
+            Loading...
+          </div>
+        ) : (
+          dataCache[selectedInterval] && (
+            <InnerChart data={dataCache[selectedInterval]} />
+          )
+        )}
+      </div>
+    </div>
+  );
 }
