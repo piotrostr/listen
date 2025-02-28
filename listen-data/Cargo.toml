@@ -55,6 +55,7 @@ yellowstone-grpc-proto = { version = "=2.0.0", git = "https://github.com/rpcpool
 clickhouse = { version = "0.13.1", features = ["native-tls", "inserter"] }
 bb8-redis = "0.20.0"
 thiserror = "2.0.11"
+tracing-journald = "0.3.1"
 
 
 [patch.crates-io.curve25519-dalek]
