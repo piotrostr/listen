@@ -3846,6 +3846,7 @@ dependencies = [
  "hex",
  "jsonwebtoken",
  "lifi",
+ "listen-tracing",
  "log",
  "once_cell",
  "privy",
@@ -3868,10 +3869,17 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tracing",
- "tracing-journald",
- "tracing-subscriber",
  "uniswap-sdk-core",
  "uniswap-v3-sdk",
+]
+
+[[package]]
+name = "listen-tracing"
+version = "0.1.0"
+dependencies = [
+ "tracing",
+ "tracing-journald",
+ "tracing-subscriber",
 ]
 
 [[package]]
