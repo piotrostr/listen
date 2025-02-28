@@ -275,7 +275,12 @@ impl Engine {
                                     }
                                 }
                                 Err(e) => {
-                                    tracing::error!(?pipeline_id, ?asset, ?e);
+                                    tracing::error!(
+                                        ?pipeline_id,
+                                        ?asset,
+                                        ?e,
+                                        "Pipeline evaluation error"
+                                    );
                                 }
                             }
 
