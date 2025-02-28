@@ -14,9 +14,8 @@ EnvironmentFile=/etc/listen-engine/environment
 WorkingDirectory=/opt/listen-engine
 ExecStart=/usr/local/bin/engine
 
-# Configure logging to both file and journal
-StandardOutput=append:/var/log/listen-engine/service.log+journal+console
-StandardError=append:/var/log/listen-engine/error.log+journal+console
+StandardOutput=append:/var/log/listen-engine/service.log
+StandardError=append:/var/log/listen-engine/service.log
 SyslogIdentifier=listen-engine
 
 [Install]
