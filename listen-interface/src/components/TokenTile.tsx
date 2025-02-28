@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { FaCheck, FaGlobe, FaTelegram, FaXTwitter } from "react-icons/fa6";
 import { IoBarChart } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
+import { useListenMetadata } from "../hooks/useListenMetadata";
 import { TokenMarketData, TokenMetadataRaw } from "../types/metadata";
 
 interface TokenTileProps {
@@ -99,7 +100,7 @@ const CopyIcon = () => (
 
 export function TokenTile({ token, index }: TokenTileProps) {
   const { openChart } = useModal();
-  const [metadata, setMetadata] = useState<TokenMetadataRaw | null>(null);
+  const { data: metadata } = useListenMetadata(token.pubkey);
   const [copied, setCopied] = useState(false);
 
   useEffect(() => {
@@ -112,22 +113,6 @@ export function TokenTile({ token, index }: TokenTileProps) {
     navigator.clipboard.writeText(token.pubkey);
     setCopied(true);
   };
-
-  useEffect(() => {
-    fetch(`https://api.listen-rs.com/v1/adapter/metadata?mint=${token.pubkey}`)
-      .then(async (res) => {
-        if (!res.ok) {
-          const text = await res.text();
-          console.log(text);
-          throw new Error(text || res.statusText);
-        }
-        return res.json();
-      })
-      .then((data) => setMetadata(data))
-      .catch((err) => {
-        console.error("Failed to fetch metadata:", err);
-      });
-  }, [token.pubkey]);
 
   return (
     <div>
@@ -188,7 +173,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
               </div>
               <div className="block">
                 <Socials
-                  tokenMetadata={metadata}
+                  tokenMetadata={metadata ?? null}
                   pubkey={token.pubkey}
                   openChart={openChart}
                 />
