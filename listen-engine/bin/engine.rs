@@ -1,8 +1,15 @@
 #[tokio::main]
 async fn main() -> std::io::Result<()> {
-    tracing_subscriber::fmt::init();
+    // Replace the basic init with a custom configuration
+    let is_systemd = std::env::var("IS_SYSTEMD_SERVICE").is_ok();
 
-    if std::env::var("IS_SYSTEMD_SERVICE").is_err() {
+    // Configure tracing with ANSI colors disabled for systemd
+    tracing_subscriber::fmt()
+        .with_ansi(!is_systemd) // Disable ANSI colors when running as systemd service
+        .with_target(true)
+        .init();
+
+    if !is_systemd {
         dotenv::dotenv().ok();
     }
     listen_engine::metrics::init_metrics();
