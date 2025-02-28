@@ -7,6 +7,7 @@ import {
 } from "lightweight-charts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CandlestickData, CandlestickDataSchema } from "../hooks/types";
+import { useListenMetadata } from "../hooks/useListenMetadata";
 
 // Props for the inner chart component that receives data directly
 interface InnerChartProps {
@@ -174,13 +175,7 @@ export function InnerChart({ data }: InnerChartProps) {
   );
 }
 
-export function Chart({
-  mint,
-  interval: defaultInterval = "30s",
-  name,
-  symbol,
-  pubkey,
-}: ChartProps) {
+export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
   // State to track the currently selected interval
   const [selectedInterval, setSelectedInterval] =
     useState<(typeof INTERVALS)[number]>(defaultInterval);
@@ -191,6 +186,8 @@ export function Chart({
   const [dataCache, setDataCache] = useState<Record<string, CandlestickData>>(
     {}
   );
+
+  const { data: metadata } = useListenMetadata(mint);
 
   // Fetch data when mint or selected interval changes
   useEffect(() => {
@@ -245,22 +242,26 @@ export function Chart({
 
   // Format pubkey for display
   const formattedPubkey = useMemo(() => {
-    if (!pubkey) return "";
-    return pubkey.length > 12
-      ? `${pubkey.slice(0, 6)}...${pubkey.slice(-6)}`
-      : pubkey;
-  }, [pubkey]);
+    if (!metadata?.mint) return "";
+    return metadata.mint.length > 12
+      ? `${metadata.mint.slice(0, 6)}...${metadata.mint.slice(-6)}`
+      : metadata.mint;
+  }, [metadata]);
 
   return (
     <div className="flex flex-col w-full h-full">
       {/* Token information */}
-      {(name || symbol || pubkey) && (
+      {metadata && (
         <div className="flex items-center justify-between mb-2 p-2 bg-gray-800 rounded">
           <div className="flex items-center space-x-2">
-            {symbol && <span className="font-bold">{symbol}</span>}
-            {name && <span className="text-gray-400">{name}</span>}
-            {pubkey && (
-              <span className="text-xs text-gray-500" title={pubkey}>
+            {metadata.mpl.symbol && (
+              <span className="font-bold">{metadata.mpl.symbol}</span>
+            )}
+            {metadata.mpl.name && (
+              <span className="text-gray-400">{metadata.mpl.name}</span>
+            )}
+            {metadata.mint && (
+              <span className="text-xs text-gray-500" title={metadata.mint}>
                 {formattedPubkey}
               </span>
             )}
