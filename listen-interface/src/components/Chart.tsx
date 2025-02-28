@@ -3,11 +3,13 @@ import {
   ColorType,
   createChart,
   HistogramSeries,
+  ISeriesApi,
   UTCTimestamp,
 } from "lightweight-charts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { CandlestickData, CandlestickDataSchema } from "../hooks/types";
 import { useListenMetadata } from "../hooks/useListenMetadata";
+import { useTokenStore } from "../store/tokenStore";
 
 // Props for the inner chart component that receives data directly
 interface InnerChartProps {
@@ -37,7 +39,10 @@ const TV_COLORS = {
 export function InnerChart({ data }: InnerChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ReturnType<typeof createChart>>(null);
+  const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
+  const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const isDisposed = useRef(false);
+  const lastDataRef = useRef<CandlestickData>([]);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -81,6 +86,8 @@ export function InnerChart({ data }: InnerChartProps) {
       borderVisible: false,
     });
 
+    candlestickSeriesRef.current = candlestickSeries;
+
     candlestickSeries.priceScale().applyOptions({
       scaleMargins: {
         top: 0.1, // highest point of the series will be 10% away from the top
@@ -95,6 +102,8 @@ export function InnerChart({ data }: InnerChartProps) {
       },
     });
 
+    volumeSeriesRef.current = volumeSeries;
+
     volumeSeries.priceScale().applyOptions({
       scaleMargins: {
         top: 0.7,
@@ -102,29 +111,29 @@ export function InnerChart({ data }: InnerChartProps) {
       },
     });
 
-    // Sort and process the data
-    const sortedData = data.sort((a, b) => a.timestamp - b.timestamp);
-    const filteredData = sortedData;
+    // Save the initial data
+    lastDataRef.current = data;
 
-    const candleData = filteredData.map((d) => ({
-      time: d.timestamp as UTCTimestamp,
-      open: d.open,
-      high: d.high,
-      low: d.low,
-      close: d.close,
-    }));
+    // Initial data loading - important to use the correct timestamp format
+    if (data.length > 0) {
+      const formattedData = data.map((d) => ({
+        time: d.timestamp as UTCTimestamp,
+        open: d.open,
+        high: d.high,
+        low: d.low,
+        close: d.close,
+      }));
 
-    const volumeData = filteredData.map((d) => ({
-      time: d.timestamp as UTCTimestamp,
-      value: d.volume,
-      color:
-        d.close >= d.open
-          ? TV_COLORS.GREEN_TRANSPARENT
-          : TV_COLORS.RED_TRANSPARENT,
-    }));
+      const volumeData = data.map((d) => ({
+        time: d.timestamp as UTCTimestamp,
+        value: d.volume,
+        color:
+          d.close >= d.open
+            ? TV_COLORS.GREEN_TRANSPARENT
+            : TV_COLORS.RED_TRANSPARENT,
+      }));
 
-    if (candleData.length > 0 && !isDisposed.current) {
-      candlestickSeries.setData(candleData);
+      candlestickSeries.setData(formattedData);
       volumeSeries.setData(volumeData);
 
       // Set a wider visible range
@@ -137,7 +146,7 @@ export function InnerChart({ data }: InnerChartProps) {
       timeScale.fitContent();
 
       // Add padding on both sides by showing a subset of the total range
-      const totalBars = candleData.length;
+      const totalBars = formattedData.length;
       timeScale.setVisibleLogicalRange({
         from: -5, // Show 5 bars worth of space on the left
         to: totalBars + 5, // Show 5 bars worth of space on the right (in addition to rightOffset)
@@ -164,6 +173,38 @@ export function InnerChart({ data }: InnerChartProps) {
       window.removeEventListener("resize", handleResize);
       chart.remove();
     };
+  }, []); // Only on mount
+
+  useEffect(() => {
+    if (
+      isDisposed.current ||
+      !data.length ||
+      !candlestickSeriesRef.current ||
+      !volumeSeriesRef.current
+    )
+      return;
+
+    // Just get the newest candle to update
+    const sortedData = [...data].sort((a, b) => b.timestamp - a.timestamp);
+    const newestCandle = sortedData[0];
+
+    // Update with the latest candle
+    candlestickSeriesRef.current.update({
+      time: newestCandle.timestamp as UTCTimestamp,
+      open: newestCandle.open,
+      high: newestCandle.high,
+      low: newestCandle.low,
+      close: newestCandle.close,
+    });
+
+    volumeSeriesRef.current.update({
+      time: newestCandle.timestamp as UTCTimestamp,
+      value: newestCandle.volume,
+      color:
+        newestCandle.close >= newestCandle.open
+          ? TV_COLORS.GREEN_TRANSPARENT
+          : TV_COLORS.RED_TRANSPARENT,
+    });
   }, [data]);
 
   return (
@@ -183,9 +224,12 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
   const [data, setData] = useState<CandlestickData>([]);
   const isDisposed = useRef(false);
 
+  // Subscribe to token store updates
+  const latestUpdate = useTokenStore((state) => state.latestUpdate);
+  const tokenData = useTokenStore((state) => state.tokenMap.get(mint));
+
   const { data: metadata } = useListenMetadata(mint);
 
-  // Calculate percentage change from the data
   const percentChange = useMemo(() => {
     if (!data || data.length < 2) {
       return null;
@@ -199,6 +243,31 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
       ((lastCandle.close - firstCandle.open) / firstCandle.open) * 100;
     return change;
   }, [data]);
+
+  useEffect(() => {
+    if (!latestUpdate || isDisposed.current || latestUpdate.pubkey !== mint) {
+      return;
+    }
+
+    setData((prevData) => {
+      if (!prevData.length) return prevData;
+
+      const newData = [...prevData];
+      const lastCandle = newData[newData.length - 1];
+      // const timestamp = Math.floor(Date.now() / 1000); // Current timestamp in seconds
+
+      const updatedCandle = {
+        ...lastCandle,
+        close: latestUpdate.price,
+        high: Math.max(lastCandle.high, latestUpdate.price),
+        low: Math.min(lastCandle.low, latestUpdate.price),
+        volume: lastCandle.volume + latestUpdate.swap_amount,
+      };
+
+      newData[newData.length - 1] = updatedCandle;
+      return newData;
+    });
+  }, [latestUpdate, mint]);
 
   // Fetch data when mint or selected interval changes
   useEffect(() => {
