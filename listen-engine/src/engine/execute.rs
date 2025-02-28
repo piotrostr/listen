@@ -29,38 +29,44 @@ impl Engine {
             evm_transaction: None,
             solana_transaction: None,
         };
+        let lifi_api_key: Option<String> = match std::env::var("LIFI_API_KEY") {
+            Ok(val) => Some(val),
+            Err(_) => None,
+        };
 
-        let transaction_result =
-            match swap_order_to_transaction(order, &lifi::LiFi::new(None), wallet_address, pubkey)
-                .await
-                .map_err(EngineError::SwapOrderError)?
-            {
-                SwapOrderTransaction::Evm(transaction) => {
-                    let spender_address = transaction["to"].as_str().unwrap();
-                    ensure_approvals(
-                        spender_address,
-                        order,
-                        &privy_transaction,
-                        self.privy.clone(),
-                    )
-                    .await?;
-                    privy_transaction.evm_transaction = Some(transaction);
-                    self.privy.execute_transaction(privy_transaction).await
-                }
-                SwapOrderTransaction::Solana(transaction) => {
-                    let latest_blockhash = BLOCKHASH_CACHE
-                        .get_blockhash()
-                        .await
-                        .map_err(EngineError::BlockhashCacheError)?;
-                    let fresh_blockhash_tx = inject_blockhash_into_encoded_tx(
-                        &transaction,
-                        &latest_blockhash.to_string(),
-                    )
-                    .map_err(EngineError::InjectBlockhashError)?;
-                    privy_transaction.solana_transaction = Some(fresh_blockhash_tx);
-                    self.privy.execute_transaction(privy_transaction).await
-                }
-            };
+        let transaction_result = match swap_order_to_transaction(
+            order,
+            &lifi::LiFi::new(lifi_api_key),
+            wallet_address,
+            pubkey,
+        )
+        .await
+        .map_err(EngineError::SwapOrderError)?
+        {
+            SwapOrderTransaction::Evm(transaction) => {
+                let spender_address = transaction["to"].as_str().unwrap();
+                ensure_approvals(
+                    spender_address,
+                    order,
+                    &privy_transaction,
+                    self.privy.clone(),
+                )
+                .await?;
+                privy_transaction.evm_transaction = Some(transaction);
+                self.privy.execute_transaction(privy_transaction).await
+            }
+            SwapOrderTransaction::Solana(transaction) => {
+                let latest_blockhash = BLOCKHASH_CACHE
+                    .get_blockhash()
+                    .await
+                    .map_err(EngineError::BlockhashCacheError)?;
+                let fresh_blockhash_tx =
+                    inject_blockhash_into_encoded_tx(&transaction, &latest_blockhash.to_string())
+                        .map_err(EngineError::InjectBlockhashError)?;
+                privy_transaction.solana_transaction = Some(fresh_blockhash_tx);
+                self.privy.execute_transaction(privy_transaction).await
+            }
+        };
 
         transaction_result.map_err(EngineError::TransactionError)
     }

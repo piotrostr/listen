@@ -49,7 +49,11 @@ pub async fn get_quote(
     to_chain: String,
 ) -> Result<serde_json::Value> {
     let signer = SignerContext::current().await;
-    let lifi = LiFi::new(None);
+    let lifi_api_key: Option<String> = match std::env::var("LIFI_API_KEY") {
+        Ok(val) => Some(val),
+        Err(_) => None,
+    };
+    let lifi = LiFi::new(lifi_api_key);
 
     let from_address = if from_chain == "1151111081099710"
         || from_chain.to_lowercase() == "sol"
@@ -126,7 +130,11 @@ pub async fn swap(
     to_chain: String,
 ) -> Result<String> {
     let signer = SignerContext::current().await;
-    let lifi = LiFi::new(None);
+    let lifi_api_key: Option<String> = match std::env::var("LIFI_API_KEY") {
+        Ok(val) => Some(val),
+        Err(_) => None,
+    };
+    let lifi = LiFi::new(lifi_api_key);
 
     let from_address = if from_chain == "1151111081099710"
         || from_chain.to_lowercase() == "sol"

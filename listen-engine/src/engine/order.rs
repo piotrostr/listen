@@ -172,7 +172,12 @@ mod tests {
             to_chain_caip2: to_chain_caip2.to_string(),
         };
 
-        let lifi = lifi::LiFi::new(None);
+        let lifi_api_key: Option<String> = match std::env::var("LIFI_API_KEY") {
+            Ok(val) => Some(val),
+            Err(_) => None,
+        };
+
+        let lifi = lifi::LiFi::new(lifi_api_key);
         let transaction =
             swap_order_to_transaction(&swap_order, &lifi, TEST_ADDRESS_EVM, TEST_ADDRESS_SOL)
                 .await
