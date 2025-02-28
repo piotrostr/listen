@@ -16,7 +16,7 @@ use listen_adapter::{
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
-    // Check if running as a systemd service
+    dotenv().ok();
     let is_systemd = std::env::var("IS_SYSTEMD_SERVICE").is_ok();
 
     // Configure logging based on environment
@@ -30,11 +30,6 @@ async fn main() -> std::io::Result<()> {
             .with_ansi(true)
             .with_target(true)
             .init();
-    }
-
-    // Load environment variables based on environment
-    if !is_systemd {
-        dotenv().ok();
     }
 
     let redis_url = std::env::var("REDIS_URL").expect("REDIS_URL must be set");
