@@ -13,7 +13,6 @@ Environment=IS_SYSTEMD_SERVICE=1
 Environment=RUST_LOG=info
 Environment=NO_COLOR=1
 Environment=RUST_LOG_STYLE=never
-Environment=RUST_LOG_FORMAT=json
 EnvironmentFile=/etc/listen-engine/environment
 WorkingDirectory=/opt/listen-engine
 ExecStart=/usr/local/bin/engine
@@ -21,7 +20,7 @@ ExecStart=/usr/local/bin/engine
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=listen-engine
-LogLevelMax=debug
+LogLevelPrefix=ERROR:3
 LogExtraFields=COMPONENT_NAME=listen-engine COMPONENT_TYPE=service
 
 [Install]
