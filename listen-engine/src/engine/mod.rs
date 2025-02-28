@@ -275,7 +275,7 @@ impl Engine {
                                     }
                                 }
                                 Err(e) => {
-                                    tracing::error!("Pipeline evaluation error: {}", e);
+                                    tracing::error!(?pipeline_id, ?asset, ?e);
                                 }
                             }
 
