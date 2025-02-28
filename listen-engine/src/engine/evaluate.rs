@@ -232,28 +232,19 @@ impl Engine {
     }
 
     async fn fetch_price_from_redis(&self, asset: &str) -> Option<f64> {
-        // Try different key formats that might contain the price
-        let keys = [
-            format!("solana:prices:{}", asset),
-            format!("evm:prices:{}", asset),
-            format!("price:{}", asset),
-        ];
+        match self.redis.get_price(asset).await {
+            Ok(price) => {
+                metrics::counter!("redis_price_fallback_hits", 1);
 
-        for key in &keys {
-            match self.redis.get_price(key).await {
-                Ok(price) => {
-                    metrics::counter!("redis_price_fallback_hits", 1);
-
-                    // Update the shared in-memory cache for future lookups
-                    {
-                        let mut cache = self.price_cache.write().await;
-                        cache.insert(asset.to_string(), price);
-                    }
-
-                    return Some(price);
+                // Update the shared in-memory cache for future lookups
+                {
+                    let mut cache = self.price_cache.write().await;
+                    cache.insert(asset.to_string(), price);
                 }
-                _ => continue,
+
+                return Some(price);
             }
+            _ => {}
         }
 
         metrics::counter!("redis_price_fallback_misses", 1);
