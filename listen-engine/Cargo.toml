@@ -33,6 +33,7 @@ parking_lot = "0.12.3"
 evm-approvals = { path = "../approvals" }
 hex = "0.4.3"
 tracing-subscriber = "0.3.19"
+solana-sdk = "2.2.1"
 
 [[bin]]
 name = "engine"
