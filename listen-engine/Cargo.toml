@@ -32,6 +32,7 @@ dashmap = "6.1.0"
 parking_lot = "0.12.3"
 evm-approvals = { path = "../approvals" }
 hex = "0.4.3"
+tracing-journald = "0.3.1"
 
 [[bin]]
 name = "engine"
