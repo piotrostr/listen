@@ -241,6 +241,15 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
     []
   );
 
+  // Handle select change for mobile dropdown
+  const handleSelectChange = useCallback(
+    (e: React.ChangeEvent<HTMLSelectElement>) => {
+      const newInterval = e.target.value as (typeof INTERVALS)[number];
+      setSelectedInterval(newInterval);
+    },
+    []
+  );
+
   // Format pubkey for display
   const formattedPubkey = useMemo(() => {
     if (!metadata?.mint) return "";
@@ -274,11 +283,13 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
             </span>
           )}
           {metadata?.mpl.name && (
-            <span className="text-purple-300 ml-2">{metadata.mpl.name}</span>
+            <span className="text-purple-300 ml-2 hidden lg:block">
+              {metadata.mpl.name}
+            </span>
           )}
           {metadata?.mint && (
             <span
-              className="text-xs text-purple-300/70 ml-2"
+              className="text-xs text-purple-300/70 ml-2 hidden lg:block"
               title={metadata.mint}
             >
               ({formattedPubkey})
@@ -298,21 +309,39 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
           )}
         </div>
 
-        {/* Interval selection buttons moved to the right */}
+        {/* Interval selection - buttons for desktop, dropdown for mobile */}
         <div className="flex space-x-1">
-          {INTERVALS.map((interval) => (
-            <button
-              key={interval}
-              onClick={() => handleIntervalChange(interval)}
-              className={`px-2 py-1 text-xs rounded ${
-                selectedInterval === interval
-                  ? "bg-purple-500/50 text-white hover:bg-purple-500/70"
-                  : "bg-transparent text-purple-200 hover:bg-purple-900/30"
-              }`}
+          {/* Mobile dropdown */}
+          <div className="md:hidden">
+            <select
+              value={selectedInterval}
+              onChange={handleSelectChange}
+              className="bg-purple-900/30 text-purple-100 rounded px-2 py-1 text-xs border-none focus:ring-2 focus:ring-purple-500"
             >
-              {interval}
-            </button>
-          ))}
+              {INTERVALS.map((interval) => (
+                <option key={interval} value={interval}>
+                  {interval}
+                </option>
+              ))}
+            </select>
+          </div>
+
+          {/* Desktop buttons */}
+          <div className="hidden md:flex space-x-1">
+            {INTERVALS.map((interval) => (
+              <button
+                key={interval}
+                onClick={() => handleIntervalChange(interval)}
+                className={`px-2 py-1 text-xs rounded ${
+                  selectedInterval === interval
+                    ? "bg-purple-500/50 text-white hover:bg-purple-500/70"
+                    : "bg-transparent text-purple-200 hover:bg-purple-900/30"
+                }`}
+              >
+                {interval}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
