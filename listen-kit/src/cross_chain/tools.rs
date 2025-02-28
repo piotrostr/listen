@@ -205,11 +205,11 @@ pub async fn check_approval(
     let signer = SignerContext::current().await;
     let owner_address = signer.address();
 
-    let allowance = approvals::get_allowance(
+    let allowance = evm_approvals::get_allowance(
         &token_address,
         &owner_address,
         &spender_address,
-        approvals::caip2_to_chain_id(&from_chain_caip2)?,
+        evm_approvals::caip2_to_chain_id(&from_chain_caip2)?,
     )
     .await?;
     let amount = amount
@@ -234,11 +234,11 @@ pub async fn approve_token(
     let signer = SignerContext::current().await;
     let owner_address = signer.address();
 
-    let transaction = approvals::create_approval_transaction(
+    let transaction = evm_approvals::create_approval_transaction(
         &token_address,
         &spender_address,
         &owner_address,
-        approvals::caip2_to_chain_id(&from_chain_caip2)?,
+        evm_approvals::caip2_to_chain_id(&from_chain_caip2)?,
     )
     .await?;
 
