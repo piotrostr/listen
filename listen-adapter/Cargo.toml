@@ -28,6 +28,7 @@ bb8-redis = "0.20.0"
 actix-cors = "0.7.0"
 url = "2.5.4"
 regex = "1.10.2"
+tracing-journald = "0.3.1"
 
 [[bin]]
 name = "adapter"
