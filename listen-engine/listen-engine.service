@@ -14,8 +14,8 @@ EnvironmentFile=/etc/listen-engine/environment
 WorkingDirectory=/opt/listen-engine
 ExecStart=/usr/local/bin/engine
 
-StandardOutput=append:/var/log/listen-engine/service.log
-StandardError=append:/var/log/listen-engine/service.log
+StandardOutput=journal
+StandardError=journal
 SyslogIdentifier=listen-engine
 
 [Install]
