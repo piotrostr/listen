@@ -11,17 +11,12 @@ Restart=always
 RestartSec=1
 Environment=IS_SYSTEMD_SERVICE=1
 Environment=RUST_LOG=info
-Environment=NO_COLOR=1
-Environment=RUST_LOG_STYLE=never
 EnvironmentFile=/etc/listen-engine/environment
 WorkingDirectory=/opt/listen-engine
 ExecStart=/usr/local/bin/engine
 
-StandardOutput=journal
-StandardError=journal
-SyslogIdentifier=listen-engine
-LogLevelPrefix=ERROR:3
-LogExtraFields=COMPONENT_NAME=listen-engine COMPONENT_TYPE=service
+StandardOutput=append:/var/log/listen-engine/output.log
+StandardError=append:/var/log/listen-engine/error.log
 
 [Install]
 WantedBy=multi-user.target
