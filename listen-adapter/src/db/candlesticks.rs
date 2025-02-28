@@ -107,8 +107,10 @@ impl ClickhouseDb {
             FROM price_updates
             WHERE pubkey = '{mint}'
             GROUP BY interval_timestamp
-            ORDER BY interval_timestamp ASC
-            "#
+            ORDER BY interval_timestamp DESC
+            LIMIT {limit}
+            "#,
+            limit = limit.unwrap_or(200)
         );
 
         let result = self
@@ -117,7 +119,7 @@ impl ClickhouseDb {
             .fetch_all::<(u64, f64, f64, f64, f64, f64)>()
             .await?;
 
-        let candlesticks = result
+        let mut candlesticks = result
             .into_iter()
             .map(|(timestamp, open, high, low, close, volume)| Candlestick {
                 timestamp,
@@ -127,8 +129,10 @@ impl ClickhouseDb {
                 close,
                 volume,
             })
-            .take(limit.unwrap_or(200))
-            .collect();
+            .collect::<Vec<_>>();
+
+        // Reverse to maintain chronological order (oldest first)
+        candlesticks.reverse();
 
         Ok(candlesticks)
     }
@@ -166,12 +170,24 @@ mod tests {
         let db = make_db().unwrap();
         let candlesticks = db
             .get_candlesticks(
-                "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+                "GJAFwWjJ3vnTsrQVabjBVK2TYB1YtRCQXRDfDgUnpump",
                 &CandlestickInterval::OneMinute.to_string(),
                 None,
             )
             .await
             .unwrap();
         println!("{:#?}", candlesticks);
+        println!(
+            "{:#?}",
+            chrono::DateTime::from_timestamp(candlesticks.first().unwrap().timestamp as i64, 0)
+        );
+        println!(
+            "{:#?}",
+            chrono::DateTime::from_timestamp(candlesticks.last().unwrap().timestamp as i64, 0)
+        );
+        println!(
+            "now: {:#?}",
+            chrono::DateTime::from_timestamp(chrono::Utc::now().timestamp(), 0)
+        );
     }
 }
