@@ -86,3 +86,4 @@ actix-web-lab = { version = "0.20", optional = true }
 tokio-stream = { version = "0.1.17", optional = true }
 jsonwebtoken = { version = "9.3.0", optional = true }
 redis = { version = "0.28.2", features = ["tokio-comp"], optional = true }
+tracing-journald = "0.3.1"
