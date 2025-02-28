@@ -21,7 +21,31 @@ impl Engine {
     pub async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<bool, EngineError> {
         tracing::info!("Evaluating pipeline: {}", pipeline.id);
         let start = Instant::now();
-        let price_cache = self.price_cache.read().await.clone();
+
+        // Get the initial price cache
+        let mut price_cache = self.price_cache.read().await.clone();
+
+        // Extract all assets needed for this pipeline
+        let needed_assets = self.extract_assets(pipeline).await;
+
+        // Check for missing prices and try to fetch them from Redis
+        let missing_assets: Vec<_> = needed_assets
+            .iter()
+            .filter(|asset| !price_cache.contains_key(*asset) && *asset != "NOW")
+            .collect();
+
+        if !missing_assets.is_empty() {
+            tracing::debug!(
+                "Fetching {} missing prices from Redis",
+                missing_assets.len()
+            );
+            for asset in missing_assets {
+                if let Some(price) = self.fetch_price_from_redis(asset).await {
+                    tracing::debug!("Found price for {} in Redis: {}", asset, price);
+                    price_cache.insert(asset.clone(), price);
+                }
+            }
+        }
 
         let mut save_needed = false;
 
@@ -205,5 +229,34 @@ impl Engine {
         }
 
         Ok(false)
+    }
+
+    async fn fetch_price_from_redis(&self, asset: &str) -> Option<f64> {
+        // Try different key formats that might contain the price
+        let keys = [
+            format!("solana:prices:{}", asset),
+            format!("evm:prices:{}", asset),
+            format!("price:{}", asset),
+        ];
+
+        for key in &keys {
+            match self.redis.get_price(key).await {
+                Ok(price) => {
+                    metrics::counter!("redis_price_fallback_hits", 1);
+
+                    // Update the shared in-memory cache for future lookups
+                    {
+                        let mut cache = self.price_cache.write().await;
+                        cache.insert(asset.to_string(), price);
+                    }
+
+                    return Some(price);
+                }
+                _ => continue,
+            }
+        }
+
+        metrics::counter!("redis_price_fallback_misses", 1);
+        None
     }
 }
