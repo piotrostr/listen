@@ -18,9 +18,10 @@ async fn main() -> Result<()> {
         sol_price_stream::get_sol_price,
         util::{make_db, make_kv_store, make_message_queue},
     };
+    use listen_tracing::setup_tracing;
     use tracing::{error, info};
 
-    tracing_subscriber::fmt().init();
+    setup_tracing();
     if std::env::var("IS_SYSTEMD_SERVICE").is_err() {
         dotenv::dotenv().expect("Failed to load .env file");
     }

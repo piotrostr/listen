@@ -2587,6 +2587,7 @@ dependencies = [
  "ctor",
  "dotenv",
  "futures-util",
+ "listen-tracing",
  "mpl-token-metadata",
  "once_cell",
  "redis",
@@ -2602,10 +2603,18 @@ dependencies = [
  "tokio",
  "tokio-tungstenite",
  "tracing",
- "tracing-journald",
  "tracing-subscriber",
  "url",
  "yellowstone-grpc-proto",
+]
+
+[[package]]
+name = "listen-tracing"
+version = "0.1.0"
+dependencies = [
+ "tracing",
+ "tracing-journald",
+ "tracing-subscriber",
 ]
 
 [[package]]
