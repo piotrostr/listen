@@ -14,5 +14,11 @@ EnvironmentFile=/etc/listen-engine/environment
 WorkingDirectory=/opt/listen-engine
 ExecStart=/usr/local/bin/engine
 
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=listen-engine
+LogsDirectory=listen-engine
+LogsDirectoryMode=0755
+
 [Install]
 WantedBy=multi-user.target
