@@ -1,8 +1,12 @@
 use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
+use solana_sdk::pubkey::Pubkey;
+use std::{collections::HashMap, str::FromStr};
 
 use privy::caip2::Caip2;
+
+use crate::jup::Jupiter;
+use privy::util::base64encode;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct SwapOrder {
@@ -26,6 +30,15 @@ pub enum SwapOrderError {
 
     #[error("Serialize error: {0}")]
     SerializeError(anyhow::Error),
+
+    #[error("Jupiter error: {0}")]
+    JupiterError(anyhow::Error),
+
+    #[error("Invalid pubkey: {0}")]
+    InvalidPubkey(anyhow::Error),
+
+    #[error("Invalid amount: {0}")]
+    InvalidAmount(anyhow::Error),
 }
 
 pub fn is_solana(caip2: &str) -> bool {
@@ -101,6 +114,10 @@ pub async fn swap_order_to_transaction(
     let to_chain_id =
         caip2_to_chain_id(&order.to_chain_caip2).ok_or(SwapOrderError::InvalidCaip2)?;
 
+    if from_chain_id == to_chain_id && is_solana(&order.from_chain_caip2) {
+        return solana_swap_order_to_transaction(order, pubkey).await;
+    }
+
     let from_address = if is_evm(&order.from_chain_caip2) {
         wallet_address
     } else {
@@ -140,6 +157,38 @@ pub async fn swap_order_to_transaction(
         }
         None => Err(SwapOrderError::NoTransactionRequest),
     }
+}
+
+pub fn transaction_to_base64<T: Serialize>(transaction: &T) -> Result<String, SwapOrderError> {
+    let serialized = bincode::serialize(transaction)
+        .map_err(|e| SwapOrderError::SerializeError(anyhow::anyhow!(e)))?;
+    Ok(base64encode(&serialized))
+}
+
+pub async fn solana_swap_order_to_transaction(
+    order: &SwapOrder,
+    pubkey: &str, // solana output
+) -> Result<SwapOrderTransaction, SwapOrderError> {
+    tracing::info!(?order, "Solana swap order to transaction");
+    let quote = Jupiter::fetch_quote(
+        &order.input_token,
+        &order.output_token,
+        order
+            .amount
+            .parse::<u64>()
+            .map_err(|e| SwapOrderError::InvalidAmount(anyhow::anyhow!(e)))?,
+    )
+    .await
+    .map_err(SwapOrderError::JupiterError)?;
+
+    let tx = Jupiter::swap(
+        quote,
+        &Pubkey::from_str(pubkey).map_err(|e| SwapOrderError::InvalidPubkey(anyhow::anyhow!(e)))?,
+    )
+    .await
+    .map_err(SwapOrderError::JupiterError)?;
+
+    Ok(SwapOrderTransaction::Solana(transaction_to_base64(&tx)?))
 }
 
 #[cfg(test)]
@@ -245,8 +294,8 @@ mod tests {
     #[ignore]
     async fn test_sol_to_sol() {
         test_swap_generic(
-            "11111111111111111111111111111111",             // SOL
-            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC
+            "So11111111111111111111111111111111111111112",  // SOL
+            "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // SOL
             "10000",                                        // 0.001 SOL
             Caip2::SOLANA,
             Caip2::SOLANA,
