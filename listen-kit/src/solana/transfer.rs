@@ -1,18 +1,18 @@
 use anyhow::Result;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
-use solana_sdk::transaction::Transaction;
+use solana_sdk::transaction::{Transaction, VersionedTransaction};
 
 pub async fn create_transfer_sol_tx(
     to: &Pubkey,
     amount: u64,
     from: &Pubkey,
-) -> Result<Transaction> {
+) -> Result<VersionedTransaction> {
     let tx = Transaction::new_with_payer(
         &[solana_sdk::system_instruction::transfer(from, to, amount)],
         Some(from),
     );
-    Ok(tx)
+    Ok(tx.into())
 }
 
 pub async fn create_transfer_spl_tx(
@@ -21,7 +21,7 @@ pub async fn create_transfer_spl_tx(
     mint: &Pubkey,
     from: &Pubkey,
     rpc_client: &RpcClient,
-) -> Result<Transaction> {
+) -> Result<VersionedTransaction> {
     let from_ata = spl_associated_token_account::get_associated_token_address(
         from, mint,
     );
@@ -53,7 +53,7 @@ pub async fn create_transfer_spl_tx(
 
     let tx = Transaction::new_with_payer(&instructions, Some(from));
 
-    Ok(tx)
+    Ok(tx.into())
 }
 
 #[cfg(test)]
@@ -69,6 +69,7 @@ mod tests {
     #[tokio::test]
     async fn test_transfer_sol() {
         let signer = make_test_signer();
+        println!("signer: {:?}", signer.pubkey());
         let owner = Pubkey::from_str(&signer.pubkey()).unwrap();
         let amount = sol_to_lamports(0.0001);
         let mut tx = create_transfer_sol_tx(&owner, amount, &owner)

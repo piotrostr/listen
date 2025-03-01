@@ -1,5 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
+use serde::Serialize;
 
 #[cfg(feature = "solana")]
 use blockhash_cache::BLOCKHASH_CACHE;
@@ -20,8 +21,8 @@ impl PrivySigner {
 }
 
 #[cfg(feature = "solana")]
-pub fn transaction_to_base64(
-    transaction: &solana_sdk::transaction::Transaction,
+pub fn transaction_to_base64<T: Serialize>(
+    transaction: &T,
 ) -> anyhow::Result<String> {
     let serialized = bincode::serialize(transaction)?;
     Ok(base64encode(&serialized))
@@ -40,16 +41,17 @@ impl TransactionSigner for PrivySigner {
     #[cfg(feature = "solana")]
     async fn sign_and_send_solana_transaction(
         &self,
-        tx: &mut solana_sdk::transaction::Transaction,
+        tx: &mut solana_sdk::transaction::VersionedTransaction,
     ) -> Result<String> {
-        use privy::caip2::Caip2;
+        tx.message
+            .set_recent_blockhash(BLOCKHASH_CACHE.get_blockhash().await?);
 
-        tx.message.recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
+        let encoded_tx = transaction_to_base64(tx)?;
 
         self.privy
             .execute_solana_transaction(
                 self.pubkey(),
-                transaction_to_base64(tx)?,
+                encoded_tx,
                 Caip2::SOLANA.to_string(),
             )
             .await

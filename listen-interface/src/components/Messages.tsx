@@ -3,9 +3,13 @@ import rehypeRaw from "rehype-raw";
 import { CandlestickDataSchema, type ToolOutput } from "../hooks/types";
 import { renderAddressOrTx } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
-import { QuoteResponseSchema } from "../types/quote";
+import {
+  JupiterQuoteResponseSchema,
+  QuoteResponseSchema,
+} from "../types/quote";
 import { InnerChart } from "./Chart";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
+import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
@@ -75,8 +79,17 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
 
   if (toolOutput.name === "get_quote") {
     try {
-      const quote = QuoteResponseSchema.parse(JSON.parse(toolOutput.result));
-      return <QuoteDisplay quote={quote} />;
+      // First try parsing as Jupiter quote
+      try {
+        const jupiterQuote = JupiterQuoteResponseSchema.parse(
+          JSON.parse(toolOutput.result)
+        );
+        return <JupiterQuoteDisplay quote={jupiterQuote} />;
+      } catch (jupiterError) {
+        // If not a Jupiter quote, try parsing as a regular quote
+        const quote = QuoteResponseSchema.parse(JSON.parse(toolOutput.result));
+        return <QuoteDisplay quote={quote} />;
+      }
     } catch (e) {
       console.error("Failed to parse quote response:", e);
     }

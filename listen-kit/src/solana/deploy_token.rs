@@ -11,7 +11,7 @@ use solana_sdk::{
     signature::Keypair,
     signer::Signer,
     system_instruction::transfer,
-    transaction::Transaction,
+    transaction::{Transaction, VersionedTransaction},
 };
 use std::str::FromStr;
 
@@ -52,7 +52,7 @@ pub struct DeployTokenParams {
 pub async fn create_deploy_token_tx(
     params: DeployTokenParams,
     owner: &Pubkey,
-) -> Result<Transaction> {
+) -> Result<VersionedTransaction> {
     let res = create_launch_tx(
         &IPFSMetaForm {
             name: params.name.clone(),
@@ -278,7 +278,7 @@ pub async fn create_launch_tx(
     image_path: Option<String>,
     owner: &Pubkey,
     dev_buy: Option<u64>, // lamports
-) -> Result<Transaction> {
+) -> Result<VersionedTransaction> {
     let mut ixs = vec![];
 
     // Add compute budget instructions
@@ -337,7 +337,7 @@ pub async fn create_launch_tx(
     create_tx
         .partial_sign(&[mint_signer], BLOCKHASH_CACHE.get_blockhash().await?);
 
-    Ok(create_tx)
+    Ok(create_tx.into())
 }
 
 pub fn get_bc_and_abc(mint: Pubkey) -> (Pubkey, Pubkey) {
@@ -485,11 +485,12 @@ mod launcher_tests {
             website: None,
             dev_buy: None,
         };
-        let mut tx = create_deploy_token_tx(params, &keypair.pubkey())
+        let tx = create_deploy_token_tx(params, &keypair.pubkey())
             .await
             .unwrap();
+        let mut tx = tx.into_legacy_transaction().unwrap();
         tx.sign(&[&keypair], BLOCKHASH_CACHE.get_blockhash().await.unwrap());
-        let res = send_tx(&tx).await.unwrap();
+        let res = send_tx(&tx.into()).await.unwrap();
         tracing::info!(?res, "deploy_token");
     }
 
@@ -500,7 +501,7 @@ mod launcher_tests {
         init_logger().ok();
         let signer =
             Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).unwrap();
-        let mut tx = create_launch_tx(
+        let tx = create_launch_tx(
             &IPFSMetaForm {
                 name: "test".to_string(),
                 symbol: "test".to_string(),
@@ -516,10 +517,10 @@ mod launcher_tests {
         )
         .await
         .unwrap();
-
+        let mut tx = tx.into_legacy_transaction().unwrap();
         tx.sign(&[&signer], BLOCKHASH_CACHE.get_blockhash().await.unwrap());
 
-        send_tx(&tx).await.unwrap();
+        send_tx(&tx.into()).await.unwrap();
     }
 
     #[tokio::test]
@@ -529,7 +530,7 @@ mod launcher_tests {
         init_logger().ok();
         let signer =
             Keypair::read_from_file(env("FUND_KEYPAIR_PATH")).unwrap();
-        let mut tx = create_launch_tx(
+        let tx = create_launch_tx(
             &IPFSMetaForm {
                 name: "test".to_string(),
                 symbol: "test".to_string(),
@@ -546,9 +547,10 @@ mod launcher_tests {
         .await
         .unwrap();
 
+        let mut tx = tx.into_legacy_transaction().unwrap();
         tx.sign(&[&signer], BLOCKHASH_CACHE.get_blockhash().await.unwrap());
 
-        send_tx(&tx).await.unwrap();
+        send_tx(&tx.into()).await.unwrap();
     }
 
     #[tokio::test]

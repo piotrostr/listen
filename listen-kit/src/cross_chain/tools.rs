@@ -21,23 +21,28 @@ token addresses and other params with the user before executing
 The from_token_address and to_token_address can either be a solana public key, evm
 address or a symbol, try to prioritize the address over the symbol
 
+It is incredibly important to pass on the correct address or public key of the
+symbol, otherwise the operation will fail
+
 The amount has to be a string to avoid precision loss. The amount is accounting
 for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
 
 Note that sometimes the quote will return a transaction request, with an address that might require approval.
 In that case, you can use the approve_token tool to approve the token.
 
-Supported from_chains:
-- solana: 1151111081099710
-- arbitrum: 42161
-- base: 8453
+Supported from_chain values:
+- solana: \"1151111081099710\"
+- arbitrum: \"42161\"
+- base: \"8453\"
 
-Supported to_chains:
-- sol: 1151111081099710
-- arb: 42161
-- base: 8453
+Supported to_chain values:
+- solana: \"1151111081099710\"
+- arbitrum: \"42161\"
+- base: \"8453\"
 
-special case: from_token_address/to_token_address for solana is just \"sol\", for ethereum (any chain) is just \"eth\"
+special case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
+
+solana address: \"So11111111111111111111111111111111111111112\"
 
 if a user hits you with a chain you cannot support, let them know
 ")]
@@ -49,6 +54,16 @@ pub async fn get_quote(
     to_chain: String,
 ) -> Result<serde_json::Value> {
     let signer = SignerContext::current().await;
+    #[cfg(feature = "solana")]
+    if from_chain == "1151111081099710" && to_chain == "1151111081099710" {
+        let quote = crate::solana::jup::Jupiter::fetch_quote(
+            &from_token_address,
+            &to_token_address,
+            amount.parse::<u64>().map_err(|e| anyhow!(e))?,
+        )
+        .await?;
+        return Ok(serde_json::to_value(quote)?);
+    }
     let lifi_api_key: Option<String> = match std::env::var("LIFI_API_KEY") {
         Ok(val) => Some(val),
         Err(_) => None,
@@ -93,10 +108,11 @@ pub async fn get_quote(
 }
 
 #[tool(description = "
-Multichain swap (or bridge).
+This tool can be used to swap tokens on any chain, solana to solana, evm to evm,
+solana to evm, evm to solana, etc.
 
-This can be used for any swap, solana to solana, evm to evm, solana to evm,
-evm to solana, etc.
+It will automatically pick the best routing for the swap, as long as the chain
+parameters and the token addresses are correct.
 
 Use this in case of the user trying to swap any tokens that exist on two remote
 chains, or would like to bridge the tokens
@@ -110,15 +126,19 @@ address or a symbol, try to prioritize the address over the symbol
 The amount has to be a string to avoid precision loss. The amount is accounting
 for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
 
-Supported from_chains:
-- solana: 1151111081099710
-- arbitrum: 42161
-- base: 8453
+Supported from_chain values:
+- solana: \"1151111081099710\"
+- arbitrum: \"42161\"
+- base: \"8453\"
 
-Supported to_chains:
-- sol: 1151111081099710
-- arb: 42161
-- base: 8453
+Supported to_chain values:
+- solana: \"1151111081099710\"
+- arbitrum: \"42161\"
+- base: \"8453\"
+
+special case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
+
+solana address: \"So11111111111111111111111111111111111111112\"
 
 if a user hits you with a chain you cannot support, let them know
 ")]
@@ -130,6 +150,15 @@ pub async fn swap(
     to_chain: String,
 ) -> Result<String> {
     let signer = SignerContext::current().await;
+    #[cfg(feature = "solana")]
+    if from_chain == "1151111081099710" && to_chain == "1151111081099710" {
+        return crate::solana::tools::jupiter_swap(
+            from_token_address,
+            amount.parse::<u64>().map_err(|e| anyhow!(e))?,
+            to_token_address,
+        )
+        .await;
+    }
     let lifi_api_key: Option<String> = match std::env::var("LIFI_API_KEY") {
         Ok(val) => Some(val),
         Err(_) => None,

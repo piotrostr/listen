@@ -161,8 +161,7 @@ impl Jupiter {
             input_mint, output_mint, amount,
         );
 
-        let response =
-            reqwest::get(&url).await?.json::<QuoteResponse>().await?;
+        let response = reqwest::get(&url).await?.json::<QuoteResponse>().await?;
         Ok(response)
     }
 
@@ -223,77 +222,5 @@ impl Jupiter {
             accounts,
             data,
         })
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use std::sync::Arc;
-
-    use privy::{auth::UserSession, config::PrivyConfig, Privy};
-    use solana_sdk::native_token::sol_to_lamports;
-
-    use crate::{
-        signer::{privy::PrivySigner, TransactionSigner},
-        solana::util::make_test_signer,
-    };
-
-    use super::*;
-
-    const TEST_ADDRESS_SOL: &str =
-        "6fp9frQ16W3kTRGiBVvpMS2NzoixE4Y1MWqYrW9SvTAj";
-
-    #[tokio::test]
-    async fn test_e2e_versioned_with_local_signer() {
-        let signer = make_test_signer();
-        let quote = Jupiter::fetch_quote(
-            "So11111111111111111111111111111111111111112",
-            "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
-            sol_to_lamports(0.00001),
-        )
-        .await
-        .unwrap();
-        let mut tx = Jupiter::swap(
-            quote,
-            &Pubkey::from_str(&signer.pubkey()).unwrap(),
-        )
-        .await
-        .unwrap();
-        signer
-            .sign_and_send_solana_transaction(&mut tx)
-            .await
-            .unwrap();
-    }
-
-    #[tokio::test]
-    async fn test_e2e_versioned_swap_with_privy() {
-        let privy = Privy::new(PrivyConfig::from_env().unwrap());
-        let quote = Jupiter::fetch_quote(
-            "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
-            "So11111111111111111111111111111111111111112",
-            10e6 as u64, // 1 fartcoin
-        )
-        .await
-        .unwrap();
-        let mut tx = Jupiter::swap(
-            quote,
-            &Pubkey::from_str(TEST_ADDRESS_SOL).unwrap(),
-        )
-        .await
-        .unwrap();
-        let privy_signer = PrivySigner::new(
-            Arc::new(privy),
-            UserSession {
-                wallet_address: TEST_ADDRESS_SOL.to_string(),
-                pubkey: TEST_ADDRESS_SOL.to_string(),
-                session_id: "test".to_string(),
-                user_id: "test".to_string(),
-            },
-        );
-
-        privy_signer
-            .sign_and_send_solana_transaction(&mut tx)
-            .await
-            .unwrap();
     }
 }

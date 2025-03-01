@@ -349,6 +349,42 @@ export const renderAddressOrTx = (text: string): string => {
     }
   }
 
+  // Add a specific pattern for non-quoted Solana transaction signatures (87-88 chars)
+  const longSolanaTxPattern = /\b([1-9A-HJ-NP-Za-km-z]{87,88})\b/g;
+  let longTxMatch;
+
+  while ((longTxMatch = longSolanaTxPattern.exec(processedText)) !== null) {
+    const fullMatch = longTxMatch[0];
+
+    // Skip if this is already inside an HTML tag (from previous replacements)
+    const prevText = processedText.substring(
+      Math.max(0, longTxMatch.index - 50),
+      longTxMatch.index
+    );
+    if (prevText.includes('<a href="https://solscan.io/')) {
+      continue;
+    }
+
+    if (isValidSolanaTransactionSignature(fullMatch)) {
+      const url = `https://solscan.io/tx/${fullMatch}`;
+
+      // Create the replacement with the link
+      const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch.slice(
+        0,
+        4
+      )}..${fullMatch.slice(-4)}</a>`;
+
+      // Replace this specific occurrence
+      processedText =
+        processedText.substring(0, longTxMatch.index) +
+        replacement +
+        processedText.substring(longTxMatch.index + fullMatch.length);
+
+      // Adjust the regex lastIndex to account for the replacement
+      longSolanaTxPattern.lastIndex += replacement.length - fullMatch.length;
+    }
+  }
+
   // Handle regular Solana addresses and transactions
   const solanaPattern = /\b([1-9A-HJ-NP-Za-km-z]{32,44})\b/g;
   let match;
