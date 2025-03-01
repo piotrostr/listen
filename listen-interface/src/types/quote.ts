@@ -27,7 +27,7 @@ export const JupiterQuoteResponseSchema = z.object({
   otherAmountThreshold: z.string(),
   outAmount: z.string(),
   outputMint: z.string(),
-  platformFee: z.null(),
+  platformFee: z.any().nullable(),
   priceImpactPct: z.string(),
   routePlan: z.array(
     z.object({
