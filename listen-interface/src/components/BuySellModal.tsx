@@ -1,15 +1,7 @@
-import { usePrivy } from "@privy-io/react-auth";
-import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useEffect, useState } from "react";
 import { FaTimes } from "react-icons/fa";
-import { config } from "../config";
-import { useToast } from "../contexts/ToastContext";
+import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { useSolBalance } from "../hooks/useSolBalance";
-import {
-  Pipeline,
-  PipelineActionType,
-  PipelineConditionType,
-} from "../types/pipeline";
 
 interface BuySellModalProps {
   isOpen: boolean;
@@ -33,10 +25,9 @@ export function BuySellModal({
   asset,
 }: BuySellModalProps) {
   const [percentage, setPercentage] = useState(50);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const { getAccessToken } = usePrivy();
-  const { showToast } = useToast();
   const { data: solBalance, refetch: refetchSolBalance } = useSolBalance();
+  const { isExecuting, quickBuyToken, sellTokenForSol } =
+    usePipelineExecution();
 
   // Always refetch SOL balance when modal is open
   useEffect(() => {
@@ -44,6 +35,30 @@ export function BuySellModal({
       refetchSolBalance();
     }
   }, [isOpen, refetchSolBalance]);
+
+  // Prevent body scrolling when modal is open
+  useEffect(() => {
+    if (isOpen) {
+      // Store original body overflow and padding
+      const originalStyle = window.getComputedStyle(document.body);
+      const originalOverflow = originalStyle.overflow;
+      const originalPaddingRight = originalStyle.paddingRight;
+
+      // Get the width of the scrollbar
+      const scrollbarWidth =
+        window.innerWidth - document.documentElement.clientWidth;
+
+      // Apply styles to prevent scrolling and maintain layout
+      document.body.style.overflow = "hidden";
+      document.body.style.paddingRight = `${scrollbarWidth}px`;
+
+      // Cleanup function to restore original styles
+      return () => {
+        document.body.style.overflow = originalOverflow;
+        document.body.style.paddingRight = originalPaddingRight;
+      };
+    }
+  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -63,77 +78,22 @@ export function BuySellModal({
   );
 
   const handleSubmit = async () => {
-    setIsSubmitting(true);
-    try {
-      const amount = calculateAmount();
+    const amount = calculateAmount();
 
-      // For buy: convert SOL to lamports
-      // For sell: convert token amount to smallest unit based on decimals
-      const rawAmount =
-        action === "buy"
-          ? Math.floor(amount * LAMPORTS_PER_SOL).toString()
-          : Math.floor(amount * 10 ** asset.decimals).toString();
-
-      const pipeline: Pipeline = {
-        steps: [
-          {
-            action: {
-              type: PipelineActionType.SwapOrder,
-              input_token:
-                action === "buy"
-                  ? "So11111111111111111111111111111111111111112" // SOL
-                  : asset.address,
-              output_token:
-                action === "buy"
-                  ? asset.address
-                  : "So11111111111111111111111111111111111111112", // SOL
-              amount: rawAmount,
-              from_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-              to_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-            },
-            conditions: [
-              {
-                type: PipelineConditionType.Now,
-                asset: asset.address,
-                value: 0,
-              },
-            ],
-          },
-        ],
-      };
-
-      const token = await getAccessToken();
-      const res = await fetch(config.API_BASE_URL + "/v1/engine/pipeline", {
-        method: "POST",
-        body: JSON.stringify(pipeline),
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
+    if (action === "buy") {
+      await quickBuyToken(asset.address, amount, {
+        onSuccess: onClose,
       });
-
-      if (!res.ok) {
-        throw new Error(`Failed to ${action} token`);
-      }
-
-      showToast(
-        `${action === "buy" ? "Buy" : "Sell"} order placed for ${asset.name}`,
-        "success"
-      );
-      onClose();
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : `Failed to ${action} token`,
-        "error"
-      );
-    } finally {
-      setIsSubmitting(false);
+    } else {
+      await sellTokenForSol(asset.address, amount, asset.decimals, asset.name, {
+        onSuccess: onClose,
+      });
     }
   };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full max-w-md p-6 bg-black/80 border border-purple-500/30 rounded-lg shadow-xl">
+      <div className="relative w-full lg:max-w-md max-w-sm p-6 bg-black/80 border border-purple-500/30 rounded-lg shadow-xl">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-purple-300 hover:text-purple-100"
@@ -202,14 +162,14 @@ export function BuySellModal({
 
         <button
           onClick={handleSubmit}
-          disabled={isSubmitting}
+          disabled={isExecuting}
           className={`w-full py-2 rounded-lg text-white font-medium transition-colors ${
             action === "buy"
               ? "bg-green-500/70 hover:bg-green-500"
               : "bg-red-500/70 hover:bg-red-500"
-          } ${isSubmitting ? "opacity-70 cursor-not-allowed" : ""}`}
+          } ${isExecuting ? "opacity-70 cursor-not-allowed" : ""}`}
         >
-          {isSubmitting
+          {isExecuting
             ? "Processing..."
             : `${action === "buy" ? "Buy" : "Sell"} ${asset.symbol}`}
         </button>

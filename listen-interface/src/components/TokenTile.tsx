@@ -1,18 +1,11 @@
-import { usePrivy } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
 import { FaShoppingCart } from "react-icons/fa";
 import { FaCheck } from "react-icons/fa6";
 import { IoBarChart } from "react-icons/io5";
-import { config } from "../config";
 import { useModal } from "../contexts/ModalContext";
-import { useToast } from "../contexts/ToastContext";
 import { useListenMetadata } from "../hooks/useListenMetadata";
+import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { TokenMarketData } from "../types/metadata";
-import {
-  Pipeline,
-  PipelineActionType,
-  PipelineConditionType,
-} from "../types/pipeline";
 import { Socials } from "./Socials";
 
 interface TokenTileProps {
@@ -36,10 +29,8 @@ export function TokenTile({ token, index }: TokenTileProps) {
   const { openChart } = useModal();
   const { data: metadata } = useListenMetadata(token.pubkey);
   const [copied, setCopied] = useState(false);
-  const [isBuying, setIsBuying] = useState(false);
-  const { getAccessToken } = usePrivy();
-  const { showToast } = useToast();
   const [quickBuyAmount, setQuickBuyAmount] = useState<number>(0.1);
+  const { isExecuting, quickBuyToken } = usePipelineExecution();
 
   useEffect(() => {
     if (copied) {
@@ -60,55 +51,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
   };
 
   const handleBuy = async () => {
-    setIsBuying(true);
-    try {
-      const lamports = Math.floor(quickBuyAmount * 1_000_000_000).toString();
-
-      const buyPipeline: Pipeline = {
-        steps: [
-          {
-            action: {
-              type: PipelineActionType.SwapOrder,
-              input_token: "So11111111111111111111111111111111111111112", // wSOL
-              output_token: token.pubkey,
-              amount: lamports,
-              from_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-              to_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-            },
-            conditions: [
-              {
-                type: PipelineConditionType.Now,
-                asset: token.pubkey,
-                value: 0, // Not used for Now condition
-              },
-            ],
-          },
-        ],
-      };
-
-      const tokenAuth = await getAccessToken();
-      const res = await fetch(config.API_BASE_URL + "/v1/engine/pipeline", {
-        method: "POST",
-        body: JSON.stringify(buyPipeline),
-        headers: {
-          Authorization: `Bearer ${tokenAuth}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to send buy order");
-      }
-
-      showToast(`Buy order placed for ${token.name}`, "success");
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : "Failed to place buy order",
-        "error"
-      );
-    } finally {
-      setIsBuying(false);
-    }
+    await quickBuyToken(token.pubkey, quickBuyAmount);
   };
 
   return (
@@ -197,10 +140,10 @@ export function TokenTile({ token, index }: TokenTileProps) {
             </div>
             <button
               onClick={handleBuy}
-              disabled={isBuying}
+              disabled={isExecuting}
               className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
             >
-              {isBuying ? (
+              {isExecuting ? (
                 <span className="animate-pulse">Buying...</span>
               ) : (
                 <>
