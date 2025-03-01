@@ -12,7 +12,7 @@ use solana_sdk::compute_budget::ComputeBudgetInstruction;
 use solana_sdk::instruction::Instruction;
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::signature::Keypair;
-use solana_sdk::transaction::Transaction;
+use solana_sdk::transaction::VersionedTransaction;
 use std::future::Future;
 use std::io::Write;
 use std::str::FromStr;
@@ -165,7 +165,7 @@ pub async fn execute_solana_transaction<F, Fut>(
 ) -> Result<String>
 where
     F: FnOnce(Pubkey) -> Fut + Send + 'static,
-    Fut: Future<Output = Result<Transaction>> + Send + 'static,
+    Fut: Future<Output = Result<VersionedTransaction>> + Send + 'static,
 {
     let signer = SignerContext::current().await;
     let owner = Pubkey::from_str(&signer.pubkey())?;

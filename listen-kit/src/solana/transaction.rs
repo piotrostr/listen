@@ -8,7 +8,7 @@ use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_client::rpc_config::RpcSendTransactionConfig;
 use solana_client::rpc_config::RpcSimulateTransactionConfig;
 use solana_sdk::pubkey::Pubkey;
-use solana_sdk::transaction::Transaction;
+use solana_sdk::transaction::VersionedTransaction;
 use solana_transaction_status::{
     Encodable, EncodedTransaction, UiTransactionEncoding,
 };
@@ -26,7 +26,7 @@ pub struct JitoResponse {
 }
 
 #[timed::timed(duration(printer = "info!"))]
-pub async fn send_jito_tx(tx: Transaction) -> Result<String> {
+pub async fn send_jito_tx(tx: &VersionedTransaction) -> Result<String> {
     let client = reqwest::Client::new();
 
     let encoded_tx = match tx.encode(UiTransactionEncoding::Binary) {
@@ -54,7 +54,7 @@ pub async fn send_jito_tx(tx: Transaction) -> Result<String> {
     Ok(jito_response.result)
 }
 
-pub async fn send_tx_fallback(tx: &Transaction) -> Result<String> {
+pub async fn send_tx_fallback(tx: &VersionedTransaction) -> Result<String> {
     let rpc_client = RpcClient::new(env("SOLANA_RPC_URL"));
 
     let signature = rpc_client
@@ -76,7 +76,7 @@ pub async fn send_tx_fallback(tx: &Transaction) -> Result<String> {
     Ok(signature.to_string())
 }
 
-pub async fn send_tx(tx: &Transaction) -> Result<String> {
+pub async fn send_tx(tx: &VersionedTransaction) -> Result<String> {
     if std::env::var("SKIP_SIMULATION").is_err() {
         let simres = RpcClient::new(env("SOLANA_RPC_URL"))
             .simulate_transaction_with_config(
@@ -95,7 +95,7 @@ pub async fn send_tx(tx: &Transaction) -> Result<String> {
         }
     }
 
-    let signature = send_jito_tx(tx.clone()).await;
+    let signature = send_jito_tx(tx).await;
     if let Ok(signature) = &signature {
         tracing::info!(?signature, "send_jito_tx");
     }

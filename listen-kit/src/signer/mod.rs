@@ -47,7 +47,7 @@ pub trait TransactionSigner: Send + Sync {
     #[cfg(feature = "solana")]
     async fn sign_and_send_solana_transaction(
         &self,
-        _tx: &mut solana_sdk::transaction::Transaction,
+        _tx: &mut solana_sdk::transaction::VersionedTransaction,
     ) -> Result<String> {
         Err(anyhow::anyhow!(
             "Solana transactions not supported by this signer"

@@ -1,14 +1,14 @@
 use crate::solana::jup::Jupiter;
 use anyhow::{anyhow, Result};
 use solana_sdk::pubkey::Pubkey;
-use solana_sdk::transaction::Transaction;
+use solana_sdk::transaction::VersionedTransaction;
 
 pub async fn create_trade_transaction(
     input_mint: String,
     input_amount: u64,
     output_mint: String,
     owner: &Pubkey,
-) -> Result<Transaction> {
+) -> Result<VersionedTransaction> {
     let quote = Jupiter::fetch_quote(&input_mint, &output_mint, input_amount)
         .await
         .map_err(|e| anyhow!("Failed to fetch quote: {}", e.to_string()))?;
@@ -17,7 +17,7 @@ pub async fn create_trade_transaction(
         .await
         .map_err(|e| anyhow!("Failed to swap: {}", e.to_string()))?;
 
-    Ok(tx)
+    Ok(tx.into())
 }
 
 #[cfg(test)]

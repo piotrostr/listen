@@ -5,7 +5,7 @@ use crate::solana::pump::{
 use anyhow::Result;
 use solana_client::nonblocking::rpc_client::RpcClient;
 use solana_sdk::pubkey::Pubkey;
-use solana_sdk::transaction::Transaction;
+use solana_sdk::transaction::{Transaction, VersionedTransaction};
 use std::str::FromStr;
 
 fn apply_slippage(amount: u64, slippage_bps: u16) -> u64 {
@@ -19,7 +19,7 @@ pub async fn create_buy_pump_fun_tx(
     slippage_bps: u16,
     rpc_client: &RpcClient,
     owner: &Pubkey,
-) -> Result<Transaction> {
+) -> Result<VersionedTransaction> {
     let mint = Pubkey::from_str(&mint)?;
     let pump_accounts = mint_to_pump_accounts(&mint);
 
@@ -43,14 +43,14 @@ pub async fn create_buy_pump_fun_tx(
 
     let tx = Transaction::new_with_payer(buy_ixs.as_slice(), Some(owner));
 
-    Ok(tx)
+    Ok(tx.into())
 }
 
 pub async fn create_sell_pump_fun_tx(
     mint: String,
     token_amount: u64,
     owner: &Pubkey,
-) -> Result<Transaction> {
+) -> Result<VersionedTransaction> {
     let mint = Pubkey::from_str(&mint)?;
     let pump_accounts = mint_to_pump_accounts(&mint);
 
@@ -63,7 +63,7 @@ pub async fn create_sell_pump_fun_tx(
 
     let tx = Transaction::new_with_payer([ix].as_slice(), Some(owner));
 
-    Ok(tx)
+    Ok(tx.into())
 }
 
 #[cfg(test)]

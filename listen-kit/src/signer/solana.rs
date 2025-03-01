@@ -36,10 +36,20 @@ impl TransactionSigner for LocalSolanaSigner {
 
     async fn sign_and_send_solana_transaction(
         &self,
-        tx: &mut solana_sdk::transaction::Transaction,
+        tx: &mut solana_sdk::transaction::VersionedTransaction,
     ) -> Result<String> {
         let recent_blockhash = BLOCKHASH_CACHE.get_blockhash().await?;
-        tx.try_sign(&[&*self.keypair], recent_blockhash)?;
+        let mut message = tx.message.clone();
+        message.set_recent_blockhash(recent_blockhash);
+
+        // Get the message data and sign it directly with the keypair
+        let message_bytes = message.serialize();
+        let signature = self.keypair.sign_message(&message_bytes);
+
+        // Update transaction with the new message and signature
+        tx.message = message;
+        tx.signatures = vec![signature];
+
         send_tx(tx).await
     }
 }

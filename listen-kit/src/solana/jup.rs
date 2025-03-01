@@ -256,3 +256,24 @@ impl Jupiter {
         })
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use privy::{config::PrivyConfig, Privy};
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_e2e_versioned_swap_with_privy() {
+        let privy = Privy::new(PrivyConfig::from_env().unwrap());
+        let quote = Jupiter::fetch_quote(
+            "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+            "So11111111111111111111111111111111111111112",
+            10e6 as u64, // 1 fartcoin
+        )
+        .await
+        .unwrap();
+        let tx = Jupiter::swap(quote, owner)
+    }
+    
+}
