@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { FaCheck } from "react-icons/fa6";
 import { z } from "zod";
-import { Socials } from "./TokenTile";
+import { Socials } from "./Socials";
 
 // Zod schema for token data
 export const TopTokenSchema = z.object({
