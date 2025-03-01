@@ -21,13 +21,19 @@ export const QuoteResponseSchema = z.object({
 });
 
 export const JupiterQuoteResponseSchema = z.object({
-  contextSlot: z.number(),
+  contextSlot: z.number().optional(),
   inAmount: z.string(),
   inputMint: z.string(),
   otherAmountThreshold: z.string(),
   outAmount: z.string(),
   outputMint: z.string(),
-  platformFee: z.any().nullable(),
+  platformFee: z
+    .object({
+      amount: z.string().optional(),
+      feeBps: z.number().optional(),
+    })
+    .nullable()
+    .optional(),
   priceImpactPct: z.string(),
   routePlan: z.array(
     z.object({
@@ -38,7 +44,7 @@ export const JupiterQuoteResponseSchema = z.object({
         feeMint: z.string(),
         inAmount: z.string(),
         inputMint: z.string(),
-        label: z.string(),
+        label: z.string().optional(),
         outAmount: z.string(),
         outputMint: z.string(),
       }),
@@ -46,7 +52,7 @@ export const JupiterQuoteResponseSchema = z.object({
   ),
   slippageBps: z.number(),
   swapMode: z.string(),
-  timeTaken: z.number(),
+  timeTaken: z.number().optional(),
 });
 
 export type QuoteResponse = z.infer<typeof QuoteResponseSchema>;
