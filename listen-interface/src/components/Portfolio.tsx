@@ -1,9 +1,11 @@
 import { useState } from "react";
-import { FaApplePay } from "react-icons/fa6";
+import { FaApplePay, FaShoppingCart } from "react-icons/fa";
+import { IoArrowDown } from "react-icons/io5";
 import { useEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
 import { imageMap } from "../hooks/util";
+import { BuySellModal } from "./BuySellModal";
 import { CopyIcon } from "./CopyIcon";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
 
@@ -16,6 +18,9 @@ export function Portfolio() {
 
   const [clickedSolana, setClickedSolana] = useState(false);
   const [clickedEvm, setClickedEvm] = useState(false);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
+  const [selectedAsset, setSelectedAsset] = useState<any>(null);
 
   const isLoading = isLoadingSolana || isLoadingEvm;
 
@@ -48,6 +53,12 @@ export function Portfolio() {
     //     paymentMethod: "mobile_wallet",
     //   },
     // });
+  };
+
+  const handleOpenModal = (asset: any, action: "buy" | "sell") => {
+    setSelectedAsset(asset);
+    setModalAction(action);
+    setModalOpen(true);
   };
 
   const assets = [...(solanaAssets ?? []), ...(evmAssets ?? [])];
@@ -151,13 +162,45 @@ export function Portfolio() {
                     </div>
                   </div>
                 </div>
-                <div className="text-sm text-gray-400">
-                  Holding: {asset.amount}
+                <div className="flex justify-between items-center">
+                  <div className="text-sm text-gray-400">
+                    Holding: {asset.amount}
+                  </div>
+
+                  {/* Buy/Sell buttons - only show for Solana chain assets */}
+                  {asset.chain === "solana" && (
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleOpenModal(asset, "buy")}
+                        className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
+                      >
+                        <FaShoppingCart size={12} />
+                        <span>Buy</span>
+                      </button>
+                      <button
+                        onClick={() => handleOpenModal(asset, "sell")}
+                        className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
+                      >
+                        <IoArrowDown size={12} />
+                        <span>Sell</span>
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             ))}
         </div>
       </div>
+
+      {/* Buy/Sell Modal */}
+      {modalOpen && selectedAsset && (
+        <BuySellModal
+          isOpen={modalOpen}
+          onClose={() => setModalOpen(false)}
+          action={modalAction}
+          asset={selectedAsset}
+        />
+      )}
     </div>
   );
 }
