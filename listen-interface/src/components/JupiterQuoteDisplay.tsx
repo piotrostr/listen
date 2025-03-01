@@ -11,8 +11,16 @@ export const JupiterQuoteDisplay = ({ quote }: JupiterQuoteDisplayProps) => {
   const inputTokenMetadata = useListenMetadata(quote.inputMint);
   const outputTokenMetadata = useListenMetadata(quote.outputMint);
 
-  const inputSymbol = inputTokenMetadata.data?.mpl?.symbol || "Unknown";
-  const outputSymbol = outputTokenMetadata.data?.mpl?.symbol || "Unknown";
+  let inputSymbol = inputTokenMetadata.data?.mpl?.symbol || "Unknown";
+  let outputSymbol = outputTokenMetadata.data?.mpl?.symbol || "Unknown";
+
+  if (quote.inputMint === "So11111111111111111111111111111111111111112") {
+    inputSymbol = "wSOL";
+  }
+
+  if (quote.outputMint === "So11111111111111111111111111111111111111112") {
+    outputSymbol = "wSOL";
+  }
 
   const inputImage =
     quote.inputMint in imageMap
