@@ -21,6 +21,9 @@ token addresses and other params with the user before executing
 The from_token_address and to_token_address can either be a solana public key, evm
 address or a symbol, try to prioritize the address over the symbol
 
+It is incredibly important to pass on the correct address or public key of the
+symbol, otherwise the operation will fail
+
 The amount has to be a string to avoid precision loss. The amount is accounting
 for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
 
