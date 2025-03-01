@@ -39,12 +39,20 @@ export function TokenTile({ token, index }: TokenTileProps) {
   const [isBuying, setIsBuying] = useState(false);
   const { getAccessToken } = usePrivy();
   const { showToast } = useToast();
+  const [quickBuyAmount, setQuickBuyAmount] = useState<number>(0.1);
 
   useEffect(() => {
     if (copied) {
       setTimeout(() => setCopied(false), 1000);
     }
   }, [copied]);
+
+  useEffect(() => {
+    const savedAmount = localStorage.getItem("quickBuyAmount");
+    if (savedAmount) {
+      setQuickBuyAmount(parseFloat(savedAmount));
+    }
+  }, []);
 
   const handleCopy = () => {
     navigator.clipboard.writeText(token.pubkey);
@@ -54,7 +62,8 @@ export function TokenTile({ token, index }: TokenTileProps) {
   const handleBuy = async () => {
     setIsBuying(true);
     try {
-      // Create a pipeline to buy the token with SOL
+      const lamports = Math.floor(quickBuyAmount * 1_000_000_000).toString();
+
       const buyPipeline: Pipeline = {
         steps: [
           {
@@ -62,7 +71,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
               type: PipelineActionType.SwapOrder,
               input_token: "So11111111111111111111111111111111111111112", // wSOL
               output_token: token.pubkey,
-              amount: "100000000", // 0.1 SOL (adjust as needed)
+              amount: lamports,
               from_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
               to_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
             },
@@ -77,7 +86,6 @@ export function TokenTile({ token, index }: TokenTileProps) {
         ],
       };
 
-      // Send pipeline for execution
       const tokenAuth = await getAccessToken();
       const res = await fetch(config.API_BASE_URL + "/v1/engine/pipeline", {
         method: "POST",
@@ -196,6 +204,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
                 <span className="animate-pulse">Buying...</span>
               ) : (
                 <>
+                  <span>{quickBuyAmount}</span>
                   <FaShoppingCart size={12} />
                 </>
               )}
