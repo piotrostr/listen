@@ -211,7 +211,7 @@ mod tests {
             .get_quote(
                 "1151111081099710", // sol
                 "42161",            // arb
-                "SOL",
+                "So11111111111111111111111111111111111111112",
                 "ETH",
                 "aiamaErRMjbeNmf2b8BMZWFR3ofxrnZEf2mLKp935fM",
                 "0x2fAA30d5EdDF1e4fa126aEdA79159878D58A2438",
