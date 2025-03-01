@@ -40,21 +40,17 @@ e.g. 1 token with 6 decimals => 1000000
 
 Both the input_mint and output_mint have to be valid Solana public keys of 
 tokens, the so called token mints
-
-slippage_bps is slippage in basis points, for majority of stuff it is fine to use 50-100bps
 ")]
 pub async fn perform_jupiter_swap(
     input_mint: String,
     input_amount: u64,
     output_mint: String,
-    slippage_bps: u16,
 ) -> Result<String> {
     execute_solana_transaction(move |owner| async move {
         create_trade_transaction(
             input_mint,
             input_amount,
             output_mint,
-            slippage_bps,
             &owner,
         )
         .await

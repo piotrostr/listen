@@ -148,11 +148,10 @@ impl Jupiter {
         input_mint: &str,
         output_mint: &str,
         amount: u64,
-        slippage: u16,
     ) -> Result<QuoteResponse> {
         let url = format!(
-            "https://quote-api.jup.ag/v6/quote?inputMint={}&outputMint={}&amount={}&slippageBps={}&asLegacyTransaction=true",
-            input_mint, output_mint, amount, slippage
+            "https://quote-api.jup.ag/v6/quote?inputMint={}&outputMint={}&amount={}",
+            input_mint, output_mint, amount, 
         );
 
         let response =
