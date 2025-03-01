@@ -18,7 +18,7 @@ export function Toast({ message, type, onClose }: ToastProps) {
   }, [onClose]);
 
   const baseClasses =
-    "fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 transition-all duration-300 ease-in-out z-50";
+    "fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 transition-all duration-300 ease-in-out z-50";
 
   const typeClasses = {
     error: "bg-red-500/20 text-red-300 border border-red-500/30",

@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
+import { FaShoppingCart } from "react-icons/fa";
 import { FaCheck } from "react-icons/fa6";
 import { IoBarChart } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
 import { useListenMetadata } from "../hooks/useListenMetadata";
+import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { TokenMarketData } from "../types/metadata";
 import { Socials } from "./Socials";
 
@@ -27,6 +29,8 @@ export function TokenTile({ token, index }: TokenTileProps) {
   const { openChart } = useModal();
   const { data: metadata } = useListenMetadata(token.pubkey);
   const [copied, setCopied] = useState(false);
+  const [quickBuyAmount, setQuickBuyAmount] = useState<number>(0.1);
+  const { isExecuting, quickBuyToken } = usePipelineExecution();
 
   useEffect(() => {
     if (copied) {
@@ -34,9 +38,20 @@ export function TokenTile({ token, index }: TokenTileProps) {
     }
   }, [copied]);
 
+  useEffect(() => {
+    const savedAmount = localStorage.getItem("quickBuyAmount");
+    if (savedAmount) {
+      setQuickBuyAmount(parseFloat(savedAmount));
+    }
+  }, []);
+
   const handleCopy = () => {
     navigator.clipboard.writeText(token.pubkey);
     setCopied(true);
+  };
+
+  const handleBuy = async () => {
+    await quickBuyToken(token.pubkey, quickBuyAmount);
   };
 
   return (
@@ -119,8 +134,24 @@ export function TokenTile({ token, index }: TokenTileProps) {
           <div className="text-xs sm:text-sm text-gray-500">
             MC: ${(token.marketCap / 1e6).toFixed(1)}M
           </div>
-          <div className="text-[10px] sm:text-xs text-gray-400">
-            {token.uniqueAddresses.size} traders
+          <div className="flex justify-end items-center gap-2 mt-1">
+            <div className="text-[10px] sm:text-xs text-gray-400">
+              {token.uniqueAddresses.size} traders
+            </div>
+            <button
+              onClick={handleBuy}
+              disabled={isExecuting}
+              className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
+            >
+              {isExecuting ? (
+                <span className="animate-pulse">Buying...</span>
+              ) : (
+                <>
+                  <span>{quickBuyAmount}</span>
+                  <FaShoppingCart size={12} />
+                </>
+              )}
+            </button>
           </div>
         </div>
       </div>

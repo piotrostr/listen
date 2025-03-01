@@ -1,7 +1,5 @@
-import { usePrivy } from "@privy-io/react-auth";
 import { useState } from "react";
-import { config } from "../config";
-import { useToast } from "../contexts/ToastContext";
+import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { Pipeline, PipelineActionType } from "../types/pipeline";
 import { NotificationPipelineStep } from "./NotificationPipelineStep";
 import { Spinner } from "./Spinner";
@@ -12,36 +10,18 @@ interface PipelineProps {
 }
 
 export function PipelineDisplay({ pipeline }: PipelineProps) {
-  const { getAccessToken } = usePrivy();
   const [status, setStatus] = useState<
     "loading" | "pending" | "approved" | "rejected"
   >("pending");
-  const { showToast } = useToast();
+  const { isExecuting, executePipeline } = usePipelineExecution();
 
   const sendPipelineForExecution = async () => {
     setStatus("loading");
-    try {
-      const token = await getAccessToken();
-      const res = await fetch(config.API_BASE_URL + "/v1/engine/pipeline", {
-        method: "POST",
-        body: JSON.stringify(pipeline),
-        headers: {
-          Authorization: `Bearer ${token}`,
-          "Content-Type": "application/json",
-        },
-      });
-
-      if (!res.ok) {
-        throw new Error("Failed to send pipeline for execution");
-      }
-
-      showToast("Pipeline scheduled for execution", "success");
-      setStatus("approved");
-    } catch (error) {
-      showToast(
-        error instanceof Error ? error.message : "An error occurred",
-        "error"
-      );
+    const success = await executePipeline(pipeline, {
+      onSuccess: () => setStatus("approved"),
+      onError: () => setStatus("pending"),
+    });
+    if (!success) {
       setStatus("pending");
     }
   };
@@ -72,7 +52,7 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
             return null;
         }
       })}
-      {status === "loading" ? (
+      {isExecuting || status === "loading" ? (
         <Spinner />
       ) : (
         <PipelineMenu

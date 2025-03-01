@@ -18,7 +18,7 @@ const connection = new Connection(
   import.meta.env?.VITE_RPC_URL ?? "https://api.mainnet-beta.solana.com"
 );
 
-async function getHoldings(
+export async function getHoldings(
   connection: Connection,
   owner: PublicKey
 ): Promise<Holding[]> {
