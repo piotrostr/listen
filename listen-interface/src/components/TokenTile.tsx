@@ -41,7 +41,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
 
   return (
     <div>
-      <div className="p-3 sm:p-4 flex items-center justify-between hover:bg-gray-50 dark:hover:bg-gray-800">
+      <div className="p-3 sm:p-4 flex items-center justify-between hover:bg-gray-800">
         <div className="flex items-center space-x-2 sm:space-x-4">
           <span className="text-gray-500 text-sm sm:text-base w-4 sm:w-6">
             {index + 1}.
