@@ -129,10 +129,13 @@ export const JupiterQuoteDisplay = ({ quote }: JupiterQuoteDisplayProps) => {
             </div>
           </div>
           <div className="text-right">
-            <div className="text-sm text-purple-300">Fees:</div>
             <div className="text-sm text-purple-300">
+              Slippage: {(quote.slippageBps / 100).toFixed(2)}%
+            </div>
+            <div className="text-sm text-purple-300">
+              Min received:{" "}
               {formatAmount(quote.otherAmountThreshold, outputDecimals)}{" "}
-              {outputSymbol} (min received)
+              {outputSymbol}
             </div>
           </div>
         </div>
