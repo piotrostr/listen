@@ -41,7 +41,7 @@ e.g. 1 token with 6 decimals => 1000000
 Both the input_mint and output_mint have to be valid Solana public keys of 
 tokens, the so called token mints
 ")]
-pub async fn perform_jupiter_swap(
+pub async fn jupiter_swap(
     input_mint: String,
     input_amount: u64,
     output_mint: String,

@@ -16,7 +16,7 @@ pub async fn create_cross_chain_agent(
         "{} {}",
         "you are a cross-chain trading agent", PREAMBLE_COMMON,
     ));
-    Ok(claude_agent_builder()
+    let agent_builder = claude_agent_builder()
         .preamble(&preamble)
         .tool(SearchOnDexScreener)
         .tool(GetQuote)
@@ -24,6 +24,6 @@ pub async fn create_cross_chain_agent(
         .tool(ApproveToken)
         .tool(CheckApproval)
         .tool(FetchCandlesticks)
-        .tool(FetchTopTokens)
-        .build())
+        .tool(FetchTopTokens);
+    Ok(agent_builder.build())
 }
