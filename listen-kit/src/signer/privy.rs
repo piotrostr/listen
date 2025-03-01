@@ -43,15 +43,15 @@ impl TransactionSigner for PrivySigner {
         &self,
         tx: &mut solana_sdk::transaction::VersionedTransaction,
     ) -> Result<String> {
-        use privy::caip2::Caip2;
-
         tx.message
             .set_recent_blockhash(BLOCKHASH_CACHE.get_blockhash().await?);
+
+        let encoded_tx = transaction_to_base64(tx)?;
 
         self.privy
             .execute_solana_transaction(
                 self.pubkey(),
-                transaction_to_base64(tx)?,
+                encoded_tx,
                 Caip2::SOLANA.to_string(),
             )
             .await

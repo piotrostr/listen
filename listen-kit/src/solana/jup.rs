@@ -5,7 +5,7 @@ use base64::prelude::BASE64_STANDARD;
 use base64::Engine;
 use serde::{Deserialize, Serialize};
 use solana_sdk::pubkey::Pubkey;
-use solana_sdk::transaction::Transaction;
+use solana_sdk::transaction::VersionedTransaction;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct PlatformFee {
@@ -124,6 +124,13 @@ pub struct SwapInstructionsResponse {
     pub address_lookup_table_addresses: Vec<String>,
 }
 
+#[derive(Serialize, Deserialize, Clone, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct SwapResponse {
+    pub swap_transaction: String,
+    // other fields not relevant atm
+}
+
 #[derive(Deserialize, Debug)]
 pub struct InstructionData {
     #[serde(rename = "programId")]
@@ -151,7 +158,7 @@ impl Jupiter {
     ) -> Result<QuoteResponse> {
         let url = format!(
             "https://quote-api.jup.ag/v6/quote?inputMint={}&outputMint={}&amount={}",
-            input_mint, output_mint, amount, 
+            input_mint, output_mint, amount,
         );
 
         let response =
@@ -162,27 +169,14 @@ impl Jupiter {
     pub async fn swap(
         quote_response: QuoteResponse,
         owner: &Pubkey,
-    ) -> Result<Transaction> {
-        let swap_request = SwapRequest {
-            user_public_key: owner.to_string(),
-            wrap_and_unwrap_sol: true,
-            use_shared_accounts: true,
-            fee_account: None,
-            tracking_account: None,
-            compute_unit_price_micro_lamports: None,
-            prioritization_fee_lamports: None,
-            as_legacy_transaction: false,
-            use_token_ledger: false,
-            destination_token_account: None,
-            dynamic_compute_unit_limit: true,
-            skip_user_accounts_rpc_calls: true,
-            dynamic_slippage: None,
-            quote_response,
-        };
-
+    ) -> Result<VersionedTransaction> {
+        let swap_request = serde_json::json!({
+            "userPublicKey": owner.to_string(),
+            "quoteResponse": quote_response
+        });
         let client = reqwest::Client::new();
         let raw_res = client
-            .post("https://quote-api.jup.ag/v6/swap-instructions")
+            .post("https://quote-api.jup.ag/v6/swap")
             .json(&swap_request)
             .send()
             .await?;
@@ -191,46 +185,21 @@ impl Jupiter {
             return Err(anyhow!(error));
         }
         let response = raw_res
-            .json::<SwapInstructionsResponse>()
+            .json::<SwapResponse>()
             .await
             .map_err(|e| anyhow!(e))?;
 
-        let mut instructions = Vec::new();
-
-        // Add token ledger instruction if present
-        if let Some(token_ledger_ix) = response.token_ledger_instruction {
-            instructions
-                .push(Self::convert_instruction_data(token_ledger_ix)?);
-        }
-
-        if let Some(compute_budget_instructions) =
-            response.compute_budget_instructions
-        {
-            for ix_data in compute_budget_instructions {
-                instructions.push(Self::convert_instruction_data(ix_data)?);
-            }
-        }
-
-        // Add setup instructions
-        for ix_data in response.setup_instructions {
-            instructions.push(Self::convert_instruction_data(ix_data)?);
-        }
-
-        // Add swap instruction
-        instructions
-            .push(Self::convert_instruction_data(response.swap_instruction)?);
-
-        // Add cleanup instruction if present
-        if let Some(cleanup_ix) = response.cleanup_instruction {
-            instructions.push(Self::convert_instruction_data(cleanup_ix)?);
-        }
-
-        let tx = Transaction::new_with_payer(&instructions, Some(owner));
+        let tx: VersionedTransaction = bincode::deserialize(
+            &BASE64_STANDARD
+                .decode(response.swap_transaction)
+                .map_err(|e| anyhow!(e))?,
+        )
+        .map_err(|e| anyhow!(e))?;
 
         Ok(tx)
     }
 
-    fn convert_instruction_data(
+    fn _convert_instruction_data(
         ix_data: InstructionData,
     ) -> Result<solana_sdk::instruction::Instruction> {
         let program_id = Pubkey::from_str(&ix_data.program_id)?;
@@ -262,12 +231,39 @@ mod tests {
     use std::sync::Arc;
 
     use privy::{auth::UserSession, config::PrivyConfig, Privy};
+    use solana_sdk::native_token::sol_to_lamports;
 
-    use crate::signer::{privy::PrivySigner, TransactionSigner};
+    use crate::{
+        signer::{privy::PrivySigner, TransactionSigner},
+        solana::util::make_test_signer,
+    };
 
     use super::*;
 
-    const TEST_ADDRESS_SOL: &str = "6fp9frQ16W3kTRGiBVvpMS2NzoixE4Y1MWqYrW9SvTAj";
+    const TEST_ADDRESS_SOL: &str =
+        "6fp9frQ16W3kTRGiBVvpMS2NzoixE4Y1MWqYrW9SvTAj";
+
+    #[tokio::test]
+    async fn test_e2e_versioned_with_local_signer() {
+        let signer = make_test_signer();
+        let quote = Jupiter::fetch_quote(
+            "So11111111111111111111111111111111111111112",
+            "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+            sol_to_lamports(0.00001),
+        )
+        .await
+        .unwrap();
+        let mut tx = Jupiter::swap(
+            quote,
+            &Pubkey::from_str(&signer.pubkey()).unwrap(),
+        )
+        .await
+        .unwrap();
+        signer
+            .sign_and_send_solana_transaction(&mut tx)
+            .await
+            .unwrap();
+    }
 
     #[tokio::test]
     async fn test_e2e_versioned_swap_with_privy() {
@@ -279,13 +275,25 @@ mod tests {
         )
         .await
         .unwrap();
-        let tx = Jupiter::swap(quote, &Pubkey::from_str(TEST_ADDRESS_SOL).unwrap()).await.unwrap();
-        let privy_signer = PrivySigner::new(Arc::new(privy), UserSession {
-            wallet_address: TEST_ADDRESS_SOL.to_string(),
-            pubkey: TEST_ADDRESS_SOL.to_string(),
-            session_id: "test".to_string(),
-            user_id: "test".to_string(),
-        });
-        privy_signer.sign_and_send_solana_transaction(&mut tx.into()).await.unwrap();
+        let mut tx = Jupiter::swap(
+            quote,
+            &Pubkey::from_str(TEST_ADDRESS_SOL).unwrap(),
+        )
+        .await
+        .unwrap();
+        let privy_signer = PrivySigner::new(
+            Arc::new(privy),
+            UserSession {
+                wallet_address: TEST_ADDRESS_SOL.to_string(),
+                pubkey: TEST_ADDRESS_SOL.to_string(),
+                session_id: "test".to_string(),
+                user_id: "test".to_string(),
+            },
+        );
+
+        privy_signer
+            .sign_and_send_solana_transaction(&mut tx)
+            .await
+            .unwrap();
     }
 }
