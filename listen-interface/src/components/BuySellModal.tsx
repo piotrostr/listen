@@ -92,8 +92,8 @@ export function BuySellModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm">
-      <div className="relative w-full lg:max-w-md max-w-sm p-6 bg-black/80 border border-purple-500/30 rounded-lg shadow-xl">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
+      <div className="relative w-full lg:max-w-md max-w-sm p-6 bg-black/80 border border-purple-500/30 rounded-lg shadow-xl max-h-[90vh] overflow-y-auto my-4">
         <button
           onClick={onClose}
           className="absolute top-4 right-4 text-purple-300 hover:text-purple-100"
