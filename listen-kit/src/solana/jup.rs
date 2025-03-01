@@ -171,7 +171,7 @@ impl Jupiter {
             tracking_account: None,
             compute_unit_price_micro_lamports: None,
             prioritization_fee_lamports: None,
-            as_legacy_transaction: true,
+            as_legacy_transaction: false,
             use_token_ledger: false,
             destination_token_account: None,
             dynamic_compute_unit_limit: true,
@@ -259,9 +259,15 @@ impl Jupiter {
 
 #[cfg(test)]
 mod tests {
-    use privy::{config::PrivyConfig, Privy};
+    use std::sync::Arc;
+
+    use privy::{auth::UserSession, config::PrivyConfig, Privy};
+
+    use crate::signer::{privy::PrivySigner, TransactionSigner};
 
     use super::*;
+
+    const TEST_ADDRESS_SOL: &str = "6fp9frQ16W3kTRGiBVvpMS2NzoixE4Y1MWqYrW9SvTAj";
 
     #[tokio::test]
     async fn test_e2e_versioned_swap_with_privy() {
@@ -273,7 +279,13 @@ mod tests {
         )
         .await
         .unwrap();
-        let tx = Jupiter::swap(quote, owner)
+        let tx = Jupiter::swap(quote, &Pubkey::from_str(TEST_ADDRESS_SOL).unwrap()).await.unwrap();
+        let privy_signer = PrivySigner::new(Arc::new(privy), UserSession {
+            wallet_address: TEST_ADDRESS_SOL.to_string(),
+            pubkey: TEST_ADDRESS_SOL.to_string(),
+            session_id: "test".to_string(),
+            user_id: "test".to_string(),
+        });
+        privy_signer.sign_and_send_solana_transaction(&mut tx.into()).await.unwrap();
     }
-    
 }
