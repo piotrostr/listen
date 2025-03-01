@@ -20,4 +20,34 @@ export const QuoteResponseSchema = z.object({
   to: ToTokenInfoSchema,
 });
 
+export const JupiterQuoteResponseSchema = z.object({
+  contextSlot: z.number(),
+  inAmount: z.string(),
+  inputMint: z.string(),
+  otherAmountThreshold: z.string(),
+  outAmount: z.string(),
+  outputMint: z.string(),
+  platformFee: z.null(),
+  priceImpactPct: z.string(),
+  routePlan: z.array(
+    z.object({
+      percent: z.number(),
+      swapInfo: z.object({
+        ammKey: z.string(),
+        feeAmount: z.string(),
+        feeMint: z.string(),
+        inAmount: z.string(),
+        inputMint: z.string(),
+        label: z.string(),
+        outAmount: z.string(),
+        outputMint: z.string(),
+      }),
+    })
+  ),
+  slippageBps: z.number(),
+  swapMode: z.string(),
+  timeTaken: z.number(),
+});
+
 export type QuoteResponse = z.infer<typeof QuoteResponseSchema>;
+export type JupiterQuoteResponse = z.infer<typeof JupiterQuoteResponseSchema>;
