@@ -262,7 +262,7 @@ async fn create_pipeline(
     )
         .into();
 
-    println!("Pipeline: {:#?}", pipeline);
+    tracing::info!(pipeline = ?pipeline, "creating pipeline");
 
     // Create oneshot channel for response
     let (response_tx, response_rx) = oneshot::channel();
