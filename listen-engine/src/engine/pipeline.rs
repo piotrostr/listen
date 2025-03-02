@@ -1,4 +1,5 @@
-use std::collections::HashMap;
+use std::hash::{Hash, Hasher};
+use std::{collections::HashMap, hash::DefaultHasher};
 
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
@@ -62,4 +63,45 @@ pub enum Status {
     Completed, // Successfully finished
     Failed,    // Execution failed
     Cancelled, // Manually cancelled
+}
+
+impl Hash for Status {
+    fn hash<H: Hasher>(&self, state: &mut H) {
+        match self {
+            Status::Pending => state.write_u8(0),
+            Status::Completed => state.write_u8(1),
+            Status::Failed => state.write_u8(2),
+            Status::Cancelled => state.write_u8(3),
+        }
+    }
+}
+
+impl Pipeline {
+    pub fn hash(&self) -> String {
+        let mut hasher = DefaultHasher::new();
+
+        // Hash all relevant fields
+        self.id.hash(&mut hasher);
+        self.user_id.hash(&mut hasher);
+        self.wallet_address.hash(&mut hasher);
+        self.pubkey.hash(&mut hasher);
+        self.current_steps.hash(&mut hasher);
+
+        // Hash the steps map
+        for (key, value) in &self.steps {
+            key.hash(&mut hasher);
+            value.id.hash(&mut hasher);
+            // For PipelineStep, hash important fields
+            value.next_steps.hash(&mut hasher);
+            value.status.hash(&mut hasher);
+            value.transaction_hash.hash(&mut hasher);
+            value.error.hash(&mut hasher);
+        }
+
+        self.status.hash(&mut hasher);
+        self.created_at.hash(&mut hasher);
+
+        // Convert the hash to a hex string
+        format!("{:x}", hasher.finish())
+    }
 }

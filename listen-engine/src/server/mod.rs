@@ -164,11 +164,6 @@ async fn get_pipelines(state: Data<AppState>, req: HttpRequest) -> impl Responde
         }
     };
 
-    println!(
-        "user: {}, {}, {}",
-        user.user_id, user.wallet_address, user.pubkey
-    );
-
     let (response_tx, response_rx) = oneshot::channel();
     tracing::debug!("Sending GetAllPipelinesByUser message to engine");
     match state
@@ -262,7 +257,7 @@ async fn create_pipeline(
     )
         .into();
 
-    println!("Pipeline: {:#?}", pipeline);
+    tracing::info!(pipeline = ?pipeline, "creating pipeline");
 
     // Create oneshot channel for response
     let (response_tx, response_rx) = oneshot::channel();

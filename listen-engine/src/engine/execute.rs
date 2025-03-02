@@ -34,7 +34,7 @@ impl Engine {
             Err(_) => None,
         };
 
-        let transaction_result = match swap_order_to_transaction(
+        match swap_order_to_transaction(
             order,
             &lifi::LiFi::new(lifi_api_key),
             wallet_address,
@@ -53,7 +53,17 @@ impl Engine {
                 )
                 .await?;
                 privy_transaction.evm_transaction = Some(transaction);
-                self.privy.execute_transaction(privy_transaction).await
+                match self
+                    .privy
+                    .execute_transaction(privy_transaction.clone())
+                    .await
+                {
+                    Ok(transaction_hash) => Ok(transaction_hash),
+                    Err(e) => {
+                        tracing::error!(transaction = ?privy_transaction, ?order, error = %e, "Failed to execute evm order");
+                        Err(EngineError::TransactionError(e))
+                    }
+                }
             }
             SwapOrderTransaction::Solana(transaction) => {
                 let latest_blockhash = BLOCKHASH_CACHE
@@ -64,11 +74,16 @@ impl Engine {
                     inject_blockhash_into_encoded_tx(&transaction, &latest_blockhash.to_string())
                         .map_err(EngineError::InjectBlockhashError)?;
                 privy_transaction.solana_transaction = Some(fresh_blockhash_tx);
-                self.privy.execute_transaction(privy_transaction).await
+                match self.privy.execute_transaction(privy_transaction).await {
+                    Ok(transaction_hash) => Ok(transaction_hash),
+                    Err(e) => {
+                        // no log of tx for solana since its base64 encoded and solana transactions pretty much never fail
+                        tracing::error!(?order, error = %e, "Failed to execute solana order");
+                        Err(EngineError::TransactionError(e))
+                    }
+                }
             }
-        };
-
-        transaction_result.map_err(EngineError::TransactionError)
+        }
     }
 }
 

@@ -5,6 +5,7 @@ use std::{collections::HashMap, str::FromStr};
 
 use privy::caip2::Caip2;
 
+use super::retry::retry_with_backoff;
 use crate::jup::Jupiter;
 use privy::util::base64encode;
 
@@ -115,8 +116,30 @@ pub async fn swap_order_to_transaction(
         caip2_to_chain_id(&order.to_chain_caip2).ok_or(SwapOrderError::InvalidCaip2)?;
 
     if from_chain_id == to_chain_id && is_solana(&order.from_chain_caip2) {
-        return solana_swap_order_to_transaction(order, pubkey).await;
+        tracing::info!("Solana swap order to transaction");
+        return retry_with_backoff("solana swap to transaction", || async {
+            try_solana_swap_order_to_transaction(order, pubkey).await
+        })
+        .await;
     }
+
+    retry_with_backoff("lifi swap to transaction", || async {
+        try_lifi_swap_order_to_transaction(order, lifi, wallet_address, pubkey).await
+    })
+    .await
+}
+
+// Helper function that actually performs the LiFi swap operation
+async fn try_lifi_swap_order_to_transaction(
+    order: &SwapOrder,
+    lifi: &lifi::LiFi,
+    wallet_address: &str,
+    pubkey: &str,
+) -> Result<SwapOrderTransaction, SwapOrderError> {
+    let from_chain_id =
+        caip2_to_chain_id(&order.from_chain_caip2).ok_or(SwapOrderError::InvalidCaip2)?;
+    let to_chain_id =
+        caip2_to_chain_id(&order.to_chain_caip2).ok_or(SwapOrderError::InvalidCaip2)?;
 
     let from_address = if is_evm(&order.from_chain_caip2) {
         wallet_address
@@ -159,59 +182,6 @@ pub async fn swap_order_to_transaction(
     }
 }
 
-pub fn transaction_to_base64<T: Serialize>(transaction: &T) -> Result<String, SwapOrderError> {
-    let serialized = bincode::serialize(transaction)
-        .map_err(|e| SwapOrderError::SerializeError(anyhow::anyhow!(e)))?;
-    Ok(base64encode(&serialized))
-}
-
-pub async fn solana_swap_order_to_transaction(
-    order: &SwapOrder,
-    pubkey: &str, // solana output
-) -> Result<SwapOrderTransaction, SwapOrderError> {
-    tracing::info!(?order, "Solana swap order to transaction");
-
-    const MAX_RETRIES: u32 = 3;
-
-    for attempt in 0..=MAX_RETRIES {
-        if attempt > 0 {
-            // Exponential backoff: 100ms, 400ms, 900ms
-            let backoff_ms = 100 * attempt * attempt;
-            tracing::warn!(
-                "Retrying solana swap (attempt {}/{}), waiting {}ms",
-                attempt,
-                MAX_RETRIES,
-                backoff_ms
-            );
-            tokio::time::sleep(tokio::time::Duration::from_millis(backoff_ms as u64)).await;
-        }
-
-        match try_solana_swap_order_to_transaction(order, pubkey).await {
-            Ok(result) => return Ok(result),
-            Err(err) => {
-                // On last attempt, return the error
-                if attempt == MAX_RETRIES {
-                    tracing::error!(
-                        error = ?err,
-                        "All solana swap to transaction attempts failed after {} retries",
-                        MAX_RETRIES
-                    );
-                    return Err(err);
-                }
-
-                tracing::warn!(
-                    error = ?err,
-                    attempt = attempt,
-                    max_retries = MAX_RETRIES,
-                    "Solana swap to transaction attempt failed"
-                );
-            }
-        }
-    }
-
-    unreachable!("Loop should either return Ok result or final Err")
-}
-
 // Helper function that actually performs the swap operation
 async fn try_solana_swap_order_to_transaction(
     order: &SwapOrder,
@@ -236,6 +206,12 @@ async fn try_solana_swap_order_to_transaction(
     .map_err(SwapOrderError::JupiterError)?;
 
     Ok(SwapOrderTransaction::Solana(transaction_to_base64(&tx)?))
+}
+
+pub fn transaction_to_base64<T: Serialize>(transaction: &T) -> Result<String, SwapOrderError> {
+    let serialized = bincode::serialize(transaction)
+        .map_err(|e| SwapOrderError::SerializeError(anyhow::anyhow!(e)))?;
+    Ok(base64encode(&serialized))
 }
 
 #[cfg(test)]

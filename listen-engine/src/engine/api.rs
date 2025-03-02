@@ -73,21 +73,36 @@ impl From<(WirePipeline, PipelineParams)> for Pipeline {
         let mut steps: HashMap<Uuid, PipelineStep> = HashMap::new();
         let mut current_steps = Vec::new();
 
-        if let Some(first_step) = wire.steps.first() {
-            let id = Uuid::new_v4();
-            current_steps.push(id);
-            steps.insert(id, first_step.into());
+        let step_ids: Vec<Uuid> = wire.steps.iter().map(|_| Uuid::new_v4()).collect();
+
+        let now_step_indices: Vec<usize> = wire
+            .steps
+            .iter()
+            .enumerate()
+            .filter(|(_, step)| {
+                step.conditions
+                    .iter()
+                    .any(|c| matches!(c.r#type, WireConditionType::Now))
+            })
+            .map(|(i, _)| i)
+            .collect();
+
+        if now_step_indices.is_empty() && !wire.steps.is_empty() {
+            current_steps.push(step_ids[step_ids.len() - 1]);
+        } else {
+            for &idx in &now_step_indices {
+                current_steps.push(step_ids[idx]);
+            }
         }
 
-        for (i, step) in wire.steps.iter().enumerate().skip(1) {
-            let id = Uuid::new_v4();
-            let prev_id = steps.iter().nth(i - 1).map(|(id, _)| *id).unwrap();
+        for (i, (step, id)) in wire.steps.iter().zip(step_ids.iter()).enumerate() {
+            let mut pipeline_step: PipelineStep = step.into();
 
-            if let Some(prev_step) = steps.get_mut(&prev_id) {
-                prev_step.next_steps.push(id);
+            if !now_step_indices.contains(&i) && i > 0 {
+                pipeline_step.next_steps.push(step_ids[i - 1]);
             }
 
-            steps.insert(id, step.into());
+            steps.insert(*id, pipeline_step);
         }
 
         Pipeline {
