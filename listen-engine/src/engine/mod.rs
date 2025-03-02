@@ -8,7 +8,7 @@ pub mod evaluator;
 pub mod execute;
 pub mod order;
 pub mod pipeline;
-
+pub mod retry;
 use crate::engine::error::EngineError;
 use crate::redis::client::{make_redis_client, RedisClient};
 use crate::redis::subscriber::{make_redis_subscriber, PriceUpdate, RedisSubscriber};
