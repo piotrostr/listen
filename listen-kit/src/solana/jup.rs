@@ -172,7 +172,8 @@ impl Jupiter {
     ) -> Result<VersionedTransaction> {
         let swap_request = serde_json::json!({
             "userPublicKey": owner.to_string(),
-            "quoteResponse": quote_response
+            "quoteResponse": quote_response,
+            "dynamicSlippage": true,
         });
         let client = reqwest::Client::new();
         let raw_res = client
