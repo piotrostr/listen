@@ -73,25 +73,87 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
       );
     } catch (e) {
       console.error("Failed to parse swap response:", e);
-      return <div>Error parsing swap response</div>;
+      return (
+        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
+          <div className="mb-2">
+            <TransactionLink
+              status={"Failed"}
+              transactionHash={null}
+              error={toolOutput.result}
+            />
+          </div>
+        </div>
+      );
     }
   }
 
   if (toolOutput.name === "get_quote") {
     try {
-      // First try parsing as Jupiter quote
+      // Clean up the result string in case it has extra escaping
+      let resultData = toolOutput.result;
+
+      // Sometimes quotes get double-stringified, check for that
+      if (resultData.startsWith('"') && resultData.endsWith('"')) {
+        try {
+          // Try to parse once to remove outer quotes if double-stringified
+          resultData = JSON.parse(resultData);
+        } catch (e) {
+          // If this fails, keep the original string
+          resultData = toolOutput.result;
+        }
+      }
+
+      console.log("Cleaned quote data:", resultData);
+
       try {
-        const jupiterQuote = JupiterQuoteResponseSchema.parse(
-          JSON.parse(toolOutput.result)
-        );
-        return <JupiterQuoteDisplay quote={jupiterQuote} />;
-      } catch (jupiterError) {
-        // If not a Jupiter quote, try parsing as a regular quote
-        const quote = QuoteResponseSchema.parse(JSON.parse(toolOutput.result));
-        return <QuoteDisplay quote={quote} />;
+        // Parse the data to an object
+        const parsedData =
+          typeof resultData === "string" ? JSON.parse(resultData) : resultData;
+        console.log("Parsed quote data:", parsedData);
+
+        // First try Jupiter quote schema
+        try {
+          const jupiterQuote = JupiterQuoteResponseSchema.parse(parsedData);
+          console.log("Successfully parsed as Jupiter quote", jupiterQuote);
+          return <JupiterQuoteDisplay quote={jupiterQuote} />;
+        } catch (jupiterError) {
+          console.error("Jupiter quote validation failed:", jupiterError);
+
+          // Then try regular quote schema
+          try {
+            const quote = QuoteResponseSchema.parse(parsedData);
+            console.log("Successfully parsed as regular quote", quote);
+            return <QuoteDisplay quote={quote} />;
+          } catch (quoteError) {
+            console.error("Regular quote validation failed:", quoteError);
+            throw new Error("Failed to validate quote with either schema");
+          }
+        }
+      } catch (parseError) {
+        console.error("JSON parse error:", parseError);
+        throw parseError;
       }
     } catch (e) {
-      console.error("Failed to parse quote response:", e);
+      console.error("Quote processing failed:", e);
+
+      return (
+        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
+          <p className="text-red-400">
+            Failed to parse quote data:{" "}
+            {e instanceof Error ? e.message : "Unknown error"}
+          </p>
+          <details>
+            <summary className="cursor-pointer text-sm">
+              View raw quote data
+            </summary>
+            <pre className="text-xs mt-2 overflow-x-auto p-2 bg-gray-800 rounded">
+              {typeof toolOutput.result === "string"
+                ? toolOutput.result
+                : JSON.stringify(toolOutput.result, null, 2)}
+            </pre>
+          </details>
+        </div>
+      );
     }
   }
   // Default tool output display

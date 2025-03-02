@@ -152,9 +152,9 @@ pub async fn swap(
     let signer = SignerContext::current().await;
     #[cfg(feature = "solana")]
     if from_chain == "1151111081099710" && to_chain == "1151111081099710" {
-        return crate::solana::tools::jupiter_swap(
+        return crate::solana::tools::swap(
             from_token_address,
-            amount.parse::<u64>().map_err(|e| anyhow!(e))?,
+            amount,
             to_token_address,
         )
         .await;

@@ -1,6 +1,7 @@
 import { useState } from "react";
-import { FaApplePay, FaShoppingCart } from "react-icons/fa";
+import { FaApplePay, FaExchangeAlt, FaShoppingCart } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
+import { useChatType } from "../hooks/useChatType";
 import { useEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
@@ -15,31 +16,42 @@ export function Portfolio() {
     useSolanaPortfolio();
   const { data: evmAssets, isLoading: isLoadingEvm } = useEvmPortfolio();
   const { data: wallets } = usePrivyWallets();
+  const { chatType } = useChatType(); // Get the global chat type from settings
 
-  const [clickedSolana, setClickedSolana] = useState(false);
-  const [clickedEvm, setClickedEvm] = useState(false);
+  // Local state for chain display toggle
+  const [displayChain, setDisplayChain] = useState<"solana" | "ethereum">(() =>
+    chatType === "solana" ? "solana" : "ethereum"
+  );
+
+  const [clickedAddress, setClickedAddress] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
 
-  const isLoading = isLoadingSolana || isLoadingEvm;
+  // Use local display chain instead of directly using chatType
+  const selectedChain = displayChain;
+  const isLoading = selectedChain === "solana" ? isLoadingSolana : isLoadingEvm;
+  const displayedAssets =
+    selectedChain === "solana" ? (solanaAssets ?? []) : (evmAssets ?? []);
 
   if (isLoading) {
     return <PortfolioSkeleton />;
   }
 
-  const handleClickCopySolana = () => {
+  const handleClickCopy = () => {
     if (!wallets) return;
-    navigator.clipboard.writeText(wallets.solanaWallet.toString());
-    setClickedSolana(true);
-    setTimeout(() => setClickedSolana(false), 1000);
+    const address =
+      selectedChain === "solana"
+        ? wallets.solanaWallet.toString()
+        : wallets.evmWallet.toString();
+
+    navigator.clipboard.writeText(address);
+    setClickedAddress(true);
+    setTimeout(() => setClickedAddress(false), 1000);
   };
 
-  const handleClickCopyEvm = () => {
-    if (!wallets) return;
-    navigator.clipboard.writeText(wallets.evmWallet.toString());
-    setClickedEvm(true);
-    setTimeout(() => setClickedEvm(false), 1000);
+  const handleToggleChain = () => {
+    setDisplayChain((prev) => (prev === "solana" ? "ethereum" : "solana"));
   };
 
   const handleTopup = async () => {
@@ -61,44 +73,54 @@ export function Portfolio() {
     setModalOpen(true);
   };
 
-  const assets = [...(solanaAssets ?? []), ...(evmAssets ?? [])];
+  const currentAddress =
+    selectedChain === "solana"
+      ? wallets?.solanaWallet?.toString()
+      : wallets?.evmWallet?.toString();
 
   return (
     <div className="h-full font-mono">
-      <div className="flex lg:flex-row flex-col lg:justify-between lg:items-center p-4 lg:mt-3 lg:mb-3">
+      <div className="flex flex-row justify-between items-center p-4 lg:mt-3 lg:mb-3">
         <h2 className="text-xl font-bold lg:mb-0 mb-2">Portfolio</h2>
-        <div className="flex lg:flex-row flex-col lg:items-center gap-2">
+
+        {/* Address Display with Chain Toggle */}
+        {currentAddress && (
           <div className="flex items-center gap-2">
             <img
-              src={imageMap["solana"]}
-              alt="Solana"
+              src={imageMap[selectedChain]}
+              alt={selectedChain}
               className="w-4 h-4 rounded-full"
             />
-            {wallets?.solanaWallet?.toString().slice(0, 4)}...
-            {wallets?.solanaWallet?.toString().slice(-5)}
-            <div onClick={handleClickCopySolana} className="cursor-pointer">
-              {clickedSolana ? <div> ✅</div> : <CopyIcon />}
+            {currentAddress.slice(0, 4)}...
+            {currentAddress.slice(-5)}
+            <div onClick={handleClickCopy} className="cursor-pointer">
+              {clickedAddress ? <div> ✅</div> : <CopyIcon />}
+            </div>
+            {/* Enhanced Chain Toggle Button with Switch Icon */}
+            <div
+              onClick={handleToggleChain}
+              className="cursor-pointer ml-2 px-2 py-1 rounded-lg hover:bg-purple-500/20 transition-colors flex items-center gap-1"
+              title={`Switch to ${selectedChain === "solana" ? "Ethereum" : "Solana"} assets`}
+            >
+              <img
+                src={imageMap[selectedChain === "solana" ? "eth" : "solana"]}
+                alt={
+                  selectedChain === "solana"
+                    ? "Switch to Ethereum"
+                    : "Switch to Solana"
+                }
+                className="w-5 h-5 rounded-full"
+              />
+              <FaExchangeAlt className="text-purple-300 text-sm" />
             </div>
           </div>
-          <div className="flex items-center gap-2">
-            <img
-              src={imageMap["eth"]}
-              alt="Ethereum"
-              className="w-4 h-4 rounded-full"
-            />
-            {wallets?.evmWallet?.toString().slice(0, 4)}...
-            {wallets?.evmWallet?.toString().slice(-5)}
-            <div onClick={handleClickCopyEvm} className="cursor-pointer">
-              {clickedEvm ? <div> ✅</div> : <CopyIcon />}
-            </div>
-          </div>
-        </div>
+        )}
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
         <div className="p-4 pt-0 space-y-4">
-          {assets
-            ?.sort((a, b) => b.price * b.amount - a.price * a.amount)
+          {displayedAssets
+            .sort((a, b) => b.price * b.amount - a.price * a.amount)
             .map((asset) => (
               <div
                 key={`${asset.address}-${asset.chain}`}
@@ -137,16 +159,17 @@ export function Portfolio() {
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-2">
-                      {asset.address ===
-                        "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" && (
-                        <button
-                          className="cursor-pointer border border-purple-500/30 rounded-full p-2 bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
-                          onClick={handleTopup}
-                          disabled={process.env.NODE_ENV === "production"}
-                        >
-                          <FaApplePay size={32} />
-                        </button>
-                      )}
+                      {selectedChain === "solana" &&
+                        asset.address ===
+                          "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" && (
+                          <button
+                            className="cursor-pointer border border-purple-500/30 rounded-full p-2 bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
+                            onClick={handleTopup}
+                            disabled={process.env.NODE_ENV === "production"}
+                          >
+                            <FaApplePay size={32} />
+                          </button>
+                        )}
                       <div>
                         <p className="font-bold">
                           ${(asset.price * asset.amount).toFixed(2)}
@@ -168,7 +191,7 @@ export function Portfolio() {
                   </div>
 
                   {/* Buy/Sell buttons - only show for Solana chain assets */}
-                  {asset.chain === "solana" && (
+                  {selectedChain === "solana" && (
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleOpenModal(asset, "buy")}

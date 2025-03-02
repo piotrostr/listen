@@ -4,7 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { config } from "../config";
 import { chatCache } from "./localStorage";
-import { systemPrompt } from "./prompts";
+import { systemPromptEvm, systemPromptSolana } from "./prompts";
 import { Chat, Message, StreamResponse, ToolOutputSchema } from "./types";
 import { useChatType } from "./useChatType";
 import { useDebounce } from "./useDebounce";
@@ -193,7 +193,7 @@ export function useChat() {
             });
           }
         }
-        if (evmPortfolio) {
+        if (evmPortfolio && chatType === "omni") {
           for (const token of evmPortfolio) {
             portfolio.push({
               chain: token.chain,
@@ -206,11 +206,17 @@ export function useChat() {
           }
         }
         const chat_history = messageHistory.filter((msg) => msg.content !== "");
-        const preamble = systemPrompt(
-          portfolio,
-          wallets?.evmWallet.toString() || "",
-          wallets?.solanaWallet.toString() || ""
-        );
+        const preamble =
+          chatType === "solana"
+            ? systemPromptSolana(
+                portfolio,
+                wallets?.solanaWallet.toString() || ""
+              )
+            : systemPromptEvm(
+                portfolio,
+                wallets?.evmWallet.toString() || "",
+                wallets?.solanaWallet.toString() || ""
+              );
 
         const body = JSON.stringify({
           prompt: userMessage,
