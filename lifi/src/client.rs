@@ -97,7 +97,13 @@ impl LiFiClient {
             let simplified_error =
                 Self::extract_error_message(&res).unwrap_or_else(|| "Unknown error".to_string());
             tracing::debug!("Full error response: {}", res);
-            tracing::error!(?status, "GET {} failed: {}", endpoint, simplified_error);
+            tracing::error!(
+                ?status,
+                "GET {} failed: {}, params: {:?}",
+                endpoint,
+                simplified_error,
+                params
+            );
             return Err(LiFiClientError::InvalidStatusCode(
                 status,
                 simplified_error.into(),
