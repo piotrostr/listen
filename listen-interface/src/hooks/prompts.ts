@@ -109,7 +109,7 @@ export function systemPromptSolana(
   <knowledge>
   ${pipelineKnowledge}
   <errors>
-    0x1771 is a program error when slippage tolerance is too low
+    0x1771: program error when slippage tolerance is too low, this can be fixed by increasing the slippage tolerance or a retry
   </errors>
   </knowledge>
   <guidelines>

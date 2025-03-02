@@ -73,21 +73,31 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
       );
     } catch (e) {
       console.error("Failed to parse swap response:", e);
-      return <div>Error parsing swap response</div>;
+      return (
+        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
+          <div className="mb-2">
+            <TransactionLink
+              status={"Failed"}
+              transactionHash={null}
+              error={toolOutput.result}
+            />
+          </div>
+        </div>
+      );
     }
   }
 
   if (toolOutput.name === "get_quote") {
     try {
-      // First try parsing as Jupiter quote
+      const result = toolOutput.result.replace(/"/g, "");
       try {
         const jupiterQuote = JupiterQuoteResponseSchema.parse(
-          JSON.parse(toolOutput.result)
+          JSON.parse(result)
         );
         return <JupiterQuoteDisplay quote={jupiterQuote} />;
       } catch (jupiterError) {
         // If not a Jupiter quote, try parsing as a regular quote
-        const quote = QuoteResponseSchema.parse(JSON.parse(toolOutput.result));
+        const quote = QuoteResponseSchema.parse(JSON.parse(result));
         return <QuoteDisplay quote={quote} />;
       }
     } catch (e) {
