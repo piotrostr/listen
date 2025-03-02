@@ -212,7 +212,7 @@ impl Engine {
                                             // Don't remove yet - will be removed on next evaluation
                                         }
                                         Err(e) => {
-                                            tracing::error!(%current_step_id, error = %e, "Failed to execute order");
+                                            tracing::error!(%current_step_id, error = %e, order = ?order, "Failed to execute order");
                                             step.status = Status::Failed;
                                             step.transaction_hash = None;
                                             step.error = Some(e.to_string());
