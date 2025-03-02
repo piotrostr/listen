@@ -446,6 +446,7 @@ impl Engine {
         pipeline: &Pipeline,
         pipeline_hash: &mut String,
     ) -> Result<(), EngineError> {
+        tracing::info!("Saving pipeline: {}", pipeline.id);
         if pipeline.hash() != *pipeline_hash {
             *pipeline_hash = pipeline.hash();
             self.redis
