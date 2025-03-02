@@ -17,7 +17,7 @@ use crate::solana::data::PortfolioItem;
 
 use super::data::holdings_to_portfolio;
 use super::deploy_token::create_deploy_token_tx;
-use super::trade::create_trade_transaction;
+use super::trade::create_jupiter_swap_transaction;
 use super::trade_pump::{create_buy_pump_fun_tx, create_sell_pump_fun_tx};
 use super::transfer::{create_transfer_sol_tx, create_transfer_spl_tx};
 use super::util::execute_solana_transaction;
@@ -33,29 +33,126 @@ fn create_rpc() -> RpcClient {
 }
 
 #[tool(description = "
-Performs a swap from input_mint to output_mint on Jupiter. 
+Fetches a quote from Jupiter API.
 
-The input_amount has to be account for decimals
-e.g. 1 token with 6 decimals => 1000000
+Params:
+input_mint: string
+  public key of the token to swap from
+input_amount: string
+  amount of the input_mint to swap accounting for decimals, 
+  e.g. 1000000 6 decimals, or 1000000000000000000 9 decimals
+output_mint: string
+  public key of the token to swap to
 
-Both the input_mint and output_mint have to be valid Solana public keys of 
-tokens, the so called token mints
+Might throw for pump.fun tokens that have not migrated to Raydium. This is
+different from the Swap tool, works for any Solana token
 ")]
-pub async fn jupiter_swap(
+pub async fn get_quote(
     input_mint: String,
     input_amount: u64,
     output_mint: String,
 ) -> Result<String> {
-    execute_solana_transaction(move |owner| async move {
-        create_trade_transaction(
-            input_mint,
-            input_amount,
-            output_mint,
-            &owner,
-        )
-        .await
-    })
+    let quote = crate::solana::jup::Jupiter::fetch_quote(
+        &input_mint,
+        &output_mint,
+        input_amount,
+    )
     .await
+    .map_err(|e| anyhow!("{:#?}", e))?;
+
+    Ok(serde_json::to_string(&quote)?)
+}
+
+#[tool(description = "
+Performs a swap, choosing the best method. 
+
+Params:
+input_mint: string
+  public key of the token to swap from
+amount: string 
+  amount of the input_mint to swap accounting for decimals, 
+  e.g. 1000000 6 decimals, or 1000000000000000000 9 decimals
+output_mint: string
+  public key of the token to swap to
+
+Works for any Solana token, regardless of whether it's on PumpFun, Raydium,
+Meteora etc. Will try Jupiter first, and if that fails, will attempt to use 
+Pump.fun directly for applicable tokens.
+
+Return:
+transaction signature as a string
+")]
+pub async fn swap(
+    input_mint: String,
+    amount: String,
+    output_mint: String,
+) -> Result<String> {
+    let _input_mint = input_mint.clone();
+    let _amount = amount.clone();
+    let _output_mint = output_mint.clone();
+
+    let jupiter_result =
+        execute_solana_transaction(move |owner| async move {
+            create_jupiter_swap_transaction(
+                input_mint.clone(),
+                amount.parse::<u64>()?,
+                output_mint.clone(),
+                &owner,
+            )
+            .await
+            // there would be a slippage error here
+        })
+        .await;
+
+    // If Jupiter swap succeeds, return the result
+    match jupiter_result {
+        Ok(signature) => return Ok(signature),
+        Err(e) => {
+            let jupiter_error = e.to_string();
+            if e.to_string().contains("0x1771") {
+                return Err(e);
+            }
+            // Parse the amount from lamports to SOL
+            let amount_u64 = _amount.parse::<u64>()?;
+            let sol_amount = amount_u64 as f64 / 1_000_000_000.0; // Convert lamports to SOL
+
+            // Try to buy using Pump.fun with a default slippage of 100 bps (1%)
+            let pump_res =
+                execute_solana_transaction(move |owner| async move {
+                    if _input_mint.to_lowercase()
+                        == "so11111111111111111111111111111111111111112"
+                    {
+                        create_buy_pump_fun_tx(
+                            _output_mint,
+                            sol_to_lamports(sol_amount),
+                            100, // 1% slippage
+                            &create_rpc(),
+                            &owner,
+                        )
+                        .await
+                    } else {
+                        create_sell_pump_fun_tx(
+                            _input_mint,
+                            amount_u64,
+                            &owner,
+                        )
+                        .await
+                    }
+                })
+                .await;
+
+            match pump_res {
+                Ok(signature) => return Ok(signature),
+                Err(e) => {
+                    return Err(anyhow!(
+                        "jupiter error: {}\n pump.fun error: {}",
+                        jupiter_error,
+                        e.to_string()
+                    ));
+                }
+            }
+        }
+    }
 }
 
 #[tool(description = "

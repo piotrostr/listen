@@ -3,7 +3,7 @@ use anyhow::{anyhow, Result};
 use solana_sdk::pubkey::Pubkey;
 use solana_sdk::transaction::VersionedTransaction;
 
-pub async fn create_trade_transaction(
+pub async fn create_jupiter_swap_transaction(
     input_mint: String,
     input_amount: u64,
     output_mint: String,
@@ -29,9 +29,9 @@ mod tests {
     use solana_sdk::signer::Signer;
 
     #[tokio::test]
-    async fn test_trade() {
+    async fn test_jupiter_swap() {
         let keypair = load_keypair_for_tests();
-        let result = create_trade_transaction(
+        let result = create_jupiter_swap_transaction(
             constants::WSOL.to_string(),
             sol_to_lamports(0.001),
             "FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P".to_string(),
