@@ -166,7 +166,8 @@ impl Engine {
         &self,
         pipeline: &mut Pipeline,
         price_cache: &HashMap<String, f64>,
-    ) {
+        pipeline_hash: &mut String,
+    ) -> Result<(), EngineError> {
         // Collect indexes of steps to remove after processing
         let mut steps_to_remove = Vec::new();
         let mut steps_to_add = Vec::new();
@@ -284,6 +285,8 @@ impl Engine {
                         steps_to_remove.push(idx);
                     }
                 }
+
+                self.save_pipeline(pipeline, &mut pipeline_hash).await?;
             } else {
                 // Step not found, mark for removal
                 steps_to_remove.push(idx);
@@ -304,6 +307,8 @@ impl Engine {
                 pipeline.current_steps.remove(idx);
             }
         }
+
+        Ok(())
     }
 
     pub fn collect_step_results(&self, pipeline: &mut Pipeline) -> bool {
@@ -375,21 +380,14 @@ impl Engine {
         let mut pipeline_hash = pipeline.hash();
 
         self.populate_current_steps_if_empty(pipeline);
-        if pipeline.hash() != pipeline_hash {
-            self.save_pipeline(pipeline).await?;
-            pipeline_hash = pipeline.hash();
-        }
+        self.save_pipeline(pipeline, &mut pipeline_hash).await?;
 
-        self.process_all_steps(pipeline, &price_cache).await;
-        if pipeline.hash() != pipeline_hash {
-            self.save_pipeline(pipeline).await?;
-            pipeline_hash = pipeline.hash();
-        }
+        self.process_all_steps(pipeline, &price_cache, &mut pipeline_hash)
+            .await;
+        self.save_pipeline(pipeline, &mut pipeline_hash).await?;
 
         let pipeline_done = self.collect_step_results(pipeline);
-        if pipeline.hash() != pipeline_hash {
-            self.save_pipeline(pipeline).await?;
-        }
+        self.save_pipeline(pipeline, &mut pipeline_hash).await?;
 
         let duration = start.elapsed();
         histogram!("pipeline_evaluation_duration", duration);
@@ -430,10 +428,19 @@ impl Engine {
         assets.contains(asset)
     }
 
-    pub async fn save_pipeline(&self, pipeline: &mut Pipeline) -> Result<(), EngineError> {
-        self.redis
-            .save_pipeline(pipeline)
-            .await
-            .map_err(EngineError::SavePipelineError)
+    pub async fn save_pipeline(
+        &self,
+        pipeline: &Pipeline,
+        pipeline_hash: &mut String,
+    ) -> Result<(), EngineError> {
+        if pipeline.hash() != *pipeline_hash {
+            *pipeline_hash = pipeline.hash();
+            self.redis
+                .save_pipeline(pipeline)
+                .await
+                .map_err(EngineError::SavePipelineError)
+        } else {
+            Ok(())
+        }
     }
 }
