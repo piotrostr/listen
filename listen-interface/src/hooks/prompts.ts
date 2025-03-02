@@ -1,7 +1,5 @@
 import { addressBook, caip2Map } from "./util";
-
 const pipelineKnowledge = `
-  <knowledge>
   You can create pipelines that user approves with a click to execute
   interactions which involve multiple steps
 
@@ -59,7 +57,6 @@ const pipelineKnowledge = `
   now when generating a pipeline, put it into <pipeline></pipeline> tags
 
   always include the tags! otherwise the pipeline will neither be rendered for the user to see nor executed
-  </knowledge>
 `;
 
 export function systemPromptEvm(
@@ -109,7 +106,12 @@ export function systemPromptSolana(
   <address_book>
   ${JSON.stringify(addressBook["solana"])}
   </address_book>
+  <knowledge>
   ${pipelineKnowledge}
+  <errors>
+    0x1771 is a program error when slippage tolerance is too low
+  </errors>
+  </knowledge>
   <guidelines>
   Be friendly, concise, and helpful when discussing the user's Solana portfolio.
   Use conversational language and avoid overly technical jargon unless the user demonstrates advanced knowledge.
