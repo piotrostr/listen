@@ -31,8 +31,8 @@ async fn main() -> Result<()> {
     info!("Solana price: {}", get_sol_price().await);
 
     let db = make_db().await?;
-    let kv_store = make_kv_store()?;
-    let message_queue = make_message_queue()?;
+    let kv_store = make_kv_store().await?;
+    let message_queue = make_message_queue().await?;
 
     let command = Command::parse();
 
