@@ -88,7 +88,7 @@ impl From<(WirePipeline, PipelineParams)> for Pipeline {
             .collect();
 
         if now_step_indices.is_empty() && !wire.steps.is_empty() {
-            current_steps.push(step_ids[0]);
+            current_steps.push(step_ids[step_ids.len() - 1]);
         } else {
             for &idx in &now_step_indices {
                 current_steps.push(step_ids[idx]);
@@ -98,8 +98,8 @@ impl From<(WirePipeline, PipelineParams)> for Pipeline {
         for (i, (step, id)) in wire.steps.iter().zip(step_ids.iter()).enumerate() {
             let mut pipeline_step: PipelineStep = step.into();
 
-            if !now_step_indices.contains(&i) && i + 1 < step_ids.len() {
-                pipeline_step.next_steps.push(step_ids[i + 1]);
+            if !now_step_indices.contains(&i) && i > 0 {
+                pipeline_step.next_steps.push(step_ids[i - 1]);
             }
 
             steps.insert(*id, pipeline_step);
