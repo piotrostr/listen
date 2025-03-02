@@ -170,6 +170,53 @@ pub async fn solana_swap_order_to_transaction(
     pubkey: &str, // solana output
 ) -> Result<SwapOrderTransaction, SwapOrderError> {
     tracing::info!(?order, "Solana swap order to transaction");
+
+    const MAX_RETRIES: u32 = 3;
+
+    for attempt in 0..=MAX_RETRIES {
+        if attempt > 0 {
+            // Exponential backoff: 100ms, 400ms, 900ms
+            let backoff_ms = 100 * attempt * attempt;
+            tracing::warn!(
+                "Retrying solana swap (attempt {}/{}), waiting {}ms",
+                attempt,
+                MAX_RETRIES,
+                backoff_ms
+            );
+            tokio::time::sleep(tokio::time::Duration::from_millis(backoff_ms as u64)).await;
+        }
+
+        match try_solana_swap_order_to_transaction(order, pubkey).await {
+            Ok(result) => return Ok(result),
+            Err(err) => {
+                // On last attempt, return the error
+                if attempt == MAX_RETRIES {
+                    tracing::error!(
+                        error = ?err,
+                        "All solana swap to transaction attempts failed after {} retries",
+                        MAX_RETRIES
+                    );
+                    return Err(err);
+                }
+
+                tracing::warn!(
+                    error = ?err,
+                    attempt = attempt,
+                    max_retries = MAX_RETRIES,
+                    "Solana swap to transaction attempt failed"
+                );
+            }
+        }
+    }
+
+    unreachable!("Loop should either return Ok result or final Err")
+}
+
+// Helper function that actually performs the swap operation
+async fn try_solana_swap_order_to_transaction(
+    order: &SwapOrder,
+    pubkey: &str,
+) -> Result<SwapOrderTransaction, SwapOrderError> {
     let quote = Jupiter::fetch_quote(
         &order.input_token,
         &order.output_token,
