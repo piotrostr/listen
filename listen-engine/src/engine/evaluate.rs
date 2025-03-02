@@ -3,7 +3,11 @@
 //! false if the pipeline is not complete meaning it should be evaluated
 //! again
 
-use std::{collections::HashSet, str::FromStr, time::Instant};
+use std::{
+    collections::{HashMap, HashSet},
+    str::FromStr,
+    time::Instant,
+};
 
 use metrics::{counter, histogram};
 use solana_sdk::pubkey::Pubkey;
@@ -18,11 +22,17 @@ use crate::{
     Engine,
 };
 
+/// Evaluate methods in Engine return `bool`
+/// `true` if the pipeline is complete and should be removed from active pipelines,
+/// `false` to continue the pipeline evaluation on price update events
+///
+/// on error, the pipeline is saved to redis and the error is returned instantly
 impl Engine {
-    pub async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<bool, EngineError> {
-        tracing::debug!("Evaluating pipeline: {}", pipeline.id);
-        let start = Instant::now();
-
+    /// ensure that all prices are available for the pipeline,
+    pub async fn ensure_prices_available(
+        &self,
+        pipeline: &mut Pipeline,
+    ) -> Result<bool, EngineError> {
         // Get the initial price cache
         let mut price_cache = self.price_cache.read().await.clone();
 
@@ -84,10 +94,6 @@ impl Engine {
 
                 // Mark the pipeline as failed
                 pipeline.status = Status::Failed;
-                self.redis
-                    .save_pipeline(pipeline)
-                    .await
-                    .map_err(EngineError::SavePipelineError)?;
                 return Ok(true);
             }
         }
@@ -105,8 +111,14 @@ impl Engine {
             }
         }
 
-        let mut save_needed = false;
+        Ok(false)
+    }
 
+    pub async fn populate_current_steps_if_empty(
+        &self,
+        pipeline: &mut Pipeline,
+        save_needed: &mut bool,
+    ) -> Result<(), EngineError> {
         // If current_steps is empty but there are pending steps, populate it from next_steps
         if pipeline.current_steps.is_empty() {
             // Find all steps that are pending and have no previous steps pointing to them
@@ -125,7 +137,7 @@ impl Engine {
                 if let Some(step) = pipeline.steps.get(&step_id) {
                     if matches!(step.status, Status::Pending) {
                         pipeline.current_steps.push(step_id);
-                        save_needed = true;
+                        *save_needed = true;
                     }
                 }
             }
@@ -147,7 +159,7 @@ impl Engine {
                                 && !has_failed_dependencies
                             {
                                 pipeline.current_steps.push(*next_step_id);
-                                save_needed = true;
+                                *save_needed = true;
                             }
                         }
                     }
@@ -155,6 +167,15 @@ impl Engine {
             }
         }
 
+        Ok(())
+    }
+
+    pub async fn process_all_steps(
+        &self,
+        pipeline: &mut Pipeline,
+        price_cache: &HashMap<String, f64>,
+        save_needed: &mut bool,
+    ) -> Result<(), EngineError> {
         // Process one step at a time
         while let Some(&current_step_id) = pipeline.current_steps.first() {
             if let Some(step) = pipeline.steps.get_mut(&current_step_id) {
@@ -204,11 +225,7 @@ impl Engine {
                                 break; // just pending, we'll check again next time
                             }
                             Err(e) => {
-                                // if it went wrong (no pricing etc), save pipeline to redis and return
-                                self.redis
-                                    .save_pipeline(pipeline)
-                                    .await
-                                    .map_err(EngineError::RedisClientError)?;
+                                // if it went wrong (no pricing etc), save pipeline to redis and return err
                                 return Err(EngineError::EvaluatePipelineError(e));
                             }
                         }
@@ -252,9 +269,13 @@ impl Engine {
                 pipeline.current_steps.remove(0);
             }
 
-            save_needed = true;
+            *save_needed = true;
         }
 
+        Ok(())
+    }
+
+    pub async fn collect_step_results(&self, pipeline: &mut Pipeline) -> Result<bool, EngineError> {
         // Check if all steps in the pipeline are complete
         let all_steps_complete = pipeline
             .steps
@@ -268,33 +289,110 @@ impl Engine {
 
         if any_of_steps_failed {
             pipeline.status = Status::Failed;
-            self.redis
-                .save_pipeline(pipeline)
-                .await
-                .map_err(EngineError::SavePipelineError)?;
             return Ok(true);
         }
 
         if all_steps_complete {
             pipeline.status = Status::Completed;
-            self.redis
-                .save_pipeline(pipeline)
-                .await
-                .map_err(EngineError::SavePipelineError)?;
             return Ok(true);
         }
 
-        let duration = start.elapsed();
-        counter!("pipeline_evaluations", 1);
-        histogram!("pipeline_evaluation_duration", duration);
+        Ok(false)
+    }
 
-        // Only save if changes were made
+    /// if evaluate_pipline returns true, means its complete, saved and should be removed from active pipelines
+    pub async fn evaluate_pipeline(&self, pipeline: &mut Pipeline) -> Result<bool, EngineError> {
+        tracing::debug!("Evaluating pipeline: {}", pipeline.id);
+        let start = Instant::now();
+        counter!("pipeline_evaluations", 1);
+
+        match self.ensure_prices_available(pipeline).await {
+            Ok(true) => {
+                self.redis
+                    .save_pipeline(pipeline)
+                    .await
+                    .map_err(EngineError::SavePipelineError)?;
+                let duration = start.elapsed();
+                histogram!("pipeline_evaluation_duration", duration);
+                return Ok(true);
+            }
+            Err(e) => {
+                let duration = start.elapsed();
+                histogram!("pipeline_evaluation_duration", duration);
+                return Err(e);
+            }
+            Ok(false) => {} // false means keep going
+        }
+
+        // Clone the price cache after ensuring prices are available
+        let price_cache = self.price_cache.read().await.clone();
+
+        let mut save_needed = false;
+
+        // this is the core processing, while init/teardown is handled by ensure_prices_available and collect_step_results
+        // the two methods don't return any values, we only save the pipeline if there are any changes on error
+
+        match self
+            .populate_current_steps_if_empty(pipeline, &mut save_needed)
+            .await
+        {
+            Ok(_) => {}
+            Err(e) => {
+                if save_needed {
+                    self.redis
+                        .save_pipeline(pipeline)
+                        .await
+                        .map_err(EngineError::SavePipelineError)?;
+                }
+                tracing::error!("Failed to populate steps: {}", e);
+                let duration = start.elapsed();
+                histogram!("pipeline_evaluation_duration", duration);
+                return Err(e);
+            }
+        }
+
+        match self
+            .process_all_steps(pipeline, &price_cache, &mut save_needed)
+            .await
+        {
+            Ok(_) => {}
+            Err(e) => {
+                if save_needed {
+                    self.redis
+                        .save_pipeline(pipeline)
+                        .await
+                        .map_err(EngineError::SavePipelineError)?;
+                }
+                tracing::error!("Failed to process steps: {}", e);
+                let duration = start.elapsed();
+                histogram!("pipeline_evaluation_duration", duration);
+                return Err(e);
+            }
+        }
+
+        match self.collect_step_results(pipeline).await? {
+            true => {
+                self.redis
+                    .save_pipeline(pipeline)
+                    .await
+                    .map_err(EngineError::SavePipelineError)?;
+                let duration = start.elapsed();
+                histogram!("pipeline_evaluation_duration", duration);
+                return Ok(true);
+            }
+            false => {} // false means keep going
+        }
+
+        // Only save if changes were made and nothing threw (price has not been reached etc)
         if save_needed {
             self.redis
                 .save_pipeline(pipeline)
                 .await
                 .map_err(EngineError::SavePipelineError)?;
         }
+
+        let duration = start.elapsed();
+        histogram!("pipeline_evaluation_duration", duration);
 
         Ok(false)
     }
