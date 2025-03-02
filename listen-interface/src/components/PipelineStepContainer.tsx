@@ -98,6 +98,9 @@ function formatError(error: string) {
   if (error.includes("insufficient funds")) {
     return "Insufficient balance";
   }
+  if (error.includes("0x1771")) {
+    return "Slippage tolerance exceeded";
+  }
   try {
     // Look for JSON between curly braces
     const match = error.match(/{.*}/);
