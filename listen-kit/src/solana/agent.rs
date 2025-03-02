@@ -25,7 +25,6 @@ pub async fn create_solana_agent(
         .tool(GetSolBalance)
         .tool(GetSplTokenBalance)
         .tool(SearchOnDexScreener)
-        .tool(DeployPumpFunToken)
         .tool(FetchCandlesticks)
         .tool(FetchTopTokens)
         .tool(DeployPumpFunToken)
