@@ -396,7 +396,7 @@ impl Engine {
         self.save_pipeline(pipeline, &mut pipeline_hash).await?;
 
         self.process_all_steps(pipeline, &price_cache, &mut pipeline_hash)
-            .await;
+            .await?;
         self.save_pipeline(pipeline, &mut pipeline_hash).await?;
 
         let pipeline_done = self.collect_step_results(pipeline);
