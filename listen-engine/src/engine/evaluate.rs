@@ -176,15 +176,19 @@ impl Engine {
         price_cache: &HashMap<String, f64>,
         save_needed: &mut bool,
     ) -> Result<(), EngineError> {
-        // Process one step at a time
-        while let Some(&current_step_id) = pipeline.current_steps.first() {
+        // Collect indexes of steps to remove after processing
+        let mut steps_to_remove = Vec::new();
+        let mut steps_to_add = Vec::new();
+
+        // Process steps in current_steps
+        for (idx, current_step_id) in pipeline.current_steps.iter_mut().enumerate() {
             if let Some(step) = pipeline.steps.get_mut(&current_step_id) {
                 match step.status {
                     Status::Completed => {
-                        // Step is complete, remove it and add next steps
-                        pipeline.current_steps.remove(0);
+                        // Step is complete, add its next steps and mark this one for removal
+                        steps_to_remove.push(idx);
                         if let Some(step) = pipeline.steps.get(&current_step_id) {
-                            pipeline.current_steps.extend(step.next_steps.clone());
+                            steps_to_add.extend(step.next_steps.clone());
                         }
                     }
                     Status::Pending => {
@@ -204,100 +208,160 @@ impl Engine {
                                         Ok(transaction_hash) => {
                                             step.status = Status::Completed;
                                             step.transaction_hash = Some(transaction_hash);
-                                            continue;
+                                            *save_needed = true;
+                                            // Don't remove yet - will be removed on next evaluation
                                         }
                                         Err(e) => {
                                             tracing::error!(%current_step_id, error = %e, "Failed to execute order");
                                             step.status = Status::Failed;
                                             step.transaction_hash = None;
                                             step.error = Some(e.to_string());
-                                            continue;
+                                            *save_needed = true;
+
+                                            // Cancel all downstream steps
+                                            let mut to_cancel = step.next_steps.clone();
+                                            let mut cancelled_steps = Vec::new();
+
+                                            while let Some(next_step_id) = to_cancel.pop() {
+                                                if let Some(next_step) =
+                                                    pipeline.steps.get(&next_step_id)
+                                                {
+                                                    if !matches!(
+                                                        next_step.status,
+                                                        Status::Failed | Status::Cancelled
+                                                    ) {
+                                                        cancelled_steps.push(next_step_id);
+                                                        to_cancel
+                                                            .extend(next_step.next_steps.clone());
+                                                    }
+                                                }
+                                            }
+
+                                            // Actually cancel the collected steps
+                                            for step_id in cancelled_steps {
+                                                if let Some(next_step) =
+                                                    pipeline.steps.get_mut(&step_id)
+                                                {
+                                                    next_step.status = Status::Cancelled;
+                                                }
+                                            }
+
+                                            // Remove this failed step from current_steps
+                                            steps_to_remove.push(idx);
                                         }
                                     }
                                 }
                                 Action::Notification(notification) => {
                                     tracing::info!(%current_step_id, ?notification, "TODO: Notification");
                                     step.status = Status::Completed;
-                                    continue;
+                                    *save_needed = true;
+                                    // Don't remove yet - will be removed on next evaluation
                                 }
                             },
                             Ok(false) => {
-                                break; // just pending, we'll check again next time
+                                // Conditions not met yet, keep step in current_steps
                             }
                             Err(e) => {
-                                // if it went wrong (no pricing etc), save pipeline to redis and return err
-                                return Err(EngineError::EvaluatePipelineError(e));
-                            }
-                        }
-                    }
-                    Status::Failed => {
-                        // If any step is failed, mark the pipeline as failed and cancel downstream steps
-                        pipeline.status = Status::Failed;
-                        // Cancel all downstream steps
-                        let mut to_cancel = step.next_steps.clone();
-                        let mut cancelled_steps = Vec::new();
+                                // If evaluation fails, mark step as failed but continue with other steps
+                                tracing::error!(%current_step_id, error = %e, "Failed to evaluate conditions");
+                                step.status = Status::Failed;
+                                step.error = Some(e.to_string());
+                                *save_needed = true;
 
-                        while let Some(next_step_id) = to_cancel.pop() {
-                            // First collect all steps that need to be cancelled
-                            if let Some(next_step) = pipeline.steps.get(&next_step_id) {
-                                if !matches!(next_step.status, Status::Failed | Status::Cancelled) {
-                                    cancelled_steps.push(next_step_id);
-                                    to_cancel.extend(next_step.next_steps.clone());
+                                // Cancel downstream steps as with other failures
+                                let mut to_cancel = step.next_steps.clone();
+                                let mut cancelled_steps = Vec::new();
+
+                                while let Some(next_step_id) = to_cancel.pop() {
+                                    if let Some(next_step) = pipeline.steps.get(&next_step_id) {
+                                        if !matches!(
+                                            next_step.status,
+                                            Status::Failed | Status::Cancelled
+                                        ) {
+                                            cancelled_steps.push(next_step_id);
+                                            to_cancel.extend(next_step.next_steps.clone());
+                                        }
+                                    }
                                 }
+
+                                for step_id in cancelled_steps {
+                                    if let Some(next_step) = pipeline.steps.get_mut(&step_id) {
+                                        next_step.status = Status::Cancelled;
+                                    }
+                                }
+
+                                steps_to_remove.push(idx);
                             }
                         }
-
-                        // Then update them in a separate loop to avoid multiple mutable borrows
-                        for step_id in cancelled_steps {
-                            if let Some(next_step) = pipeline.steps.get_mut(&step_id) {
-                                next_step.status = Status::Cancelled;
-                            }
-                        }
-
-                        pipeline.current_steps.clear(); // Clear remaining steps
-                        break;
                     }
-                    Status::Cancelled => {
-                        // If any step is cancelled, mark the pipeline as cancelled
-                        pipeline.status = Status::Cancelled;
-                        pipeline.current_steps.clear(); // Clear remaining steps
-                        break;
+                    Status::Failed | Status::Cancelled => {
+                        // Remove failed or cancelled steps from current_steps
+                        steps_to_remove.push(idx);
                     }
                 }
             } else {
-                // Step not found, remove it
-                pipeline.current_steps.remove(0);
+                // Step not found, mark for removal
+                steps_to_remove.push(idx);
             }
+        }
 
-            *save_needed = true;
+        // Add new steps to current_steps
+        for step_id in steps_to_add {
+            if !pipeline.current_steps.contains(&step_id) {
+                pipeline.current_steps.push(step_id);
+                *save_needed = true;
+            }
+        }
+
+        // Remove steps from current_steps (in reverse order to maintain valid indices)
+        steps_to_remove.sort_unstable_by(|a, b| b.cmp(a));
+        for idx in steps_to_remove {
+            if idx < pipeline.current_steps.len() {
+                pipeline.current_steps.remove(idx);
+                *save_needed = true;
+            }
         }
 
         Ok(())
     }
 
     pub async fn collect_step_results(&self, pipeline: &mut Pipeline) -> Result<bool, EngineError> {
-        // Check if all steps in the pipeline are complete
-        let all_steps_complete = pipeline
+        // A pipeline is done when:
+        // 1. All steps have a final status (not pending)
+        // 2. OR when current_steps is empty and there are no pending steps that could be run
+
+        let all_steps_have_final_status = pipeline
             .steps
             .values()
-            .all(|step| matches!(step.status, Status::Completed));
+            .all(|step| !matches!(step.status, Status::Pending));
 
-        let any_of_steps_failed = pipeline
+        let has_pending_steps = pipeline
             .steps
             .values()
-            .any(|step| matches!(step.status, Status::Failed | Status::Cancelled));
+            .any(|step| matches!(step.status, Status::Pending));
 
-        if any_of_steps_failed {
-            pipeline.status = Status::Failed;
-            return Ok(true);
+        // Pipeline is done if all steps have a final status or if there are no current steps
+        // and no pending steps that could be activated
+        let pipeline_done = all_steps_have_final_status
+            || (pipeline.current_steps.is_empty() && !has_pending_steps);
+
+        if pipeline_done {
+            // Determine final status based on step results
+            let any_step_failed = pipeline
+                .steps
+                .values()
+                .any(|step| matches!(step.status, Status::Failed));
+
+            pipeline.status = if any_step_failed {
+                Status::Failed
+            } else {
+                Status::Completed
+            };
+
+            return Ok(true); // Pipeline is complete
         }
 
-        if all_steps_complete {
-            pipeline.status = Status::Completed;
-            return Ok(true);
-        }
-
-        Ok(false)
+        Ok(false) // Pipeline still has steps to process
     }
 
     /// if evaluate_pipline returns true, means its complete, saved and should be removed from active pipelines
