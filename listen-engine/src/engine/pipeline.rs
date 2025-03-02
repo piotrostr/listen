@@ -79,18 +79,29 @@ impl Hash for Status {
 impl Pipeline {
     pub fn hash(&self) -> String {
         let mut hasher = DefaultHasher::new();
+
+        // Hash all relevant fields
         self.id.hash(&mut hasher);
         self.user_id.hash(&mut hasher);
         self.wallet_address.hash(&mut hasher);
         self.pubkey.hash(&mut hasher);
         self.current_steps.hash(&mut hasher);
-        self.steps.len().hash(&mut hasher);
-        for id in self.steps.keys() {
-            id.hash(&mut hasher);
+
+        // Hash the steps map
+        for (key, value) in &self.steps {
+            key.hash(&mut hasher);
+            value.id.hash(&mut hasher);
+            // For PipelineStep, hash important fields
+            value.next_steps.hash(&mut hasher);
+            value.status.hash(&mut hasher);
+            value.transaction_hash.hash(&mut hasher);
+            value.error.hash(&mut hasher);
         }
+
         self.status.hash(&mut hasher);
         self.created_at.hash(&mut hasher);
 
-        hasher.finish().to_string()
+        // Convert the hash to a hex string
+        format!("{:x}", hasher.finish())
     }
 }
