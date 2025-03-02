@@ -28,5 +28,6 @@ pub async fn create_solana_agent(
         .tool(DeployPumpFunToken)
         .tool(FetchCandlesticks)
         .tool(FetchTopTokens)
+        .tool(DeployPumpFunToken)
         .build())
 }

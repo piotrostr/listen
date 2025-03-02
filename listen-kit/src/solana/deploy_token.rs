@@ -269,7 +269,7 @@ pub async fn load_image(image_path: &str) -> Result<Vec<u8>> {
         let res = client.get(image_path).send().await?.bytes().await?;
         Ok(res.to_vec())
     } else {
-        Ok(std::fs::read(image_path)?)
+        Err(anyhow::anyhow!("Image path must be a url"))
     }
 }
 

@@ -249,6 +249,9 @@ PumpFun is a launchpad where anyone can launch a token for around ~$2-3
 All of the parameters are required, but for twitter, website, telegram, image_url,
 if the user doesnt provide those they can be left as empty strings
 
+The image_url cannot be a local path, it has to be an image url from the
+internet, ask user to paste in
+
 dev_buy is denoted in lamports - 1 solana is 10^9 lamports
 ")]
 #[allow(clippy::too_many_arguments)]
