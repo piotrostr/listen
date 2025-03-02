@@ -172,13 +172,17 @@ impl Engine {
         let mut steps_to_remove = Vec::new();
         let mut steps_to_add = Vec::new();
 
-        // Process steps in current_steps
-        for (idx, current_step_id) in pipeline.current_steps.iter_mut().enumerate() {
+        // Use index-based iteration to allow dropping the mutable borrow
+        let mut i = 0;
+        while i < pipeline.current_steps.len() {
+            let current_step_id = pipeline.current_steps[i];
+            let mut step_status_changed = false;
+
             if let Some(step) = pipeline.steps.get_mut(&current_step_id) {
                 match step.status {
                     Status::Completed => {
                         // Step is complete, add its next steps and mark this one for removal
-                        steps_to_remove.push(idx);
+                        steps_to_remove.push(i);
                         if let Some(step) = pipeline.steps.get(&current_step_id) {
                             steps_to_add.extend(step.next_steps.clone());
                         }
@@ -200,12 +204,14 @@ impl Engine {
                                         Ok(transaction_hash) => {
                                             step.status = Status::Completed;
                                             step.transaction_hash = Some(transaction_hash);
+                                            step_status_changed = true;
                                         }
                                         Err(e) => {
                                             tracing::error!(%current_step_id, error = %e, order = ?order, "Failed to execute order");
                                             step.status = Status::Failed;
                                             step.transaction_hash = None;
                                             step.error = Some(e.to_string());
+                                            step_status_changed = true;
 
                                             // Cancel all downstream steps
                                             let mut to_cancel = step.next_steps.clone();
@@ -236,13 +242,14 @@ impl Engine {
                                             }
 
                                             // Remove this failed step from current_steps
-                                            steps_to_remove.push(idx);
+                                            steps_to_remove.push(i);
                                         }
                                     }
                                 }
                                 Action::Notification(notification) => {
                                     tracing::info!(%current_step_id, ?notification, "TODO: Notification");
                                     step.status = Status::Completed;
+                                    step_status_changed = true;
                                 }
                             },
                             Ok(false) => {
@@ -253,6 +260,7 @@ impl Engine {
                                 tracing::error!(%current_step_id, error = %e, "Failed to evaluate conditions");
                                 step.status = Status::Failed;
                                 step.error = Some(e.to_string());
+                                step_status_changed = true;
 
                                 // Cancel downstream steps as with other failures
                                 let mut to_cancel = step.next_steps.clone();
@@ -276,21 +284,26 @@ impl Engine {
                                     }
                                 }
 
-                                steps_to_remove.push(idx);
+                                steps_to_remove.push(i);
                             }
                         }
                     }
                     Status::Failed | Status::Cancelled => {
                         // Remove failed or cancelled steps from current_steps
-                        steps_to_remove.push(idx);
+                        steps_to_remove.push(i);
                     }
                 }
-
-                self.save_pipeline(pipeline, &mut pipeline_hash).await?;
             } else {
                 // Step not found, mark for removal
-                steps_to_remove.push(idx);
+                steps_to_remove.push(i);
             }
+
+            // Save the pipeline if the step's status changed
+            if step_status_changed {
+                self.save_pipeline(pipeline, pipeline_hash).await?;
+            }
+
+            i += 1;
         }
 
         // Add new steps to current_steps
