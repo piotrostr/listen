@@ -53,6 +53,7 @@ export function Chat() {
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const { getAccessToken } = usePrivy();
+  const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
 
   const handleSendMessage = useCallback(
     (message: string) => {
@@ -91,9 +92,10 @@ export function Chat() {
   // Load shared chat if shared parameter is true
   useEffect(() => {
     const fetchSharedChat = async () => {
-      if (isSharedChat && chatId) {
+      if (isSharedChat && chatId && !hasLoadedSharedChat) {
         try {
           await loadSharedChat(chatId);
+          setHasLoadedSharedChat(true);
         } catch (error) {
           console.error("Failed to load shared chat:", error);
         }
@@ -101,7 +103,13 @@ export function Chat() {
     };
 
     fetchSharedChat();
-  }, [isSharedChat, chatId, loadSharedChat, getAccessToken]);
+  }, [
+    isSharedChat,
+    chatId,
+    loadSharedChat,
+    getAccessToken,
+    hasLoadedSharedChat,
+  ]);
 
   const handleQuestionClick = (question: string) => {
     setInputMessage(question);
