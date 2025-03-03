@@ -70,7 +70,7 @@ export class TwitterApi {
     const tweetsResponseSchema = z.object({
       tweets: z.array(TweetSchema),
       status: z.enum(["success", "error"]),
-      message: z.string(),
+      msg: z.string(),
     });
 
     const validatedResponse = await this.client.requestWithSchema(

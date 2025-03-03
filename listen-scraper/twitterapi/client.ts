@@ -45,10 +45,12 @@ export class TwitterApiClient {
       });
 
       if (!response.ok) {
-        return {
+        const res = {
           error: response.status,
           message: response.statusText,
         };
+
+        return res as ApiResponseError;
       }
 
       const data = await response.json();
@@ -92,6 +94,12 @@ export class TwitterApiClient {
     try {
       return schema.parse(response);
     } catch (error) {
+      if (error instanceof z.ZodError) {
+        const errorMessage = error.errors
+          .map((err) => `${err.path.join(".")}: ${err.message}`)
+          .join(", ");
+        throw new Error(`Response validation error: ${errorMessage}`);
+      }
       throw new Error(
         `Response validation error: ${
           error instanceof Error ? error.message : "Unknown validation error"
