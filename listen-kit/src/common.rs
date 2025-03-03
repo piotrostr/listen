@@ -41,13 +41,13 @@ use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletio
 pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
     rig::providers::anthropic::Client::from_env()
         .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
-        .max_tokens(4096)
+        .max_tokens(1024 * 4)
 }
 
 pub async fn plain_agent() -> Result<Agent<AnthropicCompletionModel>> {
     Ok(claude_agent_builder()
         .preamble("be nice to the users")
-        .max_tokens(1024)
+        .max_tokens(1024 * 4)
         .build())
 }
 

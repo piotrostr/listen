@@ -17,7 +17,6 @@ pub async fn create_evm_agent(
     ));
     Ok(claude_agent_builder()
         .preamble(&preamble)
-        .max_tokens(1024)
         .tool(Trade)
         .tool(TransferEth)
         .tool(TransferErc20)
