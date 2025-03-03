@@ -9,7 +9,8 @@ use listen_adapter::{
     redis_client::make_redis_client,
     redis_subscriber::create_redis_subscriber,
     routes::{
-        get_candlesticks, get_metadata, get_price, health_check, query_db, top_tokens, ws_route,
+        get_candlesticks, get_chat, get_metadata, get_price, health_check, query_db, save_chat,
+        top_tokens, ws_route,
     },
     state::AppState,
 };
@@ -51,6 +52,9 @@ async fn main() -> std::io::Result<()> {
             .route("/metadata", web::get().to(get_metadata))
             .route("/query", web::post().to(query_db))
             .route("/price", web::get().to(get_price))
+            // get and save chat routes are unauthenticated, those are for "shared" chats
+            .route("/get-chat", web::get().to(get_chat))
+            .route("/save-chat", web::post().to(save_chat))
     };
 
     let port = 6968;

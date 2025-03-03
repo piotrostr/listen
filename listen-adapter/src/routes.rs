@@ -179,3 +179,52 @@ pub async fn query_db(
 pub struct MetadataQuery {
     mint: String,
 }
+
+#[derive(Deserialize)]
+pub struct ChatQuery {
+    pub chat_id: String,
+}
+
+pub async fn get_chat(
+    state: web::Data<AppState>,
+    query: web::Query<ChatQuery>,
+) -> Result<HttpResponse, Error> {
+    let chat = state.redis_client.get_chat(&query.chat_id).await;
+    match chat {
+        Ok(Some(chat)) => Ok(HttpResponse::Ok().json(chat)),
+        Ok(None) => Ok(HttpResponse::NotFound().json(json!({
+            "error": "Chat not found",
+            "chat_id": query.chat_id
+        }))),
+        Err(e) => {
+            error!("Error getting chat: {}", e);
+            Err(InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR).into())
+        }
+    }
+}
+
+#[derive(Deserialize)]
+pub struct SaveChatRequest {
+    pub chat_id: String,
+    pub chat: serde_json::Value,
+}
+
+pub async fn save_chat(
+    state: web::Data<AppState>,
+    body: web::Json<SaveChatRequest>,
+) -> Result<HttpResponse, Error> {
+    let chat = state
+        .redis_client
+        .save_chat(&body.chat_id, &body.chat)
+        .await;
+    match chat {
+        Ok(_) => Ok(HttpResponse::Ok().json(json!({
+            "message": "Chat saved",
+            "chat_id": body.chat_id
+        }))),
+        Err(e) => {
+            error!("Error saving chat: {}", e);
+            Err(InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR).into())
+        }
+    }
+}
