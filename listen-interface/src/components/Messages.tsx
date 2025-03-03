@@ -60,8 +60,8 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
     try {
       // TODO standardize this output, not just string but { status: string, transactionHash: string }
       return (
-        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
-          <div className="mb-2">
+        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
+          <div className="mb-2 overflow-hidden">
             <TransactionLink
               status={"Completed"}
               transactionHash={JSON.parse(toolOutput.result)}
@@ -73,8 +73,8 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
     } catch (e) {
       console.error("Failed to parse swap response:", e);
       return (
-        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
-          <div className="mb-2">
+        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
+          <div className="mb-2 overflow-hidden">
             <TransactionLink
               status={"Failed"}
               transactionHash={null}
@@ -132,7 +132,7 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
 
       return (
         <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
-          <p className="text-red-400">
+          <p className="text-red-400 break-words">
             Failed to parse quote data:{" "}
             {e instanceof Error ? e.message : "Unknown error"}
           </p>
@@ -140,7 +140,7 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
             <summary className="cursor-pointer text-sm">
               View raw quote data
             </summary>
-            <pre className="text-xs mt-2 overflow-x-auto p-2 bg-gray-800 rounded">
+            <pre className="text-xs mt-2 overflow-x-auto p-2 bg-gray-800 rounded break-words whitespace-pre-wrap">
               {typeof toolOutput.result === "string"
                 ? toolOutput.result
                 : JSON.stringify(toolOutput.result, null, 2)}
@@ -152,7 +152,7 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
   }
   // Default tool output display
   return (
-    <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
+    <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
       {toolOutput.name}
       <ToolOutputDisplay toolOutput={toolOutput} />
     </div>
@@ -177,13 +177,25 @@ export const ChatMessage = ({
         border border-opacity-20
         lg:text-md text-sm
         ${direction === "incoming" ? "border-blue-500" : "border-purple-500"}
+        break-words word-break-all max-w-full overflow-hidden
       `}
+      style={{
+        wordBreak: "break-word",
+        overflowWrap: "break-word",
+      }}
     >
       <ReactMarkdown
         className="markdown-content"
         components={{
           p: ({ children, ...props }) => (
-            <p className="my-2" {...props}>
+            <p
+              className="my-2"
+              style={{
+                wordBreak: "break-word",
+                overflowWrap: "break-word",
+              }}
+              {...props}
+            >
               {children}
             </p>
           ),
@@ -208,11 +220,19 @@ export const ChatMessage = ({
             </li>
           ),
           a: ({ ...props }) => (
-            <a className="text-blue-400 underline" {...props} />
+            <a
+              className="text-blue-400 underline"
+              style={{
+                wordBreak: "break-all",
+                display: "inline-block",
+                maxWidth: "100%",
+              }}
+              {...props}
+            />
           ),
           blockquote: ({ children, ...props }) => (
             <blockquote
-              className="border-l-4 border-gray-500 pl-4 my-2 italic"
+              className="border-l-4 border-gray-500 pl-4 my-2 italic overflow-hidden"
               {...props}
             >
               {children}
@@ -221,12 +241,21 @@ export const ChatMessage = ({
           code: ({ ...props }) => (
             <code
               className="block bg-gray-800 p-2 rounded my-2 overflow-x-auto text-sm"
+              style={{
+                wordBreak: "break-all",
+                whiteSpace: "pre-wrap",
+              }}
               {...props}
             />
           ),
           pre: ({ ...props }) => (
             <pre
               className="bg-gray-800 p-3 rounded my-3 overflow-x-auto"
+              style={{
+                wordBreak: "break-word",
+                whiteSpace: "pre-wrap",
+                maxWidth: "100%",
+              }}
               {...props}
             />
           ),
@@ -248,7 +277,6 @@ export const ChatMessage = ({
             <hr className="my-4 border-gray-600" {...props} />
           ),
         }}
-        // Add this prop to allow HTML to be rendered within the markdown
         rehypePlugins={[rehypeRaw]}
       >
         {embeddedMessage}
