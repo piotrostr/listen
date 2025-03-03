@@ -225,7 +225,9 @@ export function useChat() {
         });
 
         const response = await fetch(
-          "https://api.listen-rs.com/v1/kit/stream",
+          process.env.NODE_ENV === "production"
+            ? "https://api.listen-rs.com/v1/kit/stream"
+            : "http://localhost:6969/stream",
           {
             method: "POST",
             headers: {
