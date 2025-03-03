@@ -369,6 +369,62 @@ export function useChat() {
     }
   };
 
+  const shareChat = async (chatId: string) => {
+    if (!chat) return chatId;
+
+    try {
+      const response = await fetch(
+        "https://api.listen-rs.com/v1/adapter/save-chat",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            chat_id: chatId,
+            chat: chat, // The entire chat object
+          }),
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to share chat");
+      }
+
+      // Server should return the same chat ID or a new one if needed
+      const result = await response.json();
+      return result.chat_id || chatId;
+    } catch (error) {
+      console.error("Error sharing chat:", error);
+      throw error;
+    }
+  };
+
+  const loadSharedChat = async (chatId: string) => {
+    try {
+      const response = await fetch(
+        `https://api.listen-rs.com/v1/adapter/get-chat?chatId=${chatId}`,
+        {
+          method: "GET",
+          headers: {
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      if (!response.ok) {
+        throw new Error("Failed to load shared chat");
+      }
+
+      const sharedChat = await response.json();
+      setChat(sharedChat);
+      return sharedChat;
+    } catch (error) {
+      console.error("Error loading shared chat:", error);
+      throw error;
+    }
+  };
+
   return {
     messages: chat?.messages || [],
     isLoading,
@@ -390,5 +446,7 @@ export function useChat() {
             }
       ),
     stopGeneration,
+    shareChat,
+    loadSharedChat,
   };
 }
