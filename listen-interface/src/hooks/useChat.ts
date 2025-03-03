@@ -224,15 +224,18 @@ export function useChat() {
           preamble,
         });
 
-        const response = await fetch("http://localhost:6969/stream", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: "Bearer " + (await getAccessToken()),
-          },
-          body,
-          signal,
-        });
+        const response = await fetch(
+          "https://api.listen-rs.com/v1/kit/stream",
+          {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: "Bearer " + (await getAccessToken()),
+            },
+            body,
+            signal,
+          }
+        );
 
         if (!response.ok) {
           throw new Error("Failed to initialize stream");
