@@ -211,8 +211,8 @@ async fn stream(
     .await;
 
     sse::Sse::from_infallible_receiver(rx)
-        .with_keep_alive(Duration::from_secs(15))
-        .with_retry_duration(Duration::from_secs(10))
+        .with_keep_alive(Duration::from_secs(90))
+        .with_retry_duration(Duration::from_secs(90))
 }
 
 #[get("/healthz")]
