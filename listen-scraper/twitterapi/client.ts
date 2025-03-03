@@ -24,7 +24,7 @@ export class TwitterApiClient {
   async request<T>(
     endpoint: string,
     params?: Record<string, string>
-  ): Promise<T> {
+  ): Promise<ApiResponse<T>> {
     const url = new URL(`${this.baseUrl}${endpoint}`);
 
     // Add query parameters if provided
@@ -34,24 +34,36 @@ export class TwitterApiClient {
       });
     }
 
-    const response = await fetch(url.toString(), {
-      method: "GET",
-      headers: {
-        "X-API-Key": this.apiKey,
-      },
-    });
+    try {
+      const response = await fetch(url.toString(), {
+        method: "GET",
+        headers: {
+          "X-API-Key": this.apiKey,
+        },
+      });
 
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.status} ${response.statusText}`);
+      if (!response.ok) {
+        return {
+          error: response.status,
+          message: response.statusText,
+        };
+      }
+
+      const data = await response.json();
+
+      // Check if it's an error response
+      if ("error" in data) {
+        return data as ApiResponseError;
+      }
+
+      // Otherwise return as success
+      return data as ApiResponseSuccess<T>;
+    } catch (error) {
+      // Handle unexpected errors
+      return {
+        error: 500,
+        message: error instanceof Error ? error.message : "Unknown error",
+      };
     }
-
-    const data = await response.json();
-
-    // Check for API error response
-    if (data.status === "error") {
-      throw new Error(`API Error: ${data.msg}`);
-    }
-
-    return data as T;
   }
 }
