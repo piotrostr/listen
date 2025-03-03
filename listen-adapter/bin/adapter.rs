@@ -43,7 +43,7 @@ async fn main() -> std::io::Result<()> {
     let app_factory = move || {
         App::new()
             .wrap(Logger::default())
-            .wrap(Cors::default().allow_any_origin())
+            .wrap(Cors::permissive())
             .app_data(app_data.clone())
             .route("/ws", web::get().to(ws_route))
             .route("/healthz", web::get().to(health_check))
