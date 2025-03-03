@@ -159,6 +159,14 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
   );
 };
 
+const sanitizeOutput = (message: string) => {
+  const isProd = process.env.NODE_ENV === "production";
+  if (isProd && message.includes("EOF while parsing an object")) {
+    return null;
+  }
+  return message;
+};
+
 export const ChatMessage = ({
   message,
   direction,
@@ -168,6 +176,11 @@ export const ChatMessage = ({
 }) => {
   // Process the message to identify addresses and transactions
   const embeddedMessage = renderAddressOrTx(message);
+  const sanitizedMessage = sanitizeOutput(embeddedMessage);
+
+  if (!sanitizedMessage) {
+    return null;
+  }
 
   return (
     <div
