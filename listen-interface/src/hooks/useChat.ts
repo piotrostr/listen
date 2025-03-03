@@ -403,7 +403,7 @@ export function useChat() {
   const loadSharedChat = async (chatId: string) => {
     try {
       const response = await fetch(
-        `https://api.listen-rs.com/v1/adapter/get-chat?chatId=${chatId}`,
+        `https://api.listen-rs.com/v1/adapter/get-chat?chat_id=${chatId}`,
         {
           method: "GET",
           headers: {
