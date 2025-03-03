@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { FaCheck } from "react-icons/fa6";
+import { IoBarChart } from "react-icons/io5";
 import { z } from "zod";
+import { useModal } from "../contexts/ModalContext";
 import { Socials } from "./Socials";
 
 // Zod schema for token data
@@ -35,6 +37,7 @@ const formatNumber = (num: number) => {
 const TokenTile = ({ token }: { token: TopToken }) => {
   const [metadata, setMetadata] = useState<any>(null);
   const [copied, setCopied] = useState(false);
+  const { openChart } = useModal();
 
   useEffect(() => {
     fetch(`https://api.listen-rs.com/v1/adapter/metadata?mint=${token.pubkey}`)
@@ -70,10 +73,14 @@ const TokenTile = ({ token }: { token: TopToken }) => {
         <div className="flex-1">
           <div className="flex items-center gap-2">
             <a
+              onClick={(e) => {
+                e.preventDefault();
+                openChart(token.pubkey);
+              }}
               href={`https://solscan.io/token/${token.pubkey}`}
               target="_blank"
               rel="noopener noreferrer"
-              className="font-medium hover:text-blue-400 truncate"
+              className="font-medium hover:text-blue-400 truncate cursor-pointer"
             >
               {metadata?.mpl?.symbol || token.name}
             </a>
@@ -96,6 +103,12 @@ const TokenTile = ({ token }: { token: TopToken }) => {
                   <path d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
                 </svg>
               )}
+            </button>
+            <button
+              onClick={() => openChart(token.pubkey)}
+              className="hover:text-blue-400 hidden lg:block"
+            >
+              <IoBarChart size={14} />
             </button>
           </div>
           <div className="text-sm text-gray-500">
