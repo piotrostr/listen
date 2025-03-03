@@ -1,11 +1,6 @@
 import { z } from "zod";
 import { TwitterApiClient } from "./client";
-import {
-  LastTweetsResponseSchema,
-  TweetSchema,
-  type LastTweetsResponse,
-  type Tweet,
-} from "./tweet";
+import { LastTweetsResponseSchema, TweetSchema, type Tweet } from "./tweet";
 import { UserInfoResponseSchema, type UserInfo } from "./userInfo";
 
 export class TwitterApi {
@@ -21,12 +16,11 @@ export class TwitterApi {
    * @returns User information
    */
   async getUserInfo(userName: string): Promise<UserInfo> {
-    const response = await this.client.request<UserInfo>("/twitter/user/info", {
-      userName,
-    });
-
-    // Validate the response with Zod
-    const validatedResponse = UserInfoResponseSchema.parse(response);
+    const validatedResponse = await this.client.requestWithSchema(
+      "/twitter/user/info",
+      UserInfoResponseSchema,
+      { userName }
+    );
     return validatedResponse.data;
   }
 
@@ -52,20 +46,11 @@ export class TwitterApi {
       params.includeReplies = options.includeReplies.toString();
     if (options.cursor) params.cursor = options.cursor;
 
-    const response = await this.client.request<LastTweetsResponse>(
+    return await this.client.requestWithSchema(
       "/twitter/user/last_tweets",
+      LastTweetsResponseSchema,
       params
     );
-
-    // Check if it's an error response
-    if ("error" in response) {
-      throw new Error(`API Error (${response.error}): ${response.message}`);
-    }
-
-    // Validate the successful response with Zod
-    const validatedResponse = LastTweetsResponseSchema.parse(response);
-
-    return validatedResponse;
   }
 
   /**
@@ -82,24 +67,17 @@ export class TwitterApi {
       tweet_ids: tweetIds.join(","),
     };
 
-    const response = await this.client.request<{ tweets: Tweet[] }>(
+    const tweetsResponseSchema = z.object({
+      tweets: z.array(TweetSchema),
+      status: z.enum(["success", "error"]),
+      message: z.string(),
+    });
+
+    const validatedResponse = await this.client.requestWithSchema(
       "/twitter/tweets",
+      tweetsResponseSchema,
       params
     );
-
-    // Check if it's an error response
-    if ("error" in response) {
-      throw new Error(`API Error (${response.error}): ${response.message}`);
-    }
-
-    // Validate the response with Zod
-    const validatedResponse = z
-      .object({
-        tweets: z.array(TweetSchema),
-        status: z.enum(["success", "error"]),
-        message: z.string(),
-      })
-      .parse(response);
 
     return validatedResponse.tweets;
   }

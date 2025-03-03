@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export type ApiResponseSuccess<T> = {
   data: T;
   status: "success" | "error";
@@ -64,6 +66,37 @@ export class TwitterApiClient {
         error: 500,
         message: error instanceof Error ? error.message : "Unknown error",
       };
+    }
+  }
+
+  /**
+   * Makes a request and validates the response with a Zod schema
+   * @param endpoint API endpoint
+   * @param schema Zod schema to validate the response
+   * @param params Request parameters
+   * @returns Validated data of type inferred from the schema
+   */
+  async requestWithSchema<T extends z.ZodType>(
+    endpoint: string,
+    schema: T,
+    params?: Record<string, string>
+  ): Promise<z.infer<T>> {
+    const response = await this.request(endpoint, params);
+
+    // Check for error response
+    if ("error" in response) {
+      throw new Error(`API Error (${response.error}): ${response.message}`);
+    }
+
+    // Validate with the provided schema
+    try {
+      return schema.parse(response);
+    } catch (error) {
+      throw new Error(
+        `Response validation error: ${
+          error instanceof Error ? error.message : "Unknown validation error"
+        }`
+      );
     }
   }
 }
