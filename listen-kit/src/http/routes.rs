@@ -13,13 +13,13 @@ use actix_web::{
 };
 use actix_web_lab::sse;
 use anyhow::Result;
+use futures::StreamExt;
 use rig::completion::Message;
 use rig::message::UserContent;
 use rig::OneOrMany;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
-use std::time::Duration;
 
 #[derive(Deserialize)]
 pub struct ChatRequest {
@@ -51,8 +51,49 @@ pub enum ServerError {
 async fn stream(
     req: HttpRequest,
     state: web::Data<AppState>,
-    request: web::Json<ChatRequest>,
+    mut body: web::Payload,
 ) -> impl Responder {
+    // Extract and collect the body
+    let mut bytes = web::BytesMut::new();
+    while let Some(item) = body.next().await {
+        let item = match item {
+            Ok(item) => item,
+            Err(e) => {
+                let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
+                let error_event = sse::Event::Data(sse::Data::new(
+                    serde_json::to_string(&StreamResponse::Error(format!(
+                        "Error reading request body: {}",
+                        e
+                    )))
+                    .unwrap(),
+                ));
+                let _ = tx.send(error_event).await;
+                return sse::Sse::from_infallible_receiver(rx);
+            }
+        };
+        bytes.extend_from_slice(&item);
+    }
+
+    // Log the raw request body
+    println!("Raw request body: {}", String::from_utf8_lossy(&bytes));
+
+    // Deserialize into ChatRequest
+    let request: ChatRequest = match serde_json::from_slice(&bytes) {
+        Ok(req) => req,
+        Err(e) => {
+            let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
+            let error_event = sse::Event::Data(sse::Data::new(
+                serde_json::to_string(&StreamResponse::Error(format!(
+                    "Error deserializing request: {}",
+                    e
+                )))
+                .unwrap(),
+            ));
+            let _ = tx.send(error_event).await;
+            return sse::Sse::from_infallible_receiver(rx);
+        }
+    };
+
     let user_session = match verify_auth(&req).await {
         Ok(s) => s,
         Err(e) => {
@@ -144,19 +185,12 @@ async fn stream(
 
     let prompt = request.prompt.clone();
     let messages = request.chat_history.clone();
-    println!("prompt: {}", prompt);
-    println!("messages: {:#?}", messages);
 
     let signer: Arc<dyn TransactionSigner> =
         Arc::new(PrivySigner::new(state.privy.clone(), user_session.clone()));
 
     spawn_with_signer(signer, || async move {
         let reasoning_loop = ReasoningLoop::new(agent).with_stdout(false);
-
-        let mut initial_messages = messages;
-        initial_messages.push(Message::User {
-            content: OneOrMany::one(UserContent::text(prompt)),
-        });
 
         // Create a channel for the reasoning loop to send responses
         let (internal_tx, mut internal_rx) = tokio::sync::mpsc::channel(32);
@@ -189,7 +223,7 @@ async fn stream(
 
         // Run the reasoning loop in the current task (with signer context)
         let loop_result = reasoning_loop
-            .stream(initial_messages, Some(internal_tx))
+            .stream(prompt, messages, Some(internal_tx))
             .await;
 
         // Wait for the send task to complete
@@ -212,8 +246,6 @@ async fn stream(
     .await;
 
     sse::Sse::from_infallible_receiver(rx)
-        .with_keep_alive(Duration::from_secs(90))
-        .with_retry_duration(Duration::from_secs(90))
 }
 
 #[get("/healthz")]

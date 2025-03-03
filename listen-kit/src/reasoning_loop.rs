@@ -31,6 +31,7 @@ impl ReasoningLoop {
 
     pub async fn stream(
         &self,
+        prompt: String,
         messages: Vec<Message>,
         tx: Option<Sender<LoopResponse>>,
     ) -> Result<Vec<Message>> {
@@ -42,37 +43,29 @@ impl ReasoningLoop {
         let agent = self.agent.clone();
         let stdout = self.stdout;
 
-        // Extract the last user message as the prompt
-        let prompt = messages
-            .iter()
-            .rev()
-            .find_map(|msg| {
-                if let Message::User { content } = msg {
-                    match content.first() {
-                        UserContent::Text(text) => Some(text.text.clone()),
-                        _ => None,
-                    }
-                } else {
-                    None
-                }
-            })
-            .unwrap_or_else(|| String::from(""));
-
-        // Remove the last user message since we're using it as the prompt
-        if !current_messages.is_empty()
-            && matches!(
-                current_messages.last().unwrap(),
-                Message::User { .. }
-            )
-        {
-            current_messages.pop();
-        }
+        // For first iteration, use the original prompt.
+        // For subsequent iterations, use an empty prompt since we already have the conversation history.
+        let mut is_first_iteration = true;
 
         'outer: loop {
             let mut current_response = String::new();
 
-            let mut stream =
-                agent.stream_chat(&prompt, current_messages.clone()).await?;
+            if stdout {
+                println!("current_messages: {:?}", current_messages);
+            }
+
+            // Use the original prompt only for the first iteration
+            let current_prompt = if is_first_iteration {
+                is_first_iteration = false;
+                prompt.clone()
+            } else {
+                // Minimal, neutral prompt for subsequent iterations that won't trigger specific behaviors
+                "Continue the conversation.".to_string()
+            };
+
+            let mut stream = agent
+                .stream_chat(&current_prompt, current_messages.clone())
+                .await?;
 
             while let Some(chunk) = stream.next().await {
                 match chunk? {

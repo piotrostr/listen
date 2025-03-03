@@ -1,12 +1,9 @@
 #[cfg(feature = "solana")]
 use {
-    anyhow::Result,
-    listen_kit::reasoning_loop::ReasoningLoop,
+    anyhow::Result, listen_kit::reasoning_loop::ReasoningLoop,
     listen_kit::signer::solana::LocalSolanaSigner,
     listen_kit::signer::SignerContext,
-    listen_kit::solana::tools::GetPortfolio,
-    listen_kit::solana::util::env,
-    rig::{message::Message, message::UserContent, OneOrMany},
+    listen_kit::solana::tools::GetPortfolio, listen_kit::solana::util::env,
     std::sync::Arc,
 };
 
@@ -25,11 +22,12 @@ async fn main() -> Result<()> {
 
         let agent = ReasoningLoop::new(Arc::new(agent));
 
-        agent.stream(vec![Message::User {
-            content: OneOrMany::one(UserContent::text(
-                "whats the portfolio looking like?".to_string(),
-            )),
-        }], None).await?;
+        agent.stream(
+            "whats the portfolio looking like?".to_string(),
+            vec![],
+            None,
+        )
+        .await?;
 
         Ok(())
     })

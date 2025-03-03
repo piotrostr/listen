@@ -4,8 +4,7 @@ use {
     listen_kit::signer::solana::LocalSolanaSigner,
     listen_kit::signer::SignerContext,
     listen_kit::solana::agent::create_solana_agent,
-    listen_kit::solana::util::env, rig::completion::Message,
-    rig::message::UserContent, rig::OneOrMany, std::sync::Arc,
+    listen_kit::solana::util::env, std::sync::Arc,
 };
 
 #[cfg(feature = "solana")]
@@ -18,12 +17,15 @@ async fn main() -> Result<()> {
         let trader_agent = ReasoningLoop::new(trader_agent).with_stdout(true);
 
         trader_agent
-            .stream(vec![Message::User {
-                content: OneOrMany::one(UserContent::text(
-                    "what is the liquidity in the pool for my largest holding?"
-                        .to_string(),
-                )),
-            }], None)
+            .stream(
+                "
+                we are testing the reasoning loop, constantly check my usdc
+                balance and swap 0.01 usdc into solana
+                "
+                .to_string(),
+                vec![],
+                None,
+            )
             .await?;
 
         Ok(())
