@@ -145,7 +145,7 @@ async fn stream(
     let prompt = request.prompt.clone();
     let messages = request.chat_history.clone();
     println!("prompt: {}", prompt);
-    println!("messages: {:?}", messages);
+    println!("messages: {:#?}", messages);
 
     let signer: Arc<dyn TransactionSigner> =
         Arc::new(PrivySigner::new(state.privy.clone(), user_session.clone()));
