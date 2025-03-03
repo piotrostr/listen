@@ -50,10 +50,6 @@ impl ReasoningLoop {
         'outer: loop {
             let mut current_response = String::new();
 
-            if stdout {
-                println!("current_messages: {:?}", current_messages);
-            }
-
             // Use the original prompt only for the first iteration
             let current_prompt = if is_first_iteration {
                 prompt.clone()
@@ -63,9 +59,6 @@ impl ReasoningLoop {
                 // TODO there might be a better way to handle this
                 "Continue the conversation.".to_string()
             };
-
-            println!("current_prompt: {}", current_prompt);
-            println!("current_messages: {:#?}", current_messages);
 
             let mut stream = match agent
                 .stream_chat(&current_prompt, current_messages.clone())
@@ -91,7 +84,6 @@ impl ReasoningLoop {
             }
 
             while let Some(chunk) = stream.next().await {
-                println!("chunk: {:?}", chunk);
                 match chunk? {
                     StreamingChoice::Message(text) => {
                         if stdout {

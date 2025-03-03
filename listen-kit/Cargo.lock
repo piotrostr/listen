@@ -3853,7 +3853,7 @@ dependencies = [
  "rand 0.8.5",
  "redis",
  "reqwest 0.12.12",
- "rig-core 0.8.0 (git+https://github.com/piotrostr/rig?branch=feat%2Fadd-send-to-streaming-result)",
+ "rig-core 0.9.1",
  "rig-tool-macro",
  "serde",
  "serde_json",
@@ -5106,8 +5106,8 @@ dependencies = [
 
 [[package]]
 name = "rig-core"
-version = "0.8.0"
-source = "git+https://github.com/piotrostr/rig?branch=feat%2Fadd-send-to-streaming-result#1b21515b49f956a9cbac220a78006bb6b8460f55"
+version = "0.9.1"
+source = "git+https://github.com/piotrostr/rig?branch=fix%2Fcontent-block-err#cac56a43d4d1d625bfd9a92881d6cf57bfd22a36"
 dependencies = [
  "async-stream",
  "bytes",
@@ -5131,7 +5131,7 @@ dependencies = [
  "anyhow",
  "proc-macro2",
  "quote",
- "rig-core 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "rig-core 0.8.0",
  "serde",
  "serde_json",
  "syn 1.0.109",
