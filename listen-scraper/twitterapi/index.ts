@@ -1,5 +1,11 @@
+import { z } from "zod";
 import { TwitterApiClient } from "./client";
-import { LastTweetsResponseSchema, type LastTweetsResponse } from "./tweet";
+import {
+  LastTweetsResponseSchema,
+  TweetSchema,
+  type LastTweetsResponse,
+  type Tweet,
+} from "./tweet";
 import { UserInfoResponseSchema, type UserInfo } from "./userInfo";
 
 export class TwitterApi {
@@ -60,5 +66,41 @@ export class TwitterApi {
     const validatedResponse = LastTweetsResponseSchema.parse(response);
 
     return validatedResponse;
+  }
+
+  /**
+   * Get tweets by their IDs
+   * @param tweetIds Array of tweet IDs to fetch
+   * @returns Array of tweet objects
+   */
+  async getTweetsByIds(tweetIds: string[]): Promise<Tweet[]> {
+    if (!tweetIds.length) {
+      throw new Error("At least one tweet ID must be provided");
+    }
+
+    const params: Record<string, string> = {
+      tweet_ids: tweetIds.join(","),
+    };
+
+    const response = await this.client.request<{ tweets: Tweet[] }>(
+      "/twitter/tweets",
+      params
+    );
+
+    // Check if it's an error response
+    if ("error" in response) {
+      throw new Error(`API Error (${response.error}): ${response.message}`);
+    }
+
+    // Validate the response with Zod
+    const validatedResponse = z
+      .object({
+        tweets: z.array(TweetSchema),
+        status: z.enum(["success", "error"]),
+        message: z.string(),
+      })
+      .parse(response);
+
+    return validatedResponse.tweets;
   }
 }
