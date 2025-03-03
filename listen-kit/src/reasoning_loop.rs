@@ -56,12 +56,16 @@ impl ReasoningLoop {
 
             // Use the original prompt only for the first iteration
             let current_prompt = if is_first_iteration {
-                is_first_iteration = false;
                 prompt.clone()
             } else {
                 // Minimal, neutral prompt for subsequent iterations that won't trigger specific behaviors
+                // this is not going to be added to the conversation history
+                // TODO there might be a better way to handle this
                 "Continue the conversation.".to_string()
             };
+
+            println!("current_prompt: {}", current_prompt);
+            println!("current_messages: {:#?}", current_messages);
 
             let mut stream = match agent
                 .stream_chat(&current_prompt, current_messages.clone())
@@ -77,7 +81,17 @@ impl ReasoningLoop {
                 }
             };
 
+            if is_first_iteration && current_messages.is_empty() {
+                current_messages.push(Message::User {
+                    content: OneOrMany::one(UserContent::text(
+                        prompt.clone(),
+                    )),
+                });
+                is_first_iteration = false;
+            }
+
             while let Some(chunk) = stream.next().await {
+                println!("chunk: {:?}", chunk);
                 match chunk? {
                     StreamingChoice::Message(text) => {
                         if stdout {
