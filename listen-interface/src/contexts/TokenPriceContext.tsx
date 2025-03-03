@@ -76,7 +76,6 @@ export function TokenPriceProvider({
           mints: ["*"],
         })
       );
-      console.log("WebSocket connection opened");
     };
 
     ws.onerror = (error) => {

@@ -7,7 +7,6 @@ export function ToolOutputDisplay({
 }: {
   toolOutput: ToolOutput | null;
 }) {
-  console.log(toolOutput);
   const signature = toolOutput?.name === "trade" ? toolOutput.result : null;
 
   const { data: transactionStatus, isLoading: isConfirming } =

@@ -1,8 +1,10 @@
+import { usePrivy } from "@privy-io/react-auth";
 import { useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useChat } from "../hooks/useChat";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
+import { ShareModal } from "./ShareModal";
 
 const IS_DISABLED = false;
 
@@ -32,11 +34,25 @@ const RECOMMENDED_QUESTIONS = [
 ];
 
 export function Chat() {
-  const { messages, isLoading, sendMessage, setMessages, stopGeneration } =
-    useChat();
+  const {
+    messages,
+    isLoading,
+    sendMessage,
+    setMessages,
+    stopGeneration,
+    shareChat,
+    loadSharedChat,
+  } = useChat();
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const { new: isNewChat } = useSearch({ from: "/chat" });
+  const {
+    chatId,
+    new: isNewChat,
+    shared: isSharedChat,
+  } = useSearch({ from: "/chat" });
   const [inputMessage, setInputMessage] = useState("");
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
+  const { getAccessToken } = usePrivy();
 
   const handleSendMessage = useCallback(
     (message: string) => {
@@ -72,9 +88,37 @@ export function Chat() {
     }
   }, [isNewChat]);
 
+  // Load shared chat if shared parameter is true
+  useEffect(() => {
+    const fetchSharedChat = async () => {
+      if (isSharedChat && chatId) {
+        try {
+          await loadSharedChat(chatId);
+        } catch (error) {
+          console.error("Failed to load shared chat:", error);
+        }
+      }
+    };
+
+    fetchSharedChat();
+  }, [isSharedChat, chatId, loadSharedChat, getAccessToken]);
+
   const handleQuestionClick = (question: string) => {
     setInputMessage(question);
     handleSendMessage(question);
+  };
+
+  const handleShareChat = async () => {
+    if (!chatId || messages.length === 0) return;
+
+    try {
+      const sharedChatId = await shareChat(chatId);
+      const url = `${window.location.origin}/chat?chatId=${sharedChatId}&shared=true`;
+      setShareUrl(url);
+      setIsShareModalOpen(true);
+    } catch (error) {
+      console.error("Failed to share chat:", error);
+    }
   };
 
   if (IS_DISABLED) {
@@ -86,37 +130,46 @@ export function Chat() {
   }
 
   return (
-    <ChatContainer
-      inputMessage={inputMessage}
-      isGenerating={isLoading}
-      onSendMessage={handleSendMessage}
-      onInputChange={setInputMessage}
-      onStopGeneration={stopGeneration}
-    >
-      {messages.length === 0 && (
-        <div className="flex flex-col items-center justify-center py-12 px-4">
-          <h2 className="text-xl font-medium text-white mb-6">
-            Start a conversation
-          </h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
-            {RECOMMENDED_QUESTIONS.map((question, index) => (
-              <button
-                key={index}
-                disabled={!question.enabled}
-                onClick={() => handleQuestionClick(question.question)}
-                className="bg-purple-900/30 hover:bg-purple-800/40 text-left p-4 rounded-lg border border-purple-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <p className="text-white">{question.question}</p>
-              </button>
-            ))}
+    <>
+      <ChatContainer
+        inputMessage={inputMessage}
+        isGenerating={isLoading}
+        onSendMessage={handleSendMessage}
+        onInputChange={setInputMessage}
+        onStopGeneration={stopGeneration}
+        onShareChat={messages.length > 0 ? handleShareChat : undefined}
+        isSharedChat={!!isSharedChat}
+      >
+        {messages.length === 0 && (
+          <div className="flex flex-col items-center justify-center py-12 px-4">
+            <h2 className="text-xl font-medium text-white mb-6">
+              Start a conversation
+            </h2>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
+              {RECOMMENDED_QUESTIONS.map((question, index) => (
+                <button
+                  key={index}
+                  disabled={!question.enabled}
+                  onClick={() => handleQuestionClick(question.question)}
+                  className="bg-purple-900/30 hover:bg-purple-800/40 text-left p-4 rounded-lg border border-purple-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  <p className="text-white">{question.question}</p>
+                </button>
+              ))}
+            </div>
           </div>
-        </div>
+        )}
+        {messages.map((message) => (
+          <MessageRenderer key={message.id} message={message} />
+        ))}
+        {isLoading && <LoadingIndicator />}
+        <div ref={messagesEndRef} />
+      </ChatContainer>
+
+      {/* Share Modal */}
+      {isShareModalOpen && (
+        <ShareModal url={shareUrl} onClose={() => setIsShareModalOpen(false)} />
       )}
-      {messages.map((message) => (
-        <MessageRenderer key={message.id} message={message} />
-      ))}
-      {isLoading && <LoadingIndicator />}
-      <div ref={messagesEndRef} />
-    </ChatContainer>
+    </>
   );
 }

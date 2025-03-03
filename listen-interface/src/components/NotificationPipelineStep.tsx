@@ -25,7 +25,7 @@ export const NotificationPipelineStep = ({
   return (
     <PipelineStepContainer
       index={index}
-      conditions={step.conditions}
+      conditions={step.conditions ?? []}
       transactionHash={null}
       error={null}
     >

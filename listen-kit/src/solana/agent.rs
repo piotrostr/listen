@@ -19,7 +19,6 @@ pub async fn create_solana_agent(
     ));
     Ok(claude_agent_builder()
         .preamble(&preamble)
-        .max_tokens(1024)
         .tool(GetQuote)
         .tool(Swap)
         .tool(GetSolBalance)

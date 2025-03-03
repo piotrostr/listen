@@ -17,7 +17,7 @@ use crate::{
     engine::{
         error::EngineError,
         evaluator::Evaluator,
-        pipeline::{Action, Pipeline, PipelineStep, Status},
+        pipeline::{Action, ConditionType, Pipeline, PipelineStep, Status},
     },
     Engine,
 };
@@ -212,31 +212,40 @@ impl Engine {
                                             step.error = Some(e.to_string());
                                             step_status_changed = true;
 
-                                            // Cancel all downstream steps
-                                            let mut to_cancel = step.next_steps.clone();
-                                            let mut cancelled_steps = Vec::new();
+                                            // Only cancel downstream steps if this is not a "Now" condition
+                                            if !step.conditions.iter().any(|c| {
+                                                matches!(
+                                                    c.condition_type,
+                                                    ConditionType::Now { .. }
+                                                )
+                                            }) {
+                                                // Cancel all downstream steps
+                                                let mut to_cancel = step.next_steps.clone();
+                                                let mut cancelled_steps = Vec::new();
 
-                                            while let Some(next_step_id) = to_cancel.pop() {
-                                                if let Some(next_step) =
-                                                    pipeline.steps.get(&next_step_id)
-                                                {
-                                                    if !matches!(
-                                                        next_step.status,
-                                                        Status::Failed | Status::Cancelled
-                                                    ) {
-                                                        cancelled_steps.push(next_step_id);
-                                                        to_cancel
-                                                            .extend(next_step.next_steps.clone());
+                                                while let Some(next_step_id) = to_cancel.pop() {
+                                                    if let Some(next_step) =
+                                                        pipeline.steps.get(&next_step_id)
+                                                    {
+                                                        if !matches!(
+                                                            next_step.status,
+                                                            Status::Failed | Status::Cancelled
+                                                        ) {
+                                                            cancelled_steps.push(next_step_id);
+                                                            to_cancel.extend(
+                                                                next_step.next_steps.clone(),
+                                                            );
+                                                        }
                                                     }
                                                 }
-                                            }
 
-                                            // Actually cancel the collected steps
-                                            for step_id in cancelled_steps {
-                                                if let Some(next_step) =
-                                                    pipeline.steps.get_mut(&step_id)
-                                                {
-                                                    next_step.status = Status::Cancelled;
+                                                // Actually cancel the collected steps
+                                                for step_id in cancelled_steps {
+                                                    if let Some(next_step) =
+                                                        pipeline.steps.get_mut(&step_id)
+                                                    {
+                                                        next_step.status = Status::Cancelled;
+                                                    }
                                                 }
                                             }
 
@@ -261,25 +270,31 @@ impl Engine {
                                 step.error = Some(e.to_string());
                                 step_status_changed = true;
 
-                                // Cancel downstream steps as with other failures
-                                let mut to_cancel = step.next_steps.clone();
-                                let mut cancelled_steps = Vec::new();
+                                // Only cancel downstream steps if this is not a "Now" condition
+                                if !step
+                                    .conditions
+                                    .iter()
+                                    .any(|c| matches!(c.condition_type, ConditionType::Now { .. }))
+                                {
+                                    let mut to_cancel = step.next_steps.clone();
+                                    let mut cancelled_steps = Vec::new();
 
-                                while let Some(next_step_id) = to_cancel.pop() {
-                                    if let Some(next_step) = pipeline.steps.get(&next_step_id) {
-                                        if !matches!(
-                                            next_step.status,
-                                            Status::Failed | Status::Cancelled
-                                        ) {
-                                            cancelled_steps.push(next_step_id);
-                                            to_cancel.extend(next_step.next_steps.clone());
+                                    while let Some(next_step_id) = to_cancel.pop() {
+                                        if let Some(next_step) = pipeline.steps.get(&next_step_id) {
+                                            if !matches!(
+                                                next_step.status,
+                                                Status::Failed | Status::Cancelled
+                                            ) {
+                                                cancelled_steps.push(next_step_id);
+                                                to_cancel.extend(next_step.next_steps.clone());
+                                            }
                                         }
                                     }
-                                }
 
-                                for step_id in cancelled_steps {
-                                    if let Some(next_step) = pipeline.steps.get_mut(&step_id) {
-                                        next_step.status = Status::Cancelled;
+                                    for step_id in cancelled_steps {
+                                        if let Some(next_step) = pipeline.steps.get_mut(&step_id) {
+                                            next_step.status = Status::Cancelled;
+                                        }
                                     }
                                 }
 
@@ -391,12 +406,25 @@ impl Engine {
 
         let mut pipeline_hash = pipeline.hash();
 
+        // Always populate current_steps if empty, not just during processing
         self.populate_current_steps_if_empty(pipeline);
+
+        // If still empty after populating, check if we have any pending steps that aren't in current_steps
+        if pipeline.current_steps.is_empty() {
+            for (step_id, step) in &pipeline.steps {
+                if matches!(step.status, Status::Pending) {
+                    pipeline.current_steps.push(*step_id);
+                }
+            }
+        }
+
         self.save_pipeline(pipeline, &mut pipeline_hash).await?;
 
-        self.process_all_steps(pipeline, &price_cache, &mut pipeline_hash)
-            .await?;
-        self.save_pipeline(pipeline, &mut pipeline_hash).await?;
+        if !pipeline.current_steps.is_empty() {
+            self.process_all_steps(pipeline, &price_cache, &mut pipeline_hash)
+                .await?;
+            self.save_pipeline(pipeline, &mut pipeline_hash).await?;
+        }
 
         let pipeline_done = self.collect_step_results(pipeline);
         self.save_pipeline(pipeline, &mut pipeline_hash).await?;

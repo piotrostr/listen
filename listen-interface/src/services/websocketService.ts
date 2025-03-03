@@ -22,7 +22,6 @@ export function setupWebSocket() {
         mints: ["*"],
       })
     );
-    console.log("WebSocket connection opened");
   };
 
   ws.onerror = (error) => {
@@ -30,7 +29,6 @@ export function setupWebSocket() {
   };
 
   ws.onclose = () => {
-    console.log("WebSocket connection closed");
     // Optionally implement reconnection logic here
   };
 

@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ReactNode, useState } from "react";
-import { FiSend, FiStopCircle } from "react-icons/fi";
+import { FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 
 interface ChatContainerProps {
@@ -9,6 +9,8 @@ interface ChatContainerProps {
   onSendMessage?: (message: string) => void;
   onInputChange?: (message: string) => void;
   onStopGeneration?: () => void;
+  onShareChat?: () => void;
+  isSharedChat?: boolean;
   children: ReactNode;
 }
 
@@ -18,6 +20,8 @@ export function ChatContainer({
   onSendMessage = () => {},
   onInputChange = () => {},
   onStopGeneration = () => {},
+  onShareChat,
+  isSharedChat = false,
   children,
 }: ChatContainerProps) {
   return (
@@ -32,6 +36,8 @@ export function ChatContainer({
           onSendMessage={onSendMessage}
           onInputChange={onInputChange}
           onStopGeneration={onStopGeneration}
+          onShareChat={onShareChat}
+          isSharedChat={isSharedChat}
         />
       </div>
     </div>
@@ -44,6 +50,8 @@ interface ChatInputProps {
   onSendMessage: (message: string) => void;
   onInputChange: (message: string) => void;
   onStopGeneration: () => void;
+  onShareChat?: () => void;
+  isSharedChat?: boolean;
 }
 
 export function ChatInput({
@@ -52,6 +60,8 @@ export function ChatInput({
   onSendMessage,
   onInputChange,
   onStopGeneration,
+  onShareChat,
+  isSharedChat = false,
 }: ChatInputProps) {
   const [isFocused, setIsFocused] = useState(false);
 
@@ -98,10 +108,21 @@ export function ChatInput({
             minHeight: "20px",
             maxHeight: "200px",
           }}
+          disabled={isSharedChat}
         />
       </div>
 
       <div className="flex-shrink-0 ml-2 flex items-center gap-2">
+        {onShareChat && (
+          <button
+            onClick={onShareChat}
+            className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 transition-colors"
+            title="Share this chat"
+          >
+            <FiShare2 size={18} />
+          </button>
+        )}
+
         <Link
           to="/chat"
           search={{ new: true }}
@@ -140,9 +161,9 @@ export function ChatInput({
               e.stopPropagation();
               handleSend();
             }}
-            disabled={!inputMessage.trim() || !walletsReady}
+            disabled={!inputMessage.trim() || !walletsReady || isSharedChat}
             className={`p-2 rounded-full ${
-              inputMessage.trim() && walletsReady
+              inputMessage.trim() && walletsReady && !isSharedChat
                 ? "bg-purple-500/20 hover:bg-purple-500/40 text-purple-300"
                 : "bg-gray-500/10 text-gray-500"
             } transition-colors`}

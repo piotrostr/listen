@@ -5,6 +5,7 @@ import { Chat } from "../components/Chat";
 const ChatSearchParamsSchema = z.object({
   chatId: z.string().optional(),
   new: z.boolean().optional(),
+  shared: z.boolean().optional(),
 });
 
 export const Route = createFileRoute("/chat")({

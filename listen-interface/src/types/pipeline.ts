@@ -16,8 +16,8 @@ export const SwapOrderActionSchema = z.object({
   input_token: z.string(),
   output_token: z.string(),
   amount: z.string(),
-  from_chain_caip2: z.string(),
-  to_chain_caip2: z.string(),
+  from_chain_caip2: z.string().optional(),
+  to_chain_caip2: z.string().optional(),
 });
 
 export const NotificationActionSchema = z.object({
@@ -39,7 +39,7 @@ export const PipelineConditionSchema = z.object({
 
 export const PipelineStepSchema = z.object({
   action: PipelineActionSchema,
-  conditions: z.array(PipelineConditionSchema),
+  conditions: z.array(PipelineConditionSchema).optional(),
 });
 
 export const PipelineSchema = z.object({

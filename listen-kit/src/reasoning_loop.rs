@@ -38,15 +38,41 @@ impl ReasoningLoop {
             panic!("enable stdout or provide tx channel");
         }
 
-        let mut current_messages = messages;
+        let mut current_messages = messages.clone();
         let agent = self.agent.clone();
         let stdout = self.stdout;
+
+        // Extract the last user message as the prompt
+        let prompt = messages
+            .iter()
+            .rev()
+            .find_map(|msg| {
+                if let Message::User { content } = msg {
+                    match content.first() {
+                        UserContent::Text(text) => Some(text.text.clone()),
+                        _ => None,
+                    }
+                } else {
+                    None
+                }
+            })
+            .unwrap_or_else(|| String::from(""));
+
+        // Remove the last user message since we're using it as the prompt
+        if !current_messages.is_empty()
+            && matches!(
+                current_messages.last().unwrap(),
+                Message::User { .. }
+            )
+        {
+            current_messages.pop();
+        }
 
         'outer: loop {
             let mut current_response = String::new();
 
             let mut stream =
-                agent.stream_chat(" ", current_messages.clone()).await?;
+                agent.stream_chat(&prompt, current_messages.clone()).await?;
 
             while let Some(chunk) = stream.next().await {
                 match chunk? {

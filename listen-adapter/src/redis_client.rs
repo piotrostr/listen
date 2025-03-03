@@ -98,6 +98,52 @@ impl RedisClient {
             }
         }
     }
+
+    fn make_chat_key(&self, chat_id: &str) -> String {
+        format!("chats:shared:{}", chat_id)
+    }
+
+    pub async fn get_chat(&self, chat_id: &str) -> Result<Option<serde_json::Value>> {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .context("Failed to get Redis connection")?;
+
+        let key = self.make_chat_key(chat_id);
+        let value: Option<String> = cmd("GET")
+            .arg(key)
+            .query_async(&mut *conn)
+            .await
+            .with_context(|| format!("Failed to get chat: {}", chat_id))?;
+
+        match value {
+            Some(json_str) => serde_json::from_str(&json_str)
+                .with_context(|| format!("Failed to deserialize chat: {}", chat_id)),
+            None => {
+                debug!(chat_id, "No chat found");
+                Ok(None)
+            }
+        }
+    }
+
+    pub async fn save_chat(&self, chat_id: &str, chat: &serde_json::Value) -> Result<()> {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .context("Failed to get Redis connection")?;
+
+        let key = self.make_chat_key(chat_id);
+        let _: () = cmd("SET")
+            .arg(key)
+            .arg(serde_json::to_string(chat)?)
+            .query_async(&mut *conn)
+            .await
+            .with_context(|| format!("Failed to save chat: {}", chat_id))?;
+
+        Ok(())
+    }
 }
 
 pub async fn make_redis_client() -> Result<Arc<RedisClient>> {

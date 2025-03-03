@@ -64,15 +64,15 @@ export const useEvmToken = (address: string, chainId: string) => {
   return { data, isLoading, error };
 };
 
-export const useToken = (address: string, chainId: string) => {
+export const useToken = (address: string, chainId?: string) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["token", address, chainId],
     queryFn: async () => {
-      const token = await getAnyToken(address, chainId);
-      if (token) {
-        return token;
+      if (!chainId) {
+        return await getSolanaTokenMetadata(address);
+      } else {
+        return await getAnyToken(address, chainId);
       }
-      return null;
     },
   });
 

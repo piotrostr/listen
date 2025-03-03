@@ -32,7 +32,7 @@ pub struct ChatRequest {
     preamble: Option<String>,
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Debug)]
 #[serde(tag = "type", content = "content")]
 pub enum StreamResponse {
     Message(String),
@@ -173,6 +173,7 @@ async fn stream(
                         StreamResponse::ToolCall { name, result }
                     }
                 };
+                println!("stream_response: {:?}", stream_response);
 
                 if tx_clone
                     .send(sse::Event::Data(sse::Data::new(
@@ -211,8 +212,8 @@ async fn stream(
     .await;
 
     sse::Sse::from_infallible_receiver(rx)
-        .with_keep_alive(Duration::from_secs(15))
-        .with_retry_duration(Duration::from_secs(10))
+        .with_keep_alive(Duration::from_secs(90))
+        .with_retry_duration(Duration::from_secs(90))
 }
 
 #[get("/healthz")]

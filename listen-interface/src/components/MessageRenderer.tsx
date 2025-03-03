@@ -5,6 +5,8 @@ import { PipelineDisplay } from "./Pipeline";
 export function MessageRenderer({ message: msg }: { message: Message }) {
   if (!msg.message) return null;
 
+  console.log("msg", msg);
+
   if (msg.isToolCall) {
     const toolOutput = {
       name: msg.message.split(": ")[0].replace("Tool ", ""),
