@@ -56,6 +56,7 @@ pub struct WireCondition {
 #[derive(Debug, Deserialize)]
 pub struct WireStep {
     pub action: WireAction,
+    #[serde(default)]
     pub conditions: Vec<WireCondition>,
 }
 
@@ -122,10 +123,22 @@ impl From<(WirePipeline, PipelineParams)> for Pipeline {
 
 impl From<&WireStep> for PipelineStep {
     fn from(wire: &WireStep) -> Self {
+        let conditions = if wire.conditions.is_empty() {
+            vec![Condition {
+                condition_type: ConditionType::Now {
+                    asset: String::new(),
+                },
+                triggered: false,
+                last_evaluated: None,
+            }]
+        } else {
+            wire.conditions.iter().map(Into::into).collect()
+        };
+
         PipelineStep {
             id: Uuid::new_v4(),
             action: (&wire.action).into(),
-            conditions: wire.conditions.iter().map(Into::into).collect(),
+            conditions,
             next_steps: Vec::new(),
             status: Status::Pending,
             transaction_hash: None,
@@ -257,6 +270,31 @@ mod tests {
             assert_eq!(order.to_chain_caip2, "eip155:1337");
         } else {
             panic!("Expected SwapOrder action");
+        }
+    }
+
+    #[test]
+    fn test_wire_step_with_no_conditions() {
+        let json = json!({
+            "action": {
+                "type": "SwapOrder",
+                "input_token": "SOL",
+                "output_token": "USDC",
+                "amount": "1.0"
+            }
+        });
+
+        let wire_step: WireStep = serde_json::from_value(json).unwrap();
+        assert!(wire_step.conditions.is_empty());
+
+        let pipeline_step: PipelineStep = (&wire_step).into();
+        assert_eq!(pipeline_step.conditions.len(), 1);
+
+        match &pipeline_step.conditions[0].condition_type {
+            ConditionType::Now { asset } => {
+                assert_eq!(asset, "");
+            }
+            _ => panic!("Expected Now condition type"),
         }
     }
 }
