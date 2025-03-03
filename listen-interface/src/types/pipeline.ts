@@ -39,7 +39,7 @@ export const PipelineConditionSchema = z.object({
 
 export const PipelineStepSchema = z.object({
   action: PipelineActionSchema,
-  conditions: z.array(PipelineConditionSchema),
+  conditions: z.array(PipelineConditionSchema).optional(),
 });
 
 export const PipelineSchema = z.object({

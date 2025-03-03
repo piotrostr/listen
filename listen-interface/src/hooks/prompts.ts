@@ -48,7 +48,7 @@ const pipelineKnowledgeEvm = `
 
   const PipelineStepSchema = z.object({
     action: PipelineActionSchema,
-    conditions: z.array(PipelineConditionSchema),
+    conditions: z.array(PipelineConditionSchema).optional(), // optional, if not provided, executes immediately
   });
 
   const PipelineSchema = z.object({
@@ -104,7 +104,7 @@ const pipelineKnowledgeSolana = `
 
   const PipelineStepSchema = z.object({
     action: PipelineActionSchema,
-    conditions: z.array(PipelineConditionSchema),
+    conditions: z.array(PipelineConditionSchema).optional(), // optional, if not provided, executes immediately
   });
 
   const PipelineSchema = z.object({

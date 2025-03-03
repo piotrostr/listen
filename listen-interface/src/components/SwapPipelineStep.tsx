@@ -49,7 +49,7 @@ export const SwapPipelineStep = ({
   return (
     <PipelineStepContainer
       index={index}
-      conditions={step.conditions}
+      conditions={step.conditions ?? []}
       status={status}
       transactionHash={transactionHash}
       error={error}
