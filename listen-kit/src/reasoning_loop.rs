@@ -63,9 +63,19 @@ impl ReasoningLoop {
                 "Continue the conversation.".to_string()
             };
 
-            let mut stream = agent
+            let mut stream = match agent
                 .stream_chat(&current_prompt, current_messages.clone())
-                .await?;
+                .await
+            {
+                Ok(stream) => stream,
+                Err(e) => {
+                    tracing::error!("Error: failed to stream chat: {}", e);
+                    return Err(anyhow::anyhow!(
+                        "failed to stream chat: {}",
+                        e
+                    ));
+                }
+            };
 
             while let Some(chunk) = stream.next().await {
                 match chunk? {
@@ -75,7 +85,13 @@ impl ReasoningLoop {
                             std::io::stdout().flush()?;
                         } else if let Some(tx) = &tx {
                             tx.send(LoopResponse::Message(text.clone()))
-                                .await?;
+                                .await
+                                .map_err(|e| {
+                                    anyhow::anyhow!(
+                                        "failed to send message: {}",
+                                        e
+                                    )
+                                })?;
                         }
                         current_response.push_str(&text);
                     }
@@ -139,7 +155,13 @@ impl ReasoningLoop {
                                     Err(err) => err.to_string(),
                                 },
                             })
-                            .await?;
+                            .await
+                            .map_err(|e| {
+                                anyhow::anyhow!(
+                                    "failed to send tool call: {}",
+                                    e
+                                )
+                            })?;
                         }
 
                         continue 'outer;

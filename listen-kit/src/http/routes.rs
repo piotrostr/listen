@@ -59,6 +59,7 @@ async fn stream(
         let item = match item {
             Ok(item) => item,
             Err(e) => {
+                tracing::error!("Error: reading request body: {}", e);
                 let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
                 let error_event = sse::Event::Data(sse::Data::new(
                     serde_json::to_string(&StreamResponse::Error(format!(
@@ -81,6 +82,7 @@ async fn stream(
     let request: ChatRequest = match serde_json::from_slice(&bytes) {
         Ok(req) => req,
         Err(e) => {
+            tracing::error!("Error: deserializing request: {}", e);
             let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
             let error_event = sse::Event::Data(sse::Data::new(
                 serde_json::to_string(&StreamResponse::Error(format!(
@@ -97,6 +99,7 @@ async fn stream(
     let user_session = match verify_auth(&req).await {
         Ok(s) => s,
         Err(e) => {
+            tracing::error!("Error: unauthorized: {}", e);
             let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
             let error_event = sse::Event::Data(sse::Data::new(
                 serde_json::to_string(&StreamResponse::Error(format!(
@@ -110,7 +113,7 @@ async fn stream(
         }
     };
 
-    let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(32);
+    let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1024);
 
     let preamble = request.preamble.clone();
 
@@ -120,6 +123,10 @@ async fn stream(
         Some("solana") => match create_solana_agent(preamble).await {
             Ok(agent) => Arc::new(agent),
             Err(e) => {
+                tracing::error!(
+                    "Error: failed to create Solana agent: {}",
+                    e
+                );
                 let error_event = sse::Event::Data(sse::Data::new(
                     serde_json::to_string(&StreamResponse::Error(format!(
                         "Failed to create Solana agent: {}",
@@ -135,6 +142,7 @@ async fn stream(
         Some("evm") => match create_evm_agent(preamble).await {
             Ok(agent) => Arc::new(agent),
             Err(e) => {
+                tracing::error!("Error: failed to create EVM agent: {}", e);
                 let error_event = sse::Event::Data(sse::Data::new(
                     serde_json::to_string(&StreamResponse::Error(format!(
                         "Failed to create EVM agent: {}",
@@ -149,6 +157,10 @@ async fn stream(
         Some("omni") => match create_cross_chain_agent(preamble).await {
             Ok(agent) => Arc::new(agent),
             Err(e) => {
+                tracing::error!(
+                    "Error: failed to create cross-chain agent: {}",
+                    e
+                );
                 let error_event = sse::Event::Data(sse::Data::new(
                     serde_json::to_string(&StreamResponse::Error(format!(
                         "Failed to create cross-chain agent: {}",
@@ -161,6 +173,7 @@ async fn stream(
             }
         },
         Some(chain) => {
+            tracing::error!("Error: unsupported chain: {}", chain);
             let error_event = sse::Event::Data(sse::Data::new(
                 serde_json::to_string(&StreamResponse::Error(format!(
                     "Unsupported chain: {}",
@@ -172,6 +185,7 @@ async fn stream(
             return sse::Sse::from_infallible_receiver(rx);
         }
         None => {
+            tracing::error!("Chain parameter is required");
             let error_event = sse::Event::Data(sse::Data::new(
                 serde_json::to_string(&StreamResponse::Error(
                     "Chain parameter is required".to_string(),
@@ -193,7 +207,7 @@ async fn stream(
         let reasoning_loop = ReasoningLoop::new(agent).with_stdout(false);
 
         // Create a channel for the reasoning loop to send responses
-        let (internal_tx, mut internal_rx) = tokio::sync::mpsc::channel(32);
+        let (internal_tx, mut internal_rx) = tokio::sync::mpsc::channel(1024);
 
         // Create a separate task to handle sending responses
         let tx_clone = tx.clone();
@@ -207,7 +221,6 @@ async fn stream(
                         StreamResponse::ToolCall { name, result }
                     }
                 };
-                println!("stream_response: {:?}", stream_response);
 
                 if tx_clone
                     .send(sse::Event::Data(sse::Data::new(
@@ -216,6 +229,7 @@ async fn stream(
                     .await
                     .is_err()
                 {
+                    tracing::error!("Error: failed to send response");
                     break;
                 }
             }
@@ -231,6 +245,7 @@ async fn stream(
 
         // Check if the reasoning loop completed successfully
         if let Err(e) = loop_result {
+            tracing::error!("Error: reasoning loop failed: {}", e);
             let _ = tx
                 .send(sse::Event::Data(sse::Data::new(
                     serde_json::to_string(&StreamResponse::Error(
