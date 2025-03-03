@@ -17,7 +17,7 @@ use crate::{
     engine::{
         error::EngineError,
         evaluator::Evaluator,
-        pipeline::{Action, Pipeline, PipelineStep, Status},
+        pipeline::{Action, ConditionType, Pipeline, PipelineStep, Status},
     },
     Engine,
 };
