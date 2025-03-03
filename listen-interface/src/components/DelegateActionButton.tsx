@@ -25,8 +25,7 @@ export function DelegateActionButton() {
   const onCreateWallet = async () => {
     try {
       setIsCreatingSolana(true);
-      const solanaWallet = await createSolanaWallet();
-      console.log(solanaWallet);
+      await createSolanaWallet();
     } catch (error) {
       console.error("Error creating Solana wallet:", error);
     } finally {
@@ -35,8 +34,7 @@ export function DelegateActionButton() {
 
     try {
       setIsCreatingEvm(true);
-      const evmWallet = await createEvmWallet();
-      console.log(evmWallet);
+      await createEvmWallet();
     } catch (error) {
       console.error("Error creating EVM wallet:", error);
     } finally {

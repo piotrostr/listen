@@ -1,7 +1,9 @@
 import { useQuery } from "@tanstack/react-query";
 import { TokenMetadataRaw } from "../types/metadata";
 
-async function fetchListenMetadata(pubkey: string): Promise<TokenMetadataRaw> {
+export async function fetchListenMetadata(
+  pubkey: string
+): Promise<TokenMetadataRaw> {
   const response = await fetch(
     `https://api.listen-rs.com/v1/adapter/metadata?mint=${pubkey}`
   );

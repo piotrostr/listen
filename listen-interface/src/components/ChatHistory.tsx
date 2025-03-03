@@ -9,14 +9,11 @@ export function ChatHistory() {
   useEffect(() => {
     const loadChats = async () => {
       const allChats = await chatCache.getAll();
-      console.log("ChatHistory", allChats);
       setChats(allChats);
     };
 
     loadChats();
   }, []);
-
-  console.log("ChatHistory", chats);
 
   return (
     <div className="container mx-auto px-4 py-8">

@@ -2,7 +2,6 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { config } from "../config";
 import { chatCache } from "./localStorage";
 import { systemPromptEvm, systemPromptSolana } from "./prompts";
 import { Chat, Message, StreamResponse, ToolOutputSchema } from "./types";
@@ -225,7 +224,7 @@ export function useChat() {
           preamble,
         });
 
-        const response = await fetch(config.API_BASE_URL + "/v1/kit/stream", {
+        const response = await fetch("http://localhost:6969/stream", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

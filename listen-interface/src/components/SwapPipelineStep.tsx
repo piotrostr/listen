@@ -39,8 +39,12 @@ export const SwapPipelineStep = ({
   const inputName = inputToken?.symbol;
   const outputName = outputToken?.symbol;
 
-  const fromChain = caip2ToChainId(step.action.from_chain_caip2);
-  const toChain = caip2ToChainId(step.action.to_chain_caip2);
+  const fromChain = step.action.from_chain_caip2
+    ? caip2ToChainId(step.action.from_chain_caip2)
+    : null;
+  const toChain = step.action.to_chain_caip2
+    ? caip2ToChainId(step.action.to_chain_caip2)
+    : null;
 
   return (
     <PipelineStepContainer

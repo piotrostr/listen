@@ -36,7 +36,6 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
   if (toolOutput.name === "fetch_candlesticks") {
     try {
       const parsed = CandlestickDataSchema.parse(JSON.parse(toolOutput.result));
-      console.log(parsed);
       return (
         <div className="h-[300px]">
           <InnerChart data={parsed} />
@@ -103,18 +102,14 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
         }
       }
 
-      console.log("Cleaned quote data:", resultData);
-
       try {
         // Parse the data to an object
         const parsedData =
           typeof resultData === "string" ? JSON.parse(resultData) : resultData;
-        console.log("Parsed quote data:", parsedData);
 
         // First try Jupiter quote schema
         try {
           const jupiterQuote = JupiterQuoteResponseSchema.parse(parsedData);
-          console.log("Successfully parsed as Jupiter quote", jupiterQuote);
           return <JupiterQuoteDisplay quote={jupiterQuote} />;
         } catch (jupiterError) {
           console.error("Jupiter quote validation failed:", jupiterError);
@@ -122,7 +117,6 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
           // Then try regular quote schema
           try {
             const quote = QuoteResponseSchema.parse(parsedData);
-            console.log("Successfully parsed as regular quote", quote);
             return <QuoteDisplay quote={quote} />;
           } catch (quoteError) {
             console.error("Regular quote validation failed:", quoteError);
