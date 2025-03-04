@@ -113,6 +113,8 @@ const pipelineKnowledgeSolana = `
 
   now when generating a pipeline, put it into <pipeline></pipeline> tags
 
+  if any step is to be executed immediately, don't include the "conditions" key, it will be filled automatically
+
   always include the tags! otherwise the pipeline will neither be rendered for the user to see nor executed
 `;
 
@@ -165,6 +167,7 @@ export function systemPromptSolana(
   </address_book>
   <knowledge>
   ${pipelineKnowledgeSolana}
+  </knowledge>
   <errors>
     0x1771: program error when slippage tolerance is too low, this can be fixed by increasing the slippage tolerance or a retry
   </errors>
