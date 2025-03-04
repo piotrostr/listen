@@ -36,7 +36,11 @@ pub struct ChatRequest {
 #[serde(tag = "type", content = "content")]
 pub enum StreamResponse {
     Message(String),
-    ToolCall { name: String, result: String },
+    ToolCall {
+        id: String,
+        name: String,
+        result: String,
+    },
     Error(String),
 }
 
@@ -217,8 +221,8 @@ async fn stream(
                     LoopResponse::Message(text) => {
                         StreamResponse::Message(text)
                     }
-                    LoopResponse::ToolCall { name, result } => {
-                        StreamResponse::ToolCall { name, result }
+                    LoopResponse::ToolCall { id, name, result } => {
+                        StreamResponse::ToolCall { id, name, result }
                     }
                 };
 
@@ -293,13 +297,19 @@ fn deserialize_messages<'de, D>(
 where
     D: serde::Deserializer<'de>,
 {
-    #[derive(Deserialize)]
+    #[derive(Deserialize, Serialize, Debug)]
     struct RawMessage {
         role: String,
         content: serde_json::Value,
     }
 
     let raw_messages: Vec<RawMessage> = Vec::deserialize(deserializer)?;
+
+    println!("Deserializing messages");
+    println!(
+        "raw_messages: {}",
+        serde_json::to_string_pretty(&raw_messages).unwrap()
+    );
 
     raw_messages
         .into_iter()

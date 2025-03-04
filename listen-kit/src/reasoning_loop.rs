@@ -13,7 +13,11 @@ use tokio::sync::mpsc::Sender;
 
 pub enum LoopResponse {
     Message(String),
-    ToolCall { name: String, result: String },
+    ToolCall {
+        id: String,
+        name: String,
+        result: String,
+    },
 }
 
 pub struct ReasoningLoop {
@@ -61,8 +65,6 @@ impl ReasoningLoop {
             };
 
             println!("current_messages: {:#?}", current_messages);
-            println!("is_first_iteration: {:?}", is_first_iteration);
-            println!("current_prompt: {:?}", current_prompt);
 
             let mut stream = match agent
                 .stream_chat(&current_prompt, current_messages.clone())
@@ -144,7 +146,7 @@ impl ReasoningLoop {
                         current_messages.push(Message::User {
                             content: OneOrMany::one(
                                 UserContent::tool_result(
-                                    tool_id,
+                                    tool_id.clone(),
                                     OneOrMany::one(ToolResultContent::text(
                                         match &result {
                                             Ok(content) => {
@@ -159,6 +161,7 @@ impl ReasoningLoop {
 
                         if let Some(tx) = &tx {
                             tx.send(LoopResponse::ToolCall {
+                                id: tool_id,
                                 name,
                                 result: match &result {
                                     Ok(content) => content.to_string(),
