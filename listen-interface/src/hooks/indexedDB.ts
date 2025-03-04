@@ -1,7 +1,8 @@
 import { openDB, type IDBPDatabase } from "idb";
 import { z } from "zod";
+import { Chat, ChatSchema } from "../types/message";
 import { CacheStore } from "./cache";
-import { Chat, ChatSchema, TokenMetadata, TokenMetadataSchema } from "./types";
+import { TokenMetadata, TokenMetadataSchema } from "./types";
 
 export class IndexedDBCache<T> implements CacheStore<T> {
   private dbName: string;

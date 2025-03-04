@@ -1,11 +1,11 @@
-import { type ToolOutput } from "../hooks/types";
 import { useWaitForTransaction } from "../hooks/useWaitForTransaction";
+import { type ToolResult } from "../types/message";
 import { Spinner } from "./Spinner";
 
 export function ToolOutputDisplay({
   toolOutput,
 }: {
-  toolOutput: ToolOutput | null;
+  toolOutput: ToolResult | null;
 }) {
   const signature = toolOutput?.name === "trade" ? toolOutput.result : null;
 

@@ -2,7 +2,7 @@ import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
 import { chatCache } from "../hooks/localStorage";
-import { Chat } from "../hooks/types";
+import { Chat } from "../types/message";
 
 export function RecentChats() {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
