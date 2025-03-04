@@ -60,6 +60,10 @@ impl ReasoningLoop {
                 "Continue the conversation.".to_string()
             };
 
+            println!("current_messages: {:#?}", current_messages);
+            println!("is_first_iteration: {:?}", is_first_iteration);
+            println!("current_prompt: {:?}", current_prompt);
+
             let mut stream = match agent
                 .stream_chat(&current_prompt, current_messages.clone())
                 .await
@@ -74,7 +78,7 @@ impl ReasoningLoop {
                 }
             };
 
-            if is_first_iteration && current_messages.is_empty() {
+            if is_first_iteration {
                 current_messages.push(Message::User {
                     content: OneOrMany::one(UserContent::text(
                         prompt.clone(),
