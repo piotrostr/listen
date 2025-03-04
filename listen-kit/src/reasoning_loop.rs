@@ -7,17 +7,26 @@ use rig::message::{ToolResultContent, UserContent};
 use rig::providers::anthropic::completion::CompletionModel;
 use rig::streaming::{StreamingChat, StreamingChoice};
 use rig::OneOrMany;
+use serde::Serialize;
 use std::io::Write;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-pub enum LoopResponse {
+#[derive(Serialize, Debug)]
+#[serde(tag = "type", content = "content")]
+pub enum StreamResponse {
     Message(String),
     ToolCall {
         id: String,
         name: String,
+        params: String,
+    },
+    ToolResult {
+        id: String,
+        name: String,
         result: String,
     },
+    Error(String),
 }
 
 pub struct ReasoningLoop {
@@ -37,7 +46,7 @@ impl ReasoningLoop {
         &self,
         prompt: String,
         messages: Vec<Message>,
-        tx: Option<Sender<LoopResponse>>,
+        tx: Option<Sender<StreamResponse>>,
     ) -> Result<Vec<Message>> {
         if tx.is_none() && !self.stdout {
             panic!("enable stdout or provide tx channel");
@@ -63,8 +72,6 @@ impl ReasoningLoop {
                 // TODO there might be a better way to handle this
                 "Continue the conversation.".to_string()
             };
-
-            println!("current_messages: {:#?}", current_messages);
 
             let mut stream = match agent
                 .stream_chat(&current_prompt, current_messages.clone())
@@ -96,7 +103,7 @@ impl ReasoningLoop {
                             print!("{}", text);
                             std::io::stdout().flush()?;
                         } else if let Some(tx) = &tx {
-                            tx.send(LoopResponse::Message(text.clone()))
+                            tx.send(StreamResponse::Message(text.clone()))
                                 .await
                                 .map_err(|e| {
                                     anyhow::anyhow!(
@@ -131,6 +138,21 @@ impl ReasoningLoop {
                             ),
                         });
 
+                        if let Some(tx) = &tx {
+                            tx.send(StreamResponse::ToolCall {
+                                id: tool_id.clone(),
+                                name: name.clone(),
+                                params: params.to_string(),
+                            })
+                            .await
+                            .map_err(|e| {
+                                anyhow::anyhow!(
+                                    "failed to send tool call: {}",
+                                    e
+                                )
+                            })?;
+                        }
+
                         // Call the tool and get result
                         let result = self
                             .agent
@@ -160,7 +182,7 @@ impl ReasoningLoop {
                         });
 
                         if let Some(tx) = &tx {
-                            tx.send(LoopResponse::ToolCall {
+                            tx.send(StreamResponse::ToolResult {
                                 id: tool_id,
                                 name,
                                 result: match &result {
