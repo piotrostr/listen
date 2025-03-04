@@ -51,7 +51,7 @@ impl RaydiumAmmV4InstructionProcessor {
         let concurrency_limit = std::env::var("SWAP_CONCURRENCY_LIMIT")
             .ok()
             .and_then(|s| s.parse::<usize>().ok())
-            .unwrap_or(500); // Default to 500
+            .unwrap_or(1000);
 
         Self {
             kv_store,
