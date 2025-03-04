@@ -56,6 +56,7 @@ function parseHolding(ata: {
 
 export async function fetchTokenMetadata(mint: string): Promise<TokenMetadata> {
   try {
+    // listen metadata is cached on server, could cache on client too here
     const metadataRaw = await fetchListenMetadata(mint);
     return {
       address: metadataRaw.mint,
