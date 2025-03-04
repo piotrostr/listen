@@ -7,6 +7,7 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { tokenMetadataCache } from "./localStorage";
 import { Holding, PriceResponse, TokenMetadata } from "./types";
+import { fetchListenMetadata } from "./useListenMetadata";
 import { usePrivyWallets } from "./usePrivyWallet";
 import { decodeTokenAccount } from "./util";
 
@@ -54,6 +55,25 @@ function parseHolding(ata: {
 }
 
 export async function fetchTokenMetadata(mint: string): Promise<TokenMetadata> {
+  try {
+    const metadataRaw = await fetchListenMetadata(mint);
+    return {
+      address: metadataRaw.mint,
+      name: metadataRaw.mpl.name,
+      symbol: metadataRaw.mpl.symbol,
+      decimals: metadataRaw.spl.decimals,
+      logoURI: metadataRaw.mpl.ipfs_metadata?.image ?? "",
+      volume24h: 0,
+      chainId: 1151111081099710,
+    };
+  } catch (error) {
+    return await fetchTokenMetadataFromJupiter(mint);
+  }
+}
+
+export async function fetchTokenMetadataFromJupiter(
+  mint: string
+): Promise<TokenMetadata> {
   try {
     // First check IndexedDB cache
     const cachedMetadata = await tokenMetadataCache.get(mint);
