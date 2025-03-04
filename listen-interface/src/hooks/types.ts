@@ -26,6 +26,7 @@ export const MessageSchema = z.object({
 export type Message = z.infer<typeof MessageSchema>;
 
 export const ToolOutputSchema = z.object({
+  id: z.string().optional(),
   name: z.string(),
   result: z.string(),
 });

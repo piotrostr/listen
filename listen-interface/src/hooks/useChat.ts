@@ -4,7 +4,13 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { chatCache } from "./localStorage";
 import { systemPromptEvm, systemPromptSolana } from "./prompts";
-import { Chat, Message, StreamResponse, ToolOutputSchema } from "./types";
+import {
+  Chat,
+  Message,
+  StreamResponse,
+  ToolOutput,
+  ToolOutputSchema,
+} from "./types";
 import { useChatType } from "./useChatType";
 import { useDebounce } from "./useDebounce";
 import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
@@ -37,6 +43,13 @@ class JsonChunkReader {
     return messages;
   }
 }
+
+const serializeToolOutput = (toolOutput: ToolOutput) => {
+  if (toolOutput.id) {
+    return `Tool ${toolOutput.name} ${toolOutput.id}: ${toolOutput.result}`;
+  }
+  return `Tool ${toolOutput.name}: ${toolOutput.result}`;
+};
 
 export function useChat() {
   const { data: solanaPortfolio } = useSolanaPortfolio();
@@ -272,7 +285,7 @@ export function useChat() {
                     ...prev!.messages,
                     {
                       id: crypto.randomUUID(),
-                      message: `Tool ${toolOutput.name}: ${toolOutput.result}`,
+                      message: serializeToolOutput(toolOutput),
                       direction: "incoming",
                       timestamp: new Date(),
                       isToolCall: true,
