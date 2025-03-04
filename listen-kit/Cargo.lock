@@ -5107,7 +5107,7 @@ dependencies = [
 [[package]]
 name = "rig-core"
 version = "0.9.1"
-source = "git+https://github.com/piotrostr/rig?branch=fix%2Fcontent-block-err#cac56a43d4d1d625bfd9a92881d6cf57bfd22a36"
+source = "git+https://github.com/piotrostr/rig?branch=fix%2Fcontent-block-err#c534b19e5eb34bbfa3afc5a1fbf0fc1d795fac04"
 dependencies = [
  "async-stream",
  "bytes",
