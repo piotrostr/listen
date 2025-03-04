@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { chatCache } from "../hooks/localStorage";
-import { Chat } from "../hooks/types";
+import { Chat } from "../types/message";
 
 export function ChatHistory() {
   const [chats, setChats] = useState<Chat[]>([]);

@@ -2,9 +2,15 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import {
+  Chat,
+  Message,
+  StreamResponse,
+  ToolCallSchema,
+  ToolResultSchema,
+} from "../types/message";
 import { chatCache } from "./localStorage";
 import { systemPromptEvm, systemPromptSolana } from "./prompts";
-import { Chat, Message, StreamResponse, ToolOutputSchema } from "./types";
 import { useChatType } from "./useChatType";
 import { useDebounce } from "./useDebounce";
 import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
@@ -125,7 +131,7 @@ export function useChat() {
         message: userMessage,
         direction: "outgoing",
         timestamp: new Date(),
-        isToolCall: false,
+        type: "Message",
       };
 
       // Initialize new chat if none exists
@@ -173,7 +179,7 @@ export function useChat() {
               message: "",
               direction: "incoming",
               timestamp: new Date(),
-              isToolCall: false,
+              type: "Message",
             },
           ],
           lastMessageAt: new Date(),
@@ -264,18 +270,18 @@ export function useChat() {
                   data.content as string
                 );
                 break;
-              case "ToolCall": {
-                const toolOutput = ToolOutputSchema.parse(data.content);
+              case "ToolResult": {
+                const toolResult = ToolResultSchema.parse(data.content);
                 setChat((prev) => ({
                   ...prev!,
                   messages: [
                     ...prev!.messages,
                     {
                       id: crypto.randomUUID(),
-                      message: `Tool ${toolOutput.name}: ${toolOutput.result}`,
+                      message: JSON.stringify(toolResult),
                       direction: "incoming",
                       timestamp: new Date(),
-                      isToolCall: true,
+                      type: "ToolResult",
                     },
                   ],
                   lastMessageAt: new Date(),
@@ -291,7 +297,25 @@ export function useChat() {
                       message: "",
                       direction: "incoming",
                       timestamp: new Date(),
-                      isToolCall: false,
+                      type: "Message",
+                    },
+                  ],
+                  lastMessageAt: new Date(),
+                }));
+                break;
+              }
+              case "ToolCall": {
+                const toolCall = ToolCallSchema.parse(data.content);
+                setChat((prev) => ({
+                  ...prev!,
+                  messages: [
+                    ...prev!.messages,
+                    {
+                      id: crypto.randomUUID(),
+                      message: JSON.stringify(toolCall),
+                      direction: "incoming",
+                      timestamp: new Date(),
+                      type: "ToolCall",
                     },
                   ],
                   lastMessageAt: new Date(),
@@ -309,7 +333,7 @@ export function useChat() {
                       message: `Error: ${data.content}`,
                       direction: "incoming",
                       timestamp: new Date(),
-                      isToolCall: false,
+                      type: "Error",
                     },
                   ],
                   lastMessageAt: new Date(),
@@ -342,7 +366,7 @@ export function useChat() {
                 message: `An error occurred: ${error instanceof Error ? error.message : "Unknown error"}`,
                 direction: "incoming",
                 timestamp: new Date(),
-                isToolCall: false,
+                type: "Error",
               },
             ],
             lastMessageAt: new Date(),

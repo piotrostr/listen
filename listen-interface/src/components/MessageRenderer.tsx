@@ -1,17 +1,26 @@
-import { type Message } from "../hooks/types";
+import { ToolResult, ToolResultSchema, type Message } from "../types/message";
 import { ChatMessage, ToolMessage } from "./Messages";
 import { PipelineDisplay } from "./Pipeline";
 
 export function MessageRenderer({ message: msg }: { message: Message }) {
   if (!msg.message) return null;
 
-  console.log("msg", msg);
+  // this is to support previous version of message schema
+  if (msg.isToolCall !== undefined && msg.isToolCall) {
+    // tool call was tool result in v1, v2 there is a distinction, tool call is
+    // passing params, tool result is the "tool output"
+    const toolResult = handleLegacyMessage(msg);
+    return <ToolMessage toolOutput={toolResult} />;
+  }
 
-  if (msg.isToolCall) {
-    const toolOutput = {
-      name: msg.message.split(": ")[0].replace("Tool ", ""),
-      result: msg.message.split(": ").slice(1).join(": "),
-    };
+  if (msg.type === "ToolCall") {
+    // no need to display tool calls, just the tool results
+    // those are really important for the chat history consistency though!
+    return;
+  }
+
+  if (msg.type === "ToolResult") {
+    const toolOutput = ToolResultSchema.parse(JSON.parse(msg.message));
     return <ToolMessage toolOutput={toolOutput} />;
   }
 
@@ -79,3 +88,44 @@ export function MessageRenderer({ message: msg }: { message: Message }) {
 
   return <ChatMessage message={msg.message} direction={msg.direction} />;
 }
+
+const handleLegacyMessage = (msg: Message): ToolResult => {
+  // Get everything after "Tool " prefix
+  const afterToolPrefix = msg.message.substring(5); // "Tool ".length = 5
+
+  // Find the position of the first colon which separates id+name/name from result
+  const colonIndex = afterToolPrefix.indexOf(": ");
+
+  if (colonIndex === -1) {
+    return {
+      id: "",
+      name: afterToolPrefix,
+      result: "",
+    };
+  }
+
+  // Get the part before the colon (contains name and possibly id)
+  const nameAndId = afterToolPrefix.substring(0, colonIndex);
+  // Get the result part after the colon
+  const result = afterToolPrefix.substring(colonIndex + 2); // Skip ": "
+
+  // Find the last space which separates name from id (if present)
+  const lastSpaceIndex = nameAndId.lastIndexOf(" ");
+
+  // Check if this is likely a legacy format message (no ID)
+  // In legacy format, nameAndId would be just the tool name without spaces
+  // We can detect this by checking if the nameAndId looks like a single word/identifier
+  if (lastSpaceIndex === -1 || /^[a-zA-Z0-9_]+$/.test(nameAndId)) {
+    return {
+      id: "",
+      name: nameAndId, // this is just name, legacy format
+      result,
+    };
+  }
+
+  // Parse name and id for new format
+  const name = nameAndId.substring(0, lastSpaceIndex);
+  const id = nameAndId.substring(lastSpaceIndex + 1);
+
+  return { name, id, result };
+};

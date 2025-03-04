@@ -1,8 +1,9 @@
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
-import { CandlestickDataSchema, type ToolOutput } from "../hooks/types";
+import { CandlestickDataSchema } from "../hooks/types";
 import { renderAddressOrTx } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
+import { ToolResult } from "../types/message";
 import {
   JupiterQuoteResponseSchema,
   QuoteResponseSchema,
@@ -15,7 +16,7 @@ import { QuoteDisplay } from "./QuoteDisplay";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
-export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
+export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
   // If it's a dexscreener response, parse and display it
   if (toolOutput.name === "search_on_dex_screener") {
     try {

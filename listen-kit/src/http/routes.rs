@@ -1,10 +1,11 @@
 use super::middleware::verify_auth;
+use super::serde::deserialize_messages;
 use super::state::AppState;
 use crate::common::spawn_with_signer;
 use crate::cross_chain::agent::create_cross_chain_agent;
 use crate::evm::agent::create_evm_agent;
-use crate::reasoning_loop::LoopResponse;
 use crate::reasoning_loop::ReasoningLoop;
+use crate::reasoning_loop::StreamResponse;
 use crate::signer::privy::PrivySigner;
 use crate::signer::TransactionSigner;
 use crate::solana::agent::create_solana_agent;
@@ -15,8 +16,6 @@ use actix_web_lab::sse;
 use anyhow::Result;
 use futures::StreamExt;
 use rig::completion::Message;
-use rig::message::UserContent;
-use rig::OneOrMany;
 use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
@@ -30,14 +29,6 @@ pub struct ChatRequest {
     chain: Option<String>,
     #[serde(default)]
     preamble: Option<String>,
-}
-
-#[derive(Serialize, Debug)]
-#[serde(tag = "type", content = "content")]
-pub enum StreamResponse {
-    Message(String),
-    ToolCall { name: String, result: String },
-    Error(String),
 }
 
 #[derive(Serialize)]
@@ -213,18 +204,9 @@ async fn stream(
         let tx_clone = tx.clone();
         let send_task = tokio::spawn(async move {
             while let Some(response) = internal_rx.recv().await {
-                let stream_response = match response {
-                    LoopResponse::Message(text) => {
-                        StreamResponse::Message(text)
-                    }
-                    LoopResponse::ToolCall { name, result } => {
-                        StreamResponse::ToolCall { name, result }
-                    }
-                };
-
                 if tx_clone
                     .send(sse::Event::Data(sse::Data::new(
-                        serde_json::to_string(&stream_response).unwrap(),
+                        serde_json::to_string(&response).unwrap(),
                     )))
                     .await
                     .is_err()
@@ -285,55 +267,4 @@ async fn auth(req: HttpRequest) -> Result<HttpResponse, Error> {
         "status": "ok",
         "wallet_address": user_session.wallet_address,
     })))
-}
-
-fn deserialize_messages<'de, D>(
-    deserializer: D,
-) -> Result<Vec<Message>, D::Error>
-where
-    D: serde::Deserializer<'de>,
-{
-    #[derive(Deserialize)]
-    struct RawMessage {
-        role: String,
-        content: serde_json::Value,
-    }
-
-    let raw_messages: Vec<RawMessage> = Vec::deserialize(deserializer)?;
-
-    raw_messages
-        .into_iter()
-        .map(|raw| {
-            let content = match raw.role.as_str() {
-                "user" => {
-                    let content = match raw.content {
-                        serde_json::Value::String(s) => {
-                            OneOrMany::one(UserContent::Text(s.into()))
-                        }
-                        _ => {
-                            return Err(serde::de::Error::custom(
-                                "Invalid user content format",
-                            ))
-                        }
-                    };
-                    Message::User { content }
-                }
-                "assistant" => {
-                    let content = match raw.content {
-                        serde_json::Value::String(s) => {
-                            OneOrMany::one(s.into())
-                        }
-                        _ => {
-                            return Err(serde::de::Error::custom(
-                                "Invalid assistant content format",
-                            ))
-                        }
-                    };
-                    Message::Assistant { content }
-                }
-                _ => return Err(serde::de::Error::custom("Invalid role")),
-            };
-            Ok(content)
-        })
-        .collect()
 }

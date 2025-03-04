@@ -1,5 +1,6 @@
 pub mod middleware;
 pub mod routes;
+pub mod serde;
 pub mod server;
 pub mod state;
 
