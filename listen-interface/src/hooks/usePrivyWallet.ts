@@ -25,12 +25,13 @@ export const usePrivyWallets = (): UseQueryResult<
   return useQuery<WalletAddresses | null, Error>({
     queryKey: ["privy-wallet"],
     queryFn: () => {
-      return {
+      const res = {
         solanaWallet: solanaWallet?.address ?? null,
         evmWallet: evmWallet?.address ?? null,
       };
+      return res;
     },
-    enabled: solanaReady && evmReady && !!solanaWallet && !!evmWallet,
+    enabled: solanaReady && evmReady,
     staleTime: 20000,
     refetchInterval: 20000,
   });

@@ -51,7 +51,7 @@ export function useChat() {
   const { chatType } = useChatType();
   const { chatId, new: isNewChat } = useSearch({ from: "/chat" });
   const navigate = useNavigate();
-  const { data: wallets } = usePrivyWallets();
+  const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -456,7 +456,7 @@ export function useChat() {
 
   return {
     messages: chat?.messages || [],
-    isLoading,
+    isLoading: isLoadingWallets || isLoading,
     sendMessage,
     setMessages: (messages: Message[]) =>
       setChat((prev) =>

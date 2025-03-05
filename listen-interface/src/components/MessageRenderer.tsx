@@ -47,7 +47,7 @@ const tagHandlers: Record<string, TagHandler> = {
     ),
   },
   setup_solana_wallet: {
-    processTag: (content: string, index: number) => {
+    processTag: (_content: string, index: number) => {
       return (
         <div key={`setup-solana-wallet-${index}`}>
           <SolanaWalletCreation error={null} />
