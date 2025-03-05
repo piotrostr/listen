@@ -54,4 +54,10 @@ pub enum EngineError {
 
     #[error("[Engine] Approvals error: {0}")]
     ApprovalsError(evm_approvals::ApprovalsError),
+
+    #[error("[Engine] EVM Wallet not available")]
+    EVMWalletNotAvailable,
+
+    #[error("[Engine] Solana Wallet not available")]
+    SolanaWalletNotAvailable,
 }

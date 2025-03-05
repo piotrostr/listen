@@ -188,7 +188,7 @@ impl Engine {
                         }
                     }
                     Status::Pending => {
-                        match Evaluator::evaluate_conditions(&step.conditions, &price_cache) {
+                        match Evaluator::evaluate_conditions(&step.conditions, price_cache) {
                             Ok(true) => match &step.action {
                                 Action::Order(order) => {
                                     let order = order.clone();
@@ -196,8 +196,8 @@ impl Engine {
                                         .execute_order(
                                             &order,
                                             &pipeline.user_id,
-                                            &pipeline.wallet_address,
-                                            &pipeline.pubkey,
+                                            pipeline.wallet_address.clone(),
+                                            pipeline.pubkey.clone(),
                                         )
                                         .await
                                     {
@@ -436,19 +436,16 @@ impl Engine {
     }
 
     async fn fetch_price_from_redis(&self, asset: &str) -> Option<f64> {
-        match self.redis.get_price(asset).await {
-            Ok(price) => {
-                metrics::counter!("redis_price_fallback_hits", 1);
+        if let Ok(price) = self.redis.get_price(asset).await {
+            metrics::counter!("redis_price_fallback_hits", 1);
 
-                // Update the shared in-memory cache for future lookups
-                {
-                    let mut cache = self.price_cache.write().await;
-                    cache.insert(asset.to_string(), price);
-                }
-
-                return Some(price);
+            // Update the shared in-memory cache for future lookups
+            {
+                let mut cache = self.price_cache.write().await;
+                cache.insert(asset.to_string(), price);
             }
-            _ => {}
+
+            return Some(price);
         }
 
         metrics::counter!("redis_price_fallback_misses", 1);

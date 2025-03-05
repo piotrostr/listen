@@ -67,8 +67,8 @@ pub struct WirePipeline {
 
 pub struct PipelineParams {
     pub user_id: String,
-    pub wallet_address: String,
-    pub pubkey: String,
+    pub wallet_address: Option<String>,
+    pub pubkey: Option<String>,
 }
 
 impl From<(WirePipeline, PipelineParams)> for Pipeline {
