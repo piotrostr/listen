@@ -9,7 +9,7 @@
 
 @font-face {
   font-family: "SF Mono Nerd Font";
-  src: url("/sf-mono.otf") format("opentype");
+  src: url("/sfmono.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
 }
