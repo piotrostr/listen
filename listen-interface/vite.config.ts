@@ -47,10 +47,21 @@ export default defineConfig({
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff2}"],
         runtimeCaching: [
           {
+            urlPattern: /^https:\/\/app\.listen-rs\.com\/.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "listen-production-cache",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24, // 1 day
+              },
+            },
+          },
+          {
             urlPattern: /^https:\/\/.*\.vercel\.app\/.*/i,
             handler: "NetworkFirst",
             options: {
-              cacheName: "listen-dynamic-cache",
+              cacheName: "listen-preview-cache",
               expiration: {
                 maxEntries: 100,
                 maxAgeSeconds: 60 * 60 * 24, // 1 day
