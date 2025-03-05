@@ -1,5 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { config } from "../config";
 import { useToast } from "../contexts/ToastContext";
@@ -8,6 +9,7 @@ import {
   PipelineActionType,
   PipelineConditionType,
 } from "../types/pipeline";
+import { usePrivyWallets } from "./usePrivyWallet";
 
 interface ExecuteOptions {
   onSuccess?: () => void;
@@ -18,6 +20,16 @@ export function usePipelineExecution() {
   const [isExecuting, setIsExecuting] = useState(false);
   const { getAccessToken } = usePrivy();
   const { showToast } = useToast();
+  const { data: wallets } = usePrivyWallets();
+  const queryClient = useQueryClient();
+
+  const invalidateSolanaPortfolio = () => {
+    if (wallets?.solanaWallet) {
+      queryClient.refetchQueries({
+        queryKey: ["portfolio", wallets.solanaWallet.toString()],
+      });
+    }
+  };
 
   // Execute any pipeline
   const executePipeline = async (
@@ -35,6 +47,8 @@ export function usePipelineExecution() {
           "Content-Type": "application/json",
         },
       });
+
+      invalidateSolanaPortfolio();
 
       if (!res.ok) {
         throw new Error("Failed to execute pipeline");
