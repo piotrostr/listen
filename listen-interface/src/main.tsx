@@ -6,6 +6,7 @@ import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { arbitrum } from "viem/chains";
 import { WagmiProvider, createConfig, http } from "wagmi";
+import UpdateHandler from "./components/UpdateHandler";
 import { ModalProvider } from "./contexts/ModalContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import "./index.css";
@@ -51,6 +52,7 @@ createRoot(document.getElementById("root")!).render(
           <QueryClientProvider client={new QueryClient()}>
             <ModalProvider>
               <RouterProvider router={router} />
+              <UpdateHandler />
             </ModalProvider>
           </QueryClientProvider>
         </WagmiProvider>

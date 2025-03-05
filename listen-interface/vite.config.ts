@@ -24,7 +24,7 @@ export default defineConfig({
     TanStackRouterVite(),
     react(),
     VitePWA({
-      registerType: "autoUpdate",
+      registerType: "prompt",
       manifest: {
         name: "listen",
         short_name: "listen",
@@ -37,6 +37,7 @@ export default defineConfig({
           },
         ],
       },
+      injectRegister: "auto",
       workbox: {
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         clientsClaim: true,
@@ -44,6 +45,19 @@ export default defineConfig({
         cleanupOutdatedCaches: true,
         navigateFallback: "index.html",
         globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff2}"],
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/.*\.vercel\.app\/.*/i,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "listen-dynamic-cache",
+              expiration: {
+                maxEntries: 100,
+                maxAgeSeconds: 60 * 60 * 24, // 1 day
+              },
+            },
+          },
+        ],
       },
       devOptions: {
         enabled: true,
