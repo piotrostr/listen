@@ -24,11 +24,11 @@ export default defineConfig({
     TanStackRouterVite(),
     react(),
     VitePWA({
-      registerType: "prompt",
+      registerType: "autoUpdate",
       manifest: {
         name: "listen",
         short_name: "listen",
-        theme_color: "#A855F7",
+        theme_color: "#000000",
         icons: [
           {
             src: "/listen-more.png",
@@ -37,42 +37,11 @@ export default defineConfig({
           },
         ],
       },
-      injectRegister: "auto",
       workbox: {
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
         clientsClaim: true,
         skipWaiting: true,
         cleanupOutdatedCaches: true,
-        navigateFallback: "index.html",
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,jpg,jpeg,woff2}"],
-        runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/app\.listen-rs\.com\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "listen-production-cache",
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24, // 1 day
-              },
-            },
-          },
-          {
-            urlPattern: /^https:\/\/.*\.vercel\.app\/.*/i,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "listen-preview-cache",
-              expiration: {
-                maxEntries: 100,
-                maxAgeSeconds: 60 * 60 * 24, // 1 day
-              },
-            },
-          },
-        ],
-      },
-      devOptions: {
-        enabled: true,
-        type: "module",
       },
     }),
     visualizer(),
