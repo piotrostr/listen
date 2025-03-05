@@ -42,12 +42,14 @@ export function Portfolio() {
     if (!wallets) return;
     const address =
       selectedChain === "solana"
-        ? wallets.solanaWallet.toString()
-        : wallets.evmWallet.toString();
+        ? (wallets?.solanaWallet?.toString() ?? "")
+        : (wallets?.evmWallet?.toString() ?? "");
 
-    navigator.clipboard.writeText(address);
-    setClickedAddress(true);
-    setTimeout(() => setClickedAddress(false), 1000);
+    if (address) {
+      navigator.clipboard.writeText(address);
+      setClickedAddress(true);
+      setTimeout(() => setClickedAddress(false), 1000);
+    }
   };
 
   const handleToggleChain = () => {

@@ -215,12 +215,12 @@ export function useChat() {
           chatType === "solana"
             ? systemPromptSolana(
                 portfolio,
-                wallets?.solanaWallet.toString() || ""
+                wallets?.solanaWallet?.toString() || null
               )
             : systemPromptEvm(
                 portfolio,
-                wallets?.evmWallet.toString() || "",
-                wallets?.solanaWallet.toString() || ""
+                wallets?.evmWallet?.toString() || null,
+                wallets?.solanaWallet?.toString() || null
               );
 
         const body = JSON.stringify({

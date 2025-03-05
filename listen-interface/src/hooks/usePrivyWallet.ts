@@ -2,8 +2,8 @@ import { useSolanaWallets, useWallets } from "@privy-io/react-auth";
 import { useQuery, UseQueryResult } from "@tanstack/react-query";
 
 interface WalletAddresses {
-  solanaWallet: string;
-  evmWallet: string;
+  solanaWallet: string | null;
+  evmWallet: string | null;
 }
 
 export const usePrivyWallets = (): UseQueryResult<
@@ -14,23 +14,20 @@ export const usePrivyWallets = (): UseQueryResult<
   const { ready: evmReady, wallets: evmWallets } = useWallets();
 
   const solanaWallet = solanaWallets.find(
-    (wallet) => wallet.type === "solana" && wallet.walletClientType === "privy",
+    (wallet) => wallet.type === "solana" && wallet.walletClientType === "privy"
   );
 
   const evmWallet = evmWallets.find(
     (wallet) =>
-      wallet.type === "ethereum" && wallet.walletClientType === "privy",
+      wallet.type === "ethereum" && wallet.walletClientType === "privy"
   );
 
   return useQuery<WalletAddresses | null, Error>({
     queryKey: ["privy-wallet"],
     queryFn: () => {
-      if (!solanaWallet || !evmWallet) {
-        return null;
-      }
       return {
-        solanaWallet: solanaWallet.address,
-        evmWallet: evmWallet.address,
+        solanaWallet: solanaWallet?.address ?? null,
+        evmWallet: evmWallet?.address ?? null,
       };
     },
     enabled: solanaReady && evmReady && !!solanaWallet && !!evmWallet,
