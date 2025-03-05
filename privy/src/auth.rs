@@ -46,14 +46,15 @@ impl Privy {
             pubkey: None,
         };
 
-        let solana_wallet = find_wallet(&user.linked_accounts, "solana", "privy")
-            .map_err(PrivyAuthError::FindWalletError)?;
-        session.pubkey = Some(solana_wallet.address.clone());
+        let solana_wallet = find_wallet(&user.linked_accounts, "solana", "privy");
+        if let Ok(wallet) = solana_wallet {
+            session.pubkey = Some(wallet.address.clone());
+        }
 
-        let evm_wallet = find_wallet(&user.linked_accounts, "ethereum", "privy")
-            .map_err(PrivyAuthError::FindWalletError)?;
-
-        session.wallet_address = Some(evm_wallet.address.clone());
+        let evm_wallet = find_wallet(&user.linked_accounts, "ethereum", "privy");
+        if let Ok(wallet) = evm_wallet {
+            session.wallet_address = Some(wallet.address.clone());
+        }
 
         Ok(session)
     }
