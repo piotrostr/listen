@@ -1,12 +1,14 @@
-import { createFileRoute, redirect } from "@tanstack/react-router";
+import { createFileRoute } from "@tanstack/react-router";
+import { PriceUpdates } from "../components/PriceUpdates";
 
 export const Route = createFileRoute("/")({
   component: Index,
-  beforeLoad: () => {
-    throw redirect({ to: "/screener" });
-  },
 });
 
 function Index() {
-  return null;
+  return (
+    <div className="flex-1 overflow-hidden">
+      <PriceUpdates />
+    </div>
+  );
 }

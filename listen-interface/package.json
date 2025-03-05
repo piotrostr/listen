@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy-prod": "bun run build && cd dist && bunx vercel -y --prod --name listen-interface . --logs",
+    "deploy-staging": "bun run build && cd dist && bunx vercel -y --name listen-interface . --logs"
   },
   "dependencies": {
     "@privy-io/react-auth": "^2.0.8",

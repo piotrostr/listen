@@ -201,7 +201,7 @@ export function VersionDisplay({ isSidebarOpen }: { isSidebarOpen: boolean }) {
         isSidebarOpen ? "px-4" : "justify-center"
       }`}
     >
-      {isSidebarOpen && <span>version: 1.0.2</span>}
+      {isSidebarOpen && <span>version: 1.1.2</span>}
     </div>
   );
 }
