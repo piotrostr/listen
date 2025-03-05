@@ -1,4 +1,5 @@
 import { ToolResult, ToolResultSchema, type Message } from "../types/message";
+import { FundWallet } from "./FundWallet";
 import { ChatMessage, ToolMessage } from "./Messages";
 import { PipelineDisplay } from "./Pipeline";
 import { SolanaWalletCreation } from "./SolanaWalletCreation";
@@ -55,7 +56,15 @@ const tagHandlers: Record<string, TagHandler> = {
       );
     },
   },
-  // More handlers can be added here for future tag types
+  fund_solana_wallet: {
+    processTag: (_content: string, index: number) => {
+      return (
+        <div key={`fund-solana-wallet-${index}`}>
+          <FundWallet />
+        </div>
+      );
+    },
+  },
 };
 
 // Generic function to process tags in a message

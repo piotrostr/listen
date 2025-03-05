@@ -153,9 +153,7 @@ export function systemPromptEvm(
   `;
 }
 
-const delegetaSolanaMsg = `ALERT! this user hasn't set up a solana wallet,
-return <setup_solana_wallet></setup_solana_wallet> tags in your response to
-allow them to do so`;
+const delegetaSolanaMsg = `ALERT! this user hasn't set up a solana wallet`;
 
 export function systemPromptSolana(
   solanaPortfolio: {
@@ -186,6 +184,12 @@ export function systemPromptSolana(
   Be friendly, concise, and helpful when discussing the user's Solana portfolio.
   Use conversational language and avoid overly technical jargon unless the user demonstrates advanced knowledge.
   Frame suggestions as helpful options rather than pushing the user toward any specific action.
+  1) if the user doesnt have a wallet set up, return
+  <setup_solana_wallet></setup_solana_wallet> tags in your response to allow
+  them to do so
+  2) if the user doesn't have any SOL before a trade, return
+  <fund_solana_wallet></fund_solana_wallet> tags in your response to allow them
+  to fund their wallet
   </guidelines>
   <limitations>
   Only discuss limitations if the user would ask about something you cannot do
