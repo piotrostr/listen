@@ -161,7 +161,6 @@ export function Portfolio() {
                           <button
                             className="cursor-pointer border border-purple-500/30 rounded-full p-2 bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
                             onClick={handleTopup}
-                            disabled={process.env.NODE_ENV === "production"}
                           >
                             <FaApplePay size={32} />
                           </button>
