@@ -1,6 +1,7 @@
 import { ToolResult, ToolResultSchema, type Message } from "../types/message";
 import { ChatMessage, ToolMessage } from "./Messages";
 import { PipelineDisplay } from "./Pipeline";
+import { SolanaWalletCreation } from "./SolanaWalletCreation";
 
 // Type definitions for tag handlers
 type TagHandler = {
@@ -49,7 +50,7 @@ const tagHandlers: Record<string, TagHandler> = {
     processTag: (content: string, index: number) => {
       return (
         <div key={`setup-solana-wallet-${index}`}>
-          TODO: setup solana wallet
+          <SolanaWalletCreation error={null} />
         </div>
       );
     },
