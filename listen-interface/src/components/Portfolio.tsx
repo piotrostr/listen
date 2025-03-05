@@ -79,37 +79,38 @@ export function Portfolio() {
         <h2 className="text-xl font-bold lg:mb-0 mb-2">Portfolio</h2>
 
         {/* Address Display with Chain Toggle */}
-        {currentAddress && (
-          <div className="flex items-center gap-2">
-            <img
-              src={imageMap[selectedChain]}
-              alt={selectedChain}
-              className="w-4 h-4 rounded-full"
-            />
-            {currentAddress.slice(0, 4)}...
-            {currentAddress.slice(-5)}
-            <div onClick={handleClickCopy} className="cursor-pointer">
-              {clickedAddress ? <div> ✅</div> : <CopyIcon />}
-            </div>
-            {/* Enhanced Chain Toggle Button with Switch Icon */}
-            <div
-              onClick={handleToggleChain}
-              className="cursor-pointer ml-2 px-2 py-1 rounded-lg hover:bg-purple-500/20 transition-colors flex items-center gap-1"
-              title={`Switch to ${selectedChain === "solana" ? "Ethereum" : "Solana"} assets`}
-            >
+        <div className="flex items-center gap-2">
+          {currentAddress && (
+            <>
               <img
-                src={imageMap[selectedChain === "solana" ? "eth" : "solana"]}
-                alt={
-                  selectedChain === "solana"
-                    ? "Switch to Ethereum"
-                    : "Switch to Solana"
-                }
-                className="w-5 h-5 rounded-full"
+                src={imageMap[selectedChain]}
+                alt={selectedChain}
+                className="w-4 h-4 rounded-full"
               />
-              <FaExchangeAlt className="text-purple-300 text-sm" />
-            </div>
+              {currentAddress.slice(0, 4)}...
+              <div onClick={handleClickCopy} className="cursor-pointer">
+                {clickedAddress ? <div> ✅</div> : <CopyIcon />}
+              </div>
+            </>
+          )}
+          {/* Enhanced Chain Toggle Button with Switch Icon */}
+          <div
+            onClick={handleToggleChain}
+            className="cursor-pointer ml-2 px-2 py-1 rounded-lg hover:bg-purple-500/20 transition-colors flex items-center gap-1"
+            title={`Switch to ${selectedChain === "solana" ? "Ethereum" : "Solana"} assets`}
+          >
+            <img
+              src={imageMap[selectedChain === "solana" ? "eth" : "solana"]}
+              alt={
+                selectedChain === "solana"
+                  ? "Switch to Ethereum"
+                  : "Switch to Solana"
+              }
+              className="w-5 h-5 rounded-full"
+            />
+            <FaExchangeAlt className="text-purple-300 text-sm" />
           </div>
-        )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
@@ -207,6 +208,9 @@ export function Portfolio() {
                 </div>
               </div>
             ))}
+          {displayedAssets.length === 0 && (
+            <div className="text-center text-gray-400">No assets found</div>
+          )}
         </div>
       </div>
 
