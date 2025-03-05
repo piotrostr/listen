@@ -11,6 +11,7 @@ use alloy::transports::http::{Client, Http};
 use anyhow::{anyhow, Result};
 
 use crate::common::wrap_unsafe;
+use crate::ensure_evm_wallet_created;
 use crate::signer::evm::LocalEvmSigner;
 use crate::signer::SignerContext;
 
@@ -50,7 +51,8 @@ where
     Fut: Future<Output = Result<TransactionRequest>> + Send + 'static,
 {
     let signer = SignerContext::current().await;
-    let owner = Address::from_str(&signer.address())?;
+    ensure_evm_wallet_created(signer.clone()).await?;
+    let owner = Address::from_str(&signer.address().unwrap())?;
 
     let tx = wrap_unsafe(move || async move { tx_creator(owner).await })
         .await

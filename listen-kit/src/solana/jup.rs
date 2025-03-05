@@ -256,7 +256,7 @@ mod tests {
         .unwrap();
         let mut tx = Jupiter::swap(
             quote,
-            &Pubkey::from_str(&signer.pubkey()).unwrap(),
+            &Pubkey::from_str(&signer.pubkey().unwrap()).unwrap(),
         )
         .await
         .unwrap();
@@ -285,8 +285,8 @@ mod tests {
         let privy_signer = PrivySigner::new(
             Arc::new(privy),
             UserSession {
-                wallet_address: TEST_ADDRESS_SOL.to_string(),
-                pubkey: TEST_ADDRESS_SOL.to_string(),
+                wallet_address: Some(TEST_ADDRESS_SOL.to_string()),
+                pubkey: Some(TEST_ADDRESS_SOL.to_string()),
                 session_id: "test".to_string(),
                 user_id: "test".to_string(),
             },

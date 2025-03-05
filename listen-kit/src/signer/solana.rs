@@ -25,13 +25,13 @@ impl LocalSolanaSigner {
 #[async_trait]
 impl TransactionSigner for LocalSolanaSigner {
     #[cfg(feature = "evm")]
-    fn address(&self) -> String {
-        unimplemented!()
+    fn address(&self) -> Option<String> {
+        None
     }
 
     #[cfg(feature = "solana")]
-    fn pubkey(&self) -> String {
-        self.keypair.pubkey().to_string()
+    fn pubkey(&self) -> Option<String> {
+        Some(self.keypair.pubkey().to_string())
     }
 
     async fn sign_and_send_solana_transaction(

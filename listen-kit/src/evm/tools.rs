@@ -15,6 +15,7 @@ use super::balance::{balance, token_balance};
 use super::trade::{check_allowance, create_approve_tx, create_trade_tx};
 use super::transfer::{create_transfer_erc20_tx, create_transfer_eth_tx};
 use super::util::{execute_evm_transaction, make_provider};
+use crate::ensure_evm_wallet_created;
 
 #[tool(description = "
 Use this function to verify if a given token has swap router allowance
@@ -24,7 +25,9 @@ On EVM, before swapping a token, this function has to be called to verify swap w
 pub async fn verify_swap_router_has_allowance(
     token_address: String,
 ) -> Result<bool> {
-    let owner = SignerContext::current().await.address();
+    let signer = SignerContext::current().await;
+    ensure_evm_wallet_created(signer.clone()).await?;
+    let owner = signer.address().unwrap();
     wrap_unsafe(move || async move {
         let provider = make_provider()?;
         let router_address = *SWAP_ROUTER_02_ADDRESSES
@@ -150,7 +153,9 @@ pub async fn transfer_erc20(
 This function returns the ethereum wallet address you are currently using
 ")]
 pub async fn wallet_address() -> Result<String> {
-    Ok(SignerContext::current().await.address())
+    let signer = SignerContext::current().await;
+    ensure_evm_wallet_created(signer.clone()).await?;
+    Ok(signer.address().unwrap())
 }
 
 #[tool]

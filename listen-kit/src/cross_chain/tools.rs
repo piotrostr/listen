@@ -3,6 +3,8 @@ use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
 use rig_tool_macro::tool;
 
 use crate::common::wrap_unsafe;
+use crate::ensure_evm_wallet_created;
+use crate::ensure_solana_wallet_created;
 use crate::signer::SignerContext;
 
 use lifi::LiFi;
@@ -54,6 +56,9 @@ pub async fn get_quote(
     to_chain: String,
 ) -> Result<serde_json::Value> {
     let signer = SignerContext::current().await;
+    ensure_solana_wallet_created(signer.clone()).await?;
+    ensure_evm_wallet_created(signer.clone()).await?;
+
     #[cfg(feature = "solana")]
     if from_chain == "1151111081099710" && to_chain == "1151111081099710" {
         let quote = crate::solana::jup::Jupiter::fetch_quote(
@@ -92,8 +97,8 @@ pub async fn get_quote(
             &to_chain,
             &from_token_address,
             &to_token_address,
-            &from_address,
-            &to_address,
+            &from_address.unwrap(),
+            &to_address.unwrap(),
             &amount,
         )
         .await
@@ -150,6 +155,9 @@ pub async fn swap(
     to_chain: String,
 ) -> Result<String> {
     let signer = SignerContext::current().await;
+    ensure_solana_wallet_created(signer.clone()).await?;
+    ensure_evm_wallet_created(signer.clone()).await?;
+
     #[cfg(feature = "solana")]
     if from_chain == "1151111081099710" && to_chain == "1151111081099710" {
         return crate::solana::tools::swap(
@@ -187,8 +195,8 @@ pub async fn swap(
             &to_chain,
             &from_token_address,
             &to_token_address,
-            &from_address,
-            &to_address,
+            &from_address.unwrap(),
+            &to_address.unwrap(),
             &amount,
         )
         .await
@@ -242,11 +250,13 @@ pub async fn check_approval(
     from_chain_caip2: String,
 ) -> Result<String> {
     let signer = SignerContext::current().await;
+    ensure_evm_wallet_created(signer.clone()).await?;
+
     let owner_address = signer.address();
 
     let allowance = evm_approvals::get_allowance(
         &token_address,
-        &owner_address,
+        &owner_address.unwrap(),
         &spender_address,
         evm_approvals::caip2_to_chain_id(&from_chain_caip2)?,
     )
@@ -271,12 +281,13 @@ pub async fn approve_token(
     from_chain_caip2: String,
 ) -> Result<String> {
     let signer = SignerContext::current().await;
+    ensure_evm_wallet_created(signer.clone()).await?;
     let owner_address = signer.address();
 
     let transaction = evm_approvals::create_approval_transaction(
         &token_address,
         &spender_address,
-        &owner_address,
+        &owner_address.unwrap(),
         evm_approvals::caip2_to_chain_id(&from_chain_caip2)?,
     )
     .await?;

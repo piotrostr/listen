@@ -1,3 +1,7 @@
+use crate::signer::TransactionSigner;
+use anyhow::Result;
+use std::sync::Arc;
+
 #[cfg(feature = "http")]
 pub mod http;
 
@@ -18,4 +22,22 @@ pub mod signer;
 fn init() {
     dotenv::dotenv().ok();
     listen_tracing::setup_tracing();
+}
+
+pub async fn ensure_solana_wallet_created(
+    signer: Arc<dyn TransactionSigner>,
+) -> Result<()> {
+    if signer.pubkey().is_none() {
+        return Err(anyhow::anyhow!("Wallet unavailable"));
+    }
+    Ok(())
+}
+
+pub async fn ensure_evm_wallet_created(
+    signer: Arc<dyn TransactionSigner>,
+) -> Result<()> {
+    if signer.address().is_none() {
+        return Err(anyhow::anyhow!("Wallet unavailable"));
+    }
+    Ok(())
 }

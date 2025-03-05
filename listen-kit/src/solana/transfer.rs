@@ -70,7 +70,7 @@ mod tests {
     async fn test_transfer_sol() {
         let signer = make_test_signer();
         println!("signer: {:?}", signer.pubkey());
-        let owner = Pubkey::from_str(&signer.pubkey()).unwrap();
+        let owner = Pubkey::from_str(&signer.pubkey().unwrap()).unwrap();
         let amount = sol_to_lamports(0.0001);
         let mut tx = create_transfer_sol_tx(&owner, amount, &owner)
             .await
@@ -83,7 +83,7 @@ mod tests {
     async fn test_transfer_spl() {
         let signer = make_test_signer();
         let rpc_client = make_rpc_client();
-        let owner = Pubkey::from_str(&signer.pubkey()).unwrap();
+        let owner = Pubkey::from_str(&signer.pubkey().unwrap()).unwrap();
         let mint = pubkey!("Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump");
         let amount = (10. * 1e6) as u64;
         let mut tx = create_transfer_spl_tx(
