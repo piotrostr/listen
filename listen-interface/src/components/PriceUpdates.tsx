@@ -57,14 +57,14 @@ export function PriceUpdates() {
       {/* Latest Update Section */}
       <div className="h-[52px] bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl p-3 flex items-center">
         {latestUpdate ? (
-          <div className="flex flex-row w-full text-sm">
-            <span className="text-purple-300/70 w-18 text-left mr-2">
+          <div className="flex flex-row w-full text-sm space-x-2">
+            <span className="text-purple-300/70 w-18 text-left">
               {latestUpdate.slot}
             </span>
             <span className="text-white w-28 text-left">
               {latestUpdate.name.slice(0, 10)}
             </span>
-            <span className="text-blue-200 w-16 text-left mr-2">
+            <span className="text-blue-200 w-16 text-left">
               ${latestUpdate.price.toFixed(5)}
             </span>
             {latestUpdate.is_buy ? (

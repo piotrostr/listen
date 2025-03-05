@@ -1,3 +1,4 @@
+import { useFundWallet } from "@privy-io/react-auth/solana";
 import { useState } from "react";
 import { FaApplePay, FaExchangeAlt, FaShoppingCart } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
@@ -27,6 +28,7 @@ export function Portfolio() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
+  const { fundWallet } = useFundWallet();
 
   // Use local display chain instead of directly using chatType
   const selectedChain = displayChain;
@@ -57,16 +59,7 @@ export function Portfolio() {
   };
 
   const handleTopup = async () => {
-    // if (!wallets) return;
-    // const wallet = wallets.solanaWallet.toString();
-    // console.log(wallet);
-    // await fundWallet(wallet, {
-    //   defaultFundingMethod: "wallet",
-    //   asset: "native-currency",
-    //   config: {
-    //     paymentMethod: "mobile_wallet",
-    //   },
-    // });
+    await fundWallet(wallets!.solanaWallet!);
   };
 
   const handleOpenModal = (asset: any, action: "buy" | "sell") => {
@@ -163,7 +156,7 @@ export function Portfolio() {
                     <div className="flex items-center gap-2">
                       {selectedChain === "solana" &&
                         asset.address ===
-                          "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v" && (
+                          "So11111111111111111111111111111111111111112" && (
                           <button
                             className="cursor-pointer border border-purple-500/30 rounded-full p-2 bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
                             onClick={handleTopup}
