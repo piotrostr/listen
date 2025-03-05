@@ -61,17 +61,12 @@ impl Database for ClickhouseDb {
             .with_user(user)
             .with_database(database);
 
-        let max_rows = std::env::var("CLICKHOUSE_MAX_BATCH_SIZE")
-            .ok()
-            .and_then(|s| s.parse::<usize>().ok())
-            .unwrap_or(5000); // Higher batch size for better throughput
-
         info!("Connecting to ClickHouse at {}", database_url);
         Self {
             client,
             inserter: None,
             is_initialized: false,
-            max_rows: max_rows as u64,
+            max_rows: 1000,
         }
     }
 
