@@ -118,6 +118,10 @@ const pipelineKnowledgeSolana = `
   always include the tags! otherwise the pipeline will neither be rendered for the user to see nor executed
 `;
 
+const delegetaEvmMsg = `ALERT! this user hasn't delegated an evm wallet,
+return <setup_evm_wallet></setup_evm_wallet> tags in your response to
+allow them to do so`;
+
 export function systemPromptEvm(
   portfolio: {
     chain: string;
@@ -127,8 +131,8 @@ export function systemPromptEvm(
     symbol: string;
     decimals: number;
   }[],
-  walletAddress: string,
-  pubkey: string
+  walletAddress: string | null,
+  pubkey: string | null
 ) {
   return `
   ${pipelineKnowledgeEvm}
@@ -137,7 +141,7 @@ export function systemPromptEvm(
   The original token is the one with highest liquidity and volume.
   Always assume the user wants the OG token, unless specified otherwise.
   </guidelines>
-  <context>Address EVM: ${walletAddress}; Address SOL: ${pubkey}; ${JSON.stringify(
+  <context>Address EVM: ${walletAddress ?? delegetaEvmMsg}; Address SOL: ${pubkey ?? delegetaSolanaMsg}; ${JSON.stringify(
     portfolio
   )} (prices in USD)</context>
   <chain_caip2_map>
@@ -149,6 +153,8 @@ export function systemPromptEvm(
   `;
 }
 
+const delegetaSolanaMsg = `ALERT! this user hasn't set up a solana wallet`;
+
 export function systemPromptSolana(
   solanaPortfolio: {
     chain: string;
@@ -158,10 +164,12 @@ export function systemPromptSolana(
     symbol: string;
     decimals: number;
   }[],
-  pubkey: string
+  pubkey: string | null
 ) {
   return `
-  <context>Address SOL: ${pubkey}; Portfolio: ${JSON.stringify(solanaPortfolio)} (prices in USD)</context>
+  <context>Address SOL: ${pubkey ?? delegetaSolanaMsg}; Portfolio: ${JSON.stringify(
+    solanaPortfolio
+  )} (prices in USD)</context>
   <address_book>
   ${JSON.stringify(addressBook["solana"])}
   </address_book>
@@ -176,6 +184,12 @@ export function systemPromptSolana(
   Be friendly, concise, and helpful when discussing the user's Solana portfolio.
   Use conversational language and avoid overly technical jargon unless the user demonstrates advanced knowledge.
   Frame suggestions as helpful options rather than pushing the user toward any specific action.
+  1) if the user doesnt have a wallet set up, return
+  <setup_solana_wallet></setup_solana_wallet> tags in your response to allow
+  them to do so
+  2) if the user doesn't have any SOL before a trade, return
+  <fund_solana_wallet></fund_solana_wallet> tags in your response to allow them
+  to fund their wallet
   </guidelines>
   <limitations>
   Only discuss limitations if the user would ask about something you cannot do

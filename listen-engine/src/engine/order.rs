@@ -40,6 +40,12 @@ pub enum SwapOrderError {
 
     #[error("Invalid amount: {0}")]
     InvalidAmount(anyhow::Error),
+
+    #[error("EVM wallet not available")]
+    EVMWalletNotAvailable,
+
+    #[error("Solana wallet not available")]
+    SolanaWalletNotAvailable,
 }
 
 pub fn is_solana(caip2: &str) -> bool {
@@ -53,6 +59,10 @@ pub fn is_evm(caip2: &str) -> bool {
 impl SwapOrder {
     pub fn is_evm(&self) -> bool {
         is_evm(&self.from_chain_caip2)
+    }
+
+    pub fn is_solana(&self) -> bool {
+        is_solana(&self.from_chain_caip2)
     }
 }
 
@@ -107,24 +117,33 @@ pub enum SwapOrderTransaction {
 pub async fn swap_order_to_transaction(
     order: &SwapOrder,
     lifi: &lifi::LiFi,
-    wallet_address: &str, // evm output
-    pubkey: &str,         // solana output
+    wallet_address: Option<String>, // evm output
+    pubkey: Option<String>,         // solana output
 ) -> Result<SwapOrderTransaction, SwapOrderError> {
     let from_chain_id =
         caip2_to_chain_id(&order.from_chain_caip2).ok_or(SwapOrderError::InvalidCaip2)?;
     let to_chain_id =
         caip2_to_chain_id(&order.to_chain_caip2).ok_or(SwapOrderError::InvalidCaip2)?;
 
+    if wallet_address.is_none() && order.is_evm() {
+        return Err(SwapOrderError::EVMWalletNotAvailable);
+    }
+    if pubkey.is_none() && order.is_solana() {
+        return Err(SwapOrderError::SolanaWalletNotAvailable);
+    }
+    let wallet_address = wallet_address.unwrap();
+    let pubkey = pubkey.unwrap();
+
     if from_chain_id == to_chain_id && is_solana(&order.from_chain_caip2) {
         tracing::info!("Solana swap order to transaction");
         return retry_with_backoff("solana swap to transaction", || async {
-            try_solana_swap_order_to_transaction(order, pubkey).await
+            try_solana_swap_order_to_transaction(order, &pubkey).await
         })
         .await;
     }
 
     retry_with_backoff("lifi swap to transaction", || async {
-        try_lifi_swap_order_to_transaction(order, lifi, wallet_address, pubkey).await
+        try_lifi_swap_order_to_transaction(order, lifi, &wallet_address, &pubkey).await
     })
     .await
 }
@@ -250,10 +269,14 @@ mod tests {
         };
 
         let lifi = lifi::LiFi::new(lifi_api_key);
-        let transaction =
-            swap_order_to_transaction(&swap_order, &lifi, TEST_ADDRESS_EVM, TEST_ADDRESS_SOL)
-                .await
-                .unwrap();
+        let transaction = swap_order_to_transaction(
+            &swap_order,
+            &lifi,
+            Some(TEST_ADDRESS_EVM.to_string()),
+            Some(TEST_ADDRESS_SOL.to_string()),
+        )
+        .await
+        .unwrap();
 
         let privy = std::sync::Arc::new(privy::Privy::new(
             privy::config::PrivyConfig::from_env().unwrap(),

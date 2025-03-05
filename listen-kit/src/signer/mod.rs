@@ -36,12 +36,12 @@ pub enum SignerType {
 
 #[async_trait]
 pub trait TransactionSigner: Send + Sync {
-    fn address(&self) -> String {
-        unimplemented!()
+    fn address(&self) -> Option<String> {
+        None
     }
 
-    fn pubkey(&self) -> String {
-        unimplemented!()
+    fn pubkey(&self) -> Option<String> {
+        None
     }
 
     #[cfg(feature = "solana")]

@@ -1,6 +1,125 @@
 import { ToolResult, ToolResultSchema, type Message } from "../types/message";
+import { FundWallet } from "./FundWallet";
 import { ChatMessage, ToolMessage } from "./Messages";
 import { PipelineDisplay } from "./Pipeline";
+import { SolanaWalletCreation } from "./SolanaWalletCreation";
+
+// Type definitions for tag handlers
+type TagHandler = {
+  processTag: (content: string, index: number, msg: Message) => JSX.Element;
+  wrapResults?: (results: JSX.Element[]) => JSX.Element;
+};
+
+// Registry of tag handlers
+const tagHandlers: Record<string, TagHandler> = {
+  pipeline: {
+    processTag: (content: string, index: number, msg: Message) => {
+      try {
+        const pipelineContent = content
+          .trim()
+          .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ""); // Remove comments
+
+        const pipeline = JSON.parse(pipelineContent);
+        if (pipeline && pipeline.steps) {
+          return (
+            <div
+              key={`pipeline-${index}`}
+              className="my-4 border-b border-purple-500/30 pb-4"
+            >
+              <PipelineDisplay pipeline={pipeline} />
+            </div>
+          );
+        }
+      } catch (e) {
+        console.error(`Failed to parse pipeline JSON #${index + 1}:`, e);
+        // If we can't parse the JSON, just render the raw content
+        return (
+          <ChatMessage
+            key={`pipeline-error-${index}`}
+            message={`<pipeline>${content}</pipeline>`}
+            direction={msg.direction}
+          />
+        );
+      }
+      return <></>;
+    },
+    wrapResults: (results: JSX.Element[]) => (
+      <div className="mb-6">{results}</div>
+    ),
+  },
+  setup_solana_wallet: {
+    processTag: (_content: string, index: number) => {
+      return (
+        <div key={`setup-solana-wallet-${index}`}>
+          <SolanaWalletCreation error={null} />
+        </div>
+      );
+    },
+  },
+  fund_solana_wallet: {
+    processTag: (_content: string, index: number) => {
+      return (
+        <div key={`fund-solana-wallet-${index}`}>
+          <FundWallet />
+        </div>
+      );
+    },
+  },
+};
+
+// Generic function to process tags in a message
+function processTagsInMessage(
+  message: string,
+  tagName: string,
+  msg: Message
+): JSX.Element[] | null {
+  const tagRegex = new RegExp(`<${tagName}>(.*?)<\\/${tagName}>`, "gs");
+  const tagMatches = [...message.matchAll(tagRegex)];
+
+  if (tagMatches.length === 0) {
+    return null;
+  }
+
+  const handler = tagHandlers[tagName];
+  if (!handler) {
+    console.warn(`No handler registered for tag: ${tagName}`);
+    return null;
+  }
+
+  try {
+    // Split the message by tags to maintain order
+    const messageParts = message.split(
+      new RegExp(`<${tagName}>.*?<\\/${tagName}>`, "s")
+    );
+    const result: JSX.Element[] = [];
+
+    // Process each part and tag content in order
+    for (let i = 0; i < messageParts.length; i++) {
+      // Add text part if it's not empty
+      if (messageParts[i].trim()) {
+        result.push(
+          <ChatMessage
+            key={`text-${tagName}-${i}`}
+            message={messageParts[i].trim()}
+            direction={msg.direction}
+          />
+        );
+      }
+
+      // Add tag content if available
+      if (i < tagMatches.length) {
+        const tagContent = tagMatches[i][1];
+        const processedTag = handler.processTag(tagContent, i, msg);
+        result.push(processedTag);
+      }
+    }
+
+    return result;
+  } catch (e) {
+    console.error(`Failed to process ${tagName} tags:`, e);
+    return null;
+  }
+}
 
 export function MessageRenderer({ message: msg }: { message: Message }) {
   if (!msg.message) return null;
@@ -38,68 +157,21 @@ export function MessageRenderer({ message: msg }: { message: Message }) {
     return <ToolMessage toolOutput={toolOutput} />;
   }
 
-  // Check if this is a pipeline message
-  const pipelineRegex = /<pipeline>(.*?)<\/pipeline>/gs;
-  const pipelineMatches = [...msg.message.matchAll(pipelineRegex)];
-
-  if (pipelineMatches.length > 0) {
-    try {
-      // Split the message by pipeline tags to maintain order
-      const messageParts = msg.message.split(/<pipeline>.*?<\/pipeline>/s);
-      const result = [];
-
-      // Process each part and pipeline in order
-      for (let i = 0; i < messageParts.length; i++) {
-        // Add text part if it's not empty
-        if (messageParts[i].trim()) {
-          result.push(
-            <ChatMessage
-              key={`text-${i}`}
-              message={messageParts[i].trim()}
-              direction={msg.direction}
-            />
-          );
-        }
-
-        // Add pipeline if available
-        if (i < pipelineMatches.length) {
-          const pipelineContent = pipelineMatches[i][1]
-            .trim()
-            .replace(/\/\*[\s\S]*?\*\/|\/\/.*/g, ""); // Remove comments
-
-          try {
-            const pipeline = JSON.parse(pipelineContent);
-            if (pipeline && pipeline.steps) {
-              result.push(
-                <div
-                  key={`pipeline-${i}`}
-                  className="my-4 border-b border-purple-500/30 pb-4"
-                >
-                  <PipelineDisplay pipeline={pipeline} />
-                </div>
-              );
-            }
-          } catch (e) {
-            console.error(`Failed to parse pipeline JSON #${i + 1}:`, e);
-            // If we can't parse the JSON, just render the raw content
-            result.push(
-              <ChatMessage
-                key={`pipeline-error-${i}`}
-                message={`<pipeline>${pipelineMatches[i][1]}</pipeline>`}
-                direction={msg.direction}
-              />
-            );
-          }
-        }
+  // Process each supported tag type
+  for (const tagName of Object.keys(tagHandlers)) {
+    const results = processTagsInMessage(msg.message, tagName, msg);
+    if (results) {
+      // If a custom wrapper is defined, use it
+      const handler = tagHandlers[tagName];
+      if (handler.wrapResults) {
+        return handler.wrapResults(results);
       }
-
-      return <div className="mb-6">{result}</div>;
-    } catch (e) {
-      console.error("Failed to process pipelines:", e);
-      // If we can't process the pipelines, just render as regular message
+      // Otherwise, use a simple div
+      return <div>{results}</div>;
     }
   }
 
+  // Default case: render as a regular message
   return <ChatMessage message={msg.message} direction={msg.direction} />;
 }
 

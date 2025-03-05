@@ -10,8 +10,9 @@ export const useIsAuthenticated = () => {
   const isDelegatedEvm = userHasDelegatedEvmWallet(user);
 
   return {
-    isAuthenticated:
-      ready && authenticated && isDelegatedSolana && isDelegatedEvm,
+    isAuthenticated: ready && authenticated,
+    hasSolanaWallet: isDelegatedSolana,
+    hasEvmWallet: isDelegatedEvm,
     ready,
   };
 };
