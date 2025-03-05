@@ -8,16 +8,10 @@ import {
 import { useState } from "react";
 
 interface EvmWalletCreationProps {
-  index?: number;
-  status?: "Pending" | "Completed" | "Failed" | "Cancelled";
   error: string | null;
 }
 
-export const EvmWalletCreation = ({
-  index,
-  status,
-  error,
-}: EvmWalletCreationProps) => {
+export const EvmWalletCreation = ({ error }: EvmWalletCreationProps) => {
   const { user } = usePrivy();
   const { ready: evmReady, wallets: evmWallets } = useWallets();
   const { createWallet: createEvmWallet } = useCreateWallet();

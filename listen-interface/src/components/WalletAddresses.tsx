@@ -3,6 +3,7 @@ import {
   usePrivy,
   useSolanaWallets,
 } from "@privy-io/react-auth";
+import { useFundWallet as useFundSolanaWallet } from "@privy-io/react-auth/solana";
 import { useState } from "react";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { imageMap } from "../hooks/util";
@@ -12,7 +13,8 @@ export function WalletAddresses() {
   const { data: wallets } = usePrivyWallets();
   const { exportWallet: exportEvmWallet } = usePrivy();
   const { exportWallet: exportSolanaWallet } = useSolanaWallets();
-  const { fundWallet } = useFundWallet();
+  const { fundWallet: fundEvmWallet } = useFundWallet();
+  const { fundWallet: fundSolanaWallet } = useFundSolanaWallet();
   const [clickedSolana, setClickedSolana] = useState(false);
   const [clickedEvm, setClickedEvm] = useState(false);
 
@@ -57,7 +59,8 @@ export function WalletAddresses() {
                 Export
               </button>
               <button
-                onClick={() => fundWallet(wallets.solanaWallet)}
+                onClick={() => fundSolanaWallet(wallets.solanaWallet!)}
+                disabled={!wallets.solanaWallet}
                 className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-purple-500/10"
               >
                 Fund
@@ -102,8 +105,9 @@ export function WalletAddresses() {
                 Export
               </button>
               <button
-                onClick={() => fundWallet(wallets.evmWallet)}
-                className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-purple-500/10"
+                onClick={() => fundEvmWallet(wallets.evmWallet!)}
+                disabled={true}
+                className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-purple-500/10 disabled:opacity-50"
               >
                 Fund
               </button>

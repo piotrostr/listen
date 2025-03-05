@@ -8,16 +8,10 @@ import { useState } from "react";
 import { FaCheckCircle } from "react-icons/fa";
 
 interface SolanaWalletCreationProps {
-  index?: number;
-  status?: "Pending" | "Completed" | "Failed" | "Cancelled";
   error: string | null;
 }
 
-export const SolanaWalletCreation = ({
-  index,
-  status,
-  error,
-}: SolanaWalletCreationProps) => {
+export const SolanaWalletCreation = ({ error }: SolanaWalletCreationProps) => {
   const { user } = usePrivy();
   const {
     ready: solanaReady,
