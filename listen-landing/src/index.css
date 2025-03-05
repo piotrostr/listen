@@ -4,7 +4,7 @@
 
 @font-face {
   font-family: "SF Mono Nerd Font";
-  src: url("/sf-mono.otf") format("opentype");
+  src: url("/sfmono.otf") format("opentype");
   font-weight: 400;
   font-style: normal;
 }
@@ -28,8 +28,14 @@ code {
 }
 
 @keyframes fadeIn {
-  from { opacity: 0; transform: translateY(10px); }
-  to { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .animate-fadeIn {
