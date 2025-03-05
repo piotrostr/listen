@@ -42,11 +42,17 @@ export default defineConfig({
         clientsClaim: true,
         skipWaiting: true,
         cleanupOutdatedCaches: true,
+        navigateFallback: "index.html",
       },
     }),
     visualizer(),
     compression(),
   ],
+  // Define build-time constants - this replaces the string "__BUILD_TIME__" in the code
+  // with the actual build timestamp during build
+  define: {
+    __BUILD_TIME__: JSON.stringify(new Date().toISOString()),
+  },
   build: {
     target: "esnext",
     minify: "esbuild",
