@@ -107,7 +107,7 @@ pub async fn swap(
 
     // If Jupiter swap succeeds, return the result
     match jupiter_result {
-        Ok(signature) => return Ok(signature),
+        Ok(signature) => Ok(signature),
         Err(e) => {
             let jupiter_error = e.to_string();
             if e.to_string().contains("0x1771") {
@@ -143,14 +143,12 @@ pub async fn swap(
                 .await;
 
             match pump_res {
-                Ok(signature) => return Ok(signature),
-                Err(e) => {
-                    return Err(anyhow!(
-                        "jupiter error: {}\n pump.fun error: {}",
-                        jupiter_error,
-                        e.to_string()
-                    ));
-                }
+                Ok(signature) => Ok(signature),
+                Err(e) => Err(anyhow!(
+                    "jupiter error: {}\n pump.fun error: {}",
+                    jupiter_error,
+                    e.to_string()
+                )),
             }
         }
     }

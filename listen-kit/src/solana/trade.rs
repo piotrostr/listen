@@ -17,7 +17,7 @@ pub async fn create_jupiter_swap_transaction(
         .await
         .map_err(|e| anyhow!("Failed to swap: {}", e.to_string()))?;
 
-    Ok(tx.into())
+    Ok(tx)
 }
 
 #[cfg(test)]
