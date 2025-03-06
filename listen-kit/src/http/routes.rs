@@ -210,25 +210,48 @@ async fn stream(
         tokio::sync::mpsc::channel::<StreamResponse>(1024);
 
     // Store all responses in this vec
-    let mut responses = Vec::new();
     let response_collector = {
         let mut rx = response_rx;
+        let mongo = state.mongo.clone();
+        let user_id = user_session.user_id.clone();
+        let wallet_address = user_session.wallet_address.clone();
+        let chat_request = request.clone();
+
         async move {
+            let mut collected_responses = Vec::new();
+
             while let Some(response) = rx.recv().await {
-                responses.push(response);
+                collected_responses.push(response);
             }
-            responses
+
+            // Only save if we have responses
+            if !collected_responses.is_empty() {
+                let collection = mongo.collection::<Chat>("chats");
+                let chat = Chat {
+                    user_id: user_id.as_str(),
+                    wallet_address: wallet_address.as_deref(),
+                    pubkey: None,
+                    chat_request,
+                    responses: join_responses(collected_responses),
+                };
+
+                match collection.insert_one(chat, None).await {
+                    Ok(_) => tracing::info!(
+                        "Successfully saved chat with responses to MongoDB"
+                    ),
+                    Err(e) => {
+                        tracing::error!(
+                            "Failed to save chat to MongoDB: {}",
+                            e
+                        )
+                    }
+                }
+            }
         }
     };
 
-    // Process responses in the background
-    let response_handle = tokio::spawn(response_collector);
-
-    // Clone what we need for saving the chat later
-    let mongo = state.mongo.clone();
-    let user_id = user_session.user_id.clone();
-    let wallet_address = user_session.wallet_address.clone();
-    let chat_request = request.clone();
+    // Process responses in the background - don't wait for it
+    tokio::spawn(response_collector);
 
     // Do the main processing with the signer
     spawn_with_signer(signer, || async move {
@@ -288,32 +311,7 @@ async fn stream(
     })
     .await;
 
-    // Now that everything is done, save the collected responses to MongoDB
-    let collected_responses = response_handle.await.unwrap_or_default();
-
-    // Only save if we have responses
-    if !collected_responses.is_empty() {
-        tokio::spawn(async move {
-            let collection = mongo.collection::<Chat>("chats");
-            let chat = Chat {
-                user_id: user_id.as_str(),
-                wallet_address: wallet_address.as_deref(),
-                pubkey: None,
-                chat_request,
-                responses: join_responses(collected_responses),
-            };
-
-            match collection.insert_one(chat, None).await {
-                Ok(_) => tracing::info!(
-                    "Successfully saved chat with responses to MongoDB"
-                ),
-                Err(e) => {
-                    tracing::error!("Failed to save chat to MongoDB: {}", e)
-                }
-            }
-        });
-    }
-
+    // Return the SSE stream immediately without waiting for all responses
     sse::Sse::from_infallible_receiver(rx)
 }
 
