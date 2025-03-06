@@ -90,7 +90,13 @@ impl Privy {
             )));
         }
         let text = response.text().await?;
-        Ok(serde_json::from_str(&text)?)
+        match serde_json::from_str(&text) {
+            Ok(user) => Ok(user),
+            Err(e) => {
+                tracing::error!(?text, ?user_id, "Error parsing user: {}", e);
+                Err(PrivyAuthError::ParseUserError(e))
+            }
+        }
     }
 }
 
