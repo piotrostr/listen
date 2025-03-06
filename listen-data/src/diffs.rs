@@ -414,10 +414,6 @@ impl TokenTransferProcessor {
         nested_instructions
             .iter()
             .filter_map(|instruction| {
-                println!(
-                    "instruction: {:?}",
-                    instruction.instruction.program_id
-                );
                 self.decode_token_program_transfer_with_vaults(
                     mint_details,
                     &instruction.instruction,
