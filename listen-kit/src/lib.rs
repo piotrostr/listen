@@ -15,6 +15,7 @@ pub mod common;
 pub mod cross_chain;
 pub mod data;
 pub mod dexscreener;
+pub mod mongo;
 pub mod reasoning_loop;
 pub mod signer;
 

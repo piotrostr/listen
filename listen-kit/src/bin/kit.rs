@@ -1,6 +1,7 @@
 #[cfg(feature = "http")]
 use {
     listen_kit::http::server::run_server,
+    listen_kit::mongo::MongoClient,
     privy::{config::PrivyConfig, Privy},
 };
 
@@ -13,9 +14,13 @@ async fn main() -> std::io::Result<()> {
             std::io::Error::new(std::io::ErrorKind::Other, e)
         })?);
 
+    let mongo = MongoClient::from_env()
+        .await
+        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+
     // Run server with just the Privy client
     // Agents will be created dynamically based on requests
-    run_server(privy_client).await
+    run_server(privy_client, mongo).await
 }
 
 #[cfg(not(feature = "http"))]

@@ -20,7 +20,7 @@ use serde::{Deserialize, Serialize};
 use serde_json::json;
 use std::sync::Arc;
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Clone)]
 pub struct ChatRequest {
     prompt: String,
     #[serde(deserialize_with = "deserialize_messages")]
@@ -29,6 +29,14 @@ pub struct ChatRequest {
     chain: Option<String>,
     #[serde(default)]
     preamble: Option<String>,
+}
+
+#[derive(Serialize, Deserialize)]
+pub struct Chat<'a> {
+    pub user_id: &'a str,
+    pub wallet_address: Option<&'a str>,
+    pub pubkey: Option<&'a str>,
+    pub chat_request: ChatRequest,
 }
 
 #[derive(Serialize)]
@@ -193,6 +201,33 @@ async fn stream(
 
     let signer: Arc<dyn TransactionSigner> =
         Arc::new(PrivySigner::new(state.privy.clone(), user_session.clone()));
+
+    // insert into mongo
+    let mongo = state.mongo.clone();
+    tokio::spawn(async move {
+        let collection = mongo.collection::<Chat>("chats");
+        let chat_request = request.clone();
+        match collection
+            .insert_one(
+                Chat {
+                    user_id: user_session.user_id.as_str(),
+                    wallet_address: user_session.wallet_address.as_deref(),
+                    pubkey: None,
+                    chat_request,
+                },
+                None,
+            )
+            .await
+        {
+            Ok(_) => {}
+            Err(e) => {
+                tracing::error!(
+                    "Error: failed to insert chat into mongo: {}",
+                    e
+                );
+            }
+        }
+    });
 
     spawn_with_signer(signer, || async move {
         let reasoning_loop = ReasoningLoop::new(agent).with_stdout(false);
