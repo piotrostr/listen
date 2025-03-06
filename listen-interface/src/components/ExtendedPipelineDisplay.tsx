@@ -56,7 +56,7 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
       <div className="flex lg:items-center justify-between flex-col lg:flex-row">
         <div className="flex lg:items-center gap-2 flex-col lg:flex-row">
           <div className="text-white text-base sm:text-lg font-bold">
-            {pipeline.status}
+            {t(`pipelines.pipeline_status.${pipeline.status}`)}
           </div>
           <div className="text-purple-300 text-xs sm:text-sm">
             <span className="font-bold">{t("pipelines.id")}:</span>{" "}
