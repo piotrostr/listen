@@ -1,11 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { chatCache } from "../hooks/localStorage";
+import i18n from "../i18n";
 import { Chat } from "../types/message";
 
 export function RecentChats() {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     const loadRecentChats = async () => {
@@ -49,7 +53,7 @@ export function RecentChats() {
           to="/chat-history"
           className="flex items-center h-10 px-4 text-sm text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 transition-colors"
         >
-          View all chats
+          {t("recent_chats.view_all_chats")}
         </Link>
       )}
     </div>

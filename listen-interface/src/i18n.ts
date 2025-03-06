@@ -18,6 +18,19 @@ const resources = {
         warning:
           "Listen is in early beta, things might not work as expected, use at own risk",
       },
+      layout: {
+        screener: "Screener",
+        portfolio: "Portfolio",
+        pipelines: "Pipelines",
+        settings: "Settings",
+        documentation: "Documentation",
+        github: "Github",
+        twitter: "Twitter",
+        logout: "Logout",
+      },
+      recent_chats: {
+        view_all_chats: "View all chats",
+      },
     },
   },
   zh: {
@@ -35,6 +48,19 @@ const resources = {
           "如果您有任何问题 - 直接询问代理 - Listen 了解它拥有的工具并拥有其管理的投资组合的视图",
         warning:
           "Listen 处于早期测试阶段，可能会出现意想不到的问题，请自行承担风险",
+      },
+      layout: {
+        screener: "筛选器",
+        portfolio: "投资组合",
+        pipelines: "管道",
+        settings: "设置",
+        documentation: "文档",
+        github: "Github",
+        twitter: "Twitter",
+        logout: "登出",
+      },
+      recent_chats: {
+        view_all_chats: "查看所有聊天",
       },
     },
   },
