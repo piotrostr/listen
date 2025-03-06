@@ -5,9 +5,13 @@ use privy::Privy;
 
 use super::routes::{auth, healthz, stream};
 use super::state::AppState;
+use crate::mongo::MongoClient;
 
-pub async fn run_server(privy: Privy) -> std::io::Result<()> {
-    let state = web::Data::new(AppState::new(privy));
+pub async fn run_server(
+    privy: Privy,
+    mongo: MongoClient,
+) -> std::io::Result<()> {
+    let state = web::Data::new(AppState::new(privy, mongo));
 
     HttpServer::new(move || {
         App::new()
