@@ -19,6 +19,7 @@ pub struct SwapMetrics {
     pub kv_insert_success: AtomicU64,
     pub kv_insert_failure: AtomicU64,
     pub pending_swaps: AtomicU64,
+    pub latest_update_slot: AtomicU64,
 }
 
 impl SwapMetrics {
@@ -98,6 +99,10 @@ impl SwapMetrics {
         self.pending_swaps.fetch_sub(1, Ordering::Relaxed);
     }
 
+    pub fn set_latest_update_slot(&self, slot: u64) {
+        self.latest_update_slot.store(slot, Ordering::Relaxed);
+    }
+
     fn log_metrics(&self) {
         let total = self.total_swaps_processed.load(Ordering::Relaxed);
         let pending = self.pending_swaps.load(Ordering::Relaxed);
@@ -126,6 +131,9 @@ impl SwapMetrics {
             0.0
         };
 
+        let latest_update_slot =
+            self.latest_update_slot.load(Ordering::Relaxed);
+
         info!(
             "Swap Processing Metrics:\n\
              Total Processed: {}\n\
@@ -143,7 +151,8 @@ impl SwapMetrics {
              DB Insert Failure: {}\n\
              Multi-hop Swaps: {}\n\
              KV Insert Success: {}\n\
-             KV Insert Failure: {}",
+             KV Insert Failure: {}\n\
+             Latest Update Slot: {}",
             total,
             pending,
             successful,
@@ -161,6 +170,7 @@ impl SwapMetrics {
             multi_hop,
             kv_insert_success,
             kv_insert_failure,
+            latest_update_slot,
         );
     }
 }

@@ -164,6 +164,8 @@ async fn process_two_token_swap(
         is_pump,
     };
 
+    metrics.set_latest_update_slot(transaction_metadata.slot);
+
     // Run all three database operations in parallel
     let db_future = db.insert_price(&price_update);
     let mq_future = message_queue.publish_price_update(price_update.clone());
