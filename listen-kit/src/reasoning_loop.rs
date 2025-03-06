@@ -7,12 +7,13 @@ use rig::message::{ToolResultContent, UserContent};
 use rig::providers::anthropic::completion::CompletionModel;
 use rig::streaming::{StreamingChat, StreamingChoice};
 use rig::OneOrMany;
+use serde::Deserialize;
 use serde::Serialize;
 use std::io::Write;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-#[derive(Serialize, Debug)]
+#[derive(Serialize, Debug, Deserialize)]
 #[serde(tag = "type", content = "content")]
 pub enum StreamResponse {
     Message(String),
