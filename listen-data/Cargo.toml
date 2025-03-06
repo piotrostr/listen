@@ -5,7 +5,7 @@ edition = "2021"
 default-run = "main"
 
 [features]
-default = ["rpc"]
+default = ["geyser"]
 geyser = ["carbon-yellowstone-grpc-datasource", "yellowstone-grpc-proto"]
 rpc = [
   "carbon-rpc-block-subscribe-datasource",
