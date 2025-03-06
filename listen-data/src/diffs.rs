@@ -1,11 +1,39 @@
-use std::collections::HashMap;
-
+use crate::constants::{
+    RAYDIUM_AUTHORITY_MINT_KEY_STR, TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID,
+    WSOL_MINT_KEY_STR,
+};
 use anyhow::Result;
+use carbon_core::{
+    deserialize::ArrangeAccounts,
+    instruction::{DecodedInstruction, InstructionDecoder, NestedInstruction},
+    transaction::TransactionMetadata,
+};
+use carbon_token_2022_decoder::{
+    instructions::transfer::{
+        Transfer as Token2022Transfer, TransferInstructionAccounts,
+    },
+    instructions::transfer_checked::{
+        TransferChecked as Token2022TransferChecked,
+        TransferCheckedInstructionAccounts,
+    },
+    instructions::Token2022Instruction,
+    Token2022Decoder,
+};
+use carbon_token_program_decoder::{
+    instructions::transfer::{Transfer, TransferAccounts},
+    instructions::transfer_checked::{
+        TransferChecked, TransferCheckedAccounts,
+    },
+    instructions::TokenProgramInstruction,
+    TokenProgramDecoder,
+};
+use solana_sdk::{pubkey::Pubkey, signature::Signature};
 use solana_transaction_status::{
     TransactionTokenBalance, UiTransactionTokenBalance,
 };
-
-use crate::constants::{RAYDIUM_AUTHORITY_MINT_KEY_STR, WSOL_MINT_KEY_STR};
+use spl_token::amount_to_ui_amount;
+use std::collections::{HashMap, HashSet};
+use tracing::error;
 
 pub trait TokenBalanceInfo {
     fn get_mint(&self) -> &str;
@@ -57,34 +85,32 @@ pub enum DiffsError {
     NonWsolsSwap,
 }
 
-pub fn process_diffs(
-    diffs: &[Diff],
+pub fn process_token_transfers(
+    vaults: &HashSet<String>,
+    transfers: &[TokenTransferDetails],
     sol_price: f64,
 ) -> Result<DiffsResult, DiffsError> {
-    if diffs.len() != 2 {
+    if transfers.len() != 2 {
         return Err(DiffsError::ExpectedExactlyTwoTokenBalanceDiffs);
     }
 
-    let (token0, token1) = (&diffs[0], &diffs[1]);
-
-    let amount0 = token0.diff;
-    let amount1 = token1.diff;
-
-    let (sol_amount, token_amount, coin_mint) =
+    let (token0, token1) = (&transfers[0], &transfers[1]);
+    let (sol_mint, token_mint) =
         match (token0.mint.as_str(), token1.mint.as_str()) {
-            (WSOL_MINT_KEY_STR, other_mint) => (amount0, amount1, other_mint),
-            (other_mint, WSOL_MINT_KEY_STR) => (amount1, amount0, other_mint),
+            (WSOL_MINT_KEY_STR, _) => (token0, token1),
+            (_, WSOL_MINT_KEY_STR) => (token1, token0),
             _ => return Err(DiffsError::NonWsolsSwap),
         };
 
-    // raydium token balance negative
-    let is_buy = token_amount < 0.0;
+    let is_buy = vaults.contains(&sol_mint.destination)
+        || vaults.contains(&token_mint.source);
 
-    let sol_amount_abs = sol_amount.abs();
-    let token_amount_abs = token_amount.abs();
+    let coin_mint = token_mint.mint.clone();
+    let sol_amount = sol_mint.ui_amount;
+    let token_amount = token_mint.ui_amount;
 
-    let price = (sol_amount_abs / token_amount_abs) * sol_price;
-    let swap_amount = sol_amount_abs * sol_price;
+    let price = (sol_amount / token_amount) * sol_price;
+    let swap_amount = sol_amount * sol_price;
 
     Ok(DiffsResult {
         price,
@@ -168,4 +194,331 @@ pub fn get_token_balance_diff<T: TokenBalanceInfo + std::fmt::Debug>(
     }
 
     diffs
+}
+
+/// Represents the details of a token transfer instruction
+///
+/// This struct contains all the relevant information about a token transfer,
+/// including the source and destination accounts, token mint, authority,
+/// amount and decimal precision.
+///
+/// # Fields
+/// * `program_id` - The ID of the token program executing the transfer (Token or Token-2022)
+/// * `source` - The source account address the tokens are being transferred from
+/// * `destination` - The destination account address the tokens are being transferred to
+/// * `mint` - Optional mint address
+/// * `authority` - The account authorized of source account
+/// * `amount` - The raw token amount being transferred (not adjusted for decimals)
+/// * `decimals` - Optional decimal precision of the token
+/// * `ui_amount` - The token amount in UI format (adjusted for decimals)
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
+pub struct TokenTransferDetails {
+    pub program_id: String,
+    pub source: String,
+    pub destination: String,
+    pub mint: String,
+    pub authority: String,
+    pub decimals: u8,
+    pub amount: u64,
+    pub ui_amount: f64,
+}
+
+/// Implement the From trait for TokenTransferDetails
+///
+/// This macro implements the From trait for TokenTransferDetails, allowing
+/// conversion from various account types to TokenTransferDetails.
+///
+/// # Parameters
+/// * `$account_type`: The type of the account to convert from
+/// * `$has_mint`: Whether the account has a mint field
+/// * `$program_id`: The program ID of the token program
+/// Returns a TokenTransferDetails struct
+macro_rules! impl_into_token_transfer_details_with_mint {
+    ($account_type:ty, $program_id:expr) => {
+        impl From<$account_type> for TokenTransferDetails {
+            fn from(accounts: $account_type) -> Self {
+                Self {
+                    program_id: $program_id.to_string(),
+                    source: accounts.source.to_string(),
+                    destination: accounts.destination.to_string(),
+                    authority: accounts.authority.to_string(),
+                    mint: accounts.mint.to_string(),
+                    decimals: 0,
+                    amount: 0,
+                    ui_amount: 0.0,
+                }
+            }
+        }
+    };
+}
+
+macro_rules! impl_into_token_transfer_details_without_mint {
+    ($account_type:ty, $program_id:expr) => {
+        impl From<$account_type> for TokenTransferDetails {
+            fn from(accounts: $account_type) -> Self {
+                Self {
+                    program_id: $program_id.to_string(),
+                    source: accounts.source.to_string(),
+                    destination: accounts.destination.to_string(),
+                    authority: accounts.authority.to_string(),
+                    mint: String::new(),
+                    decimals: 0,
+                    amount: 0,
+                    ui_amount: 0.0,
+                }
+            }
+        }
+    };
+}
+
+impl_into_token_transfer_details_without_mint!(
+    TransferAccounts,
+    TOKEN_PROGRAM_ID
+);
+impl_into_token_transfer_details_with_mint!(
+    TransferCheckedAccounts,
+    TOKEN_PROGRAM_ID
+);
+impl_into_token_transfer_details_without_mint!(
+    TransferInstructionAccounts,
+    TOKEN_2022_PROGRAM_ID
+);
+impl_into_token_transfer_details_with_mint!(
+    TransferCheckedInstructionAccounts,
+    TOKEN_2022_PROGRAM_ID
+);
+
+pub struct TokenTransferProcessor {
+    pub token_decoder: TokenProgramDecoder,
+    pub token_2022_decoder: Token2022Decoder,
+}
+
+pub fn process_token_transfer(
+    instruction: DecodedInstruction<TokenProgramInstruction>,
+) -> Option<TokenTransferDetails> {
+    if !instruction.program_id.eq(&TOKEN_PROGRAM_ID) {
+        return None;
+    }
+    match &instruction.data {
+        TokenProgramInstruction::Transfer(t) => {
+            Transfer::arrange_accounts(&instruction.accounts).map(|accounts| {
+                let mut details = TokenTransferDetails::from(accounts);
+                details.amount = t.amount;
+                details
+            })
+        }
+        TokenProgramInstruction::TransferChecked(t) => {
+            TransferChecked::arrange_accounts(&instruction.accounts).map(
+                |accounts| {
+                    let mut details = TokenTransferDetails::from(accounts);
+                    details.amount = t.amount;
+                    details.decimals = t.decimals;
+                    details.ui_amount =
+                        amount_to_ui_amount(t.amount, t.decimals);
+                    details
+                },
+            )
+        }
+        _ => None,
+    }
+}
+
+pub fn process_token_2022_transfer(
+    instruction: DecodedInstruction<Token2022Instruction>,
+) -> Option<TokenTransferDetails> {
+    if !instruction.program_id.eq(&TOKEN_2022_PROGRAM_ID) {
+        return None;
+    }
+
+    match &instruction.data {
+        Token2022Instruction::Transfer(t) => {
+            Token2022Transfer::arrange_accounts(&instruction.accounts).map(
+                |accounts| {
+                    let mut details = TokenTransferDetails::from(accounts);
+                    details.amount = t.amount;
+                    details
+                },
+            )
+        }
+        Token2022Instruction::TransferChecked(t) => {
+            Token2022TransferChecked::arrange_accounts(&instruction.accounts)
+                .map(|accounts| {
+                    let mut details = TokenTransferDetails::from(accounts);
+                    details.amount = t.amount;
+                    details.decimals = t.decimals;
+                    details.ui_amount =
+                        amount_to_ui_amount(t.amount, t.decimals);
+                    details
+                })
+        }
+        _ => None,
+    }
+}
+
+impl TokenTransferProcessor {
+    pub fn new() -> Self {
+        Self {
+            token_decoder: TokenProgramDecoder,
+            token_2022_decoder: Token2022Decoder,
+        }
+    }
+
+    pub fn try_decode_token_transfer(
+        &self,
+        instruction: &solana_sdk::instruction::Instruction,
+    ) -> Option<TokenTransferDetails> {
+        if instruction.program_id != TOKEN_PROGRAM_ID {
+            return None;
+        }
+        self.token_decoder
+            .decode_instruction(instruction)
+            .and_then(process_token_transfer)
+    }
+
+    pub fn try_decode_token_2022_transfer(
+        &self,
+        instruction: &solana_sdk::instruction::Instruction,
+    ) -> Option<TokenTransferDetails> {
+        if instruction.program_id != TOKEN_2022_PROGRAM_ID {
+            return None;
+        }
+
+        self.token_2022_decoder
+            .decode_instruction(instruction)
+            .and_then(process_token_2022_transfer)
+    }
+
+    pub fn decode_token_program_transfer_with_vaults(
+        &self,
+        mint_details: &HashMap<String, MintDetail>,
+        instruction: &solana_sdk::instruction::Instruction,
+    ) -> Option<TokenTransferDetails> {
+        let details = match instruction.program_id {
+            TOKEN_PROGRAM_ID => self.try_decode_token_transfer(instruction),
+            TOKEN_2022_PROGRAM_ID => {
+                self.try_decode_token_2022_transfer(instruction)
+            }
+            _ => None,
+        };
+        details.map(|mut details| {
+            update_token_transfer_details(&mut details, mint_details);
+            details
+        })
+    }
+
+    pub fn decode_token_transfer_with_vaults_from_nested_instructions(
+        &self,
+        nested_instructions: &Vec<NestedInstruction>,
+        mint_details: &HashMap<String, MintDetail>,
+    ) -> Vec<TokenTransferDetails> {
+        nested_instructions
+            .iter()
+            .filter_map(|instruction| {
+                println!(
+                    "instruction: {:?}",
+                    instruction.instruction.program_id
+                );
+                self.decode_token_program_transfer_with_vaults(
+                    mint_details,
+                    &instruction.instruction,
+                )
+            })
+            .collect()
+    }
+}
+
+#[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
+pub struct MintDetail {
+    pub mint: String,
+    pub owner: String,
+    pub decimals: u8,
+}
+
+impl From<&solana_transaction_status::TransactionTokenBalance> for MintDetail {
+    fn from(
+        balance: &solana_transaction_status::TransactionTokenBalance,
+    ) -> Self {
+        Self {
+            mint: balance.mint.clone(),
+            owner: balance.owner.clone(),
+            decimals: balance.ui_token_amount.decimals,
+        }
+    }
+}
+
+pub fn update_token_accounts_from_meta<'a>(
+    signature: &Signature,
+    accounts: &[Pubkey],
+    balances: &[solana_transaction_status::TransactionTokenBalance],
+    mint_details: &'a mut HashMap<String, MintDetail>,
+) -> &'a mut HashMap<String, MintDetail> {
+    for balance in balances {
+        if let Some(pubkey) = accounts.get(balance.account_index as usize) {
+            mint_details.insert(pubkey.to_string(), MintDetail::from(balance));
+        } else {
+            error!(
+                "Invalid account_index {} for signature: {}",
+                balance.account_index, signature
+            );
+        }
+    }
+    mint_details
+}
+
+pub fn update_token_transfer_details(
+    details: &mut TokenTransferDetails,
+    mint_details: &HashMap<String, MintDetail>,
+) {
+    if let Some(mint_detail) = mint_details.get(&details.source) {
+        update_details_from_mint(details, mint_detail);
+    } else if let Some(mint_detail) = mint_details.get(&details.destination) {
+        update_details_from_mint(details, mint_detail);
+    }
+}
+
+/// Helper function to update token details from mint information
+fn update_details_from_mint(
+    token_transfer_details: &mut TokenTransferDetails,
+    mint_detail: &MintDetail,
+) {
+    token_transfer_details.mint = mint_detail.mint.clone();
+    token_transfer_details.decimals = mint_detail.decimals;
+    token_transfer_details.ui_amount = amount_to_ui_amount(
+        token_transfer_details.amount,
+        mint_detail.decimals,
+    );
+}
+
+pub fn extra_mint_details_from_tx_metadata(
+    transaction_metadata: &TransactionMetadata,
+) -> HashMap<String, MintDetail> {
+    let mut mint_details = HashMap::new();
+    let account_keys =
+        transaction_metadata.message.static_account_keys().to_vec();
+    let loaded_addresses = transaction_metadata.meta.loaded_addresses.clone();
+    let accounts_address = [
+        account_keys,
+        loaded_addresses.writable,
+        loaded_addresses.readonly,
+    ]
+    .concat();
+
+    let meta = &transaction_metadata.meta;
+    if let Some(pre_balances) = meta.pre_token_balances.as_ref() {
+        update_token_accounts_from_meta(
+            &transaction_metadata.signature,
+            &accounts_address,
+            pre_balances,
+            &mut mint_details,
+        );
+    }
+    if let Some(post_balances) = meta.post_token_balances.as_ref() {
+        update_token_accounts_from_meta(
+            &transaction_metadata.signature,
+            &accounts_address,
+            post_balances,
+            &mut mint_details,
+        );
+    }
+    mint_details
 }
