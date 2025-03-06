@@ -75,6 +75,9 @@ pub enum LinkedAccount {
     Email(EmailAccount),
     #[serde(rename = "wallet")]
     Wallet(WalletAccount),
+    #[serde(rename = "phone")]
+    Phone(serde_json::Value),
+    #[serde(rename = "unknown")]
     Unknown(serde_json::Map<String, serde_json::Value>),
 }
 
