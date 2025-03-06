@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
+import { zhCN } from "date-fns/locale";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { chatCache } from "../hooks/localStorage";
@@ -29,6 +30,10 @@ export function RecentChats() {
     loadRecentChats();
   }, []);
 
+  const getLocale = () => {
+    return i18n.language.startsWith("zh") ? zhCN : undefined;
+  };
+
   return (
     <div className="overflow-hidden transition-all duration-300 ease-in-out">
       {recentChats.map((chat) => (
@@ -43,7 +48,10 @@ export function RecentChats() {
               {chat.title || chat.messages[0]?.message.slice(0, 20) + "..."}
             </div>
             <div className="text-[10px] text-gray-500">
-              {formatDistanceToNow(chat.lastMessageAt, { addSuffix: true })}
+              {formatDistanceToNow(chat.lastMessageAt, {
+                addSuffix: true,
+                locale: getLocale(),
+              })}
             </div>
           </div>
         </Link>
