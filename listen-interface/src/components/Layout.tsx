@@ -290,7 +290,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <MemoizedNavLink
                   to="/chat"
                   icon={IoChatboxOutline}
-                  label="Chat"
+                  label={t("layout.chat")}
                   isSidebarOpen={true}
                   isChat={true}
                 />
@@ -372,7 +372,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <MemoizedNavLink
                   to="/chat"
                   icon={IoChatboxOutline}
-                  label="Chat"
+                  label={t("layout.chat")}
                   isSidebarOpen={isSidebarOpen}
                   isChat={true}
                 />

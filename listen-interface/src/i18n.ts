@@ -26,6 +26,7 @@ const resources = {
         documentation: "Documentation",
         github: "Github",
         twitter: "Twitter",
+        chat: "Chat",
         logout: "Logout",
       },
       recent_chats: {
@@ -79,6 +80,7 @@ const resources = {
         github: "Github",
         twitter: "Twitter",
         logout: "登出",
+        chat: "聊天",
       },
       recent_chats: {
         view_all_chats: "查看所有聊天",
