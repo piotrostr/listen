@@ -18,6 +18,7 @@ pub struct SwapMetrics {
     pub multi_hop_swap: AtomicU64,
     pub kv_insert_success: AtomicU64,
     pub kv_insert_failure: AtomicU64,
+    pub pending_swaps: AtomicU64,
 }
 
 impl SwapMetrics {
@@ -89,8 +90,17 @@ impl SwapMetrics {
         self.kv_insert_failure.fetch_add(1, Ordering::Relaxed);
     }
 
+    pub fn increment_pending_swaps(&self) {
+        self.pending_swaps.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn decrement_pending_swaps(&self) {
+        self.pending_swaps.fetch_sub(1, Ordering::Relaxed);
+    }
+
     fn log_metrics(&self) {
         let total = self.total_swaps_processed.load(Ordering::Relaxed);
+        let pending = self.pending_swaps.load(Ordering::Relaxed);
         let successful = self.successful_swaps.load(Ordering::Relaxed);
         let failed = self.failed_swaps.load(Ordering::Relaxed);
         let tiny = self.skipped_tiny_swaps.load(Ordering::Relaxed);
@@ -119,6 +129,7 @@ impl SwapMetrics {
         info!(
             "Swap Processing Metrics:\n\
              Total Processed: {}\n\
+             Pending: {}\n\
              Successful: {} ({:.1}%)\n\
              Failed: {}\n\
              Skipped (tiny): {}\n\
@@ -134,6 +145,7 @@ impl SwapMetrics {
              KV Insert Success: {}\n\
              KV Insert Failure: {}",
             total,
+            pending,
             successful,
             success_rate,
             failed,

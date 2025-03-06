@@ -28,6 +28,9 @@ pub async fn process_swap(
     db: &Arc<ClickhouseDb>,
     metrics: &SwapMetrics,
 ) -> Result<()> {
+    // Decrement pending swaps when this function exits
+    let _pending_guard = PendingSwapGuard(metrics);
+
     let mint_details =
         extra_mint_details_from_tx_metadata(&transaction_metadata);
     let token_transfer_processor = TokenTransferProcessor::new();
@@ -195,6 +198,15 @@ async fn process_two_token_swap(
     }
 
     Ok(())
+}
+
+// Helper struct to decrement pending swaps when dropped
+struct PendingSwapGuard<'a>(&'a SwapMetrics);
+
+impl<'a> Drop for PendingSwapGuard<'a> {
+    fn drop(&mut self) {
+        self.0.decrement_pending_swaps();
+    }
 }
 
 #[cfg(test)]

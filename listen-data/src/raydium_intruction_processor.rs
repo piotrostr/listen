@@ -116,6 +116,7 @@ impl RaydiumAmmV4InstructionProcessor {
         let nested_instructions = nested_instructions.clone();
 
         metrics.increment_total_swaps();
+        metrics.increment_pending_swaps();
 
         tokio::spawn(async move {
             let _permit = match semaphore.acquire().await {
