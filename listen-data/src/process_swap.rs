@@ -1,8 +1,6 @@
-use std::sync::Arc;
-
-use crate::constants::WSOL_MINT_KEY_STR;
 use crate::diffs::{
-    get_token_balance_diff, process_diffs, Diff, DiffsError, DiffsResult,
+    extra_mint_details_from_tx_metadata, process_token_transfers, DiffsError,
+    DiffsResult, TokenTransferDetails, TokenTransferProcessor,
 };
 use crate::{
     db::{ClickhouseDb, Database},
@@ -14,37 +12,38 @@ use crate::{
     sol_price_stream::get_sol_price,
 };
 use anyhow::{Context, Result};
+use carbon_core::instruction::NestedInstruction;
 use carbon_core::transaction::TransactionMetadata;
 use chrono::Utc;
+use std::collections::HashSet;
+use std::sync::Arc;
 use tracing::{debug, warn};
 
 pub async fn process_swap(
+    vaults: &HashSet<String>,
     transaction_metadata: &TransactionMetadata,
+    nested_instructions: &Vec<NestedInstruction>,
     message_queue: &RedisMessageQueue,
     kv_store: &Arc<RedisKVStore>,
     db: &Arc<ClickhouseDb>,
     metrics: &SwapMetrics,
 ) -> Result<()> {
-    let diffs = get_token_balance_diff(
-        transaction_metadata
-            .meta
-            .pre_token_balances
-            .as_ref()
-            .unwrap(),
-        transaction_metadata
-            .meta
-            .post_token_balances
-            .as_ref()
-            .unwrap(),
-    );
+    let mint_details =
+        extra_mint_details_from_tx_metadata(&transaction_metadata);
+    let token_transfer_processor = TokenTransferProcessor::new();
+    let transfers: Vec<TokenTransferDetails> = token_transfer_processor
+        .decode_token_transfer_with_vaults_from_nested_instructions(
+            &nested_instructions,
+            &mint_details,
+        );
 
-    if diffs.iter().all(|d| d.diff.abs() < 0.01) {
+    if transfers.iter().all(|d| d.ui_amount < 0.01) {
         debug!("skipping tiny diffs");
         metrics.increment_skipped_tiny_swaps();
         return Ok(());
     }
 
-    if diffs.iter().any(|d| d.diff == 0.0) {
+    if transfers.iter().any(|d| d.ui_amount == 0.0) {
         debug!("skipping zero diffs (arbitrage likely)");
         metrics.increment_skipped_zero_swaps();
         return Ok(());
@@ -52,125 +51,18 @@ pub async fn process_swap(
 
     let sol_price = get_sol_price().await;
 
-    if diffs.len() > 3 || diffs.len() < 2 {
+    if transfers.len() > 3 || transfers.len() < 2 {
         debug!(
             "https://solscan.io/tx/{} skipping swap with unexpected number of tokens: {}",
-            transaction_metadata.signature, diffs.len()
+            transaction_metadata.signature, transfers.len()
         );
         metrics.increment_skipped_unexpected_number_of_tokens();
         return Ok(());
     }
 
-    // Handle multi-hop swaps (3 tokens)
-    if diffs.len() == 3 {
-        metrics.increment_multi_hop_swap();
-
-        // TODO
-        // even though multi-hop swaps are ~1.5% of all swaps, some of those are
-        // 4-5 figs, important for volume estimation for latest price those are
-        // not crucial since every slot there will be a price update but the
-        // price/mc has to be calculated by a more complex formula
-        //
-        // are all examples of transactions where both raydium and whirlpool or meteora are used simultaneously
-        // https://solscan.io/tx/31pB39KowUTdDSjXhzCYi7QxVSWSM4ZijaSWAkCduWUUR6GuGrWwVBbcXLLdJnVLrWbQaV7YFL2SigBXRatGfnji#tokenBalanceChange
-        // https://solscan.io/tx/5j8nDKNNLbXcJqdZvM7h76m2tuzjMsbAWAo8vfSPwBMjnVaE47G6uXbG9NE6GFHth76K9qzJMBzNeM2xoHHkT3qZ#tokenBalanceChange
-        // https://solscan.io/tx/3m4LERWUekW7im8rgu8QgpSJA8a9yEYL3gDvorbd5YpkXarrL3PGoVmyFyQzd1Pw9oZiQy2LPUjaG8Xr4p433kwn#tokenBalanceChange
-        //
-        // two options
-        // 1) skip all multi-hops
-        // 2) detect multi-hops that go out of raydium and meteora, process them separately
-        // 3) support multi-hops cross-any-dex
-        //
-        // for now going with 1)
-        //
-        // volume is normalized, since skipping multi-hops for every token means
-        // some portion of multi-hops are raydium to raydium, token A to token
-        // B, thus A->SOL->C, those are supported but since detecting is
-        // error-prone and we cannot afford to receive wrong prices by the
-        // listen-trading-engine, skipping all multi-hops for now
-        //
-        // volume is normalized, since skipping multi-hops for every token means
-        // each will lose equally as much volume
-        //
-        // while 2) could work, jupiter has 12+ aggregator accounts which
-        // take part in transaction OKX also has an aggregator, it is not
-        // trivial so ideally, it could be 3)
-        //
-        // now for 3) - it is actually possible to change up the `diffs` module
-        // to not aggregate by raydium owner + mint, and allow multiple SOL
-        // pools accounts then match the pools to the diffs and calculate the
-        // pricing for each account separately this is the most appealing
-        // approach since raydium accounts will have the correct price, amounts
-        // are split but ratios are respected; for now (14th Feb '25) there are
-        // other priorities, but this is the way to go
-        return Ok(());
-        // Find the tokens with positive and negative changes
-        #[allow(unreachable_code)]
-        let mut positive_diff = None;
-        let mut negative_diff = None;
-        let mut sol_diff = None;
-
-        for diff in &diffs {
-            if diff.mint == WSOL_MINT_KEY_STR {
-                sol_diff = Some(diff);
-                continue;
-            }
-            if diff.diff > 0.0 {
-                positive_diff = Some(diff);
-            } else if diff.diff < 0.0 {
-                negative_diff = Some(diff);
-            }
-        }
-
-        if positive_diff.is_none()
-            || negative_diff.is_none()
-            || sol_diff.is_none()
-        {
-            debug!(
-                "https://solscan.io/tx/{} three diff swap with unexpected token changes",
-                transaction_metadata.signature
-            );
-            metrics.increment_skipped_unexpected_number_of_tokens();
-            return Ok(());
-        }
-
-        if let (Some(pos), Some(neg), Some(sol)) =
-            (positive_diff, negative_diff, sol_diff)
-        {
-            // Process first hop: token being sold to SOL
-            process_two_token_swap(
-                &[neg.clone(), sol.clone()],
-                transaction_metadata,
-                message_queue,
-                kv_store,
-                db,
-                metrics,
-                sol_price,
-                true,
-            )
-            .await
-            .context("failed to process first hop")?;
-
-            // Process second hop: SOL to token being bought
-            process_two_token_swap(
-                &[pos.clone(), sol.clone()],
-                transaction_metadata,
-                message_queue,
-                kv_store,
-                db,
-                metrics,
-                sol_price,
-                true,
-            )
-            .await
-            .context("failed to process second hop")?;
-
-            return Ok(());
-        }
-    }
-
     process_two_token_swap(
-        &diffs,
+        &vaults,
+        &transfers,
         transaction_metadata,
         message_queue,
         kv_store,
@@ -186,7 +78,8 @@ pub async fn process_swap(
 // Helper function to process a single two-token swap
 #[allow(clippy::too_many_arguments)]
 async fn process_two_token_swap(
-    diffs: &[Diff],
+    vaults: &HashSet<String>,
+    transfers: &[TokenTransferDetails],
     transaction_metadata: &TransactionMetadata,
     message_queue: &RedisMessageQueue,
     kv_store: &Arc<RedisKVStore>,
@@ -200,7 +93,7 @@ async fn process_two_token_swap(
         swap_amount,
         coin_mint,
         is_buy,
-    } = match process_diffs(diffs, sol_price) {
+    } = match process_token_transfers(vaults, transfers, sol_price) {
         Ok(result) => result,
         Err(e) => {
             match e {
@@ -306,107 +199,241 @@ async fn process_two_token_swap(
 
 #[cfg(test)]
 mod tests {
-    use crate::{
-        diffs::Diff,
-        util::{make_rpc_client, round_to_decimals},
-    };
-
     use super::*;
+    use crate::util::{make_rpc_client, round_to_decimals};
+    use carbon_core::{
+        datasource::TransactionUpdate,
+        instruction::NestedInstructions,
+        transformers::{
+            extract_instructions_with_metadata,
+            transaction_metadata_from_original_meta,
+        },
+    };
+    use solana_sdk::signature::Signature;
+    use std::str::FromStr;
+    use tracing::error;
 
+    // are all examples of transactions where both raydium and whirlpool or meteora are used simultaneously
+    // https://solscan.io/tx/31pB39KowUTdDSjXhzCYi7QxVSWSM4ZijaSWAkCduWUUR6GuGrWwVBbcXLLdJnVLrWbQaV7YFL2SigBXRatGfnji
+    // IQ-SOL
+    #[tokio::test]
+    async fn test_token_for_sol() {
+        let mut vaults = HashSet::new();
+        vaults
+            .insert("HqDtzxBsHHhmTHbzmUk5aJkAZE8iGf6KKeeYrh4mVCc3".to_string());
+        vaults
+            .insert("6M2KAV658rer6g2L7tAAQtXK7f1GmrbG7ycW14gHdK5U".to_string());
+        let diffs = vec![
+            TokenTransferDetails {
+                program_id: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+                    .to_string(),
+                mint: "AsyfR3e5JcPqWot4H5MMhQUm7DZ4zwQrcp2zbB7vpump"
+                    .to_string(),
+                source: "3oV3EFEp6GUTt8cn3swj1oQXhmeuRyKv9cEzpSVZga5K"
+                    .to_string(),
+                destination: "HqDtzxBsHHhmTHbzmUk5aJkAZE8iGf6KKeeYrh4mVCc3"
+                    .to_string(),
+                authority: "6LXutJvKUw8Q5ue2gCgKHQdAN4suWW8awzFVC6XCguFx"
+                    .to_string(),
+                decimals: 6,
+                amount: 279274681533,
+                ui_amount: 279274.681533,
+            },
+            TokenTransferDetails {
+                program_id: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+                    .to_string(),
+                mint: "So11111111111111111111111111111111111111112".to_string(),
+                source: "6M2KAV658rer6g2L7tAAQtXK7f1GmrbG7ycW14gHdK5U"
+                    .to_string(),
+                destination: "BuqEDKUwyAotZuK37V4JYEykZVKY8qo1zKbpfU9gkJMo"
+                    .to_string(),
+                authority: "BuqEDKUwyAotZuK37V4JYEykZVKY8qo1zKbpfU9gkJMo"
+                    .to_string(),
+                decimals: 9,
+                amount: 856978344,
+                ui_amount: 8.56978344,
+            },
+        ];
+
+        let DiffsResult {
+            is_buy,
+            price,
+            swap_amount,
+            ..
+        } = process_token_transfers(&vaults, &diffs, 201.36).unwrap();
+        let rounded_price = round_to_decimals(price, 4);
+        assert!(is_buy == false, "is_buy: {}", is_buy);
+        assert!(rounded_price == 0.0062, "price: {}", rounded_price);
+        assert!(
+            swap_amount == 8.56978344 * 201.36,
+            "swap_amount: {}",
+            swap_amount
+        );
+    }
+
+    // https://solscan.io/tx/31pB39KowUTdDSjXhzCYi7QxVSWSM4ZijaSWAkCduWUUR6GuGrWwVBbcXLLdJnVLrWbQaV7YFL2SigBXRatGfnji
+    // SOL-Fullsend
     #[tokio::test]
     async fn test_sol_for_token() {
+        let mut vaults = HashSet::new();
+        vaults
+            .insert("Ej7C1F58YLJRLHS5eyovmUeFyX5Xc8999ZZxrgYABPZi".to_string());
+        vaults
+            .insert("84gHbaT9Eq4SF4uQ5cR2zaaP13coaHyrTnnUY7hSVaYL".to_string());
         let diffs = vec![
-            Diff {
-                mint: "G6ZaVuWEuGtFRooaiHQWjDzoCzr2f7BWr3PhsQRnjSTE"
+            TokenTransferDetails {
+                program_id: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
                     .to_string(),
-                pre_amount: 9502698.632123,
-                post_amount: 9493791.483438,
-                diff: -8907.148685000837,
-                owner: "8CNuwDVRshWyZtWRvgb31AMaBge4q6KSRHNPdJHP29HU"
-                    .to_string(),
-            },
-            Diff {
                 mint: "So11111111111111111111111111111111111111112".to_string(),
-                pre_amount: 145.774357667,
-                post_amount: 142.421949398,
-                diff: -3.3524082689999943,
-                owner: "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1"
+                source: "BuqEDKUwyAotZuK37V4JYEykZVKY8qo1zKbpfU9gkJMo"
                     .to_string(),
+                destination: "Ej7C1F58YLJRLHS5eyovmUeFyX5Xc8999ZZxrgYABPZi"
+                    .to_string(),
+                authority: "6LXutJvKUw8Q5ue2gCgKHQdAN4suWW8awzFVC6XCguFx"
+                    .to_string(),
+                decimals: 9,
+                amount: 856832000,
+                ui_amount: 0.856832,
+            },
+            TokenTransferDetails {
+                program_id: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+                    .to_string(),
+                mint: "AshG5mHt4y4etsjhKFb2wA2rq1XZxKks1EPzcuXwpump"
+                    .to_string(),
+                source: "84gHbaT9Eq4SF4uQ5cR2zaaP13coaHyrTnnUY7hSVaYL"
+                    .to_string(),
+                destination: "C4XmPzBYkdsEmq6CXgL8TZxfniqWBxu5ft1gRhiUMvia"
+                    .to_string(),
+                authority: "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1"
+                    .to_string(),
+                decimals: 6,
+                amount: 2469387663,
+                ui_amount: 2469.387663,
             },
         ];
 
         let DiffsResult {
-            price, swap_amount, ..
-        } = process_diffs(&diffs, 201.36).unwrap();
-        let rounded_price = round_to_decimals(price, 4);
-        assert!(rounded_price == 0.0758, "price: {}", rounded_price);
-        assert!(
-            swap_amount == 3.3524082689999943 * 201.36,
-            "swap_amount: {}",
-            swap_amount
-        );
-    }
-
-    #[tokio::test]
-    async fn test_sol_for_token_2() {
-        let diffs = vec![
-            Diff {
-                mint: "So11111111111111111111111111111111111111112".to_string(),
-                pre_amount: 450.295597127,
-                post_amount: 450.345597127,
-                diff: 0.05000000000001137,
-                owner: "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1"
-                    .to_string(),
-            },
-            Diff {
-                mint: "CSChJMDH1drnxaN5ZXr8ZPZtqXv2FJqNTGcSujyfmoon"
-                    .to_string(),
-                pre_amount: 61602947.9232689,
-                post_amount: 61596125.50088912,
-                diff: -6822.422379776835,
-                owner: "5Q544fKrFoe6tsEbD7S8EmxGTJYAKtTVhAW5Q5pge4j1"
-                    .to_string(),
-            },
-        ];
-
-        let DiffsResult {
-            price, swap_amount, ..
-        } = process_diffs(&diffs, 202.12).unwrap();
+            price,
+            swap_amount,
+            is_buy,
+            ..
+        } = process_token_transfers(&vaults, &diffs, 201.36).unwrap();
         let rounded_price = round_to_decimals(price, 5);
-        assert!(rounded_price == 0.00148, "price: {}", rounded_price);
+        assert!(rounded_price == 0.06987, "price: {}", rounded_price);
         assert!(
-            swap_amount == 0.05000000000001137 * 202.12,
+            swap_amount == 0.856832 * 201.36,
             "swap_amount: {}",
             swap_amount
         );
+        assert!(is_buy == true, "is_buy: {}", is_buy);
     }
 
-    #[tokio::test]
-    async fn test_by_signature() {
-        let signature = "538voMuFQKp3oE6Tu598R8kJN12sum2cGMxZBxrV2Vuip1TL4qdWaXiJ8u3yRxgJy9SFX4faP2zC83oDX68D2wuW";
-        let transaction = make_rpc_client()
+    async fn get_transaction(
+        signature: &str,
+        outer_index: usize,
+        inner_index: Option<usize>,
+    ) -> Result<Vec<TokenTransferDetails>> {
+        let signature =
+            Signature::from_str(signature).expect("failed to make signature");
+        let encoded_transaction = make_rpc_client()
             .unwrap()
             .get_transaction_with_config(
-                &signature.parse().unwrap(),
+                &signature,
                 solana_client::rpc_config::RpcTransactionConfig {
-                    encoding: Some(solana_transaction_status::UiTransactionEncoding::JsonParsed),
+                    encoding: Some(solana_transaction_status::UiTransactionEncoding::Binary),
                     max_supported_transaction_version: Some(0),
                     ..Default::default()
                 },
             )
             .await
             .unwrap();
+        let transaction = encoded_transaction.transaction;
+        let meta_original = if let Some(meta) = transaction.clone().meta {
+            meta
+        } else {
+            error!("Meta is malformed for transaction: {:?}", signature);
+            return Err(anyhow::anyhow!(
+                "Meta is malformed for transaction: {:?}",
+                signature
+            ));
+        };
 
-        let transaction_meta = transaction.transaction.meta.unwrap();
+        if meta_original.status.is_err() {
+            error!("Meta is malformed for transaction: {:?}", signature);
+            return Err(anyhow::anyhow!(
+                "Meta is malformed for transaction: {:?}",
+                signature
+            ));
+        }
 
-        let diffs = get_token_balance_diff(
-            transaction_meta.pre_token_balances.as_ref().unwrap(),
-            transaction_meta.post_token_balances.as_ref().unwrap(),
-        );
-        println!("diffs: {:#?}", diffs);
+        let decoded_transaction = transaction
+            .transaction
+            .decode()
+            .expect("Failed to decode transaction.");
+
+        let meta_needed = transaction_metadata_from_original_meta(
+            meta_original,
+        )
+        .expect("Error getting metadata from transaction original meta.");
+
+        let transaction_update = Box::new(TransactionUpdate {
+            signature,
+            transaction: decoded_transaction.clone(),
+            meta: meta_needed,
+            is_vote: false,
+            slot: encoded_transaction.slot,
+            block_time: encoded_transaction.block_time,
+        });
+
+        let transaction_metadata =
+            &(*transaction_update).clone().try_into().expect(
+                "Failed to convert transaction update to transaction metadata.",
+            );
+        let instructions_with_metadata = extract_instructions_with_metadata(
+            transaction_metadata,
+            &transaction_update,
+        )
+        .expect("Failed to extract instructions with metadata.");
+        let mint_details =
+            extra_mint_details_from_tx_metadata(&transaction_metadata);
+        let nested_instructions: NestedInstructions =
+            instructions_with_metadata.into();
+        let mut swap_instruction: NestedInstruction =
+            nested_instructions[outer_index].clone();
+        if let Some(inner_index) = inner_index {
+            swap_instruction =
+                swap_instruction.inner_instructions[inner_index].clone();
+        }
+
+        let inner_instructions = swap_instruction.inner_instructions;
+
+        let token_transfer_processor = TokenTransferProcessor::new();
+        let transfers: Vec<TokenTransferDetails> = token_transfer_processor
+            .decode_token_transfer_with_vaults_from_nested_instructions(
+                &inner_instructions,
+                &mint_details,
+            );
+        return Ok(transfers);
+    }
+
+    #[tokio::test]
+    async fn test_buy_signature() {
+        let signature = "538voMuFQKp3oE6Tu598R8kJN12sum2cGMxZBxrV2Vuip1TL4qdWaXiJ8u3yRxgJy9SFX4faP2zC83oDX68D2wuW";
+        let mut vaults = HashSet::new();
+        vaults
+            .insert("xZtEgunCtNhMUbmPFGpGZCJ6oPzXCfQGbgXWjxhsQTM".to_string());
+        vaults
+            .insert("F6gGUPwvLeg4YEW6pXFowfX76dYPpG1PB51Vrm5Mc1C3".to_string());
+        let outer_index = 0;
+        let transfers = get_transaction(signature, outer_index, None)
+            .await
+            .expect("failed to get transaction with binary encoding");
         let DiffsResult {
-            price, swap_amount, ..
-        } = process_diffs(&diffs, 203.67).unwrap();
+            is_buy,
+            price,
+            swap_amount,
+            ..
+        } = process_token_transfers(&vaults, &transfers, 203.67).unwrap();
         let rounded_price = round_to_decimals(price, 5);
         assert!(rounded_price == 0.00035, "price: {}", rounded_price);
         let rounded_swap_amount = round_to_decimals(swap_amount, 4);
@@ -415,34 +442,209 @@ mod tests {
             "swap_amount: {}",
             rounded_swap_amount
         );
+        assert!(is_buy == false, "is_buy: {}", is_buy);
     }
 
     #[tokio::test]
-    async fn test_by_signature_2() {
+    async fn test_multi_hop_by_signature() {
+        let signature = "5f3jb13ZgqKBNvGSMC5wGgJvNa4bGBaVHSXXjWqMXHiXQUj8SEpCov9pMD6K4nXCGLxcpMLfgGJHmT5A24vC2sHd";
+        // 2.1 - SolFi: Swap
+        {
+            let outer_index = 1;
+            let inner_index = 0;
+            let mut vaults = HashSet::new();
+            vaults.insert(
+                "5ep3LMR5gpCLD5KvSa9bnhR4R5Wm7HM7i1suP9u6ZvJT".to_string(),
+            );
+            vaults.insert(
+                "3TokFuQgkkc6eLmafofNApdLkYpBvU1sZovyyScnQBD1".to_string(),
+            );
+            let transfers =
+                get_transaction(signature, outer_index, Some(inner_index))
+                    .await
+                    .expect("failed to get transaction with binary encoding");
+
+            let DiffsResult {
+                is_buy,
+                price,
+                swap_amount,
+                ..
+            } = process_token_transfers(&vaults, &transfers, 203.67).unwrap();
+            let rounded_price = round_to_decimals(price, 5);
+            assert!(rounded_price == 1.36929, "price: {}", rounded_price);
+            let rounded_swap_amount = round_to_decimals(swap_amount, 4);
+            assert!(
+                rounded_swap_amount == 101.835,
+                "swap_amount: {}",
+                rounded_swap_amount
+            );
+            assert!(is_buy == true, "is_buy: {}", is_buy);
+        }
+
+        // 2.5 - Meteora DLMM Program: swap
+        {
+            let outer_index: usize = 1;
+            let inner_index = 2;
+            let mut vaults = HashSet::new();
+            vaults.insert(
+                "5Ys4iNr3MVhXYdtoHtCjcYvMq34MjnkFynaxNihy71M4".to_string(),
+            );
+            vaults.insert(
+                "2GHtKmEEEX2vwqD3btyNUUibhE3DvowojCpLH178t7Pk".to_string(),
+            );
+            let transfers =
+                get_transaction(signature, outer_index, Some(inner_index))
+                    .await
+                    .expect("failed to get transaction with binary encoding");
+            let DiffsResult {
+                is_buy,
+                price,
+                swap_amount,
+                ..
+            } = process_token_transfers(&vaults, &transfers, 203.67).unwrap();
+            let rounded_price = round_to_decimals(price, 5);
+            assert!(rounded_price == 1.36933, "price: {}", rounded_price);
+            let rounded_swap_amount = round_to_decimals(swap_amount, 4);
+            assert!(
+                rounded_swap_amount == 101.8378,
+                "swap_amount: {}",
+                rounded_swap_amount
+            );
+            assert!(is_buy == false, "is_buy: {}", is_buy);
+        }
+    }
+
+    #[tokio::test]
+    async fn test_multi_dexes_by_signature() {
         let signature = "3m4LERWUekW7im8rgu8QgpSJA8a9yEYL3gDvorbd5YpkXarrL3PGoVmyFyQzd1Pw9oZiQy2LPUjaG8Xr4p433kwn";
-        let transaction = make_rpc_client()
-            .unwrap()
-            .get_transaction_with_config(
-                &signature.parse().unwrap(),
-                solana_client::rpc_config::RpcTransactionConfig {
-                    encoding: Some(solana_transaction_status::UiTransactionEncoding::JsonParsed),
-                    max_supported_transaction_version: Some(0),
-                    ..Default::default()
-                },
-            )
-            .await
-            .unwrap();
+        // 3.2 - Raydium Liquidity Pool V4: raydium:swap
+        {
+            let outer_index = 2;
+            let inner_index = 1;
+            let mut vaults = HashSet::new();
+            vaults.insert(
+                "F6iWqisguZYprVwp916BgGR7d5ahP6Ev5E213k8y3MEb".to_string(),
+            );
+            vaults.insert(
+                "7bxbfwXi1CY7zWUXW35PBMZjhPD27SarVuHaehMzR2Fn".to_string(),
+            );
+            let transfers =
+                get_transaction(signature, outer_index, Some(inner_index))
+                    .await
+                    .expect("failed to get transaction with binary encoding");
 
-        let transaction_meta = transaction.transaction.meta.unwrap();
+            let DiffsResult {
+                is_buy,
+                price,
+                swap_amount,
+                ..
+            } = process_token_transfers(&vaults, &transfers, 203.67).unwrap();
+            let rounded_price = round_to_decimals(price, 5);
+            assert!(rounded_price == 0.55458, "price: {}", rounded_price);
+            let rounded_swap_amount = round_to_decimals(swap_amount, 4);
+            assert!(
+                rounded_swap_amount == 3327.4865,
+                "swap_amount: {}",
+                rounded_swap_amount
+            );
+            assert!(is_buy == false, "is_buy: {}", is_buy);
+        }
 
-        let diffs = get_token_balance_diff(
-            transaction_meta.pre_token_balances.as_ref().unwrap(),
-            transaction_meta.post_token_balances.as_ref().unwrap(),
-        );
+        // 3.6 - Meteora DLMM Program: swap
+        {
+            let outer_index = 2;
+            let inner_index = 3;
+            let mut vaults = HashSet::new();
+            vaults.insert(
+                "CMVrNeYhZnqdbZfQuijgcNvCfvTJN2WKvKSnt2q3HT6N".to_string(),
+            );
+            vaults.insert(
+                "5EfbkfLpaz9mHeTN6FnhtN8DTdMGZDRURYcsQ1f1Utg6".to_string(),
+            );
+            let transfers =
+                get_transaction(signature, outer_index, Some(inner_index))
+                    .await
+                    .expect("failed to get transaction with binary encoding");
+            let DiffsResult {
+                is_buy,
+                price,
+                swap_amount,
+                ..
+            } = process_token_transfers(&vaults, &transfers, 203.67).unwrap();
+            let rounded_price = round_to_decimals(price, 5);
+            assert!(rounded_price == 0.55378, "price: {}", rounded_price);
+            let rounded_swap_amount = round_to_decimals(swap_amount, 4);
+            assert!(
+                rounded_swap_amount == 13290.7687,
+                "swap_amount: {}",
+                rounded_swap_amount
+            );
+            assert!(is_buy == false, "is_buy: {}", is_buy);
+        }
 
-        println!("pre: {:#?}", transaction_meta.pre_token_balances);
-        println!("post: {:#?}", transaction_meta.post_token_balances);
+        // 3.11 - Meteora DLMM Program: swap
+        {
+            let outer_index = 2;
+            let inner_index = 5;
+            let mut vaults = HashSet::new();
+            vaults.insert(
+                "FwqN8rUaFiH749WjLsutLC5JmRUqwoL99fSqTKuUqKsj".to_string(),
+            );
+            vaults.insert(
+                "5EfbkfLpaz9mHeTN6FnhtN8DTdMGZDRURYcsQ1f1Utg6".to_string(),
+            );
+            let transfers =
+                get_transaction(signature, outer_index, Some(inner_index))
+                    .await
+                    .expect("failed to get transaction with binary encoding");
 
-        println!("diffs: {:#?}", diffs);
+            let DiffsResult {
+                is_buy,
+                price,
+                swap_amount,
+                ..
+            } = process_token_transfers(&vaults, &transfers, 203.67).unwrap();
+            let rounded_price = round_to_decimals(price, 5);
+            assert!(rounded_price == 0.07765, "price: {}", rounded_price);
+            let rounded_swap_amount = round_to_decimals(swap_amount, 4);
+            assert!(
+                rounded_swap_amount == 3323.6510,
+                "swap_amount: {}",
+                rounded_swap_amount
+            );
+            assert!(is_buy == true, "is_buy: {}", is_buy);
+        }
+
+        // 3.16 - Raydium Liquidity Pool V4: raydium:swap
+        {
+            let outer_index = 2;
+            let inner_index = 7;
+            let mut vaults = HashSet::new();
+            vaults.insert(
+                "5N8nDGtftaaX2ixPurZasiJyQPYFqbbV5XAnkTVxHpc8".to_string(),
+            );
+            vaults.insert(
+                "ANcLMBXC9jNkWUTekV1YpPiHwBp8konJsyCDvyKYXmqv".to_string(),
+            );
+            let transfers =
+                get_transaction(signature, outer_index, Some(inner_index))
+                    .await
+                    .expect("failed to get transaction with binary encoding");
+            let DiffsResult {
+                is_buy,
+                price,
+                swap_amount,
+                ..
+            } = process_token_transfers(&vaults, &transfers, 203.67).unwrap();
+            let rounded_price = round_to_decimals(price, 5);
+            assert!(rounded_price == 0.07754, "price: {}", rounded_price);
+            let rounded_swap_amount = round_to_decimals(swap_amount, 4);
+            assert!(
+                rounded_swap_amount == 13294.6041,
+                "swap_amount: {}",
+                rounded_swap_amount
+            );
+            assert!(is_buy == true, "is_buy: {}", is_buy);
+        }
     }
 }

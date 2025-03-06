@@ -1,4 +1,4 @@
-use std::sync::Arc;
+use std::{collections::HashSet, sync::Arc};
 use tokio::sync::Semaphore;
 use tracing::{debug, error};
 
@@ -7,10 +7,16 @@ use crate::{
     metrics::SwapMetrics, process_swap::process_swap,
 };
 use carbon_core::{
-    error::CarbonResult, instruction::InstructionProcessorInputType,
-    metrics::MetricsCollection, processor::Processor,
+    deserialize::ArrangeAccounts,
+    error::CarbonResult,
+    instruction::{InstructionProcessorInputType, NestedInstruction},
+    metrics::MetricsCollection,
+    processor::Processor,
 };
-use carbon_raydium_amm_v4_decoder::instructions::RaydiumAmmV4Instruction;
+use carbon_raydium_amm_v4_decoder::instructions::{
+    swap_base_in::SwapBaseIn, swap_base_out::SwapBaseOut,
+    RaydiumAmmV4Instruction,
+};
 
 pub struct RaydiumAmmV4InstructionProcessor {
     pub kv_store: Arc<RedisKVStore>,
@@ -29,11 +35,37 @@ impl Processor for RaydiumAmmV4InstructionProcessor {
         data: Self::InputType,
         _metrics: Arc<MetricsCollection>,
     ) -> CarbonResult<()> {
-        let (meta, instruction, _nested_instructions) = data;
+        let (meta, instruction, nested_instructions) = data;
         match &instruction.data {
-            RaydiumAmmV4Instruction::SwapBaseIn(_)
-            | RaydiumAmmV4Instruction::SwapBaseOut(_) => {
-                self.spawn_swap_processor(&meta);
+            RaydiumAmmV4Instruction::SwapBaseIn(_) => {
+                let accounts =
+                    SwapBaseIn::arrange_accounts(&instruction.accounts);
+                if let Some(accounts) = accounts {
+                    let vaults: HashSet<String> = HashSet::from([
+                        accounts.pool_coin_token_account.to_string(),
+                        accounts.pool_pc_token_account.to_string(),
+                    ]);
+                    self.spawn_swap_processor(
+                        &vaults,
+                        &meta,
+                        &nested_instructions,
+                    );
+                }
+            }
+            RaydiumAmmV4Instruction::SwapBaseOut(_) => {
+                let accounts =
+                    SwapBaseOut::arrange_accounts(&instruction.accounts);
+                if let Some(accounts) = accounts {
+                    let vaults: HashSet<String> = HashSet::from([
+                        accounts.pool_coin_token_account.to_string(),
+                        accounts.pool_pc_token_account.to_string(),
+                    ]);
+                    self.spawn_swap_processor(
+                        &vaults,
+                        &meta,
+                        &nested_instructions,
+                    );
+                }
             }
             _ => {}
         }
@@ -64,7 +96,9 @@ impl RaydiumAmmV4InstructionProcessor {
 
     fn spawn_swap_processor(
         &self,
+        vaults: &HashSet<String>,
         meta: &carbon_core::instruction::InstructionMetadata,
+        nested_instructions: &Vec<NestedInstruction>,
     ) {
         debug!(
             "https://solscan.io/tx/{}",
@@ -73,10 +107,13 @@ impl RaydiumAmmV4InstructionProcessor {
 
         let message_queue = self.message_queue.clone();
         let kv_store = self.kv_store.clone();
-        let tx_meta = meta.transaction_metadata.clone();
         let db = self.db.clone();
         let metrics = self.metrics.clone();
         let semaphore = self.semaphore.clone();
+
+        let vaults = vaults.clone();
+        let tx_meta = meta.transaction_metadata.clone();
+        let nested_instructions = nested_instructions.clone();
 
         metrics.increment_total_swaps();
 
@@ -91,7 +128,9 @@ impl RaydiumAmmV4InstructionProcessor {
             };
 
             match process_swap(
+                &vaults,
                 &tx_meta,
+                &nested_instructions,
                 &message_queue,
                 &kv_store,
                 &db,

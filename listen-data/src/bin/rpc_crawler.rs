@@ -1,5 +1,6 @@
 use anyhow::Result;
 use clap::Parser;
+use std::sync::Arc;
 
 #[derive(Parser)]
 pub enum Command {
@@ -15,7 +16,7 @@ async fn main() -> Result<()> {
             account_pipeline::make_raydium_rpc_accounts_pipeline,
             instruction_pipeline::make_raydium_rpc_instruction_pipeline,
         },
-        sol_price_stream::get_sol_price,
+        sol_price_stream::SolPriceCache,
         util::{make_db, make_kv_store, make_message_queue},
     };
     use listen_tracing::setup_tracing;
@@ -27,12 +28,16 @@ async fn main() -> Result<()> {
     }
     info!("Starting RPC service...");
 
-    // Initialize price cache for cold starts
-    info!("Solana price: {}", get_sol_price().await);
-
     let db = make_db().await?;
     let kv_store = make_kv_store().await?;
     let message_queue = make_message_queue().await?;
+
+    // Initialize price cache for cold starts
+    let price_cache =
+        SolPriceCache::new(Some(kv_store.clone()), Some(message_queue.clone()));
+    let price_cache = Arc::new(price_cache);
+
+    info!("Solana price: {}", price_cache.get_price().await);
 
     let command = Command::parse();
 
@@ -42,8 +47,6 @@ async fn main() -> Result<()> {
             make_raydium_rpc_instruction_pipeline(kv_store, message_queue, db)?
         }
     };
-
-    let price_cache = SOL_PRICE_CACHE.clone();
 
     tokio::spawn(async move {
         if let Err(e) = price_cache.start_price_stream().await {
