@@ -1,4 +1,5 @@
 import { useRef } from "react";
+import { useTranslation } from "react-i18next";
 
 interface ShareModalProps {
   url: string;
@@ -7,6 +8,8 @@ interface ShareModalProps {
 
 export function ShareModal({ url, onClose }: ShareModalProps) {
   const urlInputRef = useRef<HTMLInputElement>(null);
+
+  const { t } = useTranslation();
 
   const handleCopyClick = () => {
     if (urlInputRef.current) {
@@ -26,9 +29,11 @@ export function ShareModal({ url, onClose }: ShareModalProps) {
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-gray-900 border border-purple-500/30 rounded-lg max-w-md w-full p-6 shadow-xl">
-        <h3 className="text-xl font-medium text-white mb-4">Share this chat</h3>
+        <h3 className="text-xl font-medium text-white mb-4">
+          {t("share_modal.share_this_chat")}
+        </h3>
         <p className="text-gray-300 mb-4">
-          Anyone with this link can view this chat:
+          {t("share_modal.anyone_with_this_link_can_view_this_chat")}
         </p>
 
         <div className="flex gap-2 mb-6">
@@ -43,7 +48,7 @@ export function ShareModal({ url, onClose }: ShareModalProps) {
             onClick={handleCopyClick}
             className="bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 px-4 py-2 rounded transition-colors"
           >
-            Copy
+            {t("share_modal.copy")}
           </button>
         </div>
 
@@ -52,7 +57,7 @@ export function ShareModal({ url, onClose }: ShareModalProps) {
             onClick={onClose}
             className="bg-transparent hover:bg-gray-800 text-gray-300 px-4 py-2 rounded transition-colors"
           >
-            Close
+            {t("share_modal.close")}
           </button>
 
           <a
@@ -61,7 +66,7 @@ export function ShareModal({ url, onClose }: ShareModalProps) {
             rel="noopener noreferrer"
             className="bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 px-4 py-2 rounded transition-colors"
           >
-            Open in new tab
+            {t("share_modal.open_in_new_tab")}
           </a>
         </div>
       </div>

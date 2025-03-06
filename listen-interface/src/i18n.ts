@@ -94,6 +94,14 @@ const resources = {
         start_a_conversation: "Start a conversation",
         placeholder: "Type your message...",
       },
+      share_modal: {
+        share_this_chat: "Share this chat",
+        anyone_with_this_link_can_view_this_chat:
+          "Anyone with this link can view this chat",
+        copy: "Copy",
+        close: "Close",
+        open_in_new_tab: "Open in new tab",
+      },
     },
   },
   zh: {
@@ -186,6 +194,14 @@ const resources = {
             "过去几天有哪些代币获得了最大的流入/流出？",
         },
         placeholder: "输入您的消息...",
+      },
+      share_modal: {
+        share_this_chat: "分享此聊天",
+        anyone_with_this_link_can_view_this_chat:
+          "任何人都可以通过此链接查看此聊天",
+        copy: "复制",
+        close: "关闭",
+        open_in_new_tab: "在新标签页中打开",
       },
     },
   },
