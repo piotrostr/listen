@@ -1,5 +1,6 @@
 import { useFundWallet } from "@privy-io/react-auth/solana";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FaApplePay, FaExchangeAlt, FaShoppingCart } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
 import { useChatType } from "../hooks/useChatType";
@@ -35,6 +36,8 @@ export function Portfolio() {
   const isLoading = selectedChain === "solana" ? isLoadingSolana : isLoadingEvm;
   const displayedAssets =
     selectedChain === "solana" ? (solanaAssets ?? []) : (evmAssets ?? []);
+
+  const { t } = useTranslation();
 
   if (isLoading) {
     return <PortfolioSkeleton />;
@@ -76,7 +79,9 @@ export function Portfolio() {
   return (
     <div className="h-full font-mono">
       <div className="flex flex-row justify-between items-center p-4 lg:mt-3 lg:mb-3">
-        <h2 className="text-xl font-bold lg:mb-0 mb-2">Portfolio</h2>
+        <h2 className="text-xl font-bold lg:mb-0 mb-2">
+          {t("portfolio.title")}
+        </h2>
 
         {/* Address Display with Chain Toggle */}
         <div className="flex items-center gap-2">
@@ -182,7 +187,7 @@ export function Portfolio() {
                 </div>
                 <div className="flex justify-between items-center">
                   <div className="text-sm text-gray-400">
-                    Holding: {asset.amount}
+                    {t("portfolio.holding")}: {asset.amount}
                   </div>
 
                   {/* Buy/Sell buttons - only show for Solana chain assets */}
@@ -193,14 +198,14 @@ export function Portfolio() {
                         className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
                       >
                         <FaShoppingCart size={12} />
-                        <span>Buy</span>
+                        <span>{t("portfolio.buy")}</span>
                       </button>
                       <button
                         onClick={() => handleOpenModal(asset, "sell")}
                         className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
                       >
                         <IoArrowDown size={12} />
-                        <span>Sell</span>
+                        <span>{t("portfolio.sell")}</span>
                       </button>
                     </div>
                   )}
@@ -208,7 +213,9 @@ export function Portfolio() {
               </div>
             ))}
           {displayedAssets.length === 0 && (
-            <div className="text-center text-gray-400">No assets found</div>
+            <div className="text-center text-gray-400">
+              {t("portfolio.no_assets_found")}
+            </div>
           )}
         </div>
       </div>

@@ -118,6 +118,20 @@ const resources = {
         export: "Export",
         fund: "Fund",
       },
+      portfolio: {
+        title: "Portfolio",
+        holding: "Holding",
+        buy: "Buy",
+        sell: "Sell",
+        no_assets_found: "No assets found",
+      },
+      buy_sell_modal: {
+        available: "Available",
+        processing: "Processing...",
+        buy: "Buy",
+        sell: "Sell",
+        amount: "Amount",
+      },
     },
   },
   zh: {
@@ -193,6 +207,13 @@ const resources = {
         buy_order_placed: "购买订单已放置",
         failed_to_buy_token: "购买失败",
       },
+      buy_sell_modal: {
+        available: "可用",
+        processing: "处理中...",
+        buy: "购买",
+        sell: "出售",
+        amount: "金额",
+      },
       price_updates: {
         paused: "暂停",
         market_cap: "市值",
@@ -234,6 +255,13 @@ const resources = {
         evm_wallet: "EVM 钱包",
         export: "导出",
         fund: "资金",
+      },
+      portfolio: {
+        title: "投资组合",
+        holding: "持有",
+        buy: "购买",
+        sell: "出售",
+        no_assets_found: "没有找到资产",
       },
     },
   },

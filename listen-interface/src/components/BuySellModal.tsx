@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FaTimes } from "react-icons/fa";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { useSolBalance } from "../hooks/useSolBalance";
@@ -26,6 +27,7 @@ export function BuySellModal({
 }: BuySellModalProps) {
   const [percentage, setPercentage] = useState(50);
   const { data: solBalance, refetch: refetchSolBalance } = useSolBalance();
+  const { t } = useTranslation();
   const { isExecuting, quickBuyToken, sellTokenForSol } =
     usePipelineExecution();
 
@@ -102,7 +104,10 @@ export function BuySellModal({
         </button>
 
         <h2 className="text-xl font-bold mb-4 text-purple-100">
-          {action === "buy" ? "Buy" : "Sell"} {asset.symbol}
+          {action === "buy"
+            ? t("buy_sell_modal.buy")
+            : t("buy_sell_modal.sell")}{" "}
+          {asset.symbol}
         </h2>
 
         <div className="flex items-center mb-4">
@@ -124,7 +129,7 @@ export function BuySellModal({
         <div className="mb-6">
           <div className="flex justify-between mb-2">
             <span className="text-purple-300 text-sm">
-              Amount ({percentage}%)
+              {t("buy_sell_modal.amount")} ({percentage}%)
             </span>
             <span className="text-purple-300 text-sm">
               {action === "buy"
@@ -151,7 +156,9 @@ export function BuySellModal({
 
         <div className="mb-4 p-3 bg-purple-500/10 rounded-lg">
           <div className="flex justify-between text-sm">
-            <span className="text-purple-300">Available:</span>
+            <span className="text-purple-300">
+              {t("buy_sell_modal.available")}:
+            </span>
             <span className="text-purple-100">
               {action === "buy"
                 ? `${(solBalance || 0).toFixed(4)} SOL`
@@ -170,8 +177,8 @@ export function BuySellModal({
           } ${isExecuting ? "opacity-70 cursor-not-allowed" : ""}`}
         >
           {isExecuting
-            ? "Processing..."
-            : `${action === "buy" ? "Buy" : "Sell"} ${asset.symbol}`}
+            ? t("buy_sell_modal.processing")
+            : `${action === "buy" ? t("buy_sell_modal.buy") : t("buy_sell_modal.sell")} ${asset.symbol}`}
         </button>
       </div>
     </div>
