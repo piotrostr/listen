@@ -14,7 +14,7 @@ const resources = {
         step_3: "3. go wild!",
         get_started: "Get Started",
         questions:
-          "Should you have any questions - ask the agent directly - Listen understands the tools it has access to and has a view of the portfolio its managing",
+          "Should you have any questions - ask Listen directly, it understands the tools it has access to and has a view of the portfolio its managing",
         warning:
           "Listen is in early beta, things might not work as expected, use at own risk",
       },
