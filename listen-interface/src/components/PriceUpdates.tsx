@@ -55,7 +55,7 @@ export function PriceUpdates() {
   return (
     <div className="flex flex-col gap-2 p-2 sm:p-4 overflow-hidden h-full">
       {/* Latest Update Section */}
-      <div className="h-[52px] bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl p-3 flex items-center">
+      <div className="h-[52px] bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl lg:p-3 flex items-center p-1">
         {latestUpdate ? (
           <div className="flex flex-row w-full text-sm space-x-2">
             <span className="text-purple-300/70 w-18 text-left">

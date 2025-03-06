@@ -8,7 +8,7 @@ export function GettingStarted() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col items-center gap-4 p-2">
+    <div className="flex flex-col items-center gap-4 p-2 w-full overflow-hidden">
       {/* Getting Started Section */}
       <div className="w-full max-w-2xl mx-auto flex flex-col items-center text-center gap-2">
         <h2 className="text-xl lg:text-2xl font-bold mt-5 mb-2">
@@ -33,7 +33,7 @@ export function GettingStarted() {
         </p>
       </div>
 
-      <span className="text-sm my-8 mb-1 flex items-center gap-2">
+      <span className="text-sm my-8 mb-1 flex items-center gap-2 flex-col lg:flex-row text-center">
         <FaExclamationTriangle className="text-yellow-500" />
         {t("getting_started.warning")}
       </span>
@@ -43,7 +43,7 @@ export function GettingStarted() {
 
       {/* Screener Preview Section */}
       <div className="w-full max-w-4xl mx-auto">
-        <div>
+        <div className="w-full overflow-x-hidden">
           <PriceUpdates />
         </div>
       </div>

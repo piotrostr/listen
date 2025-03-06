@@ -85,7 +85,7 @@ export function TokenTile({ token, index }: TokenTileProps) {
                     {token.name}
                   </div>
                   {metadata?.mpl.symbol && (
-                    <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-gray-500">
+                    <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-gray-500 lg:block hidden">
                       {metadata.mpl.symbol}
                     </span>
                   )}

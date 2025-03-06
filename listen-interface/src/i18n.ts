@@ -16,7 +16,7 @@ const resources = {
         questions:
           "Should you have any questions - ask the agent directly - Listen understands the tools it has access to and has a view of the portfolio its managing",
         warning:
-          "WARNING: Listen is in early beta, things might not work as expected, use at own risk",
+          "Listen is in early beta, things might not work as expected, use at own risk",
       },
     },
   },
@@ -34,7 +34,7 @@ const resources = {
         questions:
           "如果您有任何问题 - 直接询问代理 - Listen 了解它拥有的工具并拥有其管理的投资组合的视图",
         warning:
-          "警告：Listen 处于早期测试阶段，可能会出现意想不到的问题，请自行承担风险",
+          "Listen 处于早期测试阶段，可能会出现意想不到的问题，请自行承担风险",
       },
     },
   },
