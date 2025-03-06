@@ -1,5 +1,4 @@
 use std::{collections::HashSet, sync::Arc};
-use tokio::sync::Semaphore;
 use tracing::{debug, error};
 
 use crate::{
@@ -23,7 +22,6 @@ pub struct RaydiumAmmV4InstructionProcessor {
     pub message_queue: Arc<RedisMessageQueue>,
     pub db: Arc<ClickhouseDb>,
     pub metrics: Arc<SwapMetrics>,
-    pub semaphore: Arc<Semaphore>,
 }
 
 #[async_trait::async_trait]
@@ -80,17 +78,11 @@ impl RaydiumAmmV4InstructionProcessor {
         message_queue: Arc<RedisMessageQueue>,
         db: Arc<ClickhouseDb>,
     ) -> Self {
-        let concurrency_limit = std::env::var("SWAP_CONCURRENCY_LIMIT")
-            .ok()
-            .and_then(|s| s.parse::<usize>().ok())
-            .unwrap_or(5000);
-
         Self {
             kv_store,
             message_queue,
             db,
             metrics: Arc::new(SwapMetrics::new()),
-            semaphore: Arc::new(Semaphore::new(concurrency_limit)),
         }
     }
 
@@ -109,7 +101,6 @@ impl RaydiumAmmV4InstructionProcessor {
         let kv_store = self.kv_store.clone();
         let db = self.db.clone();
         let metrics = self.metrics.clone();
-        let semaphore = self.semaphore.clone();
 
         let vaults = vaults.clone();
         let tx_meta = meta.transaction_metadata.clone();
@@ -119,15 +110,6 @@ impl RaydiumAmmV4InstructionProcessor {
         metrics.increment_pending_swaps();
 
         tokio::spawn(async move {
-            let _permit = match semaphore.acquire().await {
-                Ok(permit) => permit,
-                Err(e) => {
-                    metrics.increment_failed_swaps();
-                    error!("Failed to acquire semaphore permit: {}", e);
-                    return;
-                }
-            };
-
             match process_swap(
                 &vaults,
                 &tx_meta,
