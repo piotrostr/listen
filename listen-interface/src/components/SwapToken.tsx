@@ -22,7 +22,11 @@ export const SwapToken = ({
     <div className="flex items-center gap-3">
       <div className="flex flex-col">
         {image && (
-          <img src={image} alt={name} className="w-8 h-8 rounded-full" />
+          <img
+            src={image.replace("cf-ipfs.com", "ipfs.io")}
+            alt={name}
+            className="w-8 h-8 rounded-full"
+          />
         )}
       </div>
       <div>
