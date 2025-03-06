@@ -388,7 +388,7 @@ impl TokenTransferProcessor {
             .and_then(process_token_2022_transfer)
     }
 
-    pub fn decode_token_program_transfer_with_vaults(
+    pub fn parse_token_transfer_with_metadata(
         &self,
         mint_details: &HashMap<String, MintDetail>,
         instruction: &solana_sdk::instruction::Instruction,
@@ -414,7 +414,7 @@ impl TokenTransferProcessor {
         nested_instructions
             .iter()
             .filter_map(|instruction| {
-                self.decode_token_program_transfer_with_vaults(
+                self.parse_token_transfer_with_metadata(
                     mint_details,
                     &instruction.instruction,
                 )
