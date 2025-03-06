@@ -58,7 +58,41 @@ const resources = {
           Failed: "Failed",
           Cancelled: "Cancelled",
         },
+        approve: "Approve",
+        reject: "Reject",
+        pipeline_rejected: "Pipeline rejected",
+        pipeline_scheduled_for_execution: "Pipeline scheduled for execution",
         amount: "Amount",
+      },
+      token_tile: {
+        traders: "traders",
+        market_cap: "MC",
+        executing: "Buying...",
+      },
+      pipeline_execution: {
+        pipeline_scheduled: "Pipeline scheduled for execution",
+        error: "Error occured",
+        buy_order_placed: "Buy order placed for",
+        failed_to_buy_token: "Failed to buy token",
+      },
+      price_updates: {
+        paused: "Paused",
+        market_cap: "Market Cap",
+        all: "Any",
+        waiting_for_updates: "Waiting for updates...",
+      },
+      chat: {
+        recommended_questions: {
+          what_actions_can_you_perform_for_me:
+            "What actions can you perform for me?",
+          how_do_pipelines_work_and_what_pipelines_can_you_create_for_me:
+            "How do pipelines work and what pipelines can you create for me?",
+          what_chains_are_supported: "What chains are supported?",
+          what_tokens_have_received_largest_inflows_outflows_in_the_past_days:
+            "What tokens have received largest inflows/outflows in the past days?",
+        },
+        start_a_conversation: "Start a conversation",
+        placeholder: "Type your message...",
       },
     },
   },
@@ -119,6 +153,39 @@ const resources = {
           Failed: "失败",
           Cancelled: "已取消",
         },
+        approve: "批准",
+        reject: "拒绝",
+        pipeline_rejected: "管道已拒绝",
+        pipeline_scheduled_for_execution: "管道已安排执行",
+      },
+      token_tile: {
+        traders: "交易者",
+        market_cap: "市值",
+        executing: "购买中...",
+      },
+      pipeline_execution: {
+        pipeline_scheduled: "管道已安排执行",
+        error: "发生错误",
+        buy_order_placed: "购买订单已放置",
+        failed_to_buy_token: "购买失败",
+      },
+      price_updates: {
+        paused: "暂停",
+        market_cap: "市值",
+        all: "任何",
+        waiting_for_updates: "等待更新...",
+      },
+      chat: {
+        start_a_conversation: "开始对话",
+        recommended_questions: {
+          what_actions_can_you_perform_for_me: "你能为我做什么？",
+          how_do_pipelines_work_and_what_pipelines_can_you_create_for_me:
+            "管道如何运作以及你能为我创建什么管道？",
+          what_chains_are_supported: "支持哪些链？",
+          what_tokens_have_received_largest_inflows_outflows_in_the_past_days:
+            "过去几天有哪些代币获得了最大的流入/流出？",
+        },
+        placeholder: "输入您的消息...",
       },
     },
   },

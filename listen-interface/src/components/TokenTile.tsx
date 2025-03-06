@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FaShoppingCart } from "react-icons/fa";
 import { FaCheck } from "react-icons/fa6";
 import { IoBarChart } from "react-icons/io5";
@@ -7,7 +8,6 @@ import { useListenMetadata } from "../hooks/useListenMetadata";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { TokenMarketData } from "../types/metadata";
 import { Socials } from "./Socials";
-
 interface TokenTileProps {
   token: TokenMarketData;
   index: number;
@@ -31,6 +31,8 @@ export function TokenTile({ token, index }: TokenTileProps) {
   const [copied, setCopied] = useState(false);
   const [quickBuyAmount, setQuickBuyAmount] = useState<number>(0.1);
   const { isExecuting, quickBuyToken } = usePipelineExecution();
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     if (copied) {
@@ -132,11 +134,11 @@ export function TokenTile({ token, index }: TokenTileProps) {
             </span>
           </div>
           <div className="text-xs sm:text-sm text-gray-500">
-            MC: ${(token.marketCap / 1e6).toFixed(1)}M
+            {t("token_tile.market_cap")}: ${(token.marketCap / 1e6).toFixed(1)}M
           </div>
           <div className="flex justify-end items-center gap-2 mt-1">
             <div className="text-[10px] sm:text-xs text-gray-400">
-              {token.uniqueAddresses.size} traders
+              {token.uniqueAddresses.size} {t("token_tile.traders")}
             </div>
             <button
               onClick={handleBuy}
@@ -144,7 +146,9 @@ export function TokenTile({ token, index }: TokenTileProps) {
               className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
             >
               {isExecuting ? (
-                <span className="animate-pulse">Buying...</span>
+                <span className="animate-pulse">
+                  {t("token_tile.executing")}
+                </span>
               ) : (
                 <>
                   <span>{quickBuyAmount}</span>

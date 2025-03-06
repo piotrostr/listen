@@ -1,6 +1,7 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { useChat } from "../hooks/useChat";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
@@ -11,27 +12,6 @@ const IS_DISABLED = false;
 const LoadingIndicator = () => (
   <div className="bg-purple-900/20 text-purple-300 rounded px-4 py-2">...</div>
 );
-
-// Recommended conversation starters
-const RECOMMENDED_QUESTIONS = [
-  {
-    question: "What actions can you perform for me?",
-    enabled: true,
-  },
-  {
-    question: "How do pipelines work and what pipelines can you create for me?",
-    enabled: true,
-  },
-  {
-    question: "What chains are supported?",
-    enabled: true,
-  },
-  {
-    question:
-      "What tokens have received largest inflows/outflows in the past days?",
-    enabled: true,
-  },
-];
 
 export function Chat() {
   const {
@@ -54,6 +34,32 @@ export function Chat() {
   const [shareUrl, setShareUrl] = useState("");
   const { getAccessToken } = usePrivy();
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
+  const { t } = useTranslation();
+
+  const RECOMMENDED_QUESTIONS = [
+    {
+      question: t(
+        "chat.recommended_questions.what_actions_can_you_perform_for_me"
+      ),
+      enabled: true,
+    },
+    {
+      question: t(
+        "chat.recommended_questions.how_do_pipelines_work_and_what_pipelines_can_you_create_for_me"
+      ),
+      enabled: true,
+    },
+    {
+      question: t("chat.recommended_questions.what_chains_are_supported"),
+      enabled: true,
+    },
+    {
+      question: t(
+        "chat.recommended_questions.what_tokens_have_received_largest_inflows_outflows_in_the_past_days"
+      ),
+      enabled: true,
+    },
+  ];
 
   const handleSendMessage = useCallback(
     (message: string) => {
@@ -151,7 +157,7 @@ export function Chat() {
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center py-12 px-4">
             <h2 className="text-xl font-medium text-white mb-6">
-              Start a conversation
+              {t("chat.start_a_conversation")}
             </h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
               {RECOMMENDED_QUESTIONS.map((question, index) => (

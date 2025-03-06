@@ -1,12 +1,12 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FaCircle } from "react-icons/fa";
 import { FaPause } from "react-icons/fa6";
 import { setupWebSocket } from "../services/websocketService";
 import { useTokenStore } from "../store/tokenStore";
 import { TokenTile } from "./TokenTile";
-
 export function PriceUpdates() {
   const { latestUpdate, tokenMap, filterAndSortTokens } = useTokenStore();
   const [marketCapFilter, setMarketCapFilter] = useState<string>("all");
@@ -52,6 +52,8 @@ export function PriceUpdates() {
     setIsListFrozen(false);
   };
 
+  const { t } = useTranslation();
+
   return (
     <div className="flex flex-col gap-2 p-2 sm:p-4 overflow-hidden h-full">
       {/* Latest Update Section */}
@@ -79,7 +81,7 @@ export function PriceUpdates() {
           </div>
         ) : (
           <span className="text-purple-300/70 text-sm w-full text-center">
-            Waiting for updates...
+            {t("price_updates.waiting_for_updates")}
           </span>
         )}
       </div>
@@ -120,18 +122,19 @@ export function PriceUpdates() {
             <div className="flex items-center gap-2 flex-1 justify-end">
               {isListFrozen && (
                 <div className="flex items-center gap-1 bg-black/60 border border-teal-400/30 rounded px-2 py-0.5 text-xs text-teal-300">
-                  <FaPause className="text-teal-300 text-[10px]" /> PAUSED
+                  <FaPause className="text-teal-300 text-[10px]" />{" "}
+                  {t("price_updates.paused")}
                 </div>
               )}
               <span className="text-purple-100 text-sm hidden sm:inline">
-                Market Cap:
+                {t("price_updates.market_cap")}:
               </span>
               <select
                 value={marketCapFilter}
                 onChange={(e) => setMarketCapFilter(e.target.value)}
                 className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-purple-500 w-[120px]"
               >
-                <option value="all">Any</option>
+                <option value="all">{t("price_updates.all")}</option>
                 <option value="under1m">&lt;$1M</option>
                 <option value="1mTo10m">$1M-$10M</option>
                 <option value="10mTo100m">$10M-$100M</option>

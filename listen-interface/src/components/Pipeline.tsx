@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { Pipeline, PipelineActionType } from "../types/pipeline";
 import { NotificationPipelineStep } from "./NotificationPipelineStep";
@@ -74,6 +75,8 @@ function PipelineMenu({
   setStatus: (status: "pending" | "approved" | "rejected") => void;
   sendPipelineForExecution: () => void;
 }) {
+  const { t } = useTranslation();
+
   const Container = ({ children }: { children: React.ReactNode }) => {
     return <div className="flex gap-2">{children}</div>;
   };
@@ -87,13 +90,13 @@ function PipelineMenu({
               onClick={sendPipelineForExecution}
               className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg transition-colors"
             >
-              Approve
+              {t("pipelines.approve")}
             </button>
             <button
               onClick={() => setStatus("rejected")}
               className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg transition-colors"
             >
-              Reject
+              {t("pipelines.reject")}
             </button>
           </>
         </Container>
@@ -114,7 +117,7 @@ function PipelineMenu({
                 clipRule="evenodd"
               />
             </svg>
-            <span>Pipeline scheduled for execution</span>
+            <span>{t("pipelines.pipeline_scheduled_for_execution")}</span>
           </div>
         </Container>
       );
@@ -122,7 +125,7 @@ function PipelineMenu({
       return (
         <Container>
           <div className="text-red-400 flex items-center gap-2">
-            <span>Pipeline rejected</span>
+            <span>{t("pipelines.pipeline_rejected")}</span>
           </div>
         </Container>
       );
