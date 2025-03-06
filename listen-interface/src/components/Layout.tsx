@@ -11,6 +11,7 @@ import { BsLink } from "react-icons/bs";
 import { FaXTwitter } from "react-icons/fa6";
 import { IoMenu, IoSettingsOutline } from "react-icons/io5";
 import { RxCross2, RxDashboard } from "react-icons/rx";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { RecentChats } from "./RecentChats";
 
 const NAV_ITEMS = [
@@ -194,14 +195,11 @@ export function BalanceDisplay({
 }
 
 // Version Display Component
-export function VersionDisplay({ isSidebarOpen }: { isSidebarOpen: boolean }) {
+export function VersionAndLanguageDisplay() {
   return (
-    <div
-      className={`flex items-center h-6 text-xs text-gray-400 ${
-        isSidebarOpen ? "px-4" : "justify-center"
-      }`}
-    >
-      {isSidebarOpen && <span>version: 1.1.4</span>}
+    <div className="flex justify-around items-center w-full">
+      <span className="text-xs text-gray-400">version: 1.1.4</span>
+      <LanguageSwitcher />
     </div>
   );
 }
@@ -307,7 +305,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Bottom Items */}
             <div className="absolute bottom-0 left-0 right-0 mb-4 space-y-1">
-              <VersionDisplay isSidebarOpen={true} />
+              {isSidebarOpen && <VersionAndLanguageDisplay />}
               {memoizedBottomItems}
               {user && (
                 <button
@@ -389,7 +387,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Bottom section */}
             <div className="mt-auto p-4 space-y-1">
-              <VersionDisplay isSidebarOpen={isSidebarOpen} />
+              {isSidebarOpen && <VersionAndLanguageDisplay />}
               {memoizedBottomItems}
               {user && (
                 <button
