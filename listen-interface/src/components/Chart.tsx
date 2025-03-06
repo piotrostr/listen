@@ -2,6 +2,7 @@ import {
   CandlestickSeries,
   ColorType,
   createChart,
+  CrosshairMode,
   HistogramSeries,
   ISeriesApi,
   UTCTimestamp,
@@ -61,6 +62,9 @@ export function InnerChart({ data }: InnerChartProps) {
       grid: {
         vertLines: { color: "#374151" },
         horzLines: { color: "#374151" },
+      },
+      crosshair: {
+        mode: CrosshairMode.Normal,
       },
       timeScale: {
         timeVisible: true,

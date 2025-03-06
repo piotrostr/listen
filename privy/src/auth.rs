@@ -10,8 +10,8 @@ use crate::{
 pub struct UserSession {
     pub user_id: String,
     pub session_id: String,
-    pub wallet_address: String,
-    pub pubkey: String,
+    pub wallet_address: Option<String>,
+    pub pubkey: Option<String>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -42,18 +42,19 @@ impl Privy {
         let mut session = UserSession {
             user_id: user.id,
             session_id: claims.session_id,
-            wallet_address: String::new(),
-            pubkey: String::new(),
+            wallet_address: None,
+            pubkey: None,
         };
 
-        let solana_wallet = find_wallet(&user.linked_accounts, "solana", "privy")
-            .map_err(PrivyAuthError::FindWalletError)?;
-        session.pubkey = solana_wallet.address.clone();
+        let solana_wallet = find_wallet(&user.linked_accounts, "solana", "privy");
+        if let Ok(wallet) = solana_wallet {
+            session.pubkey = Some(wallet.address.clone());
+        }
 
-        let evm_wallet = find_wallet(&user.linked_accounts, "ethereum", "privy")
-            .map_err(PrivyAuthError::FindWalletError)?;
-
-        session.wallet_address = evm_wallet.address.clone();
+        let evm_wallet = find_wallet(&user.linked_accounts, "ethereum", "privy");
+        if let Ok(wallet) = evm_wallet {
+            session.wallet_address = Some(wallet.address.clone());
+        }
 
         Ok(session)
     }

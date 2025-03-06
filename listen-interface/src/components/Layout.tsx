@@ -193,6 +193,19 @@ export function BalanceDisplay({
   );
 }
 
+// Version Display Component
+export function VersionDisplay({ isSidebarOpen }: { isSidebarOpen: boolean }) {
+  return (
+    <div
+      className={`flex items-center h-6 text-xs text-gray-400 ${
+        isSidebarOpen ? "px-4" : "justify-center"
+      }`}
+    >
+      {isSidebarOpen && <span>version: 1.1.3</span>}
+    </div>
+  );
+}
+
 // Add this near the top of the file, after imports
 const SidebarContext = createContext<(open: boolean) => void>(() => {});
 
@@ -294,6 +307,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Bottom Items */}
             <div className="absolute bottom-0 left-0 right-0 mb-4 space-y-1">
+              <VersionDisplay isSidebarOpen={true} />
               {memoizedBottomItems}
               {user && (
                 <button
@@ -375,6 +389,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Bottom section */}
             <div className="mt-auto p-4 space-y-1">
+              <VersionDisplay isSidebarOpen={isSidebarOpen} />
               {memoizedBottomItems}
               {user && (
                 <button

@@ -30,11 +30,11 @@ pub fn transaction_to_base64<T: Serialize>(
 
 #[async_trait]
 impl TransactionSigner for PrivySigner {
-    fn address(&self) -> String {
+    fn address(&self) -> Option<String> {
         self.session.wallet_address.clone()
     }
 
-    fn pubkey(&self) -> String {
+    fn pubkey(&self) -> Option<String> {
         self.session.pubkey.clone()
     }
 
@@ -43,6 +43,11 @@ impl TransactionSigner for PrivySigner {
         &self,
         tx: &mut solana_sdk::transaction::VersionedTransaction,
     ) -> Result<String> {
+        if self.pubkey().is_none() {
+            return Err(anyhow::anyhow!(
+                "Pubkey is not set, wallet unavailable"
+            ));
+        }
         tx.message
             .set_recent_blockhash(BLOCKHASH_CACHE.get_blockhash().await?);
 
@@ -50,7 +55,7 @@ impl TransactionSigner for PrivySigner {
 
         self.privy
             .execute_solana_transaction(
-                self.pubkey(),
+                self.pubkey().unwrap(),
                 encoded_tx,
                 Caip2::SOLANA.to_string(),
             )
@@ -72,9 +77,14 @@ impl TransactionSigner for PrivySigner {
             tx.chain_id.map_or(Caip2::ARBITRUM.to_string(), |chain_id| {
                 Caip2::from_chain_id(chain_id).to_string()
             });
+        if self.address().is_none() {
+            return Err(anyhow::anyhow!(
+                "Address is not set, wallet unavailable"
+            ));
+        }
         self.privy
             .execute_evm_transaction(
-                self.address(),
+                self.address().unwrap(),
                 serde_json::to_value(tx)?,
                 caip2,
             )
@@ -91,9 +101,14 @@ impl TransactionSigner for PrivySigner {
         &self,
         encoded_transaction: String,
     ) -> Result<String> {
+        if self.pubkey().is_none() {
+            return Err(anyhow::anyhow!(
+                "Pubkey is not set, wallet unavailable"
+            ));
+        }
         self.privy
             .execute_solana_transaction(
-                self.pubkey(),
+                self.pubkey().unwrap(),
                 encoded_transaction,
                 Caip2::SOLANA.to_string(),
             )
@@ -110,6 +125,11 @@ impl TransactionSigner for PrivySigner {
         &self,
         tx: serde_json::Value,
     ) -> Result<String> {
+        if self.address().is_none() {
+            return Err(anyhow::anyhow!(
+                "Address is not set, wallet unavailable"
+            ));
+        }
         let caip2 = match tx["chain_id"].as_u64() {
             Some(chain_id) => Caip2::from_chain_id(chain_id),
             None => {
@@ -119,7 +139,11 @@ impl TransactionSigner for PrivySigner {
             }
         };
         self.privy
-            .execute_evm_transaction(self.address(), tx, caip2.to_string())
+            .execute_evm_transaction(
+                self.address().unwrap(),
+                tx,
+                caip2.to_string(),
+            )
             .await
             .map_err(|e| {
                 anyhow::anyhow!(

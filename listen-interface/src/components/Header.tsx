@@ -1,42 +1,11 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { Address } from "viem";
-import { useBalance, UseBalanceReturnType } from "wagmi";
-import ethereumIcon from "../assets/icons/ethereum.svg";
+import { useBalance } from "wagmi";
 import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSolBalance } from "../hooks/useSolBalance";
-import { imageMap } from "../hooks/util";
-
-const Balance = ({
-  solanaBalance,
-  ethereumBalance,
-}: {
-  solanaBalance: number | undefined;
-  ethereumBalance: number | undefined;
-}) => {
-  return (
-    <div className="flex flex-row gap-1">
-      <div className="flex items-center gap-2 mr-4">
-        <img src={imageMap.solana} alt="SOL" className="w-6 h-6 rounded-full" />
-        <span className="text-sm text-gray-300">
-          {solanaBalance?.toFixed(2) || "0.00"}
-        </span>
-      </div>
-      <div className="flex items-center gap-2 mr-4">
-        <img src={ethereumIcon} alt="ETH" className="w-6 h-6 rounded-full" />
-        <span className="text-sm text-gray-300">
-          {ethereumBalance?.toFixed(4) || "0.0000"}
-        </span>
-      </div>
-    </div>
-  );
-};
-
-function balanceToUI(balance: UseBalanceReturnType["data"]) {
-  if (!balance?.value || !balance?.decimals) return 0;
-  return Number(balance?.value) / 10 ** balance?.decimals;
-}
+import { Balance, balanceToUI } from "./Balances";
 
 export const Header = () => {
   const { data: solanaBalance } = useSolBalance();

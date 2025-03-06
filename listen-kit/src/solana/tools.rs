@@ -13,6 +13,7 @@ use solana_sdk::pubkey::Pubkey;
 use std::str::FromStr;
 
 use crate::common::wrap_unsafe;
+use crate::ensure_solana_wallet_created;
 use crate::solana::data::PortfolioItem;
 
 use super::data::holdings_to_portfolio;
@@ -106,7 +107,7 @@ pub async fn swap(
 
     // If Jupiter swap succeeds, return the result
     match jupiter_result {
-        Ok(signature) => return Ok(signature),
+        Ok(signature) => Ok(signature),
         Err(e) => {
             let jupiter_error = e.to_string();
             if e.to_string().contains("0x1771") {
@@ -142,14 +143,12 @@ pub async fn swap(
                 .await;
 
             match pump_res {
-                Ok(signature) => return Ok(signature),
-                Err(e) => {
-                    return Err(anyhow!(
-                        "jupiter error: {}\n pump.fun error: {}",
-                        jupiter_error,
-                        e.to_string()
-                    ));
-                }
+                Ok(signature) => Ok(signature),
+                Err(e) => Err(anyhow!(
+                    "jupiter error: {}\n pump.fun error: {}",
+                    jupiter_error,
+                    e.to_string()
+                )),
             }
         }
     }
@@ -203,13 +202,20 @@ pub async fn transfer_spl_token(
 
 #[tool]
 pub async fn get_public_key() -> Result<String> {
-    Ok(SignerContext::current().await.pubkey())
+    let signer = SignerContext::current().await;
+    if signer.pubkey().is_none() {
+        return Err(anyhow::anyhow!("Wallet unavailable"));
+    }
+    Ok(signer.pubkey().unwrap())
 }
 
 #[tool]
 pub async fn get_sol_balance() -> Result<u64> {
     let signer = SignerContext::current().await.clone();
-    let owner = Pubkey::from_str(&signer.pubkey())?;
+    if signer.pubkey().is_none() {
+        return Err(anyhow::anyhow!("Wallet unavailable"));
+    }
+    let owner = Pubkey::from_str(&signer.pubkey().unwrap())?;
 
     wrap_unsafe(move || async move {
         create_rpc()
@@ -226,7 +232,10 @@ in order to convert to UI amount: amount / 10^decimals
 ")]
 pub async fn get_spl_token_balance(mint: String) -> Result<(String, u8)> {
     let signer = SignerContext::current().await;
-    let owner = Pubkey::from_str(&signer.pubkey())?;
+    if signer.pubkey().is_none() {
+        return Err(anyhow::anyhow!("Wallet unavailable"));
+    }
+    let owner = Pubkey::from_str(&signer.pubkey().unwrap())?;
     let mint = Pubkey::from_str(&mint)?;
     let ata = spl_associated_token_account::get_associated_token_address(
         &owner, &mint,
@@ -344,7 +353,9 @@ Mostly, the portfolio context will be passed in but this function can be called
 to pull the portfolio again it goes out of the chat context
 ")]
 pub async fn get_portfolio() -> Result<Vec<PortfolioItem>> {
-    let owner = Pubkey::from_str(&SignerContext::current().await.pubkey())?;
+    let signer = SignerContext::current().await;
+    ensure_solana_wallet_created(signer.clone()).await?;
+    let owner = Pubkey::from_str(&signer.pubkey().unwrap())?;
     let holdings = wrap_unsafe(move || async move {
         crate::solana::balance::get_holdings(&create_rpc(), &owner)
             .await

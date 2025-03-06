@@ -1,12 +1,14 @@
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
-import { CandlestickDataSchema, type ToolOutput } from "../hooks/types";
+import { CandlestickDataSchema } from "../hooks/types";
 import { renderAddressOrTx } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
+import { ToolResult } from "../types/message";
 import {
   JupiterQuoteResponseSchema,
   QuoteResponseSchema,
 } from "../types/quote";
+import { SolanaBalance } from "./Balances";
 import { InnerChart } from "./Chart";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
@@ -15,7 +17,21 @@ import { QuoteDisplay } from "./QuoteDisplay";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
-export const ToolMessage = ({ toolOutput }: { toolOutput: ToolOutput }) => {
+export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
+  if (toolOutput.name === "get_sol_balance") {
+    try {
+      const parsedLamports = parseInt(toolOutput.result);
+      const solanaBalance = parsedLamports / 10 ** 9;
+      return (
+        <div className="p-3">
+          <SolanaBalance solanaBalance={solanaBalance} />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse solana balance:", e);
+      return <div>Error parsing solana balance</div>;
+    }
+  }
   // If it's a dexscreener response, parse and display it
   if (toolOutput.name === "search_on_dex_screener") {
     try {

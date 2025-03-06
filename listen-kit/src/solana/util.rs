@@ -19,6 +19,7 @@ use std::str::FromStr;
 use std::sync::Arc;
 
 use crate::common::wrap_unsafe;
+use crate::ensure_solana_wallet_created;
 use crate::signer::solana::LocalSolanaSigner;
 use crate::signer::{SignerContext, TransactionSigner};
 
@@ -168,7 +169,8 @@ where
     Fut: Future<Output = Result<VersionedTransaction>> + Send + 'static,
 {
     let signer = SignerContext::current().await;
-    let owner = Pubkey::from_str(&signer.pubkey())?;
+    ensure_solana_wallet_created(signer.clone()).await?;
+    let owner = Pubkey::from_str(&signer.pubkey().unwrap())?;
 
     let mut tx = wrap_unsafe(move || async move { tx_creator(owner).await })
         .await

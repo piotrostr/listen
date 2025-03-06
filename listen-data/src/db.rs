@@ -61,15 +61,12 @@ impl Database for ClickhouseDb {
             .with_user(user)
             .with_database(database);
 
-        // TODO: could be parametrized
-        let max_rows = 1000;
-
         info!("Connecting to ClickHouse at {}", database_url);
         Self {
             client,
             inserter: None,
             is_initialized: false,
-            max_rows,
+            max_rows: 1000,
         }
     }
 

@@ -1,10 +1,9 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { FaExclamationTriangle } from "react-icons/fa";
-import { DelegateActionButton } from "./DelegateActionButton";
 import { PriceUpdates } from "./PriceUpdates";
 
 export function GettingStarted() {
-  const { login, ready, user } = usePrivy();
+  const { login, ready } = usePrivy();
 
   return (
     <div className="flex flex-col items-center gap-4 p-2">
@@ -25,17 +24,13 @@ export function GettingStarted() {
         </p>
         <p className="text-sm lg:text-base">3. go wild!</p>
         <br />
-        {!user ? (
-          <button
-            onClick={login}
-            disabled={!ready}
-            className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
-          >
-            get started
-          </button>
-        ) : (
-          <DelegateActionButton />
-        )}
+        <button
+          onClick={login}
+          disabled={!ready}
+          className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
+        >
+          get started
+        </button>
         <p className="text-sm max-w-md text-center mt-3">
           should you have any questions - ask the agent directly - Listen
           understands the tools it has access to and has a view of the portfolio

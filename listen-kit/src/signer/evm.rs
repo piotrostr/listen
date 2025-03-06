@@ -25,8 +25,8 @@ impl LocalEvmSigner {
 
 #[async_trait]
 impl TransactionSigner for LocalEvmSigner {
-    fn address(&self) -> String {
-        self.wallet.default_signer().address().to_string()
+    fn address(&self) -> Option<String> {
+        Some(self.wallet.default_signer().address().to_string())
     }
 
     async fn sign_and_send_evm_transaction(

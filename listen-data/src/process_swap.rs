@@ -161,7 +161,16 @@ async fn process_two_token_swap(
         is_pump,
     };
 
-    match db.insert_price(&price_update).await {
+    // Run all three database operations in parallel
+    let db_future = db.insert_price(&price_update);
+    let mq_future = message_queue.publish_price_update(price_update.clone());
+    let kv_future = kv_store.insert_price(&price_update);
+
+    let (db_result, mq_result, kv_result) =
+        tokio::join!(db_future, mq_future, kv_future);
+
+    // Handle results
+    match db_result {
         Ok(_) => metrics.increment_db_insert_success(),
         Err(e) => {
             metrics.increment_db_insert_failure();
@@ -169,10 +178,7 @@ async fn process_two_token_swap(
         }
     }
 
-    match message_queue
-        .publish_price_update(price_update.clone())
-        .await
-    {
+    match mq_result {
         Ok(_) => metrics.increment_message_send_success(),
         Err(e) => {
             metrics.increment_message_send_failure();
@@ -180,7 +186,7 @@ async fn process_two_token_swap(
         }
     }
 
-    match kv_store.insert_price(&price_update).await {
+    match kv_result {
         Ok(_) => metrics.increment_kv_insert_success(),
         Err(e) => {
             metrics.increment_kv_insert_failure();

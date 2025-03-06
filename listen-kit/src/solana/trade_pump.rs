@@ -82,7 +82,7 @@ mod tests {
             sol_to_lamports(0.0001),
             500,
             &rpc_client,
-            &Pubkey::from_str(&signer.pubkey()).unwrap(),
+            &Pubkey::from_str(&signer.pubkey().unwrap()).unwrap(),
         )
         .await
         .unwrap();
@@ -96,7 +96,7 @@ mod tests {
         let mut tx = create_sell_pump_fun_tx(
             "76VCegXJdjqHXBdQyeVV3Swt3JgXrBoQpXcvRQsYpump".to_string(),
             (1. * 1e6) as u64,
-            &Pubkey::from_str(&signer.pubkey()).unwrap(),
+            &Pubkey::from_str(&signer.pubkey().unwrap()).unwrap(),
         )
         .await
         .unwrap();

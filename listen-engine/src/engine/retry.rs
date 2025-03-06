@@ -5,7 +5,7 @@ where
     Fut: std::future::Future<Output = Result<T, E>>,
     E: std::fmt::Debug,
 {
-    const MAX_RETRIES: u32 = 3;
+    const MAX_RETRIES: u32 = 4;
 
     for attempt in 0..=MAX_RETRIES {
         if attempt > 0 {

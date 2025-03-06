@@ -13,17 +13,22 @@ impl Engine {
         &self,
         order: &SwapOrder,
         user_id: &str,
-        wallet_address: &str,
-        pubkey: &str,
+        wallet_address: Option<String>,
+        pubkey: Option<String>,
     ) -> Result<String, EngineError> {
-        // Execute transaction first
+        if wallet_address.is_none() && order.is_evm() {
+            return Err(EngineError::EVMWalletNotAvailable);
+        }
+        if pubkey.is_none() && order.is_solana() {
+            return Err(EngineError::SolanaWalletNotAvailable);
+        }
         let address = match order.is_evm() {
-            true => wallet_address,
-            false => pubkey,
+            true => wallet_address.clone().unwrap(),
+            false => pubkey.clone().unwrap(),
         };
         let mut privy_transaction = PrivyTransaction {
             user_id: user_id.to_string(),
-            address: address.to_string(),
+            address,
             from_chain_caip2: order.from_chain_caip2.clone(),
             to_chain_caip2: order.to_chain_caip2.clone(),
             evm_transaction: None,
@@ -37,8 +42,8 @@ impl Engine {
         match swap_order_to_transaction(
             order,
             &lifi::LiFi::new(lifi_api_key),
-            wallet_address,
-            pubkey,
+            wallet_address.clone(),
+            pubkey.clone(),
         )
         .await
         .map_err(EngineError::SwapOrderError)?

@@ -245,14 +245,21 @@ async fn create_pipeline(
         }
     };
 
+    if user.pubkey.is_none() {
+        return HttpResponse::Unauthorized().json(serde_json::json!({
+            "status": "error",
+            "message": "Wallet is required in order to create a pipeline"
+        }));
+    }
+
     metrics::counter!("pipeline_creation_attempts", 1);
 
     let pipeline: Pipeline = (
         wire.into_inner(),
         PipelineParams {
             user_id: user.user_id,
-            wallet_address: user.wallet_address,
-            pubkey: user.pubkey,
+            wallet_address: user.wallet_address.clone(),
+            pubkey: user.pubkey.clone(),
         },
     )
         .into();

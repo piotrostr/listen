@@ -7,8 +7,9 @@ import {
 import { useQuery } from "@tanstack/react-query";
 import { tokenMetadataCache } from "./localStorage";
 import { Holding, PriceResponse, TokenMetadata } from "./types";
+import { fetchListenMetadata } from "./useListenMetadata";
 import { usePrivyWallets } from "./usePrivyWallet";
-import { decodeTokenAccount } from "./util";
+import { decodeTokenAccount, imageMap } from "./util";
 
 const TOKEN_PROGRAM_ID = new PublicKey(
   "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
@@ -55,6 +56,31 @@ function parseHolding(ata: {
 
 export async function fetchTokenMetadata(mint: string): Promise<TokenMetadata> {
   try {
+    // listen metadata is cached on server, could cache on client too here
+    const metadataRaw = await fetchListenMetadata(mint);
+    const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+    const usdcImage = imageMap[USDC_MINT];
+    const logoUri =
+      mint === USDC_MINT ? usdcImage : metadataRaw.mpl.ipfs_metadata?.image;
+
+    return {
+      address: metadataRaw.mint,
+      name: metadataRaw.mpl.name,
+      symbol: metadataRaw.mpl.symbol,
+      decimals: metadataRaw.spl.decimals,
+      logoURI: logoUri ?? "",
+      volume24h: 0,
+      chainId: 1151111081099710,
+    };
+  } catch (error) {
+    return await fetchTokenMetadataFromJupiter(mint);
+  }
+}
+
+export async function fetchTokenMetadataFromJupiter(
+  mint: string
+): Promise<TokenMetadata> {
+  try {
     // First check IndexedDB cache
     const cachedMetadata = await tokenMetadataCache.get(mint);
     if (cachedMetadata) {
@@ -97,9 +123,9 @@ export const useSolanaPortfolio = () => {
   const { data: wallets } = usePrivyWallets();
 
   return useQuery({
-    queryKey: ["portfolio", wallets?.solanaWallet.toString()],
+    queryKey: ["portfolio", wallets?.solanaWallet?.toString()],
     queryFn: async () => {
-      const pubkey = new PublicKey(wallets!.solanaWallet);
+      const pubkey = new PublicKey(wallets!.solanaWallet!);
       const WSOL_MINT = "So11111111111111111111111111111111111111112";
       const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
@@ -162,7 +188,7 @@ export const useSolanaPortfolio = () => {
 
       return [solPortfolioItem, ...tokenPortfolioItems];
     },
-    enabled: !!wallets,
+    enabled: !!wallets?.solanaWallet,
     staleTime: 10000, // 10 seconds
   });
 };
