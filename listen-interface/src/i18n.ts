@@ -102,6 +102,22 @@ const resources = {
         close: "Close",
         open_in_new_tab: "Open in new tab",
       },
+      settings: {
+        title: "Settings",
+        quick_buy: "Quick Buy",
+        quick_buy_default_sol_amount: "Default SOL amount for quick buy",
+        quick_buy_default_sol_amount_description:
+          "This is the default amount of SOL that will be used for quick buys",
+        mode: "Mode",
+        wallet_addresses: "Wallet addresses",
+        connected_accounts: "Connected accounts",
+      },
+      wallet_addresses: {
+        solana_wallet: "Solana Wallet",
+        evm_wallet: "EVM Wallet",
+        export: "Export",
+        fund: "Fund",
+      },
     },
   },
   zh: {
@@ -202,6 +218,22 @@ const resources = {
         copy: "复制",
         close: "关闭",
         open_in_new_tab: "在新标签页中打开",
+      },
+      settings: {
+        title: "设置",
+        quick_buy: "快速购买",
+        quick_buy_default_sol_amount: "快速购买默认SOL金额",
+        quick_buy_default_sol_amount_description:
+          "这是快速购买按钮在代币上点击时将使用的默认SOL金额",
+        mode: "模式",
+        wallet_addresses: "钱包地址",
+        connected_accounts: "已连接的账户",
+      },
+      wallet_addresses: {
+        solana_wallet: "Solana 钱包",
+        evm_wallet: "EVM 钱包",
+        export: "导出",
+        fund: "资金",
       },
     },
   },
