@@ -46,7 +46,7 @@ const TokenTile = ({ token }: { token: TopToken }) => {
   }, [token.pubkey]);
 
   return (
-    <div className="rounded-lg p-3 border border-blue-500/20 hover:border-blue-500/40 transition-colors">
+    <div className="rounded-lg p-3 border border-blue-500/20 hover:border-blue-500/40 transition-colors bg-black/40 backdrop-blur-sm">
       <div className="flex items-center gap-2 mb-2">
         {metadata?.mpl?.ipfs_metadata?.image ? (
           <img
