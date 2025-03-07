@@ -79,16 +79,16 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   );
 
   // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  // useEffect(() => {
+  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  // }, [messages]);
 
-  // Also scroll to bottom when loading state changes
-  useEffect(() => {
-    if (!isLoading) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [isLoading]);
+  // // Also scroll to bottom when loading state changes
+  // useEffect(() => {
+  //   if (!isLoading) {
+  //     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  //   }
+  // }, [isLoading]);
 
   // Focus the input field when creating a new chat
   useEffect(() => {
@@ -161,30 +161,32 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         onShareChat={messages.length > 0 ? handleShareChat : undefined}
         isSharedChat={!!urlParams.isSharedChat}
       >
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 px-4">
-            <h2 className="text-xl font-medium text-white mb-6">
-              {t("chat.start_a_conversation")}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
-              {RECOMMENDED_QUESTIONS.map((question, index) => (
-                <button
-                  key={index}
-                  disabled={!question.enabled}
-                  onClick={() => handleQuestionClick(question.question)}
-                  className="bg-purple-900/30 hover:bg-purple-800/40 text-left p-4 rounded-lg border border-purple-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <p className="text-white">{question.question}</p>
-                </button>
-              ))}
+        <div className="h-full flex flex-col">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 px-4">
+              <h2 className="text-xl font-medium text-white mb-6">
+                {t("chat.start_a_conversation")}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
+                {RECOMMENDED_QUESTIONS.map((question, index) => (
+                  <button
+                    key={index}
+                    disabled={!question.enabled}
+                    onClick={() => handleQuestionClick(question.question)}
+                    className="bg-purple-900/30 hover:bg-purple-800/40 text-left p-4 rounded-lg border border-purple-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <p className="text-white">{question.question}</p>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-        {messages.map((message) => (
-          <MessageRenderer key={message.id} message={message} />
-        ))}
-        {isLoading && <LoadingIndicator />}
-        <div ref={messagesEndRef} />
+          )}
+          {messages.map((message) => (
+            <MessageRenderer key={message.id} message={message} />
+          ))}
+          {isLoading && <LoadingIndicator />}
+          <div ref={messagesEndRef} />
+        </div>
       </ChatContainer>
 
       {/* Share Modal */}

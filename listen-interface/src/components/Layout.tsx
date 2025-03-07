@@ -249,7 +249,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarContext.Provider value={handleSidebarToggle}>
-      <div className="relative min-h-screen text-white">
+      <div className="relative h-screen flex flex-col text-white overflow-hidden">
         <Background />
 
         {/* Mobile Header */}
@@ -332,7 +332,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
         </div>
 
-        <div className="relative z-10 flex h-screen">
+        <div className="relative z-10 flex flex-1 h-full overflow-hidden">
           {/* Desktop Sidebar - Hidden on mobile */}
           <div className="hidden lg:flex w-64 border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex-col">
             {/* Logo section */}
@@ -403,11 +403,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 flex mt-16 lg:mt-0 pb-16 lg:pb-0">
-            <div className="flex-1 flex">
+          <div className="flex-1 flex flex-col h-full overflow-hidden">
+            {/* Add top padding only on mobile to account for the header */}
+            <div className="flex-1 flex overflow-hidden pt-16 lg:pt-0">
               {/* Chat is always visible when no panel is active on mobile */}
               <div
-                className={`flex-1 overflow-auto ${activePanel && window.innerWidth < 1024 ? "hidden" : "block"}`}
+                className={`flex-1 overflow-hidden ${activePanel && window.innerWidth < 1024 ? "hidden" : "block"}`}
               >
                 {children}
               </div>

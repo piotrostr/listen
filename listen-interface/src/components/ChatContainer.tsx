@@ -26,9 +26,9 @@ export function ChatContainer({
   children,
 }: ChatContainerProps) {
   return (
-    <div className="flex flex-col h-full max-h-[100vh]">
-      <div className="flex-grow overflow-y-auto pb-4 space-y-4 scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
-        <div className="p-4">{children}</div>
+    <div className="flex flex-col h-full">
+      <div className="flex-1 overflow-y-auto scrollable-container pb-4">
+        <div className="p-4 h-full">{children}</div>
       </div>
       <div className="sticky bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm border-t border-purple-500/20">
         <ChatInput
@@ -127,7 +127,7 @@ export function ChatInput({
         )}
 
         <Link
-          to="/chat"
+          to="/"
           search={{ new: true }}
           className={`p-2 rounded-full bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 transition-colors`}
           title="New Chat"

@@ -29,7 +29,7 @@ export function PanelSelector({
 
   return (
     <>
-      <div className="relative">
+      <div className="relative h-full">
         {/* Panel toggle buttons - desktop only */}
         <div className="absolute top-4 right-4 hidden lg:flex gap-2 z-10">
           <button
@@ -64,7 +64,7 @@ export function PanelSelector({
 
         {/* Panel content */}
         <div
-          className={`lg:w-96 w-full h-full border-l border-purple-500/30 bg-black/40 backdrop-blur-sm transition-all duration-300 ${
+          className={`lg:w-96 w-full h-full border-l border-purple-500/30 bg-black/40 backdrop-blur-sm transition-all duration-300 scrollable-container ${
             activePanel
               ? "translate-x-0"
               : "lg:translate-x-full translate-y-full"

@@ -162,3 +162,46 @@ code {
   background-color: rgba(147, 51, 234, 0.3);
   border-radius: 3px;
 }
+
+/* After your existing styles, add these rules */
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  /* Fix for iOS Safari */
+  min-height: -webkit-fill-available;
+}
+
+/* Fix for iOS Safari */
+html {
+  height: -webkit-fill-available;
+}
+
+/* Add this class for scrollable containers */
+.scrollable-container {
+  overflow-y: auto;
+  height: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(147, 51, 234, 0.3) transparent;
+}
+
+.scrollable-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb {
+  background-color: rgba(147, 51, 234, 0.3);
+  border-radius: 3px;
+}
+
+/* Add this to your existing CSS */
+@media (max-width: 1024px) {
+  .mobile-content-fix {
+    height: calc(100vh - 16px);
+    padding-top: 16px;
+  }
+}
