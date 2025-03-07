@@ -6,19 +6,19 @@ import { Spinner } from "./Spinner";
 import { SwapToken } from "./SwapToken";
 
 interface SwapPipelineStepProps {
-  index: number;
   step: PipelineStep;
   status?: "Pending" | "Completed" | "Failed" | "Cancelled";
   transactionHash: string | null;
   error: string | null;
+  compact?: boolean;
 }
 
 export const SwapPipelineStep = ({
-  index,
   step,
   status,
   transactionHash,
   error,
+  compact = false,
 }: SwapPipelineStepProps) => {
   if (step.action.type !== PipelineActionType.SwapOrder) {
     throw new Error("SwapPipelineStep received non-swap action type");
@@ -48,13 +48,12 @@ export const SwapPipelineStep = ({
 
   return (
     <PipelineStepContainer
-      index={index}
       conditions={step.conditions ?? []}
       status={status}
       transactionHash={transactionHash}
       error={error}
     >
-      <div className="lg:flex-1">
+      <div className="flex-1">
         {inputTokenLoading ? (
           <Spinner />
         ) : (
@@ -69,6 +68,7 @@ export const SwapPipelineStep = ({
             chainId={fromChain}
             address={inputToken?.address}
             showAmount={true}
+            compact={compact}
           />
         )}
       </div>
@@ -91,7 +91,7 @@ export const SwapPipelineStep = ({
         </svg>
       </div>
 
-      <div className="lg:flex-1">
+      <div className="flex-1">
         {outputTokenLoading ? (
           <Spinner />
         ) : (
@@ -100,6 +100,7 @@ export const SwapPipelineStep = ({
             name={outputName}
             chainId={toChain}
             address={outputToken?.address}
+            compact={compact}
           />
         )}
       </div>

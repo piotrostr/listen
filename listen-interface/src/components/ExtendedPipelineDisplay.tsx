@@ -51,13 +51,10 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
     throw new Error(`Unknown condition type: ${JSON.stringify(condType)}`);
   };
   return (
-    <div className="lg:space-y-4 lg:p-4 rounded-lg">
+    <>
       {/* Header */}
-      <div className="flex lg:items-center justify-between flex-col lg:flex-row">
-        <div className="flex lg:items-center gap-2 flex-col lg:flex-row">
-          <div className="text-white text-base sm:text-lg font-bold">
-            {t(`pipelines.pipeline_status.${pipeline.status}`)}
-          </div>
+      <div className="flex justify-between flex-col">
+        <div className="flex gap-2 flex-col">
           <div className="text-purple-300 text-xs sm:text-sm">
             <span className="font-bold">{t("pipelines.id")}:</span>{" "}
             {pipeline.id}
@@ -71,13 +68,12 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
 
       {/* Steps */}
       <div className="space-y-3 mt-4">
-        {orderedSteps.map((step, index) => {
+        {orderedSteps.map((step) => {
           if ("Order" in step.action) {
             return (
               <div key={step.id}>
                 <SwapPipelineStep
                   key={step.id}
-                  index={index}
                   step={{
                     action: {
                       type: PipelineActionType.SwapOrder,
@@ -94,6 +90,7 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
                   status={step.status}
                   transactionHash={step.transaction_hash}
                   error={step.error ?? null}
+                  compact={true}
                 />
               </div>
             );
@@ -101,7 +98,6 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
             return (
               <NotificationPipelineStep
                 key={step.id}
-                index={index}
                 step={{
                   action: {
                     type: PipelineActionType.Notification,
@@ -118,6 +114,6 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
           return null;
         })}
       </div>
-    </div>
+    </>
   );
 }

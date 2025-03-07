@@ -35,7 +35,6 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
             return (
               <SwapPipelineStep
                 key={`swap-${index}`}
-                index={index}
                 step={step}
                 transactionHash={null}
                 error={null}
@@ -45,7 +44,6 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
             return (
               <NotificationPipelineStep
                 key={`notification-${index}`}
-                index={index}
                 step={step}
               />
             );
