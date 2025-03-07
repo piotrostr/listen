@@ -58,7 +58,7 @@ export function Socials({
           <FaGlobe size={12} className="sm:text-base" />
         </a>
       )}
-      <div className="lg:hidden flex gap-1 sm:gap-2">
+      <div className="flex gap-1 sm:gap-2">
         <button onClick={handleCopy} className="hover:text-blue-500">
           {copied ? (
             <FaCheck size={12} className="sm:text-base" />

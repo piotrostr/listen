@@ -69,9 +69,6 @@ export function Pipelines() {
   return (
     <div className="h-full overflow-auto p-4">
       <div className="flex justify-between items-center mb-6">
-        <h1 className="text-xl font-bold text-white">
-          {t("pipelines.pipelines")}
-        </h1>
         <div className="flex items-center gap-2">
           <select
             value={statusFilter}

@@ -8,7 +8,7 @@ import { setupWebSocket } from "../services/websocketService";
 import { useTokenStore } from "../store/tokenStore";
 import { TokenTile } from "./TokenTile";
 export function PriceUpdates() {
-  const { latestUpdate, tokenMap, filterAndSortTokens } = useTokenStore();
+  const { tokenMap, filterAndSortTokens } = useTokenStore();
   const [marketCapFilter, setMarketCapFilter] = useState<string>("all");
   const [volumeFilter, setVolumeFilter] = useState<"bought" | "sold" | "all">(
     "all"
@@ -57,6 +57,7 @@ export function PriceUpdates() {
   return (
     <div className="flex flex-col gap-2 p-2 sm:p-4 overflow-hidden h-full">
       {/* Latest Update Section */}
+      {/*
       <div className="h-[52px] bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl lg:p-3 flex items-center p-1">
         {latestUpdate ? (
           <div className="flex flex-row w-full text-sm space-x-2">
@@ -85,6 +86,7 @@ export function PriceUpdates() {
           </span>
         )}
       </div>
+      */}
 
       {/* Top Tokens Section */}
       <div className="flex-1 bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl shadow-lg flex flex-col min-h-0">
@@ -148,8 +150,8 @@ export function PriceUpdates() {
           onMouseEnter={handleMouseEnter}
           onMouseLeave={handleMouseLeave}
         >
-          {topTokens.map((token, index) => (
-            <TokenTile key={token.pubkey} token={token} index={index} />
+          {topTokens.map((token) => (
+            <TokenTile key={token.pubkey} token={token} />
           ))}
         </div>
       </div>

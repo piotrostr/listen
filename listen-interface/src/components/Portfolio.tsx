@@ -1,15 +1,13 @@
 import { useFundWallet } from "@privy-io/react-auth/solana";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FaApplePay, FaExchangeAlt, FaShoppingCart } from "react-icons/fa";
+import { FaApplePay, FaShoppingCart } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
 import { useChatType } from "../hooks/useChatType";
 import { useEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
-import { imageMap } from "../hooks/util";
 import { BuySellModal } from "./BuySellModal";
-import { CopyIcon } from "./CopyIcon";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
 
 export function Portfolio() {
@@ -20,46 +18,19 @@ export function Portfolio() {
   const { data: wallets } = usePrivyWallets();
   const { chatType } = useChatType(); // Get the global chat type from settings
 
-  // Local state for chain display toggle
-  const [displayChain, setDisplayChain] = useState<"solana" | "ethereum">(() =>
-    chatType === "solana" ? "solana" : "ethereum"
-  );
-
-  const [clickedAddress, setClickedAddress] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const { fundWallet } = useFundWallet();
 
-  // Use local display chain instead of directly using chatType
-  const selectedChain = displayChain;
-  const isLoading = selectedChain === "solana" ? isLoadingSolana : isLoadingEvm;
-  const displayedAssets =
-    selectedChain === "solana" ? (solanaAssets ?? []) : (evmAssets ?? []);
-
   const { t } = useTranslation();
+
+  const isLoading =
+    chatType === "solana" ? isLoadingSolana : isLoadingEvm && isLoadingSolana;
 
   if (isLoading) {
     return <PortfolioSkeleton />;
   }
-
-  const handleClickCopy = () => {
-    if (!wallets) return;
-    const address =
-      selectedChain === "solana"
-        ? (wallets?.solanaWallet?.toString() ?? "")
-        : (wallets?.evmWallet?.toString() ?? "");
-
-    if (address) {
-      navigator.clipboard.writeText(address);
-      setClickedAddress(true);
-      setTimeout(() => setClickedAddress(false), 1000);
-    }
-  };
-
-  const handleToggleChain = () => {
-    setDisplayChain((prev) => (prev === "solana" ? "ethereum" : "solana"));
-  };
 
   const handleTopup = async () => {
     await fundWallet(wallets!.solanaWallet!);
@@ -71,53 +42,13 @@ export function Portfolio() {
     setModalOpen(true);
   };
 
-  const currentAddress =
-    selectedChain === "solana"
-      ? wallets?.solanaWallet?.toString()
-      : wallets?.evmWallet?.toString();
+  const displayedAssets =
+    chatType === "solana"
+      ? (solanaAssets ?? [])
+      : [...(evmAssets ?? []), ...(solanaAssets ?? [])];
 
   return (
     <div className="h-full font-mono  overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
-      <div className="flex flex-row justify-between items-center p-4 lg:mt-3 lg:mb-3">
-        <h2 className="text-xl font-bold lg:mb-0 mb-2">
-          {t("portfolio.title")}
-        </h2>
-
-        {/* Address Display with Chain Toggle */}
-        <div className="flex items-center gap-2">
-          {currentAddress && (
-            <>
-              <img
-                src={imageMap[selectedChain]}
-                alt={selectedChain}
-                className="w-4 h-4 rounded-full"
-              />
-              {currentAddress.slice(0, 4)}...
-              <div onClick={handleClickCopy} className="cursor-pointer">
-                {clickedAddress ? <div> ✅</div> : <CopyIcon />}
-              </div>
-            </>
-          )}
-          {/* Enhanced Chain Toggle Button with Switch Icon */}
-          <div
-            onClick={handleToggleChain}
-            className="cursor-pointer ml-2 px-2 py-1 rounded-lg hover:bg-purple-500/20 transition-colors flex items-center gap-1"
-            title={`Switch to ${selectedChain === "solana" ? "Ethereum" : "Solana"} assets`}
-          >
-            <img
-              src={imageMap[selectedChain === "solana" ? "eth" : "solana"]}
-              alt={
-                selectedChain === "solana"
-                  ? "Switch to Ethereum"
-                  : "Switch to Solana"
-              }
-              className="w-5 h-5 rounded-full"
-            />
-            <FaExchangeAlt className="text-purple-300 text-sm" />
-          </div>
-        </div>
-      </div>
-
       <div className="flex-1">
         <div className="p-4 pt-0 space-y-4">
           {displayedAssets
@@ -161,7 +92,7 @@ export function Portfolio() {
                   </div>
                   <div className="text-right">
                     <div className="flex items-center gap-2">
-                      {selectedChain === "solana" &&
+                      {asset.chain === "solana" &&
                         asset.address ===
                           "So11111111111111111111111111111111111111112" && (
                           <button
@@ -192,21 +123,19 @@ export function Portfolio() {
                   </div>
 
                   {/* Buy/Sell buttons - only show for Solana chain assets */}
-                  {selectedChain === "solana" && (
+                  {asset.chain === "solana" && (
                     <div className="flex gap-2">
                       <button
                         onClick={() => handleOpenModal(asset, "buy")}
                         className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
                       >
                         <FaShoppingCart size={12} />
-                        <span>{t("portfolio.buy")}</span>
                       </button>
                       <button
                         onClick={() => handleOpenModal(asset, "sell")}
                         className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
                       >
                         <IoArrowDown size={12} />
-                        <span>{t("portfolio.sell")}</span>
                       </button>
                     </div>
                   )}
