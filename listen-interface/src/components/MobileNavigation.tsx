@@ -35,7 +35,7 @@ export function MobileNavigation({
   return (
     <div
       className={`md:hidden fixed left-0 right-0 bg-black/60 backdrop-blur-sm border-t border-purple-500/30 z-50 ${
-        isIOS ? "bottom-6" : "bottom-0"
+        isIOS ? "bottom-4" : "bottom-0"
       }`}
     >
       <div className="flex justify-around items-center h-16 mb-2">
@@ -79,6 +79,7 @@ export function MobileNavigation({
           <span className="text-xs mt-1">{t("layout.settings")}</span>
         </button>
       </div>
+      {isIOS && <div className="h-4 w-full bg-black/60"></div>}
     </div>
   );
 }
