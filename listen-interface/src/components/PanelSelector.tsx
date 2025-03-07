@@ -68,7 +68,7 @@ export function PanelSelector({
             activePanel
               ? "translate-x-0"
               : "lg:translate-x-full translate-y-full"
-          }`}
+          } mt-10`}
         >
           {activePanel === "portfolio" && <Portfolio />}
           {activePanel === "screener" && <PriceUpdates />}

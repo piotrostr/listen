@@ -77,7 +77,7 @@ export function Portfolio() {
       : wallets?.evmWallet?.toString();
 
   return (
-    <div className="h-full font-mono">
+    <div className="h-full font-mono  overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
       <div className="flex flex-row justify-between items-center p-4 lg:mt-3 lg:mb-3">
         <h2 className="text-xl font-bold lg:mb-0 mb-2">
           {t("portfolio.title")}
@@ -118,7 +118,7 @@ export function Portfolio() {
         </div>
       </div>
 
-      <div className="flex-1 overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
+      <div className="flex-1">
         <div className="p-4 pt-0 space-y-4">
           {displayedAssets
             .sort((a, b) => b.price * b.amount - a.price * a.amount)
@@ -145,13 +145,14 @@ export function Portfolio() {
                     <div>
                       <h3 className="font-bold flex items-center gap-2">
                         {asset.name}{" "}
+                        {/* TODO unified portfolio makes sense to display chain, otherwise hidden */}
                         <img
                           src={
                             "https://dd.dexscreener.com/ds-data/chains/" +
                             asset.chain.toLowerCase() +
                             ".png"
                           }
-                          className="w-4 h-4"
+                          className="w-4 h-4 hidden"
                           alt={asset.chain}
                         />
                       </h3>
