@@ -16,7 +16,7 @@ const resources = {
         questions:
           "Should you have any questions - ask Listen directly, it understands the tools it has access to and has a view of the portfolio its managing",
         warning:
-          "Listen is in early beta, things might not work as expected, use at own risk",
+          "Listen is in beta, some things might not work as expected, use at own risk",
       },
       layout: {
         screener: "Screener",

@@ -1,7 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useTranslation } from "react-i18next";
 import { FaExclamationTriangle } from "react-icons/fa";
-import { PriceUpdates } from "./PriceUpdates";
 
 export function GettingStarted() {
   const { login, ready } = usePrivy();
@@ -37,16 +36,6 @@ export function GettingStarted() {
         <FaExclamationTriangle className="text-yellow-500" />
         {t("getting_started.warning")}
       </span>
-
-      {/* Divider */}
-      <div className="border-t border-purple-500/30 w-full max-w-4xl" />
-
-      {/* Screener Preview Section */}
-      <div className="w-full max-w-4xl mx-auto">
-        <div className="w-full overflow-x-hidden">
-          <PriceUpdates />
-        </div>
-      </div>
     </div>
   );
 }
