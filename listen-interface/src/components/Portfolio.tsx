@@ -152,7 +152,7 @@ export function Portfolio() {
                 </div>
               </div>
             ))}
-          {displayedAssets.length !== 0 && (
+          {displayedAssets.length === 0 && (
             <div className="text-center text-gray-400 flex flex-col items-center gap-2">
               {t("portfolio.no_assets_found")}
               <button onClick={handleRefresh}>

@@ -1,4 +1,7 @@
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { IoRefreshOutline } from "react-icons/io5";
 import { useMobile } from "../contexts/MobileContext";
 import { Chat } from "./Chat";
 import { FloatingPanel } from "./FloatingPanel";
@@ -27,9 +30,19 @@ export function PanelSelector({
   // Get mobile state from context
   const { isMobile } = useMobile();
 
+  // For refreshing portfolio data
+  const queryClient = useQueryClient();
+
   const handleClose = useCallback(() => {
     setActivePanel(null);
   }, [setActivePanel]);
+
+  const handlePortfolioRefresh = useCallback(async () => {
+    await queryClient.resetQueries({
+      queryKey: ["portfolio"],
+      exact: false,
+    });
+  }, [queryClient]);
 
   if (!activePanel) return null;
 
@@ -76,7 +89,14 @@ export function PanelSelector({
     }
 
     if (activePanel === "portfolio") {
-      return <Portfolio />;
+      return (
+        <div className="h-full">
+          <div className="mb-4">
+            <PortfolioHeader onRefresh={handlePortfolioRefresh} />
+          </div>
+          <Portfolio />
+        </div>
+      );
     }
 
     if (activePanel === "settings") {
@@ -134,7 +154,11 @@ export function PanelSelector({
       )}
 
       {activePanel === "portfolio" && (
-        <FloatingPanel title="portfolio" onClose={handleClose}>
+        <FloatingPanel
+          title="portfolio"
+          onClose={handleClose}
+          headerContent={<PortfolioHeader onRefresh={handlePortfolioRefresh} />}
+        >
           <Portfolio />
         </FloatingPanel>
       )}
@@ -144,6 +168,23 @@ export function PanelSelector({
           <Settings />
         </FloatingPanel>
       )}
+    </div>
+  );
+}
+
+// New Portfolio Header component
+function PortfolioHeader({ onRefresh }: { onRefresh: () => Promise<void> }) {
+  const { t } = useTranslation();
+
+  return (
+    <div className="flex items-center gap-2 h-full">
+      <button
+        onClick={onRefresh}
+        className="bg-black/40 text-white border border-purple-500/30 rounded-lg w-8 h-8 flex items-center justify-center hover:bg-purple-500/20"
+        title={t("portfolio.refresh")}
+      >
+        <IoRefreshOutline className="w-4 h-4" />
+      </button>
     </div>
   );
 }
