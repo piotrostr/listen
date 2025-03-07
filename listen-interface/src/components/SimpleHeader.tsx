@@ -40,6 +40,9 @@ export function SimpleHeader({
         )}
         <Link
           to="/"
+          search={{
+            new: true,
+          }}
           className="flex items-center space-x-3 cursor-pointer"
           onMouseEnter={() => setSidebarOpen(true)}
           onMouseLeave={() => setSidebarOpen(false)}

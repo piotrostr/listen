@@ -23,6 +23,9 @@ export function ChatHistory() {
         <h1 className="text-2xl font-bold text-white">Chat History</h1>
         <Link
           to="/"
+          params={{
+            new: true,
+          }}
           className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors"
         >
           {t("chat_history.new_chat")}
