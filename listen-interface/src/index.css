@@ -205,3 +205,21 @@ html {
     padding-top: 16px;
   }
 }
+
+/* Add this to your existing CSS */
+.chat-container {
+  transition: margin-right 0.3s ease;
+  width: 100%;
+  max-width: 1024px;
+  margin: 0 auto;
+}
+
+.chat-container.panel-open {
+  margin-right: 24rem; /* 384px (w-96) */
+}
+
+@media (max-width: 1024px) {
+  .chat-container.panel-open {
+    margin-right: 0;
+  }
+}

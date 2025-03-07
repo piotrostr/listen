@@ -266,7 +266,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         </div>
 
         {/* Main Content with Sidebar */}
-        <div className="flex-1 flex overflow-hidden relative">
+        <div className="flex-1 relative overflow-hidden">
           {/* Collapsible Sidebar */}
           <div
             className={`absolute left-0 top-0 bottom-0 z-10 transition-all duration-300 ${
@@ -350,28 +350,18 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Centered Chat Content */}
-          <div className="flex-1 flex overflow-hidden z-0">
-            {/* Chat is always visible and centered */}
-            <div
-              className={`flex-1 overflow-hidden ${
-                activePanel && window.innerWidth < 1024 ? "hidden" : "block"
-              } mx-auto max-w-4xl px-4 lg:px-0`}
-            >
+          {/* Main Content Area - Truly centered with no space allocation */}
+          <div className="flex justify-center h-full w-full">
+            <div className="flex-1 max-w-4xl flex flex-col overflow-hidden">
               {children}
             </div>
+          </div>
 
-            {/* Right panel for toggleable components */}
+          {/* Panel Selector - Absolute positioning to avoid space allocation */}
+          <div className="absolute right-0 top-0 bottom-0 h-full">
             <PanelSelector
               activePanel={activePanel}
-              setActivePanel={(panel) => {
-                setActivePanel(panel);
-                if (panel) {
-                  localStorage.setItem("activePanel", panel);
-                } else {
-                  localStorage.removeItem("activePanel");
-                }
-              }}
+              setActivePanel={setActivePanel}
             />
           </div>
         </div>
