@@ -139,15 +139,14 @@ const resources = {
       getting_started: {
         how_it_works: "如何运作",
         how_it_works_description:
-          "Listen 是您的单一目的地，用于使用自然语言进行链上交易",
-        step_1: "1. 创建一个帐户，您可以使用电子邮件或钱包",
-        step_2: "2. 为您的 AI 代理初始化一个钱包，存入资金并委托访问",
-        step_3: "3. 尽情体验吧!",
+          "Listen 是您使用自然语言进行链上交易的一站式平台",
+        step_1: "1. 创建账户（可使用邮箱或钱包）",
+        step_2: "2. 为 AI 代理初始化钱包，存入资金并授权访问",
+        step_3: "3. 开始畅享！",
         get_started: "开始",
         questions:
-          "如果您有任何问题，请直接询问 Listen - 它了解所有可用工具，并可查看其管理的投资组合",
-        warning:
-          "Listen 目前处于早期测试阶段，某些功能可能不会按预期工作，请自行承担风险",
+          "如有疑问可直接询问 Listen，它了解可用工具并管理您的投资组合",
+        warning: "Listen 处于早期测试阶段，功能可能不稳定，使用风险自负",
       },
       layout: {
         screener: "市场筛选",
@@ -156,21 +155,21 @@ const resources = {
         settings: "设置",
         documentation: "文档",
         github: "Github",
-        twitter: "Twitter",
-        logout: "登出",
+        twitter: "推特",
         chat: "聊天",
+        logout: "退出登录",
       },
       recent_chats: {
         view_all_chats: "查看所有聊天",
       },
       pipelines: {
         pipelines: "自动化任务",
-        please_connect_wallet: "请连接您的钱包以继续",
+        please_connect_wallet: "请连接钱包以继续",
         all: "全部",
         pending: "处理中",
         completed: "已完成",
         failed: "失败",
-        no_pipelines_found: "没有找到自动化任务",
+        no_pipelines_found: "未找到自动化任务",
         id: "ID",
         created: "创建",
         send_notification: "发送通知",
@@ -180,7 +179,7 @@ const resources = {
         price_above: "价格高于",
         price_below: "价格低于",
         status: "状态",
-        slippage_tolerance_exceeded: "滑点容差超出",
+        slippage_tolerance_exceeded: "滑点超出范围",
         insufficient_balance: "余额不足",
         cancelled: "已取消",
         amount: "金额",
@@ -216,20 +215,20 @@ const resources = {
       price_updates: {
         paused: "暂停",
         market_cap: "市值",
-        all: "任何",
+        all: "全部",
         waiting_for_updates: "等待更新...",
       },
       chat: {
         start_a_conversation: "开始对话",
         recommended_questions: {
-          what_actions_can_you_perform_for_me: "你能为我执行哪些操作？",
+          what_actions_can_you_perform_for_me: "你能执行哪些操作？",
           how_do_pipelines_work_and_what_pipelines_can_you_create_for_me:
-            "自动化任务是如何工作的，你能为我创建哪些自动化任务？",
-          what_chains_are_supported: "支持哪些区块链？",
+            "自动化任务如何运作，你能为我创建哪些自动化任务？",
+          what_chains_are_supported: "支持哪些链？",
           what_tokens_have_received_largest_inflows_outflows_in_the_past_days:
-            "过去几天哪些代币获得了最大的资金流入/流出？",
+            "过去 24 小时资金流入/流出最多的代币有哪些？",
         },
-        placeholder: "输入您的消息...",
+        placeholder: "输入消息...",
       },
       share_modal: {
         share_this_chat: "分享此聊天",
@@ -242,12 +241,12 @@ const resources = {
       settings: {
         title: "设置",
         quick_buy: "快速购买",
-        quick_buy_default_sol_amount: "快速购买默认SOL金额",
+        quick_buy_default_sol_amount: "快速购买默认 SOL 数量",
         quick_buy_default_sol_amount_description:
-          "这是使用快速购买功能时的默认 SOL 数量",
+          "快速购买功能使用的默认 SOL 数量",
         mode: "模式",
         wallet_addresses: "钱包地址",
-        connected_accounts: "已连接的账户",
+        connected_accounts: "已连接账户",
       },
       wallet_addresses: {
         solana_wallet: "Solana 钱包",
