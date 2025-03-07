@@ -7,7 +7,7 @@ import { chatCache } from "../hooks/localStorage";
 import i18n from "../i18n";
 import { Chat } from "../types/message";
 
-export function RecentChats() {
+export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const navigate = useNavigate();
 
@@ -37,6 +37,7 @@ export function RecentChats() {
 
   const selectChat = (chatId: string) => {
     navigate({ to: "/", search: { chatId }, replace: true });
+    if (onItemClick) onItemClick();
   };
 
   return (
