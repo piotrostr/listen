@@ -100,7 +100,7 @@ export function VersionAndLanguageDisplay() {
 }
 
 // Add this near the top of the file, after imports
-const SidebarContext = createContext<(open: boolean) => void>(() => {});
+export const SidebarContext = createContext<(open: boolean) => void>(() => {});
 
 function getBottomItems(t: (key: string) => string) {
   return [

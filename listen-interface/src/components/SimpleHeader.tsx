@@ -1,7 +1,10 @@
+import { Link } from "@tanstack/react-router";
+import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { BsLink } from "react-icons/bs";
 import { IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
 import { RxDashboard } from "react-icons/rx";
+import { SidebarContext } from "./Layout";
 
 interface SimpleHeaderProps {
   activePanel: string | null;
@@ -13,6 +16,7 @@ export function SimpleHeader({
   setActivePanel,
 }: SimpleHeaderProps) {
   const { t } = useTranslation();
+  const setSidebarOpen = useContext(SidebarContext);
 
   const togglePanel = (panelName: string) => {
     setActivePanel(activePanel === panelName ? null : panelName);
@@ -20,11 +24,16 @@ export function SimpleHeader({
 
   return (
     <div className="flex items-center justify-between h-16 px-4">
-      {/* Left side - Logo */}
-      <div className="flex items-center space-x-3">
+      {/* Left side - Logo with hover effect */}
+      <Link
+        to="/"
+        className="flex items-center space-x-3 cursor-pointer"
+        onMouseEnter={() => setSidebarOpen(true)}
+        onMouseLeave={() => setSidebarOpen(false)}
+      >
         <img src="/listen-more.png" alt="Logo" className="w-8 h-8 rounded" />
         <span className="font-bold text-md lg:text-xl">listen-rs</span>
-      </div>
+      </Link>
 
       {/* Right side - Panel toggles */}
       <div className="flex items-center space-x-2">
