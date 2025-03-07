@@ -78,18 +78,6 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     [sendMessage, setMessages]
   );
 
-  // Auto-scroll to bottom when messages change
-  // useEffect(() => {
-  //   messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  // }, [messages]);
-
-  // // Also scroll to bottom when loading state changes
-  // useEffect(() => {
-  //   if (!isLoading) {
-  //     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  //   }
-  // }, [isLoading]);
-
   // Focus the input field when creating a new chat
   useEffect(() => {
     if (urlParams.isNewChat) {

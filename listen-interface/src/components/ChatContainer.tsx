@@ -27,8 +27,15 @@ export function ChatContainer({
 }: ChatContainerProps) {
   return (
     <div className="flex flex-col h-full">
-      <div className="flex-1 overflow-y-auto scrollable-container pb-4">
-        <div className="p-4 h-full">{children}</div>
+      <div
+        className="flex-1 overflow-y-auto scrollable-container pb-4"
+        style={{
+          WebkitOverflowScrolling: "touch",
+          scrollBehavior: "smooth",
+          maxHeight: "calc(100vh - 120px)",
+        }}
+      >
+        <div className="p-4">{children}</div>
       </div>
       <div className="sticky bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm border-t border-purple-500/20">
         <ChatInput

@@ -55,7 +55,7 @@ export function PriceUpdates() {
   const { t } = useTranslation();
 
   return (
-    <div className="flex flex-col gap-2 p-2 sm:p-4 overflow-hidden h-full">
+    <div className="flex flex-col gap-2 p-2 sm:p-4 h-full">
       {/* Latest Update Section */}
       {/*
       <div className="h-[52px] bg-black/40 backdrop-blur-sm border border-purple-500/20 rounded-xl lg:p-3 flex items-center p-1">
@@ -145,11 +145,7 @@ export function PriceUpdates() {
             </div>
           </div>
         </div>
-        <div
-          className="divide-y divide-purple-500/20 overflow-y-auto flex-1"
-          onMouseEnter={handleMouseEnter}
-          onMouseLeave={handleMouseLeave}
-        >
+        <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
           {topTokens.map((token) => (
             <TokenTile key={token.pubkey} token={token} />
           ))}
