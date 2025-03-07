@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useMobile } from "../contexts/MobileContext";
 import { Chat } from "./Chat";
 import { FloatingPanel } from "./FloatingPanel";
 import { Pipelines, PipelinesHeader } from "./Pipelines";
@@ -23,18 +24,8 @@ export function PanelSelector({
   // Pipelines state
   const [statusFilter, setStatusFilter] = useState<string>("All");
 
-  // Check if we're on mobile
-  const [isMobile, setIsMobile] = useState(false);
-
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 600);
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
+  // Get mobile state from context
+  const { isMobile } = useMobile();
 
   const handleClose = useCallback(() => {
     setActivePanel(null);

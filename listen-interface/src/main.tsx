@@ -7,6 +7,7 @@ import { createRoot } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
 import { arbitrum } from "viem/chains";
 import { WagmiProvider, createConfig, http } from "wagmi";
+import { MobileProvider } from "./contexts/MobileContext";
 import { ModalProvider } from "./contexts/ModalContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import i18n from "./i18n";
@@ -34,31 +35,35 @@ declare module "@tanstack/react-router" {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <I18nextProvider i18n={i18n}>
-      <PrivyProvider
-        appId={"cm6c7ifqd00ar52m1qxfgbkkn"}
-        config={{
-          appearance: {
-            theme: "dark",
-            walletChainType: "ethereum-and-solana",
-          },
-          externalWallets: {
-            solana: {
-              connectors: toSolanaWalletConnectors({ shouldAutoConnect: true }),
+    <MobileProvider>
+      <I18nextProvider i18n={i18n}>
+        <PrivyProvider
+          appId={"cm6c7ifqd00ar52m1qxfgbkkn"}
+          config={{
+            appearance: {
+              theme: "dark",
+              walletChainType: "ethereum-and-solana",
             },
-          },
-        }}
-      >
-        <ToastProvider>
-          <WagmiProvider config={config}>
-            <QueryClientProvider client={new QueryClient()}>
-              <ModalProvider>
-                <RouterProvider router={router} />
-              </ModalProvider>
-            </QueryClientProvider>
-          </WagmiProvider>
-        </ToastProvider>
-      </PrivyProvider>
-    </I18nextProvider>
+            externalWallets: {
+              solana: {
+                connectors: toSolanaWalletConnectors({
+                  shouldAutoConnect: true,
+                }),
+              },
+            },
+          }}
+        >
+          <ToastProvider>
+            <WagmiProvider config={config}>
+              <QueryClientProvider client={new QueryClient()}>
+                <ModalProvider>
+                  <RouterProvider router={router} />
+                </ModalProvider>
+              </QueryClientProvider>
+            </WagmiProvider>
+          </ToastProvider>
+        </PrivyProvider>
+      </I18nextProvider>
+    </MobileProvider>
   </StrictMode>
 );

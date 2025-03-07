@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { createContext, memo, useEffect, useState } from "react";
+import { createContext, memo, useState } from "react";
 import { UseBalanceReturnType } from "wagmi";
 import ethereumIcon from "../assets/icons/ethereum.svg";
 import { imageMap } from "../hooks/util";
@@ -8,7 +8,7 @@ import { Background } from "./Background";
 
 import { useTranslation } from "react-i18next";
 import { FaXTwitter } from "react-icons/fa6";
-import { IoMenu } from "react-icons/io5";
+import { useMobile } from "../contexts/MobileContext";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { MobileNavigation } from "./MobileNavigation";
 import { PanelSelector } from "./PanelSelector";
@@ -137,20 +137,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
     localStorage.getItem("activePanel") || null
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const [isMobile, setIsMobile] = useState(false);
+  const { isMobile } = useMobile();
   const { user, logout } = usePrivy();
   const { t } = useTranslation();
-
-  // Check if we're on mobile - change breakpoint to 600px
-  useEffect(() => {
-    const checkMobile = () => {
-      setIsMobile(window.innerWidth < 600); // Changed from 1024px to 600px
-    };
-
-    checkMobile();
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
-  }, []);
 
   // Call the function with the current translation function
   const BOTTOM_ITEMS = getBottomItems(t);
@@ -187,17 +176,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Header */}
         <div className="z-20 bg-black/40 backdrop-blur-sm flex items-center">
-          {isMobile && (
-            <button
-              onClick={toggleMobileSidebar}
-              className="p-4 text-white focus:outline-none"
-            >
-              <IoMenu size={24} />
-            </button>
-          )}
           <div className="flex-1">
             <SimpleHeader
               activePanel={activePanel}
+              toggleMobileSidebar={toggleMobileSidebar}
               setActivePanel={(panel) => {
                 setActivePanel(panel);
                 if (panel) {

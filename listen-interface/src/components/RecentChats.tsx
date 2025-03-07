@@ -23,7 +23,7 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
               (b.lastMessageAt.getTime() ?? 0) -
               (a.lastMessageAt.getTime() ?? 0)
           )
-          .slice(0, 10);
+          .slice(0, 5);
         setRecentChats(recent);
       }
     };
