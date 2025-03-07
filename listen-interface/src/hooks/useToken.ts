@@ -68,7 +68,7 @@ export const useToken = (address: string, chainId?: string) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["token", address, chainId],
     queryFn: async () => {
-      if (!chainId) {
+      if (!chainId || chainId === "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp") {
         return await getSolanaTokenMetadata(address);
       } else {
         return await getAnyToken(address, chainId);
