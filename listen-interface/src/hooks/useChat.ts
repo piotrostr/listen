@@ -73,7 +73,7 @@ export function useChat() {
   useEffect(() => {
     if (isNewChat) {
       setChat(null);
-      // Remove the 'new' parameter but keep the URL at /chat
+      // Remove the 'new' parameter - always redirecting to root route
       navigate({ to: "/", search: {}, replace: true });
     }
   }, [isNewChat, navigate]);

@@ -190,6 +190,7 @@ export function systemPromptSolana(
   2) if the user doesn't have any SOL before a trade, return
   <fund_solana_wallet></fund_solana_wallet> tags in your response to allow them
   to fund their wallet
+  3) in your responses, you don't need to use code blocks, use plain markdown with the special tags whenever applicable
   </guidelines>
   <limitations>
   Only discuss limitations if the user would ask about something you cannot do

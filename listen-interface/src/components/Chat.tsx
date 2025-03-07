@@ -13,13 +13,23 @@ const LoadingIndicator = () => (
 );
 
 export function Chat({ selectedChatId }: { selectedChatId?: string }) {
-  // Parse URL query parameters manually instead of using router
-  const [urlParams] = useState(() => {
+  // Add useEffect to update urlParams when location changes
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setUrlParams({
+      chatId: params.get("chatId") || undefined,
+      isNewChat: params.get("new") === "true",
+      isSharedChat: params.get("shared") === "true",
+    });
+  }, [window.location.search]);
+
+  // Update the state declaration
+  const [urlParams, setUrlParams] = useState(() => {
     const params = new URLSearchParams(window.location.search);
     return {
       chatId: params.get("chatId") || undefined,
       isNewChat: params.get("new") === "true",
-      isSharedChat: params.get("shared") === "false",
+      isSharedChat: params.get("shared") === "true",
     };
   });
 
@@ -121,8 +131,8 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
 
     try {
       const sharedChatId = await shareChat(currentChatId);
-      // Create a shareable URL with query parameters
-      const url = `${window.location.origin}?chatId=${sharedChatId}&shared=true`;
+      // Create a shareable URL that always uses the root path
+      const url = `${window.location.origin}/?chatId=${sharedChatId}&shared=true`;
       setShareUrl(url);
       setIsShareModalOpen(true);
     } catch (error) {
