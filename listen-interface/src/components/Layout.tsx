@@ -140,7 +140,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     localStorage.getItem("activePanel") || null
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const { isMobile } = useMobile();
+  const { isMobile, isIOS } = useMobile();
   const { user, logout } = usePrivy();
   const { t } = useTranslation();
 
@@ -297,7 +297,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             className={`flex justify-center h-full w-full transition-all duration-300 
               ${isMobile ? "" : "pl-16"} 
               ${activePanel && !isMobile ? "lg:pr-[420px]" : ""}
-              ${isMobile ? "pb-16" : ""}`}
+              ${isMobile ? (isIOS ? "pb-24" : "pb-16") : ""}`}
           >
             <div className="flex-1 max-w-4xl flex flex-col overflow-hidden">
               {children}

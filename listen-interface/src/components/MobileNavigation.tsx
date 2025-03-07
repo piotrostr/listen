@@ -6,6 +6,7 @@ import {
   IoWalletOutline,
 } from "react-icons/io5";
 import { RxDashboard } from "react-icons/rx";
+import { useMobile } from "../contexts/MobileContext";
 
 type NavType = "chat" | "portfolio" | "screener" | "pipelines" | "settings";
 
@@ -19,6 +20,7 @@ export function MobileNavigation({
   setActivePanel,
 }: MobileNavigationProps) {
   const { t } = useTranslation();
+  const { isIOS } = useMobile();
 
   const handleNavClick = (navType: NavType) => {
     if (navType === "chat") {
@@ -31,7 +33,11 @@ export function MobileNavigation({
   };
 
   return (
-    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm border-t border-purple-500/30 z-50">
+    <div
+      className={`md:hidden fixed left-0 right-0 bg-black/60 backdrop-blur-sm border-t border-purple-500/30 z-50 ${
+        isIOS ? "bottom-6" : "bottom-0"
+      }`}
+    >
       <div className="flex justify-around items-center h-16 mb-2">
         <button
           onClick={() => handleNavClick("chat")}
