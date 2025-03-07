@@ -1,5 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { ReactNode, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 
@@ -76,6 +77,8 @@ export function ChatInput({
   const walletsReady =
     wallets?.evmWallet !== undefined && wallets?.solanaWallet !== undefined;
 
+  const { t } = useTranslation();
+
   return (
     <div
       className={`min-h-12 border-2 ${isFocused ? "border-purple-500/60" : "border-purple-500/30"} 
@@ -103,7 +106,7 @@ export function ChatInput({
           }}
           rows={1}
           className="w-full bg-transparent text-white outline-none resize-none chat-input"
-          placeholder="Type your message..."
+          placeholder={t("chat.placeholder")}
           style={{
             minHeight: "20px",
             maxHeight: "200px",

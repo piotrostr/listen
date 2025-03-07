@@ -1,3 +1,5 @@
+import { TFunction } from "i18next";
+import { useTranslation } from "react-i18next";
 import {
   FaBan,
   FaCheckCircle,
@@ -24,6 +26,7 @@ export const PipelineStepContainer = ({
   transactionHash,
   error,
 }: PipelineStepContainerProps) => {
+  const { t } = useTranslation();
   return (
     <div className="border border-purple-500/30 rounded-lg lg:p-4 p-4 bg-black/40 backdrop-blur-sm">
       <div className="flex items-center gap-4">
@@ -36,24 +39,28 @@ export const PipelineStepContainer = ({
       {/* Conditions */}
       {conditions.length > 0 && (
         <div className="mt-3 pt-3 border-t border-purple-500/30">
-          <div className="text-sm text-purple-300">Conditions:</div>
+          <div className="text-sm text-purple-300">
+            {t("pipelines.conditions")}
+          </div>
           {conditions.map((condition, index) => (
             <div
               key={index}
               className="mt-1 lg:text-sm text-xs text-purple-200"
             >
               {condition.type === PipelineConditionType.Now
-                ? "Execute immediately"
+                ? t("pipelines.execute_immediately")
                 : condition.type === PipelineConditionType.PriceAbove
-                  ? `Price above ${condition.value} for ${condition.asset.slice(0, 4)}...${condition.asset.slice(-4)}`
-                  : `Price below ${condition.value} for ${condition.asset.slice(0, 4)}...${condition.asset.slice(-4)}`}
+                  ? `${t("pipelines.price_above")} ${condition.value} ${t("pipelines.for")} ${condition.asset.slice(0, 4)}...${condition.asset.slice(-4)}`
+                  : `${t("pipelines.price_below")} ${condition.value} ${t("pipelines.for")} ${condition.asset.slice(0, 4)}...${condition.asset.slice(-4)}`}
             </div>
           ))}
         </div>
       )}
       {status && (
         <div className="mt-3 pt-3 border-t border-purple-500/30">
-          <div className="text-sm text-purple-300">Status:</div>
+          <div className="text-sm text-purple-300">
+            {t("pipelines.status")}:
+          </div>
           <TransactionLink
             status={status}
             transactionHash={transactionHash}
@@ -65,41 +72,41 @@ export const PipelineStepContainer = ({
   );
 };
 
-const renderStatus = (status: string) => {
+const renderStatus = (status: string, t: TFunction) => {
   switch (status) {
     case "Pending":
       return (
         <span className="text-yellow-300 flex items-center gap-1">
-          <FaSpinner /> Pending
+          <FaSpinner /> {t("pipelines.pending")}
         </span>
       );
     case "Completed":
       return (
         <span className="text-green-300 flex items-center gap-1">
-          <FaCheckCircle /> Completed
+          <FaCheckCircle /> {t("pipelines.completed")}
         </span>
       );
     case "Failed":
       return (
         <span className="text-red-300 flex items-center gap-1">
-          <FaTimesCircle /> Failed:
+          <FaTimesCircle /> {t("pipelines.failed")}
         </span>
       );
     case "Cancelled":
       return (
         <span className="text-gray-300 flex items-center gap-1">
-          <FaBan /> Cancelled
+          <FaBan /> {t("pipelines.cancelled")}
         </span>
       );
   }
 };
 
-function formatError(error: string) {
+function formatError(error: string, t: TFunction) {
   if (error.includes("insufficient funds")) {
-    return "Insufficient balance";
+    return t("pipelines.insufficient_balance");
   }
   if (error.includes("0x1771")) {
-    return "Slippage tolerance exceeded";
+    return t("pipelines.slippage_tolerance_exceeded");
   }
   try {
     // Look for JSON between curly braces
@@ -125,9 +132,10 @@ export const TransactionLink = ({
   transactionHash: string | null;
   error: string | null;
 }) => {
+  const { t } = useTranslation();
   return (
     <div className="text-xs sm:text-sm text-gray-400 flex flex-wrap items-center gap-2 mt-2">
-      {renderStatus(status)}{" "}
+      {renderStatus(status, t)}{" "}
       {transactionHash && (
         <span className="flex items-center gap-1 inline-flex">
           <a
@@ -147,7 +155,7 @@ export const TransactionLink = ({
       )}
       {error && (
         <span className="text-red-300 break-all overflow-hidden">
-          {formatError(error)}
+          {formatError(error, t)}
         </span>
       )}
     </div>

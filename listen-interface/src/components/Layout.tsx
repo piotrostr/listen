@@ -7,44 +7,13 @@ import ethereumIcon from "../assets/icons/ethereum.svg";
 import { imageMap } from "../hooks/util";
 import { Background } from "./Background";
 
+import { useTranslation } from "react-i18next";
 import { BsLink } from "react-icons/bs";
 import { FaXTwitter } from "react-icons/fa6";
 import { IoMenu, IoSettingsOutline } from "react-icons/io5";
 import { RxCross2, RxDashboard } from "react-icons/rx";
+import LanguageSwitcher from "./LanguageSwitcher";
 import { RecentChats } from "./RecentChats";
-
-const NAV_ITEMS = [
-  { to: "/screener", icon: RxDashboard, label: "Screener" },
-  { to: "/portfolio", icon: IoWalletOutline, label: "Portfolio" },
-  { to: "/pipelines", icon: BsLink, label: "Pipelines" },
-  { to: "/settings", icon: IoSettingsOutline, label: "Settings" },
-] as const;
-
-const BOTTOM_ITEMS = [
-  {
-    href: "https://docs.listen-rs.com",
-    icon: () => (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
-      </svg>
-    ),
-    label: "Documentation",
-  },
-  {
-    href: "https://github.com/piotrostr/listen",
-    icon: () => (
-      <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
-        <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
-      </svg>
-    ),
-    label: "GitHub",
-  },
-  {
-    href: "https://x.com/listenonsol",
-    icon: () => <FaXTwitter />,
-    label: "Twitter",
-  },
-] as const;
 
 function balanceToUI(balance: UseBalanceReturnType["data"]) {
   if (!balance?.value || !balance?.decimals) return 0;
@@ -194,14 +163,11 @@ export function BalanceDisplay({
 }
 
 // Version Display Component
-export function VersionDisplay({ isSidebarOpen }: { isSidebarOpen: boolean }) {
+export function VersionAndLanguageDisplay() {
   return (
-    <div
-      className={`flex items-center h-6 text-xs text-gray-400 ${
-        isSidebarOpen ? "px-4" : "justify-center"
-      }`}
-    >
-      {isSidebarOpen && <span>version: 1.1.4</span>}
+    <div className="flex justify-around items-center w-full">
+      <span className="text-xs text-gray-400">version: 1.1.4</span>
+      <LanguageSwitcher />
     </div>
   );
 }
@@ -212,6 +178,41 @@ const SidebarContext = createContext<(open: boolean) => void>(() => {});
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = usePrivy();
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+
+  const { t } = useTranslation();
+
+  const NAV_ITEMS = [
+    { to: "/screener", icon: RxDashboard, label: t("layout.screener") },
+    { to: "/portfolio", icon: IoWalletOutline, label: t("layout.portfolio") },
+    { to: "/pipelines", icon: BsLink, label: t("layout.pipelines") },
+    { to: "/settings", icon: IoSettingsOutline, label: t("layout.settings") },
+  ] as const;
+
+  const BOTTOM_ITEMS = [
+    {
+      href: "https://docs.listen-rs.com",
+      icon: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M14 2H6c-1.1 0-1.99.9-1.99 2L4 20c0 1.1.89 2 1.99 2H18c1.1 0 2-.9 2-2V8l-6-6zm2 16H8v-2h8v2zm0-4H8v-2h8v2zm-3-5V3.5L18.5 9H13z" />
+        </svg>
+      ),
+      label: t("layout.documentation"),
+    },
+    {
+      href: "https://github.com/piotrostr/listen",
+      icon: () => (
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0c-6.626 0-12 5.373-12 12 0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23.957-.266 1.983-.399 3.003-.404 1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576 4.765-1.589 8.199-6.086 8.199-11.386 0-6.627-5.373-12-12-12z" />
+        </svg>
+      ),
+      label: t("layout.github"),
+    },
+    {
+      href: "https://x.com/listenonsol",
+      icon: () => <FaXTwitter />,
+      label: t("layout.twitter"),
+    },
+  ] as const;
 
   const handleSidebarToggle = (open: boolean) => {
     setIsSidebarOpen(open);
@@ -289,7 +290,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <MemoizedNavLink
                   to="/chat"
                   icon={IoChatboxOutline}
-                  label="Chat"
+                  label={t("layout.chat")}
                   isSidebarOpen={true}
                   isChat={true}
                 />
@@ -307,7 +308,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Bottom Items */}
             <div className="absolute bottom-0 left-0 right-0 mb-4 space-y-1">
-              <VersionDisplay isSidebarOpen={true} />
+              {isSidebarOpen && <VersionAndLanguageDisplay />}
               {memoizedBottomItems}
               {user && (
                 <button
@@ -329,7 +330,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <path d="M16 17l5-5-5-5" />
                       <path d="M21 12H9" />
                     </svg>
-                    <span className="ml-3">Logout</span>
+                    <span className="ml-3">{t("layout.logout")}</span>
                   </div>
                 </button>
               )}
@@ -371,7 +372,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 <MemoizedNavLink
                   to="/chat"
                   icon={IoChatboxOutline}
-                  label="Chat"
+                  label={t("layout.chat")}
                   isSidebarOpen={isSidebarOpen}
                   isChat={true}
                 />
@@ -389,7 +390,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Bottom section */}
             <div className="mt-auto p-4 space-y-1">
-              <VersionDisplay isSidebarOpen={isSidebarOpen} />
+              {isSidebarOpen && <VersionAndLanguageDisplay />}
               {memoizedBottomItems}
               {user && (
                 <button

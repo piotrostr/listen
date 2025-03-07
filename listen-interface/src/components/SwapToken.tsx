@@ -1,3 +1,5 @@
+import { useTranslation } from "react-i18next";
+
 interface SwapTokenProps {
   image?: string | null;
   name?: string;
@@ -15,11 +17,16 @@ export const SwapToken = ({
   address,
   showAmount = false,
 }: SwapTokenProps) => {
+  const { t } = useTranslation();
   return (
     <div className="flex items-center gap-3">
       <div className="flex flex-col">
         {image && (
-          <img src={image} alt={name} className="w-8 h-8 rounded-full" />
+          <img
+            src={image.replace("cf-ipfs.com", "ipfs.io")}
+            alt={name}
+            className="w-8 h-8 rounded-full"
+          />
         )}
       </div>
       <div>
@@ -37,7 +44,7 @@ export const SwapToken = ({
         </div>
         {showAmount && amount && (
           <div className="text-xs sm:text-sm text-purple-300">
-            Amount: {amount}
+            {t("pipelines.amount")}: {amount}
           </div>
         )}
         {address && (

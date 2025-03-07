@@ -1,11 +1,16 @@
 import { Link } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
+import { zhCN } from "date-fns/locale";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { chatCache } from "../hooks/localStorage";
+import i18n from "../i18n";
 import { Chat } from "../types/message";
 
 export function RecentChats() {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
+
+  const { t } = useTranslation();
 
   useEffect(() => {
     const loadRecentChats = async () => {
@@ -25,6 +30,10 @@ export function RecentChats() {
     loadRecentChats();
   }, []);
 
+  const getLocale = () => {
+    return i18n.language.startsWith("zh") ? zhCN : undefined;
+  };
+
   return (
     <div className="overflow-hidden transition-all duration-300 ease-in-out">
       {recentChats.map((chat) => (
@@ -39,7 +48,10 @@ export function RecentChats() {
               {chat.title || chat.messages[0]?.message.slice(0, 20) + "..."}
             </div>
             <div className="text-[10px] text-gray-500">
-              {formatDistanceToNow(chat.lastMessageAt, { addSuffix: true })}
+              {formatDistanceToNow(chat.lastMessageAt, {
+                addSuffix: true,
+                locale: getLocale(),
+              })}
             </div>
           </div>
         </Link>
@@ -49,7 +61,7 @@ export function RecentChats() {
           to="/chat-history"
           className="flex items-center h-10 px-4 text-sm text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 transition-colors"
         >
-          View all chats
+          {t("recent_chats.view_all_chats")}
         </Link>
       )}
     </div>

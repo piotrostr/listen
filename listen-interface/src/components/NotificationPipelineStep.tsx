@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { useSolanaToken } from "../hooks/useToken";
 import { PipelineActionType, PipelineStep } from "../types/pipeline";
 import { PipelineStepContainer } from "./PipelineStepContainer";
@@ -11,6 +12,8 @@ export const NotificationPipelineStep = ({
   index,
   step,
 }: NotificationPipelineStepProps) => {
+  const { t } = useTranslation();
+
   if (step.action.type !== PipelineActionType.Notification) {
     return null;
   }
@@ -39,7 +42,9 @@ export const NotificationPipelineStep = ({
             />
           )}
           <div>
-            <div className="font-bold text-purple-100">Send a notification</div>
+            <div className="font-bold text-purple-100">
+              {t("pipelines.send_notification")}
+            </div>
             <div className="text-purple-300 text-sm">{step.action.message}</div>
           </div>
         </div>

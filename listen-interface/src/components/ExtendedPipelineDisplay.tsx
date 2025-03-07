@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { ExtendedPipeline, ExtendedPipelineCondition } from "../types/api";
 import {
   PipelineActionType,
@@ -12,6 +13,8 @@ interface ExtendedPipelineProps {
 }
 
 export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
+  const { t } = useTranslation();
+
   // Convert steps object to array and sort by execution order
   const orderedSteps = Object.entries(pipeline.steps).map(([index, step]) => ({
     ...step,
@@ -53,14 +56,15 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
       <div className="flex lg:items-center justify-between flex-col lg:flex-row">
         <div className="flex lg:items-center gap-2 flex-col lg:flex-row">
           <div className="text-white text-base sm:text-lg font-bold">
-            {pipeline.status}
+            {t(`pipelines.pipeline_status.${pipeline.status}`)}
           </div>
           <div className="text-purple-300 text-xs sm:text-sm">
-            <span className="font-bold">ID:</span> {pipeline.id}
+            <span className="font-bold">{t("pipelines.id")}:</span>{" "}
+            {pipeline.id}
           </div>
         </div>
         <div className="text-purple-300 text-xs sm:text-sm">
-          <span className="font-bold">Created:</span>{" "}
+          <span className="font-bold">{t("pipelines.created")}:</span>{" "}
           {new Date(pipeline.created_at).toLocaleString()}
         </div>
       </div>

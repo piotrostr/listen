@@ -1,5 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { IoRefreshOutline } from "react-icons/io5";
 import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 import { usePipelines } from "../hooks/usePipelines";
@@ -13,6 +14,8 @@ export function Pipelines() {
   const { data, isLoading, error, refetch } = usePipelines();
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const [isRefreshing, setIsRefreshing] = useState(false);
+
+  const { t } = useTranslation();
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
@@ -32,7 +35,7 @@ export function Pipelines() {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-gray-400">
-          Please connect your wallet to continue
+          {t("pipelines.please_connect_wallet")}
         </div>
       </div>
     );
@@ -67,7 +70,7 @@ export function Pipelines() {
     <div className="container mx-auto lg:px-4 py-8">
       <div className="flex justify-between items-center mb-6 lg:p-0 p-4">
         <h1 className="lg:text-2xl text-xl font-bold text-white lg:text-left text-center">
-          Pipelines
+          {t("pipelines.pipelines")}
         </h1>
         <div className="flex items-center gap-2">
           <select
@@ -75,10 +78,10 @@ export function Pipelines() {
             onChange={(e) => setStatusFilter(e.target.value)}
             className="bg-black/40 text-white border border-purple-500/30 rounded-lg px-4 py-2"
           >
-            <option value="All">All</option>
-            <option value="Pending">Pending</option>
-            <option value="Completed">Completed</option>
-            <option value="Failed">Failed</option>
+            <option value="All">{t("pipelines.all")}</option>
+            <option value="Pending">{t("pipelines.pending")}</option>
+            <option value="Completed">{t("pipelines.completed")}</option>
+            <option value="Failed">{t("pipelines.failed")}</option>
           </select>
           <button
             onClick={handleRefresh}
@@ -102,7 +105,7 @@ export function Pipelines() {
         ))}
         {(!filteredPipelines || filteredPipelines.length === 0) && (
           <div className="text-center text-gray-400 py-8">
-            No pipelines found
+            {t("pipelines.no_pipelines_found")}
           </div>
         )}
       </div>

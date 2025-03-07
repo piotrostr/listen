@@ -2,6 +2,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { config } from "../config";
 import { useToast } from "../contexts/ToastContext";
 import {
@@ -22,6 +23,8 @@ export function usePipelineExecution() {
   const { showToast } = useToast();
   const { data: wallets } = usePrivyWallets();
   const queryClient = useQueryClient();
+
+  const { t } = useTranslation();
 
   const invalidateSolanaPortfolio = () => {
     if (wallets?.solanaWallet) {
@@ -54,12 +57,12 @@ export function usePipelineExecution() {
         throw new Error("Failed to execute pipeline");
       }
 
-      showToast("Pipeline scheduled for execution", "success");
+      showToast(t("pipeline_execution.pipeline_scheduled"), "success");
       options?.onSuccess?.();
       return true;
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : "An error occurred";
+        error instanceof Error ? error.message : t("pipeline_execution.error");
       showToast(errorMessage, "error");
       options?.onError?.(
         error instanceof Error ? error : new Error(errorMessage)
@@ -102,11 +105,17 @@ export function usePipelineExecution() {
 
     return executePipeline(buyPipeline, {
       onSuccess: () => {
-        showToast(`Buy order placed for ${tokenAddress}`, "success");
+        showToast(
+          `${t("pipeline_execution.buy_order_placed")} ${tokenAddress}`,
+          "success"
+        );
         options?.onSuccess?.();
       },
       onError: (error) => {
-        showToast(`Failed to buy token: ${error.message}`, "error");
+        showToast(
+          `${t("pipeline_execution.failed_to_buy_token")} ${error.message}`,
+          "error"
+        );
         options?.onError?.(error);
       },
     });
