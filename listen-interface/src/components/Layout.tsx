@@ -175,14 +175,9 @@ export function VersionAndLanguageDisplay() {
 // Add this near the top of the file, after imports
 const SidebarContext = createContext<(open: boolean) => void>(() => {});
 
-export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = usePrivy();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activePanel, setActivePanel] = useState(null);
-
-  const { t } = useTranslation();
-
-  const NAV_ITEMS = [
+// Move these outside the component as functions that take the translation function
+function getNavItems(t: (key: string) => string) {
+  return [
     {
       to: "/",
       icon: TbHistoryToggle,
@@ -190,8 +185,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
       isChat: true, // This will show the recent chats
     },
   ] as const;
+}
 
-  const BOTTOM_ITEMS = [
+function getBottomItems(t: (key: string) => string) {
+  return [
     {
       href: "https://docs.listen-rs.com",
       icon: () => (
@@ -216,12 +213,24 @@ export function Layout({ children }: { children: React.ReactNode }) {
       label: t("layout.twitter"),
     },
   ] as const;
+}
+
+export function Layout({ children }: { children: React.ReactNode }) {
+  const { user, logout } = usePrivy();
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [activePanel, setActivePanel] = useState(null);
+
+  const { t } = useTranslation();
+
+  // Call the functions with the current translation function
+  const NAV_ITEMS = getNavItems(t);
+  const BOTTOM_ITEMS = getBottomItems(t);
 
   const handleSidebarToggle = (open: boolean) => {
     setIsSidebarOpen(open);
   };
 
-  // Memoize the nav items
+  // Memoize the nav items - now depends on both isSidebarOpen and NAV_ITEMS (which depends on t)
   const memoizedNavItems = useMemo(
     () =>
       NAV_ITEMS.map((item) => (
@@ -231,10 +240,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
           isSidebarOpen={isSidebarOpen}
         />
       )),
-    [isSidebarOpen]
+    [isSidebarOpen, NAV_ITEMS]
   );
 
-  // Memoize the bottom items
+  // Memoize the bottom items - now depends on both isSidebarOpen and BOTTOM_ITEMS (which depends on t)
   const memoizedBottomItems = useMemo(
     () =>
       BOTTOM_ITEMS.map((item) => (
@@ -244,7 +253,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           isSidebarOpen={isSidebarOpen}
         />
       )),
-    [isSidebarOpen]
+    [isSidebarOpen, BOTTOM_ITEMS]
   );
 
   return (
@@ -395,7 +404,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
                       <path d="M16 17l5-5-5-5" />
                       <path d="M21 12H9" />
                     </svg>
-                    {isSidebarOpen && <span className="ml-3">Logout</span>}
+                    {isSidebarOpen && (
+                      <span className="ml-3">{t("layout.logout")}</span>
+                    )}
                   </div>
                 </button>
               )}
