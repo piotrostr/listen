@@ -97,7 +97,7 @@ export function VersionAndLanguageDisplay() {
   return (
     <div className="flex justify-around items-center w-full">
       <span className="text-xs text-gray-400">
-        {t("layout.version")}: 1.1.4
+        {t("layout.version")}: 1.2.0
       </span>
       <LanguageSwitcher />
     </div>
