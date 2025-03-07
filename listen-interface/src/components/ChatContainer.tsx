@@ -37,7 +37,7 @@ export function ChatContainer({
       >
         <div className="flex flex-col gap-3 px-4 pt-1">{children}</div>
       </div>
-      <div className="sticky bottom-0 left-0 right-0 px-4 py-3 bg-black/80 backdrop-blur-sm border-t border-purple-500/20">
+      <div className="sticky bottom-0 left-0 right-0 px-4 py-3 bg-black/80 backdrop-blur-sm">
         <ChatInput
           inputMessage={inputMessage}
           isGenerating={isGenerating}

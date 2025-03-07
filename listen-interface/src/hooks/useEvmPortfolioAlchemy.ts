@@ -153,6 +153,7 @@ export async function getTokenHoldings(
               price: Number(price),
               amount,
               chain,
+              logoURI: metadata.logoURI || "",
             };
 
             return portfolioItem;
