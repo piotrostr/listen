@@ -31,9 +31,11 @@ export function Settings() {
   };
 
   return (
-    <div className="h-full overflow-auto p-4">
-      <h1 className="text-xl font-bold mb-4">{t("settings.title")}</h1>
-
+    <div className="h-full overflow-auto px-4 scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
+      <h2 className="text-lg font-bold mb-2 mt-4">
+        {t("settings.wallet_addresses")}
+      </h2>
+      <WalletAddresses />
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.quick_buy")}</h2>
       <div className="bg-black/40 backdrop-blur-sm border border-purple-500/30 rounded-lg p-4 mb-4">
         <label className="block text-sm text-purple-100 mb-2">
@@ -62,11 +64,6 @@ export function Settings() {
         {t("settings.connected_accounts")}
       </h2>
       {user && <ConnectedAccounts user={user} />}
-
-      <h2 className="text-lg font-bold mb-2 mt-4">
-        {t("settings.wallet_addresses")}
-      </h2>
-      <WalletAddresses />
     </div>
   );
 }
