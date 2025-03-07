@@ -1,8 +1,4 @@
 import { useTranslation } from "react-i18next";
-import { BsLink } from "react-icons/bs";
-import { IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
-import { RxDashboard } from "react-icons/rx";
-import { MobileNavigation } from "./MobileNavigation";
 import { Pipelines } from "./Pipelines";
 import { Portfolio } from "./Portfolio";
 import { PriceUpdates } from "./PriceUpdates";
@@ -18,61 +14,41 @@ export function PanelSelector({
   const { t } = useTranslation();
 
   return (
-    <>
-      <div className="relative h-full">
-        <div className="flex-row justify-between items-center border-l border-purple-500/30 bg-black/40 backdrop-blur-sm p-3 lg:flex hidden">
-          <div>{t(`layout.${activePanel}`)}</div>
-          <div className="flex flex-row gap-2">
+    <div
+      className={`lg:w-96 w-full h-full border-l border-purple-500/30 bg-black/40 backdrop-blur-sm transition-all duration-300 ${
+        activePanel ? "translate-x-0" : "lg:translate-x-full translate-y-full"
+      }`}
+    >
+      {activePanel && (
+        <div className="flex flex-col h-full">
+          <div className="border-b border-purple-500/30 p-3 flex justify-between items-center">
+            <div>{t(`layout.${activePanel}`)}</div>
             <button
-              onClick={() => setActivePanel("portfolio")}
-              className={`p-2 rounded-lg ${activePanel === "portfolio" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
-              title={t("layout.portfolio")}
+              onClick={() => setActivePanel(null)}
+              className="p-1 rounded-full hover:bg-purple-500/20"
             >
-              <IoWalletOutline className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setActivePanel("screener")}
-              className={`p-2 rounded-lg ${activePanel === "screener" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
-              title={t("layout.screener")}
-            >
-              <RxDashboard className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setActivePanel("pipelines")}
-              className={`p-2 rounded-lg ${activePanel === "pipelines" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
-              title={t("layout.pipelines")}
-            >
-              <BsLink className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setActivePanel("settings")}
-              className={`p-2 rounded-lg ${activePanel === "settings" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
-              title={t("layout.settings")}
-            >
-              <IoSettingsOutline className="w-5 h-5" />
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
             </button>
           </div>
-        </div>
 
-        {/* Panel content */}
-        <div
-          className={`lg:w-96 w-full h-full border-l border-purple-500/30 bg-black/40 backdrop-blur-sm transition-all duration-300 scrollable-container ${
-            activePanel
-              ? "translate-x-0"
-              : "lg:translate-x-full translate-y-full"
-          }`}
-        >
-          {activePanel === "portfolio" && <Portfolio />}
-          {activePanel === "screener" && <PriceUpdates />}
-          {activePanel === "pipelines" && <Pipelines />}
-          {activePanel === "settings" && <Settings />}
+          <div className="flex-1 overflow-auto">
+            {activePanel === "portfolio" && <Portfolio />}
+            {activePanel === "screener" && <PriceUpdates />}
+            {activePanel === "pipelines" && <Pipelines />}
+            {activePanel === "settings" && <Settings />}
+          </div>
         </div>
-      </div>
-
-      <MobileNavigation
-        activePanel={activePanel}
-        setActivePanel={setActivePanel}
-      />
-    </>
+      )}
+    </div>
   );
 }

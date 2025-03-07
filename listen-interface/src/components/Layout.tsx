@@ -1,7 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { createContext, memo, useContext, useMemo, useState } from "react";
-import { IoMenu } from "react-icons/io5";
+import { createContext, memo, useContext, useState } from "react";
 import { UseBalanceReturnType } from "wagmi";
 import ethereumIcon from "../assets/icons/ethereum.svg";
 import { imageMap } from "../hooks/util";
@@ -9,11 +8,11 @@ import { Background } from "./Background";
 
 import { useTranslation } from "react-i18next";
 import { FaXTwitter } from "react-icons/fa6";
-import { RxCross2 } from "react-icons/rx";
 import { TbHistoryToggle } from "react-icons/tb";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { PanelSelector } from "./PanelSelector";
 import { RecentChats } from "./RecentChats";
+import { SimpleHeader } from "./SimpleHeader";
 
 function balanceToUI(balance: UseBalanceReturnType["data"]) {
   if (!balance?.value || !balance?.decimals) return 0;
@@ -216,166 +215,102 @@ function getBottomItems(t: (key: string) => string) {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = usePrivy();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
   const [activePanel, setActivePanel] = useState(
     localStorage.getItem("activePanel") || null
   );
-
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const { user, logout } = usePrivy();
   const { t } = useTranslation();
 
-  // Call the functions with the current translation function
-  const NAV_ITEMS = getNavItems(t);
+  // Call the function with the current translation function
   const BOTTOM_ITEMS = getBottomItems(t);
 
-  const handleSidebarToggle = (open: boolean) => {
-    setIsSidebarOpen(open);
+  // Memoize the bottom items to prevent unnecessary re-renders
+  const memoizedBottomItems = BOTTOM_ITEMS.map((item, index) => (
+    <MemoizedBottomLink
+      key={index}
+      href={item.href}
+      icon={item.icon}
+      label={item.label}
+      isSidebarOpen={isSidebarOpen}
+    />
+  ));
+
+  // Handle sidebar hover effects
+  const handleSidebarMouseEnter = () => {
+    setIsSidebarOpen(true);
   };
 
-  // Memoize the nav items - now depends on both isSidebarOpen and NAV_ITEMS (which depends on t)
-  const memoizedNavItems = useMemo(
-    () =>
-      NAV_ITEMS.map((item) => (
-        <MemoizedNavLink
-          key={item.to}
-          {...item}
-          isSidebarOpen={isSidebarOpen}
-        />
-      )),
-    [isSidebarOpen, NAV_ITEMS]
-  );
-
-  // Memoize the bottom items - now depends on both isSidebarOpen and BOTTOM_ITEMS (which depends on t)
-  const memoizedBottomItems = useMemo(
-    () =>
-      BOTTOM_ITEMS.map((item) => (
-        <MemoizedBottomLink
-          key={item.href}
-          {...item}
-          isSidebarOpen={isSidebarOpen}
-        />
-      )),
-    [isSidebarOpen, BOTTOM_ITEMS]
-  );
+  const handleSidebarMouseLeave = () => {
+    setIsSidebarOpen(false);
+  };
 
   return (
-    <SidebarContext.Provider value={handleSidebarToggle}>
+    <SidebarContext.Provider value={setIsSidebarOpen}>
       <div className="relative h-screen flex flex-col text-white overflow-hidden">
         <Background />
 
-        {/* Mobile Header */}
-        <div className="lg:hidden fixed top-0 left-0 right-0 h-16 z-50 bg-black/40 backdrop-blur-sm border-b border-purple-500/30 flex items-center justify-between px-4">
-          <div className="flex items-center space-x-3">
-            <img
-              src="/listen-more.png"
-              alt="Logo"
-              className="w-8 h-8 rounded"
-            />
-            <span className="font-bold text-md lg:text-xl">listen-rs</span>
-          </div>
-          <button
-            onClick={() => handleSidebarToggle(!isSidebarOpen)}
-            className="p-2 rounded-lg hover:bg-purple-500/10 transition-colors"
-          >
-            {isSidebarOpen ? (
-              <RxCross2 className="w-6 h-6" />
-            ) : (
-              <IoMenu className="w-6 h-6" />
-            )}
-          </button>
+        {/* Header */}
+        <div className="z-20 bg-black/40 backdrop-blur-sm">
+          <SimpleHeader
+            activePanel={activePanel}
+            setActivePanel={(panel) => {
+              setActivePanel(panel);
+              if (panel) {
+                localStorage.setItem("activePanel", panel);
+              } else {
+                localStorage.removeItem("activePanel");
+              }
+            }}
+          />
         </div>
 
-        {/* Mobile Sidebar Overlay */}
-        <div
-          className={`lg:hidden fixed inset-0 z-40 bg-black/40 backdrop-blur-sm transition-opacity duration-300 ${
-            isSidebarOpen ? "opacity-100" : "opacity-0 pointer-events-none"
-          }`}
-          onClick={() => handleSidebarToggle(false)}
-        >
+        {/* Main Content with Sidebar */}
+        <div className="flex-1 flex overflow-hidden relative">
+          {/* Collapsible Sidebar */}
           <div
-            className={`w-64 h-full bg-black/60 backdrop-blur-sm transition-transform duration-300 ${
-              isSidebarOpen ? "translate-x-0" : "-translate-x-full"
-            }`}
-            onClick={(e) => e.stopPropagation()}
+            className={`absolute left-0 top-0 bottom-0 z-10 transition-all duration-300 ${
+              isSidebarOpen ? "w-64" : "w-16"
+            } border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex flex-col`}
+            onMouseEnter={handleSidebarMouseEnter}
+            onMouseLeave={handleSidebarMouseLeave}
           >
-            <div className="p-4 pt-20">
-              <nav className="space-y-1">{memoizedNavItems}</nav>
-
-              {/* Balance Display */}
-              {/*isAuthenticated && (
-                <BalanceDisplay
-                  isSidebarOpen={true}
-                  solanaBalance={solanaBalance}
-                  ethereumBalance={ethereumBalance}
-                />
-              )*/}
-            </div>
-
-            {/* Bottom Items */}
-            <div className="absolute bottom-0 left-0 right-0 mb-4 space-y-1">
-              {isSidebarOpen && <VersionAndLanguageDisplay />}
-              {memoizedBottomItems}
-              {user && (
-                <button
-                  onClick={() => logout()}
-                  className="flex items-center h-10 w-full rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
-                >
-                  <div className="flex items-center h-full px-4 w-full">
-                    <svg
-                      width="20"
-                      height="20"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    >
-                      <path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4" />
-                      <path d="M16 17l5-5-5-5" />
-                      <path d="M21 12H9" />
-                    </svg>
-                    <span className="ml-3">{t("layout.logout")}</span>
-                  </div>
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-
-        <div className="relative z-10 flex flex-1 h-full overflow-hidden">
-          {/* Desktop Sidebar - Hidden on mobile */}
-          <div className="hidden lg:flex w-64 border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex-col">
-            {/* Logo section */}
+            {/* New Chat Button */}
             <div className="p-4">
-              <div className="flex items-center">
-                <div
-                  className={`flex items-center ${isSidebarOpen ? "px-2" : "justify-center"}`}
-                >
-                  <img
-                    src="/listen-more.png"
-                    alt="Logo"
-                    className="w-8 h-8 rounded"
-                  />
-                  {isSidebarOpen && (
-                    <span className="ml-3 font-bold text-xl">listen-rs</span>
-                  )}
+              <Link
+                to="/"
+                search={{ new: true }}
+                className="flex items-center justify-center h-10 rounded-lg bg-purple-500/20 text-white hover:bg-purple-500/30 transition-colors"
+              >
+                <div className="flex items-center">
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  >
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                  </svg>
+                  {isSidebarOpen && <span className="ml-3">New Chat</span>}
                 </div>
-              </div>
+              </Link>
             </div>
 
-            {/* Navigation */}
-            <div className="p-4">
-              <nav className="space-y-1">{memoizedNavItems}</nav>
-
-              {/* Balance Display */}
-              {/*isAuthenticated && (
-                <BalanceDisplay
-                  isSidebarOpen={isSidebarOpen}
-                  solanaBalance={solanaBalance}
-                  ethereumBalance={ethereumBalance}
-                />
-              )*/}
+            {/* Recent Chats Section */}
+            <div className="px-4 mb-2">
+              {isSidebarOpen && (
+                <div className="text-xs text-gray-400 uppercase tracking-wider mb-1 px-4">
+                  {t("layout.recent_chats")}
+                </div>
+              )}
+              <div className={isSidebarOpen ? "block" : "hidden"}>
+                <RecentChats />
+              </div>
             </div>
 
             {/* Bottom section */}
@@ -415,26 +350,29 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Main Content */}
-          <div className="flex-1 flex flex-col h-full overflow-hidden">
-            {/* Add top padding only on mobile to account for the header */}
-            <div className="flex-1 flex overflow-hidden pt-16 lg:pt-0">
-              {/* Chat is always visible when no panel is active on mobile */}
-              <div
-                className={`flex-1 overflow-hidden ${activePanel && window.innerWidth < 1024 ? "hidden" : "block"}`}
-              >
-                {children}
-              </div>
-
-              {/* Right panel for toggleable components */}
-              <PanelSelector
-                activePanel={activePanel}
-                setActivePanel={(panel) => {
-                  setActivePanel(panel);
-                  localStorage.setItem("activePanel", panel);
-                }}
-              />
+          {/* Centered Chat Content */}
+          <div className="flex-1 flex overflow-hidden z-0">
+            {/* Chat is always visible and centered */}
+            <div
+              className={`flex-1 overflow-hidden ${
+                activePanel && window.innerWidth < 1024 ? "hidden" : "block"
+              } mx-auto max-w-4xl px-4 lg:px-0`}
+            >
+              {children}
             </div>
+
+            {/* Right panel for toggleable components */}
+            <PanelSelector
+              activePanel={activePanel}
+              setActivePanel={(panel) => {
+                setActivePanel(panel);
+                if (panel) {
+                  localStorage.setItem("activePanel", panel);
+                } else {
+                  localStorage.removeItem("activePanel");
+                }
+              }}
+            />
           </div>
         </div>
       </div>
