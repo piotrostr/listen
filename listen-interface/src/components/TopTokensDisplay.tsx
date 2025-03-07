@@ -99,10 +99,18 @@ const TokenTile = ({ token }: { token: TopToken }) => {
 
 export const TopTokensDisplay = ({ tokens }: TopTokensDisplayProps) => {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
-      {tokens.map((token) => (
-        <TokenTile key={token.pubkey} token={token} />
-      ))}
+    <div className="container-query">
+      <div
+        className="grid grid-cols-1 gap-4 
+        sm:grid-cols-2
+        [@container(min-width:400px)]:grid-cols-2 
+        [@container(min-width:600px)]:grid-cols-3 
+        [@container(min-width:800px)]:grid-cols-4"
+      >
+        {tokens.map((token) => (
+          <TokenTile key={token.pubkey} token={token} />
+        ))}
+      </div>
     </div>
   );
 };

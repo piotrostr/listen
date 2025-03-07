@@ -223,3 +223,9 @@ html {
     margin-right: 0;
   }
 }
+
+/* Add this to your existing CSS */
+.container-query {
+  container-type: inline-size;
+  width: 100%;
+}
