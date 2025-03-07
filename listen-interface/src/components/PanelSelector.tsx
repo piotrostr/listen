@@ -22,13 +22,6 @@ export function PanelSelector({
 
   // Pipelines state
   const [statusFilter, setStatusFilter] = useState<string>("All");
-  const [isRefreshing, setIsRefreshing] = useState(false);
-
-  const handleRefresh = async () => {
-    setIsRefreshing(true);
-    // Add your refresh logic here
-    setIsRefreshing(false);
-  };
 
   const handleClose = useCallback(() => {
     setActivePanel(null);
@@ -69,8 +62,6 @@ export function PanelSelector({
             <PipelinesHeader
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
-              onRefresh={handleRefresh}
-              isRefreshing={isRefreshing}
             />
           }
         >
