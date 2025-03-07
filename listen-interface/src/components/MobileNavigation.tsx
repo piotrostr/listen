@@ -31,8 +31,8 @@ export function MobileNavigation({
   };
 
   return (
-    <div className="lg:hidden fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm border-t border-purple-500/30 z-50">
-      <div className="flex justify-around items-center h-16">
+    <div className="md:hidden fixed bottom-0 left-0 right-0 bg-black/60 backdrop-blur-sm border-t border-purple-500/30 z-50">
+      <div className="flex justify-around items-center h-16 mb-2">
         <button
           onClick={() => handleNavClick("chat")}
           className={`flex flex-col items-center justify-center p-2 ${activePanel === null ? "text-purple-400" : "text-gray-400"}`}

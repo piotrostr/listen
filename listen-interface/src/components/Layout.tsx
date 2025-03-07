@@ -203,7 +203,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               ${isSidebarOpen ? "w-64 bg-black/60 backdrop-blur-sm" : isMobile ? "w-0" : "w-16"} 
               ${isMobile && !isSidebarOpen ? "opacity-0 pointer-events-none" : "opacity-100"}
               ${isMobile ? "lg:block" : "block"} flex flex-col
-              ${isMobile ? "pb-16" : ""}`}
+              ${isMobile ? "pb-20" : ""}`}
             onMouseEnter={handleSidebarMouseEnter}
             onMouseLeave={handleSidebarMouseLeave}
           >
