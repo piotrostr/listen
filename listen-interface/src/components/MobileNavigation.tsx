@@ -1,3 +1,4 @@
+import { usePrivy } from "@privy-io/react-auth";
 import { useTranslation } from "react-i18next";
 import { BsLink } from "react-icons/bs";
 import {
@@ -20,6 +21,7 @@ export function MobileNavigation({
   setActivePanel,
 }: MobileNavigationProps) {
   const { t } = useTranslation();
+  const { user } = usePrivy();
   const { isIOS } = useMobile();
 
   const handleNavClick = (navType: NavType) => {
@@ -31,6 +33,10 @@ export function MobileNavigation({
       setActivePanel(activePanel === navType ? null : navType);
     }
   };
+
+  if (!user) {
+    return null;
+  }
 
   return (
     <div
