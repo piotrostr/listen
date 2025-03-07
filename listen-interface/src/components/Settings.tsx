@@ -31,7 +31,7 @@ export function Settings() {
   };
 
   return (
-    <div className="h-full overflow-auto px-4 scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
+    <div className="h-full overflow-auto px-4 scrollable-container">
       <h2 className="text-lg font-bold mb-2 mt-4">
         {t("settings.wallet_addresses")}
       </h2>

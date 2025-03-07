@@ -229,3 +229,33 @@ html {
   container-type: inline-size;
   width: 100%;
 }
+
+/* Hide scrollbar from all elements */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+/* Apply to specific containers */
+.scrollable-container::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollable-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Make sure RecentChats scrollbar is hidden */
+.recent-chats-container::-webkit-scrollbar {
+  display: none;
+}
+
+.recent-chats-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

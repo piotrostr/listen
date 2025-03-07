@@ -25,7 +25,7 @@ export function Pipelines({ statusFilter }: PipelinesProps) {
   );
 
   return (
-    <div className="h-full overflow-auto p-4">
+    <div className="h-full overflow-auto p-4 scrollable-container">
       {!ready || isLoading ? (
         <div className="flex items-center justify-center h-full">
           <Spinner />

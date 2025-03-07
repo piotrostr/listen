@@ -60,7 +60,7 @@ export function PriceUpdates({
   };
 
   return (
-    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
+    <div className="h-full font-mono overflow-y-auto scrollable-container">
       <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
         {topTokens.map((token) => (
           <TokenTile key={token.pubkey} token={token} />
@@ -89,6 +89,11 @@ export function PriceUpdatesHeader({
   return (
     <div className="flex items-center gap-2 h-full">
       <div className="flex gap-2 h-full items-center">
+        {isListFrozen && (
+          <div className="flex items-center gap-1 bg-black/60 border border-teal-400/30 rounded px-2 h-8 text-xs text-teal-300">
+            <FaPause className="text-teal-300 text-[10px]" />
+          </div>
+        )}
         <button
           onClick={() =>
             setVolumeFilter(volumeFilter === "bought" ? "all" : "bought")
@@ -116,12 +121,6 @@ export function PriceUpdatesHeader({
       </div>
 
       <div className="flex items-center gap-2">
-        {isListFrozen && (
-          <div className="flex items-center gap-1 bg-black/60 border border-teal-400/30 rounded px-2 h-8 text-xs text-teal-300">
-            <FaPause className="text-teal-300 text-[10px]" />{" "}
-            {t("price_updates.paused")}
-          </div>
-        )}
         <select
           value={marketCapFilter}
           onChange={(e) => setMarketCapFilter(e.target.value)}
