@@ -269,7 +269,7 @@ export const ChatMessage = ({
           ),
           code: ({ ...props }) => (
             <code
-              className="block bg-gray-800 p-2 rounded my-2 overflow-x-auto text-sm"
+              className="block bg-transparent rounded overflow-x-auto text-sm"
               style={{
                 wordBreak: "break-all",
                 whiteSpace: "pre-wrap",
@@ -279,7 +279,7 @@ export const ChatMessage = ({
           ),
           pre: ({ ...props }) => (
             <pre
-              className="bg-gray-800 p-3 rounded my-3 overflow-x-auto"
+              className="bg-transparent rounded overflow-x-auto"
               style={{
                 wordBreak: "break-word",
                 whiteSpace: "pre-wrap",
