@@ -218,7 +218,9 @@ function getBottomItems(t: (key: string) => string) {
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = usePrivy();
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
-  const [activePanel, setActivePanel] = useState(null);
+  const [activePanel, setActivePanel] = useState(
+    localStorage.getItem("activePanel") || null
+  );
 
   const { t } = useTranslation();
 
@@ -427,7 +429,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
               {/* Right panel for toggleable components */}
               <PanelSelector
                 activePanel={activePanel}
-                setActivePanel={setActivePanel}
+                setActivePanel={(panel) => {
+                  setActivePanel(panel);
+                  localStorage.setItem("activePanel", panel);
+                }}
               />
             </div>
           </div>
