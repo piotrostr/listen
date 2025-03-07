@@ -20,7 +20,7 @@ export function ChatHistory() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-white">Chat History</h1>
         <Link
-          to="/chat"
+          to="/"
           className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors"
         >
           New Chat
@@ -38,7 +38,7 @@ export function ChatHistory() {
             return (
               <div key={chat.id} className="group relative">
                 <Link
-                  to="/chat"
+                  to="/"
                   search={{ chatId: chat.id }}
                   className="block p-4 bg-blue-900/20 rounded-lg hover:bg-blue-900/30 transition-colors"
                 >

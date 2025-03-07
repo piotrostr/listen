@@ -1,18 +1,18 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { createContext, memo, useContext, useMemo, useState } from "react";
-import { IoChatboxOutline, IoWalletOutline } from "react-icons/io5";
+import { IoMenu } from "react-icons/io5";
 import { UseBalanceReturnType } from "wagmi";
 import ethereumIcon from "../assets/icons/ethereum.svg";
 import { imageMap } from "../hooks/util";
 import { Background } from "./Background";
 
 import { useTranslation } from "react-i18next";
-import { BsLink } from "react-icons/bs";
 import { FaXTwitter } from "react-icons/fa6";
-import { IoMenu, IoSettingsOutline } from "react-icons/io5";
-import { RxCross2, RxDashboard } from "react-icons/rx";
+import { RxCross2 } from "react-icons/rx";
+import { TbHistoryToggle } from "react-icons/tb";
 import LanguageSwitcher from "./LanguageSwitcher";
+import { PanelSelector } from "./PanelSelector";
 import { RecentChats } from "./RecentChats";
 
 function balanceToUI(balance: UseBalanceReturnType["data"]) {
@@ -58,7 +58,7 @@ const MemoizedNavLink = memo(function NavLink({
               <span className="ml-3 flex-1">{label}</span>
               {isChat && (
                 <Link
-                  to="/chat"
+                  to="/"
                   search={{ new: true }}
                   className="p-1 hover:bg-purple-500/20 rounded-full transition-colors"
                   title="New Chat"
@@ -177,15 +177,18 @@ const SidebarContext = createContext<(open: boolean) => void>(() => {});
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = usePrivy();
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isSidebarOpen, setIsSidebarOpen] = useState(true);
+  const [activePanel, setActivePanel] = useState(null);
 
   const { t } = useTranslation();
 
   const NAV_ITEMS = [
-    { to: "/screener", icon: RxDashboard, label: t("layout.screener") },
-    { to: "/portfolio", icon: IoWalletOutline, label: t("layout.portfolio") },
-    { to: "/pipelines", icon: BsLink, label: t("layout.pipelines") },
-    { to: "/settings", icon: IoSettingsOutline, label: t("layout.settings") },
+    {
+      to: "/",
+      icon: TbHistoryToggle,
+      label: t("layout.chat_history"),
+      isChat: true, // This will show the recent chats
+    },
   ] as const;
 
   const BOTTOM_ITEMS = [
@@ -285,16 +288,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             onClick={(e) => e.stopPropagation()}
           >
             <div className="p-4 pt-20">
-              <nav className="space-y-1">
-                {memoizedNavItems}
-                <MemoizedNavLink
-                  to="/chat"
-                  icon={IoChatboxOutline}
-                  label={t("layout.chat")}
-                  isSidebarOpen={true}
-                  isChat={true}
-                />
-              </nav>
+              <nav className="space-y-1">{memoizedNavItems}</nav>
 
               {/* Balance Display */}
               {/*isAuthenticated && (
@@ -340,13 +334,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         <div className="relative z-10 flex h-screen">
           {/* Desktop Sidebar - Hidden on mobile */}
-          <div
-            className={`hidden lg:flex ${
-              isSidebarOpen ? "w-64" : "w-16"
-            } border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex-col transition-all duration-300 group relative`}
-            onMouseEnter={() => handleSidebarToggle(true)}
-            onMouseLeave={() => handleSidebarToggle(false)}
-          >
+          <div className="hidden lg:flex w-64 border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex-col">
             {/* Logo section */}
             <div className="p-4">
               <div className="flex items-center">
@@ -367,16 +355,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
             {/* Navigation */}
             <div className="p-4">
-              <nav className="space-y-1">
-                {memoizedNavItems}
-                <MemoizedNavLink
-                  to="/chat"
-                  icon={IoChatboxOutline}
-                  label={t("layout.chat")}
-                  isSidebarOpen={isSidebarOpen}
-                  isChat={true}
-                />
-              </nav>
+              <nav className="space-y-1">{memoizedNavItems}</nav>
 
               {/* Balance Display */}
               {/*isAuthenticated && (
@@ -424,8 +403,21 @@ export function Layout({ children }: { children: React.ReactNode }) {
           </div>
 
           {/* Main Content */}
-          <div className="flex-1 flex mt-16 lg:mt-0">
-            <div className="flex-1 overflow-auto">{children}</div>
+          <div className="flex-1 flex mt-16 lg:mt-0 pb-16 lg:pb-0">
+            <div className="flex-1 flex">
+              {/* Chat is always visible when no panel is active on mobile */}
+              <div
+                className={`flex-1 overflow-auto ${activePanel && window.innerWidth < 1024 ? "hidden" : "block"}`}
+              >
+                {children}
+              </div>
+
+              {/* Right panel for toggleable components */}
+              <PanelSelector
+                activePanel={activePanel}
+                setActivePanel={setActivePanel}
+              />
+            </div>
           </div>
         </div>
       </div>

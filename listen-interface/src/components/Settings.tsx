@@ -1,17 +1,12 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ChatSelector } from "../components/ChatSelector";
-import { ConnectedAccounts } from "../components/ConnectedAccounts";
-import { WalletAddresses } from "../components/WalletAddresses";
 import { useChatType } from "../hooks/useChatType";
+import { ChatSelector } from "./ChatSelector";
+import { ConnectedAccounts } from "./ConnectedAccounts";
+import { WalletAddresses } from "./WalletAddresses";
 
-export const Route = createFileRoute("/settings")({
-  component: Settings,
-});
-
-function Settings() {
+export function Settings() {
   const { user } = usePrivy();
   const { chatType, setChatType } = useChatType();
   const [quickBuyAmount, setQuickBuyAmount] = useState<number>(0.1);
@@ -36,8 +31,8 @@ function Settings() {
   };
 
   return (
-    <div className="container mx-auto p-4">
-      <h1 className="text-2xl font-bold mb-4">{t("settings.title")}</h1>
+    <div className="h-full overflow-auto p-4">
+      <h1 className="text-xl font-bold mb-4">{t("settings.title")}</h1>
 
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.quick_buy")}</h2>
       <div className="bg-black/40 backdrop-blur-sm border border-purple-500/30 rounded-lg p-4 mb-4">
@@ -64,14 +59,14 @@ function Settings() {
       <ChatSelector selectedChat={chatType} onSelectChat={setChatType} />
 
       <h2 className="text-lg font-bold mb-2 mt-4">
-        {t("settings.wallet_addresses")}
-      </h2>
-      <WalletAddresses />
-
-      <h2 className="text-lg font-bold mb-2 mt-4">
         {t("settings.connected_accounts")}
       </h2>
       {user && <ConnectedAccounts user={user} />}
+
+      <h2 className="text-lg font-bold mb-2 mt-4">
+        {t("settings.wallet_addresses")}
+      </h2>
+      <WalletAddresses />
     </div>
   );
 }

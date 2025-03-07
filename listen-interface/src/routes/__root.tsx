@@ -1,14 +1,20 @@
-import { createRootRoute, Outlet } from "@tanstack/react-router";
+import { createRootRoute } from "@tanstack/react-router";
+import { z } from "zod";
+import { Chat } from "../components/Chat";
 import { GettingStarted } from "../components/GettingStarted";
 import { Layout } from "../components/Layout";
 import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 
+const SearchParamsSchema = z.object({
+  chatId: z.string().optional(),
+  new: z.boolean().optional(),
+  shared: z.boolean().optional(),
+});
+
 export const Route = createRootRoute({
   component: RootComponent,
-  beforeLoad: async ({ location }) => {
-    if (location.pathname === "/") {
-      return;
-    }
+  validateSearch: (search: Record<string, unknown>) => {
+    return SearchParamsSchema.parse(search);
   },
 });
 
@@ -23,5 +29,5 @@ function RootComponent() {
     );
   }
 
-  return <Layout>{isAuthenticated ? <Outlet /> : <GettingStarted />}</Layout>;
+  return <Layout>{isAuthenticated ? <Chat /> : <GettingStarted />}</Layout>;
 }

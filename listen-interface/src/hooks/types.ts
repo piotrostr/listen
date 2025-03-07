@@ -18,7 +18,7 @@ export const TokenMetadataSchema = z.object({
   name: z.string(),
   symbol: z.string(),
   decimals: z.number(),
-  logoURI: z.string(),
+  logoURI: z.string().optional().nullable(),
   volume24h: z.number().optional(),
   chainId: z.number().optional(),
 });

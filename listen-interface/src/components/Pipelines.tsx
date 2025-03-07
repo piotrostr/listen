@@ -67,16 +67,16 @@ export function Pipelines() {
   );
 
   return (
-    <div className="container mx-auto lg:px-4 py-8">
-      <div className="flex justify-between items-center mb-6 lg:p-0 p-4">
-        <h1 className="lg:text-2xl text-xl font-bold text-white lg:text-left text-center">
+    <div className="h-full overflow-auto p-4">
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-xl font-bold text-white">
           {t("pipelines.pipelines")}
         </h1>
         <div className="flex items-center gap-2">
           <select
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
-            className="bg-black/40 text-white border border-purple-500/30 rounded-lg px-4 py-2"
+            className="bg-black/40 text-white border border-purple-500/30 rounded-lg px-4 py-2 text-sm"
           >
             <option value="All">{t("pipelines.all")}</option>
             <option value="Pending">{t("pipelines.pending")}</option>
@@ -89,7 +89,7 @@ export function Pipelines() {
             className="bg-black/40 text-white border border-purple-500/30 rounded-lg p-2 hover:bg-purple-500/20 transition-colors disabled:opacity-50"
           >
             <IoRefreshOutline
-              className={`w-6 h-6 ${isRefreshing ? "animate-spin" : ""}`}
+              className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
             />
           </button>
         </div>
@@ -98,7 +98,7 @@ export function Pipelines() {
         {filteredPipelines?.map((pipeline: ExtendedPipeline, index: number) => (
           <div
             key={`pipeline-${index}`}
-            className="bg-black/40 backdrop-blur-sm border border-purple-500/30 rounded-lg lg:p-6 p-2 py-4"
+            className="bg-black/40 backdrop-blur-sm border border-purple-500/30 rounded-lg p-4"
           >
             <ExtendedPipelineDisplay pipeline={pipeline} />
           </div>

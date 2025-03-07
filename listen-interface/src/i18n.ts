@@ -28,6 +28,7 @@ const resources = {
         twitter: "Twitter",
         chat: "Chat",
         logout: "Logout",
+        chat_history: "Chat History",
       },
       recent_chats: {
         view_all_chats: "View all chats",
@@ -158,6 +159,7 @@ const resources = {
         twitter: "推特",
         chat: "聊天",
         logout: "退出登录",
+        chat_history: "聊天记录",
       },
       recent_chats: {
         view_all_chats: "查看所有聊天",

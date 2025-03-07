@@ -49,7 +49,7 @@ export function useChat() {
   const { data: evmPortfolio } = useEvmPortfolio();
   const { getAccessToken } = usePrivy();
   const { chatType } = useChatType();
-  const { chatId, new: isNewChat } = useSearch({ from: "/chat" });
+  const { chatId, new: isNewChat } = useSearch({ from: "/" });
   const navigate = useNavigate();
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
 
@@ -74,7 +74,7 @@ export function useChat() {
     if (isNewChat) {
       setChat(null);
       // Remove the 'new' parameter but keep the URL at /chat
-      navigate({ to: "/chat", search: {}, replace: true });
+      navigate({ to: "/", search: {}, replace: true });
     }
   }, [isNewChat, navigate]);
 
@@ -149,7 +149,7 @@ export function useChat() {
         // Only navigate if this is truly a new chat (no chatId in URL)
         if (!chatId) {
           navigate({
-            to: "/chat",
+            to: "/",
             search: { chatId: newChatId },
             replace: true,
           });

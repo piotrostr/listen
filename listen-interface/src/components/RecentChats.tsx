@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { useEffect, useState } from "react";
@@ -9,6 +9,7 @@ import { Chat } from "../types/message";
 
 export function RecentChats() {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
+  const navigate = useNavigate();
 
   const { t } = useTranslation();
 
@@ -34,14 +35,17 @@ export function RecentChats() {
     return i18n.language.startsWith("zh") ? zhCN : undefined;
   };
 
+  const selectChat = (chatId: string) => {
+    navigate({ to: "/", search: { chatId }, replace: true });
+  };
+
   return (
     <div className="overflow-hidden transition-all duration-300 ease-in-out">
       {recentChats.map((chat) => (
-        <Link
+        <div
           key={chat.id}
-          to="/chat"
-          search={{ chatId: chat.id }}
-          className="flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
+          onClick={() => selectChat(chat.id)}
+          className="flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors cursor-pointer"
         >
           <div className="flex-1 min-w-0">
             <div className="truncate text-xs">
@@ -54,11 +58,11 @@ export function RecentChats() {
               })}
             </div>
           </div>
-        </Link>
+        </div>
       ))}
       {recentChats.length > 0 && (
         <Link
-          to="/chat-history"
+          to="/"
           className="flex items-center h-10 px-4 text-sm text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 transition-colors"
         >
           {t("recent_chats.view_all_chats")}
