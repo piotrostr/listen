@@ -48,7 +48,7 @@ export function Portfolio() {
       : [...(evmAssets ?? []), ...(solanaAssets ?? [])];
 
   return (
-    <div className="h-full font-mono  overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
+    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
       <div className="flex-1">
         <div className="p-4 pt-0 space-y-4">
           {displayedAssets

@@ -206,19 +206,19 @@ html {
   }
 }
 
-/* Add this to your existing CSS */
+/* Update the chat container width */
 .chat-container {
   transition: margin-right 0.3s ease;
   width: 100%;
-  max-width: 1024px;
+  max-width: 1075px; /* Increased from 1024px by ~5% */
   margin: 0 auto;
 }
 
 .chat-container.panel-open {
-  margin-right: 24rem; /* 384px (w-96) */
+  margin-right: 24rem; /* Keep the margin for when panel is open */
 }
 
-@media (max-width: 1024px) {
+@media (max-width: 1075px) { /* Update the breakpoint to match new width */
   .chat-container.panel-open {
     margin-right: 0;
   }

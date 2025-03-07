@@ -63,7 +63,7 @@ export function TokenTile({ token }: TokenTileProps) {
                     className="hover:text-blue-500 truncate max-w-[90px] sm:max-w-none cursor-pointer"
                     onClick={() => openChart(token.pubkey)}
                   >
-                    {token.name}
+                    {metadata?.mpl.symbol ?? token.name}
                   </div>
                   {/*metadata?.mpl.symbol && (
                     <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-gray-500 hidden lg:block">
