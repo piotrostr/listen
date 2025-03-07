@@ -30,9 +30,10 @@ const resources = {
         logout: "Logout",
         chat_history: "Chat History",
         recent_chats: "Recent Chats",
+        version: "Version",
+        new_chat: "New Chat",
       },
       chat_history: {
-        new_chat: "New Chat",
         no_chats_found: "No chats found",
       },
       recent_chats: {
@@ -168,6 +169,10 @@ const resources = {
         recent_chats: "最近聊天",
         new_chat: "新聊天",
         no_chats_found: "未找到聊天",
+        version: "版本",
+      },
+      chat_history: {
+        new_chat: "新聊天",
       },
       recent_chats: {
         view_all_chats: "查看所有聊天",

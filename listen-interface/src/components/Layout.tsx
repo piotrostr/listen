@@ -93,9 +93,12 @@ export function BalanceDisplay({
 
 // Version Display Component
 export function VersionAndLanguageDisplay() {
+  const { t } = useTranslation();
   return (
     <div className="flex justify-around items-center w-full">
-      <span className="text-xs text-gray-400">version: 1.1.4</span>
+      <span className="text-xs text-gray-400">
+        {t("layout.version")}: 1.1.4
+      </span>
       <LanguageSwitcher />
     </div>
   );
@@ -230,7 +233,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                           <line x1="12" y1="5" x2="12" y2="19"></line>
                           <line x1="5" y1="12" x2="19" y2="12"></line>
                         </svg>
-                        <span className="ml-3">New Chat</span>
+                        <span className="ml-3">{t("layout.new_chat")}</span>
                       </div>
                     </Link>
                   </div>
