@@ -27,7 +27,7 @@ export function SimpleHeader({
   };
 
   return (
-    <div className="flex items-center justify-between h-16 md:px-4">
+    <div className="flex items-center justify-between h-16 sm:px-4">
       {/* Left side - Logo with hover effect */}
       <div className="flex items-center">
         {isMobile && (

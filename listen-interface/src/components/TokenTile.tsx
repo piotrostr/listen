@@ -87,10 +87,10 @@ export function TokenTile({ token }: TokenTileProps) {
         <div className="text-right">
           <div className="flex flex-col">
             <span className="text-green-500 font-medium text-xs sm:text-base">
-              +${token.buyVolume.toFixed(2).toLocaleString()}
+              +${parseFloat(token.buyVolume.toFixed(2)).toLocaleString()}
             </span>
             <span className="text-red-500 font-medium text-xs sm:text-base">
-              -${token.sellVolume.toFixed(2).toLocaleString()}
+              -${parseFloat(token.sellVolume.toFixed(2)).toLocaleString()}
             </span>
           </div>
           <div className="flex justify-end items-center gap-2 mt-1">
