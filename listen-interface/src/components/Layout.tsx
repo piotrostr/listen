@@ -268,11 +268,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Main Content Area - Centered with transition and minimum left padding */}
+          {/* Main Content Area - Responsive behavior */}
           <div
-            className={`flex justify-center h-full w-full transition-all duration-300 ${
-              activePanel ? "pr-[420px]" : ""
-            } pl-16`}
+            className={`flex justify-center h-full w-full transition-all duration-300 pl-16 
+              ${activePanel ? "lg:pr-[420px]" : ""}`}
           >
             <div className="flex-1 max-w-4xl flex flex-col overflow-hidden">
               {children}

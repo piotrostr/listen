@@ -29,9 +29,9 @@ export function PanelSelector({
 
   if (!activePanel) return null;
 
-  switch (activePanel) {
-    case "screener":
-      return (
+  return (
+    <div className="h-full pr-4">
+      {activePanel === "screener" && (
         <FloatingPanel
           title="screener"
           onClose={handleClose}
@@ -52,9 +52,9 @@ export function PanelSelector({
             setIsListFrozen={setIsListFrozen}
           />
         </FloatingPanel>
-      );
-    case "pipelines":
-      return (
+      )}
+
+      {activePanel === "pipelines" && (
         <FloatingPanel
           title="pipelines"
           onClose={handleClose}
@@ -67,26 +67,25 @@ export function PanelSelector({
         >
           <Pipelines statusFilter={statusFilter} />
         </FloatingPanel>
-      );
-    case "chat":
-      return (
+      )}
+
+      {activePanel === "chat" && (
         <FloatingPanel title="chat" onClose={handleClose}>
           <Chat />
         </FloatingPanel>
-      );
-    case "portfolio":
-      return (
+      )}
+
+      {activePanel === "portfolio" && (
         <FloatingPanel title="portfolio" onClose={handleClose}>
           <Portfolio />
         </FloatingPanel>
-      );
-    case "settings":
-      return (
+      )}
+
+      {activePanel === "settings" && (
         <FloatingPanel title="settings" onClose={handleClose}>
           <Settings />
         </FloatingPanel>
-      );
-    default:
-      return null;
-  }
+      )}
+    </div>
+  );
 }
