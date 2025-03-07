@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useModal } from "../contexts/ModalContext";
-import { Socials } from "./Socials";
 
 // Zod schema for token data
 export const TopTokenSchema = z.object({
@@ -23,13 +22,13 @@ interface TopTokensDisplayProps {
 
 const formatNumber = (num: number) => {
   if (num >= 1_000_000_000) {
-    return `$${(num / 1_000_000_000).toFixed(2)}B`;
+    return `$${(num / 1_000_000_000).toFixed(1)}B`;
   } else if (num >= 1_000_000) {
-    return `$${(num / 1_000_000).toFixed(2)}M`;
+    return `$${(num / 1_000_000).toFixed(1)}M`;
   } else if (num >= 1_000) {
-    return `$${(num / 1_000).toFixed(2)}K`;
+    return `$${(num / 1_000).toFixed(1)}K`;
   }
-  return `$${num.toFixed(2)}`;
+  return `$${num.toFixed(1)}`;
 };
 
 const TokenTile = ({ token }: { token: TopToken }) => {
@@ -75,7 +74,6 @@ const TokenTile = ({ token }: { token: TopToken }) => {
             >
               {metadata?.mpl?.symbol || token.name}
             </a>
-            <Socials tokenMetadata={metadata} pubkey={token.pubkey} />
           </div>
           <div className="text-sm text-gray-500">
             ${token.price.toFixed(token.price < 0.01 ? 4 : 2)}
@@ -84,16 +82,14 @@ const TokenTile = ({ token }: { token: TopToken }) => {
       </div>
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div>
-          <div className="text-gray-500">Market Cap</div>
           <div className="font-medium">{formatNumber(token.market_cap)}</div>
         </div>
         <div>
-          <div className="text-gray-500">24h Change</div>
           <div
             className={`font-medium ${token.price_change_24h >= 0 ? "text-green-500" : "text-red-500"}`}
           >
             {token.price_change_24h >= 0 ? "+" : ""}
-            {token.price_change_24h.toFixed(2)}%
+            {token.price_change_24h.toFixed(1)}%
           </div>
         </div>
       </div>
@@ -103,7 +99,7 @@ const TokenTile = ({ token }: { token: TopToken }) => {
 
 export const TopTokensDisplay = ({ tokens }: TopTokensDisplayProps) => {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-4 gap-4">
       {tokens.map((token) => (
         <TokenTile key={token.pubkey} token={token} />
       ))}
