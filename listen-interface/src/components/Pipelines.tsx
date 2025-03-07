@@ -97,11 +97,11 @@ export function PipelinesHeader({
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center gap-2">
+    <div className="flex items-center gap-2 h-full">
       <select
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value)}
-        className="bg-black/40 text-white border border-purple-500/30 rounded-lg px-4 py-2 text-sm"
+        className="bg-black/40 text-white border border-purple-500/30 rounded-lg px-4 h-8 text-sm"
       >
         <option value="All">{t("pipelines.all")}</option>
         <option value="Pending">{t("pipelines.pending")}</option>
@@ -111,10 +111,10 @@ export function PipelinesHeader({
       <button
         onClick={onRefresh}
         disabled={isRefreshing}
-        className="bg-black/40 text-white border border-purple-500/30 rounded-lg p-2 hover:bg-purple-500/20 transition-colors disabled:opacity-50"
+        className="bg-black/40 text-white border border-purple-500/30 rounded-lg w-8 h-8 flex items-center justify-center hover:bg-purple-500/20 transition-colors disabled:opacity-50"
       >
         <IoRefreshOutline
-          className={`w-5 h-5 ${isRefreshing ? "animate-spin" : ""}`}
+          className={`w-4 h-4 ${isRefreshing ? "animate-spin" : ""}`}
         />
       </button>
     </div>

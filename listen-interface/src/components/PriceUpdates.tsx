@@ -87,8 +87,8 @@ export function PriceUpdatesHeader({
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center justify-between gap-2 h-full">
-      <div className="flex gap-2">
+    <div className="flex items-center gap-2 h-full">
+      <div className="flex gap-2 h-full items-center">
         <button
           onClick={() =>
             setVolumeFilter(volumeFilter === "bought" ? "all" : "bought")
@@ -99,7 +99,7 @@ export function PriceUpdatesHeader({
               : "bg-black/40 border-2 border-purple-500/30"
           } hover:bg-purple-500/10 transition-all`}
         >
-          <FaCircle className="text-green-500" />
+          <FaCircle className="text-green-500 text-xs" />
         </button>
         <button
           onClick={() =>
@@ -111,13 +111,13 @@ export function PriceUpdatesHeader({
               : "bg-black/40 border-2 border-purple-500/30"
           } hover:bg-purple-500/10 transition-all`}
         >
-          <FaCircle className="text-red-500" />
+          <FaCircle className="text-red-500 text-xs" />
         </button>
       </div>
 
-      <div className="flex items-center gap-2 flex-1 justify-end">
+      <div className="flex items-center gap-2">
         {isListFrozen && (
-          <div className="flex items-center gap-1 bg-black/60 border border-teal-400/30 rounded px-2 py-0.5 text-xs text-teal-300">
+          <div className="flex items-center gap-1 bg-black/60 border border-teal-400/30 rounded px-2 h-8 text-xs text-teal-300">
             <FaPause className="text-teal-300 text-[10px]" />{" "}
             {t("price_updates.paused")}
           </div>
@@ -125,7 +125,7 @@ export function PriceUpdatesHeader({
         <select
           value={marketCapFilter}
           onChange={(e) => setMarketCapFilter(e.target.value)}
-          className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-2 py-1 text-sm focus:outline-none focus:border-purple-500 w-[120px]"
+          className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-2 h-8 text-sm focus:outline-none focus:border-purple-500 w-[120px]"
         >
           <option value="all">{t("price_updates.all")}</option>
           <option value="under1m">&lt;$1M</option>

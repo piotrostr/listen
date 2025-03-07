@@ -19,14 +19,14 @@ export function FloatingPanel({
   return (
     <div className="absolute right-4 top-4 bottom-4 w-[420px] rounded-xl border border-purple-500/30 bg-black/40 backdrop-blur-sm shadow-lg">
       <div className="flex flex-col h-full">
-        <div className="border-b border-purple-500/30 p-3">
-          <div className="flex items-center justify-between gap-2">
+        <div className="border-b border-purple-500/30 h-12">
+          <div className="flex items-center justify-between gap-2 px-3 h-full">
             <div>{t(`layout.${title}`)}</div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 h-full">
               {headerContent}
               <button
                 onClick={onClose}
-                className="p-1 rounded-full hover:bg-purple-500/20"
+                className="w-8 h-8 rounded-full hover:bg-purple-500/20 flex items-center justify-center"
               >
                 <svg
                   width="16"
