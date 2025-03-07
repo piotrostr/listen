@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { createContext, memo, useContext, useState } from "react";
+import { createContext, memo, useState } from "react";
 import { UseBalanceReturnType } from "wagmi";
 import ethereumIcon from "../assets/icons/ethereum.svg";
 import { imageMap } from "../hooks/util";
@@ -8,7 +8,6 @@ import { Background } from "./Background";
 
 import { useTranslation } from "react-i18next";
 import { FaXTwitter } from "react-icons/fa6";
-import { TbHistoryToggle } from "react-icons/tb";
 import LanguageSwitcher from "./LanguageSwitcher";
 import { PanelSelector } from "./PanelSelector";
 import { RecentChats } from "./RecentChats";
@@ -18,77 +17,6 @@ function balanceToUI(balance: UseBalanceReturnType["data"]) {
   if (!balance?.value || !balance?.decimals) return 0;
   return Number(balance?.value) / 10 ** balance?.decimals;
 }
-
-// Memoize the NavLink component
-const MemoizedNavLink = memo(function NavLink({
-  to,
-  icon: Icon,
-  label,
-  isSidebarOpen = true,
-  isChat = false,
-}: {
-  to: string;
-  icon: React.ComponentType<{ className?: string }>;
-  label: string;
-  isSidebarOpen?: boolean;
-  isChat?: boolean;
-}) {
-  const setIsSidebarOpen = useContext(SidebarContext);
-
-  return (
-    <div className="relative">
-      <Link
-        to={to}
-        className="flex items-center h-10 rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 [&.active]:bg-purple-500/20 [&.active]:text-white transition-colors"
-        onClick={() => {
-          if (window.innerWidth < 1024) {
-            setIsSidebarOpen(false);
-          }
-        }}
-      >
-        <div
-          className={`flex items-center h-full ${
-            isSidebarOpen ? "px-4 w-full" : "justify-center w-16"
-          }`}
-        >
-          <Icon className="w-5 h-5 min-w-[20px]" />
-          {isSidebarOpen && (
-            <>
-              <span className="ml-3 flex-1">{label}</span>
-              {isChat && (
-                <Link
-                  to="/"
-                  search={{ new: true }}
-                  className="p-1 hover:bg-purple-500/20 rounded-full transition-colors"
-                  title="New Chat"
-                >
-                  <svg
-                    width="16"
-                    height="16"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                </Link>
-              )}
-            </>
-          )}
-        </div>
-      </Link>
-      {isChat && isSidebarOpen && (
-        <div className="mt-1">
-          <RecentChats />
-        </div>
-      )}
-    </div>
-  );
-});
 
 // Memoize the BottomLink component
 const MemoizedBottomLink = memo(function BottomLink({
@@ -174,18 +102,6 @@ export function VersionAndLanguageDisplay() {
 // Add this near the top of the file, after imports
 const SidebarContext = createContext<(open: boolean) => void>(() => {});
 
-// Move these outside the component as functions that take the translation function
-function getNavItems(t: (key: string) => string) {
-  return [
-    {
-      to: "/",
-      icon: TbHistoryToggle,
-      label: t("layout.chat_history"),
-      isChat: true, // This will show the recent chats
-    },
-  ] as const;
-}
-
 function getBottomItems(t: (key: string) => string) {
   return [
     {
@@ -270,36 +186,38 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Collapsible Sidebar - Floating */}
           <div
             className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 ${
-              isSidebarOpen ? "w-64" : "w-16"
-            } border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex flex-col`}
+              isSidebarOpen ? "w-64 bg-black/60 backdrop-blur-sm" : "w-16"
+            } flex flex-col`}
             onMouseEnter={handleSidebarMouseEnter}
             onMouseLeave={handleSidebarMouseLeave}
           >
             {/* New Chat Button */}
-            <div className="p-4">
-              <Link
-                to="/"
-                search={{ new: true }}
-                className="flex items-center justify-center h-10 rounded-lg bg-purple-500/20 text-white hover:bg-purple-500/30 transition-colors"
-              >
-                <div className="flex items-center">
-                  <svg
-                    width="20"
-                    height="20"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  >
-                    <line x1="12" y1="5" x2="12" y2="19"></line>
-                    <line x1="5" y1="12" x2="19" y2="12"></line>
-                  </svg>
-                  {isSidebarOpen && <span className="ml-3">New Chat</span>}
-                </div>
-              </Link>
-            </div>
+            {isSidebarOpen && (
+              <div className="p-4">
+                <Link
+                  to="/"
+                  search={{ new: true }}
+                  className="flex items-center justify-center h-10 rounded-lg bg-purple-500/20 text-white hover:bg-purple-500/30"
+                >
+                  <div className="flex items-center">
+                    <svg
+                      width="20"
+                      height="20"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    >
+                      <line x1="12" y1="5" x2="12" y2="19"></line>
+                      <line x1="5" y1="12" x2="19" y2="12"></line>
+                    </svg>
+                    <span className="ml-3">New Chat</span>
+                  </div>
+                </Link>
+              </div>
+            )}
 
             {/* Recent Chats Section */}
             <div className="px-4 mb-2">
@@ -350,11 +268,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Main Content Area - Centered with transition */}
+          {/* Main Content Area - Centered with transition and minimum left padding */}
           <div
             className={`flex justify-center h-full w-full transition-all duration-300 ${
               activePanel ? "pr-[400px]" : ""
-            }`}
+            } pl-16`}
           >
             <div className="flex-1 max-w-4xl flex flex-col overflow-hidden">
               {children}
