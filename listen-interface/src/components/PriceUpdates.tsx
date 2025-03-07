@@ -8,13 +8,20 @@ import { setupWebSocket } from "../services/websocketService";
 import { useTokenStore } from "../store/tokenStore";
 import { TokenTile } from "./TokenTile";
 
-export function PriceUpdates() {
+interface PriceUpdatesProps {
+  marketCapFilter: string;
+  volumeFilter: "bought" | "sold" | "all";
+  isListFrozen: boolean;
+  setIsListFrozen: (frozen: boolean) => void;
+}
+
+export function PriceUpdates({
+  marketCapFilter,
+  volumeFilter,
+  isListFrozen,
+  setIsListFrozen,
+}: PriceUpdatesProps) {
   const { tokenMap, filterAndSortTokens } = useTokenStore();
-  const [marketCapFilter, setMarketCapFilter] = useState<string>("all");
-  const [volumeFilter, setVolumeFilter] = useState<"bought" | "sold" | "all">(
-    "all"
-  );
-  const [isListFrozen, setIsListFrozen] = useState(false);
   const [frozenTokens, setFrozenTokens] = useState<any[]>([]);
 
   // Setup WebSocket connection
@@ -44,7 +51,6 @@ export function PriceUpdates() {
   // Use frozen tokens when list is frozen, otherwise use current tokens
   const topTokens = isListFrozen ? frozenTokens : currentTokens;
 
-  // Handlers for mouse events
   const handleMouseEnter = () => {
     setIsListFrozen(true);
   };
@@ -53,9 +59,34 @@ export function PriceUpdates() {
     setIsListFrozen(false);
   };
 
+  return (
+    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
+      <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
+        {topTokens.map((token) => (
+          <TokenTile key={token.pubkey} token={token} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Export the filter header component separately
+export function PriceUpdatesHeader({
+  volumeFilter,
+  setVolumeFilter,
+  marketCapFilter,
+  setMarketCapFilter,
+  isListFrozen,
+}: {
+  volumeFilter: "bought" | "sold" | "all";
+  setVolumeFilter: (filter: "bought" | "sold" | "all") => void;
+  marketCapFilter: string;
+  setMarketCapFilter: (filter: string) => void;
+  isListFrozen: boolean;
+}) {
   const { t } = useTranslation();
 
-  const filterHeader = (
+  return (
     <div className="flex items-center justify-between gap-2 h-full">
       <div className="flex gap-2">
         <button
@@ -91,9 +122,6 @@ export function PriceUpdates() {
             {t("price_updates.paused")}
           </div>
         )}
-        <span className="text-purple-100 text-sm hidden sm:inline">
-          {t("price_updates.market_cap")}:
-        </span>
         <select
           value={marketCapFilter}
           onChange={(e) => setMarketCapFilter(e.target.value)}
@@ -105,19 +133,6 @@ export function PriceUpdates() {
           <option value="10mTo100m">$10M-$100M</option>
           <option value="over100m">&gt;$100M</option>
         </select>
-      </div>
-    </div>
-  );
-
-  return (
-    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
-      <div className="h-[64px] p-3 border-b border-purple-500/20">
-        {filterHeader}
-      </div>
-      <div onMouseEnter={handleMouseEnter} onMouseLeave={handleMouseLeave}>
-        {topTokens.map((token) => (
-          <TokenTile key={token.pubkey} token={token} />
-        ))}
       </div>
     </div>
   );
