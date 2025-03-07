@@ -1,5 +1,5 @@
 dev-dist
-debug-*
+debug*
 stats.html
 dist/*.gz
 dist/stats.html
