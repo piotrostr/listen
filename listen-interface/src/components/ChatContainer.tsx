@@ -89,7 +89,7 @@ export function ChatInput({
   return (
     <div
       className={`min-h-10 border ${isFocused ? "border-purple-500/60" : "border-purple-500/30"} 
-                 rounded-lg bg-black/40 backdrop-blur-sm px-3 py-2 flex items-center`}
+                 rounded-lg bg-black/40 backdrop-blur-sm px-3 py-2 flex items-center mb-2`}
     >
       <div className="flex-grow relative">
         <textarea

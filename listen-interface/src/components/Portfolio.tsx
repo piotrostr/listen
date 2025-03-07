@@ -1,7 +1,8 @@
 import { useFundWallet } from "@privy-io/react-auth/solana";
+import { useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FaApplePay, FaShoppingCart } from "react-icons/fa";
+import { FaApplePay, FaShoppingCart, FaSync } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
 import { useChatType } from "../hooks/useChatType";
 import { useEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
@@ -17,6 +18,8 @@ export function Portfolio() {
   const { data: evmAssets, isLoading: isLoadingEvm } = useEvmPortfolio();
   const { data: wallets } = usePrivyWallets();
   const { chatType } = useChatType(); // Get the global chat type from settings
+
+  const queryClient = useQueryClient();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
@@ -40,6 +43,13 @@ export function Portfolio() {
     setSelectedAsset(asset);
     setModalAction(action);
     setModalOpen(true);
+  };
+
+  const handleRefresh = async () => {
+    await queryClient.resetQueries({
+      queryKey: ["portfolio"],
+      exact: false,
+    });
   };
 
   const displayedAssets =
@@ -142,9 +152,12 @@ export function Portfolio() {
                 </div>
               </div>
             ))}
-          {displayedAssets.length === 0 && (
-            <div className="text-center text-gray-400">
+          {displayedAssets.length !== 0 && (
+            <div className="text-center text-gray-400 flex flex-col items-center gap-2">
               {t("portfolio.no_assets_found")}
+              <button onClick={handleRefresh}>
+                <FaSync size={12} />
+              </button>
             </div>
           )}
         </div>
