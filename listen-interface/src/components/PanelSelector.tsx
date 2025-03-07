@@ -8,8 +8,6 @@ import { Portfolio } from "./Portfolio";
 import { PriceUpdates } from "./PriceUpdates";
 import { Settings } from "./Settings";
 
-type PanelType = "portfolio" | "screener" | "pipelines" | "settings" | null;
-
 export function PanelSelector({
   activePanel,
   setActivePanel,
@@ -19,42 +17,34 @@ export function PanelSelector({
 }) {
   const { t } = useTranslation();
 
-  const togglePanel = (panel: PanelType) => {
-    if (activePanel === panel) {
-      setActivePanel(null);
-    } else {
-      setActivePanel(panel);
-    }
-  };
-
   return (
     <>
       <div className="relative h-full">
         {/* Panel toggle buttons - desktop only */}
         <div className="absolute top-4 right-4 hidden lg:flex gap-2 z-10">
           <button
-            onClick={() => togglePanel("portfolio")}
+            onClick={() => setActivePanel("portfolio")}
             className={`p-2 rounded-lg ${activePanel === "portfolio" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
             title={t("layout.portfolio")}
           >
             <IoWalletOutline className="w-5 h-5" />
           </button>
           <button
-            onClick={() => togglePanel("screener")}
+            onClick={() => setActivePanel("screener")}
             className={`p-2 rounded-lg ${activePanel === "screener" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
             title={t("layout.screener")}
           >
             <RxDashboard className="w-5 h-5" />
           </button>
           <button
-            onClick={() => togglePanel("pipelines")}
+            onClick={() => setActivePanel("pipelines")}
             className={`p-2 rounded-lg ${activePanel === "pipelines" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
             title={t("layout.pipelines")}
           >
             <BsLink className="w-5 h-5" />
           </button>
           <button
-            onClick={() => togglePanel("settings")}
+            onClick={() => setActivePanel("settings")}
             className={`p-2 rounded-lg ${activePanel === "settings" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
             title={t("layout.settings")}
           >
