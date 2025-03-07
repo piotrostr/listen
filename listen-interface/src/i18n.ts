@@ -29,6 +29,7 @@ const resources = {
         chat: "Chat",
         logout: "Logout",
         chat_history: "Chat History",
+        recent_chats: "Recent Chats",
       },
       recent_chats: {
         view_all_chats: "View all chats",
@@ -160,6 +161,7 @@ const resources = {
         chat: "聊天",
         logout: "退出登录",
         chat_history: "聊天记录",
+        recent_chats: "最近聊天",
       },
       recent_chats: {
         view_all_chats: "查看所有聊天",

@@ -23,7 +23,7 @@ export function RecentChats() {
               (b.lastMessageAt.getTime() ?? 0) -
               (a.lastMessageAt.getTime() ?? 0)
           )
-          .slice(0, 5); // Show up to 5 recent chats
+          .slice(0, 10);
         setRecentChats(recent);
       }
     };
