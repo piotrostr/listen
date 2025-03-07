@@ -267,9 +267,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Main Content with Sidebar */}
         <div className="flex-1 relative overflow-hidden">
-          {/* Collapsible Sidebar */}
+          {/* Collapsible Sidebar - Floating */}
           <div
-            className={`absolute left-0 top-0 bottom-0 z-10 transition-all duration-300 ${
+            className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 ${
               isSidebarOpen ? "w-64" : "w-16"
             } border-r border-purple-500/30 bg-black/40 backdrop-blur-sm flex flex-col`}
             onMouseEnter={handleSidebarMouseEnter}
@@ -350,15 +350,23 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           </div>
 
-          {/* Main Content Area - Truly centered with no space allocation */}
-          <div className="flex justify-center h-full w-full">
+          {/* Main Content Area - Centered with transition */}
+          <div
+            className={`flex justify-center h-full w-full transition-all duration-300 ${
+              activePanel ? "pr-[400px]" : ""
+            }`}
+          >
             <div className="flex-1 max-w-4xl flex flex-col overflow-hidden">
               {children}
             </div>
           </div>
 
-          {/* Panel Selector - Absolute positioning to avoid space allocation */}
-          <div className="absolute right-0 top-0 bottom-0 h-full">
+          {/* Panel Selector - Floating positioning */}
+          <div
+            className={`fixed right-0 top-16 bottom-0 z-30 transition-transform duration-300 ${
+              activePanel ? "translate-x-0" : "translate-x-full"
+            }`}
+          >
             <PanelSelector
               activePanel={activePanel}
               setActivePanel={setActivePanel}
