@@ -1,9 +1,6 @@
 import { useEffect, useState } from "react";
-import { FaCheck } from "react-icons/fa6";
-import { IoBarChart } from "react-icons/io5";
 import { z } from "zod";
 import { useModal } from "../contexts/ModalContext";
-import { Socials } from "./Socials";
 
 // Zod schema for token data
 export const TopTokenSchema = z.object({
@@ -25,18 +22,17 @@ interface TopTokensDisplayProps {
 
 const formatNumber = (num: number) => {
   if (num >= 1_000_000_000) {
-    return `$${(num / 1_000_000_000).toFixed(2)}B`;
+    return `$${(num / 1_000_000_000).toFixed(1)}B`;
   } else if (num >= 1_000_000) {
-    return `$${(num / 1_000_000).toFixed(2)}M`;
+    return `$${(num / 1_000_000).toFixed(1)}M`;
   } else if (num >= 1_000) {
-    return `$${(num / 1_000).toFixed(2)}K`;
+    return `$${(num / 1_000).toFixed(1)}K`;
   }
-  return `$${num.toFixed(2)}`;
+  return `$${num.toFixed(1)}`;
 };
 
 const TokenTile = ({ token }: { token: TopToken }) => {
   const [metadata, setMetadata] = useState<any>(null);
-  const [copied, setCopied] = useState(false);
   const { openChart } = useModal();
 
   useEffect(() => {
@@ -49,14 +45,8 @@ const TokenTile = ({ token }: { token: TopToken }) => {
       .catch(console.error);
   }, [token.pubkey]);
 
-  const handleCopy = () => {
-    navigator.clipboard.writeText(token.pubkey);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 1000);
-  };
-
   return (
-    <div className="rounded-lg p-3 border border-blue-500/20 hover:border-blue-500/40 transition-colors">
+    <div className="rounded-lg p-3 border border-blue-500/20 hover:border-blue-500/40 transition-colors bg-black/40 backdrop-blur-sm">
       <div className="flex items-center gap-2 mb-2">
         {metadata?.mpl?.ipfs_metadata?.image ? (
           <img
@@ -84,32 +74,6 @@ const TokenTile = ({ token }: { token: TopToken }) => {
             >
               {metadata?.mpl?.symbol || token.name}
             </a>
-            <Socials tokenMetadata={metadata} pubkey={token.pubkey} />
-            <button
-              onClick={handleCopy}
-              className="hover:text-blue-400 hidden lg:block"
-            >
-              {copied ? (
-                <FaCheck size={12} />
-              ) : (
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  strokeWidth={1.5}
-                  stroke="currentColor"
-                  className="w-4 h-4"
-                >
-                  <path d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 01-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 011.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 00-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 01-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 00-3.375-3.375h-1.5a1.125 1.125 0 01-1.125-1.125v-1.5a3.375 3.375 0 00-3.375-3.375H9.75" />
-                </svg>
-              )}
-            </button>
-            <button
-              onClick={() => openChart(token.pubkey)}
-              className="hover:text-blue-400 hidden lg:block"
-            >
-              <IoBarChart size={14} />
-            </button>
           </div>
           <div className="text-sm text-gray-500">
             ${token.price.toFixed(token.price < 0.01 ? 4 : 2)}
@@ -118,16 +82,14 @@ const TokenTile = ({ token }: { token: TopToken }) => {
       </div>
       <div className="grid grid-cols-2 gap-2 text-sm">
         <div>
-          <div className="text-gray-500">Market Cap</div>
           <div className="font-medium">{formatNumber(token.market_cap)}</div>
         </div>
         <div>
-          <div className="text-gray-500">24h Change</div>
           <div
             className={`font-medium ${token.price_change_24h >= 0 ? "text-green-500" : "text-red-500"}`}
           >
             {token.price_change_24h >= 0 ? "+" : ""}
-            {token.price_change_24h.toFixed(2)}%
+            {token.price_change_24h.toFixed(1)}%
           </div>
         </div>
       </div>
@@ -137,10 +99,18 @@ const TokenTile = ({ token }: { token: TopToken }) => {
 
 export const TopTokensDisplay = ({ tokens }: TopTokensDisplayProps) => {
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
-      {tokens.map((token) => (
-        <TokenTile key={token.pubkey} token={token} />
-      ))}
+    <div className="container-query">
+      <div
+        className="grid grid-cols-1 gap-4 
+        sm:grid-cols-2
+        [@container(min-width:400px)]:grid-cols-2 
+        [@container(min-width:600px)]:grid-cols-3 
+        [@container(min-width:800px)]:grid-cols-4"
+      >
+        {tokens.map((token) => (
+          <TokenTile key={token.pubkey} token={token} />
+        ))}
+      </div>
     </div>
   );
 };

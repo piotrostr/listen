@@ -4,12 +4,10 @@ import { PipelineActionType, PipelineStep } from "../types/pipeline";
 import { PipelineStepContainer } from "./PipelineStepContainer";
 
 interface NotificationPipelineStepProps {
-  index: number;
   step: PipelineStep;
 }
 
 export const NotificationPipelineStep = ({
-  index,
   step,
 }: NotificationPipelineStepProps) => {
   const { t } = useTranslation();
@@ -27,7 +25,6 @@ export const NotificationPipelineStep = ({
 
   return (
     <PipelineStepContainer
-      index={index}
       conditions={step.conditions ?? []}
       transactionHash={null}
       error={null}

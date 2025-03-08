@@ -10,16 +10,15 @@ import {
 import { PipelineCondition, PipelineConditionType } from "../types/pipeline";
 
 interface PipelineStepContainerProps {
-  index: number;
   children: React.ReactNode;
   conditions: PipelineCondition[];
   status?: "Pending" | "Completed" | "Failed" | "Cancelled";
   transactionHash: string | null;
   error: string | null;
+  compact?: boolean;
 }
 
 export const PipelineStepContainer = ({
-  index,
   children,
   conditions,
   status,
@@ -29,12 +28,7 @@ export const PipelineStepContainer = ({
   const { t } = useTranslation();
   return (
     <div className="border border-purple-500/30 rounded-lg lg:p-4 p-4 bg-black/40 backdrop-blur-sm">
-      <div className="flex items-center gap-4">
-        <div className="text-sm text-purple-300 lg:inline hidden">
-          {index + 1}
-        </div>
-        {children}
-      </div>
+      <div className="flex items-center gap-4">{children}</div>
 
       {/* Conditions */}
       {conditions.length > 0 && (

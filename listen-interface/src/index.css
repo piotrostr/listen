@@ -162,3 +162,100 @@ code {
   background-color: rgba(147, 51, 234, 0.3);
   border-radius: 3px;
 }
+
+/* After your existing styles, add these rules */
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  /* Fix for iOS Safari */
+  min-height: -webkit-fill-available;
+}
+
+/* Fix for iOS Safari */
+html {
+  height: -webkit-fill-available;
+}
+
+/* Add this class for scrollable containers */
+.scrollable-container {
+  overflow-y: auto;
+  height: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(147, 51, 234, 0.3) transparent;
+}
+
+.scrollable-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb {
+  background-color: rgba(147, 51, 234, 0.3);
+  border-radius: 3px;
+}
+
+/* Add this to your existing CSS */
+@media (max-width: 1024px) {
+  .mobile-content-fix {
+    height: calc(100vh - 16px);
+    padding-top: 16px;
+  }
+}
+
+/* Update the chat container width */
+.chat-container {
+  transition: margin-right 0.3s ease;
+  width: 100%;
+  max-width: 1075px; /* Increased from 1024px by ~5% */
+  margin: 0 auto;
+}
+
+.chat-container.panel-open {
+  margin-right: 24rem; /* Keep the margin for when panel is open */
+}
+
+@media (max-width: 1075px) { /* Update the breakpoint to match new width */
+  .chat-container.panel-open {
+    margin-right: 0;
+  }
+}
+
+/* Add this to your existing CSS */
+.container-query {
+  container-type: inline-size;
+  width: 100%;
+}
+
+/* Hide scrollbar from all elements */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+/* Apply to specific containers */
+.scrollable-container::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollable-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Make sure RecentChats scrollbar is hidden */
+.recent-chats-container::-webkit-scrollbar {
+  display: none;
+}
+
+.recent-chats-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}

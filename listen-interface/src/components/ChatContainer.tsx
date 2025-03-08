@@ -26,11 +26,18 @@ export function ChatContainer({
   children,
 }: ChatContainerProps) {
   return (
-    <div className="flex flex-col h-full max-h-[100vh]">
-      <div className="flex-grow overflow-y-auto pb-4 space-y-4 scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent">
-        <div className="p-4">{children}</div>
+    <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col md:px-2">
+      <div
+        className="flex-1 overflow-y-auto scrollable-container"
+        style={{
+          WebkitOverflowScrolling: "touch",
+          scrollBehavior: "smooth",
+          maxHeight: "calc(100vh - 100px)",
+        }}
+      >
+        <div className="flex flex-col gap-3 px-4 pt-1">{children}</div>
       </div>
-      <div className="sticky bottom-0 left-0 right-0 p-4 bg-black/80 backdrop-blur-sm border-t border-purple-500/20">
+      <div className="sticky bottom-0 left-0 right-0 px-4 py-3 bg-black/80 backdrop-blur-sm">
         <ChatInput
           inputMessage={inputMessage}
           isGenerating={isGenerating}
@@ -81,8 +88,8 @@ export function ChatInput({
 
   return (
     <div
-      className={`min-h-12 border-2 ${isFocused ? "border-purple-500/60" : "border-purple-500/30"} 
-                 rounded-lg bg-black/40 backdrop-blur-sm px-3 py-3 flex items-center`}
+      className={`min-h-10 border ${isFocused ? "border-purple-500/60" : "border-purple-500/30"} 
+                 rounded-lg bg-black/40 backdrop-blur-sm px-3 py-2 flex items-center mb-2`}
     >
       <div className="flex-grow relative">
         <textarea
@@ -127,7 +134,7 @@ export function ChatInput({
         )}
 
         <Link
-          to="/chat"
+          to="/"
           search={{ new: true }}
           className={`p-2 rounded-full bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 transition-colors`}
           title="New Chat"

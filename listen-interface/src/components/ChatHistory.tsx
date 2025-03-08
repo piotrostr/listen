@@ -1,9 +1,11 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 import { chatCache } from "../hooks/localStorage";
 import { Chat } from "../types/message";
 
 export function ChatHistory() {
+  const { t } = useTranslation();
   const [chats, setChats] = useState<Chat[]>([]);
 
   useEffect(() => {
@@ -20,15 +22,18 @@ export function ChatHistory() {
       <div className="flex justify-between items-center mb-6">
         <h1 className="text-2xl font-bold text-white">Chat History</h1>
         <Link
-          to="/chat"
+          to="/"
+          params={{
+            new: true,
+          }}
           className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors"
         >
-          New Chat
+          {t("chat_history.new_chat")}
         </Link>
       </div>
-      {chats.length === 0 && (
-        <div className="text-gray-400">No chats found</div>
-      )}
+      {/*chats.length === 0 && (
+        <div className="text-gray-400">{t("chat_history.no_chats_found")}</div>
+      )*/}
 
       <div className="space-y-4">
         {chats.length > 0 &&
@@ -38,7 +43,7 @@ export function ChatHistory() {
             return (
               <div key={chat.id} className="group relative">
                 <Link
-                  to="/chat"
+                  to="/"
                   search={{ chatId: chat.id }}
                   className="block p-4 bg-blue-900/20 rounded-lg hover:bg-blue-900/30 transition-colors"
                 >

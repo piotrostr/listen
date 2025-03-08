@@ -11,10 +11,16 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
   const [toast, setToast] = useState<{
     message: string;
     type: ToastType;
+    isVisible: boolean;
   } | null>(null);
 
   const showToast = useCallback((message: string, type: ToastType) => {
-    setToast({ message, type });
+    setToast({ message, type, isVisible: true });
+  }, []);
+
+  const handleClose = useCallback(() => {
+    setToast((prev) => (prev ? { ...prev, isVisible: false } : null));
+    setTimeout(() => setToast(null), 300);
   }, []);
 
   return (
@@ -24,7 +30,8 @@ export function ToastProvider({ children }: { children: React.ReactNode }) {
         <Toast
           message={toast.message}
           type={toast.type}
-          onClose={() => setToast(null)}
+          onClose={handleClose}
+          isVisible={toast.isVisible}
         />
       )}
     </ToastContext.Provider>

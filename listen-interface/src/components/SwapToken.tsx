@@ -7,6 +7,7 @@ interface SwapTokenProps {
   chainId?: string | null;
   address?: string;
   showAmount?: boolean;
+  compact: boolean;
 }
 
 export const SwapToken = ({
@@ -15,9 +16,13 @@ export const SwapToken = ({
   amount,
   chainId,
   address,
+  compact,
   showAmount = false,
 }: SwapTokenProps) => {
   const { t } = useTranslation();
+  if (compact) {
+    return <SwapTokenCompact image={image} name={name} amount={amount} />;
+  }
   return (
     <div className="flex items-center gap-3">
       <div className="flex flex-col">
@@ -53,6 +58,30 @@ export const SwapToken = ({
           </div>
         )}
       </div>
+    </div>
+  );
+};
+
+export const SwapTokenCompact = ({
+  image,
+  name,
+  amount,
+}: {
+  image: string | null | undefined;
+  name: string | null | undefined;
+  amount: string | null | undefined;
+}) => {
+  return (
+    <div className="flex flex-col items-center gap-1">
+      <div className="text-sm font-medium">{name ?? ""}</div>
+      {image && (
+        <img
+          src={image.replace("cf-ipfs.com", "ipfs.io")}
+          alt={name ?? ""}
+          className="w-8 h-8 rounded-full"
+        />
+      )}
+      <span className="text-sm font-medium">{amount ?? ""}</span>
     </div>
   );
 };

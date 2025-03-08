@@ -1,12 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/screener")({
-  component: ScreenerPage,
-  beforeLoad: () => {
-    throw redirect({ to: "/" });
+  beforeLoad: ({ search }) => {
+    // Redirect to the root route while preserving all search parameters
+    throw redirect({
+      to: "/",
+      search: search,
+      replace: true,
+    });
   },
 });
-
-function ScreenerPage() {
-  return null;
-}

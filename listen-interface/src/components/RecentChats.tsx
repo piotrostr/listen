@@ -1,28 +1,23 @@
-import { Link } from "@tanstack/react-router";
+import { useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { useEffect, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { chatCache } from "../hooks/localStorage";
 import i18n from "../i18n";
 import { Chat } from "../types/message";
 
-export function RecentChats() {
+export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
-
-  const { t } = useTranslation();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const loadRecentChats = async () => {
       const allChats = await chatCache.getAll();
       if (allChats.length > 0) {
-        const recent = allChats
-          .sort(
-            (a, b) =>
-              (b.lastMessageAt.getTime() ?? 0) -
-              (a.lastMessageAt.getTime() ?? 0)
-          )
-          .slice(0, 5); // Show up to 5 recent chats
+        const recent = allChats.sort(
+          (a, b) =>
+            (b.lastMessageAt.getTime() ?? 0) - (a.lastMessageAt.getTime() ?? 0)
+        );
         setRecentChats(recent);
       }
     };
@@ -34,14 +29,18 @@ export function RecentChats() {
     return i18n.language.startsWith("zh") ? zhCN : undefined;
   };
 
+  const selectChat = (chatId: string) => {
+    navigate({ to: "/", search: { chatId }, replace: true });
+    if (onItemClick) onItemClick();
+  };
+
   return (
-    <div className="overflow-hidden transition-all duration-300 ease-in-out">
+    <div className="overflow-y-auto max-h-[43vh] scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent transition-all duration-300 ease-in-out">
       {recentChats.map((chat) => (
-        <Link
+        <div
           key={chat.id}
-          to="/chat"
-          search={{ chatId: chat.id }}
-          className="flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
+          onClick={() => selectChat(chat.id)}
+          className="flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors cursor-pointer"
         >
           <div className="flex-1 min-w-0">
             <div className="truncate text-xs">
@@ -54,16 +53,8 @@ export function RecentChats() {
               })}
             </div>
           </div>
-        </Link>
+        </div>
       ))}
-      {recentChats.length > 0 && (
-        <Link
-          to="/chat-history"
-          className="flex items-center h-10 px-4 text-sm text-purple-400 hover:text-purple-300 hover:bg-purple-500/10 transition-colors"
-        >
-          {t("recent_chats.view_all_chats")}
-        </Link>
-      )}
     </div>
   );
 }

@@ -1,5 +1,4 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../hooks/useChat";
@@ -13,7 +12,27 @@ const LoadingIndicator = () => (
   <div className="bg-purple-900/20 text-purple-300 rounded px-4 py-2">...</div>
 );
 
-export function Chat() {
+export function Chat({ selectedChatId }: { selectedChatId?: string }) {
+  // Add useEffect to update urlParams when location changes
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setUrlParams({
+      chatId: params.get("chatId") || undefined,
+      isNewChat: params.get("new") === "true",
+      isSharedChat: params.get("shared") === "true",
+    });
+  }, [window.location.search]);
+
+  // Update the state declaration
+  const [urlParams, setUrlParams] = useState(() => {
+    const params = new URLSearchParams(window.location.search);
+    return {
+      chatId: params.get("chatId") || undefined,
+      isNewChat: params.get("new") === "true",
+      isSharedChat: params.get("shared") === "true",
+    };
+  });
+
   const {
     messages,
     isLoading,
@@ -23,12 +42,8 @@ export function Chat() {
     shareChat,
     loadSharedChat,
   } = useChat();
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const {
-    chatId,
-    new: isNewChat,
-    shared: isSharedChat,
-  } = useSearch({ from: "/chat" });
   const [inputMessage, setInputMessage] = useState("");
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
@@ -73,34 +88,22 @@ export function Chat() {
     [sendMessage, setMessages]
   );
 
-  // Auto-scroll to bottom when messages change
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
-
-  // Also scroll to bottom when loading state changes
-  useEffect(() => {
-    if (!isLoading) {
-      messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-    }
-  }, [isLoading]);
-
   // Focus the input field when creating a new chat
   useEffect(() => {
-    if (isNewChat) {
+    if (urlParams.isNewChat) {
       const inputElement = document.querySelector(".chat-input");
       if (inputElement instanceof HTMLTextAreaElement) {
         inputElement.focus();
       }
     }
-  }, [isNewChat]);
+  }, [urlParams.isNewChat]);
 
   // Load shared chat if shared parameter is true
   useEffect(() => {
     const fetchSharedChat = async () => {
-      if (isSharedChat && chatId && !hasLoadedSharedChat) {
+      if (urlParams.isSharedChat && urlParams.chatId && !hasLoadedSharedChat) {
         try {
-          await loadSharedChat(chatId);
+          await loadSharedChat(urlParams.chatId);
           setHasLoadedSharedChat(true);
         } catch (error) {
           console.error("Failed to load shared chat:", error);
@@ -110,8 +113,8 @@ export function Chat() {
 
     fetchSharedChat();
   }, [
-    isSharedChat,
-    chatId,
+    urlParams.isSharedChat,
+    urlParams.chatId,
     loadSharedChat,
     getAccessToken,
     hasLoadedSharedChat,
@@ -123,11 +126,13 @@ export function Chat() {
   };
 
   const handleShareChat = async () => {
-    if (!chatId || messages.length === 0) return;
+    const currentChatId = urlParams.chatId || selectedChatId;
+    if (!currentChatId || messages.length === 0) return;
 
     try {
-      const sharedChatId = await shareChat(chatId);
-      const url = `${window.location.origin}/chat?chatId=${sharedChatId}&shared=true`;
+      const sharedChatId = await shareChat(currentChatId);
+      // Create a shareable URL that always uses the root path
+      const url = `${window.location.origin}/?chatId=${sharedChatId}&shared=true`;
       setShareUrl(url);
       setIsShareModalOpen(true);
     } catch (error) {
@@ -152,32 +157,34 @@ export function Chat() {
         onInputChange={setInputMessage}
         onStopGeneration={stopGeneration}
         onShareChat={messages.length > 0 ? handleShareChat : undefined}
-        isSharedChat={!!isSharedChat}
+        isSharedChat={!!urlParams.isSharedChat}
       >
-        {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center py-12 px-4">
-            <h2 className="text-xl font-medium text-white mb-6">
-              {t("chat.start_a_conversation")}
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
-              {RECOMMENDED_QUESTIONS.map((question, index) => (
-                <button
-                  key={index}
-                  disabled={!question.enabled}
-                  onClick={() => handleQuestionClick(question.question)}
-                  className="bg-purple-900/30 hover:bg-purple-800/40 text-left p-4 rounded-lg border border-purple-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  <p className="text-white">{question.question}</p>
-                </button>
-              ))}
+        <div className="h-full flex flex-col">
+          {messages.length === 0 && (
+            <div className="flex flex-col items-center justify-center py-12 px-4">
+              <h2 className="text-xl font-medium text-white mb-6">
+                {t("chat.start_a_conversation")}
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
+                {RECOMMENDED_QUESTIONS.map((question, index) => (
+                  <button
+                    key={index}
+                    disabled={!question.enabled}
+                    onClick={() => handleQuestionClick(question.question)}
+                    className="bg-purple-900/30 hover:bg-purple-800/40 text-left p-4 rounded-lg border border-purple-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <p className="text-white">{question.question}</p>
+                  </button>
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-        {messages.map((message) => (
-          <MessageRenderer key={message.id} message={message} />
-        ))}
-        {isLoading && <LoadingIndicator />}
-        <div ref={messagesEndRef} />
+          )}
+          {messages.map((message) => (
+            <MessageRenderer key={message.id} message={message} />
+          ))}
+          {isLoading && <LoadingIndicator />}
+          <div ref={messagesEndRef} />
+        </div>
       </ChatContainer>
 
       {/* Share Modal */}

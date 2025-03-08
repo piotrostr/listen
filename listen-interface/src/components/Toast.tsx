@@ -6,9 +6,10 @@ interface ToastProps {
   message: string;
   type: ToastType;
   onClose: () => void;
+  isVisible: boolean;
 }
 
-export function Toast({ message, type, onClose }: ToastProps) {
+export function Toast({ message, type, onClose, isVisible }: ToastProps) {
   useEffect(() => {
     const timer = setTimeout(() => {
       onClose();
@@ -17,8 +18,7 @@ export function Toast({ message, type, onClose }: ToastProps) {
     return () => clearTimeout(timer);
   }, [onClose]);
 
-  const baseClasses =
-    "fixed top-4 right-4 px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 transition-all duration-300 ease-in-out z-50";
+  const baseClasses = "fixed top-4 left-1/2 transform -translate-x-1/2 z-50";
 
   const typeClasses = {
     error: "bg-red-500/20 text-red-300 border border-red-500/30",
@@ -27,7 +27,11 @@ export function Toast({ message, type, onClose }: ToastProps) {
   };
 
   return (
-    <div className={`${baseClasses} ${typeClasses[type]}`}>
+    <div
+      className={`${baseClasses} ${typeClasses[type]} px-6 py-3 rounded-lg shadow-lg flex items-center gap-2 transition-all duration-300 ease-in-out ${
+        isVisible ? "opacity-100" : "opacity-0"
+      }`}
+    >
       <span>{message}</span>
       <button
         onClick={onClose}

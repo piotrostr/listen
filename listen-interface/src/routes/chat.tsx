@@ -1,20 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { z } from "zod";
-import { Chat } from "../components/Chat";
-
-const ChatSearchParamsSchema = z.object({
-  chatId: z.string().optional(),
-  new: z.boolean().optional(),
-  shared: z.boolean().optional(),
-});
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/chat")({
-  component: RouteComponent,
-  validateSearch: (search: Record<string, unknown>) => {
-    return ChatSearchParamsSchema.parse(search);
+  beforeLoad: ({ search }) => {
+    // Redirect to the root route while preserving all search parameters
+    throw redirect({
+      to: "/",
+      search: search,
+      replace: true,
+    });
   },
 });
-
-function RouteComponent() {
-  return <Chat />;
-}

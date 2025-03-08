@@ -1,14 +1,12 @@
-import { createFileRoute } from "@tanstack/react-router";
-import { Portfolio } from "../components/Portfolio";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 
 export const Route = createFileRoute("/portfolio")({
-  component: PortfolioPage,
+  beforeLoad: ({ search }) => {
+    // Redirect to the root route while preserving all search parameters
+    throw redirect({
+      to: "/",
+      search: search,
+      replace: true,
+    });
+  },
 });
-
-function PortfolioPage() {
-  return (
-    <div className="max-w-7xl mx-auto px-4">
-      <Portfolio />
-    </div>
-  );
-}
