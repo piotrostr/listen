@@ -2,6 +2,9 @@ use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
 use serde::{Deserialize, Serialize};
 
+pub mod twitter;
+mod twitter_types;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Candlestick {
     pub timestamp: u64,
