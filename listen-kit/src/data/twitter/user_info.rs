@@ -1,4 +1,6 @@
-use super::{ApiResponse, Result, TwitterApi};
+use super::{ApiResponse, TwitterApi};
+use crate::data::twitter::TwitterApiError;
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -66,7 +68,10 @@ pub struct UrlEntity {
 }
 
 impl TwitterApi {
-    pub async fn fetch_user_info(&self, username: &str) -> Result<UserInfo> {
+    pub async fn fetch_user_info(
+        &self,
+        username: &str,
+    ) -> Result<UserInfo, TwitterApiError> {
         let mut params = std::collections::HashMap::new();
         params.insert("userName".to_string(), username.to_string());
 
@@ -88,7 +93,7 @@ mod tests {
 
     #[tokio::test]
     async fn twitter_fetch_user_info() {
-        let twitter = TwitterApi::from_env();
+        let twitter = TwitterApi::from_env().unwrap();
         let user_info = twitter.fetch_user_info("listenonsol").await.unwrap();
         println!("{:#?}", user_info);
     }

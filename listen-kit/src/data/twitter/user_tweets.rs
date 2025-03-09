@@ -1,5 +1,7 @@
-use super::{ApiResponse, Result, TwitterApi};
-use anyhow::anyhow;
+use crate::data::twitter::TwitterApiError;
+
+use super::{ApiResponse, TwitterApi};
+use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -76,10 +78,10 @@ impl TwitterApi {
     pub async fn fetch_user_tweets(
         &self,
         options: FetchUserTweetsOptions,
-    ) -> Result<UserTweetsResponse> {
+    ) -> Result<UserTweetsResponse, TwitterApiError> {
         if options.user_id.is_none() && options.username.is_none() {
-            return Err(anyhow!(
-                "Either user_id or username must be provided"
+            return Err(TwitterApiError::InvalidInput(
+                "Either user_id or username must be provided".to_string(),
             ));
         }
 
@@ -122,7 +124,7 @@ mod tests {
 
     #[tokio::test]
     async fn twitter_fetch_user_tweets() {
-        let twitter = super::TwitterApi::from_env();
+        let twitter = super::TwitterApi::from_env().unwrap();
         let posts = twitter
             .fetch_user_tweets(FetchUserTweetsOptions {
                 user_id: None,

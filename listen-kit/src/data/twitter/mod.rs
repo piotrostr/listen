@@ -14,7 +14,10 @@ pub use user_tweets::UserTweet;
 // Common types shared across modules
 use serde::{Deserialize, Serialize};
 
-use crate::data::twitter::user_tweets::FetchUserTweetsOptions;
+use crate::{
+    data::twitter::user_tweets::FetchUserTweetsOptions, distiller::Distiller,
+    distiller::DistillerError,
+};
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -32,7 +35,8 @@ pub struct ApiResponse<T> {
 
 // Twitter API Implementation
 pub struct TwitterApi {
-    client: TwitterApiClient,
+    pub client: TwitterApiClient,
+    pub distiller: Distiller,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -51,29 +55,35 @@ pub enum TwitterApiError {
 
     #[error("[TwitterAPI] Invalid input: {0}")]
     InvalidInput(String),
+
+    #[error("[TwitterAPI] Distiller error: {0}")]
+    DistillerError(DistillerError),
 }
 
 impl TwitterApi {
-    pub fn new(api_key: String) -> Self {
+    pub fn new(api_key: String, distiller: Distiller) -> Self {
         Self {
             client: TwitterApiClient::new(api_key, None),
+            distiller,
         }
     }
 
-    pub fn from_env() -> Self {
+    pub fn from_env() -> Result<Self> {
         let client = TwitterApiClient::new(
             std::env::var("TWITTERAPI_API_KEY").unwrap(),
             Some("https://api.twitterapi.io".to_string()),
         );
-        Self { client }
+        let distiller =
+            Distiller::from_env().map_err(TwitterApiError::DistillerError)?;
+        Ok(Self { client, distiller })
     }
 
     pub async fn research_profile(
         &self,
         username: &str,
-    ) -> Result<UserProfileResearch> {
+    ) -> Result<String, TwitterApiError> {
         let profile = self.fetch_user_info(username).await?;
-        let posts = self
+        let tweets_response = self
             .fetch_user_tweets(FetchUserTweetsOptions {
                 user_id: None,
                 username: Some(username.to_string()),
@@ -82,24 +92,28 @@ impl TwitterApi {
             })
             .await?;
 
-        let tweets = posts
-            .tweets
-            .iter()
-            .map(|tweet| TweetSummary {
-                text: tweet.text.clone(),
-                author_username: tweet
-                    .author
-                    .as_ref()
-                    .map(|a| a.user_name.clone()),
-                created_at: tweet.created_at.clone(),
-                url: tweet.url.clone(),
-                retweet_count: tweet.retweet_count,
-                reply_count: tweet.reply_count,
-                like_count: tweet.like_count,
-            })
-            .collect::<Vec<_>>();
+        if std::env::var("RUST_LOG").unwrap_or_default() == "debug" {
+            std::fs::write(
+                "debug/profile.json",
+                serde_json::to_string(&profile).unwrap(),
+            )
+            .expect("failed to write debug output");
+            std::fs::write(
+                "debug/tweets.json",
+                serde_json::to_string(&tweets_response.tweets).unwrap(),
+            )
+            .expect("failed to write debug output");
+        }
 
-        Ok(UserProfileResearch { profile, tweets })
+        let res = serde_json::json!({
+            "profile": profile,
+            "tweets": tweets_response.tweets,
+        });
+
+        self.distiller
+            .distill(&res)
+            .await
+            .map_err(TwitterApiError::DistillerError)
     }
 }
 
@@ -128,7 +142,7 @@ mod tests {
     #[tokio::test]
     #[ignore]
     async fn twitter_e2e() {
-        let twitter = TwitterApi::from_env();
+        let twitter = TwitterApi::from_env().unwrap();
         let summary = twitter.research_profile("listenonsol").await.unwrap();
 
         println!("{:#?}", summary);
