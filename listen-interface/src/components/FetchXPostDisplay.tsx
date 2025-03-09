@@ -1,4 +1,5 @@
 import { useEffect, useRef } from "react";
+import i18n from "../i18n";
 import { Tweet } from "../types/x";
 import { Spinner } from "./Spinner";
 
@@ -18,7 +19,11 @@ export function FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
       ref={tweetRef}
       className="w-full h-full flex justify-center items-center bg-transparent"
     >
-      <blockquote className="twitter-tweet" data-lang="en" data-theme="light">
+      <blockquote
+        className="twitter-tweet"
+        data-lang={i18n.language === "zh" ? "zh-cn" : "en"}
+        data-theme="light"
+      >
         <a
           href={`https://twitter.com/${tweet.author?.userName}/status/${tweet.id}`}
         >
