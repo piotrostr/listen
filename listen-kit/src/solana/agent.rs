@@ -6,7 +6,9 @@ use super::tools::{
     DeployPumpFunToken, GetQuote, GetSolBalance, GetSplTokenBalance, Swap,
 };
 use crate::common::{claude_agent_builder, PREAMBLE_COMMON};
-use crate::data::{FetchCandlesticks, FetchTopTokens};
+use crate::data::{
+    FetchCandlesticks, FetchTokenMetadata, FetchTopTokens, ResearchXProfile,
+};
 use crate::dexscreener::tools::SearchOnDexScreener;
 
 pub async fn create_solana_agent(
@@ -27,5 +29,7 @@ pub async fn create_solana_agent(
         .tool(FetchCandlesticks)
         .tool(FetchTopTokens)
         .tool(DeployPumpFunToken)
+        .tool(FetchTokenMetadata)
+        .tool(ResearchXProfile)
         .build())
 }

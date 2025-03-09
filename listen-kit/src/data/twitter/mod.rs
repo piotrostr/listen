@@ -82,7 +82,8 @@ impl TwitterApi {
         &self,
         username: &str,
     ) -> Result<String, TwitterApiError> {
-        let profile = self.fetch_user_info(username).await?;
+        let profile =
+            self.fetch_user_info(&username.replace("@", "")).await?;
         let tweets_response = self
             .fetch_user_tweets(FetchUserTweetsOptions {
                 user_id: None,
@@ -109,6 +110,9 @@ impl TwitterApi {
             "profile": profile,
             "tweets": tweets_response.tweets,
         });
+
+        // TODO might make sense to return the actual tweets here too, extract
+        // the core contents and leave the interpretation to core model rather than distiller
 
         self.distiller
             .distill(&res)
@@ -139,11 +143,20 @@ pub struct UserProfileResearch {
 mod tests {
     use super::*;
 
+    #[timed::timed]
     #[tokio::test]
-    #[ignore]
-    async fn twitter_e2e() {
+    async fn twitter_e2e_listen() {
         let twitter = TwitterApi::from_env().unwrap();
         let summary = twitter.research_profile("listenonsol").await.unwrap();
+
+        println!("{:#?}", summary);
+    }
+
+    #[timed::timed]
+    #[tokio::test]
+    async fn twitter_e2e_arc() {
+        let twitter = TwitterApi::from_env().unwrap();
+        let summary = twitter.research_profile("arcdotfun").await.unwrap();
 
         println!("{:#?}", summary);
     }
