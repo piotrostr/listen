@@ -1,8 +1,10 @@
 import { useEffect, useRef } from "react";
 import { Tweet } from "../types/x";
+import { Spinner } from "./Spinner";
 
-export function _FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
+export function FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
   const tweetRef = useRef<HTMLDivElement>(null);
+  console.log(tweet);
 
   useEffect(() => {
     // Initialize tweet if Twitter widgets API is loaded
@@ -12,19 +14,24 @@ export function _FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
   }, [tweet.id]);
 
   return (
-    <div ref={tweetRef}>
+    <div
+      ref={tweetRef}
+      className="w-full h-full flex justify-center items-center"
+    >
       <blockquote className="twitter-tweet" data-lang="en" data-theme="dark">
         <a
           href={`https://twitter.com/${tweet.author?.userName}/status/${tweet.id}`}
         >
-          Loading tweet...
+          <div className="w-full h-full flex justify-center items-center">
+            <Spinner />
+          </div>
         </a>
       </blockquote>
     </div>
   );
 }
 
-export function FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
+export function _FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
   console.log(tweet);
   return (
     <div
