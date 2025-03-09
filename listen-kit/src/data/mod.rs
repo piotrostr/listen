@@ -42,17 +42,37 @@ It returns metadata that includes:
 - IPFS metadata (name, description, image, social links)
 ")]
 pub async fn fetch_token_metadata(mint: String) -> Result<serde_json::Value> {
-    let response = reqwest::get(format!(
-        "{}/v1/adapter/metadata?mint={}",
-        API_BASE, mint
-    ))
-    .await
-    .map_err(|e| anyhow!("Failed to fetch token metadata: {}", e))?;
+    let response =
+        reqwest::get(format!("{}/metadata?mint={}", API_BASE, mint))
+            .await
+            .map_err(|e| anyhow!("Failed to fetch token metadata: {}", e))?;
 
     Ok(response
         .json::<serde_json::Value>()
         .await
         .map_err(|e| anyhow!("Failed to parse JSON {}", e))?)
+}
+
+#[tool(description = "
+Fetch a single X (twitter) post by its ID
+
+Parameters:
+- id (string): The id of the post
+
+Returns a JSON object with the tweet data. This is useful for finding out the
+context of any token or project.
+")]
+pub async fn fetch_x_post(id: String) -> Result<serde_json::Value> {
+    let twitter = TwitterApi::from_env()
+        .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
+    let response = twitter
+        .fetch_tweets_by_ids(vec![id])
+        .await
+        .map_err(|e| anyhow!("Failed to fetch X post: {}", e))?;
+    let tweet = response.tweets.first().ok_or(anyhow!("No tweet found"))?;
+    let tweet_json = serde_json::to_value(tweet)
+        .map_err(|e| anyhow!("Failed to parse tweet: {}", e))?;
+    Ok(tweet_json)
 }
 
 #[tool(description = "
