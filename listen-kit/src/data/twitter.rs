@@ -31,13 +31,6 @@ impl TwitterApiClient {
         }
     }
 
-    pub fn from_env() -> Self {
-        Self::new(
-            std::env::var("TWITTERAPI_API_KEY").unwrap(),
-            Some("https://api.twitterapi.io".to_string()),
-        )
-    }
-
     pub async fn request<T: serde::de::DeserializeOwned>(
         &self,
         endpoint: &str,
@@ -84,6 +77,8 @@ impl TwitterApiClient {
             .await
             .map_err(|e| TwitterApiError::ParseError(e))?;
 
+        tracing::debug!("Twitter API Response: {}", text);
+
         // Try to parse the JSON
         match serde_json::from_str::<T>(&text) {
             Ok(data) => Ok(data),
@@ -102,6 +97,14 @@ impl TwitterApi {
         Self {
             client: TwitterApiClient::new(api_key, None),
         }
+    }
+
+    pub fn from_env() -> Self {
+        let client = TwitterApiClient::new(
+            std::env::var("TWITTERAPI_API_KEY").unwrap(),
+            Some("https://api.twitterapi.io".to_string()),
+        );
+        Self { client }
     }
 
     // Fetch user profile information
@@ -185,6 +188,34 @@ impl TwitterApi {
 
         Ok(response.data)
     }
+
+    pub async fn research_profile(
+        &self,
+        username: &str,
+    ) -> Result<serde_json::Value> {
+        let profile = self.fetch_profile(username).await?;
+        let posts = self
+            .fetch_posts(FetchPostsOptions {
+                user_id: None,
+                username: Some(username.to_string()),
+                include_replies: Some(false),
+                cursor: None,
+            })
+            .await?;
+        println!("{:#?}", posts);
+        let tweets = posts
+            .tweets
+            .iter()
+            .map(|tweet| {
+                let text = tweet.text.clone();
+                let author = tweet.author.clone();
+                let created_at = tweet.created_at.clone();
+                let url = tweet.url.clone();
+                (text, author, created_at, url)
+            })
+            .collect::<Vec<_>>();
+        Ok(serde_json::Value::Null)
+    }
 }
 
 #[cfg(test)]
@@ -192,11 +223,15 @@ mod tests {
     use super::*;
 
     #[tokio::test]
-    async fn test_twitter_e2e() {
-        let twitter =
-            TwitterApi::new(std::env::var("TWITTERAPI_API_KEY").unwrap());
+    async fn fetch_profile() {
+        let twitter = TwitterApi::from_env();
         let profile = twitter.fetch_profile("listenonsol").await.unwrap();
+        println!("{:#?}", profile);
+    }
 
+    #[tokio::test]
+    async fn fetch_posts() {
+        let twitter = TwitterApi::from_env();
         let posts = twitter
             .fetch_posts(FetchPostsOptions {
                 user_id: None,
@@ -206,5 +241,15 @@ mod tests {
             })
             .await
             .unwrap();
+
+        println!("{:#?}", posts);
+    }
+
+    #[tokio::test]
+    async fn twitter_e2e() {
+        let twitter = TwitterApi::from_env();
+        let summary = twitter.research_profile("listenonsol").await.unwrap();
+
+        println!("{:#?}", summary);
     }
 }

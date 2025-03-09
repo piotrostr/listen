@@ -2,6 +2,8 @@ use crate::signer::TransactionSigner;
 use anyhow::Result;
 use std::sync::Arc;
 
+pub mod distiller;
+
 #[cfg(feature = "http")]
 pub mod http;
 
@@ -22,6 +24,7 @@ pub mod signer;
 #[ctor::ctor]
 fn init() {
     dotenv::dotenv().ok();
+    std::env::set_var("RUST_LOG", "debug");
     listen_tracing::setup_tracing();
 }
 
