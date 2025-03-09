@@ -24,7 +24,7 @@ pub mod signer;
 #[ctor::ctor]
 fn init() {
     dotenv::dotenv().ok();
-    std::env::set_var("RUST_LOG", "debug");
+    // std::env::set_var("RUST_LOG", "debug");
     listen_tracing::setup_tracing();
 }
 
