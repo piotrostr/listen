@@ -58,12 +58,16 @@ Fetch a single X (twitter) post by its ID
 
 Parameters:
 - id (string): The id of the post
+- language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
 
 Returns a JSON object with the tweet data. This is useful for finding out the
 context of any token or project.
 ")]
-pub async fn fetch_x_post(id: String) -> Result<serde_json::Value> {
-    let twitter = TwitterApi::from_env()
+pub async fn fetch_x_post(
+    id: String,
+    language: String,
+) -> Result<serde_json::Value> {
+    let twitter = TwitterApi::from_env_with_locale(language)
         .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
     let response = twitter
         .fetch_tweets_by_ids(vec![id])
@@ -89,8 +93,11 @@ The response will be markdown summary
 It might contain other profiles, if those are relevant to the context, you can
 re-research those proflies calling this same tool
 ")]
-pub async fn research_x_profile(username: String) -> Result<String> {
-    let twitter = TwitterApi::from_env()
+pub async fn research_x_profile(
+    username: String,
+    language: String,
+) -> Result<String> {
+    let twitter = TwitterApi::from_env_with_locale(language)
         .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
     wrap_unsafe(move || async move {
         twitter

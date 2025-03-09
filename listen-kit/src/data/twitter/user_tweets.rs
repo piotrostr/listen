@@ -80,9 +80,9 @@ impl TwitterApi {
         options: FetchUserTweetsOptions,
     ) -> Result<UserTweetsResponse, TwitterApiError> {
         if options.user_id.is_none() && options.username.is_none() {
-            return Err(TwitterApiError::InvalidInput(
-                "Either user_id or username must be provided".to_string(),
-            ));
+            return Err(TwitterApiError::InvalidInput(anyhow::anyhow!(
+                "Either user_id or username must be provided"
+            )));
         }
 
         let mut params = HashMap::new();

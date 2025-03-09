@@ -68,9 +68,9 @@ impl TwitterApi {
         tweet_ids: Vec<String>,
     ) -> Result<TweetsResponse, TwitterApiError> {
         if tweet_ids.is_empty() {
-            return Err(TwitterApiError::InvalidInput(
-                "At least one tweet ID must be provided".to_string(),
-            ));
+            return Err(TwitterApiError::InvalidInput(anyhow::anyhow!(
+                "At least one tweet ID must be provided"
+            )));
         }
 
         let mut params = HashMap::new();
@@ -93,8 +93,9 @@ mod tests {
         let twitter = super::TwitterApi::from_env().unwrap();
         let tweets = twitter
             .fetch_tweets_by_ids(vec![
-                "1898590596442599556".to_string(),
-                "1898591118196900000".to_string(),
+                // "1898590596442599556".to_string(),
+                // "1898591118196900000".to_string(),
+                "1895669466786402519".to_string(),
             ])
             .await
             .unwrap();

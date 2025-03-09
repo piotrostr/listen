@@ -1,26 +1,109 @@
 use anyhow::Result;
 
-use rig::{
-    completion::Prompt,
-    providers::gemini::completion::CompletionModel as GeminiCompletionModel,
-};
+use rig::completion::Prompt;
+use rig::providers::gemini::completion::CompletionModel as GeminiCompletionModel;
+
+// Add import for DeepSeek
+use rig::providers::deepseek::DeepSeekCompletionModel;
 
 pub type GeminiAgent = rig::agent::Agent<GeminiCompletionModel>;
+// Add DeepSeekAgent type
+pub type DeepSeekAgent = rig::agent::Agent<DeepSeekCompletionModel>;
 
-pub fn make_distiller_agent() -> Result<GeminiAgent> {
+pub const DEFAULT_PREAMBLE: &str = "Your job is to extract the most relevant content from an
+        Twitter API response and provide a summary. Be sure to take into account
+        things like mindshare, the likes, retweets";
+
+pub const DEFAULT_PREAMBLE_ZH: &str = "你的任务是从一个推特API响应中提取最相关的内容，并提供一个总结。确保考虑到以下因素：
+- 关注度
+- 点赞数
+- 转发数
+- 评论数
+- 用户互动
+";
+
+pub fn make_gemini_distiller(
+    preamble: Option<String>,
+) -> Result<GeminiAgent> {
     Ok(rig::providers::gemini::Client::from_env()
         .agent(rig::providers::gemini::completion::GEMINI_2_0_FLASH)
-        .preamble("Your job is to extract the most relevant content from an
-        Twitter API response and provide a summary. Be sure to take into account
-        things like mindshare, the likes, retweets")
+        .preamble(&preamble.unwrap_or(DEFAULT_PREAMBLE.to_string()))
         .build())
 }
 
-/// Distiller is a wrapper around multimodal Gemini 2.0 that allows to bring
+pub fn make_deepseek_distiller(
+    preamble: Option<String>,
+) -> Result<DeepSeekAgent> {
+    Ok(rig::providers::deepseek::Client::from_env()
+        .agent(rig::providers::deepseek::DEEPSEEK_CHAT)
+        .preamble(&preamble.unwrap_or(DEFAULT_PREAMBLE_ZH.to_string()))
+        .build())
+}
+
+// Add Send + Sync bounds to make the trait object thread-safe
+#[async_trait::async_trait]
+pub trait DistillerAgent: Send + Sync {
+    async fn distill(
+        &self,
+        response: &serde_json::Value,
+    ) -> Result<String, DistillerError>;
+}
+
+// Add this function to choose between Gemini and DeepSeek
+pub fn make_distiller_agent(
+    preamble: Option<String>,
+) -> Result<Box<dyn DistillerAgent>> {
+    // Default to Gemini, but you could add logic here to choose based on language
+    let gemini_agent = make_gemini_distiller(preamble)?;
+    Ok(Box::new(gemini_agent))
+}
+
+// Add a function to create a distiller that automatically chooses based on language
+pub fn make_language_aware_distiller(
+    preamble: Option<String>,
+    use_chinese: bool,
+) -> Result<Box<dyn DistillerAgent>> {
+    if use_chinese {
+        let deepseek_agent = make_deepseek_distiller(preamble)?;
+        Ok(Box::new(deepseek_agent))
+    } else {
+        let gemini_agent = make_gemini_distiller(preamble)?;
+        Ok(Box::new(gemini_agent))
+    }
+}
+
+// Implementation for GeminiAgent
+#[async_trait::async_trait]
+impl DistillerAgent for GeminiAgent {
+    async fn distill(
+        &self,
+        response: &serde_json::Value,
+    ) -> Result<String, DistillerError> {
+        self.prompt(response.to_string())
+            .await
+            .map_err(DistillerError::PromptError)
+    }
+}
+
+// Implementation for DeepSeekAgent
+#[async_trait::async_trait]
+impl DistillerAgent for DeepSeekAgent {
+    async fn distill(
+        &self,
+        response: &serde_json::Value,
+    ) -> Result<String, DistillerError> {
+        self.prompt(response.to_string())
+            .await
+            .map_err(DistillerError::PromptError)
+    }
+}
+
+/// Distiller is a wrapper around multimodal models that allows to bring
 /// understanding of assets, pass it a link to an image, video or large block of
 /// text and receive a summary of the content.
 pub struct Distiller {
-    pub agent: GeminiAgent,
+    // Change to use our Promptable trait
+    pub agent: Box<dyn DistillerAgent>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -32,23 +115,37 @@ pub enum DistillerError {
     PromptError(rig::completion::PromptError),
 }
 
+// TODO make this generic and find a better model, gemini struggles with chinese, deepseek is too slow
+// wish grok3 was out...
 impl Distiller {
     pub fn from_env() -> Result<Self, DistillerError> {
-        let agent = make_distiller_agent()
+        Self::from_env_with_preamble(None)
+    }
+
+    pub fn from_env_with_preamble(
+        preamble: Option<String>,
+    ) -> Result<Self, DistillerError> {
+        let agent = make_distiller_agent(preamble)
             .map_err(|_| DistillerError::GeminiApiKeyNotSet)?;
         Ok(Self { agent })
     }
 
-    // TODO cache this by hash of entire value that goes in to improve latency
-    // for subsequent calls
+    // Add a method to create distiller with language awareness
+    pub fn from_env_with_language(
+        preamble: Option<String>,
+        use_chinese: bool,
+    ) -> Result<Self, DistillerError> {
+        let agent = make_language_aware_distiller(preamble, use_chinese)
+            .map_err(|_| DistillerError::GeminiApiKeyNotSet)?;
+        Ok(Self { agent })
+    }
+
+    // Update the distill method to use our Promptable trait
     pub async fn distill(
         &self,
         response: &serde_json::Value,
     ) -> Result<String, DistillerError> {
-        self.agent
-            .prompt(response.to_string())
-            .await
-            .map_err(DistillerError::PromptError)
+        self.agent.distill(response).await
     }
 }
 
