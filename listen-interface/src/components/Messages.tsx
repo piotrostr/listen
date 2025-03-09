@@ -9,9 +9,11 @@ import {
   JupiterQuoteResponseSchema,
   QuoteResponseSchema,
 } from "../types/quote";
+import { TweetSchema } from "../types/x";
 import { SolanaBalance } from "./Balances";
 import { InnerChart } from "./Chart";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
+import { FetchXPostDisplay } from "./FetchXPostDisplay";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
@@ -20,6 +22,11 @@ import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
 export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
+  if (toolOutput.name === "fetch_x_post") {
+    const parsed = TweetSchema.parse(JSON.parse(toolOutput.result));
+    return <FetchXPostDisplay tweet={parsed} />;
+  }
+
   if (toolOutput.name === "research_x_profile") {
     return (
       <ChatMessage message={JSON.parse(toolOutput.result)} direction="agent" />
