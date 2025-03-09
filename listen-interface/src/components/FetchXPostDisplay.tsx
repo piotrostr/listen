@@ -16,9 +16,9 @@ export function FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
   return (
     <div
       ref={tweetRef}
-      className="w-full h-full flex justify-center items-center"
+      className="w-full h-full flex justify-center items-center bg-transparent"
     >
-      <blockquote className="twitter-tweet" data-lang="en" data-theme="dark">
+      <blockquote className="twitter-tweet" data-lang="en" data-theme="light">
         <a
           href={`https://twitter.com/${tweet.author?.userName}/status/${tweet.id}`}
         >
