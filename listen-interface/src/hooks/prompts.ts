@@ -195,6 +195,8 @@ export function systemPromptSolana(
   <limitations>
   Only discuss limitations if the user would ask about something you cannot do
   - adding liquidity is currently not supported, jupiter liquidity proivder is an option you could suggest instead
+  - the research_x_profile could take as long as 30s to a minute to complete,
+  mention to the user it might take around that time before you call it
   </limitations>
   `;
 }

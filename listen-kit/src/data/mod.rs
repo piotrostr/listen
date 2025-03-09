@@ -2,6 +2,10 @@ use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
 use serde::{Deserialize, Serialize};
 
+use crate::{common::wrap_unsafe, data::twitter::TwitterApi};
+
+pub mod twitter;
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Candlestick {
     pub timestamp: u64,
@@ -23,6 +27,86 @@ pub struct TopToken {
 }
 
 const API_BASE: &str = "https://api.listen-rs.com/v1/adapter";
+
+#[tool(description = "
+Fetch token metadata from the Listen API. This is the metadata that was
+initially set during token creation by the token creator that lives on-chain and
+IPFS.
+
+Parameters:
+- mint (string): The token's mint/pubkey address
+
+It returns metadata that includes:
+- Basic SPL token info (supply, decimals, authorities)
+- MPL (Metaplex) metadata (name, symbol, URI) 
+- IPFS metadata (name, description, image, social links)
+")]
+pub async fn fetch_token_metadata(mint: String) -> Result<serde_json::Value> {
+    let response =
+        reqwest::get(format!("{}/metadata?mint={}", API_BASE, mint))
+            .await
+            .map_err(|e| anyhow!("Failed to fetch token metadata: {}", e))?;
+
+    Ok(response
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse JSON {}", e))?)
+}
+
+#[tool(description = "
+Fetch a single X (twitter) post by its ID
+
+Parameters:
+- id (string): The id of the post
+- language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
+
+Returns a JSON object with the tweet data. This is useful for finding out the
+context of any token or project.
+")]
+pub async fn fetch_x_post(
+    id: String,
+    language: String,
+) -> Result<serde_json::Value> {
+    let twitter = TwitterApi::from_env_with_locale(language)
+        .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
+    let response = twitter
+        .fetch_tweets_by_ids(vec![id])
+        .await
+        .map_err(|e| anyhow!("Failed to fetch X post: {}", e))?;
+    let tweet = response.tweets.first().ok_or(anyhow!("No tweet found"))?;
+    let tweet_json = serde_json::to_value(tweet)
+        .map_err(|e| anyhow!("Failed to parse tweet: {}", e))?;
+    Ok(tweet_json)
+}
+
+#[tool(description = "
+Delegate the x (twitter) profile name to your helper agent that will fetch the
+context and provide a summary of the profile.
+
+Parameters:
+- username (string): The X username, e.g. @elonmusk
+
+This method might take around 10-15 seconds to return a response
+
+The response will be markdown summary
+
+It might contain other profiles, if those are relevant to the context, you can
+re-research those proflies calling this same tool
+")]
+pub async fn research_x_profile(
+    username: String,
+    language: String,
+) -> Result<String> {
+    let twitter = TwitterApi::from_env_with_locale(language)
+        .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
+    wrap_unsafe(move || async move {
+        twitter
+            .research_profile(&username)
+            .await
+            .map_err(|e| anyhow!("{:#?}", e))
+    })
+    .await
+}
 
 #[tool(description = "
 Fetch top tokens from the Listen API.
