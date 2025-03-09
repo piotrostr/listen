@@ -20,6 +20,12 @@ import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
 export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
+  if (toolOutput.name === "research_x_profile") {
+    return (
+      <ChatMessage message={JSON.parse(toolOutput.result)} direction="agent" />
+    );
+  }
+
   if (toolOutput.name === "fetch_token_metadata") {
     try {
       const parsed = TokenMetadataSchema.parse(JSON.parse(toolOutput.result));
@@ -28,6 +34,7 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
       console.error("Failed to parse token metadata:", e);
     }
   }
+
   if (toolOutput.name === "get_sol_balance") {
     try {
       const parsedLamports = parseInt(toolOutput.result);
@@ -198,7 +205,7 @@ export const ChatMessage = ({
   direction,
 }: {
   message: string;
-  direction: "incoming" | "outgoing";
+  direction: "incoming" | "outgoing" | "agent";
 }) => {
   // Process the message to identify addresses and transactions
   const embeddedMessage = renderAddressOrTx(message);
@@ -211,11 +218,12 @@ export const ChatMessage = ({
   return (
     <div
       className={`
-        ${direction === "incoming" ? "bg-blue-900/20 text-blue-300" : "bg-purple-900/20 text-purple-300"}
+        ${direction === "incoming" && "bg-blue-900/20 text-blue-300 border-blue-500"}
+        ${direction === "outgoing" && "bg-purple-900/20 text-purple-300 border-purple-500"}
+        ${direction === "agent" && "bg-green-900/20 text-green-300 border-green-500"}
         rounded-lg px-4 py-2 my-2 backdrop-blur-sm
         border border-opacity-20
         lg:text-md text-sm
-        ${direction === "incoming" ? "border-blue-500" : "border-purple-500"}
         break-words word-break-all max-w-full overflow-hidden
       `}
       style={{
