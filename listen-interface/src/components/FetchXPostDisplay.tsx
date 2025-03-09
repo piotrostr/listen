@@ -5,7 +5,7 @@ import { Spinner } from "./Spinner";
 
 export function FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
   const tweetRef = useRef<HTMLDivElement>(null);
-  console.log(tweet);
+  console.debug(tweet);
 
   useEffect(() => {
     // Initialize tweet if Twitter widgets API is loaded
@@ -37,7 +37,7 @@ export function FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
 }
 
 export function _FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
-  console.log(tweet);
+  console.debug(tweet);
   return (
     <div
       className="border rounded-lg p-4 max-w-3xl hover:shadow-md transition-shadow duration-200 bg-black"
