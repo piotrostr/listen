@@ -27,33 +27,33 @@ impl std::fmt::Display for TwitterApiResponseError {
 }
 
 #[derive(Debug, Deserialize, Clone)]
-pub struct TweetsResponse<'a> {
-    pub tweets: Vec<Tweet<'a>>,
+pub struct TweetsResponse {
+    pub tweets: Vec<Tweet>,
     #[serde(rename = "pin_tweet")]
-    pub pinned_tweet: Option<Tweet<'a>>,
+    pub pinned_tweet: Option<Tweet>,
     #[serde(default)]
     pub has_next_page: bool,
     #[serde(default)]
-    pub next_cursor: Option<&'a str>,
+    pub next_cursor: Option<String>,
 }
 
 // User Info types
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct UserInfo<'a> {
-    pub user_name: &'a str,
-    pub id: &'a str,
-    pub name: &'a str,
+pub struct UserInfo {
+    pub user_name: String,
+    pub id: String,
+    pub name: String,
     pub is_verified: Option<bool>,
     pub is_blue_verified: Option<bool>,
-    pub profile_picture: Option<&'a str>,
-    pub cover_picture: Option<&'a str>,
-    pub description: Option<&'a str>,
-    pub location: Option<&'a str>,
+    pub profile_picture: Option<String>,
+    pub cover_picture: Option<String>,
+    pub description: Option<String>,
+    pub location: Option<String>,
     pub followers: Option<u32>,
     pub following: Option<u32>,
     pub can_dm: Option<bool>,
-    pub created_at: Option<&'a str>,
+    pub created_at: Option<String>,
     pub statuses_count: Option<u32>,
     // Add other fields as needed
 }
@@ -61,25 +61,25 @@ pub struct UserInfo<'a> {
 // Tweet types
 #[derive(Debug, Deserialize, Serialize, Clone)]
 #[serde(rename_all = "camelCase")]
-pub struct Tweet<'a> {
-    pub id: &'a str,
-    pub url: Option<&'a str>,
-    pub text: &'a str,
+pub struct Tweet {
+    pub id: String,
+    pub url: Option<String>,
+    pub text: String,
     pub retweet_count: Option<u32>,
     pub reply_count: Option<u32>,
     pub like_count: Option<u32>,
     pub quote_count: Option<u32>,
-    pub created_at: &'a str,
+    pub created_at: String,
     pub is_reply: Option<bool>,
-    pub in_reply_to_id: Option<&'a str>,
-    pub author: Option<UserInfo<'a>>,
+    pub in_reply_to_id: Option<String>,
+    pub author: Option<UserInfo>,
     // Add other fields as needed
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
-pub struct FetchPostsOptions<'a> {
-    pub user_id: Option<&'a str>,
-    pub username: Option<&'a str>,
+pub struct FetchPostsOptions {
+    pub user_id: Option<String>,
+    pub username: Option<String>,
     pub include_replies: Option<bool>,
-    pub cursor: Option<&'a str>,
+    pub cursor: Option<String>,
 }

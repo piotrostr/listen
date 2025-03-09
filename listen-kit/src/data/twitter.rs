@@ -246,6 +246,16 @@ mod tests {
     }
 
     #[tokio::test]
+    async fn get_tweets_by_ids() {
+        let twitter = TwitterApi::from_env();
+        let tweets = twitter
+            .get_tweets_by_ids(vec!["1888057233935683678".to_string()])
+            .await
+            .unwrap();
+        println!("{:#?}", tweets);
+    }
+
+    #[tokio::test]
     async fn twitter_e2e() {
         let twitter = TwitterApi::from_env();
         let summary = twitter.research_profile("listenonsol").await.unwrap();
