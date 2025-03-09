@@ -4,6 +4,7 @@ import { CandlestickDataSchema } from "../hooks/types";
 import { renderAddressOrTx } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import { ToolResult } from "../types/message";
+import { TokenMetadataSchema } from "../types/metadata";
 import {
   JupiterQuoteResponseSchema,
   QuoteResponseSchema,
@@ -14,10 +15,19 @@ import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
+import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
 export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
+  if (toolOutput.name === "fetch_token_metadata") {
+    try {
+      const parsed = TokenMetadataSchema.parse(JSON.parse(toolOutput.result));
+      return <RawTokenMetadataDisplay metadata={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse token metadata:", e);
+    }
+  }
   if (toolOutput.name === "get_sol_balance") {
     try {
       const parsedLamports = parseInt(toolOutput.result);
