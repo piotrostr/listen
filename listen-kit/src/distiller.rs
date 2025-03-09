@@ -12,7 +12,7 @@ pub type DeepSeekAgent = rig::agent::Agent<DeepSeekCompletionModel>;
 
 pub const DEFAULT_PREAMBLE: &str = "Your job is to extract the most relevant content from an
         Twitter API response and provide a summary. Be sure to take into account
-        things like mindshare, the likes, retweets";
+        things like mindshare, the likes, retweets.";
 
 pub const DEFAULT_PREAMBLE_ZH: &str = "你的任务是从一个推特API响应中提取最相关的内容，并提供一个总结。确保考虑到以下因素：
 - 关注度
@@ -20,6 +20,8 @@ pub const DEFAULT_PREAMBLE_ZH: &str = "你的任务是从一个推特API响应�
 - 转发数
 - 评论数
 - 用户互动
+
+请用中文回答我接下来的所有问题。
 ";
 
 pub fn make_gemini_distiller(
