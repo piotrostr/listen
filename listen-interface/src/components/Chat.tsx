@@ -41,6 +41,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     stopGeneration,
     shareChat,
     loadSharedChat,
+    isSharedChat,
   } = useChat();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -157,7 +158,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         onInputChange={setInputMessage}
         onStopGeneration={stopGeneration}
         onShareChat={messages.length > 0 ? handleShareChat : undefined}
-        isSharedChat={!!urlParams.isSharedChat}
+        isSharedChat={isSharedChat || urlParams.isSharedChat}
       >
         <div className="h-full flex flex-col">
           {messages.length === 0 && (

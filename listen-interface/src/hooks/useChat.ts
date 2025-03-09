@@ -477,5 +477,6 @@ export function useChat() {
     stopGeneration,
     shareChat,
     loadSharedChat,
+    isSharedChat: !!useSearch({ from: "/" }).shared,
   };
 }
