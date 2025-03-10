@@ -1,5 +1,3 @@
-import { useTranslation } from "react-i18next";
-
 interface SwapTokenProps {
   image?: string | null;
   name?: string;
@@ -19,7 +17,6 @@ export const SwapToken = ({
   compact,
   showAmount = false,
 }: SwapTokenProps) => {
-  const { t } = useTranslation();
   if (compact) {
     return <SwapTokenCompact image={image} name={name} amount={amount} />;
   }
