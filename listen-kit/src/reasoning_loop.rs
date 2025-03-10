@@ -5,6 +5,7 @@ use rig::completion::AssistantContent;
 use rig::completion::Message;
 use rig::message::{ToolResultContent, UserContent};
 use rig::providers::anthropic::completion::CompletionModel;
+use rig::streaming::StreamingCompletion;
 use rig::streaming::{StreamingChat, StreamingChoice};
 use rig::OneOrMany;
 use serde::Deserialize;
@@ -75,7 +76,12 @@ impl ReasoningLoop {
             };
 
             let mut stream = match agent
-                .stream_chat(&current_prompt, current_messages.clone())
+                .stream_completion(
+                    Message::user(current_prompt),
+                    current_messages.clone(),
+                )
+                .await?
+                .stream()
                 .await
             {
                 Ok(stream) => stream,
