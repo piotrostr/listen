@@ -7,6 +7,7 @@ import { usePipelines } from "../hooks/usePipelines";
 import { ExtendedPipeline } from "../types/api";
 import { ExtendedPipelineDisplay } from "./ExtendedPipelineDisplay";
 import { Spinner } from "./Spinner";
+
 interface PipelinesProps {
   statusFilter: string;
 }
