@@ -423,18 +423,18 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
           <div className="flex flex-col">
             <div className="flex items-center space-x-2">
               {metadata?.mpl.symbol && (
-                <span className="font-bold text-purple-100">
+                <span className="font-bold text-white">
                   {metadata.mpl.symbol}
                 </span>
               )}
               {metadata?.mpl.name && (
-                <span className="text-purple-300 ml-2 hidden lg:block">
+                <span className="text-white ml-2 hidden lg:block">
                   {metadata.mpl.name}
                 </span>
               )}
               {metadata?.mint && (
                 <span
-                  className="text-xs text-purple-300/70 ml-2 hidden lg:block"
+                  className="text-xs text-white/70 ml-2 hidden lg:block"
                   title={metadata.mint}
                 >
                   ({formattedPubkey})

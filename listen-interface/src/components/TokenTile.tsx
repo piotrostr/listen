@@ -40,7 +40,7 @@ export function TokenTile({ token }: TokenTileProps) {
 
   return (
     <div>
-      <div className="p-3 sm:p-4 flex items-center justify-between hover:bg-gray-800">
+      <div className="p-3 sm:p-4 flex items-center justify-between hover:bg-black/50 transition-colors">
         <div className="flex items-center space-x-2 sm:space-x-4">
           <div className="flex items-center space-x-2 sm:space-x-3">
             {metadata?.mpl.ipfs_metadata?.image &&
