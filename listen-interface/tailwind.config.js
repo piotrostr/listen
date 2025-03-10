@@ -4,7 +4,7 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        mono: ["SF Mono", "monospace"],
+        mono: ["Space Grotesk", "monospace"],
       },
       animation: {
         blob: "blob 7s infinite",

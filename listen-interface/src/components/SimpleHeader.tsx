@@ -49,7 +49,7 @@ export function SimpleHeader({
         >
           <img src="/listen-more.png" alt="Logo" className="w-8 h-8 rounded" />
           {!isMobile && (
-            <span className="font-bold text-md lg:text-xl">listen-rs</span>
+            <span className="font-bold text-md lg:text-xl">Listen</span>
           )}
         </Link>
       </div>

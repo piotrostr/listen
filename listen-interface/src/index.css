@@ -7,18 +7,11 @@
   color-scheme: dark;
 }
 
-@font-face {
-  font-family: "SF Mono Nerd Font";
-  src: url("/sfmono.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-}
-
 /* Base styles */
 html,
 body,
 code {
-  font-family: "SF Mono Nerd Font", monospace;
+  font-family: "Space Grotesk", monospace;
 }
 
 /* Animation delays */
@@ -49,7 +42,7 @@ code {
 
 .cs-message-input__content-editor {
   color: white !important;
-  font-family: "SF Mono Nerd Font", monospace !important;
+  font-family: "Space Grotesk", monospace !important;
   caret-color: transparent !important;
 }
 
