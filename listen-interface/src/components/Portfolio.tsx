@@ -53,7 +53,7 @@ export function Portfolio() {
           .map((asset) => (
             <div
               key={`${asset.address}-${asset.chain}`}
-              className="rounded-lg p-3 hover:bg-black/50 transition-colors"
+              className="p-3 sm:p-4 hover:bg-black/50 transition-colors"
             >
               <div className="flex justify-between items-start mb-2">
                 <div className="flex items-center gap-3">

@@ -46,7 +46,7 @@ const TokenTile = ({ token }: { token: TopToken }) => {
   }, [token.pubkey]);
 
   return (
-    <div className="rounded-lg p-3 border border-blue-500/20 hover:border-blue-500/40 transition-colors bg-black/40 backdrop-blur-sm">
+    <div className="rounded-lg p-3 border border-[#2D2D2D] hover:border-blue-500/40 transition-colors bg-black/40 backdrop-blur-sm flex flex-col">
       <div className="flex items-center gap-2 mb-2">
         {metadata?.mpl?.ipfs_metadata?.image ? (
           <img
@@ -60,20 +60,17 @@ const TokenTile = ({ token }: { token: TopToken }) => {
         ) : (
           <div className="w-8 h-8 rounded-full bg-blue-500/20" />
         )}
-        <div className="flex-1">
+        <div>
           <div className="flex items-center gap-2">
-            <a
+            <div
               onClick={(e) => {
                 e.preventDefault();
                 openChart(token.pubkey);
               }}
-              href={`https://solscan.io/token/${token.pubkey}`}
-              target="_blank"
-              rel="noopener noreferrer"
               className="font-medium hover:text-blue-400 truncate cursor-pointer"
             >
               {metadata?.mpl?.symbol || token.name}
-            </a>
+            </div>
           </div>
           <div className="text-sm text-gray-500">
             ${token.price.toFixed(token.price < 0.01 ? 4 : 2)}
@@ -86,7 +83,7 @@ const TokenTile = ({ token }: { token: TopToken }) => {
         </div>
         <div>
           <div
-            className={`font-medium ${token.price_change_24h >= 0 ? "text-green-500" : "text-red-500"}`}
+            className={`font-medium ${token.price_change_24h >= 0 ? "text-green-500" : "text-red-500"} flex justify-end`}
           >
             {token.price_change_24h >= 0 ? "+" : ""}
             {token.price_change_24h.toFixed(1)}%
@@ -101,11 +98,8 @@ export const TopTokensDisplay = ({ tokens }: TopTokensDisplayProps) => {
   return (
     <div className="container-query">
       <div
-        className="grid grid-cols-1 gap-4 
-        sm:grid-cols-2
-        [@container(min-width:400px)]:grid-cols-2 
-        [@container(min-width:600px)]:grid-cols-3 
-        [@container(min-width:800px)]:grid-cols-4"
+        className="grid grid-cols-2 gap-4 
+        [@container(min-width:600px)]:grid-cols-4"
       >
         {tokens.map((token) => (
           <TokenTile key={token.pubkey} token={token} />
