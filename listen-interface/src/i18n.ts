@@ -69,6 +69,7 @@ const resources = {
         reject: "Reject",
         pipeline_rejected: "Pipeline rejected",
         pipeline_scheduled_for_execution: "Pipeline scheduled for execution",
+        invalid_timestamp: "Invalid timestamp",
         amount: "Amount",
       },
       token_tile: {
@@ -208,6 +209,7 @@ const resources = {
         reject: "拒绝",
         pipeline_rejected: "自动化任务已被拒绝",
         pipeline_scheduled_for_execution: "自动化任务已安排执行",
+        invalid_timestamp: "无效的时间戳",
       },
       token_tile: {
         traders: "交易者",

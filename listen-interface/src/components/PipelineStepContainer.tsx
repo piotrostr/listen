@@ -102,6 +102,9 @@ function formatError(error: string, t: TFunction) {
   if (error.includes("0x1771")) {
     return t("pipelines.slippage_tolerance_exceeded");
   }
+  if (error.includes("program error: 0x1786")) {
+    return t("pipelines.invalid_timestamp");
+  }
   try {
     // Look for JSON between curly braces
     const match = error.match(/{.*}/);
