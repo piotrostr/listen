@@ -11,7 +11,7 @@ const IS_DISABLED = false;
 
 const LoadingIndicator = () => (
   <div className="flex items-center flex-start py-4 px-4">
-    <div className="h-3 w-3 rounded-full animate-[spherePulse_3s_ease-in-out_infinite] shadow-lg relative">
+    <div className="h-4 w-4 rounded-full animate-[spherePulse_3s_ease-in-out_infinite] shadow-lg relative">
       <div className="absolute inset-0 rounded-full animate-[colorPulse_1s_ease-in-out_infinite] opacity-70 blur-[1px]"></div>
     </div>
   </div>
@@ -181,7 +181,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
           {messages.map((message) => (
             <MessageRenderer key={message.id} message={message} />
           ))}
-          {!isLoading &&
+          {isLoading &&
             messages[messages.length - 1]?.direction !== "outgoing" && (
               <LoadingIndicator />
             )}
