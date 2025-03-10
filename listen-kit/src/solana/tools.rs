@@ -227,10 +227,12 @@ pub async fn get_sol_balance() -> Result<u64> {
 }
 
 #[tool(description = "
-get_token_balance returns the amount as String and the decimals as u8
+get_token_balance returns (amount as String, decimals as u8, mint as String)
 in order to convert to UI amount: amount / 10^decimals
 ")]
-pub async fn get_spl_token_balance(mint: String) -> Result<(String, u8)> {
+pub async fn get_spl_token_balance(
+    mint: String,
+) -> Result<(String, u8, String)> {
     let signer = SignerContext::current().await;
     if signer.pubkey().is_none() {
         return Err(anyhow::anyhow!("Wallet unavailable"));
@@ -249,7 +251,7 @@ pub async fn get_spl_token_balance(mint: String) -> Result<(String, u8)> {
     .await
     .map_err(|e| anyhow!("{:#?}", e))?;
 
-    Ok((balance.amount, balance.decimals))
+    Ok((balance.amount, balance.decimals, mint.to_string()))
 }
 
 #[tool(description = "
