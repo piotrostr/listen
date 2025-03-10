@@ -48,7 +48,7 @@ export function Settings() {
             onChange={handleAmountChange}
             min="0.01"
             step="0.01"
-            className="bg-black/60 rounded-lg px-3 py-2 text-white w-24 focus:outline-none focus:border-purple-500"
+            className="bg-black/60 rounded-lg px-3 py-2 text-white w-24 focus:outline-none"
           />
           <span className="ml-2 text-white">SOL</span>
         </div>

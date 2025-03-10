@@ -188,7 +188,7 @@ function PortfolioHeader({ onRefresh }: { onRefresh: () => Promise<void> }) {
       <div className="flex items-center gap-2">
         <button
           onClick={onRefresh}
-          className="bg-black/40 text-white border border-purple-500/30 rounded-lg w-8 h-8 flex items-center justify-center hover:bg-purple-500/20"
+          className="bg-black/40 text-white border border-[#2D2D2D] rounded-lg w-8 h-8 flex items-center justify-center hover:bg-white/10"
           title={t("portfolio.refresh")}
         >
           <IoRefreshOutline className="w-4 h-4" />

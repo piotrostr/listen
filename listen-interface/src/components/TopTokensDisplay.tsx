@@ -46,7 +46,12 @@ const TokenTile = ({ token }: { token: TopToken }) => {
   }, [token.pubkey]);
 
   return (
-    <div className="rounded-lg p-3 border border-[#2D2D2D] hover:border-blue-500/40 transition-colors bg-black/40 backdrop-blur-sm flex flex-col">
+    <div
+      className="rounded-lg p-3 border border-[#2D2D2D] transition-colors bg-black/40 backdrop-blur-sm flex flex-col cursor-pointer"
+      onClick={() => {
+        openChart(token.pubkey);
+      }}
+    >
       <div className="flex items-center gap-2 mb-2">
         {metadata?.mpl?.ipfs_metadata?.image ? (
           <img
