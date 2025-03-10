@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
+import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderAddressOrTx } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
@@ -10,7 +11,7 @@ import {
   QuoteResponseSchema,
 } from "../types/quote";
 import { TweetSchema } from "../types/x";
-import { SolanaBalance } from "./Balances";
+import { SolanaBalance, SplTokenBalance } from "./Balances";
 import { InnerChart } from "./Chart";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
@@ -21,7 +22,26 @@ import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
+const SplTokenBalanceSchema = z.tuple([z.string(), z.number(), z.string()]);
+
 export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
+  if (toolOutput.name === "get_spl_token_balance") {
+    try {
+      const parsed = SplTokenBalanceSchema.parse(JSON.parse(toolOutput.result));
+      return (
+        <div className="p-3">
+          <SplTokenBalance
+            amount={parsed[0]}
+            decimals={parsed[1]}
+            mint={parsed[2]}
+          />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse spl token balance:", e);
+    }
+  }
+
   if (toolOutput.name === "fetch_x_post") {
     const parsed = TweetSchema.parse(JSON.parse(toolOutput.result));
     return <FetchXPostDisplay tweet={parsed} />;

@@ -1,6 +1,7 @@
 export const recommendedQuestions = {
   en: {
-    what_actions_can_you_perform_for_me: "What actions can you perform for me?",
+    what_actions_can_you_perform_for_me:
+      "What actions can you perform for me? Why would I use an AI agent to trade?",
     how_do_pipelines_work_and_what_pipelines_can_you_create_for_me:
       "How do pipelines work and what pipelines can you create for me?",
     what_chains_are_supported:
