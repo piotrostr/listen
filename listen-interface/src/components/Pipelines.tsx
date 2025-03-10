@@ -1,4 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { IoRefreshOutline } from "react-icons/io5";
 import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
@@ -6,7 +7,6 @@ import { usePipelines } from "../hooks/usePipelines";
 import { ExtendedPipeline } from "../types/api";
 import { ExtendedPipelineDisplay } from "./ExtendedPipelineDisplay";
 import { Spinner } from "./Spinner";
-
 interface PipelinesProps {
   statusFilter: string;
 }
@@ -75,7 +75,14 @@ export function PipelinesHeader({
   setStatusFilter,
 }: PipelinesHeaderProps) {
   const { t } = useTranslation();
-  const { refetch } = usePipelines();
+
+  const queryClient = useQueryClient();
+
+  const refetch = async () => {
+    await queryClient.resetQueries({
+      queryKey: ["pipelines"],
+    });
+  };
 
   return (
     <div className="flex items-center gap-2 h-full">

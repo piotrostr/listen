@@ -1,25 +1,20 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useEffect, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
 import { config } from "../config";
-import { useToast } from "../contexts/ToastContext";
 import { ExtendedPipelineResponse, ExtendedPipelineSchema } from "../types/api";
 import { useIsAuthenticated } from "./useIsAuthenticated";
 
 export const usePipelines = () => {
   const { isAuthenticated } = useIsAuthenticated();
   const { getAccessToken, ready } = usePrivy();
-  const { showToast } = useToast();
-  const [isLoading, setIsLoading] = useState(false);
-  const [data, setData] = useState<ExtendedPipelineResponse | null>(null);
-  const [error, setError] = useState<Error | null>(null);
 
-  const fetchPipelines = async () => {
-    if (!ready || !isAuthenticated) return;
+  return useQuery({
+    queryKey: ["pipelines"],
+    queryFn: async (): Promise<ExtendedPipelineResponse> => {
+      if (!ready || !isAuthenticated) {
+        throw new Error("Not authenticated");
+      }
 
-    setIsLoading(true);
-    setError(null);
-
-    try {
       const accessToken = await getAccessToken();
 
       if (!accessToken) {
@@ -62,33 +57,13 @@ export const usePipelines = () => {
         );
       });
 
-      console.log(pipelines);
-
-      setData({
+      return {
         pipelines: pipelines,
         status: responseData.status,
-      });
-    } catch (err) {
-      const error =
-        err instanceof Error ? err : new Error("Failed to fetch pipelines");
-      setError(error);
-      showToast(error.message, "error");
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchPipelines();
-  }, [ready, isAuthenticated]);
-
-  return {
-    data,
-    isLoading,
-    error,
-    refetch: async () => {
-      setData(null);
-      await fetchPipelines();
+      };
     },
-  };
+    enabled: ready && isAuthenticated,
+    staleTime: 30000, // Consider data fresh for 30 seconds
+    refetchOnWindowFocus: true,
+  });
 };
