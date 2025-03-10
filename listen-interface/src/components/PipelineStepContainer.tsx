@@ -27,7 +27,7 @@ export const PipelineStepContainer = ({
 }: PipelineStepContainerProps) => {
   const { t } = useTranslation();
   return (
-    <div className="rounded-lg p-2 bg-black/40 backdrop-blur-sm border-b border-[#2D2D2D] pb-4">
+    <div className="p-2 border-b border-[#2D2D2D] pb-4">
       <div className="flex items-center gap-4">{children}</div>
 
       {/* Conditions */}

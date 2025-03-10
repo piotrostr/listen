@@ -47,10 +47,7 @@ export function Pipelines({ statusFilter }: PipelinesProps) {
         <div className="space-y-6">
           {filteredPipelines?.map(
             (pipeline: ExtendedPipeline, index: number) => (
-              <div
-                key={`pipeline-${index}`}
-                className="bg-black/40 backdrop-blur-sm rounded-lg p-4"
-              >
+              <div key={`pipeline-${index}`}>
                 <ExtendedPipelineDisplay pipeline={pipeline} />
               </div>
             )
