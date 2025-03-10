@@ -55,23 +55,25 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
 
   const RECOMMENDED_QUESTIONS_CAROUSEL = [
     {
-      question: "whats the most viral token right now?",
+      question: t("recommended_questions.whats_the_most_viral_token_right_now"),
       enabled: true,
     },
     {
-      question: "what does LP mean?",
+      question: t("recommended_questions.what_does_lp_mean"),
       enabled: true,
     },
     {
-      question: "how to manage risk when trading memecoins?",
+      question: t(
+        "recommended_questions.how_to_manage_risk_when_trading_memecoins"
+      ),
       enabled: true,
     },
     {
-      question: "buy the Solana dip",
+      question: t("recommended_questions.buy_the_solana_dip"),
       enabled: true,
     },
     {
-      question: "research arcdotfun for me", // TODO X search
+      question: t("recommended_questions.research_arcdotfun_for_me"), // TODO X search
       enabled: true,
     },
   ];

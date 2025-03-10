@@ -11,6 +11,13 @@ export const recommendedQuestions = {
     complex_made_simple: "Automate things",
     discover_coins: "Discover coins",
     supported_chains: "What are chains?",
+    whats_the_most_viral_token_right_now:
+      "What's the most viral token right now?",
+    what_does_lp_mean: "What does LP mean?",
+    how_to_manage_risk_when_trading_memecoins:
+      "How to manage risk when trading memecoins?",
+    buy_the_solana_dip: "Buy the Solana dip",
+    research_arcdotfun_for_me: "Research arcdotfun for me",
   },
   zh: {
     what_actions_can_you_perform_for_me: "你能执行哪些操作？",
@@ -23,5 +30,11 @@ export const recommendedQuestions = {
     complex_made_simple: "自动化任务",
     discover_coins: "发现代币",
     supported_chains: "什么是 '链'？",
+    whats_the_most_viral_token_right_now: "现在最受欢迎的代币是什么？",
+    what_does_lp_mean: "什么是 LP？",
+    how_to_manage_risk_when_trading_memecoins:
+      "如何管理交易 memecoins 的风险？",
+    buy_the_solana_dip: "购买 Solana 的下跌",
+    research_arcdotfun_for_me: "帮我研究 arcdotfun",
   },
 };
