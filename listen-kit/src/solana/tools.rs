@@ -105,53 +105,55 @@ pub async fn swap(
         })
         .await;
 
-    // If Jupiter swap succeeds, return the result
-    match jupiter_result {
-        Ok(signature) => Ok(signature),
-        Err(e) => {
-            let jupiter_error = e.to_string();
-            if e.to_string().contains("0x1771") {
-                return Err(e);
-            }
-            // Parse the amount from lamports to SOL
-            let amount_u64 = _amount.parse::<u64>()?;
-            let sol_amount = amount_u64 as f64 / 1_000_000_000.0; // Convert lamports to SOL
+    jupiter_result
 
-            // Try to buy using Pump.fun with a default slippage of 100 bps (1%)
-            let pump_res =
-                execute_solana_transaction(move |owner| async move {
-                    if _input_mint.to_lowercase()
-                        == "so11111111111111111111111111111111111111112"
-                    {
-                        create_buy_pump_fun_tx(
-                            _output_mint,
-                            sol_to_lamports(sol_amount),
-                            100, // 1% slippage
-                            &create_rpc(),
-                            &owner,
-                        )
-                        .await
-                    } else {
-                        create_sell_pump_fun_tx(
-                            _input_mint,
-                            amount_u64,
-                            &owner,
-                        )
-                        .await
-                    }
-                })
-                .await;
+    // // If Jupiter swap succeeds, return the result
+    // match jupiter_result {
+    //     Ok(signature) => Ok(signature),
+    //     Err(e) => {
+    //         let jupiter_error = e.to_string();
+    //         if e.to_string().contains("0x1771") {
+    //             return Err(e);
+    //         }
+    //         // Parse the amount from lamports to SOL
+    //         let amount_u64 = _amount.parse::<u64>()?;
+    //         let sol_amount = amount_u64 as f64 / 1_000_000_000.0; // Convert lamports to SOL
 
-            match pump_res {
-                Ok(signature) => Ok(signature),
-                Err(e) => Err(anyhow!(
-                    "jupiter error: {}\n pump.fun error: {}",
-                    jupiter_error,
-                    e.to_string()
-                )),
-            }
-        }
-    }
+    //         // Try to buy using Pump.fun with a default slippage of 100 bps (1%)
+    //         let pump_res =
+    //             execute_solana_transaction(move |owner| async move {
+    //                 if _input_mint.to_lowercase()
+    //                     == "so11111111111111111111111111111111111111112"
+    //                 {
+    //                     create_buy_pump_fun_tx(
+    //                         _output_mint,
+    //                         sol_to_lamports(sol_amount),
+    //                         100, // 1% slippage
+    //                         &create_rpc(),
+    //                         &owner,
+    //                     )
+    //                     .await
+    //                 } else {
+    //                     create_sell_pump_fun_tx(
+    //                         _input_mint,
+    //                         amount_u64,
+    //                         &owner,
+    //                     )
+    //                     .await
+    //                 }
+    //             })
+    //             .await;
+
+    //         match pump_res {
+    //             Ok(signature) => Ok(signature),
+    //             Err(e) => Err(anyhow!(
+    //                 "jupiter error: {}\n pump.fun error: {}",
+    //                 jupiter_error,
+    //                 e.to_string()
+    //             )),
+    //         }
+    //     }
+    // }
 }
 
 #[tool(description = "
