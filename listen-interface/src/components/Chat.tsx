@@ -53,7 +53,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
   const { t } = useTranslation();
 
-  const RECOMMENDED_QUESTIONS = [
+  const RECOMMENDED_QUESTIONS_TILES = [
     {
       question: t(
         "chat.recommended_questions.what_actions_can_you_perform_for_me"
@@ -76,6 +76,9 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       ),
       enabled: true,
     },
+  ];
+
+  const RECOMMENDED_QUESTIONS_CAROUSEL = [
     {
       question: "whats the most viral token right now?",
       enabled: true,
@@ -86,6 +89,18 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     },
     {
       question: "how to manage risk when trading memecoins?",
+      enabled: true,
+    },
+    {
+      question: "buy the Solana dip",
+      enabled: true,
+    },
+    {
+      question: "research arcdotfun for me", // TODO X search
+      enabled: true,
+    },
+    {
+      question: "what is the best way to buy a new token?",
       enabled: true,
     },
   ];
@@ -178,19 +193,9 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
             <div className="flex flex-col items-center justify-center py-12 px-4">
               <div className="flex flex-col items-center justify-center">
                 <NewChatCarousel
-                  questions={RECOMMENDED_QUESTIONS}
+                  questions={RECOMMENDED_QUESTIONS_CAROUSEL}
                   onSelect={handleQuestionClick}
                 />
-                {/*RECOMMENDED_QUESTIONS.map((question, index) => (
-                  <button
-                    key={index}
-                    disabled={!question.enabled}
-                    onClick={() => handleQuestionClick(question.question)}
-                    className="bg-purple-900/30 hover:bg-purple-800/40 text-left p-4 rounded-lg border border-purple-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <p className="text-white">{question.question}</p>
-                  </button>
-                ))*/}
               </div>
             </div>
           )}

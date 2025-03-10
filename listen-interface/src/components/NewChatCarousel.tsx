@@ -76,34 +76,36 @@ export const NewChatCarousel: React.FC<NewChatCarouselProps> = ({
   const repeatedQuestions = [...questions, ...questions, ...questions];
 
   return (
-    <div className="relative h-[300px]">
-      <div
-        ref={containerRef}
-        className="h-full overflow-y-auto scrollbar-hide"
-        style={{
-          scrollSnapType: "y mandatory",
-        }}
-      >
-        <div className="py-[120px]">
-          {repeatedQuestions.map((item, index) => (
-            <motion.div
-              key={index}
-              className={`flex items-center justify-between h-[60px] cursor-pointer px-4
+    <div className="flex flex-row items-center justify-center">
+      <div className="relative h-[300px]">
+        <div
+          ref={containerRef}
+          className="h-full overflow-y-auto scrollbar-hide"
+          style={{
+            scrollSnapType: "y mandatory",
+          }}
+        >
+          <div className="py-[120px]">
+            {repeatedQuestions.map((item, index) => (
+              <motion.div
+                key={index}
+                className={`flex items-center justify-between h-[60px] cursor-pointer px-4
                 ${getVisibilityClass(index % questions.length)}
                 transition-all duration-200 ease-in-out`}
-              style={{
-                scrollSnapAlign: "center",
-              }}
-              onClick={() => handleClick(index % questions.length)}
-            >
-              <span className="text-lg flex-1 text-center">
-                {item.question}
-              </span>
-              <span className="text-white opacity-inherit">→</span>
-            </motion.div>
-          ))}
+                style={{
+                  scrollSnapAlign: "center",
+                }}
+                onClick={() => handleClick(index % questions.length)}
+              >
+                <span className="text-lg flex-1 text-center">
+                  {item.question}
+                </span>
+              </motion.div>
+            ))}
+          </div>
         </div>
       </div>
+      <span className="text-white">→</span>
     </div>
   );
 };
