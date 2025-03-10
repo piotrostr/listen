@@ -18,7 +18,7 @@ export const NewChatTiles: React.FC<NewChatTilesProps> = ({
 }) => {
   return (
     <div className="w-full overflow-x-auto scrollbar-hide px-4 md:px-0">
-      <div className="flex flex-nowrap gap-3 pb-4 min-w-min lg:flex lg:justify-center">
+      <div className="flex flex-nowrap gap-3 pb-4 min-w-min lg:flex lg:justify-center pt-2">
         {questions.map((item, index) => (
           <motion.div
             key={index}

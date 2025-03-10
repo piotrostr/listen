@@ -52,9 +52,6 @@ export function SimpleHeader({
           onMouseLeave={() => setSidebarOpen(false)}
         >
           <img src="/listen-more.png" alt="Logo" className="w-8 h-8 rounded" />
-          {!isMobile && (
-            <span className="font-bold text-md lg:text-xl">Listen</span>
-          )}
         </Link>
       </div>
 

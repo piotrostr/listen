@@ -42,7 +42,7 @@ export function WalletAddresses() {
   return (
     <div className="space-y-2">
       {wallets?.solanaWallet && (
-        <div className="border border-purple-500/30 rounded-lg p-3 hover:bg-purple-900/20 transition-colors backdrop-blur-sm">
+        <div className="rounded-lg p-3 transition-colors backdrop-blur-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <img
@@ -57,14 +57,14 @@ export function WalletAddresses() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => exportSolanaWallet()}
-                className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-purple-500/10"
+                className="p-2 border-2 border-[#2d2d2d] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-purple-500/10"
               >
                 {t("wallet_addresses.export")}
               </button>
               <button
                 onClick={() => fundSolanaWallet(wallets.solanaWallet!)}
                 disabled={!wallets.solanaWallet}
-                className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-purple-500/10"
+                className="p-2 border-2 border-[#2d2d2d] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-purple-500/10"
               >
                 {t("wallet_addresses.fund")}
               </button>

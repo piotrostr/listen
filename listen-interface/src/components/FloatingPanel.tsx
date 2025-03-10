@@ -17,9 +17,9 @@ export function FloatingPanel({
   const { t } = useTranslation();
 
   return (
-    <div className="h-[90vh] w-[420px] rounded-xl border border-purple-500/30 bg-black/80 backdrop-blur-sm shadow-lg">
+    <div className="h-[90vh] w-[420px] rounded-xl border border-[#2D2D2D] backdrop-blur-sm shadow-lg">
       <div className="flex flex-col h-full">
-        <div className="border-b border-purple-500/30 h-12">
+        <div className="border-b border-[#2D2D2D] h-12">
           <div className="flex items-center justify-between gap-2 px-3 h-full">
             <div>{t(`layout.${title}`)}</div>
             <div className="flex items-center gap-2 h-full">

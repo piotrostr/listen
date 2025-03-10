@@ -91,7 +91,7 @@ export function Portfolio() {
                         asset.address ===
                           "So11111111111111111111111111111111111111112" && (
                           <button
-                            className="cursor-pointer border border-purple-500/30 rounded-full p-2 bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
+                            className="cursor-pointer border border-[#2D2D2D] rounded-full p-2 bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
                             onClick={handleTopup}
                           >
                             <FaApplePay size={32} />

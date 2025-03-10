@@ -179,7 +179,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Background />
 
         {/* Header */}
-        <div className="z-20 bg-transparent backdrop-blur-sm flex items-center">
+        <div className="z-20 bg-black/10 backdrop-blur-sm flex items-center">
           <div className="flex-1">
             <SimpleHeader
               activePanel={activePanel}
