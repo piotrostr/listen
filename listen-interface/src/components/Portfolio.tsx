@@ -46,7 +46,7 @@ export function Portfolio() {
   const { openChart } = useModal();
 
   return (
-    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent scrollable-container">
+    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent scrollable-container pb-16 md:pb-0">
       <div className="flex-1">
         {assets
           ?.sort((a, b) => b.price * b.amount - a.price * a.amount)
