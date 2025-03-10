@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { useChat } from "../hooks/useChat";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
+import { NewChatCarousel } from "./NewChatCarousel";
 import { ShareModal } from "./ShareModal";
 
 const IS_DISABLED = false;
@@ -73,6 +74,18 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       question: t(
         "chat.recommended_questions.what_tokens_have_received_largest_inflows_outflows_in_the_past_days"
       ),
+      enabled: true,
+    },
+    {
+      question: "whats the most viral token right now?",
+      enabled: true,
+    },
+    {
+      question: "what does LP mean?",
+      enabled: true,
+    },
+    {
+      question: "how to manage risk when trading memecoins?",
       enabled: true,
     },
   ];
@@ -166,8 +179,12 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
               <h2 className="text-xl font-medium text-white mb-6">
                 {t("chat.start_a_conversation")}
               </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
-                {RECOMMENDED_QUESTIONS.map((question, index) => (
+              <div className="flex flex-col items-center justify-center">
+                <NewChatCarousel
+                  questions={RECOMMENDED_QUESTIONS}
+                  onSelect={handleQuestionClick}
+                />
+                {/*RECOMMENDED_QUESTIONS.map((question, index) => (
                   <button
                     key={index}
                     disabled={!question.enabled}
@@ -176,7 +193,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
                   >
                     <p className="text-white">{question.question}</p>
                   </button>
-                ))}
+                ))*/}
               </div>
             </div>
           )}
