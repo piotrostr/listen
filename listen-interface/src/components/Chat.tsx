@@ -182,7 +182,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
             <MessageRenderer key={message.id} message={message} />
           ))}
           {isLoading &&
-            messages[messages.length - 1]?.direction !== "outgoing" && (
+            messages[messages.length - 1]?.direction === "outgoing" && (
               <LoadingIndicator />
             )}
           <div ref={messagesEndRef} />
