@@ -10,7 +10,11 @@ import { ShareModal } from "./ShareModal";
 const IS_DISABLED = false;
 
 const LoadingIndicator = () => (
-  <div className="bg-purple-900/20 text-purple-300 rounded px-4 py-2">...</div>
+  <div className="flex items-center flex-start py-4 px-4">
+    <div className="h-3 w-3 rounded-full animate-[spherePulse_3s_ease-in-out_infinite] shadow-lg relative">
+      <div className="absolute inset-0 rounded-full animate-[colorPulse_1s_ease-in-out_infinite] opacity-70 blur-[1px]"></div>
+    </div>
+  </div>
 );
 
 export function Chat({ selectedChatId }: { selectedChatId?: string }) {
@@ -177,7 +181,10 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
           {messages.map((message) => (
             <MessageRenderer key={message.id} message={message} />
           ))}
-          {isLoading && <LoadingIndicator />}
+          {!isLoading &&
+            messages[messages.length - 1]?.direction !== "outgoing" && (
+              <LoadingIndicator />
+            )}
           <div ref={messagesEndRef} />
         </div>
       </ChatContainer>
