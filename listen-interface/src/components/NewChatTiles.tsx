@@ -18,7 +18,7 @@ export const NewChatTiles: React.FC<NewChatTilesProps> = ({
 }) => {
   return (
     <div className="w-full overflow-x-auto scrollbar-hide px-4 md:px-0">
-      <div className="flex flex-nowrap gap-3 pb-4 min-w-min">
+      <div className="flex flex-nowrap gap-3 pb-4 min-w-min lg:flex lg:justify-center">
         {questions.map((item, index) => (
           <motion.div
             key={index}
@@ -28,14 +28,12 @@ export const NewChatTiles: React.FC<NewChatTilesProps> = ({
           >
             <div
               onClick={() => onSelect(item.question)}
-              className="flex flex-row items-start p-5 w-[173px] h-[80px] bg-transparent
-                       border border-[#2D2D2D] rounded-[20px] cursor-pointer"
+              className="flex flex-row items-start w-[160px] lg:[w-173px] h-[55px] bg-transparent
+                       border border-[#2D2D2D] rounded-[20px] cursor-pointer flex justify-center items-center p-2"
             >
-              <div className="flex flex-col justify-center">
-                <span className="font-space-grotesk text-base text-white line-clamp-2">
-                  {item.display}
-                </span>
-              </div>
+              <span className="font-space-grotesk text-sm text-white">
+                {item.display}
+              </span>
             </div>
           </motion.div>
         ))}

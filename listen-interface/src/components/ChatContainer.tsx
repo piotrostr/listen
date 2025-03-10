@@ -33,36 +33,28 @@ export function ChatContainer({
   const { t } = useTranslation();
   const RECOMMENDED_QUESTIONS_TILES = [
     {
-      question: t(
-        "chat.recommended_questions.what_actions_can_you_perform_for_me"
-      ),
+      question: t("recommended_questions.what_actions_can_you_perform_for_me"),
       enabled: true,
-      display: t(
-        "chat.recommended_questions.what_actions_can_you_perform_for_me"
-      ),
+      display: t("recommended_questions.learn_about_listen"),
     },
     {
       question: t(
-        "chat.recommended_questions.how_do_pipelines_work_and_what_pipelines_can_you_create_for_me"
+        "recommended_questions.how_do_pipelines_work_and_what_pipelines_can_you_create_for_me"
       ),
       enabled: true,
-      display: t(
-        "chat.recommended_questions.how_do_pipelines_work_and_what_pipelines_can_you_create_for_me"
-      ),
+      display: t("recommended_questions.complex_made_simple"),
     },
     {
-      question: t("chat.recommended_questions.what_chains_are_supported"),
+      question: t("recommended_questions.what_chains_are_supported"),
       enabled: true,
-      display: t("chat.recommended_questions.what_chains_are_supported"),
+      display: t("recommended_questions.supported_chains"),
     },
     {
       question: t(
-        "chat.recommended_questions.what_tokens_have_received_largest_inflows_outflows_in_the_past_days"
+        "recommended_questions.what_tokens_have_received_largest_inflows_outflows_in_the_past_days"
       ),
       enabled: true,
-      display: t(
-        "chat.recommended_questions.what_tokens_have_received_largest_inflows_outflows_in_the_past_days"
-      ),
+      display: t("recommended_questions.discover_coins"),
     },
   ];
 
@@ -84,7 +76,7 @@ export function ChatContainer({
           onSelect={handleQuestionClick || (() => {})}
         />
       )}
-      <div className="sticky bottom-0 left-0 right-0 px-4 py-3 bg-black/80 backdrop-blur-sm">
+      <div className="sticky bottom-0 left-0 right-0 bg-black/80 backdrop-blur-sm pb-2 px-4 lg:px-0 pt-3">
         <ChatInput
           inputMessage={inputMessage}
           isGenerating={isGenerating}

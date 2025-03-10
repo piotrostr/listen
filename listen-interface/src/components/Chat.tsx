@@ -164,7 +164,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         <div className="h-full flex flex-col">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 px-4">
-              <div className="flex flex-col items-center justify-center gap-8">
+              <div className="flex flex-col items-center justify-center gap-8 mt-16">
                 <NewChatCarousel
                   questions={RECOMMENDED_QUESTIONS_CAROUSEL}
                   onSelect={handleQuestionClick}

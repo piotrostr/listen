@@ -147,7 +147,10 @@ export function MessageRenderer({ message: msg }: { message: Message }) {
         <br />
         name: {name}
         <br />
-        params: <pre>{JSON.stringify(JSON.parse(params), null, 2)}</pre>
+        params:{" "}
+        <pre className="truncate">
+          {JSON.stringify(JSON.parse(params), null, 2)}
+        </pre>
       </div>
     );
   }
