@@ -176,9 +176,6 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         <div className="h-full flex flex-col">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 px-4">
-              <h2 className="text-xl font-medium text-white mb-6">
-                {t("chat.start_a_conversation")}
-              </h2>
               <div className="flex flex-col items-center justify-center">
                 <NewChatCarousel
                   questions={RECOMMENDED_QUESTIONS}
