@@ -28,9 +28,13 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
   }
 
   if (toolOutput.name === "research_x_profile") {
-    return (
-      <ChatMessage message={JSON.parse(toolOutput.result)} direction="agent" />
-    );
+    try {
+      const message = JSON.parse(toolOutput.result);
+      return <ChatMessage message={message} direction="agent" />;
+    } catch (e) {
+      console.error("Failed to parse tweet:", e);
+      return <ChatMessage message={toolOutput.result} direction="agent" />;
+    }
   }
 
   if (toolOutput.name === "fetch_token_metadata") {

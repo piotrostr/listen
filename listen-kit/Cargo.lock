@@ -3324,7 +3324,7 @@ dependencies = [
  "httpdate",
  "itoa",
  "pin-project-lite",
- "socket2 0.5.8",
+ "socket2 0.4.10",
  "tokio",
  "tower-service",
  "tracing",
@@ -5324,7 +5324,7 @@ dependencies = [
 [[package]]
 name = "rig-core"
 version = "0.9.1"
-source = "git+https://github.com/piotrostr/rig?branch=fix%2Fcontent-block-err#c534b19e5eb34bbfa3afc5a1fbf0fc1d795fac04"
+source = "git+https://github.com/piotrostr/rig?branch=fix%2Fcontent-block-err#6820b33b009430bd6c4ad3f6d73fe8c463059b57"
 dependencies = [
  "async-stream",
  "bytes",

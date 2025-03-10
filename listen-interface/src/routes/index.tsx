@@ -20,6 +20,11 @@ export const Route = createFileRoute("/")({
 
 function Index() {
   const { isAuthenticated, isLoading } = useIsAuthenticated();
+  const { shared, chatId } = Route.useSearch();
+
+  // Allow access to shared chats without authentication
+  const isSharedChat = shared === true && chatId !== undefined;
+  const shouldShowChat = isAuthenticated || isSharedChat;
 
   return (
     <div className="flex-1 overflow-hidden">
@@ -27,7 +32,7 @@ function Index() {
         <div className="flex items-center justify-center h-full">
           <Spinner />
         </div>
-      ) : isAuthenticated ? (
+      ) : shouldShowChat ? (
         <Chat />
       ) : (
         <GettingStarted />

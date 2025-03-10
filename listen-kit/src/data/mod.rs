@@ -47,10 +47,10 @@ pub async fn fetch_token_metadata(mint: String) -> Result<serde_json::Value> {
             .await
             .map_err(|e| anyhow!("Failed to fetch token metadata: {}", e))?;
 
-    Ok(response
+    response
         .json::<serde_json::Value>()
         .await
-        .map_err(|e| anyhow!("Failed to parse JSON {}", e))?)
+        .map_err(|e| anyhow!("Failed to parse JSON {}", e))
 }
 
 #[tool(description = "

@@ -99,7 +99,7 @@ const resources = {
             "What tokens have received largest inflows/outflows in the past days?",
         },
         start_a_conversation: "Start a conversation",
-        placeholder: "Type your message...",
+        placeholder: "How can I help you?",
       },
       share_modal: {
         share_this_chat: "Share this chat",
@@ -243,7 +243,7 @@ const resources = {
           what_tokens_have_received_largest_inflows_outflows_in_the_past_days:
             "过去 24 小时资金流入/流出最多的代币有哪些？",
         },
-        placeholder: "输入消息...",
+        placeholder: "我能为你做什么？",
       },
       share_modal: {
         share_this_chat: "分享此聊天",

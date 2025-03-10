@@ -3,6 +3,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IoRefreshOutline } from "react-icons/io5";
 import { useMobile } from "../contexts/MobileContext";
+import { usePortfolio } from "../hooks/usePortfolio";
 import { Chat } from "./Chat";
 import { FloatingPanel } from "./FloatingPanel";
 import { Pipelines, PipelinesHeader } from "./Pipelines";
@@ -175,16 +176,24 @@ export function PanelSelector({
 // New Portfolio Header component
 function PortfolioHeader({ onRefresh }: { onRefresh: () => Promise<void> }) {
   const { t } = useTranslation();
+  const { portfolioValue, isLoading } = usePortfolio();
 
   return (
-    <div className="flex items-center gap-2 h-full">
-      <button
-        onClick={onRefresh}
-        className="bg-black/40 text-white border border-purple-500/30 rounded-lg w-8 h-8 flex items-center justify-center hover:bg-purple-500/20"
-        title={t("portfolio.refresh")}
-      >
-        <IoRefreshOutline className="w-4 h-4" />
-      </button>
+    <div className="flex items-center justify-between w-full">
+      <div className="flex items-center gap-2">
+        <span className="font-mono text-sm">
+          {isLoading ? "..." : `$${portfolioValue.toFixed(2)}`}
+        </span>
+      </div>
+      <div className="flex items-center gap-2">
+        <button
+          onClick={onRefresh}
+          className="bg-black/40 text-white border border-purple-500/30 rounded-lg w-8 h-8 flex items-center justify-center hover:bg-purple-500/20"
+          title={t("portfolio.refresh")}
+        >
+          <IoRefreshOutline className="w-4 h-4" />
+        </button>
+      </div>
     </div>
   );
 }

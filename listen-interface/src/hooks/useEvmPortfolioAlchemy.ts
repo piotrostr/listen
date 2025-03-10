@@ -173,15 +173,14 @@ export async function getTokenHoldings(
 
 export function useEvmPortfolio() {
   const { data: wallets } = usePrivyWallets();
-  const address = wallets?.evmWallet;
 
   return useQuery({
-    queryKey: ["portfolio", address],
+    queryKey: ["portfolio", wallets?.evmWallet],
     queryFn: async () => {
-      if (!address) throw new Error("No address provided");
-      return getTokenHoldings(address);
+      if (!wallets?.evmWallet) throw new Error("No address provided");
+      return getTokenHoldings(wallets.evmWallet);
     },
-    enabled: !!address,
+    enabled: !!wallets?.evmWallet,
     staleTime: 30000,
   });
 }

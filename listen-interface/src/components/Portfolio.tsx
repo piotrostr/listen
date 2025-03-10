@@ -4,21 +4,14 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaApplePay, FaShoppingCart, FaSync } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
-import { useChatType } from "../hooks/useChatType";
-import { useEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
+import { usePortfolio } from "../hooks/usePortfolio";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
-import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
 import { BuySellModal } from "./BuySellModal";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
 
 export function Portfolio() {
-  // const { fundWallet } = useFundWallet();
-  const { data: solanaAssets, isLoading: isLoadingSolana } =
-    useSolanaPortfolio();
-  const { data: evmAssets, isLoading: isLoadingEvm } = useEvmPortfolio();
+  const { data: assets, isLoading } = usePortfolio();
   const { data: wallets } = usePrivyWallets();
-  const { chatType } = useChatType(); // Get the global chat type from settings
-
   const queryClient = useQueryClient();
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -27,9 +20,6 @@ export function Portfolio() {
   const { fundWallet } = useFundWallet();
 
   const { t } = useTranslation();
-
-  const isLoading =
-    chatType === "solana" ? isLoadingSolana : isLoadingEvm && isLoadingSolana;
 
   if (isLoading) {
     return <PortfolioSkeleton />;
@@ -52,17 +42,12 @@ export function Portfolio() {
     });
   };
 
-  const displayedAssets =
-    chatType === "solana"
-      ? (solanaAssets ?? [])
-      : [...(evmAssets ?? []), ...(solanaAssets ?? [])];
-
   return (
     <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent scrollable-container">
       <div className="flex-1">
         <div className="p-4 pt-0 space-y-4">
-          {displayedAssets
-            .sort((a, b) => b.price * b.amount - a.price * a.amount)
+          {assets
+            ?.sort((a, b) => b.price * b.amount - a.price * a.amount)
             .map((asset) => (
               <div
                 key={`${asset.address}-${asset.chain}`}
@@ -152,7 +137,7 @@ export function Portfolio() {
                 </div>
               </div>
             ))}
-          {displayedAssets.length === 0 && (
+          {(!assets || assets.length === 0) && (
             <div className="text-center text-gray-400 flex flex-col items-center gap-2">
               {t("portfolio.no_assets_found")}
               <button onClick={handleRefresh}>
