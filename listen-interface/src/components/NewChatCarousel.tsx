@@ -1,6 +1,12 @@
 import { motion } from "framer-motion";
 import React, { useEffect, useRef, useState } from "react";
 
+declare global {
+  interface HTMLDivElement {
+    scrollTimeout: number;
+  }
+}
+
 interface Question {
   question: string;
   enabled: boolean;
@@ -30,6 +36,21 @@ export const NewChatCarousel: React.FC<NewChatCarouselProps> = ({
       } else if (scrollPosition < totalHeight) {
         containerRef.current.scrollTop = scrollPosition + totalHeight;
       }
+
+      // When scrolling stops, snap to nearest item without triggering selection
+      clearTimeout(containerRef.current.scrollTimeout);
+      containerRef.current.scrollTimeout = setTimeout(() => {
+        const newIndex =
+          Math.round(scrollPosition / itemHeight) % questions.length;
+        setActiveIndex(newIndex);
+
+        // Just scroll to position without triggering selection
+        const middleSetOffset = questions.length * itemHeight;
+        containerRef.current?.scrollTo({
+          top: middleSetOffset + newIndex * itemHeight,
+          behavior: "smooth",
+        });
+      }, 50) as any;
 
       const newIndex = Math.round((scrollPosition % totalHeight) / itemHeight);
       setActiveIndex(newIndex);
@@ -80,6 +101,9 @@ export const NewChatCarousel: React.FC<NewChatCarouselProps> = ({
           ref={containerRef}
           className="h-full overflow-y-auto scrollbar-hide"
           onScroll={handleScroll}
+          style={{
+            scrollSnapType: "y mandatory",
+          }}
         >
           <div className="py-[120px]">
             {repeatedQuestions.map((item, index) => (
@@ -87,6 +111,9 @@ export const NewChatCarousel: React.FC<NewChatCarouselProps> = ({
                 key={index}
                 className={`flex items-center justify-center h-[60px] cursor-pointer px-4 transition-all duration-200
                   ${getVisibilityClass(index)}`}
+                style={{
+                  scrollSnapAlign: "center",
+                }}
                 onClick={() => handleClick(index % questions.length)}
               >
                 <span className="text-lg text-center">{item.question}</span>
