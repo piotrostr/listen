@@ -28,7 +28,7 @@ export function ShareModal({ url, onClose }: ShareModalProps) {
 
   return (
     <div className="fixed inset-0 bg-black/70 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-gray-900 border border-purple-500/30 rounded-lg max-w-md w-full p-6 shadow-xl">
+      <div className="bg-gray-900 border border-[#2D2D2D] rounded-lg max-w-md w-full p-6 shadow-xl">
         <h3 className="text-xl font-medium text-white mb-4">
           {t("share_modal.share_this_chat")}
         </h3>
@@ -42,7 +42,7 @@ export function ShareModal({ url, onClose }: ShareModalProps) {
             type="text"
             value={url}
             readOnly
-            className="flex-1 bg-black/40 border border-purple-500/30 rounded px-3 py-2 text-white transition-colors"
+            className="flex-1 bg-black/40 border border-[#2D2D2D] rounded px-3 py-2 text-white transition-colors"
           />
           <button
             onClick={handleCopyClick}

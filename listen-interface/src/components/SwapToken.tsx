@@ -74,7 +74,7 @@ export const SwapTokenCompact = ({
         <img
           src={image.replace("cf-ipfs.com", "ipfs.io")}
           alt={name ?? ""}
-          className="w-8 h-8 rounded-full"
+          className="w-10 h-10 rounded-full"
         />
       )}
       <span className="text-sm font-medium">{amount ?? ""}</span>

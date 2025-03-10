@@ -23,7 +23,7 @@ export function GettingStarted() {
         <button
           onClick={login}
           disabled={!ready}
-          className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
+          className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
         >
           {t("getting_started.get_started")}
         </button>

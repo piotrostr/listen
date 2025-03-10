@@ -14,9 +14,7 @@ function ChatOption({ id, iconPaths, isSelected, onClick }: ChatOptionProps) {
       onClick={() => onClick(id)}
       disabled={id === "omni" && process.env.NODE_ENV === "production"}
       className={`p-4 border-2 ${
-        isSelected
-          ? "border-purple-500 bg-purple-500/20"
-          : "border-purple-500/30"
+        isSelected ? "border-purple-500 bg-purple-500/20" : "border-[#2D2D2D]"
       } rounded-lg bg-black/40 backdrop-blur-sm hover:bg-purple-500/10 transition-all`}
     >
       <div className="flex flex-row justify-center gap-2">

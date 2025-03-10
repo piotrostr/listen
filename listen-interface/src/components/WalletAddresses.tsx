@@ -90,7 +90,7 @@ export function WalletAddresses() {
       )}
 
       {wallets?.evmWallet && (
-        <div className="border border-purple-500/30 rounded-lg p-3 hover:bg-purple-900/20 transition-colors backdrop-blur-sm">
+        <div className="border border-[#2D2D2D] rounded-lg p-3 hover:bg-purple-900/20 transition-colors backdrop-blur-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <img

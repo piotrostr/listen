@@ -86,13 +86,13 @@ function PipelineMenu({
           <>
             <button
               onClick={sendPipelineForExecution}
-              className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg transition-colors"
+              className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-[#2D2D2D] rounded-lg transition-colors"
             >
               {t("pipelines.approve")}
             </button>
             <button
               onClick={() => setStatus("rejected")}
-              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg transition-colors"
+              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-[#2D2D2D] rounded-lg transition-colors"
             >
               {t("pipelines.reject")}
             </button>

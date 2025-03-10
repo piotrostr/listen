@@ -27,29 +27,29 @@ export const PipelineStepContainer = ({
 }: PipelineStepContainerProps) => {
   const { t } = useTranslation();
   return (
-    <div className="rounded-lg lg:p-4 p-4 bg-black/40 backdrop-blur-sm">
+    <div className="rounded-lg p-2 bg-black/40 backdrop-blur-sm border-b border-[#2D2D2D] pb-4">
       <div className="flex items-center gap-4">{children}</div>
 
       {/* Conditions */}
       {conditions.length > 0 && (
-        <div className="mt-3 pt-3">
-          <div className="text-sm text-white">{t("pipelines.conditions")}</div>
+        <div className="mt-3 pt-3 flex flex-row gap-2 items-center">
+          <span className="text-sm text-white">
+            {t("pipelines.conditions")}:
+          </span>
           {conditions.map((condition, index) => (
-            <div key={index} className="mt-1 lg:text-sm text-xs text-gray-400">
+            <div key={index} className="lg:text-sm text-xs text-gray-400">
               {condition.type === PipelineConditionType.Now
                 ? t("pipelines.execute_immediately")
                 : condition.type === PipelineConditionType.PriceAbove
-                  ? `${t("pipelines.price_above")} ${condition.value} ${t("pipelines.for")} ${condition.asset.slice(0, 4)}...${condition.asset.slice(-4)}`
-                  : `${t("pipelines.price_below")} ${condition.value} ${t("pipelines.for")} ${condition.asset.slice(0, 4)}...${condition.asset.slice(-4)}`}
+                  ? `${t("pipelines.price_above")} ${condition.value} ${t("pipelines.for")} ${condition.asset.slice(0, 3)}...${condition.asset.slice(-4)}`
+                  : `${t("pipelines.price_below")} ${condition.value} ${t("pipelines.for")} ${condition.asset.slice(0, 3)}...${condition.asset.slice(-4)}`}
             </div>
           ))}
         </div>
       )}
       {status && (
-        <div className="mt-3 pt-3">
-          <div className="text-sm text-purple-300">
-            {t("pipelines.status")}:
-          </div>
+        <div className="flex flex-row gap-2 items-center mt-1">
+          <div className="text-sm text-white">{t("pipelines.status")}:</div>
           <TransactionLink
             status={status}
             transactionHash={transactionHash}
@@ -61,7 +61,7 @@ export const PipelineStepContainer = ({
   );
 };
 
-const renderStatus = (status: string, t: TFunction) => {
+const renderStatus = (status: string, t: TFunction, error: string | null) => {
   switch (status) {
     case "Pending":
       return (
@@ -77,9 +77,16 @@ const renderStatus = (status: string, t: TFunction) => {
       );
     case "Failed":
       return (
-        <span className="text-red-300 flex items-center gap-1">
-          <FaTimesCircle /> {t("pipelines.failed")}
-        </span>
+        <div className="relative group">
+          <span className="text-red-300 flex items-center gap-1 cursor-help">
+            <FaTimesCircle /> {t("pipelines.failed")}
+          </span>
+          {error && (
+            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-black/90 text-red-300 p-2 rounded shadow-lg z-10 max-w-xs break-words w-[150px]">
+              {formatError(error, t)}
+            </div>
+          )}
+        </div>
       );
     case "Cancelled":
       return (
@@ -126,8 +133,8 @@ export const TransactionLink = ({
 }) => {
   const { t } = useTranslation();
   return (
-    <div className="text-xs sm:text-sm text-gray-400 flex flex-wrap items-center gap-2 mt-2">
-      {renderStatus(status, t)}{" "}
+    <div className="text-xs sm:text-sm text-gray-400 flex flex-wrap items-center gap-2">
+      {renderStatus(status, t, error)}{" "}
       {transactionHash && (
         <span className="flex items-center gap-1 inline-flex">
           <a
@@ -143,11 +150,6 @@ export const TransactionLink = ({
             {transactionHash.slice(0, 6)}...{transactionHash.slice(-4)}
             <FaExternalLinkAlt size={10} />
           </a>
-        </span>
-      )}
-      {error && (
-        <span className="text-red-300 break-all overflow-hidden">
-          {formatError(error, t)}
         </span>
       )}
     </div>

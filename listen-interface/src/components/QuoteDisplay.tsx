@@ -49,7 +49,7 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
     imageMap[quote.to.token as keyof typeof imageMap];
 
   return (
-    <div className="border border-purple-500/30 rounded-lg p-4 bg-black/40 backdrop-blur-sm">
+    <div className="border border-[#2D2D2D] rounded-lg p-4 bg-black/40 backdrop-blur-sm">
       <div className="flex items-center gap-4">
         {/* Input Token */}
         <div className="flex-1">
@@ -139,22 +139,22 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
       </div>
 
       {/* Transaction Details */}
-      <div className="mt-3 pt-3 border-t border-purple-500/30">
+      <div className="mt-3 pt-3 border-t border-[#2D2D2D]">
         <div className="flex justify-between items-start">
           <div>
-            <div className="text-sm text-purple-300">
+            <div className="text-sm text-white">
               Est. Time: {quote.execution_time_seconds}s
             </div>
-            <div className="text-sm text-purple-300">
+            <div className="text-sm text-white">
               Slippage: {quote.slippage_percent}%
             </div>
           </div>
           <div className="text-right">
-            <div className="text-sm text-purple-300">Costs:</div>
+            <div className="text-sm text-white">Costs:</div>
             {Object.entries(quote.costs).map(([token, amount]) => {
               const decimals = getTokenDecimals(token, quote);
               return (
-                <div key={token} className="text-sm text-purple-300">
+                <div key={token} className="text-sm text-white">
                   {formatAmount(amount, decimals)} {token}
                 </div>
               );

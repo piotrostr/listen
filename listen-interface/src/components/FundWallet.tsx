@@ -29,7 +29,7 @@ export const FundWallet = ({ error = null }: FundWalletProps) => {
 
   if (!ready || !user || !wallets?.solanaWallet) {
     return (
-      <div className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center justify-center">
+      <div className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center justify-center">
         <Spinner />
       </div>
     );
@@ -38,14 +38,14 @@ export const FundWallet = ({ error = null }: FundWalletProps) => {
   return (
     <div>
       {error ? (
-        <div className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm">
+        <div className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm">
           <span className="text-red-500">Error: {error}</span>
         </div>
       ) : (
         <button
           disabled={isFunding}
           onClick={handleFundWallet}
-          className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
+          className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
         >
           {isFunding ? "Funding wallet..." : "Fund Wallet"}
         </button>

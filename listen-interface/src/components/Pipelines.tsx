@@ -90,7 +90,7 @@ export function PipelinesHeader({
       <select
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value)}
-        className="bg-black/40 text-white border border-purple-500/30 rounded-lg px-4 h-8 text-sm"
+        className="bg-black/40 text-white border border-[#2D2D2D] rounded-lg px-4 h-8 text-sm"
       >
         <option value="All">{t("pipelines.all")}</option>
         <option value="Pending">{t("pipelines.pending")}</option>
@@ -99,7 +99,7 @@ export function PipelinesHeader({
       </select>
       <button
         onClick={refetch}
-        className="bg-black/40 text-white border border-purple-500/30 rounded-lg w-8 h-8 flex items-center justify-center hover:bg-purple-500/20"
+        className="bg-black/40 text-white border border-[#2D2D2D] rounded-lg w-8 h-8 flex items-center justify-center hover:bg-purple-500/20"
       >
         <IoRefreshOutline className="w-4 h-4" />
       </button>
