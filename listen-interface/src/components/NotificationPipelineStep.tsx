@@ -39,10 +39,10 @@ export const NotificationPipelineStep = ({
             />
           )}
           <div>
-            <div className="font-bold text-purple-100">
+            <div className="font-bold text-white">
               {t("pipelines.send_notification")}
             </div>
-            <div className="text-purple-300 text-sm">{step.action.message}</div>
+            <div className="text-gray-400">{step.action.message}</div>
           </div>
         </div>
       </div>

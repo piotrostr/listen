@@ -196,7 +196,7 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
   }
   // Default tool output display
   return (
-    <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
+    <div className="text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
       {toolOutput.name}
       <ToolOutputDisplay toolOutput={toolOutput} />
     </div>
@@ -229,13 +229,9 @@ export const ChatMessage = ({
   return (
     <div
       className={`
-        ${direction === "incoming" && "bg-blue-900/20 text-blue-300 border-blue-500"}
-        ${direction === "outgoing" && "bg-purple-900/20 text-purple-300 border-purple-500"}
-        ${direction === "agent" && "bg-green-900/20 text-green-300 border-green-500"}
-        rounded-lg px-4 py-2 my-2 backdrop-blur-sm
-        border border-opacity-20
-        lg:text-md text-sm
-        break-words word-break-all max-w-full overflow-hidden
+        rounded-lg px-4 py-2 my-2
+        break-words word-break-all overflow-hidden
+        ${direction === "outgoing" ? "rounded-3xl bg-[#2f2f2f]/40 ml-auto" : "max-w-full"}
       `}
       style={{
         wordBreak: "break-word",
@@ -298,7 +294,7 @@ export const ChatMessage = ({
           ),
           code: ({ ...props }) => (
             <code
-              className="block bg-transparent rounded overflow-x-auto text-sm"
+              className="block bg-transparent rounded overflow-x-auto"
               style={{
                 wordBreak: "break-all",
                 whiteSpace: "pre-wrap",

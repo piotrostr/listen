@@ -1,6 +1,6 @@
 export const Background = () => {
   return (
-    <div className="fixed inset-0 -z-10 h-screen w-screen bg-black">
+    <div className="fixed inset-0 -z-10 h-screen w-screen bg-[#151518]">
       {/*
       <div className="absolute inset-0 bg-black opacity-80" />
       <div className="absolute inset-0 overflow-hidden">

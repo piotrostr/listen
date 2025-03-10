@@ -27,20 +27,15 @@ export const PipelineStepContainer = ({
 }: PipelineStepContainerProps) => {
   const { t } = useTranslation();
   return (
-    <div className="border border-purple-500/30 rounded-lg lg:p-4 p-4 bg-black/40 backdrop-blur-sm">
+    <div className="rounded-lg lg:p-4 p-4 bg-black/40 backdrop-blur-sm">
       <div className="flex items-center gap-4">{children}</div>
 
       {/* Conditions */}
       {conditions.length > 0 && (
-        <div className="mt-3 pt-3 border-t border-purple-500/30">
-          <div className="text-sm text-purple-300">
-            {t("pipelines.conditions")}
-          </div>
+        <div className="mt-3 pt-3">
+          <div className="text-sm text-white">{t("pipelines.conditions")}</div>
           {conditions.map((condition, index) => (
-            <div
-              key={index}
-              className="mt-1 lg:text-sm text-xs text-purple-200"
-            >
+            <div key={index} className="mt-1 lg:text-sm text-xs text-gray-400">
               {condition.type === PipelineConditionType.Now
                 ? t("pipelines.execute_immediately")
                 : condition.type === PipelineConditionType.PriceAbove
@@ -51,7 +46,7 @@ export const PipelineStepContainer = ({
         </div>
       )}
       {status && (
-        <div className="mt-3 pt-3 border-t border-purple-500/30">
+        <div className="mt-3 pt-3">
           <div className="text-sm text-purple-300">
             {t("pipelines.status")}:
           </div>

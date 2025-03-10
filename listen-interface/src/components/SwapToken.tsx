@@ -36,9 +36,7 @@ export const SwapToken = ({
       </div>
       <div>
         <div className="flex items-center gap-2">
-          <div className="font-bold text-purple-100 text-base sm:text-lg">
-            {name}
-          </div>
+          <div className="font-bold text-base sm:text-lg">{name}</div>
           {chainId && (
             <img
               src={`https://dd.dexscreener.com/ds-data/chains/${chainId.toLowerCase()}.png`}
@@ -48,9 +46,7 @@ export const SwapToken = ({
           )}
         </div>
         {showAmount && amount && (
-          <div className="text-xs sm:text-sm text-purple-300">
-            {t("pipelines.amount")}: {amount}
-          </div>
+          <div className="text-xs sm:text-sm">{amount}</div>
         )}
         {address && (
           <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-1">

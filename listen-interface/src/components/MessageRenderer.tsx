@@ -22,10 +22,7 @@ const tagHandlers: Record<string, TagHandler> = {
         const pipeline = JSON.parse(pipelineContent);
         if (pipeline && pipeline.steps) {
           return (
-            <div
-              key={`pipeline-${index}`}
-              className="my-4 border-b border-purple-500/30 pb-4"
-            >
+            <div key={`pipeline-${index}`} className="my-4 pb-4">
               <PipelineDisplay pipeline={pipeline} />
             </div>
           );

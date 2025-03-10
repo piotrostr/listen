@@ -40,14 +40,14 @@ export function MobileNavigation({
 
   return (
     <div
-      className={`md:hidden fixed left-0 right-0 bg-black/60 backdrop-blur-sm border-t border-purple-500/30 z-50 ${
+      className={`md:hidden fixed left-0 right-0 bg-[#151518]/60 backdrop-blur-sm  z-50 ${
         isIOS ? "bottom-0 pb-5" : "bottom-0"
       }`}
     >
       <div className="flex justify-around items-center h-16 mb-2">
         <button
           onClick={() => handleNavClick("chat")}
-          className={`flex flex-col items-center justify-center p-2 ${activePanel === null ? "text-purple-400" : "text-gray-400"}`}
+          className={`flex flex-col items-center justify-center p-2 ${activePanel === null ? "text-white-400" : "text-gray-400"}`}
         >
           <IoChatboxOutline className="w-6 h-6" />
           <span className="text-xs mt-1">{t("layout.chat")}</span>
@@ -55,7 +55,7 @@ export function MobileNavigation({
 
         <button
           onClick={() => handleNavClick("portfolio")}
-          className={`flex flex-col items-center justify-center p-2 ${activePanel === "portfolio" ? "text-purple-400" : "text-gray-400"}`}
+          className={`flex flex-col items-center justify-center p-2 ${activePanel === "portfolio" ? "text-white-400" : "text-gray-400"}`}
         >
           <IoWalletOutline className="w-6 h-6" />
           <span className="text-xs mt-1">{t("layout.portfolio")}</span>
@@ -63,7 +63,7 @@ export function MobileNavigation({
 
         <button
           onClick={() => handleNavClick("screener")}
-          className={`flex flex-col items-center justify-center p-2 ${activePanel === "screener" ? "text-purple-400" : "text-gray-400"}`}
+          className={`flex flex-col items-center justify-center p-2 ${activePanel === "screener" ? "text-white-400" : "text-gray-400"}`}
         >
           <RxDashboard className="w-6 h-6" />
           <span className="text-xs mt-1">{t("layout.screener")}</span>
@@ -71,7 +71,7 @@ export function MobileNavigation({
 
         <button
           onClick={() => handleNavClick("pipelines")}
-          className={`flex flex-col items-center justify-center p-2 ${activePanel === "pipelines" ? "text-purple-400" : "text-gray-400"}`}
+          className={`flex flex-col items-center justify-center p-2 ${activePanel === "pipelines" ? "text-white-400" : "text-gray-400"}`}
         >
           <BsLink className="w-6 h-6" />
           <span className="text-xs mt-1">{t("layout.pipelines")}</span>
@@ -79,7 +79,7 @@ export function MobileNavigation({
 
         <button
           onClick={() => handleNavClick("settings")}
-          className={`flex flex-col items-center justify-center p-2 ${activePanel === "settings" ? "text-purple-400" : "text-gray-400"}`}
+          className={`flex flex-col items-center justify-center p-2 ${activePanel === "settings" ? "text-white-400" : "text-gray-400"}`}
         >
           <IoSettingsOutline className="w-6 h-6" />
           <span className="text-xs mt-1">{t("layout.settings")}</span>

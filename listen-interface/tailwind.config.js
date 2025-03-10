@@ -26,6 +26,9 @@ export default {
           },
         },
       },
+      colors: {
+        black: "#151518",
+      },
     },
   },
   plugins: [

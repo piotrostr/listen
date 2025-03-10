@@ -74,7 +74,7 @@ export const SwapPipelineStep = ({
       </div>
 
       {/* Arrow */}
-      <div className="text-purple-500">
+      <div className="text-white-500">
         <svg
           xmlns="http://www.w3.org/2000/svg"
           fill="none"
