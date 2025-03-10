@@ -86,6 +86,9 @@ export const usePipelines = () => {
     data,
     isLoading,
     error,
-    refetch: fetchPipelines,
+    refetch: async () => {
+      setData(null);
+      await fetchPipelines();
+    },
   };
 };

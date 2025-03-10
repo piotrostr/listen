@@ -122,71 +122,76 @@ async function fetchPrices(mints: string[]): Promise<PriceResponse> {
 export const useSolanaPortfolio = () => {
   const { data: wallets } = usePrivyWallets();
 
-  return useQuery({
-    queryKey: ["portfolio", wallets?.solanaWallet?.toString()],
-    queryFn: async () => {
-      const pubkey = new PublicKey(wallets!.solanaWallet!);
-      const WSOL_MINT = "So11111111111111111111111111111111111111112";
-      const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
+  const fetchPortfolio = async (address: string) => {
+    const pubkey = new PublicKey(address);
+    const WSOL_MINT = "So11111111111111111111111111111111111111112";
+    const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
-      // Get SOL balance and token holdings in parallel
-      const [solBalance, holdings] = await Promise.all([
-        connection.getBalance(pubkey),
-        getHoldings(connection, pubkey),
-      ]);
+    // Get SOL balance and token holdings in parallel
+    const [solBalance, holdings] = await Promise.all([
+      connection.getBalance(pubkey),
+      getHoldings(connection, pubkey),
+    ]);
 
-      // Ensure USDC is in the mints list even if not in holdings
-      const existingMints = holdings.map((h) => h.mint);
-      if (!existingMints.includes(USDC_MINT)) {
-        holdings.push({
-          mint: USDC_MINT,
-          ata: "",
-          amount: 0n,
-        });
-      }
+    // Ensure USDC is in the mints list even if not in holdings
+    const existingMints = holdings.map((h) => h.mint);
+    if (!existingMints.includes(USDC_MINT)) {
+      holdings.push({
+        mint: USDC_MINT,
+        ata: "",
+        amount: 0n,
+      });
+    }
 
-      const mints = [WSOL_MINT, ...holdings.map((h) => h.mint)];
+    const mints = [WSOL_MINT, ...holdings.map((h) => h.mint)];
 
-      // Get metadata and prices in parallel
-      const [tokenMetadata, pricesResponse] = await Promise.all([
-        Promise.all(mints.map(fetchTokenMetadata)),
-        fetchPrices(mints),
-      ]);
+    // Get metadata and prices in parallel
+    const [tokenMetadata, pricesResponse] = await Promise.all([
+      Promise.all(mints.map(fetchTokenMetadata)),
+      fetchPrices(mints),
+    ]);
 
-      // Create SOL portfolio item using Jupiter metadata
-      const solMetadata = tokenMetadata[0];
-      const solPortfolioItem = {
-        address: WSOL_MINT,
-        name: "Solana",
-        symbol: "SOL",
-        decimals: solMetadata.decimals,
-        logoURI: solMetadata.logoURI,
-        price: Number(pricesResponse.data[WSOL_MINT]?.price || 0),
-        amount: solBalance / LAMPORTS_PER_SOL,
-        daily_volume: solMetadata.volume24h || 0,
+    // Create SOL portfolio item using Jupiter metadata
+    const solMetadata = tokenMetadata[0];
+    const solPortfolioItem = {
+      address: WSOL_MINT,
+      name: "Solana",
+      symbol: "SOL",
+      decimals: solMetadata.decimals,
+      logoURI: solMetadata.logoURI,
+      price: Number(pricesResponse.data[WSOL_MINT]?.price || 0),
+      amount: solBalance / LAMPORTS_PER_SOL,
+      daily_volume: solMetadata.volume24h || 0,
+      chain: "solana",
+    };
+
+    // Combine SOL with other tokens
+    const tokenPortfolioItems = holdings.map((holding, index) => {
+      const metadata = tokenMetadata[index + 1]; // offset by 1 since SOL metadata is first
+      const price = Number(pricesResponse.data[holding.mint]?.price || 0);
+      const amount = Number(holding.amount) / Math.pow(10, metadata.decimals);
+
+      return {
+        address: metadata.address,
+        name: metadata.name,
+        symbol: metadata.symbol,
+        decimals: metadata.decimals,
+        logoURI: metadata.logoURI,
+        price,
+        amount,
+        daily_volume: metadata.volume24h || 0,
         chain: "solana",
       };
+    });
 
-      // Combine SOL with other tokens
-      const tokenPortfolioItems = holdings.map((holding, index) => {
-        const metadata = tokenMetadata[index + 1]; // offset by 1 since SOL metadata is first
-        const price = Number(pricesResponse.data[holding.mint]?.price || 0);
-        const amount = Number(holding.amount) / Math.pow(10, metadata.decimals);
+    return [solPortfolioItem, ...tokenPortfolioItems];
+  };
 
-        return {
-          address: metadata.address,
-          name: metadata.name,
-          symbol: metadata.symbol,
-          decimals: metadata.decimals,
-          logoURI: metadata.logoURI,
-          price,
-          amount,
-          daily_volume: metadata.volume24h || 0,
-          chain: "solana",
-        };
-      });
-
-      return [solPortfolioItem, ...tokenPortfolioItems];
+  return useQuery({
+    queryKey: ["portfolio", wallets?.solanaWallet],
+    queryFn: async () => {
+      if (!wallets?.solanaWallet) throw new Error("No address provided");
+      return fetchPortfolio(wallets.solanaWallet);
     },
     enabled: !!wallets?.solanaWallet,
     staleTime: 10000, // 10 seconds
