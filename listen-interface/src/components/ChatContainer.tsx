@@ -3,6 +3,7 @@ import { ReactNode, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { NewChatTiles } from "./NewChatTiles";
 
 interface ChatContainerProps {
   inputMessage: string;
@@ -13,6 +14,8 @@ interface ChatContainerProps {
   onShareChat?: () => void;
   isSharedChat?: boolean;
   children: ReactNode;
+  handleQuestionClick?: (question: string) => void;
+  displayTiles?: boolean;
 }
 
 export function ChatContainer({
@@ -24,7 +27,45 @@ export function ChatContainer({
   onShareChat,
   isSharedChat = false,
   children,
+  handleQuestionClick,
+  displayTiles = false,
 }: ChatContainerProps) {
+  const { t } = useTranslation();
+  const RECOMMENDED_QUESTIONS_TILES = [
+    {
+      question: t(
+        "chat.recommended_questions.what_actions_can_you_perform_for_me"
+      ),
+      enabled: true,
+      display: t(
+        "chat.recommended_questions.what_actions_can_you_perform_for_me"
+      ),
+    },
+    {
+      question: t(
+        "chat.recommended_questions.how_do_pipelines_work_and_what_pipelines_can_you_create_for_me"
+      ),
+      enabled: true,
+      display: t(
+        "chat.recommended_questions.how_do_pipelines_work_and_what_pipelines_can_you_create_for_me"
+      ),
+    },
+    {
+      question: t("chat.recommended_questions.what_chains_are_supported"),
+      enabled: true,
+      display: t("chat.recommended_questions.what_chains_are_supported"),
+    },
+    {
+      question: t(
+        "chat.recommended_questions.what_tokens_have_received_largest_inflows_outflows_in_the_past_days"
+      ),
+      enabled: true,
+      display: t(
+        "chat.recommended_questions.what_tokens_have_received_largest_inflows_outflows_in_the_past_days"
+      ),
+    },
+  ];
+
   return (
     <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col md:px-2">
       <div
@@ -37,6 +78,12 @@ export function ChatContainer({
       >
         <div className="flex flex-col gap-3 px-4 pt-1">{children}</div>
       </div>
+      {displayTiles && (
+        <NewChatTiles
+          questions={RECOMMENDED_QUESTIONS_TILES}
+          onSelect={handleQuestionClick || (() => {})}
+        />
+      )}
       <div className="sticky bottom-0 left-0 right-0 px-4 py-3 bg-black/80 backdrop-blur-sm">
         <ChatInput
           inputMessage={inputMessage}

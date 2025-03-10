@@ -96,7 +96,7 @@ export const NewChatCarousel: React.FC<NewChatCarouselProps> = ({
 
   return (
     <div className="flex flex-row items-center justify-center">
-      <div className="relative h-[300px] w-[400px]">
+      <div className="relative h-[300px] w-full">
         <div
           ref={containerRef}
           className="h-full overflow-y-auto scrollbar-hide"

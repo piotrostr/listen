@@ -5,6 +5,7 @@ export default {
     extend: {
       fontFamily: {
         mono: ["Space Grotesk", "monospace"],
+        'space-grotesk': ['Space Grotesk', 'sans-serif'],
       },
       animation: {
         blob: "blob 7s infinite",

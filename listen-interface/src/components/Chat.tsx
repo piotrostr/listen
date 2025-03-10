@@ -53,31 +53,6 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
   const { t } = useTranslation();
 
-  const RECOMMENDED_QUESTIONS_TILES = [
-    {
-      question: t(
-        "chat.recommended_questions.what_actions_can_you_perform_for_me"
-      ),
-      enabled: true,
-    },
-    {
-      question: t(
-        "chat.recommended_questions.how_do_pipelines_work_and_what_pipelines_can_you_create_for_me"
-      ),
-      enabled: true,
-    },
-    {
-      question: t("chat.recommended_questions.what_chains_are_supported"),
-      enabled: true,
-    },
-    {
-      question: t(
-        "chat.recommended_questions.what_tokens_have_received_largest_inflows_outflows_in_the_past_days"
-      ),
-      enabled: true,
-    },
-  ];
-
   const RECOMMENDED_QUESTIONS_CAROUSEL = [
     {
       question: "whats the most viral token right now?",
@@ -97,10 +72,6 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     },
     {
       question: "research arcdotfun for me", // TODO X search
-      enabled: true,
-    },
-    {
-      question: "what is the best way to buy a new token?",
       enabled: true,
     },
   ];
@@ -187,11 +158,13 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         onStopGeneration={stopGeneration}
         onShareChat={messages.length > 0 ? handleShareChat : undefined}
         isSharedChat={isSharedChat || urlParams.isSharedChat}
+        handleQuestionClick={handleQuestionClick}
+        displayTiles={messages.length === 0}
       >
         <div className="h-full flex flex-col">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 px-4">
-              <div className="flex flex-col items-center justify-center">
+              <div className="flex flex-col items-center justify-center gap-8">
                 <NewChatCarousel
                   questions={RECOMMENDED_QUESTIONS_CAROUSEL}
                   onSelect={handleQuestionClick}
