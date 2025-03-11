@@ -35,12 +35,12 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   };
 
   return (
-    <div className="overflow-y-auto max-h-[43vh] scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent transition-all duration-300 ease-in-out">
+    <div className="overflow-y-auto max-h-[43vh] scrollbar-thin scrollbar-thumb-[#212121] scrollbar-track-transparent transition-all duration-300 ease-in-out">
       {recentChats.map((chat) => (
         <div
           key={chat.id}
           onClick={() => selectChat(chat.id)}
-          className="flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors cursor-pointer"
+          className="flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-[#212121] transition-colors cursor-pointer"
         >
           <div className="flex-1 min-w-0">
             <div className="truncate text-xs">
