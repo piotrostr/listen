@@ -130,28 +130,6 @@ export function MessageRenderer({ message: msg }: { message: Message }) {
     return <ToolMessage toolOutput={toolResult} />;
   }
 
-  if (msg.type === "ToolCall") {
-    // no need to display tool calls, just the tool results
-    // those are really important for the chat history consistency though!
-    return null;
-    if (process.env.NODE_ENV === "debug") {
-      const { id, name, params } = JSON.parse(msg.message);
-
-      return (
-        <div>
-          id: {id}
-          <br />
-          name: {name}
-          <br />
-          params:{" "}
-          <pre className="truncate">
-            {JSON.stringify(JSON.parse(params), null, 2)}
-          </pre>
-        </div>
-      );
-    }
-  }
-
   if (msg.type === "ToolResult") {
     const toolOutput = ToolResultSchema.parse(JSON.parse(msg.message));
     return <ToolMessage toolOutput={toolOutput} />;

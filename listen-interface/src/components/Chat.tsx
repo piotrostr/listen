@@ -2,10 +2,12 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../hooks/useChat";
+import { ToolCall, ToolCallSchema } from "../types/message";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
 import { NewChatCarousel } from "./NewChatCarousel";
 import { ShareModal } from "./ShareModal";
+import { ToolCallMessage } from "./ToolCallMessage";
 
 const IS_DISABLED = false;
 
@@ -56,6 +58,8 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const { getAccessToken } = usePrivy();
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
   const { t } = useTranslation();
+
+  const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>(null);
 
   const RECOMMENDED_QUESTIONS_CAROUSEL = [
     {
@@ -146,6 +150,24 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     }
   };
 
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.type === "ToolCall") {
+        try {
+          const toolCall = ToolCallSchema.parse(
+            JSON.parse(lastMessage.message)
+          );
+          setToolBeingCalled(toolCall);
+        } catch (error) {
+          console.error("Failed to parse tool call:", error);
+        }
+      } else {
+        setToolBeingCalled(null);
+      }
+    }
+  }, [messages]);
+
   if (IS_DISABLED) {
     return (
       <ChatContainer inputMessage="" isGenerating={false}>
@@ -181,6 +203,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
           {messages.map((message) => (
             <MessageRenderer key={message.id} message={message} />
           ))}
+          {toolBeingCalled && <ToolCallMessage toolCall={toolBeingCalled} />}
           {isLoading &&
             messages[messages.length - 1]?.direction === "outgoing" && (
               <LoadingIndicator />
