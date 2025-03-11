@@ -51,7 +51,7 @@ export function PanelSelector({
   if (isMobile) {
     if (activePanel === "screener") {
       return (
-        <div className="h-full">
+        <div className="h-full bg-black">
           <div className="mb-4">
             <PriceUpdatesHeader
               volumeFilter={volumeFilter}
@@ -73,7 +73,7 @@ export function PanelSelector({
 
     if (activePanel === "pipelines") {
       return (
-        <div className="h-full">
+        <div className="h-full bg-black">
           <div className="mb-4">
             <PipelinesHeader
               statusFilter={statusFilter}
@@ -91,7 +91,7 @@ export function PanelSelector({
 
     if (activePanel === "portfolio") {
       return (
-        <div className="h-full">
+        <div className="h-full bg-black">
           <div className="mb-4">
             <PortfolioHeader onRefresh={handlePortfolioRefresh} />
           </div>
@@ -101,7 +101,11 @@ export function PanelSelector({
     }
 
     if (activePanel === "settings") {
-      return <Settings />;
+      return (
+        <div className="h-full bg-black">
+          <Settings />
+        </div>
+      );
     }
 
     return null;
