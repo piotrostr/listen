@@ -52,17 +52,43 @@ export const ChatMessage = ({
               {children}
             </p>
           ),
+          strong: ({ children, ...props }) => (
+            <strong
+              style={{ fontWeight: 700 }}
+              className="font-bold"
+              {...props}
+            >
+              {children}
+            </strong>
+          ),
+          b: ({ children, ...props }) => (
+            <b style={{ fontWeight: 700 }} className="font-bold" {...props}>
+              {children}
+            </b>
+          ),
           h1: ({ ...props }) => (
-            <h1 className="text-xl font-bold my-3" {...props} />
+            <h1
+              className="text-xl font-bold my-3"
+              style={{ fontWeight: 700 }}
+              {...props}
+            />
           ),
           h2: ({ ...props }) => (
-            <h2 className="text-lg font-bold my-3" {...props} />
+            <h2
+              className="text-lg font-bold my-3"
+              style={{ fontWeight: 700 }}
+              {...props}
+            />
           ),
           h3: ({ ...props }) => (
-            <h3 className="text-md font-bold my-2" {...props} />
+            <h3
+              className="text-md font-bold my-2"
+              style={{ fontWeight: 700 }}
+              {...props}
+            />
           ),
           ul: ({ ...props }) => (
-            <ul className="list-disc pl-6 my-2" {...props} />
+            <ul className="list-disc pl-10 my-2" {...props} />
           ),
           ol: ({ ...props }) => (
             <ol className="list-decimal pl-6 my-2" {...props} />
