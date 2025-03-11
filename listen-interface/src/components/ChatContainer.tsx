@@ -16,6 +16,7 @@ interface ChatContainerProps {
   children: ReactNode;
   handleQuestionClick?: (question: string) => void;
   displayTiles?: boolean;
+  hasMessages?: boolean;
 }
 
 export function ChatContainer({
@@ -29,6 +30,7 @@ export function ChatContainer({
   children,
   handleQuestionClick,
   displayTiles = false,
+  hasMessages = false,
 }: ChatContainerProps) {
   const { t } = useTranslation();
   const RECOMMENDED_QUESTIONS_TILES = [
@@ -85,6 +87,7 @@ export function ChatContainer({
           onStopGeneration={onStopGeneration}
           onShareChat={onShareChat}
           isSharedChat={isSharedChat}
+          hasMessages={hasMessages}
         />
       </div>
     </div>
@@ -99,6 +102,7 @@ interface ChatInputProps {
   onStopGeneration: () => void;
   onShareChat?: () => void;
   isSharedChat?: boolean;
+  hasMessages?: boolean;
 }
 
 export function ChatInput({
@@ -109,6 +113,7 @@ export function ChatInput({
   onStopGeneration,
   onShareChat,
   isSharedChat = false,
+  hasMessages = false,
 }: ChatInputProps) {
   const handleSend = () => {
     if (inputMessage.trim()) {
@@ -155,7 +160,7 @@ export function ChatInput({
       />
 
       <div className="flex-shrink-0 ml-2 flex items-center gap-2">
-        {onShareChat && (
+        {!isSharedChat && onShareChat && (
           <button
             onClick={onShareChat}
             className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 transition-colors"
@@ -165,26 +170,28 @@ export function ChatInput({
           </button>
         )}
 
-        <Link
-          to="/"
-          search={{ new: true }}
-          className={`p-2 rounded-full bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 transition-colors`}
-          title="New Chat"
-        >
-          <svg
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
+        {hasMessages && (
+          <Link
+            to="/"
+            search={{ new: true }}
+            className={`p-2 rounded-full bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 transition-colors`}
+            title="New Chat"
           >
-            <line x1="12" y1="5" x2="12" y2="19"></line>
-            <line x1="5" y1="12" x2="19" y2="12"></line>
-          </svg>
-        </Link>
+            <svg
+              width="18"
+              height="18"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2"
+              strokeLinecap="round"
+              strokeLinejoin="round"
+            >
+              <line x1="12" y1="5" x2="12" y2="19"></line>
+              <line x1="5" y1="12" x2="19" y2="12"></line>
+            </svg>
+          </Link>
+        )}
 
         {isGenerating ? (
           <button

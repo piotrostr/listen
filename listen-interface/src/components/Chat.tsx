@@ -194,6 +194,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         isSharedChat={isSharedChat || urlParams.isSharedChat}
         handleQuestionClick={handleQuestionClick}
         displayTiles={messages.length === 0}
+        hasMessages={messages.length > 0}
       >
         <div className="h-full flex flex-col">
           {messages.length === 0 && (
