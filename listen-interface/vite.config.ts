@@ -31,9 +31,9 @@ export default defineConfig({
         theme_color: "#000000",
         icons: [
           {
-            src: "/listen-new.svg",
+            src: "/listen-icon.png",
             sizes: "192x192",
-            type: "image/svg+xml",
+            type: "image/png",
           },
         ],
       },
