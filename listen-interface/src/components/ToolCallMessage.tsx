@@ -1,7 +1,7 @@
+// import { useTranslation } from "react-i18next";
 import { ToolCall } from "../types/message";
 
 export const ToolCallMessage = ({ toolCall }: { toolCall: ToolCall }) => {
-  return (
-    <div className="text-sm text-gray-400">Tool call: {toolCall.name}</div>
-  );
+  // const { t } = useTranslation();
+  return <div className="text-sm text-gray-400">{toolCall.name}</div>;
 };

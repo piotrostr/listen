@@ -84,6 +84,10 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     },
   ];
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const handleSendMessage = useCallback(
     (message: string) => {
       if (message.trim() === "clear") {
@@ -92,6 +96,10 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         sendMessage(message);
       }
       setInputMessage("");
+
+      if (messages?.length > 0) {
+        scrollToBottom();
+      }
     },
     [sendMessage, setMessages]
   );
@@ -205,9 +213,9 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
             {isLoading && <ThinkingIndicator />}
             {toolBeingCalled && <ToolCallMessage toolCall={toolBeingCalled} />}
           </div>
-          <div ref={messagesEndRef} />
         </div>
-        <div className="flex-grow min-h-[65vh]" />
+        <div ref={messagesEndRef} />
+        <div className="flex-grow min-h-[65vh] md:min-h-[85vh]" />
       </ChatContainer>
 
       {/* Share Modal */}
