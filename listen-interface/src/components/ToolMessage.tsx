@@ -41,8 +41,13 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
   }
 
   if (toolOutput.name === "fetch_x_post") {
-    const parsed = TweetSchema.parse(JSON.parse(toolOutput.result));
-    return <FetchXPostDisplay tweet={parsed} />;
+    try {
+      const parsed = TweetSchema.parse(JSON.parse(toolOutput.result));
+      return <FetchXPostDisplay tweet={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse tweet:", e);
+      return <ChatMessage message={toolOutput.result} direction="agent" />;
+    }
   }
 
   if (
