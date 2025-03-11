@@ -1,3 +1,4 @@
+import React from "react";
 import { ToolResult, ToolResultSchema, type Message } from "../types/message";
 import { ChatMessage } from "./ChatMessage";
 import { FundWallet } from "./FundWallet";
@@ -119,7 +120,7 @@ function processTagsInMessage(
   }
 }
 
-export function MessageRenderer({ message: msg }: { message: Message }) {
+export function MessageRendererBase({ message: msg }: { message: Message }) {
   if (!msg.message) return null;
 
   // this is to support previous version of message schema
@@ -198,3 +199,6 @@ const handleLegacyMessage = (msg: Message): ToolResult => {
 
   return { name, id, result };
 };
+
+// Export a memoized version of MessageRenderer
+export const MessageRenderer = React.memo(MessageRendererBase);
