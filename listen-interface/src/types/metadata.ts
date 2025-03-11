@@ -6,7 +6,7 @@ const IpfsMetadataSchema = z.object({
   image: z.string().nullable().optional(),
   name: z.string(),
   symbol: z.string(),
-  showName: z.boolean().nullable().optional(),
+  showName: z.union([z.string(), z.boolean()]).nullable().optional(),
   twitter: z.string().nullable().optional(),
   website: z.string().nullable().optional(),
   telegram: z.string().nullable().optional(),
