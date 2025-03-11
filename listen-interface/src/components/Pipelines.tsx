@@ -96,7 +96,7 @@ export function PipelinesHeader({
       </select>
       <button
         onClick={refetch}
-        className="bg-black/40 text-white border border-[#2D2D2D] rounded-lg w-8 h-8 flex items-center justify-center hover:bg-purple-500/20"
+        className="bg-black/40 text-white border border-[#2D2D2D] rounded-lg w-8 h-8 flex items-center justify-center hover:bg-[#2D2D2D]"
       >
         <IoRefreshOutline className="w-4 h-4" />
       </button>

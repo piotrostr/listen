@@ -48,7 +48,7 @@ export const EvmWalletCreation = ({ error }: EvmWalletCreationProps) => {
       <button
         disabled={!evmReady || isCreating}
         onClick={onCreateWallet}
-        className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
+        className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-[#2D2D2D]"
       >
         {isCreating ? (
           <span>Creating EVM wallet...</span>
@@ -73,7 +73,7 @@ export const EvmWalletCreation = ({ error }: EvmWalletCreationProps) => {
             console.error("Error delegating EVM wallet:", error);
           }
         }}
-        className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
+        className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-[#2D2D2D]"
       >
         Delegate EVM
       </button>
@@ -81,7 +81,7 @@ export const EvmWalletCreation = ({ error }: EvmWalletCreationProps) => {
   }
 
   return (
-    <div className="p-2 border-2 border-purple-500/30 rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm">
+    <div className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm">
       {error ? (
         <span className="text-red-500">Error: {error}</span>
       ) : isEvmDelegated ? (

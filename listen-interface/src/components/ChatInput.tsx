@@ -122,7 +122,7 @@ export function ChatInput({
             disabled={!inputMessage.trim() || !walletsReady || isSharedChat}
             className={`p-2 rounded-full ${
               inputMessage.trim() && walletsReady && !isSharedChat
-                ? "bg-purple-500/20 hover:bg-purple-500/40 text-purple-300"
+                ? "bg-[#FB2671]/20 hover:bg-[#FB2671]/40 text-[#FB2671]"
                 : "bg-gray-500/10 text-gray-500"
             } transition-colors`}
             aria-label="Send message"

@@ -98,12 +98,12 @@ export function BuySellModal({
       <div className="relative w-full lg:max-w-md max-w-sm p-6 bg-black/80 border border-[#2D2D2D] rounded-lg shadow-xl max-h-[90vh] overflow-y-auto my-4">
         <button
           onClick={onClose}
-          className="absolute top-4 right-4 text-purple-300 hover:text-purple-100"
+          className="absolute top-4 right-4 text-white hover:text-white"
         >
           <FaTimes />
         </button>
 
-        <h2 className="text-xl font-bold mb-4 text-purple-100">
+        <h2 className="text-xl font-bold mb-4 text-white">
           {action === "buy"
             ? t("buy_sell_modal.buy")
             : t("buy_sell_modal.sell")}{" "}
@@ -119,19 +119,17 @@ export function BuySellModal({
             />
           )}
           <div>
-            <div className="font-bold text-purple-100">{asset.name}</div>
-            <div className="text-sm text-purple-300">
-              ${asset.price.toFixed(6)}
-            </div>
+            <div className="font-bold text-white">{asset.name}</div>
+            <div className="text-sm text-white">${asset.price.toFixed(6)}</div>
           </div>
         </div>
 
         <div className="mb-6">
           <div className="flex justify-between mb-2">
-            <span className="text-purple-300 text-sm">
+            <span className="text-white text-sm">
               {t("buy_sell_modal.amount")} ({percentage}%)
             </span>
-            <span className="text-purple-300 text-sm">
+            <span className="text-white text-sm">
               {action === "buy"
                 ? `${formattedAmount} SOL ($${(calculateAmount() * (action === "buy" ? 1 : asset.price)).toFixed(2)})`
                 : `${formattedAmount} ${asset.symbol} ($${(calculateAmount() * asset.price).toFixed(2)})`}
@@ -144,22 +142,20 @@ export function BuySellModal({
             max="100"
             value={percentage}
             onChange={(e) => setPercentage(parseInt(e.target.value))}
-            className="w-full h-2 bg-purple-500/20 rounded-lg appearance-none cursor-pointer"
+            className="w-full h-2 bg-[#2D2D2D] rounded-lg appearance-none cursor-pointer"
           />
 
           <div className="flex justify-between mt-1">
-            <span className="text-purple-300 text-xs">1%</span>
-            <span className="text-purple-300 text-xs">50%</span>
-            <span className="text-purple-300 text-xs">100%</span>
+            <span className="text-white text-xs">1%</span>
+            <span className="text-white text-xs">50%</span>
+            <span className="text-white text-xs">100%</span>
           </div>
         </div>
 
-        <div className="mb-4 p-3 bg-purple-500/10 rounded-lg">
+        <div className="mb-4 p-3 bg-[#2D2D2D] rounded-lg">
           <div className="flex justify-between text-sm">
-            <span className="text-purple-300">
-              {t("buy_sell_modal.available")}:
-            </span>
-            <span className="text-purple-100">
+            <span className="text-white">{t("buy_sell_modal.available")}:</span>
+            <span className="text-white">
               {action === "buy"
                 ? `${(solBalance || 0).toFixed(4)} SOL`
                 : `${asset.amount.toFixed(asset.decimals > 6 ? 6 : asset.decimals)} ${asset.symbol}`}

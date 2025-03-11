@@ -46,7 +46,7 @@ export function Portfolio() {
   const { openChart } = useModal();
 
   return (
-    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent scrollable-container pb-16 md:pb-0">
+    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container pb-16 md:pb-0">
       <div className="flex-1">
         {assets
           ?.sort((a, b) => b.price * b.amount - a.price * a.amount)
@@ -98,7 +98,7 @@ export function Portfolio() {
                       asset.address ===
                         "So11111111111111111111111111111111111111112" && (
                         <button
-                          className="cursor-pointer border border-[#2D2D2D] rounded-full p-2 bg-purple-500/10 hover:bg-purple-500/20 transition-colors"
+                          className="cursor-pointer border border-[#2D2D2D] rounded-full p-2 bg-transparent hover:bg-[#2D2D2D] transition-colors"
                           onClick={handleTopup}
                         >
                           <FaApplePay size={32} />

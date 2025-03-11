@@ -217,7 +217,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <Link
                       to="/"
                       search={{ new: true }}
-                      className="flex items-center justify-center h-10 rounded-lg bg-purple-500/20 text-white hover:bg-[#212121]"
+                      className="flex items-center justify-center h-10 rounded-lg bg-[#2D2D2D] text-white hover:bg-[#2D2D2D]"
                       onClick={() => isMobile && setIsSidebarOpen(false)}
                     >
                       <div className="flex items-center">

@@ -172,7 +172,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   if (IS_DISABLED) {
     return (
       <ChatContainer inputMessage="" isGenerating={false}>
-        <div className="text-purple-300 px-4 py-2">disabled</div>
+        <div className="text-white px-4 py-2">disabled</div>
       </ChatContainer>
     );
   }

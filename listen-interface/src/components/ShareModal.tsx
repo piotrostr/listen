@@ -17,10 +17,10 @@ export function ShareModal({ url, onClose }: ShareModalProps) {
       navigator.clipboard.writeText(url);
 
       // Flash the input to show it was copied
-      urlInputRef.current.classList.add("bg-purple-500/20");
+      urlInputRef.current.classList.add("bg-[#2D2D2D]");
       setTimeout(() => {
         if (urlInputRef.current) {
-          urlInputRef.current.classList.remove("bg-purple-500/20");
+          urlInputRef.current.classList.remove("bg-[#2D2D2D]");
         }
       }, 300);
     }
@@ -46,7 +46,7 @@ export function ShareModal({ url, onClose }: ShareModalProps) {
           />
           <button
             onClick={handleCopyClick}
-            className="bg-purple-500/20 hover:bg-purple-500/40 text-purple-300 px-4 py-2 rounded transition-colors"
+            className="bg-[#2D2D2D] hover:bg-[#2D2D2D] text-white px-4 py-2 rounded transition-colors"
           >
             {t("share_modal.copy")}
           </button>
@@ -55,7 +55,7 @@ export function ShareModal({ url, onClose }: ShareModalProps) {
         <div className="flex justify-between">
           <button
             onClick={onClose}
-            className="bg-transparent hover:bg-gray-800 text-gray-300 px-4 py-2 rounded transition-colors"
+            className="bg-transparent hover:bg-[#2D2D2D] text-white px-4 py-2 rounded transition-colors"
           >
             {t("share_modal.close")}
           </button>
@@ -64,7 +64,7 @@ export function ShareModal({ url, onClose }: ShareModalProps) {
             href={url}
             target="_blank"
             rel="noopener noreferrer"
-            className="bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 px-4 py-2 rounded transition-colors"
+            className="bg-[#2D2D2D] hover:bg-[#2D2D2D] text-white px-4 py-2 rounded transition-colors"
           >
             {t("share_modal.open_in_new_tab")}
           </a>
