@@ -11,11 +11,9 @@ import { ToolCallMessage } from "./ToolCallMessage";
 
 const IS_DISABLED = false;
 
-const LoadingIndicator = () => (
-  <div className="flex items-center flex-start py-4 px-4">
-    <div className="h-4 w-4 rounded-full animate-[spherePulse_3s_ease-in-out_infinite] shadow-lg relative">
-      <div className="absolute inset-0 rounded-full animate-[colorPulse_1s_ease-in-out_infinite] opacity-70 blur-[1px]"></div>
-    </div>
+const ThinkingIndicator = () => (
+  <div className="h-4 w-4 rounded-full animate-[spherePulse_3s_ease-in-out_infinite] shadow-lg relative">
+    <div className="absolute inset-0 rounded-full animate-[colorPulse_1s_ease-in-out_infinite] opacity-70 blur-[1px]"></div>
   </div>
 );
 
@@ -59,7 +57,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
   const { t } = useTranslation();
 
-  const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>(null);
+  const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>();
 
   const RECOMMENDED_QUESTIONS_CAROUSEL = [
     {
@@ -203,13 +201,13 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
           {messages.map((message) => (
             <MessageRenderer key={message.id} message={message} />
           ))}
-          {toolBeingCalled && <ToolCallMessage toolCall={toolBeingCalled} />}
-          {isLoading &&
-            messages[messages.length - 1]?.direction === "outgoing" && (
-              <LoadingIndicator />
-            )}
+          <div className="flex flex-row items-center gap-2 pl-3">
+            {isLoading && <ThinkingIndicator />}
+            {toolBeingCalled && <ToolCallMessage toolCall={toolBeingCalled} />}
+          </div>
           <div ref={messagesEndRef} />
         </div>
+        <div className="flex-grow min-h-[65vh]" />
       </ChatContainer>
 
       {/* Share Modal */}
