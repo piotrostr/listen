@@ -10,9 +10,20 @@ pub type GeminiAgent = rig::agent::Agent<GeminiCompletionModel>;
 // Add DeepSeekAgent type
 pub type DeepSeekAgent = rig::agent::Agent<DeepSeekCompletionModel>;
 
-pub const DEFAULT_PREAMBLE: &str = "Your job is to extract the most relevant content from an
-        Twitter API response and provide a summary. Be sure to take into account
-        things like mindshare, the likes, retweets.";
+pub const DEFAULT_PREAMBLE: &str =
+    "Your job is to extract the most relevant content from an
+    Twitter API response and provide a summary. Be sure to take into account
+    things like mindshare, the likes, retweets.
+    1-500 likes - not a lot
+    500-1k likes - some engagement
+    1k-20k likes - decent engagement
+    20k-100k likes - high engagement
+    views:
+    1-1000 views - not a lot
+    1k-5k views - some engagement
+    5k-20k views - decent engagement
+    20k-100k views - high engagement
+";
 
 pub const DEFAULT_PREAMBLE_ZH: &str = "你的任务是从一个推特API响应中提取最相关的内容，并提供一个总结。确保考虑到以下因素：
 - 关注度
@@ -20,10 +31,18 @@ pub const DEFAULT_PREAMBLE_ZH: &str = "你的任务是从一个推特API响应�
 - 转发数
 - 评论数
 - 用户互动
-
 请用中文回答我接下来的所有问题。
-";
 
+1-500 likes - 没有太多关注
+500-1k likes - 一些互动
+1k-20k likes - 中等关注
+20k-100k likes - 高关注
+
+1-1000 views - 没有太多关注
+1k-5k views - 一些互动
+5k-20k views - 中等关注
+20k-100k views - 高关注
+";
 pub fn make_gemini_distiller(
     preamble: Option<String>,
 ) -> Result<GeminiAgent> {
