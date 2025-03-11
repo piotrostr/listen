@@ -42,7 +42,7 @@ export function TokenTile({ token }: TokenTileProps) {
   };
 
   const tokenSymbol = metadata?.mpl.symbol ?? token.name;
-  const researchMessage = `Listen, please research $${tokenSymbol} (${token.pubkey}) for me`;
+  const researchMessage = `Listen, please research $${tokenSymbol} (${token.pubkey}). Provide it a score between 1 and 100 on how solid the narrative is.`;
 
   return (
     <div

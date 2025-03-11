@@ -20,6 +20,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       chatId: params.get("chatId") || undefined,
       isNewChat: params.get("new") === "true",
       isSharedChat: params.get("shared") === "true",
+      message: params.get("message") || undefined,
     });
   }, [window.location.search]);
 
@@ -30,6 +31,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       chatId: params.get("chatId") || undefined,
       isNewChat: params.get("new") === "true",
       isSharedChat: params.get("shared") === "true",
+      message: params.get("message") || undefined,
     };
   });
 

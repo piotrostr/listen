@@ -49,7 +49,11 @@ export function useChat() {
   const { data: evmPortfolio } = useEvmPortfolio();
   const { getAccessToken } = usePrivy();
   const { chatType } = useChatType();
-  const { chatId, new: isNewChat } = useSearch({ from: "/" });
+  const {
+    chatId,
+    new: isNewChat,
+    message: initialMessage,
+  } = useSearch({ from: "/" });
   const navigate = useNavigate();
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
 
@@ -68,15 +72,6 @@ export function useChat() {
     };
     loadChat();
   }, [chatId, isNewChat]);
-
-  // If isNewChat is true, clear the current chat
-  useEffect(() => {
-    if (isNewChat) {
-      setChat(null);
-      // Remove the 'new' parameter - always redirecting to root route
-      navigate({ to: "/", search: {}, replace: true });
-    }
-  }, [isNewChat, navigate]);
 
   // Replace the existing backup effect with this debounced version
   const debouncedBackup = useDebounce(async (chatToBackup: Chat) => {
@@ -157,7 +152,7 @@ export function useChat() {
       } else {
         setChat((prev) => ({
           ...prev!,
-          messages: [...prev!.messages, userChatMessage],
+          messages: [...(prev?.messages || []), userChatMessage],
           lastMessageAt: new Date(),
         }));
       }
@@ -389,6 +384,17 @@ export function useChat() {
       navigate,
     ]
   );
+
+  // If isNewChat is true, clear the current chat
+  useEffect(() => {
+    if (isNewChat) {
+      // Explicitly set chat to null first to ensure clean state
+      setChat(null);
+
+      // Navigate to clean URLsearchParams
+      navigate({ to: "/", search: {}, replace: true });
+    }
+  }, [isNewChat, navigate, setChat]);
 
   const stopGeneration = () => {
     if (abortControllerRef.current) {
