@@ -215,7 +215,9 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
           </div>
         </div>
         <div ref={messagesEndRef} />
-        <div className="flex-grow min-h-[68vh] md:min-h-[85vh]" />
+        {messages.length !== 0 && (
+          <div className="flex-grow min-h-[68vh] md:min-h-[85vh]" />
+        )}
       </ChatContainer>
 
       {/* Share Modal */}
