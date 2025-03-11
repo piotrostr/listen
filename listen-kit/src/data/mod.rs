@@ -54,6 +54,47 @@ pub async fn fetch_token_metadata(mint: String) -> Result<serde_json::Value> {
 }
 
 #[tool(description = "
+Performs an advanced search for tweets
+
+Parameters:
+- query (string): The search query string (e.g. \"AI\" OR \"Twitter\" from:elonmusk)
+- query_type (string): The type of search (Latest or Top)
+- cursor (string): Optional cursor for pagination
+
+Core Query Structure:
+Terms combine with implicit AND: term1 term2
+Explicit OR: term1 OR term2
+Phrases: \"exact phrase\"
+Exclusion: -term or -\"phrase\"
+Key Operator Categories
+Content: #hashtag, $cashtag, \"quoted phrase\"
+Users: from:user, to:user, @user, filter:verified
+3. Time: since:YYYY-MM-DD, until:YYYY-MM-DD, within_time:2d
+Media: filter:images, filter:videos, filter:media
+Engagement: min_retweets:10, min_faves:5, min_replies:3
+Type: filter:replies, filter:nativeretweets, filter:quote
+Location: near:city, within:10km
+Multiple operators can be combined to narrow results: from:nasa filter:images since:2023-01-01 \"mars rover\"
+
+Returns a SearchResponse containing tweets and pagination information
+")]
+pub async fn search_tweets(
+    query: String,
+    query_type: String,
+    cursor: Option<String>,
+) -> Result<serde_json::Value> {
+    let twitter = TwitterApi::from_env_with_locale("en".to_string())
+        .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
+    let query_type = match query_type.as_str() {
+        "Latest" => twitter::search::QueryType::Latest,
+        "Top" => twitter::search::QueryType::Top,
+        _ => return Err(anyhow!("Invalid query type: {}", query_type)),
+    };
+    let response = twitter.search_tweets(&query, query_type, cursor).await?;
+    Ok(serde_json::to_value(response)?)
+}
+
+#[tool(description = "
 Fetch a single X (twitter) post by its ID
 
 Parameters:
