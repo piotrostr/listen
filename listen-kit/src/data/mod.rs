@@ -76,13 +76,13 @@ Type: filter:replies, filter:nativeretweets, filter:quote
 Location: near:city, within:10km
 Multiple operators can be combined to narrow results: from:nasa filter:images since:2023-01-01 \"mars rover\"
 
-Returns a SearchResponse containing tweets and pagination information
+Returns a distilled summary of the search response from another AI agent
 ")]
 pub async fn search_tweets(
     query: String,
     query_type: String,
     cursor: Option<String>,
-) -> Result<serde_json::Value> {
+) -> Result<String> {
     let twitter = TwitterApi::from_env_with_locale("en".to_string())
         .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
     let query_type = match query_type.as_str() {
@@ -91,7 +91,15 @@ pub async fn search_tweets(
         _ => return Err(anyhow!("Invalid query type: {}", query_type)),
     };
     let response = twitter.search_tweets(&query, query_type, cursor).await?;
-    Ok(serde_json::to_value(response)?)
+    let distilled = wrap_unsafe(move || async move {
+        twitter
+            .distiller
+            .distill(&serde_json::to_value(&response)?)
+            .await
+            .map_err(|e| anyhow!("Failed to distill: {}", e))
+    })
+    .await?;
+    Ok(distilled)
 }
 
 #[tool(description = "

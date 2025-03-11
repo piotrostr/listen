@@ -7,11 +7,8 @@ use super::tools::{
 };
 use crate::common::{claude_agent_builder, PREAMBLE_COMMON};
 use crate::data::{
-    FetchCandlesticks,
-    FetchTokenMetadata,
-    FetchTopTokens,
-    FetchXPost,
-    ResearchXProfile, //SearchTweets,
+    FetchCandlesticks, FetchTokenMetadata, FetchTopTokens, FetchXPost,
+    ResearchXProfile, SearchTweets,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 
@@ -36,6 +33,6 @@ pub async fn create_solana_agent(
         .tool(FetchTokenMetadata)
         .tool(ResearchXProfile)
         .tool(FetchXPost)
-        // .tool(SearchTweets) TODO this yields too much output, possibly side-agent
+        .tool(SearchTweets)
         .build())
 }
