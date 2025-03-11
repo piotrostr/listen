@@ -18,7 +18,7 @@ export const recommendedQuestions = {
     how_to_manage_risk_when_trading_memecoins:
       "How to manage risk when trading memecoins?",
     buy_the_solana_dip: "Buy the Solana dip",
-    research_arcdotfun_for_me: "Research arcdotfun for me",
+    research_arcdotfun_for_me: "Research $arc for me",
   },
   zh: {
     what_actions_can_you_perform_for_me: "你能执行哪些操作？",
@@ -36,6 +36,6 @@ export const recommendedQuestions = {
     how_to_manage_risk_when_trading_memecoins:
       "如何管理交易 memecoins 的风险？",
     buy_the_solana_dip: "购买 Solana 的下跌",
-    research_arcdotfun_for_me: "帮我研究 arcdotfun",
+    research_arcdotfun_for_me: "帮我研究 $arc",
   },
 };

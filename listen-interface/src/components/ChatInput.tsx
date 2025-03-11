@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
@@ -24,6 +25,34 @@ export function ChatInput({
   isSharedChat = false,
   hasMessages = false,
 }: ChatInputProps) {
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  // Function to auto-resize the textarea
+  const autoResizeTextarea = () => {
+    const textarea = textareaRef.current;
+    if (!textarea) return;
+
+    // Reset height to measure the scrollHeight correctly
+    textarea.style.height = "auto";
+
+    // Calculate line height (approximately 20px per line)
+    const lineHeight = 20;
+    const maxLines = 4;
+
+    // Get content height and limit to 4 lines
+    const contentHeight = textarea.scrollHeight;
+    const maxHeight = lineHeight * maxLines;
+
+    // Set the height with a minimum of one line
+    textarea.style.height =
+      Math.min(Math.max(lineHeight, contentHeight), maxHeight) + "px";
+  };
+
+  // Auto-resize when input changes
+  useEffect(() => {
+    autoResizeTextarea();
+  }, [inputMessage]);
+
   const handleSend = () => {
     if (inputMessage.trim()) {
       onSendMessage(inputMessage);
@@ -39,9 +68,10 @@ export function ChatInput({
 
   return (
     <div
-      className={`flex flex-row items-center justify-center gap-1 px-2 pl-4 py-2 bg-[#151518]/40 backdrop-blur-sm border border-[#2D2D2D] rounded-[99px] mb-2`}
+      className={`flex flex-row items-center gap-1 px-1 pl-4 py-1 bg-[#151518]/40 backdrop-blur-sm border border-[#2D2D2D] rounded-3xl mb-2`}
     >
       <textarea
+        ref={textareaRef}
         value={inputMessage}
         onChange={(e) => onInputChange(e.target.value)}
         onKeyDown={(e) => {
@@ -59,11 +89,11 @@ export function ChatInput({
           }
         }}
         rows={1}
-        className="w-full bg-transparent text-white outline-none resize-none chat-input"
+        className="w-full bg-transparent text-white outline-none resize-none chat-input overflow-y-auto scrollbar-hide"
         placeholder={t("chat.placeholder")}
         style={{
           minHeight: "20px",
-          maxHeight: "200px",
+          maxHeight: "80px", // Approximately 4 lines
         }}
         disabled={isSharedChat}
       />
