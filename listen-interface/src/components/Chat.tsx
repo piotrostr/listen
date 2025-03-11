@@ -206,7 +206,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
             <MessageRenderer key={message.id} message={message} />
           ))}
           <div className="flex flex-row items-center gap-2 pl-3">
-            {!isLoading && <ThinkingIndicator />}
+            {isLoading && <ThinkingIndicator />}
             {toolBeingCalled && <ToolCallMessage toolCall={toolBeingCalled} />}
           </div>
         </div>
