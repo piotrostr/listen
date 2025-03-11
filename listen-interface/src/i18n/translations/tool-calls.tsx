@@ -11,6 +11,7 @@ export const toolCalls = {
     research_x_profile: "Reading up on X profile...",
     fetch_x_post: "Grabbing post from X...",
     search_tweets: "Searching through X...",
+    fetch_top_tokens: "Fetching hottest picks...",
   },
   zh: {
     get_quote: "获取报价中...",
@@ -24,5 +25,6 @@ export const toolCalls = {
     research_x_profile: "查看X个人资料中...",
     fetch_x_post: "获取X帖子中...",
     search_tweets: "搜索X帖子中...",
+    fetch_top_tokens: "获取热门代币中...",
   },
 };

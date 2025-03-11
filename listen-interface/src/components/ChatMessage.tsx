@@ -28,7 +28,7 @@ export const ChatMessage = ({
   return (
     <div
       className={`
-        rounded-lg px-4 py-2 my-2
+        rounded-lg px-4 py-1 my-2
         break-words word-break-all overflow-hidden
         ${direction === "outgoing" ? "rounded-3xl bg-[#2f2f2f]/40 ml-auto" : "max-w-full"}
       `}
