@@ -55,14 +55,16 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
       {/* Header */}
       <div className="flex justify-between flex-col">
         <div className="flex gap-2 flex-col">
-          <div className="text-purple-300 text-xs sm:text-sm">
+          <div className="text-white text-xs sm:text-sm">
             <span className="font-bold">{t("pipelines.id")}:</span>{" "}
-            {pipeline.id}
+            <span className="text-gray-400">{pipeline.id}</span>
           </div>
         </div>
-        <div className="text-purple-300 text-xs sm:text-sm">
+        <div className="text-white text-xs sm:text-sm">
           <span className="font-bold">{t("pipelines.created")}:</span>{" "}
-          {new Date(pipeline.created_at).toLocaleString()}
+          <span className="text-gray-400">
+            {new Date(pipeline.created_at).toLocaleString()}
+          </span>
         </div>
       </div>
 

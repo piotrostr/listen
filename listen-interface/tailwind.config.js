@@ -4,7 +4,8 @@ export default {
   theme: {
     extend: {
       fontFamily: {
-        mono: ["SF Mono", "monospace"],
+        mono: ["Space Grotesk", "monospace"],
+        'space-grotesk': ['Space Grotesk', 'sans-serif'],
       },
       animation: {
         blob: "blob 7s infinite",
@@ -25,7 +26,13 @@ export default {
           },
         },
       },
+      colors: {
+        black: "#151518",
+      },
     },
   },
-  plugins: [require("tailwind-scrollbar")],
+  plugins: [
+    require("tailwind-scrollbar"),
+    require('tailwind-scrollbar-hide')
+  ],
 };

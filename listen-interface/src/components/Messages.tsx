@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
+import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderAddressOrTx } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
@@ -10,7 +11,7 @@ import {
   QuoteResponseSchema,
 } from "../types/quote";
 import { TweetSchema } from "../types/x";
-import { SolanaBalance } from "./Balances";
+import { SolanaBalance, SplTokenBalance } from "./Balances";
 import { InnerChart } from "./Chart";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
@@ -21,16 +22,39 @@ import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
+const SplTokenBalanceSchema = z.tuple([z.string(), z.number(), z.string()]);
+
 export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
+  if (toolOutput.name === "get_spl_token_balance") {
+    try {
+      const parsed = SplTokenBalanceSchema.parse(JSON.parse(toolOutput.result));
+      return (
+        <div className="p-3">
+          <SplTokenBalance
+            amount={parsed[0]}
+            decimals={parsed[1]}
+            mint={parsed[2]}
+          />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse spl token balance:", e);
+    }
+  }
+
   if (toolOutput.name === "fetch_x_post") {
     const parsed = TweetSchema.parse(JSON.parse(toolOutput.result));
     return <FetchXPostDisplay tweet={parsed} />;
   }
 
   if (toolOutput.name === "research_x_profile") {
-    return (
-      <ChatMessage message={JSON.parse(toolOutput.result)} direction="agent" />
-    );
+    try {
+      const message = JSON.parse(toolOutput.result);
+      return <ChatMessage message={message} direction="agent" />;
+    } catch (e) {
+      console.error("Failed to parse tweet:", e);
+      return <ChatMessage message={toolOutput.result} direction="agent" />;
+    }
   }
 
   if (toolOutput.name === "fetch_token_metadata") {
@@ -62,11 +86,7 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
       const parsed = DexScreenerResponseSchema.parse(
         JSON.parse(toolOutput.result)
       );
-      return (
-        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-2 py-1 lg:px-4 lg:py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
-          <DexscreenerDisplay pairs={parsed.pairs} />
-        </div>
-      );
+      return <DexscreenerDisplay pairs={parsed.pairs} />;
     } catch (e) {
       console.error("Failed to parse dexscreener response:", e);
       return <div>Error parsing DexScreener data</div>;
@@ -192,7 +212,7 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
   }
   // Default tool output display
   return (
-    <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
+    <div className="text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
       {toolOutput.name}
       <ToolOutputDisplay toolOutput={toolOutput} />
     </div>
@@ -225,13 +245,9 @@ export const ChatMessage = ({
   return (
     <div
       className={`
-        ${direction === "incoming" && "bg-blue-900/20 text-blue-300 border-blue-500"}
-        ${direction === "outgoing" && "bg-purple-900/20 text-purple-300 border-purple-500"}
-        ${direction === "agent" && "bg-green-900/20 text-green-300 border-green-500"}
-        rounded-lg px-4 py-2 my-2 backdrop-blur-sm
-        border border-opacity-20
-        lg:text-md text-sm
-        break-words word-break-all max-w-full overflow-hidden
+        rounded-lg px-4 py-2 my-2
+        break-words word-break-all overflow-hidden
+        ${direction === "outgoing" ? "rounded-3xl bg-[#2f2f2f]/40 ml-auto" : "max-w-full"}
       `}
       style={{
         wordBreak: "break-word",
@@ -294,7 +310,7 @@ export const ChatMessage = ({
           ),
           code: ({ ...props }) => (
             <code
-              className="block bg-transparent rounded overflow-x-auto text-sm"
+              className="block bg-transparent rounded overflow-x-auto"
               style={{
                 wordBreak: "break-all",
                 whiteSpace: "pre-wrap",

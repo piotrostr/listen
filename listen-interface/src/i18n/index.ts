@@ -1,5 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { recommendedQuestions } from "./translations/recommended-questions";
 
 const resources = {
   en: {
@@ -69,6 +70,7 @@ const resources = {
         reject: "Reject",
         pipeline_rejected: "Pipeline rejected",
         pipeline_scheduled_for_execution: "Pipeline scheduled for execution",
+        invalid_timestamp: "Invalid timestamp",
         amount: "Amount",
       },
       token_tile: {
@@ -89,18 +91,10 @@ const resources = {
         waiting_for_updates: "Waiting for updates...",
       },
       chat: {
-        recommended_questions: {
-          what_actions_can_you_perform_for_me:
-            "What actions can you perform for me?",
-          how_do_pipelines_work_and_what_pipelines_can_you_create_for_me:
-            "How do pipelines work and what pipelines can you create for me?",
-          what_chains_are_supported: "What chains are supported?",
-          what_tokens_have_received_largest_inflows_outflows_in_the_past_days:
-            "What tokens have received largest inflows/outflows in the past days?",
-        },
         start_a_conversation: "Start a conversation",
-        placeholder: "Type your message...",
+        placeholder: "How can I help?",
       },
+      recommended_questions: recommendedQuestions.en,
       share_modal: {
         share_this_chat: "Share this chat",
         anyone_with_this_link_can_view_this_chat:
@@ -208,6 +202,7 @@ const resources = {
         reject: "拒绝",
         pipeline_rejected: "自动化任务已被拒绝",
         pipeline_scheduled_for_execution: "自动化任务已安排执行",
+        invalid_timestamp: "无效的时间戳",
       },
       token_tile: {
         traders: "交易者",
@@ -235,16 +230,9 @@ const resources = {
       },
       chat: {
         start_a_conversation: "开始对话",
-        recommended_questions: {
-          what_actions_can_you_perform_for_me: "你能执行哪些操作？",
-          how_do_pipelines_work_and_what_pipelines_can_you_create_for_me:
-            "自动化任务如何运作，你能为我创建哪些自动化任务？",
-          what_chains_are_supported: "支持哪些链？",
-          what_tokens_have_received_largest_inflows_outflows_in_the_past_days:
-            "过去 24 小时资金流入/流出最多的代币有哪些？",
-        },
-        placeholder: "输入消息...",
+        placeholder: "我能为你做什么？",
       },
+      recommended_questions: recommendedQuestions.zh,
       share_modal: {
         share_this_chat: "分享此聊天",
         anyone_with_this_link_can_view_this_chat:

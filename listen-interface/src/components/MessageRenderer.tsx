@@ -22,10 +22,7 @@ const tagHandlers: Record<string, TagHandler> = {
         const pipeline = JSON.parse(pipelineContent);
         if (pipeline && pipeline.steps) {
           return (
-            <div
-              key={`pipeline-${index}`}
-              className="my-4 border-b border-purple-500/30 pb-4"
-            >
+            <div key={`pipeline-${index}`} className="my-4 pb-4">
               <PipelineDisplay pipeline={pipeline} />
             </div>
           );
@@ -135,21 +132,23 @@ export function MessageRenderer({ message: msg }: { message: Message }) {
   if (msg.type === "ToolCall") {
     // no need to display tool calls, just the tool results
     // those are really important for the chat history consistency though!
-    if (process.env.NODE_ENV === "production") {
-      return;
+    return null;
+    if (process.env.NODE_ENV === "debug") {
+      const { id, name, params } = JSON.parse(msg.message);
+
+      return (
+        <div>
+          id: {id}
+          <br />
+          name: {name}
+          <br />
+          params:{" "}
+          <pre className="truncate">
+            {JSON.stringify(JSON.parse(params), null, 2)}
+          </pre>
+        </div>
+      );
     }
-
-    const { id, name, params } = JSON.parse(msg.message);
-
-    return (
-      <div>
-        id: {id}
-        <br />
-        name: {name}
-        <br />
-        params: <pre>{JSON.stringify(JSON.parse(params), null, 2)}</pre>
-      </div>
-    );
   }
 
   if (msg.type === "ToolResult") {

@@ -97,7 +97,7 @@ export function VersionAndLanguageDisplay() {
   return (
     <div className="flex justify-around items-center w-full">
       <span className="text-xs text-gray-400">
-        {t("layout.version")}: 1.2.1
+        {t("layout.version")}: 2.0.0
       </span>
       <LanguageSwitcher />
     </div>
@@ -179,7 +179,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Background />
 
         {/* Header */}
-        <div className="z-20 bg-transparent backdrop-blur-sm flex items-center">
+        <div className="z-20 bg-black/10 backdrop-blur-sm flex items-center">
           <div className="flex-1">
             <SimpleHeader
               activePanel={activePanel}
@@ -201,7 +201,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {/* Collapsible Sidebar - Floating */}
           <div
             className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 
-              ${isSidebarOpen ? "w-64 bg-black/60 backdrop-blur-sm" : isMobile ? "w-0" : "w-16"} 
+              ${isSidebarOpen ? "w-64 bg-black/90 backdrop-blur-sm" : isMobile ? "w-0" : "w-16"} 
               ${isMobile && !isSidebarOpen ? "opacity-0 pointer-events-none" : "opacity-100"}
               ${isMobile ? "lg:block" : "block"} flex flex-col
               ${isMobile ? "pb-20" : ""}`}

@@ -1,4 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
+import { useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "react-i18next";
 import { IoRefreshOutline } from "react-icons/io5";
 import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
@@ -46,10 +47,7 @@ export function Pipelines({ statusFilter }: PipelinesProps) {
         <div className="space-y-6">
           {filteredPipelines?.map(
             (pipeline: ExtendedPipeline, index: number) => (
-              <div
-                key={`pipeline-${index}`}
-                className="bg-black/40 backdrop-blur-sm border border-purple-500/30 rounded-lg p-4"
-              >
+              <div key={`pipeline-${index}`}>
                 <ExtendedPipelineDisplay pipeline={pipeline} />
               </div>
             )
@@ -75,14 +73,21 @@ export function PipelinesHeader({
   setStatusFilter,
 }: PipelinesHeaderProps) {
   const { t } = useTranslation();
-  const { refetch } = usePipelines();
+
+  const queryClient = useQueryClient();
+
+  const refetch = async () => {
+    await queryClient.resetQueries({
+      queryKey: ["pipelines"],
+    });
+  };
 
   return (
     <div className="flex items-center gap-2 h-full">
       <select
         value={statusFilter}
         onChange={(e) => setStatusFilter(e.target.value)}
-        className="bg-black/40 text-white border border-purple-500/30 rounded-lg px-4 h-8 text-sm"
+        className="bg-black/40 text-white border border-[#2D2D2D] rounded-lg px-4 h-8 text-sm"
       >
         <option value="All">{t("pipelines.all")}</option>
         <option value="Pending">{t("pipelines.pending")}</option>
@@ -91,7 +96,7 @@ export function PipelinesHeader({
       </select>
       <button
         onClick={refetch}
-        className="bg-black/40 text-white border border-purple-500/30 rounded-lg w-8 h-8 flex items-center justify-center hover:bg-purple-500/20"
+        className="bg-black/40 text-white border border-[#2D2D2D] rounded-lg w-8 h-8 flex items-center justify-center hover:bg-purple-500/20"
       >
         <IoRefreshOutline className="w-4 h-4" />
       </button>

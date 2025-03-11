@@ -1,5 +1,3 @@
-import { useTranslation } from "react-i18next";
-
 interface SwapTokenProps {
   image?: string | null;
   name?: string;
@@ -19,7 +17,6 @@ export const SwapToken = ({
   compact,
   showAmount = false,
 }: SwapTokenProps) => {
-  const { t } = useTranslation();
   if (compact) {
     return <SwapTokenCompact image={image} name={name} amount={amount} />;
   }
@@ -36,9 +33,7 @@ export const SwapToken = ({
       </div>
       <div>
         <div className="flex items-center gap-2">
-          <div className="font-bold text-purple-100 text-base sm:text-lg">
-            {name}
-          </div>
+          <div className="font-bold text-base sm:text-lg">{name}</div>
           {chainId && (
             <img
               src={`https://dd.dexscreener.com/ds-data/chains/${chainId.toLowerCase()}.png`}
@@ -48,9 +43,7 @@ export const SwapToken = ({
           )}
         </div>
         {showAmount && amount && (
-          <div className="text-xs sm:text-sm text-purple-300">
-            {t("pipelines.amount")}: {amount}
-          </div>
+          <div className="text-xs sm:text-sm">{amount}</div>
         )}
         {address && (
           <div className="text-xs sm:text-sm text-gray-400 flex items-center gap-1">
@@ -78,7 +71,7 @@ export const SwapTokenCompact = ({
         <img
           src={image.replace("cf-ipfs.com", "ipfs.io")}
           alt={name ?? ""}
-          className="w-8 h-8 rounded-full"
+          className="w-10 h-10 rounded-full"
         />
       )}
       <span className="text-sm font-medium">{amount ?? ""}</span>

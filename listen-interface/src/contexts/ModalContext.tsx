@@ -21,8 +21,8 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       {chartMint &&
         createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center">
-            <div className="fixed inset-0 bg-black/60 backdrop-blur-sm pointer-events-none" />
-            <div className="relative bg-black/40 border border-purple-500/20 w-[90vw] h-[80vh] rounded-xl p-6 backdrop-blur-sm pointer-events-auto">
+            <div className="fixed inset-0 bg-[#151518]/60 backdrop-blur-sm pointer-events-none" />
+            <div className="relative bg-[#151518]/40  w-[90vw] h-[80vh] rounded-xl p-6 backdrop-blur-sm pointer-events-auto">
               <button
                 onClick={closeChart}
                 className="absolute top-4 right-4 text-purple-300/70 hover:text-purple-100 transition-colors"

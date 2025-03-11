@@ -14,7 +14,7 @@ export function RawTokenMetadataDisplay({
   return (
     <div className="flex flex-row w-full space-x-8 px-4 py-6">
       {/* Left column: Image, name, symbol, socials */}
-      <div className="flex items-start space-x-4 min-w-[300px]">
+      <div className="flex items-start space-x-4 lg:min-w-[300px]">
         {metadata?.mpl.ipfs_metadata?.image &&
           metadata.mpl.ipfs_metadata.image.startsWith("https://") && (
             <div className="w-16 h-16 sm:w-24 sm:h-24 relative rounded-full overflow-hidden">

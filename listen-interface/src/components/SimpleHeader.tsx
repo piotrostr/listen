@@ -4,7 +4,9 @@ import { useTranslation } from "react-i18next";
 import { BsLink } from "react-icons/bs";
 import { IoMenu, IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
 import { RxDashboard } from "react-icons/rx";
+import { TbMoneybag } from "react-icons/tb";
 import { useMobile } from "../contexts/MobileContext";
+import { usePortfolio } from "../hooks/usePortfolio";
 import { SidebarContext } from "./Layout";
 
 interface SimpleHeaderProps {
@@ -25,6 +27,8 @@ export function SimpleHeader({
   const togglePanel = (panelName: string) => {
     setActivePanel(activePanel === panelName ? null : panelName);
   };
+
+  const { portfolioValue } = usePortfolio();
 
   return (
     <div className="flex items-center justify-between h-16 sm:px-4">
@@ -49,7 +53,7 @@ export function SimpleHeader({
         >
           <img src="/listen-more.png" alt="Logo" className="w-8 h-8 rounded" />
           {!isMobile && (
-            <span className="font-bold text-md lg:text-xl">listen-rs</span>
+            <span className="text-white text-lg font-bold">Listen</span>
           )}
         </Link>
       </div>
@@ -89,6 +93,11 @@ export function SimpleHeader({
           </>
         )}
       </div>
+      {isMobile && portfolioValue > 0 && (
+        <div className="text-white text-sm pr-5 flex items-center gap-1">
+          <TbMoneybag className="w-4 h-4" />${portfolioValue.toFixed(2)}
+        </div>
+      )}
     </div>
   );
 }

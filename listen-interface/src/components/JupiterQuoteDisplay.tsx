@@ -42,7 +42,7 @@ export const JupiterQuoteDisplay = ({ quote }: JupiterQuoteDisplayProps) => {
   ).toFixed(2);
 
   return (
-    <div className="border border-purple-500/30 rounded-lg p-4 bg-black/40 backdrop-blur-sm">
+    <div className="border border-[#2D2D2D] rounded-lg p-4 bg-black/40 backdrop-blur-sm">
       <div className="flex items-center gap-4">
         {/* Input Token */}
         <div className="flex-1">
@@ -57,18 +57,20 @@ export const JupiterQuoteDisplay = ({ quote }: JupiterQuoteDisplayProps) => {
                 }}
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-300">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white">
                 {inputSymbol.slice(0, 2)}
               </div>
             )}
             <div>
-              <div className="font-bold text-purple-100 flex items-center gap-2">
-                {inputSymbol}
-              </div>
-              <div className="text-sm text-purple-300">
+              <strong>
+                <div className="font-bold text-white flex items-center gap-2">
+                  {inputSymbol}
+                </div>
+              </strong>
+              <div className="text-sm text-white">
                 {formatAmount(quote.inAmount, inputDecimals)}
               </div>
-              <div className="text-xs text-purple-300/70">
+              <div className="text-xs text-gray-400">
                 {quote.inputMint.slice(0, 6)}...{quote.inputMint.slice(-4)}
               </div>
             </div>
@@ -76,7 +78,7 @@ export const JupiterQuoteDisplay = ({ quote }: JupiterQuoteDisplayProps) => {
         </div>
 
         {/* Arrow */}
-        <div className="text-purple-500">
+        <div className="text-white">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -106,18 +108,20 @@ export const JupiterQuoteDisplay = ({ quote }: JupiterQuoteDisplayProps) => {
                 }}
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-300">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center text-white">
                 {outputSymbol.slice(0, 2)}
               </div>
             )}
             <div>
-              <div className="font-bold text-purple-100 flex items-center gap-2">
-                {outputSymbol}
-              </div>
-              <div className="text-sm text-purple-300">
+              <strong>
+                <div className="font-bold text-white flex items-center gap-2">
+                  {outputSymbol}
+                </div>
+              </strong>
+              <div className="text-sm text-white">
                 {formatAmount(quote.outAmount, outputDecimals)}
               </div>
-              <div className="text-xs text-purple-300/70">
+              <div className="text-xs text-gray-400">
                 {quote.outputMint.slice(0, 6)}...{quote.outputMint.slice(-4)}
               </div>
             </div>
@@ -126,21 +130,21 @@ export const JupiterQuoteDisplay = ({ quote }: JupiterQuoteDisplayProps) => {
       </div>
 
       {/* Transaction Details */}
-      <div className="mt-3 pt-3 border-t border-purple-500/30">
+      <div className="mt-3 pt-3 border-t border-[#2D2D2D]">
         <div className="flex justify-between items-start">
           <div>
-            <div className="text-sm text-purple-300">
+            <div className="text-sm text-white">
               Route Type: {quote.routePlan.length > 1 ? "Multi-hop" : "Direct"}
             </div>
-            <div className="text-sm text-purple-300">
+            <div className="text-sm text-white">
               Price Impact: {priceImpactPercentage}%
             </div>
           </div>
           <div className="text-right">
-            <div className="text-sm text-purple-300">
+            <div className="text-sm text-white">
               Slippage: {(quote.slippageBps / 100).toFixed(2)}%
             </div>
-            <div className="text-sm text-purple-300">
+            <div className="text-sm text-white">
               Min received:{" "}
               {formatAmount(quote.otherAmountThreshold, outputDecimals)}{" "}
               {outputSymbol}

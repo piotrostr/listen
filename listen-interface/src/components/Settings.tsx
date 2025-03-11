@@ -37,8 +37,8 @@ export function Settings() {
       </h2>
       <WalletAddresses />
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.quick_buy")}</h2>
-      <div className="bg-black/40 backdrop-blur-sm border border-purple-500/30 rounded-lg p-4 mb-4">
-        <label className="block text-sm text-purple-100 mb-2">
+      <div className="bg-black/40 backdrop-blur-sm rounded-lg p-4 mb-4">
+        <label className="block text-sm text-white mb-2">
           {t("settings.quick_buy_default_sol_amount")}
         </label>
         <div className="flex items-center">
@@ -48,11 +48,11 @@ export function Settings() {
             onChange={handleAmountChange}
             min="0.01"
             step="0.01"
-            className="bg-black/60 border border-purple-500/30 rounded-lg px-3 py-2 text-purple-100 w-24 focus:outline-none focus:border-purple-500"
+            className="bg-black/60 rounded-lg px-3 py-2 text-white w-24 focus:outline-none"
           />
-          <span className="ml-2 text-purple-300">SOL</span>
+          <span className="ml-2 text-white">SOL</span>
         </div>
-        <p className="text-xs text-purple-300 mt-2">
+        <p className="text-xs text-gray-400 mt-2">
           {t("settings.quick_buy_default_sol_amount_description")}
         </p>
       </div>

@@ -17,20 +17,16 @@ export function ConnectedAccount({
     <div
       className={`
         flex items-center p-1.5 rounded-lg 
-        ${
-          isConnected
-            ? "bg-purple-500/5 hover:bg-purple-500/10 flex-1 min-w-[200px]"
-            : "bg-purple-500/5 hover:bg-purple-500/10 w-fit"
-        } 
+        ${isConnected ? "flex-1 min-w-[200px]" : "w-fit"} 
         transition-colors
       `}
     >
       <div className="flex items-center">
-        <div className="p-1 rounded-lg bg-purple-500/10">{Icon}</div>
+        <div className="p-1 rounded-lg">{Icon}</div>
       </div>
       {isConnected ? (
         <>
-          <div className="ml-1 p-1 rounded-lg bg-purple-500/10 text-green-500">
+          <div className="ml-1 p-1 rounded-lg text-green-500">
             <svg
               className="w-3 h-3"
               fill="none"

@@ -1,8 +1,9 @@
 import { Link } from "@tanstack/react-router";
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { NewChatTiles } from "./NewChatTiles";
 
 interface ChatContainerProps {
   inputMessage: string;
@@ -13,6 +14,8 @@ interface ChatContainerProps {
   onShareChat?: () => void;
   isSharedChat?: boolean;
   children: ReactNode;
+  handleQuestionClick?: (question: string) => void;
+  displayTiles?: boolean;
 }
 
 export function ChatContainer({
@@ -24,7 +27,37 @@ export function ChatContainer({
   onShareChat,
   isSharedChat = false,
   children,
+  handleQuestionClick,
+  displayTiles = false,
 }: ChatContainerProps) {
+  const { t } = useTranslation();
+  const RECOMMENDED_QUESTIONS_TILES = [
+    {
+      question: t("recommended_questions.what_actions_can_you_perform_for_me"),
+      enabled: true,
+      display: t("recommended_questions.learn_about_listen"),
+    },
+    {
+      question: t(
+        "recommended_questions.how_do_pipelines_work_and_what_pipelines_can_you_create_for_me"
+      ),
+      enabled: true,
+      display: t("recommended_questions.complex_made_simple"),
+    },
+    {
+      question: t("recommended_questions.what_chains_are_supported"),
+      enabled: true,
+      display: t("recommended_questions.supported_chains"),
+    },
+    {
+      question: t(
+        "recommended_questions.what_tokens_have_received_largest_inflows_outflows_in_the_past_days"
+      ),
+      enabled: true,
+      display: t("recommended_questions.discover_coins"),
+    },
+  ];
+
   return (
     <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col md:px-2">
       <div
@@ -37,7 +70,13 @@ export function ChatContainer({
       >
         <div className="flex flex-col gap-3 px-4 pt-1">{children}</div>
       </div>
-      <div className="sticky bottom-0 left-0 right-0 px-4 py-3 bg-black/80 backdrop-blur-sm">
+      {displayTiles && (
+        <NewChatTiles
+          questions={RECOMMENDED_QUESTIONS_TILES}
+          onSelect={handleQuestionClick || (() => {})}
+        />
+      )}
+      <div className="sticky bottom-0 left-0 right-0 bg-[#151518]/80 backdrop-blur-sm pb-2 px-4 lg:px-0 pt-3">
         <ChatInput
           inputMessage={inputMessage}
           isGenerating={isGenerating}
@@ -71,8 +110,6 @@ export function ChatInput({
   onShareChat,
   isSharedChat = false,
 }: ChatInputProps) {
-  const [isFocused, setIsFocused] = useState(false);
-
   const handleSend = () => {
     if (inputMessage.trim()) {
       onSendMessage(inputMessage);
@@ -88,39 +125,34 @@ export function ChatInput({
 
   return (
     <div
-      className={`min-h-10 border ${isFocused ? "border-purple-500/60" : "border-purple-500/30"} 
-                 rounded-lg bg-black/40 backdrop-blur-sm px-3 py-2 flex items-center mb-2`}
+      className={`flex flex-row items-center justify-center gap-1 px-2 pl-4 py-2 bg-[#151518]/40 backdrop-blur-sm border border-[#2D2D2D] rounded-[99px] mb-2`}
     >
-      <div className="flex-grow relative">
-        <textarea
-          value={inputMessage}
-          onChange={(e) => onInputChange(e.target.value)}
-          onFocus={() => setIsFocused(true)}
-          onBlur={() => setIsFocused(false)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              if (isGenerating) {
-                onStopGeneration();
-              } else {
-                handleSend();
-              }
-            }
-            if (e.key === "Escape" && isGenerating) {
-              e.preventDefault();
+      <textarea
+        value={inputMessage}
+        onChange={(e) => onInputChange(e.target.value)}
+        onKeyDown={(e) => {
+          if (e.key === "Enter" && !e.shiftKey) {
+            e.preventDefault();
+            if (isGenerating) {
               onStopGeneration();
+            } else {
+              handleSend();
             }
-          }}
-          rows={1}
-          className="w-full bg-transparent text-white outline-none resize-none chat-input"
-          placeholder={t("chat.placeholder")}
-          style={{
-            minHeight: "20px",
-            maxHeight: "200px",
-          }}
-          disabled={isSharedChat}
-        />
-      </div>
+          }
+          if (e.key === "Escape" && isGenerating) {
+            e.preventDefault();
+            onStopGeneration();
+          }
+        }}
+        rows={1}
+        className="w-full bg-transparent text-white outline-none resize-none chat-input"
+        placeholder={t("chat.placeholder")}
+        style={{
+          minHeight: "20px",
+          maxHeight: "200px",
+        }}
+        disabled={isSharedChat}
+      />
 
       <div className="flex-shrink-0 ml-2 flex items-center gap-2">
         {onShareChat && (

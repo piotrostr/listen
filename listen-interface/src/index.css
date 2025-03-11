@@ -7,18 +7,11 @@
   color-scheme: dark;
 }
 
-@font-face {
-  font-family: "SF Mono Nerd Font";
-  src: url("/sfmono.otf") format("opentype");
-  font-weight: 400;
-  font-style: normal;
-}
-
 /* Base styles */
 html,
 body,
 code {
-  font-family: "SF Mono Nerd Font", monospace;
+  font-family: "Space Grotesk", monospace;
 }
 
 /* Animation delays */
@@ -49,7 +42,7 @@ code {
 
 .cs-message-input__content-editor {
   color: white !important;
-  font-family: "SF Mono Nerd Font", monospace !important;
+  font-family: "Space Grotesk", monospace !important;
   caret-color: transparent !important;
 }
 
@@ -258,4 +251,24 @@ html {
 .recent-chats-container {
   -ms-overflow-style: none;
   scrollbar-width: none;
+}
+
+@keyframes colorPulse {
+  0%, 100% { background-color: rgba(99, 102, 241, 0.6); } /* blue-500/60 */
+  25% { background-color: rgba(192, 132, 252, 0.8); } /* purple-400/80 */
+  50% { background-color: rgba(168, 85, 247, 0.8); } /* purple-500/80 */
+  75% { background-color: rgba(147, 51, 234, 0.8); } /* purple-600/80 */
+}
+
+@keyframes spherePulse {
+  0%, 100% { 
+    transform: scale(0.8);
+    background-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 5px rgba(99, 102, 241, 0.6);
+  }
+  50% { 
+    transform: scale(1.1);
+    background-color: rgba(168, 85, 247, 0.6);
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.8);
+  }
 }

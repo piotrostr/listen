@@ -4,12 +4,17 @@ import { useTranslation } from "react-i18next";
 import { useChat } from "../hooks/useChat";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
+import { NewChatCarousel } from "./NewChatCarousel";
 import { ShareModal } from "./ShareModal";
 
 const IS_DISABLED = false;
 
 const LoadingIndicator = () => (
-  <div className="bg-purple-900/20 text-purple-300 rounded px-4 py-2">...</div>
+  <div className="flex items-center flex-start py-4 px-4">
+    <div className="h-4 w-4 rounded-full animate-[spherePulse_3s_ease-in-out_infinite] shadow-lg relative">
+      <div className="absolute inset-0 rounded-full animate-[colorPulse_1s_ease-in-out_infinite] opacity-70 blur-[1px]"></div>
+    </div>
+  </div>
 );
 
 export function Chat({ selectedChatId }: { selectedChatId?: string }) {
@@ -41,6 +46,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     stopGeneration,
     shareChat,
     loadSharedChat,
+    isSharedChat,
   } = useChat();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -51,27 +57,27 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
   const { t } = useTranslation();
 
-  const RECOMMENDED_QUESTIONS = [
+  const RECOMMENDED_QUESTIONS_CAROUSEL = [
     {
-      question: t(
-        "chat.recommended_questions.what_actions_can_you_perform_for_me"
-      ),
+      question: t("recommended_questions.whats_the_most_viral_token_right_now"),
+      enabled: true,
+    },
+    {
+      question: t("recommended_questions.what_does_lp_mean"),
       enabled: true,
     },
     {
       question: t(
-        "chat.recommended_questions.how_do_pipelines_work_and_what_pipelines_can_you_create_for_me"
+        "recommended_questions.how_to_manage_risk_when_trading_memecoins"
       ),
       enabled: true,
     },
     {
-      question: t("chat.recommended_questions.what_chains_are_supported"),
+      question: t("recommended_questions.buy_the_solana_dip"),
       enabled: true,
     },
     {
-      question: t(
-        "chat.recommended_questions.what_tokens_have_received_largest_inflows_outflows_in_the_past_days"
-      ),
+      question: t("recommended_questions.research_arcdotfun_for_me"), // TODO X search
       enabled: true,
     },
   ];
@@ -157,32 +163,28 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         onInputChange={setInputMessage}
         onStopGeneration={stopGeneration}
         onShareChat={messages.length > 0 ? handleShareChat : undefined}
-        isSharedChat={!!urlParams.isSharedChat}
+        isSharedChat={isSharedChat || urlParams.isSharedChat}
+        handleQuestionClick={handleQuestionClick}
+        displayTiles={messages.length === 0}
       >
         <div className="h-full flex flex-col">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 px-4">
-              <h2 className="text-xl font-medium text-white mb-6">
-                {t("chat.start_a_conversation")}
-              </h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
-                {RECOMMENDED_QUESTIONS.map((question, index) => (
-                  <button
-                    key={index}
-                    disabled={!question.enabled}
-                    onClick={() => handleQuestionClick(question.question)}
-                    className="bg-purple-900/30 hover:bg-purple-800/40 text-left p-4 rounded-lg border border-purple-500/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                  >
-                    <p className="text-white">{question.question}</p>
-                  </button>
-                ))}
+              <div className="flex flex-col items-center justify-center gap-8 mt-16">
+                <NewChatCarousel
+                  questions={RECOMMENDED_QUESTIONS_CAROUSEL}
+                  onSelect={handleQuestionClick}
+                />
               </div>
             </div>
           )}
           {messages.map((message) => (
             <MessageRenderer key={message.id} message={message} />
           ))}
-          {isLoading && <LoadingIndicator />}
+          {isLoading &&
+            messages[messages.length - 1]?.direction === "outgoing" && (
+              <LoadingIndicator />
+            )}
           <div ref={messagesEndRef} />
         </div>
       </ChatContainer>

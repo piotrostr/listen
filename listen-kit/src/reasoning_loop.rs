@@ -5,7 +5,8 @@ use rig::completion::AssistantContent;
 use rig::completion::Message;
 use rig::message::{ToolResultContent, UserContent};
 use rig::providers::anthropic::completion::CompletionModel;
-use rig::streaming::{StreamingChat, StreamingChoice};
+use rig::streaming::StreamingChoice;
+use rig::streaming::StreamingCompletion;
 use rig::OneOrMany;
 use serde::Deserialize;
 use serde::Serialize;
@@ -57,25 +58,21 @@ impl ReasoningLoop {
         let agent = self.agent.clone();
         let stdout = self.stdout;
 
-        // For first iteration, use the original prompt.
-        // For subsequent iterations, use an empty prompt since we already have the conversation history.
+        // Start with the user's original prompt
+        let mut next_input = Message::user(prompt.clone());
         let mut is_first_iteration = true;
 
         'outer: loop {
             let mut current_response = String::new();
 
-            // Use the original prompt only for the first iteration
-            let current_prompt = if is_first_iteration {
-                prompt.clone()
-            } else {
-                // Minimal, neutral prompt for subsequent iterations that won't trigger specific behaviors
-                // this is not going to be added to the conversation history
-                // TODO there might be a better way to handle this
-                "Continue the conversation.".to_string()
-            };
-
+            // Stream using the next input (original prompt or tool result)
             let mut stream = match agent
-                .stream_chat(&current_prompt, current_messages.clone())
+                .stream_completion(
+                    next_input.clone(),
+                    current_messages.clone(),
+                )
+                .await?
+                .stream()
                 .await
             {
                 Ok(stream) => stream,
@@ -88,6 +85,7 @@ impl ReasoningLoop {
                 }
             };
 
+            // Only add the original user prompt to history on the first iteration
             if is_first_iteration {
                 current_messages.push(Message::User {
                     content: OneOrMany::one(UserContent::text(
@@ -95,6 +93,9 @@ impl ReasoningLoop {
                     )),
                 });
                 is_first_iteration = false;
+            } else {
+                // For subsequent iterations, add the tool result message to history
+                current_messages.push(next_input.clone());
             }
 
             while let Some(chunk) = stream.next().await {
@@ -165,31 +166,29 @@ impl ReasoningLoop {
                             println!("Tool result: {:?}", result);
                         }
 
-                        // Add the tool result as a user message
-                        current_messages.push(Message::User {
+                        // Create the tool result message to use directly as next input
+                        let result_str = match &result {
+                            Ok(content) => content.to_string(),
+                            Err(err) => err.to_string(),
+                        };
+
+                        // Create the tool result message to be used as the next input
+                        next_input = Message::User {
                             content: OneOrMany::one(
                                 UserContent::tool_result(
                                     tool_id.clone(),
                                     OneOrMany::one(ToolResultContent::text(
-                                        match &result {
-                                            Ok(content) => {
-                                                content.to_string()
-                                            }
-                                            Err(err) => err.to_string(),
-                                        },
+                                        result_str.clone(),
                                     )),
                                 ),
                             ),
-                        });
+                        };
 
                         if let Some(tx) = &tx {
                             tx.send(StreamResponse::ToolResult {
                                 id: tool_id,
                                 name,
-                                result: match &result {
-                                    Ok(content) => content.to_string(),
-                                    Err(err) => err.to_string(),
-                                },
+                                result: result_str,
                             })
                             .await
                             .map_err(|e| {

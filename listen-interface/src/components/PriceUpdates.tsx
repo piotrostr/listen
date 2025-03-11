@@ -99,9 +99,7 @@ export function PriceUpdatesHeader({
             setVolumeFilter(volumeFilter === "bought" ? "all" : "bought")
           }
           className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center ${
-            volumeFilter === "bought"
-              ? "bg-purple-500/20 border-2 border-purple-500"
-              : "bg-black/40 border-2 border-purple-500/30"
+            volumeFilter === "bought" ? "bg-purple-500/20" : "bg-black/40"
           } hover:bg-purple-500/10 transition-all`}
         >
           <FaCircle className="text-green-500 text-xs" />
@@ -111,9 +109,7 @@ export function PriceUpdatesHeader({
             setVolumeFilter(volumeFilter === "sold" ? "all" : "sold")
           }
           className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center ${
-            volumeFilter === "sold"
-              ? "bg-purple-500/20 border-2 border-purple-500"
-              : "bg-black/40 border-2 border-purple-500/30"
+            volumeFilter === "sold" ? "bg-purple-500/20" : "bg-black/40"
           } hover:bg-purple-500/10 transition-all`}
         >
           <FaCircle className="text-red-500 text-xs" />
@@ -124,7 +120,7 @@ export function PriceUpdatesHeader({
         <select
           value={marketCapFilter}
           onChange={(e) => setMarketCapFilter(e.target.value)}
-          className="bg-black/40 text-purple-100 border border-purple-500/20 rounded-lg px-2 h-8 text-sm focus:outline-none focus:border-purple-500 w-[120px]"
+          className="bg-black/40 text-purple-100 rounded-lg px-2 h-8 text-sm focus:outline-none w-[120px]"
         >
           <option value="all">{t("price_updates.all")}</option>
           <option value="under1m">&lt;$1M</option>
