@@ -1,6 +1,7 @@
 use anyhow::Result;
 
 pub mod client;
+pub mod search;
 pub mod tweets;
 pub mod user_info;
 pub mod user_tweets;
