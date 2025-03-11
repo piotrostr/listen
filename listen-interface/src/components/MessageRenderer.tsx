@@ -130,6 +130,11 @@ export function MessageRenderer({ message: msg }: { message: Message }) {
     return <ToolMessage toolOutput={toolResult} />;
   }
 
+  if (msg.type === "ToolCall") {
+    // tool calls are rendered in the top-level
+    return null;
+  }
+
   if (msg.type === "ToolResult") {
     const toolOutput = ToolResultSchema.parse(JSON.parse(msg.message));
     return <ToolMessage toolOutput={toolOutput} />;
