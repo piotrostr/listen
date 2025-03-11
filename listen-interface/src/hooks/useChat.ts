@@ -60,6 +60,7 @@ export function useChat() {
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const [sentInitialMessage, setSentInitialMessage] = useState(false);
 
   // Load existing chat if chatId is present and not creating a new chat
   useEffect(() => {
@@ -392,9 +393,23 @@ export function useChat() {
       setChat(null);
 
       // Navigate to clean URLsearchParams
-      navigate({ to: "/", search: {}, replace: true });
+      setSentInitialMessage(false);
+      navigate({
+        to: "/",
+        search: {
+          message: initialMessage,
+        },
+        replace: true,
+      });
     }
   }, [isNewChat, navigate, setChat]);
+
+  useEffect(() => {
+    if (initialMessage && !sentInitialMessage) {
+      sendMessage(initialMessage);
+      setSentInitialMessage(true);
+    }
+  }, [initialMessage, isNewChat, sendMessage, sentInitialMessage]);
 
   const stopGeneration = () => {
     if (abortControllerRef.current) {
