@@ -13,7 +13,7 @@ export const LanguageSwitcher = () => {
 
   return (
     <button
-      className="px-3 py-1 rounded-md bg-gray-800 text-white hover:bg-gray-700 transition-colors"
+      className="px-3 py-1 rounded-md border-2 border-[#212121] bg-transparent text-white hover:bg-[#212121] transition-colors"
       onClick={toggleLanguage}
     >
       {currentLanguage}
