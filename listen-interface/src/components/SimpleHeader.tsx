@@ -51,7 +51,7 @@ export function SimpleHeader({
           onMouseEnter={() => setSidebarOpen(true)}
           onMouseLeave={() => setSidebarOpen(false)}
         >
-          <img src="/listen-more.png" alt="Logo" className="w-8 h-8 rounded" />
+          <img src="/listen-new.svg" alt="Logo" className="w-8 h-8 rounded" />
           {!isMobile && (
             <span className="text-white text-lg font-bold">Listen</span>
           )}
