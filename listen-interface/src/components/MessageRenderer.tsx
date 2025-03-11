@@ -1,8 +1,9 @@
 import { ToolResult, ToolResultSchema, type Message } from "../types/message";
+import { ChatMessage } from "./ChatMessage";
 import { FundWallet } from "./FundWallet";
-import { ChatMessage, ToolMessage } from "./Messages";
 import { PipelineDisplay } from "./Pipeline";
 import { SolanaWalletCreation } from "./SolanaWalletCreation";
+import { ToolMessage } from "./ToolMessage";
 
 // Type definitions for tag handlers
 type TagHandler = {
