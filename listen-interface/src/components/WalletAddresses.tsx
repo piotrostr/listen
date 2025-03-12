@@ -57,14 +57,14 @@ export function WalletAddresses() {
             <div className="flex items-center gap-2">
               <button
                 onClick={() => exportSolanaWallet()}
-                className="p-2 border-2 border-[#2d2d2d] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-purple-500/10"
+                className="p-2 border-2 border-[#2d2d2d] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-[#2D2D2D]"
               >
                 {t("wallet_addresses.export")}
               </button>
               <button
                 onClick={() => fundSolanaWallet(wallets.solanaWallet!)}
                 disabled={!wallets.solanaWallet}
-                className="p-2 border-2 border-[#2d2d2d] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-purple-500/10"
+                className="p-2 border-2 border-[#2d2d2d] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-[#2D2D2D]"
               >
                 {t("wallet_addresses.fund")}
               </button>
@@ -81,7 +81,7 @@ export function WalletAddresses() {
             </div>
             <div
               onClick={handleClickCopySolana}
-              className="cursor-pointer flex-shrink-0 hover:text-blue-400"
+              className="cursor-pointer flex-shrink-0 hover:text-white"
             >
               {clickedSolana ? <div>✅</div> : <CopyIcon />}
             </div>
@@ -105,14 +105,14 @@ export function WalletAddresses() {
             <div className="flex items-center gap-2">
               <button
                 onClick={exportEvmWallet}
-                className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-purple-500/10"
+                className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-[#2D2D2D]"
               >
                 {t("wallet_addresses.export")}
               </button>
               <button
                 onClick={() => fundEvmWallet(wallets.evmWallet!)}
                 disabled={true}
-                className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-purple-500/10 disabled:opacity-50"
+                className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-[#2D2D2D] disabled:opacity-50"
               >
                 {t("wallet_addresses.fund")}
               </button>

@@ -26,7 +26,7 @@ export function FloatingPanel({
               {headerContent}
               <button
                 onClick={onClose}
-                className="w-8 h-8 rounded-full hover:bg-purple-500/20 flex items-center justify-center"
+                className="w-8 h-8 rounded-full hover:bg-[#2D2D2D] flex items-center justify-center"
               >
                 <svg
                   width="16"

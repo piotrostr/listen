@@ -10,19 +10,29 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const navigate = useNavigate();
 
+  const loadRecentChats = async () => {
+    const allChats = await chatCache.getAll();
+    if (allChats.length > 0) {
+      const recent = allChats.sort(
+        (a, b) =>
+          (b.lastMessageAt.getTime() ?? 0) - (a.lastMessageAt.getTime() ?? 0)
+      );
+      setRecentChats(recent);
+    }
+  };
+
   useEffect(() => {
-    const loadRecentChats = async () => {
-      const allChats = await chatCache.getAll();
-      if (allChats.length > 0) {
-        const recent = allChats.sort(
-          (a, b) =>
-            (b.lastMessageAt.getTime() ?? 0) - (a.lastMessageAt.getTime() ?? 0)
-        );
-        setRecentChats(recent);
-      }
+    loadRecentChats();
+
+    const handleChatUpdate = () => {
+      loadRecentChats();
     };
 
-    loadRecentChats();
+    window.addEventListener("chatUpdated", handleChatUpdate);
+
+    return () => {
+      window.removeEventListener("chatUpdated", handleChatUpdate);
+    };
   }, []);
 
   const getLocale = () => {
@@ -35,12 +45,12 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   };
 
   return (
-    <div className="overflow-y-auto max-h-[43vh] scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent transition-all duration-300 ease-in-out">
+    <div className="overflow-y-auto max-h-[43vh] scrollbar-thin scrollbar-thumb-[#212121] scrollbar-track-transparent transition-all duration-300 ease-in-out">
       {recentChats.map((chat) => (
         <div
           key={chat.id}
           onClick={() => selectChat(chat.id)}
-          className="flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors cursor-pointer"
+          className="flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-[#212121] transition-colors cursor-pointer"
         >
           <div className="flex-1 min-w-0">
             <div className="truncate text-xs">

@@ -464,7 +464,7 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
             <select
               value={selectedInterval}
               onChange={handleSelectChange}
-              className="bg-purple-900/30 text-purple-100 rounded px-2 py-1 text-xs border-none focus:ring-2 focus:ring-purple-500"
+              className="bg-black/40 text-white rounded px-2 py-1 text-xs border-none focus:ring-2 focus:ring-[#2D2D2D]"
             >
               {INTERVALS.map((interval) => (
                 <option key={interval} value={interval}>
@@ -482,8 +482,8 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
                 onClick={() => handleIntervalChange(interval)}
                 className={`px-2 py-1 text-xs rounded ${
                   selectedInterval === interval
-                    ? "bg-purple-500/50 text-white hover:bg-purple-500/70"
-                    : "bg-transparent text-purple-200 hover:bg-purple-900/30"
+                    ? "bg-[#2D2D2D] text-white hover:bg-[#2D2D2D]"
+                    : "bg-transparent text-white hover:bg-[#2D2D2D]"
                 }`}
               >
                 {interval}
@@ -496,7 +496,7 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
       {/* Chart */}
       <div className="flex-grow">
         {isLoading ? (
-          <div className="flex items-center justify-center h-full text-purple-300">
+          <div className="flex items-center justify-center h-full text-white">
             Loading...
           </div>
         ) : (

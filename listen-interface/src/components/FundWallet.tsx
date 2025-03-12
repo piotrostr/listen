@@ -45,7 +45,7 @@ export const FundWallet = ({ error = null }: FundWalletProps) => {
         <button
           disabled={isFunding}
           onClick={handleFundWallet}
-          className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-purple-500/10"
+          className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-[#2D2D2D]"
         >
           {isFunding ? "Funding wallet..." : "Fund Wallet"}
         </button>

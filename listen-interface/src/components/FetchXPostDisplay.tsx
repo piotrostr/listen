@@ -1,7 +1,6 @@
 import { useEffect, useRef } from "react";
 import i18n from "../i18n";
 import { Tweet } from "../types/x";
-import { Spinner } from "./Spinner";
 
 export function FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
   const tweetRef = useRef<HTMLDivElement>(null);
@@ -26,11 +25,7 @@ export function FetchXPostDisplay({ tweet }: { tweet: Tweet }) {
       >
         <a
           href={`https://twitter.com/${tweet.author?.userName}/status/${tweet.id}`}
-        >
-          <div className="w-full h-full flex justify-center items-center">
-            <Spinner />
-          </div>
-        </a>
+        ></a>
       </blockquote>
     </div>
   );

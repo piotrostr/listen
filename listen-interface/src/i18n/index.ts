@@ -1,10 +1,12 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { recommendedQuestions } from "./translations/recommended-questions";
+import { toolCalls } from "./translations/tool-calls";
 
 const resources = {
   en: {
     translation: {
+      tool_calls: toolCalls.en,
       getting_started: {
         how_it_works: "How it works",
         how_it_works_description:
@@ -137,6 +139,7 @@ const resources = {
   },
   zh: {
     translation: {
+      tool_calls: toolCalls.zh,
       getting_started: {
         how_it_works: "如何运作",
         how_it_works_description:

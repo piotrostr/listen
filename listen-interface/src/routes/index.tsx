@@ -13,6 +13,7 @@ export const Route = createFileRoute("/")({
         chatId: z.string().optional(),
         new: z.boolean().optional(),
         shared: z.boolean().optional(),
+        message: z.string().optional(),
       })
       .parse(search);
   },

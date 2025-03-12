@@ -2,6 +2,16 @@
 @tailwind components;
 @tailwind utilities;
 
+@layer base {
+  html {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  
+  strong, b, .font-bold, [class*="font-bold"] {
+    font-weight: 700 !important;
+  }
+}
+
 /* Force dark mode */
 :root {
   color-scheme: dark;

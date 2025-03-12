@@ -50,7 +50,7 @@ export function ConnectedAccount({
       ) : (
         <button
           onClick={onConnect}
-          className="ml-1 p-1 rounded-lg bg-purple-500/10 hover:bg-purple-500/20 text-white transition-colors"
+          className="ml-1 p-1 rounded-lg bg-[#2D2D2D] hover:bg-[#2D2D2D] text-white transition-colors"
         >
           <TbPlugConnected className="w-3 h-3" />
         </button>

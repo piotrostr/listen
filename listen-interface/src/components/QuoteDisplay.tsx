@@ -61,12 +61,12 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
                 className="w-10 h-10 rounded-full"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-300">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center">
                 {quote.from.token.slice(0, 2)}
               </div>
             )}
             <div>
-              <div className="font-bold text-purple-100 flex items-center gap-2">
+              <div className="font-bold flex items-center gap-2">
                 {quote.from.token}
                 <img
                   src={`https://dd.dexscreener.com/ds-data/chains/${fromChain}.png`}
@@ -74,10 +74,10 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
                   className="w-4 h-4 rounded-full"
                 />
               </div>
-              <div className="text-sm text-purple-300">
+              <div className="text-sm">
                 {formatAmount(inputAmount, inputTokenDecimals)}
               </div>
-              <div className="text-xs text-purple-300/70">
+              <div className="text-xs">
                 {quote.from.address.slice(0, 6)}...
                 {quote.from.address.slice(-4)}
               </div>
@@ -86,7 +86,7 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
         </div>
 
         {/* Arrow */}
-        <div className="text-purple-500">
+        <div className="text-white">
           <svg
             xmlns="http://www.w3.org/2000/svg"
             fill="none"
@@ -113,12 +113,12 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
                 className="w-10 h-10 rounded-full"
               />
             ) : (
-              <div className="w-10 h-10 rounded-full bg-purple-500/20 flex items-center justify-center text-purple-300">
+              <div className="w-10 h-10 rounded-full flex items-center justify-center">
                 {quote.to.token.slice(0, 2)}
               </div>
             )}
             <div>
-              <div className="font-bold text-purple-100 flex items-center gap-2">
+              <div className="font-bold flex items-center gap-2">
                 {quote.to.token}
                 <img
                   src={`https://dd.dexscreener.com/ds-data/chains/${toChain}.png`}
@@ -126,10 +126,10 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
                   className="w-4 h-4 rounded-full"
                 />
               </div>
-              <div className="text-sm text-purple-300">
+              <div className="text-sm">
                 {formatAmount(outputAmount, outputTokenDecimals)}
               </div>
-              <div className="text-xs text-purple-300/70">
+              <div className="text-xs">
                 {quote.to.address.slice(0, 6)}...
                 {quote.to.address.slice(-4)}
               </div>

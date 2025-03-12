@@ -1,6 +1,6 @@
 export function PortfolioSkeleton() {
   return (
-    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-purple-500/30 scrollbar-track-transparent scrollable-container">
+    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container">
       <div className="flex-1">
         <div className="p-4 pt-0 space-y-4">
           {[1, 2, 3, 4].map((index) => (

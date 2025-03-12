@@ -26,7 +26,7 @@ export function ChatHistory() {
           params={{
             new: true,
           }}
-          className="px-4 py-2 bg-purple-500/20 hover:bg-purple-500/30 text-purple-300 rounded-lg transition-colors"
+          className="px-4 py-2 bg-[#2D2D2D] hover:bg-[#2D2D2D] text-white rounded-lg transition-colors"
         >
           {t("chat_history.new_chat")}
         </Link>

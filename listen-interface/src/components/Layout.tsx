@@ -35,7 +35,7 @@ const MemoizedBottomLink = memo(function BottomLink({
   return (
     <a
       href={href}
-      className="flex items-center h-10 rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
+      className="flex items-center h-10 rounded-lg text-gray-300 hover:text-white hover:bg-[#212121] transition-colors"
       target="_blank"
       rel="noopener noreferrer"
     >
@@ -217,7 +217,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                     <Link
                       to="/"
                       search={{ new: true }}
-                      className="flex items-center justify-center h-10 rounded-lg bg-purple-500/20 text-white hover:bg-purple-500/30"
+                      className="flex items-center justify-center h-10 rounded-lg bg-[#2D2D2D] text-white hover:bg-[#2D2D2D]"
                       onClick={() => isMobile && setIsSidebarOpen(false)}
                     >
                       <div className="flex items-center">
@@ -261,7 +261,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   {user && (
                     <button
                       onClick={() => logout()}
-                      className="flex items-center h-10 w-full rounded-lg text-gray-300 hover:text-white hover:bg-purple-500/10 transition-colors"
+                      className="flex items-center h-10 w-full rounded-lg text-gray-300 hover:text-white hover:bg-[#212121] transition-colors"
                     >
                       <div
                         className={`flex items-center h-full ${
@@ -340,12 +340,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </div>
-      <head>
-        <meta
-          name="viewport"
-          content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no"
-        />
-      </head>
     </SidebarContext.Provider>
   );
 }

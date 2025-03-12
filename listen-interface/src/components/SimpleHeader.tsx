@@ -30,6 +30,9 @@ export function SimpleHeader({
 
   const { portfolioValue } = usePortfolio();
 
+  const panelButtonStyle = (active: boolean) =>
+    `p-2 rounded-lg ${active ? "bg-[#2D2D2D]" : "bg-black/40"} hover:bg-[#2D2D2D] transition-colors`;
+
   return (
     <div className="flex items-center justify-between h-16 sm:px-4">
       {/* Left side - Logo with hover effect */}
@@ -51,7 +54,7 @@ export function SimpleHeader({
           onMouseEnter={() => setSidebarOpen(true)}
           onMouseLeave={() => setSidebarOpen(false)}
         >
-          <img src="/listen-more.png" alt="Logo" className="w-8 h-8 rounded" />
+          <img src="/listen-new.svg" alt="Logo" className="w-8 h-8 rounded" />
           {!isMobile && (
             <span className="text-white text-lg font-bold">Listen</span>
           )}
@@ -64,28 +67,28 @@ export function SimpleHeader({
           <>
             <button
               onClick={() => togglePanel("portfolio")}
-              className={`p-2 rounded-lg ${activePanel === "portfolio" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
+              className={panelButtonStyle(activePanel === "portfolio")}
               title={t("layout.portfolio")}
             >
               <IoWalletOutline className="w-5 h-5" />
             </button>
             <button
               onClick={() => togglePanel("screener")}
-              className={`p-2 rounded-lg ${activePanel === "screener" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
+              className={panelButtonStyle(activePanel === "screener")}
               title={t("layout.screener")}
             >
               <RxDashboard className="w-5 h-5" />
             </button>
             <button
               onClick={() => togglePanel("pipelines")}
-              className={`p-2 rounded-lg ${activePanel === "pipelines" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
+              className={panelButtonStyle(activePanel === "pipelines")}
               title={t("layout.pipelines")}
             >
               <BsLink className="w-5 h-5" />
             </button>
             <button
               onClick={() => togglePanel("settings")}
-              className={`p-2 rounded-lg ${activePanel === "settings" ? "bg-purple-500/40" : "bg-black/40"} hover:bg-purple-500/20 transition-colors`}
+              className={panelButtonStyle(activePanel === "settings")}
               title={t("layout.settings")}
             >
               <IoSettingsOutline className="w-5 h-5" />

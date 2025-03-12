@@ -22,50 +22,65 @@ export const NewChatCarousel: React.FC<NewChatCarouselProps> = ({
   onSelect,
 }) => {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [isScrolling, setIsScrolling] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const scrollTimeoutRef = useRef<number | null>(null);
   const itemHeight = 60;
 
-  const handleScroll = () => {
-    if (containerRef.current) {
-      const scrollPosition = containerRef.current.scrollTop;
-      const totalHeight = questions.length * itemHeight;
-
-      // Reset to middle when reaching edges
-      if (scrollPosition >= totalHeight * 2) {
-        containerRef.current.scrollTop = scrollPosition - totalHeight;
-      } else if (scrollPosition < totalHeight) {
-        containerRef.current.scrollTop = scrollPosition + totalHeight;
-      }
-
-      // When scrolling stops, snap to nearest item without triggering selection
-      clearTimeout(containerRef.current.scrollTimeout);
-      containerRef.current.scrollTimeout = setTimeout(() => {
-        const newIndex =
-          Math.round(scrollPosition / itemHeight) % questions.length;
-        setActiveIndex(newIndex);
-
-        // Just scroll to position without triggering selection
-        const middleSetOffset = questions.length * itemHeight;
-        containerRef.current?.scrollTo({
-          top: middleSetOffset + newIndex * itemHeight,
-          behavior: "smooth",
-        });
-      }, 50) as any;
-
-      const newIndex = Math.round((scrollPosition % totalHeight) / itemHeight);
-      setActiveIndex(newIndex);
-    }
-  };
-
+  // Initialize scroll position to middle set
   useEffect(() => {
     const container = containerRef.current;
     if (container) {
-      // Start in the middle set
       container.scrollTop = questions.length * itemHeight;
     }
   }, [questions.length]);
 
+  const handleScroll = () => {
+    if (!containerRef.current) return;
+
+    const container = containerRef.current;
+    const scrollPosition = container.scrollTop;
+    const totalHeight = questions.length * itemHeight;
+
+    // During active scrolling, only update the active index
+    const newIndex = Math.floor(
+      (container.scrollTop % totalHeight) / itemHeight
+    );
+    if (newIndex >= 0 && newIndex < questions.length) {
+      setActiveIndex(newIndex);
+    }
+
+    // Set scrolling state immediately for click prevention
+    setIsScrolling(true);
+
+    // Debounce scroll handling for fast scrolls
+    if (scrollTimeoutRef.current) {
+      window.clearTimeout(scrollTimeoutRef.current);
+    }
+
+    // Only handle boundary resets AFTER scrolling has stopped
+    scrollTimeoutRef.current = window.setTimeout(() => {
+      // Check if we're near boundaries
+      if (scrollPosition >= totalHeight * 1.8) {
+        // If near bottom boundary, reset to middle without animation
+        container.style.scrollBehavior = "auto";
+        container.scrollTop = totalHeight + (scrollPosition % totalHeight);
+        container.style.scrollBehavior = "smooth";
+      } else if (scrollPosition <= totalHeight * 0.2) {
+        // If near top boundary, reset to middle without animation
+        container.style.scrollBehavior = "auto";
+        container.scrollTop = totalHeight + (scrollPosition % totalHeight);
+        container.style.scrollBehavior = "smooth";
+      }
+
+      setIsScrolling(false);
+    }, 150); // Longer timeout to ensure scrolling has fully stopped
+  };
+
   const handleClick = (index: number) => {
+    // Don't process clicks while scrolling
+    if (isScrolling) return;
+
     setActiveIndex(index);
     if (containerRef.current) {
       const middleSetOffset = questions.length * itemHeight;
@@ -103,6 +118,7 @@ export const NewChatCarousel: React.FC<NewChatCarouselProps> = ({
           onScroll={handleScroll}
           style={{
             scrollSnapType: "y mandatory",
+            scrollBehavior: "smooth",
           }}
         >
           <div className="py-[120px]">

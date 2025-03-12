@@ -80,10 +80,9 @@ export const useTokenStore = create<TokenState>((set, get) => ({
   },
 
   filterAndSortTokens: (tokens, marketCapFilter, volumeFilter) => {
-    const marketCapFiltered = get().filterTokensByMarketCap(
-      tokens,
-      marketCapFilter
-    );
+    const marketCapFiltered = get()
+      .filterTokensByMarketCap(tokens, marketCapFilter)
+      .filter((token) => (token.marketCap / 1e6).toFixed(1) !== "0.0");
 
     switch (volumeFilter) {
       case "bought":

@@ -1,7 +1,9 @@
+import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaShoppingCart } from "react-icons/fa";
 import { FaBoltLightning } from "react-icons/fa6";
+import { HiOutlineSparkles } from "react-icons/hi2";
 import { useModal } from "../contexts/ModalContext";
 import { useListenMetadata } from "../hooks/useListenMetadata";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
@@ -18,6 +20,7 @@ export function TokenTile({ token }: TokenTileProps) {
   const [copied, setCopied] = useState(false);
   const [quickBuyAmount, setQuickBuyAmount] = useState<number>(0.1);
   const { isExecuting, quickBuyToken } = usePipelineExecution();
+  const [isHovered, setIsHovered] = useState(false);
 
   const { t } = useTranslation();
 
@@ -38,9 +41,15 @@ export function TokenTile({ token }: TokenTileProps) {
     await quickBuyToken(token.pubkey, quickBuyAmount);
   };
 
+  const tokenSymbol = metadata?.mpl.symbol ?? token.name;
+  const researchMessage = `Listen, please research $${tokenSymbol} (${token.pubkey}). Provide it a score between 1 and 100 on how solid the narrative is.`;
+
   return (
-    <div>
-      <div className="p-3 sm:p-4 flex items-center justify-between hover:bg-black/50 transition-colors">
+    <div
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+    >
+      <div className="p-3 sm:p-4 flex items-center justify-between hover:bg-black/50 transition-colors relative">
         <div className="flex items-center space-x-2 sm:space-x-4">
           <div className="flex items-center space-x-2 sm:space-x-3">
             {metadata?.mpl.ipfs_metadata?.image &&
@@ -65,11 +74,6 @@ export function TokenTile({ token }: TokenTileProps) {
                   >
                     {metadata?.mpl.symbol ?? token.name}
                   </div>
-                  {/*metadata?.mpl.symbol && (
-                    <span className="ml-1 sm:ml-2 text-xs sm:text-sm text-gray-500 hidden lg:block">
-                      {metadata.mpl.symbol}
-                    </span>
-                  )}*/}
                 </span>
               </div>
               <Socials
@@ -82,6 +86,15 @@ export function TokenTile({ token }: TokenTileProps) {
                 {(token.marketCap / 1e6).toFixed(1)}M
               </div>
             </div>
+            <Link
+              to="/"
+              search={{ new: true, message: researchMessage }}
+              onClick={(e) => e.stopPropagation()}
+              className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 rounded-lg transition-all`}
+              title="Research this token"
+            >
+              <HiOutlineSparkles size={16} />
+            </Link>
           </div>
         </div>
         <div className="text-right">

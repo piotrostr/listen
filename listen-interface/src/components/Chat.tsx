@@ -2,20 +2,15 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../hooks/useChat";
+import { ToolCall, ToolCallSchema } from "../types/message";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
 import { NewChatCarousel } from "./NewChatCarousel";
 import { ShareModal } from "./ShareModal";
+import { ThinkingIndicator } from "./ThinkingIndicator";
+import { ToolCallMessage } from "./ToolCallMessage";
 
 const IS_DISABLED = false;
-
-const LoadingIndicator = () => (
-  <div className="flex items-center flex-start py-4 px-4">
-    <div className="h-4 w-4 rounded-full animate-[spherePulse_3s_ease-in-out_infinite] shadow-lg relative">
-      <div className="absolute inset-0 rounded-full animate-[colorPulse_1s_ease-in-out_infinite] opacity-70 blur-[1px]"></div>
-    </div>
-  </div>
-);
 
 export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   // Add useEffect to update urlParams when location changes
@@ -25,6 +20,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       chatId: params.get("chatId") || undefined,
       isNewChat: params.get("new") === "true",
       isSharedChat: params.get("shared") === "true",
+      message: params.get("message") || undefined,
     });
   }, [window.location.search]);
 
@@ -35,6 +31,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       chatId: params.get("chatId") || undefined,
       isNewChat: params.get("new") === "true",
       isSharedChat: params.get("shared") === "true",
+      message: params.get("message") || undefined,
     };
   });
 
@@ -56,6 +53,8 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const { getAccessToken } = usePrivy();
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
   const { t } = useTranslation();
+
+  const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>();
 
   const RECOMMENDED_QUESTIONS_CAROUSEL = [
     {
@@ -82,6 +81,10 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     },
   ];
 
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
   const handleSendMessage = useCallback(
     (message: string) => {
       if (message.trim() === "clear") {
@@ -90,6 +93,10 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         sendMessage(message);
       }
       setInputMessage("");
+
+      if (messages?.length > 0) {
+        scrollToBottom();
+      }
     },
     [sendMessage, setMessages]
   );
@@ -146,10 +153,28 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     }
   };
 
+  useEffect(() => {
+    if (messages.length > 0) {
+      const lastMessage = messages[messages.length - 1];
+      if (lastMessage.type === "ToolCall") {
+        try {
+          const toolCall = ToolCallSchema.parse(
+            JSON.parse(lastMessage.message)
+          );
+          setToolBeingCalled(toolCall);
+        } catch (error) {
+          console.error("Failed to parse tool call:", error);
+        }
+      } else {
+        setToolBeingCalled(null);
+      }
+    }
+  }, [messages]);
+
   if (IS_DISABLED) {
     return (
       <ChatContainer inputMessage="" isGenerating={false}>
-        <div className="text-purple-300 px-4 py-2">disabled</div>
+        <div className="text-white px-4 py-2">disabled</div>
       </ChatContainer>
     );
   }
@@ -166,6 +191,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         isSharedChat={isSharedChat || urlParams.isSharedChat}
         handleQuestionClick={handleQuestionClick}
         displayTiles={messages.length === 0}
+        hasMessages={messages.length > 0}
       >
         <div className="h-full flex flex-col">
           {messages.length === 0 && (
@@ -181,12 +207,15 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
           {messages.map((message) => (
             <MessageRenderer key={message.id} message={message} />
           ))}
-          {isLoading &&
-            messages[messages.length - 1]?.direction === "outgoing" && (
-              <LoadingIndicator />
-            )}
-          <div ref={messagesEndRef} />
+          <div className="flex flex-row items-center gap-2 pl-3">
+            {isLoading && <ThinkingIndicator />}
+            {toolBeingCalled && <ToolCallMessage toolCall={toolBeingCalled} />}
+          </div>
         </div>
+        <div ref={messagesEndRef} />
+        {messages.length !== 0 && (
+          <div className="flex-grow min-h-[68vh] md:min-h-[85vh]" />
+        )}
       </ChatContainer>
 
       {/* Share Modal */}

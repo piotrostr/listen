@@ -1,3 +1,4 @@
+import React from "react";
 import { ToolResult, ToolResultSchema, type Message } from "../types/message";
 import { ChatMessage } from "./ChatMessage";
 import { FundWallet } from "./FundWallet";
@@ -119,7 +120,7 @@ function processTagsInMessage(
   }
 }
 
-export function MessageRenderer({ message: msg }: { message: Message }) {
+export function MessageRendererBase({ message: msg }: { message: Message }) {
   if (!msg.message) return null;
 
   // this is to support previous version of message schema
@@ -131,25 +132,8 @@ export function MessageRenderer({ message: msg }: { message: Message }) {
   }
 
   if (msg.type === "ToolCall") {
-    // no need to display tool calls, just the tool results
-    // those are really important for the chat history consistency though!
+    // tool calls are rendered in the top-level
     return null;
-    if (process.env.NODE_ENV === "debug") {
-      const { id, name, params } = JSON.parse(msg.message);
-
-      return (
-        <div>
-          id: {id}
-          <br />
-          name: {name}
-          <br />
-          params:{" "}
-          <pre className="truncate">
-            {JSON.stringify(JSON.parse(params), null, 2)}
-          </pre>
-        </div>
-      );
-    }
   }
 
   if (msg.type === "ToolResult") {
@@ -215,3 +199,6 @@ const handleLegacyMessage = (msg: Message): ToolResult => {
 
   return { name, id, result };
 };
+
+// Export a memoized version of MessageRenderer
+export const MessageRenderer = React.memo(MessageRendererBase);

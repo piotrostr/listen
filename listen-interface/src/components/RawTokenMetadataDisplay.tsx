@@ -9,8 +9,6 @@ export function RawTokenMetadataDisplay({
 }) {
   const { openChart } = useModal();
 
-  console.log(metadata);
-
   return (
     <div className="flex flex-row w-full space-x-8 px-4 py-6">
       {/* Left column: Image, name, symbol, socials */}

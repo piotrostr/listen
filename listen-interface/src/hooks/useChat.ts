@@ -49,13 +49,18 @@ export function useChat() {
   const { data: evmPortfolio } = useEvmPortfolio();
   const { getAccessToken } = usePrivy();
   const { chatType } = useChatType();
-  const { chatId, new: isNewChat } = useSearch({ from: "/" });
+  const {
+    chatId,
+    new: isNewChat,
+    message: initialMessage,
+  } = useSearch({ from: "/" });
   const navigate = useNavigate();
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
+  const [sentInitialMessage, setSentInitialMessage] = useState(false);
 
   // Load existing chat if chatId is present and not creating a new chat
   useEffect(() => {
@@ -69,24 +74,18 @@ export function useChat() {
     loadChat();
   }, [chatId, isNewChat]);
 
-  // If isNewChat is true, clear the current chat
-  useEffect(() => {
-    if (isNewChat) {
-      setChat(null);
-      // Remove the 'new' parameter - always redirecting to root route
-      navigate({ to: "/", search: {}, replace: true });
-    }
-  }, [isNewChat, navigate]);
-
   // Replace the existing backup effect with this debounced version
   const debouncedBackup = useDebounce(async (chatToBackup: Chat) => {
     try {
       await chatCache.set(chatToBackup.id, chatToBackup);
       console.log("Chat backed up successfully:", chatToBackup.id);
+
+      // Dispatch a custom event to notify about chat updates
+      window.dispatchEvent(new Event("chatUpdated"));
     } catch (error) {
       console.error("Failed to backup chat:", error);
     }
-  }, 1000); // 2 second delay
+  }, 1000); // 1 second delay
 
   useEffect(() => {
     if (!chat?.id) return;
@@ -157,7 +156,7 @@ export function useChat() {
       } else {
         setChat((prev) => ({
           ...prev!,
-          messages: [...prev!.messages, userChatMessage],
+          messages: [...(prev?.messages || []), userChatMessage],
           lastMessageAt: new Date(),
         }));
       }
@@ -389,6 +388,31 @@ export function useChat() {
       navigate,
     ]
   );
+
+  // If isNewChat is true, clear the current chat
+  useEffect(() => {
+    if (isNewChat) {
+      // Explicitly set chat to null first to ensure clean state
+      setChat(null);
+
+      // Navigate to clean URLsearchParams
+      setSentInitialMessage(false);
+      navigate({
+        to: "/",
+        search: {
+          message: initialMessage,
+        },
+        replace: true,
+      });
+    }
+  }, [isNewChat, navigate, setChat]);
+
+  useEffect(() => {
+    if (initialMessage && !sentInitialMessage) {
+      setSentInitialMessage(true);
+      sendMessage(initialMessage);
+    }
+  }, [initialMessage, isNewChat, sendMessage, sentInitialMessage]);
 
   const stopGeneration = () => {
     if (abortControllerRef.current) {

@@ -25,7 +25,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
             <div className="relative bg-[#151518]/40  w-[90vw] h-[80vh] rounded-xl p-6 backdrop-blur-sm pointer-events-auto">
               <button
                 onClick={closeChart}
-                className="absolute top-4 right-4 text-purple-300/70 hover:text-purple-100 transition-colors"
+                className="absolute top-4 right-4 text-white transition-colors"
               >
                 ✕
               </button>
