@@ -9,25 +9,19 @@ import { setupWebSocket } from "../services/websocketService";
 import { useTokenStore } from "../store/tokenStore";
 import { TokenTile } from "./TokenTile";
 
-interface PriceUpdatesProps {
-  marketCapFilter: string;
-  volumeFilter: "bought" | "sold" | "all";
-  isListFrozen: boolean;
-  setIsListFrozen: (frozen: boolean) => void;
-  showWatchlistOnly: boolean;
-  showHiddenOnly: boolean;
-}
-
-export function PriceUpdates({
-  marketCapFilter,
-  volumeFilter,
-  isListFrozen,
-  setIsListFrozen,
-  showWatchlistOnly,
-  showHiddenOnly,
-}: PriceUpdatesProps) {
-  const { tokenMap, filterAndSortTokens, isWatchlisted, isHidden } =
-    useTokenStore();
+export function PriceUpdates() {
+  const {
+    tokenMap,
+    filterAndSortTokens,
+    isWatchlisted,
+    isHidden,
+    isListFrozen,
+    setIsListFrozen,
+    showWatchlistOnly,
+    showHiddenOnly,
+    marketCapFilter,
+    volumeFilter,
+  } = useTokenStore();
   const [frozenTokens, setFrozenTokens] = useState<any[]>([]);
 
   // Setup WebSocket connection
@@ -99,31 +93,20 @@ export function PriceUpdates({
   );
 }
 
-interface PriceUpdatesHeaderProps {
-  volumeFilter: "bought" | "sold" | "all";
-  setVolumeFilter: (filter: "bought" | "sold" | "all") => void;
-  marketCapFilter: string;
-  setMarketCapFilter: (filter: string) => void;
-  isListFrozen: boolean;
-  showWatchlistOnly: boolean;
-  showHiddenOnly: boolean;
-  setShowWatchlistOnly: (show: boolean) => void;
-  setShowHiddenOnly: (show: boolean) => void;
-}
-
-export function PriceUpdatesHeader({
-  volumeFilter,
-  setVolumeFilter,
-  marketCapFilter,
-  setMarketCapFilter,
-  isListFrozen,
-  showWatchlistOnly,
-  setShowWatchlistOnly,
-  showHiddenOnly,
-  setShowHiddenOnly,
-}: PriceUpdatesHeaderProps) {
+export function PriceUpdatesHeader() {
   const { t } = useTranslation();
   const [showFilterPopup, setShowFilterPopup] = useState(false);
+  const {
+    isListFrozen,
+    showWatchlistOnly,
+    showHiddenOnly,
+    setShowWatchlistOnly,
+    setShowHiddenOnly,
+    marketCapFilter,
+    setMarketCapFilter,
+    volumeFilter,
+    setVolumeFilter,
+  } = useTokenStore();
 
   const toggleFilterPopup = () => setShowFilterPopup(!showFilterPopup);
 

@@ -9,6 +9,13 @@ interface TokenState {
   watchlist: Set<string>;
   hiddenTokens: Set<string>;
 
+  // UI state
+  isListFrozen: boolean;
+  showWatchlistOnly: boolean;
+  showHiddenOnly: boolean;
+  marketCapFilter: string;
+  volumeFilter: "bought" | "sold" | "all";
+
   // Actions
   setLatestUpdate: (update: PriceUpdate) => void;
   updateTokenData: (data: PriceUpdate) => void;
@@ -16,6 +23,13 @@ interface TokenState {
   toggleHidden: (pubkey: string) => void;
   isWatchlisted: (pubkey: string) => boolean;
   isHidden: (pubkey: string) => boolean;
+
+  // UI actions
+  setIsListFrozen: (frozen: boolean) => void;
+  setShowWatchlistOnly: (show: boolean) => void;
+  setShowHiddenOnly: (show: boolean) => void;
+  setMarketCapFilter: (filter: string) => void;
+  setVolumeFilter: (filter: "bought" | "sold" | "all") => void;
 
   // Selectors
   filterTokensByMarketCap: (
@@ -37,6 +51,13 @@ export const useTokenStore = create<TokenState>()(
       tokenMap: new Map<string, TokenMarketData>(),
       watchlist: new Set<string>(),
       hiddenTokens: new Set<string>(),
+
+      // UI state
+      isListFrozen: false,
+      showWatchlistOnly: false,
+      showHiddenOnly: false,
+      marketCapFilter: "all",
+      volumeFilter: "all",
 
       setLatestUpdate: (update) => set({ latestUpdate: update }),
 
@@ -165,12 +186,24 @@ export const useTokenStore = create<TokenState>()(
         // Return only what's needed
         return limit ? result.slice(0, limit) : result;
       },
+
+      // UI actions
+      setIsListFrozen: (frozen) => set({ isListFrozen: frozen }),
+      setShowWatchlistOnly: (show) => set({ showWatchlistOnly: show }),
+      setShowHiddenOnly: (show) => set({ showHiddenOnly: show }),
+      setMarketCapFilter: (filter) => set({ marketCapFilter: filter }),
+      setVolumeFilter: (filter) => set({ volumeFilter: filter }),
     }),
     {
       name: "token-storage",
       partialize: (state) => ({
         watchlist: Array.from(state.watchlist),
         hiddenTokens: Array.from(state.hiddenTokens),
+        // Optional: persist UI state too
+        showWatchlistOnly: state.showWatchlistOnly,
+        showHiddenOnly: state.showHiddenOnly,
+        marketCapFilter: state.marketCapFilter,
+        volumeFilter: state.volumeFilter,
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {

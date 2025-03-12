@@ -18,13 +18,6 @@ export function PanelSelector({
   activePanel: string | null;
   setActivePanel: (panel: string | null) => void;
 }) {
-  const [marketCapFilter, setMarketCapFilter] = useState<string>("all");
-  const [volumeFilter, setVolumeFilter] = useState<"bought" | "sold" | "all">(
-    "all"
-  );
-  const [isListFrozen, setIsListFrozen] = useState(false);
-  const [showWatchlistOnly, setShowWatchlistOnly] = useState(false);
-  const [showHiddenOnly, setShowHiddenOnly] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const { isMobile } = useMobile();
   const queryClient = useQueryClient();
@@ -48,26 +41,9 @@ export function PanelSelector({
       return (
         <div className="h-full bg-black">
           <div className="mb-4">
-            <PriceUpdatesHeader
-              volumeFilter={volumeFilter}
-              setVolumeFilter={setVolumeFilter}
-              marketCapFilter={marketCapFilter}
-              setMarketCapFilter={setMarketCapFilter}
-              isListFrozen={isListFrozen}
-              showWatchlistOnly={showWatchlistOnly}
-              setShowWatchlistOnly={setShowWatchlistOnly}
-              showHiddenOnly={showHiddenOnly}
-              setShowHiddenOnly={setShowHiddenOnly}
-            />
+            <PriceUpdatesHeader />
           </div>
-          <PriceUpdates
-            marketCapFilter={marketCapFilter}
-            volumeFilter={volumeFilter}
-            isListFrozen={isListFrozen}
-            setIsListFrozen={setIsListFrozen}
-            showWatchlistOnly={showWatchlistOnly}
-            showHiddenOnly={showHiddenOnly}
-          />
+          <PriceUpdates />
         </div>
       );
     }
@@ -119,28 +95,9 @@ export function PanelSelector({
         <FloatingPanel
           title="screener"
           onClose={handleClose}
-          headerContent={
-            <PriceUpdatesHeader
-              volumeFilter={volumeFilter}
-              setVolumeFilter={setVolumeFilter}
-              marketCapFilter={marketCapFilter}
-              setMarketCapFilter={setMarketCapFilter}
-              isListFrozen={isListFrozen}
-              showWatchlistOnly={showWatchlistOnly}
-              setShowWatchlistOnly={setShowWatchlistOnly}
-              showHiddenOnly={showHiddenOnly}
-              setShowHiddenOnly={setShowHiddenOnly}
-            />
-          }
+          headerContent={<PriceUpdatesHeader />}
         >
-          <PriceUpdates
-            marketCapFilter={marketCapFilter}
-            volumeFilter={volumeFilter}
-            isListFrozen={isListFrozen}
-            setIsListFrozen={setIsListFrozen}
-            showWatchlistOnly={showWatchlistOnly}
-            showHiddenOnly={showHiddenOnly}
-          />
+          <PriceUpdates />
         </FloatingPanel>
       )}
 
