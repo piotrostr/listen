@@ -182,6 +182,9 @@ export function useChat() {
           chat_history: chat_history,
           chain: chatType,
           preamble,
+          features: {
+            autonomous: agentMode,
+          },
         });
 
         const response = await fetch(
