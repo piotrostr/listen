@@ -174,8 +174,10 @@ pub async fn research_x_profile(
 #[tool(description = "
 Fetch top tokens from the Listen API.
 
+No point using limit of more than ~6, less is more, as long as the filters are right
+
 Parameters:
-- limit (string): Optional number of tokens to return (default: 20)
+- limit (string): Optional number of tokens to return
 - min_volume (string): Optional minimum 24h volume filter
 - min_market_cap (string): Optional minimum market cap filter
 - timeframe (string): Optional timeframe in seconds

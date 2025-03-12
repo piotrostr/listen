@@ -1,7 +1,3 @@
-use anyhow::Result;
-use rig::agent::Agent;
-use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
-
 use super::tools::{
     DeployPumpFunToken, GetQuote, GetSolBalance, GetSplTokenBalance, Swap,
 };
@@ -11,19 +7,30 @@ use crate::data::{
     FetchTopTokens, FetchXPost, ResearchXProfile, SearchTweets,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
+use anyhow::Result;
+use rig::agent::Agent;
+use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
+
+use serde::{Deserialize, Serialize};
+
+#[derive(Default, Serialize, Deserialize, Clone)]
+pub struct Features {
+    pub autonomous: bool,
+}
 
 pub async fn create_solana_agent(
     preamble: Option<String>,
+    features: Features,
 ) -> Result<Agent<AnthropicCompletionModel>> {
     let preamble = preamble.unwrap_or(format!(
         "{} {}",
         "you are a solana trading agent that can also interact with pump.fun;",
         PREAMBLE_COMMON
     ));
-    Ok(claude_agent_builder()
+
+    let mut agent = claude_agent_builder()
         .preamble(&preamble)
         .tool(GetQuote)
-        .tool(Swap)
         .tool(GetSolBalance)
         .tool(GetSplTokenBalance)
         .tool(SearchOnDexScreener)
@@ -33,6 +40,11 @@ pub async fn create_solana_agent(
         .tool(ResearchXProfile)
         .tool(FetchXPost)
         .tool(SearchTweets)
-        .tool(FetchCandlesticks)
-        .build())
+        .tool(FetchCandlesticks);
+
+    if features.autonomous {
+        agent = agent.tool(Swap);
+    }
+
+    Ok(agent.build())
 }
