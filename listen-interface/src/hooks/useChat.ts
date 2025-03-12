@@ -2,7 +2,8 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { systemPromptEvm, systemPromptSolana } from "../prompts";
+import { useSettings } from "../contexts/SettingsContext";
+import { pickSystemPrompt } from "../prompts";
 import {
   Chat,
   Message,
@@ -19,6 +20,7 @@ import { useSolanaPortfolio } from "./useSolanaPortfolio";
 import { compactPortfolio } from "./util";
 
 export function useChat() {
+  const { quickBuyAmount: defaultAmount, agentMode } = useSettings();
   const { data: solanaPortfolio } = useSolanaPortfolio();
   const { data: evmPortfolio } = useEvmPortfolio();
   const { getAccessToken } = usePrivy();
@@ -166,17 +168,14 @@ export function useChat() {
           portfolio.push(...compactPortfolio(evmPortfolio));
         }
         const chat_history = messageHistory.filter((msg) => msg.content !== "");
-        const preamble =
-          chatType === "solana"
-            ? systemPromptSolana(
-                portfolio,
-                wallets?.solanaWallet?.toString() || null
-              )
-            : systemPromptEvm(
-                portfolio,
-                wallets?.evmWallet?.toString() || null,
-                wallets?.solanaWallet?.toString() || null
-              );
+        const preamble = pickSystemPrompt(
+          chatType,
+          agentMode,
+          portfolio,
+          defaultAmount.toString(),
+          wallets?.solanaWallet?.toString() || null,
+          wallets?.evmWallet?.toString() || null
+        );
 
         const body = JSON.stringify({
           prompt: userMessage,

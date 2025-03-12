@@ -1,5 +1,5 @@
-import { addressBook } from "../hooks/util";
-import { guidelines, personality } from "./common";
+import { addressBook, CompactPortfolio } from "../hooks/util";
+import { guidelines, personality, personalityAgent } from "./common";
 import { pipelineKnowledge } from "./pipelines";
 
 const solanaErrors = `
@@ -14,24 +14,32 @@ Only discuss limitations if the user would ask about something you cannot do
 `;
 
 export function systemPromptSolana(
-  solanaPortfolio: {
-    chain: string;
-    address: string;
-    amount: string;
-    name: string;
-    symbol: string;
-    decimals: number;
-  }[],
-  pubkey: string | null
+  solanaPortfolio: CompactPortfolio,
+  pubkey: string | null,
+  defaultAmount: string
 ) {
   return `
   <personality>${personality}</personality>
-  <guidelines>${guidelines("solana")}</guidelines>
+  <guidelines>${guidelines("solana", defaultAmount)}</guidelines>
   <solana_address>${pubkey}</solana_address>
   <portfolio>Portfolio: ${JSON.stringify(solanaPortfolio)} (prices in USD)</portfolio>
   <address_book>Address book: ${JSON.stringify(addressBook["solana"])}</address_book>
   <knowledge>${pipelineKnowledge("solana")}</knowledge>
   <errors>${solanaErrors}</errors>
   <limitations>${solanaLimitations}</limitations>
+  `;
+}
+
+export function systemPromptSolanaAgent(
+  solanaPortfolio: CompactPortfolio,
+  pubkey: string,
+  defaultAmount: string
+) {
+  return `
+  <personality>${personalityAgent}</personality>
+  <guidelines>${guidelines("solana", defaultAmount, true)}</guidelines>
+  <solana_address>${pubkey}</solana_address>
+  <portfolio>${JSON.stringify(solanaPortfolio)}</portfolio>
+  <errors>${solanaErrors}</errors>
   `;
 }
