@@ -89,7 +89,7 @@ export function TokenTile({ token }: TokenTileProps) {
           <div className="flex items-center space-x-2 sm:space-x-3">
             {metadata?.mpl.ipfs_metadata?.image &&
               metadata.mpl.ipfs_metadata.image.startsWith("https://") && (
-                <div className="w-6 h-6 sm:w-8 sm:h-8 relative rounded-full overflow-hidden">
+                <div className="w-8 h-8 sm:w-12 sm:h-12 relative rounded-full overflow-hidden">
                   <img
                     src={metadata.mpl.ipfs_metadata.image.replace(
                       "cf-ipfs.com",
@@ -109,6 +109,24 @@ export function TokenTile({ token }: TokenTileProps) {
                   >
                     {metadata?.mpl.symbol ?? token.name}
                   </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWatchlist(token.pubkey);
+                    }}
+                    className={`ml-1 text-yellow-400 ${!isTokenWatchlisted && !isHovered ? "opacity-0" : "opacity-100"} transition-opacity`}
+                    title={
+                      isTokenWatchlisted
+                        ? "Remove from watchlist"
+                        : "Add to watchlist"
+                    }
+                  >
+                    {isTokenWatchlisted ? (
+                      <FaStar size={14} />
+                    ) : (
+                      <FaRegStar size={14} />
+                    )}
+                  </button>
                 </span>
               </div>
               <Socials
@@ -139,21 +157,6 @@ export function TokenTile({ token }: TokenTileProps) {
                 <HiOutlineSparkles size={16} />
               </Link>
             )}
-            <button
-              onClick={handleToggleWatchlist}
-              className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 ${isTokenWatchlisted ? "bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-300 border border-yellow-500/30" : "bg-gray-500/20 hover:bg-gray-500/40 text-gray-300 border border-gray-500/30"} rounded-lg transition-all`}
-              title={
-                isTokenWatchlisted
-                  ? "Remove from watchlist"
-                  : "Add to watchlist"
-              }
-            >
-              {isTokenWatchlisted ? (
-                <FaStar size={16} />
-              ) : (
-                <FaRegStar size={16} />
-              )}
-            </button>
             <button
               onClick={handleHideToken}
               className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 rounded-lg transition-all`}
