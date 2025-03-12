@@ -25,7 +25,8 @@ interface TokenState {
   filterAndSortTokens: (
     tokens: TokenMarketData[],
     marketCapFilter: string,
-    volumeFilter: "bought" | "sold" | "all"
+    volumeFilter: "bought" | "sold" | "all",
+    limit?: number
   ) => TokenMarketData[];
 }
 
@@ -123,7 +124,12 @@ export const useTokenStore = create<TokenState>()(
         }
       },
 
-      filterAndSortTokens: (tokens, marketCapFilter, volumeFilter) => {
+      filterAndSortTokens: (
+        tokens: TokenMarketData[],
+        marketCapFilter: string,
+        volumeFilter: "bought" | "sold" | "all",
+        limit?: number
+      ) => {
         // Filter out hidden tokens
         const visibleTokens = tokens.filter(
           (token) => !get().hiddenTokens.has(token.pubkey)
@@ -133,25 +139,31 @@ export const useTokenStore = create<TokenState>()(
           .filterTokensByMarketCap(visibleTokens, marketCapFilter)
           .filter((token) => (token.marketCap / 1e6).toFixed(1) !== "0.0");
 
+        let result;
         switch (volumeFilter) {
           case "bought":
-            return marketCapFiltered.sort((a, b) => {
+            result = marketCapFiltered.sort((a, b) => {
               const netVolumeA = a.buyVolume - a.sellVolume;
               const netVolumeB = b.buyVolume - b.sellVolume;
               return netVolumeB - netVolumeA;
             });
+            break;
           case "sold":
-            return marketCapFiltered.sort((a, b) => {
+            result = marketCapFiltered.sort((a, b) => {
               const netVolumeA = a.sellVolume - a.buyVolume;
               const netVolumeB = b.sellVolume - b.buyVolume;
               return netVolumeB - netVolumeA;
             });
+            break;
           default:
-            return marketCapFiltered.sort(
+            result = marketCapFiltered.sort(
               (a, b) =>
                 b.buyVolume + b.sellVolume - (a.buyVolume + a.sellVolume)
             );
         }
+
+        // Return only what's needed
+        return limit ? result.slice(0, limit) : result;
       },
     }),
     {

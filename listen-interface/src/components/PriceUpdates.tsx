@@ -38,29 +38,36 @@ export function PriceUpdates({
     };
   }, []);
 
-  // Get the current tokens based on filters
-  const currentTokens = useMemo(() => {
-    let tokens = filterAndSortTokens(
-      Array.from(tokenMap.values()),
-      marketCapFilter,
-      volumeFilter
-    );
+  // Convert to array once and memoize that result separately
+  const tokenArray = useMemo(() => Array.from(tokenMap.values()), [tokenMap]);
 
-    // Filter by watchlist if needed
+  // Apply pagination logic BEFORE expensive operations
+  const currentTokens = useMemo(() => {
+    // Pre-filter for watchlist/hidden to reduce the dataset early
+    let tokensToProcess = tokenArray;
     if (showWatchlistOnly) {
-      tokens = tokens.filter((token) => isWatchlisted(token.pubkey));
+      tokensToProcess = tokenArray.filter((token) =>
+        isWatchlisted(token.pubkey)
+      );
     } else if (showHiddenOnly) {
-      tokens = tokens.filter((token) => isHidden(token.pubkey));
+      tokensToProcess = tokenArray.filter((token) => isHidden(token.pubkey));
     }
 
-    return tokens.slice(0, 20);
+    return filterAndSortTokens(
+      tokensToProcess,
+      marketCapFilter,
+      volumeFilter,
+      20
+    );
   }, [
-    tokenMap,
+    tokenArray,
     marketCapFilter,
     volumeFilter,
     filterAndSortTokens,
     showWatchlistOnly,
+    showHiddenOnly,
     isWatchlisted,
+    isHidden,
   ]);
 
   // Keep frozen tokens updated with current tokens when not frozen
