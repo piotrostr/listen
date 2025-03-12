@@ -22,6 +22,7 @@ export function TokenTile({ token }: TokenTileProps) {
   const [quickBuyAmount, setQuickBuyAmount] = useState<number>(0.1);
   const { isExecuting, quickBuyToken } = usePipelineExecution();
   const [isHovered, setIsHovered] = useState(false);
+  const [researchCooldown, setResearchCooldown] = useState(false);
 
   const { t } = useTranslation();
 
@@ -40,6 +41,21 @@ export function TokenTile({ token }: TokenTileProps) {
 
   const handleBuy = async () => {
     await quickBuyToken(token.pubkey, quickBuyAmount);
+  };
+
+  const handleResearchClick = (e: React.MouseEvent) => {
+    e.stopPropagation();
+
+    if (researchCooldown) {
+      e.preventDefault();
+      return;
+    }
+
+    setResearchCooldown(true);
+
+    setTimeout(() => {
+      setResearchCooldown(false);
+    }, 10000);
   };
 
   const tokenSymbol = metadata?.mpl.symbol ?? token.name;
@@ -90,15 +106,24 @@ export function TokenTile({ token }: TokenTileProps) {
                 {(token.marketCap / 1e6).toFixed(1)}M
               </div>
             </div>
-            <Link
-              to="/"
-              search={{ new: true, message: researchMessage }}
-              onClick={(e) => e.stopPropagation()}
-              className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 rounded-lg transition-all`}
-              title="Research this token"
-            >
-              <HiOutlineSparkles size={16} />
-            </Link>
+            {researchCooldown ? (
+              <div
+                className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} opacity-50 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg transition-all cursor-not-allowed`}
+                title="Please wait before researching again"
+              >
+                <HiOutlineSparkles size={16} />
+              </div>
+            ) : (
+              <Link
+                to="/"
+                search={{ new: true, message: researchMessage }}
+                onClick={handleResearchClick}
+                className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 rounded-lg transition-all`}
+                title="Research this token"
+              >
+                <HiOutlineSparkles size={16} />
+              </Link>
+            )}
           </div>
         </div>
         <div className="text-right">
