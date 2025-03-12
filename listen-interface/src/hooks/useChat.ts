@@ -79,10 +79,13 @@ export function useChat() {
     try {
       await chatCache.set(chatToBackup.id, chatToBackup);
       console.log("Chat backed up successfully:", chatToBackup.id);
+
+      // Dispatch a custom event to notify about chat updates
+      window.dispatchEvent(new Event("chatUpdated"));
     } catch (error) {
       console.error("Failed to backup chat:", error);
     }
-  }, 1000); // 2 second delay
+  }, 1000); // 1 second delay
 
   useEffect(() => {
     if (!chat?.id) return;
