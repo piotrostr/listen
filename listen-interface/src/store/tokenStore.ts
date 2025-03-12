@@ -121,7 +121,13 @@ export const useTokenStore = create<TokenState>()(
       },
 
       isHidden: (pubkey) => {
-        return get().hiddenTokens.has(pubkey);
+        const hiddenTokens = get().hiddenTokens;
+        // Ensure hiddenTokens is a Set
+        return hiddenTokens instanceof Set
+          ? hiddenTokens.has(pubkey)
+          : Array.isArray(hiddenTokens)
+            ? (hiddenTokens as string[]).includes(pubkey)
+            : false;
       },
 
       filterTokensByMarketCap: (tokens, filter) => {
@@ -151,10 +157,17 @@ export const useTokenStore = create<TokenState>()(
         volumeFilter: "bought" | "sold" | "all",
         limit?: number
       ) => {
-        // Filter out hidden tokens
-        const visibleTokens = tokens.filter(
-          (token) => !get().hiddenTokens.has(token.pubkey)
-        );
+        const hiddenTokens = get().hiddenTokens;
+
+        // Filter out hidden tokens with safety check for Set
+        const visibleTokens = tokens.filter((token) => {
+          if (hiddenTokens instanceof Set) {
+            return !hiddenTokens.has(token.pubkey);
+          } else if (Array.isArray(hiddenTokens)) {
+            return !(hiddenTokens as string[]).includes(token.pubkey);
+          }
+          return true; // If hiddenTokens is invalid, show all tokens
+        });
 
         const marketCapFiltered = get()
           .filterTokensByMarketCap(visibleTokens, marketCapFilter)
@@ -207,8 +220,20 @@ export const useTokenStore = create<TokenState>()(
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
-          state.watchlist = new Set(state.watchlist || []);
-          state.hiddenTokens = new Set(state.hiddenTokens || []);
+          // Ensure these are proper Set objects
+          state.watchlist = new Set(
+            Array.isArray(state.watchlist) ? state.watchlist : []
+          );
+          state.hiddenTokens = new Set(
+            Array.isArray(state.hiddenTokens) ? state.hiddenTokens : []
+          );
+
+          console.log(
+            "Store rehydrated, watchlist size:",
+            state.watchlist.size,
+            "hiddenTokens size:",
+            state.hiddenTokens.size
+          );
         }
       },
     }
