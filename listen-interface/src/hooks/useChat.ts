@@ -6,43 +6,17 @@ import { systemPromptEvm, systemPromptSolana } from "../prompts";
 import {
   Chat,
   Message,
-  StreamResponse,
   ToolCallSchema,
   ToolResultSchema,
 } from "../types/message";
+import { JsonChunkReader } from "./chunk-reader";
 import { chatCache } from "./localStorage";
 import { useChatType } from "./useChatType";
 import { useDebounce } from "./useDebounce";
 import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
 import { usePrivyWallets } from "./usePrivyWallet";
 import { useSolanaPortfolio } from "./useSolanaPortfolio";
-
-class JsonChunkReader {
-  private buffer = "";
-
-  append(chunk: string): StreamResponse[] {
-    this.buffer += chunk;
-    const messages: StreamResponse[] = [];
-    const lines = this.buffer.split("\n");
-
-    this.buffer = lines[lines.length - 1];
-
-    for (let i = 0; i < lines.length - 1; i++) {
-      const line = lines[i];
-      if (line.startsWith("data: ")) {
-        try {
-          const jsonStr = line.slice(6);
-          const data = JSON.parse(jsonStr);
-          messages.push(data);
-        } catch (e) {
-          console.warn("Failed to parse JSON from line:", line, e);
-        }
-      }
-    }
-
-    return messages;
-  }
-}
+import { compactPortfolio } from "./util";
 
 export function useChat() {
   const { data: solanaPortfolio } = useSolanaPortfolio();
@@ -186,28 +160,10 @@ export function useChat() {
 
         const portfolio = [];
         if (solanaPortfolio) {
-          for (const token of solanaPortfolio) {
-            portfolio.push({
-              chain: token.chain,
-              address: token.address,
-              amount: token.amount.toString(),
-              name: token.name,
-              symbol: token.symbol,
-              decimals: token.decimals,
-            });
-          }
+          portfolio.push(...compactPortfolio(solanaPortfolio));
         }
         if (evmPortfolio && chatType === "omni") {
-          for (const token of evmPortfolio) {
-            portfolio.push({
-              chain: token.chain,
-              address: token.address,
-              amount: token.amount.toString(),
-              name: token.name,
-              symbol: token.symbol,
-              decimals: token.decimals,
-            });
-          }
+          portfolio.push(...compactPortfolio(evmPortfolio));
         }
         const chat_history = messageHistory.filter((msg) => msg.content !== "");
         const preamble =

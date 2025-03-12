@@ -9,6 +9,7 @@ import {
   PipelineConditionType,
   PipelineSchema,
 } from "../types/pipeline";
+import { PortfolioItem } from "./types";
 
 interface RawAccount {
   mint: PublicKey;
@@ -472,4 +473,15 @@ export const renderAddressOrTx = (text: string): string => {
   }
 
   return processedText;
+};
+
+export const compactPortfolio = (portfolio: PortfolioItem[]) => {
+  return portfolio.map((token) => ({
+    chain: token.chain,
+    address: token.address,
+    amount: token.amount.toString(),
+    name: token.name,
+    symbol: token.symbol,
+    decimals: token.decimals,
+  }));
 };
