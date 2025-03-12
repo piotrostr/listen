@@ -54,7 +54,9 @@ export function Settings() {
       </div>
 
       <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold mb-2 mt-4">Agent Mode</h2>
+        <h2 className="text-lg font-bold mb-2 mt-4">
+          {t("settings.agent_mode")}
+        </h2>
         <button
           onClick={handleAgentModeToggle}
           className={`px-4 py-2 rounded-lg transition-colors ${
@@ -63,16 +65,14 @@ export function Settings() {
               : "bg-gray-600/30 text-gray-400 hover:bg-gray-600/40"
           }`}
         >
-          {agentMode ? "Enabled" : "Disabled"}
+          {agentMode ? t("settings.enabled") : t("settings.disabled")}
         </button>
       </div>
       <p className="text-xs text-gray-400 mt-2">
-        Enabled: Listen will have a lot more autonomy and will execute trades
-        directly without any confirmation.{" "}
+        {t("settings.agent_mode_enabled")}
       </p>
       <p className="text-xs text-gray-400 mt-2">
-        Disabled: Listen doesn't have access to direct swapping tools and every
-        trade is confirmed by hand.
+        {t("settings.agent_mode_disabled")}
       </p>
 
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.mode")}</h2>
