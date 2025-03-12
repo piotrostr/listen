@@ -3,7 +3,7 @@ use futures::future::join_all;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
-use crate::dexscreener::{search_ticker, PairInfo};
+use crate::dexscreener::{search_ticker, types::PairInfo};
 use crate::solana::balance::Holding;
 
 pub async fn fetch_pair_info(mint_or_symbol: String) -> Result<PairInfo> {
