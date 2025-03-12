@@ -10,19 +10,29 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const navigate = useNavigate();
 
+  const loadRecentChats = async () => {
+    const allChats = await chatCache.getAll();
+    if (allChats.length > 0) {
+      const recent = allChats.sort(
+        (a, b) =>
+          (b.lastMessageAt.getTime() ?? 0) - (a.lastMessageAt.getTime() ?? 0)
+      );
+      setRecentChats(recent);
+    }
+  };
+
   useEffect(() => {
-    const loadRecentChats = async () => {
-      const allChats = await chatCache.getAll();
-      if (allChats.length > 0) {
-        const recent = allChats.sort(
-          (a, b) =>
-            (b.lastMessageAt.getTime() ?? 0) - (a.lastMessageAt.getTime() ?? 0)
-        );
-        setRecentChats(recent);
-      }
+    loadRecentChats();
+
+    const handleChatUpdate = () => {
+      loadRecentChats();
     };
 
-    loadRecentChats();
+    window.addEventListener("chatUpdated", handleChatUpdate);
+
+    return () => {
+      window.removeEventListener("chatUpdated", handleChatUpdate);
+    };
   }, []);
 
   const getLocale = () => {
