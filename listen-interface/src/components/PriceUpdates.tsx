@@ -106,6 +106,7 @@ export function PriceUpdatesHeader() {
     setMarketCapFilter,
     volumeFilter,
     setVolumeFilter,
+    setIsListFrozen,
   } = useTokenStore();
 
   const toggleFilterPopup = () => setShowFilterPopup(!showFilterPopup);
@@ -114,7 +115,10 @@ export function PriceUpdatesHeader() {
     <div className="flex items-center gap-2 h-full">
       <div className="flex gap-2 h-full items-center">
         {isListFrozen && (
-          <div className="flex items-center gap-1 bg-black/60 border border-teal-400/30 rounded px-2 h-8 text-xs text-teal-300">
+          <div
+            className="flex items-center gap-1 bg-black/60 border border-teal-400/30 rounded px-2 h-8 text-xs text-teal-300"
+            onClick={() => setIsListFrozen(false)}
+          >
             <FaPause className="text-teal-300 text-[10px]" />
           </div>
         )}
