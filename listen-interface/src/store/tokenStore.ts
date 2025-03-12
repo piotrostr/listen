@@ -158,19 +158,47 @@ export const useTokenStore = create<TokenState>()(
         limit?: number
       ) => {
         const hiddenTokens = get().hiddenTokens;
+        const showHiddenOnly = get().showHiddenOnly;
+        const showWatchlistOnly = get().showWatchlistOnly;
+        const watchlist = get().watchlist;
 
-        // Filter out hidden tokens with safety check for Set
-        const visibleTokens = tokens.filter((token) => {
-          if (hiddenTokens instanceof Set) {
-            return !hiddenTokens.has(token.pubkey);
-          } else if (Array.isArray(hiddenTokens)) {
-            return !(hiddenTokens as string[]).includes(token.pubkey);
-          }
-          return true; // If hiddenTokens is invalid, show all tokens
-        });
+        // First apply watchlist/hidden filters
+        let filteredTokens = tokens;
+
+        if (showHiddenOnly) {
+          // Show only hidden tokens
+          filteredTokens = tokens.filter((token) => {
+            if (hiddenTokens instanceof Set) {
+              return hiddenTokens.has(token.pubkey);
+            } else if (Array.isArray(hiddenTokens)) {
+              return (hiddenTokens as string[]).includes(token.pubkey);
+            }
+            return false;
+          });
+        } else if (showWatchlistOnly) {
+          // Show only watchlisted tokens
+          filteredTokens = tokens.filter((token) => {
+            if (watchlist instanceof Set) {
+              return watchlist.has(token.pubkey);
+            } else if (Array.isArray(watchlist)) {
+              return (watchlist as string[]).includes(token.pubkey);
+            }
+            return false;
+          });
+        } else {
+          // Normal mode: show non-hidden tokens
+          filteredTokens = tokens.filter((token) => {
+            if (hiddenTokens instanceof Set) {
+              return !hiddenTokens.has(token.pubkey);
+            } else if (Array.isArray(hiddenTokens)) {
+              return !(hiddenTokens as string[]).includes(token.pubkey);
+            }
+            return true;
+          });
+        }
 
         const marketCapFiltered = get()
-          .filterTokensByMarketCap(visibleTokens, marketCapFilter)
+          .filterTokensByMarketCap(filteredTokens, marketCapFilter)
           .filter((token) => (token.marketCap / 1e6).toFixed(1) !== "0.0");
 
         let result;

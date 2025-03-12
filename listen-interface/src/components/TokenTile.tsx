@@ -61,11 +61,6 @@ export function TokenTile({ token }: TokenTileProps) {
     }, 10000);
   };
 
-  const handleToggleWatchlist = (e: React.MouseEvent) => {
-    e.stopPropagation();
-    toggleWatchlist(token.pubkey);
-  };
-
   const handleHideToken = (e: React.MouseEvent) => {
     e.stopPropagation();
     toggleHidden(token.pubkey);
