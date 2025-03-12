@@ -53,26 +53,27 @@ export function Settings() {
         </p>
       </div>
 
-      <h2 className="text-lg font-bold mb-2 mt-4">Agent Mode</h2>
-      <div className="bg-black/40 backdrop-blur-sm rounded-lg p-4 mb-4">
-        <div className="flex items-center justify-between">
-          <label className="block text-sm text-white">Enable Agent Mode</label>
-          <button
-            onClick={handleAgentModeToggle}
-            className={`px-4 py-2 rounded-lg transition-colors ${
-              agentMode
-                ? "bg-green-500/30 text-green-300"
-                : "bg-gray-600/30 text-gray-400"
-            }`}
-          >
-            {agentMode ? "Enabled" : "Disabled"}
-          </button>
-        </div>
-        <p className="text-xs text-gray-400 mt-2">
-          When enabled, the AI will act more proactively as your agent,
-          suggesting trades and monitoring market trends.
-        </p>
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold mb-2 mt-4">Agent Mode</h2>
+        <button
+          onClick={handleAgentModeToggle}
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            agentMode
+              ? "bg-green-500/30 text-green-300 hover:bg-green-500/40"
+              : "bg-gray-600/30 text-gray-400 hover:bg-gray-600/40"
+          }`}
+        >
+          {agentMode ? "Enabled" : "Disabled"}
+        </button>
       </div>
+      <p className="text-xs text-gray-400 mt-2">
+        Enabled: Listen will have a lot more autonomy and will execute trades
+        directly without any confirmation.{" "}
+      </p>
+      <p className="text-xs text-gray-400 mt-2">
+        Disabled: Listen doesn't have access to direct swapping tools and every
+        trade is confirmed by hand.
+      </p>
 
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.mode")}</h2>
       <ChatSelector selectedChat={chatType} onSelectChat={setChatType} />
