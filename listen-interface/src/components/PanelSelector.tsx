@@ -8,7 +8,8 @@ import { Chat } from "./Chat";
 import { FloatingPanel } from "./FloatingPanel";
 import { Pipelines, PipelinesHeader } from "./Pipelines";
 import { Portfolio } from "./Portfolio";
-import { PriceUpdates, PriceUpdatesHeader } from "./PriceUpdates";
+import { PriceUpdates } from "./PriceUpdates";
+import { PriceUpdatesHeader } from "./PriceUpdatesHeader";
 import { Settings } from "./Settings";
 
 export function PanelSelector({

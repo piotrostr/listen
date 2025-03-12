@@ -152,45 +152,47 @@ export function TokenTile({ token }: TokenTileProps) {
                 <HiOutlineSparkles size={16} />
               </Link>
             )}
-            <button
-              onClick={handleHideToken}
-              className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 rounded-lg transition-all`}
-              title="Hide this token"
-            >
-              <BiSolidHide size={16} />
-            </button>
           </div>
         </div>
-        <div className="text-right">
-          <div className="flex flex-col">
-            <span className="text-green-500 font-medium text-xs sm:text-base">
-              +${parseFloat(token.buyVolume.toFixed(2)).toLocaleString()}
-            </span>
-            <span className="text-red-500 font-medium text-xs sm:text-base">
-              -${parseFloat(token.sellVolume.toFixed(2)).toLocaleString()}
-            </span>
-          </div>
-          <div className="flex justify-end items-center gap-2 mt-1">
-            <div className="text-[10px] sm:text-xs text-gray-400 flex items-center gap-1">
-              <FaBoltLightning />
-              {token.uniqueAddresses.size}
+        <div className="flex items-center gap-2">
+          <button
+            onClick={handleHideToken}
+            className={`${isHovered ? "opacity-100" : "opacity-0"} text-gray-500 transition-all hover:text-gray-400`}
+            title="Hide this token"
+          >
+            <BiSolidHide size={16} />
+          </button>
+          <div className="text-right">
+            <div className="flex flex-col">
+              <span className="text-green-500 font-medium text-xs sm:text-base">
+                +${parseFloat(token.buyVolume.toFixed(2)).toLocaleString()}
+              </span>
+              <span className="text-red-500 font-medium text-xs sm:text-base">
+                -${parseFloat(token.sellVolume.toFixed(2)).toLocaleString()}
+              </span>
             </div>
-            <button
-              onClick={handleBuy}
-              disabled={isExecuting}
-              className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
-            >
-              {isExecuting ? (
-                <span className="animate-pulse">
-                  {t("token_tile.executing")}
-                </span>
-              ) : (
-                <>
-                  <span>{quickBuyAmount}</span>
-                  <FaShoppingCart size={12} />
-                </>
-              )}
-            </button>
+            <div className="flex justify-end items-center gap-2 mt-1">
+              <div className="text-[10px] sm:text-xs text-gray-400 flex items-center gap-1">
+                <FaBoltLightning />
+                {token.uniqueAddresses.size}
+              </div>
+              <button
+                onClick={handleBuy}
+                disabled={isExecuting}
+                className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
+              >
+                {isExecuting ? (
+                  <span className="animate-pulse">
+                    {t("token_tile.executing")}
+                  </span>
+                ) : (
+                  <>
+                    <span>{quickBuyAmount}</span>
+                    <FaShoppingCart size={12} />
+                  </>
+                )}
+              </button>
+            </div>
           </div>
         </div>
       </div>
