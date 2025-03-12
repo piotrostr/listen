@@ -2,6 +2,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { systemPromptEvm, systemPromptSolana } from "../prompts";
 import {
   Chat,
   Message,
@@ -10,7 +11,6 @@ import {
   ToolResultSchema,
 } from "../types/message";
 import { chatCache } from "./localStorage";
-import { systemPromptEvm, systemPromptSolana } from "./prompts";
 import { useChatType } from "./useChatType";
 import { useDebounce } from "./useDebounce";
 import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
