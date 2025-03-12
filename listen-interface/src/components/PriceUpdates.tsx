@@ -44,18 +44,16 @@ export function PriceUpdates({
       Array.from(tokenMap.values()),
       marketCapFilter,
       volumeFilter
-    ).slice(0, 20);
+    );
 
     // Filter by watchlist if needed
     if (showWatchlistOnly) {
       tokens = tokens.filter((token) => isWatchlisted(token.pubkey));
-    }
-
-    if (showHiddenOnly) {
+    } else if (showHiddenOnly) {
       tokens = tokens.filter((token) => isHidden(token.pubkey));
     }
 
-    return tokens;
+    return tokens.slice(0, 20);
   }, [
     tokenMap,
     marketCapFilter,
