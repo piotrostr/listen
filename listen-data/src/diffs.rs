@@ -32,7 +32,10 @@ use solana_transaction_status::{
     TransactionTokenBalance, UiTransactionTokenBalance,
 };
 use spl_token::amount_to_ui_amount;
-use std::collections::{HashMap, HashSet};
+use std::{
+    collections::{HashMap, HashSet},
+    sync::LazyLock,
+};
 use tracing::error;
 
 pub trait TokenBalanceInfo {
@@ -287,6 +290,10 @@ impl_into_token_transfer_details_with_mint!(
     TransferCheckedInstructionAccounts,
     TOKEN_2022_PROGRAM_ID
 );
+
+/// A static instance of TokenTransferProcessor for global access
+pub static SPL_TOKEN_TRANSFER_PROCESSOR: LazyLock<TokenTransferProcessor> =
+    LazyLock::new(TokenTransferProcessor::new);
 
 pub struct TokenTransferProcessor {
     pub token_decoder: TokenProgramDecoder,

@@ -1,6 +1,6 @@
 use crate::diffs::{
     extra_mint_details_from_tx_metadata, process_token_transfers, DiffsError,
-    DiffsResult, TokenTransferDetails, TokenTransferProcessor,
+    DiffsResult, TokenTransferDetails, SPL_TOKEN_TRANSFER_PROCESSOR,
 };
 use crate::{
     db::{ClickhouseDb, Database},
@@ -33,8 +33,7 @@ pub async fn process_swap(
 
     let mint_details =
         extra_mint_details_from_tx_metadata(&transaction_metadata);
-    let token_transfer_processor = TokenTransferProcessor::new();
-    let transfers: Vec<TokenTransferDetails> = token_transfer_processor
+    let transfers: Vec<TokenTransferDetails> = SPL_TOKEN_TRANSFER_PROCESSOR
         .decode_token_transfer_with_vaults_from_nested_instructions(
             &nested_instructions,
             &mint_details,
@@ -427,8 +426,7 @@ mod tests {
 
         let inner_instructions = swap_instruction.inner_instructions;
 
-        let token_transfer_processor = TokenTransferProcessor::new();
-        let transfers: Vec<TokenTransferDetails> = token_transfer_processor
+        let transfers: Vec<TokenTransferDetails> = SPL_TOKEN_TRANSFER_PROCESSOR
             .decode_token_transfer_with_vaults_from_nested_instructions(
                 &inner_instructions,
                 &mint_details,
