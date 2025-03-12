@@ -2,49 +2,25 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { useSettings } from "../contexts/SettingsContext";
+import { pickSystemPrompt } from "../prompts";
 import {
   Chat,
   Message,
-  StreamResponse,
   ToolCallSchema,
   ToolResultSchema,
 } from "../types/message";
+import { JsonChunkReader } from "./chunk-reader";
 import { chatCache } from "./localStorage";
-import { systemPromptEvm, systemPromptSolana } from "./prompts";
 import { useChatType } from "./useChatType";
 import { useDebounce } from "./useDebounce";
 import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
 import { usePrivyWallets } from "./usePrivyWallet";
 import { useSolanaPortfolio } from "./useSolanaPortfolio";
-
-class JsonChunkReader {
-  private buffer = "";
-
-  append(chunk: string): StreamResponse[] {
-    this.buffer += chunk;
-    const messages: StreamResponse[] = [];
-    const lines = this.buffer.split("\n");
-
-    this.buffer = lines[lines.length - 1];
-
-    for (let i = 0; i < lines.length - 1; i++) {
-      const line = lines[i];
-      if (line.startsWith("data: ")) {
-        try {
-          const jsonStr = line.slice(6);
-          const data = JSON.parse(jsonStr);
-          messages.push(data);
-        } catch (e) {
-          console.warn("Failed to parse JSON from line:", line, e);
-        }
-      }
-    }
-
-    return messages;
-  }
-}
+import { compactPortfolio } from "./util";
 
 export function useChat() {
+  const { quickBuyAmount: defaultAmount, agentMode } = useSettings();
   const { data: solanaPortfolio } = useSolanaPortfolio();
   const { data: evmPortfolio } = useEvmPortfolio();
   const { getAccessToken } = usePrivy();
@@ -186,47 +162,29 @@ export function useChat() {
 
         const portfolio = [];
         if (solanaPortfolio) {
-          for (const token of solanaPortfolio) {
-            portfolio.push({
-              chain: token.chain,
-              address: token.address,
-              amount: token.amount.toString(),
-              name: token.name,
-              symbol: token.symbol,
-              decimals: token.decimals,
-            });
-          }
+          portfolio.push(...compactPortfolio(solanaPortfolio));
         }
         if (evmPortfolio && chatType === "omni") {
-          for (const token of evmPortfolio) {
-            portfolio.push({
-              chain: token.chain,
-              address: token.address,
-              amount: token.amount.toString(),
-              name: token.name,
-              symbol: token.symbol,
-              decimals: token.decimals,
-            });
-          }
+          portfolio.push(...compactPortfolio(evmPortfolio));
         }
         const chat_history = messageHistory.filter((msg) => msg.content !== "");
-        const preamble =
-          chatType === "solana"
-            ? systemPromptSolana(
-                portfolio,
-                wallets?.solanaWallet?.toString() || null
-              )
-            : systemPromptEvm(
-                portfolio,
-                wallets?.evmWallet?.toString() || null,
-                wallets?.solanaWallet?.toString() || null
-              );
+        const preamble = pickSystemPrompt(
+          chatType,
+          agentMode,
+          portfolio,
+          defaultAmount.toString(),
+          wallets?.solanaWallet?.toString() || null,
+          wallets?.evmWallet?.toString() || null
+        );
 
         const body = JSON.stringify({
           prompt: userMessage,
           chat_history: chat_history,
           chain: chatType,
           preamble,
+          features: {
+            autonomous: agentMode,
+          },
         });
 
         const response = await fetch(

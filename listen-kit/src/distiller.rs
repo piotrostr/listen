@@ -23,6 +23,8 @@ pub const DEFAULT_PREAMBLE: &str =
     1k-5k views - some engagement
     5k-20k views - decent engagement
     20k-100k views - high engagement
+    If the profile has a blockchain address in the bio (solana public key,
+    ethereum address), be sure to include it in the summary
 ";
 
 pub const DEFAULT_PREAMBLE_ZH: &str = "你的任务是从一个推特API响应中提取最相关的内容，并提供一个总结。确保考虑到以下因素：
@@ -42,6 +44,8 @@ pub const DEFAULT_PREAMBLE_ZH: &str = "你的任务是从一个推特API响应�
 1k-5k views - 一些互动
 5k-20k views - 中等关注
 20k-100k views - 高关注
+
+如果用户在个人简介中包含区块链地址（solana 公钥，以太坊地址），请务必在总结中包含它。
 ";
 pub fn make_gemini_distiller(
     preamble: Option<String>,

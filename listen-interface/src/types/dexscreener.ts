@@ -8,15 +8,15 @@ export const DexScreenerTokenSchema = z.object({
 
 export const DexScreenerLiquiditySchema = z.object({
   usd: z.number(),
-  base: z.number(),
-  quote: z.number(),
+  base: z.number().nullable().optional(),
+  quote: z.number().nullable().optional(),
 });
 
 export const DexScreenerVolumeSchema = z.object({
   h24: z.number(),
-  h6: z.number(),
-  h1: z.number(),
-  m5: z.number(),
+  h6: z.number().nullable().optional(),
+  h1: z.number().nullable().optional(),
+  m5: z.number().nullable().optional(),
 });
 
 export const DexScreenerPairSchema = z.object({

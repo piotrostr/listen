@@ -8,7 +8,8 @@ import { Chat } from "./Chat";
 import { FloatingPanel } from "./FloatingPanel";
 import { Pipelines, PipelinesHeader } from "./Pipelines";
 import { Portfolio } from "./Portfolio";
-import { PriceUpdates, PriceUpdatesHeader } from "./PriceUpdates";
+import { PriceUpdates } from "./PriceUpdates";
+import { PriceUpdatesHeader } from "./PriceUpdatesHeader";
 import { Settings } from "./Settings";
 
 export function PanelSelector({
@@ -18,20 +19,8 @@ export function PanelSelector({
   activePanel: string | null;
   setActivePanel: (panel: string | null) => void;
 }) {
-  // Price Updates state
-  const [marketCapFilter, setMarketCapFilter] = useState<string>("all");
-  const [volumeFilter, setVolumeFilter] = useState<"bought" | "sold" | "all">(
-    "all"
-  );
-  const [isListFrozen, setIsListFrozen] = useState(false);
-
-  // Pipelines state
   const [statusFilter, setStatusFilter] = useState<string>("All");
-
-  // Get mobile state from context
   const { isMobile } = useMobile();
-
-  // For refreshing portfolio data
   const queryClient = useQueryClient();
 
   const handleClose = useCallback(() => {
@@ -53,20 +42,9 @@ export function PanelSelector({
       return (
         <div className="h-full bg-black">
           <div className="mb-4">
-            <PriceUpdatesHeader
-              volumeFilter={volumeFilter}
-              setVolumeFilter={setVolumeFilter}
-              marketCapFilter={marketCapFilter}
-              setMarketCapFilter={setMarketCapFilter}
-              isListFrozen={isListFrozen}
-            />
+            <PriceUpdatesHeader />
           </div>
-          <PriceUpdates
-            marketCapFilter={marketCapFilter}
-            volumeFilter={volumeFilter}
-            isListFrozen={isListFrozen}
-            setIsListFrozen={setIsListFrozen}
-          />
+          <PriceUpdates />
         </div>
       );
     }
@@ -118,22 +96,9 @@ export function PanelSelector({
         <FloatingPanel
           title="screener"
           onClose={handleClose}
-          headerContent={
-            <PriceUpdatesHeader
-              volumeFilter={volumeFilter}
-              setVolumeFilter={setVolumeFilter}
-              marketCapFilter={marketCapFilter}
-              setMarketCapFilter={setMarketCapFilter}
-              isListFrozen={isListFrozen}
-            />
-          }
+          headerContent={<PriceUpdatesHeader />}
         >
-          <PriceUpdates
-            marketCapFilter={marketCapFilter}
-            volumeFilter={volumeFilter}
-            isListFrozen={isListFrozen}
-            setIsListFrozen={setIsListFrozen}
-          />
+          <PriceUpdates />
         </FloatingPanel>
       )}
 

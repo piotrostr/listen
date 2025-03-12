@@ -1,3 +1,4 @@
+import { ReactNode } from "react";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
@@ -127,10 +128,15 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
     }
   }
   if (toolOutput.name === "swap") {
+    const TxContainer = ({ children }: { children: ReactNode }) => (
+      <div className="text-white px-4 py-3 my-2 backdrop-blur-sm overflow-hidden border-b border-[#2d2d2d]">
+        {children}
+      </div>
+    );
     try {
       // TODO standardize this output, not just string but { status: string, transactionHash: string }
       return (
-        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
+        <TxContainer>
           <div className="mb-2 overflow-hidden">
             <TransactionLink
               status={"Completed"}
@@ -138,12 +144,12 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
               error={null}
             />
           </div>
-        </div>
+        </TxContainer>
       );
     } catch (e) {
       console.error("Failed to parse swap response:", e);
       return (
-        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
+        <TxContainer>
           <div className="mb-2 overflow-hidden">
             <TransactionLink
               status={"Failed"}
@@ -151,7 +157,7 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
               error={toolOutput.result}
             />
           </div>
-        </div>
+        </TxContainer>
       );
     }
   }
