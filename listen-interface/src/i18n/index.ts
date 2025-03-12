@@ -90,6 +90,9 @@ const resources = {
         paused: "Paused",
         market_cap: "Market Cap",
         all: "Any",
+        filter: "Filter",
+        volume: "Volume",
+        sell: "Sell",
         waiting_for_updates: "Waiting for updates...",
       },
       chat: {
@@ -230,6 +233,9 @@ const resources = {
         market_cap: "市值",
         all: "全部",
         waiting_for_updates: "等待更新...",
+        filter: "过滤",
+        volume: "成交量",
+        sell: "出售",
       },
       chat: {
         start_a_conversation: "开始对话",

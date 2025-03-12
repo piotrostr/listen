@@ -4,6 +4,7 @@ import { useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BiSolidHide } from "react-icons/bi";
 import { FaCircle, FaPause, FaRegStar } from "react-icons/fa";
+import { LuFilter } from "react-icons/lu";
 import { setupWebSocket } from "../services/websocketService";
 import { useTokenStore } from "../store/tokenStore";
 import { TokenTile } from "./TokenTile";
@@ -105,7 +106,6 @@ interface PriceUpdatesHeaderProps {
   setShowHiddenOnly: (show: boolean) => void;
 }
 
-// Export the filter header component separately
 export function PriceUpdatesHeader({
   volumeFilter,
   setVolumeFilter,
@@ -118,6 +118,9 @@ export function PriceUpdatesHeader({
   setShowHiddenOnly,
 }: PriceUpdatesHeaderProps) {
   const { t } = useTranslation();
+  const [showFilterPopup, setShowFilterPopup] = useState(false);
+
+  const toggleFilterPopup = () => setShowFilterPopup(!showFilterPopup);
 
   return (
     <div className="flex items-center gap-2 h-full">
@@ -127,26 +130,75 @@ export function PriceUpdatesHeader({
             <FaPause className="text-teal-300 text-[10px]" />
           </div>
         )}
-        <button
-          onClick={() =>
-            setVolumeFilter(volumeFilter === "bought" ? "all" : "bought")
-          }
-          className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center ${
-            volumeFilter === "bought" ? "bg-[#2D2D2D]" : "bg-black/40"
-          } hover:bg-[#2D2D2D] transition-all`}
-        >
-          <FaCircle className="text-green-500 text-xs" />
-        </button>
-        <button
-          onClick={() =>
-            setVolumeFilter(volumeFilter === "sold" ? "all" : "sold")
-          }
-          className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center ${
-            volumeFilter === "sold" ? "bg-[#2D2D2D]" : "bg-black/40"
-          } hover:bg-[#2D2D2D] transition-all`}
-        >
-          <FaCircle className="text-red-500 text-xs" />
-        </button>
+
+        {/* Filter button with popup */}
+        <div className="relative">
+          <button
+            onClick={toggleFilterPopup}
+            className={`h-8 rounded-lg px-3 text-sm flex items-center justify-center gap-2 border border-[#2D2D2D] ${
+              showFilterPopup ? "bg-[#2D2D2D]" : "bg-black/40"
+            } hover:bg-[#2D2D2D] transition-all`}
+            title="Filters"
+          >
+            <LuFilter size={14} />
+            <span className="text-xs">{t("price_updates.filter")}</span>
+          </button>
+
+          {showFilterPopup && (
+            <div className="absolute top-full left-0 mt-1 p-3 bg-black border border-[#2D2D2D] rounded-lg shadow-lg z-10 min-w-[200px]">
+              <div className="mb-3">
+                <div className="text-xs text-gray-400 mb-2">
+                  {t("price_updates.volume")}
+                </div>
+                <div className="flex gap-2">
+                  <button
+                    onClick={() =>
+                      setVolumeFilter(
+                        volumeFilter === "bought" ? "all" : "bought"
+                      )
+                    }
+                    className={`px-3 py-1 rounded text-sm flex items-center gap-2 ${
+                      volumeFilter === "bought" ? "bg-[#2D2D2D]" : "bg-black/40"
+                    } hover:bg-[#2D2D2D] transition-all`}
+                  >
+                    <FaCircle className="text-green-500 text-xs" />
+                    <span>Buy</span>
+                  </button>
+                  <button
+                    onClick={() =>
+                      setVolumeFilter(volumeFilter === "sold" ? "all" : "sold")
+                    }
+                    className={`px-3 py-1 rounded text-sm flex items-center gap-2 ${
+                      volumeFilter === "sold" ? "bg-[#2D2D2D]" : "bg-black/40"
+                    } hover:bg-[#2D2D2D] transition-all`}
+                  >
+                    <FaCircle className="text-red-500 text-xs" />
+                    <span>{t("price_updates.sell")}</span>
+                  </button>
+                </div>
+              </div>
+
+              <div>
+                <div className="text-xs text-gray-400 mb-2">
+                  {t("price_updates.market_cap")}
+                </div>
+                <select
+                  value={marketCapFilter}
+                  onChange={(e) => setMarketCapFilter(e.target.value)}
+                  className="bg-black/40 text-white rounded px-2 py-1 text-sm focus:outline-none w-full border border-[#2D2D2D]"
+                >
+                  <option value="all">{t("price_updates.all")}</option>
+                  <option value="under1m">&lt;$1M</option>
+                  <option value="1mTo10m">$1M-$10M</option>
+                  <option value="10mTo100m">$10M-$100M</option>
+                  <option value="over100m">&gt;$100M</option>
+                </select>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Keep watchlist and hidden buttons always visible */}
         <button
           onClick={() => setShowWatchlistOnly(!showWatchlistOnly)}
           className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center ${
@@ -169,20 +221,6 @@ export function PriceUpdatesHeader({
         >
           <BiSolidHide size={14} />
         </button>
-      </div>
-
-      <div className="flex items-center gap-2">
-        <select
-          value={marketCapFilter}
-          onChange={(e) => setMarketCapFilter(e.target.value)}
-          className="bg-black/40 text-white rounded-lg px-2 h-8 text-sm focus:outline-none w-[120px] border border-[#2D2D2D]"
-        >
-          <option value="all">{t("price_updates.all")}</option>
-          <option value="under1m">&lt;$1M</option>
-          <option value="1mTo10m">$1M-$10M</option>
-          <option value="10mTo100m">$10M-$100M</option>
-          <option value="over100m">&gt;$100M</option>
-        </select>
       </div>
     </div>
   );
