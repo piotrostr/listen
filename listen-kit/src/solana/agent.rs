@@ -7,8 +7,8 @@ use super::tools::{
 };
 use crate::common::{claude_agent_builder, PREAMBLE_COMMON};
 use crate::data::{
-    FetchPriceChart, FetchTokenMetadata, FetchTopTokens, FetchXPost,
-    ResearchXProfile, SearchTweets,
+    FetchCandlesticks, /*FetchPriceChart,*/ FetchTokenMetadata,
+    FetchTopTokens, FetchXPost, ResearchXProfile, SearchTweets,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 
@@ -33,6 +33,6 @@ pub async fn create_solana_agent(
         .tool(ResearchXProfile)
         .tool(FetchXPost)
         .tool(SearchTweets)
-        .tool(FetchPriceChart)
+        .tool(FetchCandlesticks)
         .build())
 }

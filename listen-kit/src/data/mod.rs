@@ -233,7 +233,6 @@ Fetch price series for a token from the Listen API.
 Parameters:
 - mint (string): The token's mint/pubkey address
 - interval (string): The interval of the price data, one of:
-  * '1m'  (1 minute)
   * '5m'  (5 minutes)
   * '15m' (15 minutes)
   * '30m' (30 minutes)
@@ -275,8 +274,6 @@ Fetch candlestick data for a token from the Listen API.
 Parameters:
 - mint (string): The token's mint/pubkey address
 - interval (string): The candlestick interval, one of:
-  * '1m'  (1 minute)
-  * '5m'  (5 minutes)
   * '15m' (15 minutes)
   * '30m' (30 minutes)
   * '1h'  (1 hour)

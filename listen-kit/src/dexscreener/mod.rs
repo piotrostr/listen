@@ -36,20 +36,22 @@ pub struct PairInfo {
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Liquidity {
     pub usd: Option<f64>,
-    pub base: Option<f64>,
-    pub quote: Option<f64>,
+    // pub base: Option<f64>,
+    // pub quote: Option<f64>,
+    // not relevant for us, save tokens
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone, Default)]
 pub struct Volume {
     #[serde(default)]
     pub h24: Option<f64>,
-    #[serde(default)]
-    pub h6: Option<f64>,
-    #[serde(default)]
-    pub h1: Option<f64>,
-    #[serde(default)]
-    pub m5: Option<f64>,
+    // #[serde(default)]
+    // pub h6: Option<f64>,
+    // #[serde(default)]
+    // pub h1: Option<f64>,
+    // #[serde(default)]
+    // pub m5: Option<f64>,
+    // not relevant for us, save tokens
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -82,8 +84,8 @@ pub async fn search_ticker(ticker: String) -> Result<DexScreenerResponse> {
 
     let mut dex_response: DexScreenerResponse = serde_json::from_value(data)?;
 
-    // trim up to 8
-    dex_response.pairs.truncate(8);
+    // trim up to 6
+    dex_response.pairs.truncate(6);
 
     Ok(dex_response)
 }
@@ -103,6 +105,7 @@ mod tests {
     async fn test_search_ticker() {
         let response = search_ticker("BONK".to_string()).await.unwrap();
         assert_eq!(response.schema_version, "1.0.0");
+        println!("{:?}", response);
     }
 
     #[tokio::test]
