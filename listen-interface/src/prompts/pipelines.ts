@@ -96,15 +96,10 @@ const pipelineSchemaSolana = `
 
 export const pipelineKnowledge = (chain: "evm" | "solana") => `
   You can create pipelines that user approves with a click to execute
-  interactions which involve multiple steps
-
+  interactions which involve multiple steps, as well as simple swaps
   Here is the format for the pipeline defined as zod validators:
-
   ${chain === "evm" ? pipelineSchemaEvm : pipelineSchemaSolana}
-
-  now when generating a pipeline, put it into <pipeline></pipeline> tags
-
-  if any step is to be executed immediately, don't include the "conditions" key, it will be filled automatically
-
-  always include the tags! otherwise the pipeline will neither be rendered for the user to see nor executed
+  When generating a pipeline, put it into <pipeline></pipeline> tags
+  If any step is to be executed immediately, don't include the "conditions" key, it will be filled automatically
+  Always include the tags! Otherwise the pipeline will neither be rendered for the user to see nor executed
 `;
