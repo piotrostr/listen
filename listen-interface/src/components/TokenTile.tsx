@@ -1,13 +1,15 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { BiSolidHide } from "react-icons/bi";
 import { FaShoppingCart } from "react-icons/fa";
-import { FaBoltLightning } from "react-icons/fa6";
+import { FaBoltLightning, FaRegStar, FaStar } from "react-icons/fa6";
 import { HiOutlineSparkles } from "react-icons/hi2";
 import { useModal } from "../contexts/ModalContext";
 import { useListenMetadata } from "../hooks/useListenMetadata";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import i18n from "../i18n";
+import { useTokenStore } from "../store/tokenStore";
 import { TokenMarketData } from "../types/metadata";
 import { Socials } from "./Socials";
 
@@ -23,6 +25,7 @@ export function TokenTile({ token }: TokenTileProps) {
   const { isExecuting, quickBuyToken } = usePipelineExecution();
   const [isHovered, setIsHovered] = useState(false);
   const [researchCooldown, setResearchCooldown] = useState(false);
+  const { toggleWatchlist, toggleHidden, isWatchlisted } = useTokenStore();
 
   const { t } = useTranslation();
 
@@ -57,6 +60,18 @@ export function TokenTile({ token }: TokenTileProps) {
       setResearchCooldown(false);
     }, 10000);
   };
+
+  const handleToggleWatchlist = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleWatchlist(token.pubkey);
+  };
+
+  const handleHideToken = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    toggleHidden(token.pubkey);
+  };
+
+  const isTokenWatchlisted = isWatchlisted(token.pubkey);
 
   const tokenSymbol = metadata?.mpl.symbol ?? token.name;
   const researchMessage =
@@ -124,6 +139,28 @@ export function TokenTile({ token }: TokenTileProps) {
                 <HiOutlineSparkles size={16} />
               </Link>
             )}
+            <button
+              onClick={handleToggleWatchlist}
+              className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 ${isTokenWatchlisted ? "bg-yellow-500/20 hover:bg-yellow-500/40 text-yellow-300 border border-yellow-500/30" : "bg-gray-500/20 hover:bg-gray-500/40 text-gray-300 border border-gray-500/30"} rounded-lg transition-all`}
+              title={
+                isTokenWatchlisted
+                  ? "Remove from watchlist"
+                  : "Add to watchlist"
+              }
+            >
+              {isTokenWatchlisted ? (
+                <FaStar size={16} />
+              ) : (
+                <FaRegStar size={16} />
+              )}
+            </button>
+            <button
+              onClick={handleHideToken}
+              className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 bg-red-500/20 hover:bg-red-500/40 text-red-300 border border-red-500/30 rounded-lg transition-all`}
+              title="Hide this token"
+            >
+              <BiSolidHide size={16} />
+            </button>
           </div>
         </div>
         <div className="text-right">

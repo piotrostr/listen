@@ -18,20 +18,15 @@ export function PanelSelector({
   activePanel: string | null;
   setActivePanel: (panel: string | null) => void;
 }) {
-  // Price Updates state
   const [marketCapFilter, setMarketCapFilter] = useState<string>("all");
   const [volumeFilter, setVolumeFilter] = useState<"bought" | "sold" | "all">(
     "all"
   );
   const [isListFrozen, setIsListFrozen] = useState(false);
-
-  // Pipelines state
+  const [showWatchlistOnly, setShowWatchlistOnly] = useState(false);
+  const [showHiddenOnly, setShowHiddenOnly] = useState(false);
   const [statusFilter, setStatusFilter] = useState<string>("All");
-
-  // Get mobile state from context
   const { isMobile } = useMobile();
-
-  // For refreshing portfolio data
   const queryClient = useQueryClient();
 
   const handleClose = useCallback(() => {
@@ -59,6 +54,10 @@ export function PanelSelector({
               marketCapFilter={marketCapFilter}
               setMarketCapFilter={setMarketCapFilter}
               isListFrozen={isListFrozen}
+              showWatchlistOnly={showWatchlistOnly}
+              setShowWatchlistOnly={setShowWatchlistOnly}
+              showHiddenOnly={showHiddenOnly}
+              setShowHiddenOnly={setShowHiddenOnly}
             />
           </div>
           <PriceUpdates
@@ -66,6 +65,8 @@ export function PanelSelector({
             volumeFilter={volumeFilter}
             isListFrozen={isListFrozen}
             setIsListFrozen={setIsListFrozen}
+            showWatchlistOnly={showWatchlistOnly}
+            showHiddenOnly={showHiddenOnly}
           />
         </div>
       );
@@ -125,6 +126,10 @@ export function PanelSelector({
               marketCapFilter={marketCapFilter}
               setMarketCapFilter={setMarketCapFilter}
               isListFrozen={isListFrozen}
+              showWatchlistOnly={showWatchlistOnly}
+              setShowWatchlistOnly={setShowWatchlistOnly}
+              showHiddenOnly={showHiddenOnly}
+              setShowHiddenOnly={setShowHiddenOnly}
             />
           }
         >
@@ -133,6 +138,8 @@ export function PanelSelector({
             volumeFilter={volumeFilter}
             isListFrozen={isListFrozen}
             setIsListFrozen={setIsListFrozen}
+            showWatchlistOnly={showWatchlistOnly}
+            showHiddenOnly={showHiddenOnly}
           />
         </FloatingPanel>
       )}
