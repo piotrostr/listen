@@ -7,6 +7,7 @@ import { HiOutlineSparkles } from "react-icons/hi2";
 import { useModal } from "../contexts/ModalContext";
 import { useListenMetadata } from "../hooks/useListenMetadata";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
+import i18n from "../i18n";
 import { TokenMarketData } from "../types/metadata";
 import { Socials } from "./Socials";
 
@@ -42,7 +43,10 @@ export function TokenTile({ token }: TokenTileProps) {
   };
 
   const tokenSymbol = metadata?.mpl.symbol ?? token.name;
-  const researchMessage = `Listen, please research $${tokenSymbol} (${token.pubkey}). Provide it a score between 1 and 100 on how solid the narrative is.`;
+  const researchMessage =
+    i18n.language === "en"
+      ? `Listen, please research $${tokenSymbol} (${token.pubkey}). Provide it a score between 1 and 100 on how solid the narrative is.`
+      : `听着，请研究 $${tokenSymbol} (${token.pubkey})。请给它的叙事可靠性评分，分数在1到100之间。`;
 
   return (
     <div
