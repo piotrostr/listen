@@ -11,7 +11,7 @@ use std::collections::HashMap;
 pub struct SearchResponse {
     pub tweets: Vec<super::tweets::Tweet>,
     pub has_next_page: bool,
-    pub next_cursor: String,
+    pub next_cursor: Option<String>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -82,6 +82,6 @@ mod tests {
 
         println!("Found {} tweets", search_results.tweets.len());
         println!("Has next page: {}", search_results.has_next_page);
-        println!("Next cursor: {}", search_results.next_cursor);
+        println!("Next cursor: {:?}", search_results.next_cursor);
     }
 }
