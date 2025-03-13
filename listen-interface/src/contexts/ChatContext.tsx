@@ -1,7 +1,19 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { v4 as uuidv4 } from "uuid";
+import { chatCache } from "../hooks/localStorage";
+import { useDebounce } from "../hooks/useDebounce";
+import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { compactPortfolio } from "../hooks/util";
 import { pickSystemPrompt } from "../prompts";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useSettingsStore } from "../store/settingsStore";
@@ -12,12 +24,21 @@ import {
   ToolResultSchema,
 } from "../types/message";
 import { JsonChunkReader } from "./chunk-reader";
-import { chatCache } from "./localStorage";
-import { useDebounce } from "./useDebounce";
-import { usePrivyWallets } from "./usePrivyWallet";
-import { compactPortfolio } from "./util";
 
-export function useChat() {
+interface ChatContextType {
+  messages: Message[];
+  isLoading: boolean;
+  sendMessage: (message: string) => Promise<void>;
+  setMessages: (messages: Message[]) => void;
+  stopGeneration: () => void;
+  shareChat: (chatId: string) => Promise<string>;
+  loadSharedChat: (chatId: string) => Promise<Chat>;
+  isSharedChat: boolean;
+}
+
+const ChatContext = createContext<ChatContextType | null>(null);
+
+export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const {
     quickBuyAmount: defaultAmount,
     agentMode,
@@ -439,7 +460,7 @@ export function useChat() {
     }
   };
 
-  return {
+  const value = {
     messages: chat?.messages || [],
     isLoading: isLoadingWallets || isLoading,
     sendMessage,
@@ -464,4 +485,14 @@ export function useChat() {
     loadSharedChat,
     isSharedChat: !!useSearch({ from: "/" }).shared,
   };
-}
+
+  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
+};
+
+export const useChat = () => {
+  const context = useContext(ChatContext);
+  if (!context) {
+    throw new Error("useChat must be used within a ChatProvider");
+  }
+  return context;
+};

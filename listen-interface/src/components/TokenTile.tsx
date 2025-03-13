@@ -5,6 +5,7 @@ import { BiSolidHide } from "react-icons/bi";
 import { FaShoppingCart } from "react-icons/fa";
 import { FaBoltLightning, FaRegStar, FaStar } from "react-icons/fa6";
 import { HiOutlineSparkles } from "react-icons/hi2";
+import { useChat } from "../contexts/ChatContext";
 import { useModal } from "../contexts/ModalContext";
 import { useListenMetadata } from "../hooks/useListenMetadata";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
@@ -20,6 +21,7 @@ interface TokenTileProps {
 
 export function TokenTile({ token }: TokenTileProps) {
   const { openChart } = useModal();
+  const { isLoading } = useChat();
   const { data: metadata } = useListenMetadata(token.pubkey);
   const { quickBuyAmount } = useSettingsStore();
   const [copied, setCopied] = useState(false);
@@ -142,6 +144,7 @@ export function TokenTile({ token }: TokenTileProps) {
                 onClick={handleResearchClick}
                 className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 rounded-lg transition-all`}
                 title="Research this token"
+                disabled={isLoading}
               >
                 <HiOutlineSparkles size={16} />
               </Link>
