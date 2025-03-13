@@ -9,7 +9,7 @@ use std::collections::HashMap;
 pub struct UserInfo {
     #[serde(default)]
     pub r#type: Option<String>,
-    pub user_name: String,
+    pub user_name: Option<String>,
     pub url: Option<String>,
     pub id: String,
     pub name: String,
