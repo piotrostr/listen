@@ -217,21 +217,36 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       // Initialize visibility listener and other portfolio management
       initializePortfolioManager: () => {
-        // Function to handle visibility change
-        const handleVisibilityChange = () => {
-          if (document.visibilityState === "visible") {
-            // On becoming visible, check if data is fresh
-            if (!get().isFresh()) {
-              get().refreshPortfolio();
+        // Don't add multiple event listeners
+        const visibilityListenerAlreadyAdded = Boolean(
+          (window as any).__portfolioVisibilityListenerAdded
+        );
+
+        if (!visibilityListenerAlreadyAdded) {
+          console.log("Adding portfolio visibility listener");
+
+          // Function to handle visibility change
+          const handleVisibilityChange = () => {
+            if (document.visibilityState === "visible") {
+              // On becoming visible, check if data is fresh
+              if (!get().isFresh()) {
+                console.log("Data is stale, refreshing");
+                get().refreshPortfolio();
+              } else {
+                console.log("Data is fresh, no refresh needed");
+              }
             }
-          }
-        };
+          };
 
-        // Add visibility listener
-        document.addEventListener("visibilitychange", handleVisibilityChange);
+          // Add visibility listener
+          document.addEventListener("visibilitychange", handleVisibilityChange);
 
-        // Initial fetch if needed
-        if (get().solanaAssets.length === 0) {
+          // Mark that we've added the listener
+          (window as any).__portfolioVisibilityListenerAdded = true;
+        }
+
+        // Initial fetch if needed - run this only if we have no data
+        if (get().solanaAssets.length === 0 && !get().isLoading) {
           console.log("Initial portfolio load");
           get().refreshPortfolio();
         }

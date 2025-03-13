@@ -24,10 +24,12 @@ export function Portfolio() {
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
 
-  // Initialize portfolio management once
+  // Only run once on mount
   useEffect(() => {
-    initializePortfolioManager();
-  }, [initializePortfolioManager]);
+    if (!isLoading) {
+      initializePortfolioManager();
+    }
+  }, []);
 
   const handleTopup = async () => {
     if (solanaAddress) {
