@@ -19,6 +19,21 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use tracing::{debug, warn};
 
+/// Validates whether a token transfer involves a known vault account.
+///
+/// This function checks if either the source or destination address of a token transfer
+/// matches any address in the provided set of vault addresses. It's used to filter token
+/// transfers that are relevant to DEX or AMM operations by ensuring they interact with
+/// a liquidity pool vault.
+/// For a real-world example, see:
+/// https://solscan.io/tx/2usSAGxq35GJxQxVKHQ7NHBDnJim95Jyk3AeFrRAcpHc2TJUH3bjhVSvtAWcxnqnQyJFzpPFgJvMHNkTuQ8t779f
+pub fn is_valid_vault_transfer(
+    transfer: &TokenTransferDetails,
+    vaults: &HashSet<String>,
+) -> bool {
+    vaults.contains(&transfer.destination) || vaults.contains(&transfer.source)
+}
+
 pub async fn process_swap(
     vaults: &HashSet<String>,
     transaction_metadata: &TransactionMetadata,
@@ -33,11 +48,16 @@ pub async fn process_swap(
 
     let mint_details =
         extra_mint_details_from_tx_metadata(&transaction_metadata);
-    let transfers: Vec<TokenTransferDetails> = SPL_TOKEN_TRANSFER_PROCESSOR
+
+    let inner_transfers = SPL_TOKEN_TRANSFER_PROCESSOR
         .decode_token_transfer_with_vaults_from_nested_instructions(
             &nested_instructions,
             &mint_details,
         );
+    let transfers = inner_transfers
+        .into_iter()
+        .filter(|d| is_valid_vault_transfer(d, vaults))
+        .collect::<Vec<_>>();
 
     if transfers.iter().all(|d| d.ui_amount < 0.01) {
         debug!("skipping tiny diffs");
