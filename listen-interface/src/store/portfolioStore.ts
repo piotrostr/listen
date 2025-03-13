@@ -84,7 +84,11 @@ export const usePortfolioStore = create<PortfolioState>()(
       fetchSolanaPortfolio: async (address: string) => {
         if (!address) return;
 
-        set({ isLoading: true, error: null });
+        // Don't set isLoading if we already have data
+        set((state) => ({
+          isLoading: state.solanaAssets.length === 0,
+          error: null,
+        }));
 
         try {
           const solanaAssets = await fetchSolanaPortfolio(address);
@@ -95,11 +99,11 @@ export const usePortfolioStore = create<PortfolioState>()(
             logoURI: asset.logoURI || "",
           }));
 
-          set({
+          set((state) => ({
             solanaAssets: normalizedAssets,
             isLoading: false,
             lastUpdated: Date.now(),
-          });
+          }));
 
           // Update combined portfolio
           get().updateCombinedPortfolio();
@@ -124,19 +128,21 @@ export const usePortfolioStore = create<PortfolioState>()(
           return;
         }
 
+        // Don't set isLoading if we already have data
         set((state) => ({
-          isLoading: !state.solanaAssets.length, // Only show loading if we have no data
+          isLoading:
+            state.evmAssets.length === 0 && state.solanaAssets.length === 0,
           error: null,
         }));
 
         try {
           const evmAssets = await fetchEvmPortfolio(address);
 
-          set({
+          set(() => ({
             evmAssets,
             isLoading: false,
             lastUpdated: Date.now(),
-          });
+          }));
 
           // Update combined portfolio
           get().updateCombinedPortfolio();
@@ -161,21 +167,29 @@ export const usePortfolioStore = create<PortfolioState>()(
         // Access chatType directly from settings store
         const chatType = useSettingsStore.getState().chatType;
 
+        // Set loading state at the beginning
         set({ isLoading: true, error: null });
 
         try {
+          const fetchPromises = [];
+
           // Always fetch Solana portfolio if solanaAddress is provided
           if (solAddr) {
-            await get().fetchSolanaPortfolio(solAddr);
+            fetchPromises.push(get().fetchSolanaPortfolio(solAddr));
           }
 
           // Only fetch EVM portfolio if chatType is "omni" and evmAddress is provided
           if (evmAddr && chatType === "omni") {
-            await get().fetchEvmPortfolio(evmAddr);
+            fetchPromises.push(get().fetchEvmPortfolio(evmAddr));
           }
 
-          // Update combined portfolio after both fetches
-          get().updateCombinedPortfolio();
+          // Wait for all portfolio fetches to complete
+          await Promise.all(fetchPromises);
+
+          set(() => ({
+            lastUpdated: Date.now(),
+            isLoading: false,
+          }));
         } catch (error) {
           set({
             error: error as Error,
@@ -185,13 +199,13 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
-      // Refresh portfolio data
+      // Refresh portfolio data - always forces a refresh
       refreshPortfolio: async () => {
         // Access chatType directly from settings store
         const chatType = useSettingsStore.getState().chatType;
-        console.log("Refreshing portfolio, chatType:", chatType);
+        console.log("Force refreshing portfolio, chatType:", chatType);
 
-        // Reset data first to ensure UI shows loading state
+        // Reset data first to ensure UI shows loading state and indicate force refresh
         set({
           isLoading: true,
           error: null,
@@ -203,11 +217,19 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       // Initialize visibility listener and other portfolio management
       initializePortfolioManager: () => {
+        console.log("Initializing portfolio manager");
+
         // Function to handle visibility change
         const handleVisibilityChange = () => {
           if (document.visibilityState === "visible") {
-            // On becoming visible, refresh if needed
-            get().refreshPortfolio();
+            console.log("Tab became visible, checking if refresh needed");
+            // On becoming visible, check if data is fresh
+            if (!get().isFresh()) {
+              console.log("Data is stale, refreshing");
+              get().refreshPortfolio();
+            } else {
+              console.log("Data is fresh, no refresh needed");
+            }
           }
         };
 
@@ -215,14 +237,14 @@ export const usePortfolioStore = create<PortfolioState>()(
         document.addEventListener("visibilitychange", handleVisibilityChange);
 
         // Initial fetch if needed
-        if (!get().isFresh()) {
+        if (get().solanaAssets.length === 0) {
+          console.log("Initial portfolio load");
           get().refreshPortfolio();
         }
       },
     }),
     {
       name: "portfolio-storage",
-      // We could persist the actual portfolio data if desired
       partialize: (state) => ({
         lastUpdated: state.lastUpdated,
       }),
