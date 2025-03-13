@@ -8,8 +8,14 @@ import { WalletAddresses } from "./WalletAddresses";
 export function Settings() {
   const { user } = usePrivy();
   const { chatType, setChatType } = useSettingsStore();
-  const { quickBuyAmount, setQuickBuyAmount, agentMode, setAgentMode } =
-    useSettingsStore();
+  const {
+    quickBuyAmount,
+    setQuickBuyAmount,
+    agentMode,
+    setAgentMode,
+    debugMode,
+    setDebugMode,
+  } = useSettingsStore();
 
   const { t } = useTranslation();
 
@@ -81,6 +87,15 @@ export function Settings() {
         {t("settings.connected_accounts")}
       </h2>
       {user && <ConnectedAccounts user={user} />}
+      {process.env.NODE_ENV !== "production" && (
+        <button
+          onClick={() => {
+            setDebugMode(!debugMode);
+          }}
+        >
+          Debug mode: {debugMode ? "enabled" : "disabled"}
+        </button>
+      )}
     </div>
   );
 }

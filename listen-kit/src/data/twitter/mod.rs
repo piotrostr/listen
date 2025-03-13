@@ -148,7 +148,7 @@ impl TwitterApi {
         // the core contents and leave the interpretation to core model rather than distiller
 
         self.distiller
-            .distill(&res)
+            .distill(username, &res)
             .await
             .map_err(TwitterApiError::DistillerError)
     }

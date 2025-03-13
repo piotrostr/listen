@@ -10,24 +10,26 @@ pub type GeminiAgent = rig::agent::Agent<GeminiCompletionModel>;
 // Add DeepSeekAgent type
 pub type DeepSeekAgent = rig::agent::Agent<DeepSeekCompletionModel>;
 
-pub const DEFAULT_PREAMBLE: &str =
-    "Your job is to extract the most relevant content from an
-    Twitter API response and provide a summary. Be sure to take into account
-    things like mindshare, the likes, retweets.
-    1-500 likes - not a lot
-    500-1k likes - some engagement
-    1k-20k likes - decent engagement
-    20k-100k likes - high engagement
-    views:
-    1-1000 views - not a lot
-    1k-5k views - some engagement
-    5k-20k views - decent engagement
-    20k-100k views - high engagement
-    If the profile has a blockchain address in the bio (solana public key,
-    ethereum address), be sure to include it in the summary
+pub const DEFAULT_PREAMBLE: &str = "
+Your job is to extract the most relevant content from an
+Twitter API response and provide a summary. Be sure to take into account
+things like followers, the likes, reposts count, age of account,..
+1-500 likes - not a lot
+500-1k likes - some engagement
+1k-20k likes - decent engagement
+20k-100k likes - high engagement
+views:
+1-1000 views - not a lot
+1k-5k views - some engagement
+5k-20k views - decent engagement
+20k-100k views - high engagement
+If the profile has a blockchain address in the bio (solana public key, ethereum address), be sure to include it in the summary
+Good summary is to the point, enscapsulates the most important information and is not overly excessive
+Through providing the most significant tweet IDs and profile names format @username/tweet_id, it is possible to continue the analysis further and ground the response
 ";
 
-pub const DEFAULT_PREAMBLE_ZH: &str = "你的任务是从一个推特API响应中提取最相关的内容，并提供一个总结。确保考虑到以下因素：
+pub const DEFAULT_PREAMBLE_ZH: &str = "你的任务是从一个推特API响应中提取最相关的内容
+，并提供一个总结。确保考虑到以下因素：
 - 关注度
 - 点赞数
 - 转发数
@@ -46,6 +48,8 @@ pub const DEFAULT_PREAMBLE_ZH: &str = "你的任务是从一个推特API响应�
 20k-100k views - 高关注
 
 如果用户在个人简介中包含区块链地址（solana 公钥，以太坊地址），请务必在总结中包含它。
+通过提供推特ID和用户名，可以继续分析。
+总结要简洁，抓住最重要的信息，不要过于冗长。
 ";
 pub fn make_gemini_distiller(
     preamble: Option<String>,
@@ -70,6 +74,7 @@ pub fn make_deepseek_distiller(
 pub trait DistillerAgent: Send + Sync {
     async fn distill(
         &self,
+        query: &str,
         response: &serde_json::Value,
     ) -> Result<String, DistillerError>;
 }
@@ -102,11 +107,16 @@ pub fn make_language_aware_distiller(
 impl DistillerAgent for GeminiAgent {
     async fn distill(
         &self,
+        query: &str,
         response: &serde_json::Value,
     ) -> Result<String, DistillerError> {
-        self.prompt(response.to_string())
-            .await
-            .map_err(DistillerError::PromptError)
+        self.prompt(format!(
+            "query: {}\nresponse: {}",
+            query,
+            response.to_string()
+        ))
+        .await
+        .map_err(DistillerError::PromptError)
     }
 }
 
@@ -115,11 +125,16 @@ impl DistillerAgent for GeminiAgent {
 impl DistillerAgent for DeepSeekAgent {
     async fn distill(
         &self,
+        query: &str,
         response: &serde_json::Value,
     ) -> Result<String, DistillerError> {
-        self.prompt(response.to_string())
-            .await
-            .map_err(DistillerError::PromptError)
+        self.prompt(format!(
+            "query: {}\nresponse: {}",
+            query,
+            response.to_string()
+        ))
+        .await
+        .map_err(DistillerError::PromptError)
     }
 }
 
@@ -168,9 +183,10 @@ impl Distiller {
     // Update the distill method to use our Promptable trait
     pub async fn distill(
         &self,
+        query: &str,
         response: &serde_json::Value,
     ) -> Result<String, DistillerError> {
-        self.agent.distill(response).await
+        self.agent.distill(query, response).await
     }
 }
 
@@ -183,6 +199,7 @@ mod tests {
         let distiller = Distiller::from_env().unwrap();
         let result = distiller
             .distill(
+                "pwease",
                 &std::fs::read_to_string("./debug/tweets_by_ids.json")
                     .unwrap()
                     .parse::<serde_json::Value>()

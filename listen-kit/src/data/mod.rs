@@ -108,7 +108,7 @@ pub async fn search_tweets(
     let distilled = wrap_unsafe(move || async move {
         twitter
             .distiller
-            .distill(&serde_json::to_value(&response)?)
+            .distill(&query, &serde_json::to_value(&response)?)
             .await
             .map_err(|e| anyhow!("Failed to distill: {}", e))
     })

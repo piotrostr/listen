@@ -7,9 +7,11 @@ interface SettingsState {
   quickBuyAmount: number;
   agentMode: boolean;
   chatType: ChatType;
+  debugMode: boolean;
   setQuickBuyAmount: (amount: number) => void;
   setAgentMode: (enabled: boolean) => void;
   setChatType: (type: ChatType) => void;
+  setDebugMode: (enabled: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -18,7 +20,7 @@ export const useSettingsStore = create<SettingsState>()(
       quickBuyAmount: 0.1,
       agentMode: false,
       chatType: "solana" as ChatType,
-
+      debugMode: false,
       setQuickBuyAmount: (amount: number) => {
         if (!isNaN(amount) && amount > 0) {
           set({ quickBuyAmount: amount });
@@ -31,6 +33,10 @@ export const useSettingsStore = create<SettingsState>()(
 
       setChatType: (type: ChatType) => {
         set({ chatType: type });
+      },
+
+      setDebugMode: (enabled: boolean) => {
+        set({ debugMode: enabled });
       },
     }),
     {
