@@ -198,13 +198,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Main Content with Sidebar */}
         <div className="flex-1 relative overflow-hidden">
-          {/* Collapsible Sidebar - Floating */}
+          {/* Collapsible Sidebar - Modified for X-style animation */}
           <div
             className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 
-              ${isSidebarOpen ? "w-64 bg-black/90 backdrop-blur-sm" : isMobile ? "w-0" : "w-16"} 
-              ${isMobile && !isSidebarOpen ? "opacity-0 pointer-events-none" : "opacity-100"}
-              ${isMobile ? "lg:block" : "block"} flex flex-col
-              ${isMobile ? "pb-20" : ""}`}
+              ${isMobile ? "w-64" : isSidebarOpen ? "w-64" : "w-16"} 
+              ${isMobile ? "transform" : ""} 
+              ${isMobile && !isSidebarOpen ? "-translate-x-full" : "translate-x-0"}
+              bg-black/90 backdrop-blur-sm flex flex-col ${isMobile ? "pb-5" : ""}`}
             onMouseEnter={handleSidebarMouseEnter}
             onMouseLeave={handleSidebarMouseLeave}
           >
@@ -293,10 +293,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
             )}
           </div>
 
-          {/* Main Content Area - Responsive behavior */}
+          {/* Dimming overlay for mobile */}
+          {isMobile && isSidebarOpen && (
+            <div
+              className="fixed inset-0 bg-black/50 z-30 transition-opacity duration-300"
+              onClick={() => setIsSidebarOpen(false)}
+            ></div>
+          )}
+
+          {/* Main Content Area - Modified for X-style shifting */}
           <div
             className={`flex justify-center h-full w-full transition-all duration-300 
-              ${isMobile ? "" : "pl-16"} 
+              ${isMobile ? "transform" : "pl-16"} 
+              ${isMobile && isSidebarOpen ? "translate-x-64" : "translate-x-0"}
               ${activePanel && !isMobile ? "lg:pr-[420px]" : ""}
               ${isMobile ? (isIOS ? "pb-24" : "pb-16") : ""}`}
           >
@@ -331,12 +340,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
             </div>
           )}
 
-          {/* Mobile Navigation */}
+          {/* Mobile Navigation - Shift with content */}
           {isMobile && (
-            <MobileNavigation
-              activePanel={activePanel}
-              setActivePanel={setActivePanel}
-            />
+            <div
+              className={`transition-transform duration-300 ${isSidebarOpen ? "transform translate-x-64" : ""}`}
+            >
+              <MobileNavigation
+                activePanel={activePanel}
+                setActivePanel={setActivePanel}
+              />
+            </div>
           )}
         </div>
       </div>
