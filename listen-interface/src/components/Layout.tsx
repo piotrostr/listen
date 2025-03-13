@@ -9,12 +9,12 @@ import { Background } from "./Background";
 import { useTranslation } from "react-i18next";
 import { FaXTwitter } from "react-icons/fa6";
 import { useMobile } from "../contexts/MobileContext";
-import LanguageSwitcher from "./LanguageSwitcher";
 import { MobileNavigation } from "./MobileNavigation";
 import { PanelSelector } from "./PanelSelector";
 import { RecentChats } from "./RecentChats";
 import { SimpleHeader } from "./SimpleHeader";
 import { SwipeHandler } from "./SwipeHandler";
+import { VersionAndLanguageDisplay } from "./VersionAndLanguage";
 
 function balanceToUI(balance: UseBalanceReturnType["data"]) {
   if (!balance?.value || !balance?.decimals) return 0;
@@ -88,19 +88,6 @@ export function BalanceDisplay({
           </span>
         )}
       </div>
-    </div>
-  );
-}
-
-// Version Display Component
-export function VersionAndLanguageDisplay() {
-  const { t } = useTranslation();
-  return (
-    <div className="flex justify-around items-center w-full">
-      <span className="text-xs text-gray-400">
-        {t("layout.version")}: 2.1.0
-      </span>
-      <LanguageSwitcher />
     </div>
   );
 }
