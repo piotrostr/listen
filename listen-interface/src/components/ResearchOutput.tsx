@@ -1,6 +1,7 @@
 import { ChatMessage } from "./ChatMessage";
 
 function embedResearchAnchors(message: string): string {
+  console.log("embedResearchAnchors", message);
   // First, temporarily replace escaped underscores in usernames
   // This handles cases like @Felixxx\_on\_sol/1898668765270909366
   let processableMessage = message;
@@ -32,6 +33,28 @@ function embedResearchAnchors(message: string): string {
     }
   }
 
+  // Also collect references without @ symbol (like in parentheses)
+  const plainRefRegex = /\(([a-zA-Z0-9_§]+)\/(\d+)\)/g;
+  while ((match = plainRefRegex.exec(processableMessage)) !== null) {
+    let username = match[1];
+    const tweetId = match[2];
+
+    // Skip if it's not likely a Twitter reference
+    if (username.includes("/") || tweetId.length < 10) {
+      continue;
+    }
+
+    // Convert the placeholder back to underscore
+    username = username.replace(new RegExp(placeholderChar, "g"), "_");
+
+    const refKey = `${username}/${tweetId}`;
+
+    if (!references[refKey]) {
+      refCount++;
+      references[refKey] = refCount;
+    }
+  }
+
   // Second pass: replace all references with links
   // We need to handle both normal and escaped versions
 
@@ -45,19 +68,19 @@ function embedResearchAnchors(message: string): string {
     // Create escaped username pattern (with \_ instead of _)
     const escapedUsername = username.replace(/_/g, "\\_");
 
-    // Replace the escaped version first
+    // Replace the escaped version first - with @ symbol
     processableMessage = processableMessage.replace(
       new RegExp(`@${escapedUsername}\\/${tweetId}`, "g"),
       link
     );
 
-    // Replace the normal version
+    // Replace normal version - with @ symbol
     processableMessage = processableMessage.replace(
       new RegExp(`@${username.replace(/_/g, "[_§]")}\\/${tweetId}`, "g"),
       link
     );
 
-    // Also handle parenthesized versions
+    // Also handle parenthesized versions - with @ symbol
     processableMessage = processableMessage.replace(
       new RegExp(`\\(@${escapedUsername}\\/${tweetId}\\)`, "g"),
       link
@@ -65,6 +88,16 @@ function embedResearchAnchors(message: string): string {
     processableMessage = processableMessage.replace(
       new RegExp(`\\(@${username.replace(/_/g, "[_§]")}\\/${tweetId}\\)`, "g"),
       link
+    );
+
+    // Handle parenthesized versions - without @ symbol
+    processableMessage = processableMessage.replace(
+      new RegExp(`\\(${escapedUsername}\\/${tweetId}\\)`, "g"),
+      `(${link})`
+    );
+    processableMessage = processableMessage.replace(
+      new RegExp(`\\(${username.replace(/_/g, "[_§]")}\\/${tweetId}\\)`, "g"),
+      `(${link})`
     );
   }
 
