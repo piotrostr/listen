@@ -1,4 +1,6 @@
 import { ReactNode } from "react";
+import { useTranslation } from "react-i18next";
+import { FaExclamationTriangle } from "react-icons/fa";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
@@ -18,12 +20,15 @@ import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
 import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
+import { ResearchOutputDisplay } from "./ResearchOutput";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
 const SplTokenBalanceSchema = z.tuple([z.string(), z.number(), z.string()]);
 
 export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
+  const { t } = useTranslation();
+
   if (toolOutput.name === "get_spl_token_balance") {
     try {
       const parsed = SplTokenBalanceSchema.parse(JSON.parse(toolOutput.result));
@@ -57,13 +62,16 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
   ) {
     try {
       const message = JSON.parse(toolOutput.result);
-      return (
-        <div className="text-gray-400">
-          <ChatMessage message={message} direction="agent" />
-        </div>
-      );
+      return <ResearchOutputDisplay message={message} />;
     } catch (e) {
       console.error("Failed to parse tweet:", e);
+      if (toolOutput.result.includes("Account suspended")) {
+        return (
+          <div className="text-orange-500">
+            <FaExclamationTriangle /> {t("pipelines.account_suspended")}
+          </div>
+        );
+      }
       return <ChatMessage message={toolOutput.result} direction="agent" />;
     }
   }
