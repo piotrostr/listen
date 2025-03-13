@@ -64,32 +64,50 @@ export const useTokenStore = create<TokenState>()(
       updateTokenData: (data) => {
         if (!data.is_pump) return;
 
-        set((state) => {
-          const newMap = new Map(state.tokenMap);
-          const existing = newMap.get(data.pubkey);
+        // Instead of skipping updates, we'll prevent recursive/nested updates
+        // by tracking when we're in the middle of a set operation
+        const isNested = (window as any).__currentlyUpdatingTokenData;
+        if (isNested) {
+          // Queue this update for the next tick to avoid nested updates
+          setTimeout(() => {
+            get().updateTokenData(data);
+          }, 0);
+          return;
+        }
 
-          newMap.set(data.pubkey, {
-            name: data.name,
-            buyVolume:
-              (existing?.buyVolume || 0) + (data.is_buy ? data.swap_amount : 0),
-            sellVolume:
-              (existing?.sellVolume || 0) +
-              (!data.is_buy ? data.swap_amount : 0),
-            lastPrice: data.price,
-            lastUpdate: new Date(data.timestamp),
-            marketCap: data.market_cap,
-            uniqueAddresses: new Set([
-              ...(existing?.uniqueAddresses || []),
-              data.owner,
-            ]),
-            pubkey: data.pubkey,
+        try {
+          (window as any).__currentlyUpdatingTokenData = true;
+
+          set((state) => {
+            const newMap = new Map(state.tokenMap);
+            const existing = newMap.get(data.pubkey);
+
+            newMap.set(data.pubkey, {
+              name: data.name,
+              buyVolume:
+                (existing?.buyVolume || 0) +
+                (data.is_buy ? data.swap_amount : 0),
+              sellVolume:
+                (existing?.sellVolume || 0) +
+                (!data.is_buy ? data.swap_amount : 0),
+              lastPrice: data.price,
+              lastUpdate: new Date(data.timestamp),
+              marketCap: data.market_cap,
+              uniqueAddresses: new Set([
+                ...(existing?.uniqueAddresses || []),
+                data.owner,
+              ]),
+              pubkey: data.pubkey,
+            });
+
+            return {
+              tokenMap: newMap,
+              latestUpdate: data,
+            };
           });
-
-          return {
-            tokenMap: newMap,
-            latestUpdate: data,
-          };
-        });
+        } finally {
+          (window as any).__currentlyUpdatingTokenData = false;
+        }
       },
 
       toggleWatchlist: (pubkey) => {
