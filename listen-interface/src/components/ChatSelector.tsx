@@ -1,5 +1,5 @@
 import pumpIcon from "../assets/icons/pump.png";
-import { ChatType } from "../contexts/SettingsContext";
+import { ChatType } from "../store/settingsStore";
 
 interface ChatOptionProps {
   id: ChatType;

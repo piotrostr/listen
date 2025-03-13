@@ -1,9 +1,9 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { ChatType } from "../contexts/SettingsContext";
 import { PortfolioItem } from "../hooks/types";
 import { getTokenHoldings as fetchEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { fetchPortfolio as fetchSolanaPortfolio } from "../hooks/useSolanaPortfolio";
+import { useSettingsStore } from "./settingsStore"; // Import the settings store
 
 export function getPortfolioTotalValue(assets: PortfolioItem[]): number {
   return assets.reduce((total, asset) => total + asset.price * asset.amount, 0);
@@ -18,7 +18,6 @@ interface PortfolioState {
   evmAssets: PortfolioItem[];
   combinedPortfolio: PortfolioItem[];
   portfolioValue: number;
-  chatType: ChatType;
 
   // Status
   isLoading: boolean;
@@ -32,7 +31,6 @@ interface PortfolioState {
     solanaAddress: string,
     evmAddress: string
   ) => Promise<void>;
-  setChatType: (type: ChatType) => void;
   refreshPortfolio: (
     solanaAddress: string,
     evmAddress: string,
@@ -50,7 +48,6 @@ export const usePortfolioStore = create<PortfolioState>()(
       evmAssets: [],
       combinedPortfolio: [],
       portfolioValue: 0,
-      chatType: "solana", // Default to solana-only mode
 
       // Initial status
       isLoading: false,
@@ -66,12 +63,15 @@ export const usePortfolioStore = create<PortfolioState>()(
         return now - lastUpdated < STALE_TIME;
       },
 
-      // Helper to update combined portfolio based on current chatType
+      // Helper to update combined portfolio based on current settings
       updateCombinedPortfolio: () => {
+        // Get chatType directly from settings store
+        const chatType = useSettingsStore.getState().chatType;
+
         set((state) => {
           // Only include Solana assets if chatType is "solana"
           const combinedPortfolio =
-            state.chatType === "solana"
+            chatType === "solana"
               ? [...state.solanaAssets]
               : [...state.solanaAssets, ...state.evmAssets];
 
@@ -100,18 +100,13 @@ export const usePortfolioStore = create<PortfolioState>()(
             logoURI: asset.logoURI || "",
           }));
 
-          set((_state) => {
-            // Store the Solana assets
-            const newState = {
-              solanaAssets: normalizedAssets,
-              isLoading: false,
-              lastUpdated: Date.now(),
-            };
-
-            return newState;
+          set({
+            solanaAssets: normalizedAssets,
+            isLoading: false,
+            lastUpdated: Date.now(),
           });
 
-          // Update combined portfolio separately to ensure correct filtering
+          // Update combined portfolio
           get().updateCombinedPortfolio();
         } catch (error) {
           set({
@@ -125,8 +120,11 @@ export const usePortfolioStore = create<PortfolioState>()(
       fetchEvmPortfolio: async (address: string) => {
         if (!address) return;
 
+        // Access chatType directly from settings store
+        const chatType = useSettingsStore.getState().chatType;
+
         // Skip fetching EVM assets if we're in Solana-only mode
-        if (get().chatType === "solana") {
+        if (chatType === "solana") {
           console.log("Skipping EVM fetch in Solana-only mode");
           return;
         }
@@ -145,7 +143,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             lastUpdated: Date.now(),
           });
 
-          // Update combined portfolio separately
+          // Update combined portfolio
           get().updateCombinedPortfolio();
         } catch (error) {
           set({
@@ -159,6 +157,9 @@ export const usePortfolioStore = create<PortfolioState>()(
       fetchAllPortfolios: async (solanaAddress: string, evmAddress: string) => {
         if (!solanaAddress && !evmAddress) return;
 
+        // Access chatType directly from settings store
+        const chatType = useSettingsStore.getState().chatType;
+
         set({ isLoading: true, error: null });
 
         try {
@@ -168,7 +169,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           }
 
           // Only fetch EVM portfolio if chatType is "omni" and evmAddress is provided
-          if (evmAddress && get().chatType === "omni") {
+          if (evmAddress && chatType === "omni") {
             await get().fetchEvmPortfolio(evmAddress);
           }
 
@@ -183,13 +184,6 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
-      setChatType: (type: ChatType) => {
-        set({ chatType: type });
-
-        // Update the combined portfolio whenever the chatType changes
-        get().updateCombinedPortfolio();
-      },
-
       refreshPortfolio: async (
         solanaAddress: string,
         evmAddress: string,
@@ -201,13 +195,15 @@ export const usePortfolioStore = create<PortfolioState>()(
           return;
         }
 
-        console.log("Refreshing portfolio, chatType:", get().chatType);
+        // Access chatType directly from settings store
+        const chatType = useSettingsStore.getState().chatType;
+        console.log("Refreshing portfolio, chatType:", chatType);
 
         // Reset data first to ensure UI shows loading state
-        set((_state) => ({
+        set({
           isLoading: true,
           error: null,
-        }));
+        });
 
         // Reuse the fetchAllPortfolios to refresh
         await get().fetchAllPortfolios(solanaAddress, evmAddress);
@@ -215,10 +211,8 @@ export const usePortfolioStore = create<PortfolioState>()(
     }),
     {
       name: "portfolio-storage",
-      // Only persist chat type preference
-      partialize: (state) => ({
-        chatType: state.chatType,
-      }),
+      // We don't need to persist anything
+      partialize: (_state) => ({}),
     }
   )
 );

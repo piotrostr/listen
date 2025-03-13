@@ -2,9 +2,9 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { useSettings } from "../contexts/SettingsContext";
 import { pickSystemPrompt } from "../prompts";
 import { usePortfolioStore } from "../store/portfolioStore";
+import { useSettingsStore } from "../store/settingsStore";
 import {
   Chat,
   Message,
@@ -18,9 +18,12 @@ import { usePrivyWallets } from "./usePrivyWallet";
 import { compactPortfolio } from "./util";
 
 export function useChat() {
-  const { quickBuyAmount: defaultAmount, agentMode } = useSettings();
+  const {
+    quickBuyAmount: defaultAmount,
+    agentMode,
+    chatType,
+  } = useSettingsStore();
   const { getAccessToken } = usePrivy();
-  const { chatType } = useSettings();
   const {
     chatId,
     new: isNewChat,

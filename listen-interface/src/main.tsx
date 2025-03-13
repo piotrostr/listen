@@ -11,7 +11,6 @@ import { arbitrum } from "viem/chains";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { MobileProvider } from "./contexts/MobileContext";
 import { ModalProvider } from "./contexts/ModalContext";
-import { SettingsProvider } from "./contexts/SettingsContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import i18n from "./i18n";
 import "./index.css";
@@ -59,11 +58,9 @@ createRoot(document.getElementById("root")!).render(
           <ToastProvider>
             <WagmiProvider config={config}>
               <QueryClientProvider client={new QueryClient()}>
-                <SettingsProvider>
-                  <ModalProvider>
-                    <RouterProvider router={router} />
-                  </ModalProvider>
-                </SettingsProvider>
+                <ModalProvider>
+                  <RouterProvider router={router} />
+                </ModalProvider>
               </QueryClientProvider>
             </WagmiProvider>
           </ToastProvider>
