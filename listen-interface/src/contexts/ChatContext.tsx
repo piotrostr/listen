@@ -377,24 +377,39 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       // Explicitly set chat to null first to ensure clean state
       setChat(null);
 
-      // Navigate to clean URLsearchParams
+      // Generate a new chat ID for new chats
+      const newChatId = uuidv4();
+
+      // Navigate to clean URLsearchParams with new chat ID
       setSentInitialMessage(false);
       navigate({
         to: "/",
         search: {
           message: initialMessage,
+          chatId: newChatId, // Add the new chat ID
         },
         replace: true,
       });
     }
-  }, [isNewChat, navigate, setChat]);
+  }, [isNewChat, navigate, setChat, initialMessage]);
 
   useEffect(() => {
     if (initialMessage && !sentInitialMessage) {
       setSentInitialMessage(true);
       sendMessage(initialMessage);
+
+      // Clear only the message from URL after sending, keep the chatId
+      navigate({
+        to: "/",
+        search: (prev) => ({
+          ...prev,
+          message: undefined,
+          // Keep the chatId in the URL
+        }),
+        replace: true,
+      });
     }
-  }, [initialMessage, isNewChat, sendMessage, sentInitialMessage]);
+  }, [initialMessage, isNewChat, sendMessage, sentInitialMessage, navigate]);
 
   const stopGeneration = () => {
     if (abortControllerRef.current) {
