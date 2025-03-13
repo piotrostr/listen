@@ -1,4 +1,3 @@
-import { useTranslation } from "react-i18next";
 import { FaApplePay, FaShoppingCart } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
@@ -10,24 +9,56 @@ interface PortfolioItemTileProps {
   onTopup: () => void;
 }
 
+// Helper function to format amounts
+const formatAmount = (amount: number): string => {
+  if (amount >= 1_000_000_000) {
+    return (amount / 1_000_000_000).toFixed(3) + "B";
+  } else if (amount >= 1_000_000) {
+    return (amount / 1_000_000).toFixed(3) + "M";
+  } else if (amount >= 1000) {
+    return amount.toFixed(3);
+  } else {
+    return amount.toFixed(6);
+  }
+};
+
+// Helper function to format prices to 4 significant digits
+const formatPrice = (price: number): string => {
+  if (!price) return "0";
+
+  // For numbers >= 0.001, use toFixed with appropriate decimal places
+  if (price >= 0.001) {
+    return price.toPrecision(4);
+  }
+
+  // For very small numbers, convert to string and find significant digits
+  const priceStr = price.toString();
+  const match = priceStr.match(/^0\.0*[1-9]/);
+  if (match) {
+    // Count leading zeros after decimal
+    const leadingZeros = match[0].length - 3; // -3 for "0." and the first non-zero digit
+    return price.toFixed(leadingZeros + 3); // Show 4 significant digits
+  }
+
+  return price.toPrecision(4);
+};
+
 export function PortfolioItemTile({
   asset,
   onBuy,
   onSell,
   onTopup,
 }: PortfolioItemTileProps) {
-  const { t } = useTranslation();
   const { openChart } = useModal();
-
   return (
     <div className="p-3 sm:p-4 hover:bg-black/50 transition-colors">
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-3">
           {asset.logoURI ? (
             <img
-              src={asset.logoURI}
+              src={asset.logoURI.replace("cf-ipfs.com", "ipfs.io")}
               alt={asset.symbol}
-              className="w-8 h-8 rounded-full"
+              className="w-12 h-12 rounded-full"
             />
           ) : (
             <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
@@ -52,7 +83,9 @@ export function PortfolioItemTile({
                 alt={asset.chain}
               />
             </h3>
-            <p className="text-sm text-gray-400">${asset.symbol}</p>
+            <p className="text-sm text-gray-400">
+              {formatAmount(asset.amount)} {asset.symbol}
+            </p>
           </div>
         </div>
         <div className="text-right">
@@ -75,7 +108,7 @@ export function PortfolioItemTile({
                 $
                 {asset.address !==
                 "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-                  ? asset.price?.toFixed(6)
+                  ? formatPrice(asset.price)
                   : asset.price?.toFixed(2)}
               </p>
             </div>
@@ -83,10 +116,6 @@ export function PortfolioItemTile({
         </div>
       </div>
       <div className="flex justify-between items-center">
-        <div className="text-sm text-gray-400">
-          {t("portfolio.holding")}: {asset.amount}
-        </div>
-
         {/* Buy/Sell buttons - only show for Solana chain assets */}
         {asset.chain === "solana" && (
           <div className="flex gap-2">
