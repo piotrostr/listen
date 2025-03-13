@@ -122,23 +122,12 @@ export const fetchPortfolio = async (
 ): Promise<PortfolioItem[]> => {
   const pubkey = new PublicKey(address);
   const WSOL_MINT = "So11111111111111111111111111111111111111112";
-  const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
   // Get SOL balance and token holdings in parallel
   const [solBalance, holdings] = await Promise.all([
     connection.getBalance(pubkey),
     getHoldings(connection, pubkey),
   ]);
-
-  // Ensure USDC is in the mints list even if not in holdings
-  const existingMints = holdings.map((h) => h.mint);
-  if (!existingMints.includes(USDC_MINT)) {
-    holdings.push({
-      mint: USDC_MINT,
-      ata: "",
-      amount: 0n,
-    });
-  }
 
   const mints = [WSOL_MINT, ...holdings.map((h) => h.mint)];
 
@@ -148,7 +137,6 @@ export const fetchPortfolio = async (
     fetchPrices(mints),
   ]);
 
-  // Create SOL portfolio item using Jupiter metadata
   const solMetadata = tokenMetadata[0];
   const solPortfolioItem = {
     address: WSOL_MINT,
