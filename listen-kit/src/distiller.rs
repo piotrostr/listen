@@ -75,6 +75,7 @@ pub fn make_deepseek_distiller(
 pub trait DistillerAgent: Send + Sync {
     async fn distill(
         &self,
+        query: &str,
         response: &serde_json::Value,
     ) -> Result<String, DistillerError>;
 }
@@ -107,11 +108,16 @@ pub fn make_language_aware_distiller(
 impl DistillerAgent for GeminiAgent {
     async fn distill(
         &self,
+        query: &str,
         response: &serde_json::Value,
     ) -> Result<String, DistillerError> {
-        self.prompt(response.to_string())
-            .await
-            .map_err(DistillerError::PromptError)
+        self.prompt(format!(
+            "query: {}\nresponse: {}",
+            query,
+            response.to_string()
+        ))
+        .await
+        .map_err(DistillerError::PromptError)
     }
 }
 
@@ -120,11 +126,16 @@ impl DistillerAgent for GeminiAgent {
 impl DistillerAgent for DeepSeekAgent {
     async fn distill(
         &self,
+        query: &str,
         response: &serde_json::Value,
     ) -> Result<String, DistillerError> {
-        self.prompt(response.to_string())
-            .await
-            .map_err(DistillerError::PromptError)
+        self.prompt(format!(
+            "query: {}\nresponse: {}",
+            query,
+            response.to_string()
+        ))
+        .await
+        .map_err(DistillerError::PromptError)
     }
 }
 
@@ -173,9 +184,10 @@ impl Distiller {
     // Update the distill method to use our Promptable trait
     pub async fn distill(
         &self,
+        query: &str,
         response: &serde_json::Value,
     ) -> Result<String, DistillerError> {
-        self.agent.distill(response).await
+        self.agent.distill(query, response).await
     }
 }
 
@@ -188,6 +200,7 @@ mod tests {
         let distiller = Distiller::from_env().unwrap();
         let result = distiller
             .distill(
+                "pwease",
                 &std::fs::read_to_string("./debug/tweets_by_ids.json")
                     .unwrap()
                     .parse::<serde_json::Value>()
