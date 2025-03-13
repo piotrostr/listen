@@ -4,6 +4,7 @@ import { PortfolioItem } from "../hooks/types";
 import { getTokenHoldings as fetchEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { fetchPortfolio as fetchSolanaPortfolio } from "../hooks/useSolanaPortfolio";
 import { useSettingsStore } from "./settingsStore";
+import { useTokenStore } from "./tokenStore";
 import { useWalletStore } from "./walletStore";
 
 export function getPortfolioTotalValue(assets: PortfolioItem[]): number {
@@ -15,10 +16,14 @@ const STALE_TIME = 30 * 1000;
 
 interface PortfolioState {
   // Data
-  solanaAssets: PortfolioItem[];
-  evmAssets: PortfolioItem[];
-  combinedPortfolio: PortfolioItem[];
-  portfolioValue: number;
+  solanaAssetsMap: Map<string, PortfolioItem>; // mint => item
+  evmAssetsMap: Map<string, PortfolioItem>; // address => item
+
+  // Computed/derived values (can be accessed via selectors)
+  getSolanaAssets: () => PortfolioItem[];
+  getEvmAssets: () => PortfolioItem[];
+  getCombinedPortfolio: () => PortfolioItem[];
+  getPortfolioValue: () => number;
 
   // Status
   isLoading: boolean;
@@ -31,18 +36,30 @@ interface PortfolioState {
   fetchAllPortfolios: () => Promise<void>;
   refreshPortfolio: () => Promise<void>;
   isFresh: () => boolean;
-  updateCombinedPortfolio: () => void;
   initializePortfolioManager: () => void;
+  updateSolanaTokenPrices: () => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>()(
   persist(
     (set, get) => ({
-      // Initial data state
-      solanaAssets: [],
-      evmAssets: [],
-      combinedPortfolio: [],
-      portfolioValue: 0,
+      // Initial data state using Maps
+      solanaAssetsMap: new Map<string, PortfolioItem>(),
+      evmAssetsMap: new Map<string, PortfolioItem>(),
+
+      // Selectors to get arrays from maps when needed
+      getSolanaAssets: () => Array.from(get().solanaAssetsMap.values()),
+      getEvmAssets: () => Array.from(get().evmAssetsMap.values()),
+      getCombinedPortfolio: () => {
+        const chatType = useSettingsStore.getState().chatType;
+        const solanaAssets = Array.from(get().solanaAssetsMap.values());
+
+        return chatType === "solana"
+          ? solanaAssets
+          : [...solanaAssets, ...Array.from(get().evmAssetsMap.values())];
+      },
+      getPortfolioValue: () =>
+        getPortfolioTotalValue(get().getCombinedPortfolio()),
 
       // Initial status
       isLoading: false,
@@ -58,55 +75,35 @@ export const usePortfolioStore = create<PortfolioState>()(
         return now - lastUpdated < STALE_TIME;
       },
 
-      // Helper to update combined portfolio based on current settings
-      updateCombinedPortfolio: () => {
-        // Get chatType directly from settings store
-        const chatType = useSettingsStore.getState().chatType;
-
-        set((state) => {
-          // Only include Solana assets if chatType is "solana"
-          const combinedPortfolio =
-            chatType === "solana"
-              ? [...state.solanaAssets]
-              : [...state.solanaAssets, ...state.evmAssets];
-
-          // Calculate portfolio value
-          const portfolioValue = getPortfolioTotalValue(combinedPortfolio);
-
-          return {
-            combinedPortfolio,
-            portfolioValue,
-          };
-        });
-      },
-
       // Actions
       fetchSolanaPortfolio: async (address: string) => {
         if (!address) return;
 
-        // Don't set isLoading if we already have data
         set((state) => ({
-          isLoading: state.solanaAssets.length === 0,
+          isLoading: state.solanaAssetsMap.size === 0,
           error: null,
         }));
 
         try {
           const solanaAssets = await fetchSolanaPortfolio(address);
 
-          // Normalize assets to ensure logoURI is always a string
-          const normalizedAssets = solanaAssets.map((asset) => ({
-            ...asset,
-            logoURI: asset.logoURI || "",
-          }));
+          // Convert array to map
+          const solanaAssetsMap = new Map();
+          solanaAssets.forEach((asset) => {
+            solanaAssetsMap.set(asset.address, {
+              ...asset,
+              logoURI: asset.logoURI || "",
+            });
+          });
 
           set(() => ({
-            solanaAssets: normalizedAssets,
+            solanaAssetsMap,
             isLoading: false,
             lastUpdated: Date.now(),
           }));
 
           // Update combined portfolio
-          get().updateCombinedPortfolio();
+          get().getCombinedPortfolio();
         } catch (error) {
           set({
             error: error as Error,
@@ -131,21 +128,26 @@ export const usePortfolioStore = create<PortfolioState>()(
         // Don't set isLoading if we already have data
         set((state) => ({
           isLoading:
-            state.evmAssets.length === 0 && state.solanaAssets.length === 0,
+            state.evmAssetsMap.size === 0 && state.solanaAssetsMap.size === 0,
           error: null,
         }));
 
         try {
           const evmAssets = await fetchEvmPortfolio(address);
 
+          // Convert array to map
+          const evmAssetsMap = new Map();
+          evmAssets.forEach((asset) => {
+            evmAssetsMap.set(asset.address, asset);
+          });
+
           set(() => ({
-            evmAssets,
+            evmAssetsMap,
             isLoading: false,
             lastUpdated: Date.now(),
           }));
 
-          // Update combined portfolio
-          get().updateCombinedPortfolio();
+          get().getCombinedPortfolio();
         } catch (error) {
           set({
             error: error as Error,
@@ -246,17 +248,92 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
 
         // Initial fetch if needed - run this only if we have no data
-        if (get().solanaAssets.length === 0 && !get().isLoading) {
+        if (get().solanaAssetsMap.size === 0 && !get().isLoading) {
           console.log("Initial portfolio load");
           get().refreshPortfolio();
         }
+
+        // Subscribe to tokenStore updates
+        const unsubscribe = useTokenStore.subscribe((state, prevState) => {
+          if (
+            state.latestUpdate !== prevState.latestUpdate &&
+            state.latestUpdate
+          ) {
+            // When token prices update, update our portfolio prices
+            get().updateSolanaTokenPrices();
+          }
+        });
+
+        // Store the unsubscribe function to prevent memory leaks
+        (window as any).__portfolioTokenStoreUnsubscribe = unsubscribe;
+      },
+
+      // Add this new method to update prices from tokenStore
+      updateSolanaTokenPrices: () => {
+        const tokenMap = useTokenStore.getState().tokenMap;
+        const latestUpdate = useTokenStore.getState().latestUpdate;
+
+        if (!latestUpdate) return;
+
+        set((state) => {
+          // Get the updated token's mint address
+          const mintToUpdate = latestUpdate.pubkey;
+          const tokenData = tokenMap.get(mintToUpdate);
+
+          // Check if this token is in our portfolio
+          const portfolioItem = state.solanaAssetsMap.get(mintToUpdate);
+
+          // Only update if needed
+          if (
+            portfolioItem &&
+            tokenData &&
+            tokenData.lastPrice !== portfolioItem.price
+          ) {
+            console.log("Updating token price for", mintToUpdate);
+            // Create new map (immutable update for React)
+            const updatedMap = new Map(state.solanaAssetsMap);
+
+            // Update just this one token
+            updatedMap.set(mintToUpdate, {
+              ...portfolioItem,
+              price: tokenData.lastPrice,
+            });
+
+            return { solanaAssetsMap: updatedMap };
+          }
+
+          return {}; // No updates needed
+        });
       },
     }),
     {
       name: "portfolio-storage",
       partialize: (state) => ({
+        // Convert maps to arrays for storage
+        solanaAssets: Array.from(state.solanaAssetsMap.values()),
+        evmAssets: Array.from(state.evmAssetsMap.values()),
         lastUpdated: state.lastUpdated,
       }),
+      onRehydrateStorage: (
+        state: PortfolioState & {
+          solanaAssets?: PortfolioItem[];
+          evmAssets?: PortfolioItem[];
+        }
+      ) => {
+        if (state) {
+          // Convert arrays back to maps
+          if (Array.isArray(state.solanaAssets)) {
+            state.solanaAssetsMap = new Map(
+              state.solanaAssets.map((asset) => [asset.address, asset])
+            );
+          }
+          if (Array.isArray(state.evmAssets)) {
+            state.evmAssetsMap = new Map(
+              state.evmAssets.map((asset) => [asset.address, asset])
+            );
+          }
+        }
+      },
     }
   )
 );

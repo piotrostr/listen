@@ -138,7 +138,8 @@ export function PanelSelector({
 // New Portfolio Header component
 function PortfolioHeader({ onRefresh }: { onRefresh: () => Promise<void> }) {
   const { t } = useTranslation();
-  const { portfolioValue, isLoading } = usePortfolioStore();
+  const { getPortfolioValue, isLoading } = usePortfolioStore();
+  const portfolioValue = getPortfolioValue();
 
   return (
     <div className="flex items-center justify-between w-full">

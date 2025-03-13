@@ -11,7 +11,7 @@ import { PortfolioSkeleton } from "./PortfolioSkeleton";
 export function Portfolio() {
   const { solanaAddress } = useWalletStore();
   const {
-    combinedPortfolio: assets,
+    getCombinedPortfolio,
     isLoading,
     refreshPortfolio,
     initializePortfolioManager,
@@ -42,6 +42,9 @@ export function Portfolio() {
     setModalAction(action);
     setModalOpen(true);
   };
+
+  // Get assets using the selector
+  const assets = getCombinedPortfolio();
 
   if (isLoading && (!assets || assets.length === 0)) {
     return <PortfolioSkeleton />;

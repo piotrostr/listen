@@ -28,7 +28,8 @@ export function SimpleHeader({
     setActivePanel(activePanel === panelName ? null : panelName);
   };
 
-  const { portfolioValue } = usePortfolioStore();
+  const { getPortfolioValue } = usePortfolioStore();
+  const portfolioValue = getPortfolioValue();
 
   const panelButtonStyle = (active: boolean) =>
     `p-2 rounded-lg ${active ? "bg-[#2D2D2D]" : "bg-black/40"} hover:bg-[#2D2D2D] transition-colors`;
