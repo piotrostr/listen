@@ -55,6 +55,64 @@ function embedResearchAnchors(message: string): string {
     }
   }
 
+  // Also collect references in comma-separated lists
+  const commaRefRegex = /([a-zA-Z0-9_§]+)\/(\d+)(?=,|\s|\))/g;
+  while ((match = commaRefRegex.exec(processableMessage)) !== null) {
+    let username = match[1];
+    const tweetId = match[2];
+
+    // Skip if it's not likely a Twitter reference
+    if (username.includes("/") || tweetId.length < 10) {
+      continue;
+    }
+
+    // Convert the placeholder back to underscore
+    username = username.replace(new RegExp(placeholderChar, "g"), "_");
+
+    const refKey = `${username}/${tweetId}`;
+
+    if (!references[refKey]) {
+      refCount++;
+      references[refKey] = refCount;
+    }
+  }
+
+  // Special case for comma-separated references inside parentheses
+  const specialCaseRegex =
+    /\(([a-zA-Z0-9_§]+)\/(\d+),\s*([a-zA-Z0-9_§]+)\/(\d+)\)/g;
+  let specialMatch;
+  while ((specialMatch = specialCaseRegex.exec(processableMessage)) !== null) {
+    // First reference
+    let username1 = specialMatch[1];
+    const tweetId1 = specialMatch[2];
+
+    // Second reference
+    let username2 = specialMatch[3];
+    const tweetId2 = specialMatch[4];
+
+    // Process first reference
+    if (!username1.includes("/") && tweetId1.length >= 10) {
+      username1 = username1.replace(new RegExp(placeholderChar, "g"), "_");
+      const refKey1 = `${username1}/${tweetId1}`;
+
+      if (!references[refKey1]) {
+        refCount++;
+        references[refKey1] = refCount;
+      }
+    }
+
+    // Process second reference
+    if (!username2.includes("/") && tweetId2.length >= 10) {
+      username2 = username2.replace(new RegExp(placeholderChar, "g"), "_");
+      const refKey2 = `${username2}/${tweetId2}`;
+
+      if (!references[refKey2]) {
+        refCount++;
+        references[refKey2] = refCount;
+      }
+    }
+  }
+
   // Second pass: replace all references with links
   // We need to handle both normal and escaped versions
 
