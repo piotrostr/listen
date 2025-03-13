@@ -14,6 +14,7 @@ import { MobileNavigation } from "./MobileNavigation";
 import { PanelSelector } from "./PanelSelector";
 import { RecentChats } from "./RecentChats";
 import { SimpleHeader } from "./SimpleHeader";
+import { SwipeHandler } from "./SwipeHandler";
 
 function balanceToUI(balance: UseBalanceReturnType["data"]) {
   if (!balance?.value || !balance?.decimals) return 0;
@@ -198,6 +199,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
         {/* Main Content with Sidebar */}
         <div className="flex-1 relative overflow-hidden">
+          {/* Add SwipeHandler for mobile */}
+          {isMobile && (
+            <SwipeHandler
+              onOpenSidebar={() => setIsSidebarOpen(true)}
+              isOpen={isSidebarOpen}
+            />
+          )}
+
           {/* Collapsible Sidebar - Modified for X-style animation */}
           <div
             className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 
