@@ -1,9 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { createContext, memo, useState } from "react";
-import { UseBalanceReturnType } from "wagmi";
-import ethereumIcon from "../assets/icons/ethereum.svg";
-import { imageMap } from "../hooks/util";
 import { Background } from "./Background";
 
 import { useTranslation } from "react-i18next";
@@ -15,12 +12,8 @@ import { RecentChats } from "./RecentChats";
 import { SimpleHeader } from "./SimpleHeader";
 import { SwipeHandler } from "./SwipeHandler";
 import { VersionAndLanguageDisplay } from "./VersionAndLanguage";
-
-function balanceToUI(balance: UseBalanceReturnType["data"]) {
-  if (!balance?.value || !balance?.decimals) return 0;
-  return Number(balance?.value) / 10 ** balance?.decimals;
-}
-
+import { WalletInitializer } from "./WalletInitializer";
+import { WebsocketInitializer } from "./WebsocketInitializer";
 // Memoize the BottomLink component
 const MemoizedBottomLink = memo(function BottomLink({
   href,
@@ -51,46 +44,6 @@ const MemoizedBottomLink = memo(function BottomLink({
     </a>
   );
 });
-
-// Balance Display Component
-export function BalanceDisplay({
-  isSidebarOpen,
-  solanaBalance,
-  ethereumBalance,
-}: {
-  isSidebarOpen: boolean;
-  solanaBalance?: number;
-  ethereumBalance?: UseBalanceReturnType["data"];
-}) {
-  return (
-    <div className="mt-8 space-y-1">
-      <div
-        className={`flex items-center h-10 ${
-          isSidebarOpen ? "px-4" : "justify-center"
-        }`}
-      >
-        <img src={imageMap.solana} alt="SOL" className="w-6 h-6 rounded-full" />
-        {isSidebarOpen && (
-          <span className="ml-3 text-sm text-gray-300">
-            {solanaBalance?.toFixed(2) || "0.00"}
-          </span>
-        )}
-      </div>
-      <div
-        className={`flex items-center h-10 ${
-          isSidebarOpen ? "px-4" : "justify-center"
-        }`}
-      >
-        <img src={ethereumIcon} alt="ETH" className="w-6 h-6 rounded-full" />
-        {isSidebarOpen && (
-          <span className="ml-3 text-sm text-gray-300">
-            {balanceToUI(ethereumBalance)?.toFixed(4) || "0.0000"}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
 
 // Add this near the top of the file, after imports
 export const SidebarContext = createContext<(open: boolean) => void>(() => {});
@@ -163,6 +116,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarContext.Provider value={setIsSidebarOpen}>
+      <WalletInitializer />
+      <WebsocketInitializer />
       <div className="relative h-screen flex flex-col text-white overflow-hidden">
         <Background />
 
@@ -302,7 +257,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             className={`flex justify-center h-full w-full transition-all duration-300 
               ${isMobile ? "transform" : "pl-16"} 
               ${isMobile && isSidebarOpen ? "translate-x-64" : "translate-x-0"}
-              ${activePanel && !isMobile ? "lg:pr-[420px]" : ""}
+              ${activePanel && !isMobile ? "lg:pr-[440px]" : ""}
               ${
                 isMobile
                   ? isIOS && user

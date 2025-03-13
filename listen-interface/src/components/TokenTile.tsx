@@ -5,10 +5,12 @@ import { BiSolidHide } from "react-icons/bi";
 import { FaShoppingCart } from "react-icons/fa";
 import { FaBoltLightning, FaRegStar, FaStar } from "react-icons/fa6";
 import { HiOutlineSparkles } from "react-icons/hi2";
+import { useChat } from "../contexts/ChatContext";
 import { useModal } from "../contexts/ModalContext";
 import { useListenMetadata } from "../hooks/useListenMetadata";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import i18n from "../i18n";
+import { useSettingsStore } from "../store/settingsStore";
 import { useTokenStore } from "../store/tokenStore";
 import { TokenMarketData } from "../types/metadata";
 import { Socials } from "./Socials";
@@ -19,9 +21,10 @@ interface TokenTileProps {
 
 export function TokenTile({ token }: TokenTileProps) {
   const { openChart } = useModal();
+  const { isLoading } = useChat();
   const { data: metadata } = useListenMetadata(token.pubkey);
+  const { quickBuyAmount } = useSettingsStore();
   const [copied, setCopied] = useState(false);
-  const [quickBuyAmount, setQuickBuyAmount] = useState<number>(0.1);
   const { isExecuting, quickBuyToken } = usePipelineExecution();
   const [isHovered, setIsHovered] = useState(false);
   const [researchCooldown, setResearchCooldown] = useState(false);
@@ -34,13 +37,6 @@ export function TokenTile({ token }: TokenTileProps) {
       setTimeout(() => setCopied(false), 1000);
     }
   }, [copied]);
-
-  useEffect(() => {
-    const savedAmount = localStorage.getItem("quickBuyAmount");
-    if (savedAmount) {
-      setQuickBuyAmount(parseFloat(savedAmount));
-    }
-  }, []);
 
   const handleBuy = async () => {
     await quickBuyToken(token.pubkey, quickBuyAmount);
@@ -148,6 +144,7 @@ export function TokenTile({ token }: TokenTileProps) {
                 onClick={handleResearchClick}
                 className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 rounded-lg transition-all`}
                 title="Research this token"
+                disabled={isLoading}
               >
                 <HiOutlineSparkles size={16} />
               </Link>

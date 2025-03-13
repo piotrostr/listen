@@ -6,7 +6,7 @@ import { IoMenu, IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
 import { RxDashboard } from "react-icons/rx";
 import { TbMoneybag } from "react-icons/tb";
 import { useMobile } from "../contexts/MobileContext";
-import { usePortfolio } from "../hooks/usePortfolio";
+import { usePortfolioStore } from "../store/portfolioStore";
 import { SidebarContext } from "./Layout";
 
 interface SimpleHeaderProps {
@@ -28,7 +28,8 @@ export function SimpleHeader({
     setActivePanel(activePanel === panelName ? null : panelName);
   };
 
-  const { portfolioValue } = usePortfolio();
+  const { getPortfolioValue } = usePortfolioStore();
+  const portfolioValue = getPortfolioValue();
 
   const panelButtonStyle = (active: boolean) =>
     `p-2 rounded-lg ${active ? "bg-[#2D2D2D]" : "bg-black/40"} hover:bg-[#2D2D2D] transition-colors`;
@@ -97,7 +98,10 @@ export function SimpleHeader({
         )}
       </div>
       {isMobile && portfolioValue > 0 && (
-        <div className="text-white text-sm pr-5 flex items-center gap-1">
+        <div
+          className="text-white text-sm pr-5 flex items-center gap-1"
+          onClick={() => setActivePanel("portfolio")}
+        >
           <TbMoneybag className="w-4 h-4" />${portfolioValue.toFixed(2)}
         </div>
       )}

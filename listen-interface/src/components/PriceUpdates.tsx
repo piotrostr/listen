@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from "react";
-import { setupWebSocket } from "../services/websocketService";
 import { useTokenStore } from "../store/tokenStore";
 import { TokenTile } from "./TokenTile";
 
@@ -13,14 +12,6 @@ export function PriceUpdates() {
     volumeFilter,
   } = useTokenStore();
   const [frozenTokens, setFrozenTokens] = useState<any[]>([]);
-
-  // Setup WebSocket connection
-  useEffect(() => {
-    const ws = setupWebSocket();
-    return () => {
-      ws.close();
-    };
-  }, []);
 
   // Convert to array once and memoize that result separately
   const tokenArray = useMemo(() => Array.from(tokenMap.values()), [tokenMap]);

@@ -1,9 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IoRefreshOutline } from "react-icons/io5";
 import { useMobile } from "../contexts/MobileContext";
-import { usePortfolio } from "../hooks/usePortfolio";
+import { usePortfolioStore } from "../store/portfolioStore";
 import { Chat } from "./Chat";
 import { FloatingPanel } from "./FloatingPanel";
 import { Pipelines, PipelinesHeader } from "./Pipelines";
@@ -21,18 +20,12 @@ export function PanelSelector({
 }) {
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const { isMobile } = useMobile();
-  const queryClient = useQueryClient();
+
+  const { refreshPortfolio } = usePortfolioStore();
 
   const handleClose = useCallback(() => {
     setActivePanel(null);
   }, [setActivePanel]);
-
-  const handlePortfolioRefresh = useCallback(async () => {
-    await queryClient.resetQueries({
-      queryKey: ["portfolio"],
-      exact: false,
-    });
-  }, [queryClient]);
 
   if (!activePanel) return null;
 
@@ -71,7 +64,7 @@ export function PanelSelector({
       return (
         <div className="h-full bg-black">
           <div className="mb-4">
-            <PortfolioHeader onRefresh={handlePortfolioRefresh} />
+            <PortfolioHeader onRefresh={refreshPortfolio} />
           </div>
           <Portfolio />
         </div>
@@ -127,7 +120,7 @@ export function PanelSelector({
         <FloatingPanel
           title="portfolio"
           onClose={handleClose}
-          headerContent={<PortfolioHeader onRefresh={handlePortfolioRefresh} />}
+          headerContent={<PortfolioHeader onRefresh={refreshPortfolio} />}
         >
           <Portfolio />
         </FloatingPanel>
@@ -145,7 +138,8 @@ export function PanelSelector({
 // New Portfolio Header component
 function PortfolioHeader({ onRefresh }: { onRefresh: () => Promise<void> }) {
   const { t } = useTranslation();
-  const { portfolioValue, isLoading } = usePortfolio();
+  const { getPortfolioValue, isLoading } = usePortfolioStore();
+  const portfolioValue = getPortfolioValue();
 
   return (
     <div className="flex items-center justify-between w-full">

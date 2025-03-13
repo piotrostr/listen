@@ -64,31 +64,48 @@ export const useTokenStore = create<TokenState>()(
       updateTokenData: (data) => {
         if (!data.is_pump) return;
 
+        // Use a more robust approach to avoid update loops
         set((state) => {
-          const newMap = new Map(state.tokenMap);
-          const existing = newMap.get(data.pubkey);
+          // Skip if this token is already being processed
+          const processingKey = `__processing_${data.pubkey}`;
+          if ((window as any)[processingKey]) {
+            return {}; // Return empty object to avoid state change
+          }
 
-          newMap.set(data.pubkey, {
-            name: data.name,
-            buyVolume:
-              (existing?.buyVolume || 0) + (data.is_buy ? data.swap_amount : 0),
-            sellVolume:
-              (existing?.sellVolume || 0) +
-              (!data.is_buy ? data.swap_amount : 0),
-            lastPrice: data.price,
-            lastUpdate: new Date(data.timestamp),
-            marketCap: data.market_cap,
-            uniqueAddresses: new Set([
-              ...(existing?.uniqueAddresses || []),
-              data.owner,
-            ]),
-            pubkey: data.pubkey,
-          });
+          try {
+            (window as any)[processingKey] = true;
 
-          return {
-            tokenMap: newMap,
-            latestUpdate: data,
-          };
+            const newMap = new Map(state.tokenMap);
+            const existing = newMap.get(data.pubkey);
+
+            newMap.set(data.pubkey, {
+              name: data.name,
+              buyVolume:
+                (existing?.buyVolume || 0) +
+                (data.is_buy ? data.swap_amount : 0),
+              sellVolume:
+                (existing?.sellVolume || 0) +
+                (!data.is_buy ? data.swap_amount : 0),
+              lastPrice: data.price,
+              lastUpdate: new Date(data.timestamp),
+              marketCap: data.market_cap,
+              uniqueAddresses: new Set([
+                ...(existing?.uniqueAddresses || []),
+                data.owner,
+              ]),
+              pubkey: data.pubkey,
+            });
+
+            return {
+              tokenMap: newMap,
+              latestUpdate: data,
+            };
+          } finally {
+            // Use setTimeout to ensure the flag is cleared after the current call stack
+            setTimeout(() => {
+              (window as any)[processingKey] = false;
+            }, 0);
+          }
         });
       },
 

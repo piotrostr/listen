@@ -1,9 +1,22 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate, useSearch } from "@tanstack/react-router";
-import { useCallback, useEffect, useRef, useState } from "react";
+import {
+  createContext,
+  ReactNode,
+  useCallback,
+  useContext,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { v4 as uuidv4 } from "uuid";
-import { useSettings } from "../contexts/SettingsContext";
+import { chatCache } from "../hooks/localStorage";
+import { useDebounce } from "../hooks/useDebounce";
+import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { compactPortfolio } from "../hooks/util";
 import { pickSystemPrompt } from "../prompts";
+import { usePortfolioStore } from "../store/portfolioStore";
+import { useSettingsStore } from "../store/settingsStore";
 import {
   Chat,
   Message,
@@ -11,20 +24,27 @@ import {
   ToolResultSchema,
 } from "../types/message";
 import { JsonChunkReader } from "./chunk-reader";
-import { chatCache } from "./localStorage";
-import { useChatType } from "./useChatType";
-import { useDebounce } from "./useDebounce";
-import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
-import { usePrivyWallets } from "./usePrivyWallet";
-import { useSolanaPortfolio } from "./useSolanaPortfolio";
-import { compactPortfolio } from "./util";
 
-export function useChat() {
-  const { quickBuyAmount: defaultAmount, agentMode } = useSettings();
-  const { data: solanaPortfolio } = useSolanaPortfolio();
-  const { data: evmPortfolio } = useEvmPortfolio();
+interface ChatContextType {
+  messages: Message[];
+  isLoading: boolean;
+  sendMessage: (message: string) => Promise<void>;
+  setMessages: (messages: Message[]) => void;
+  stopGeneration: () => void;
+  shareChat: (chatId: string) => Promise<string>;
+  loadSharedChat: (chatId: string) => Promise<Chat>;
+  isSharedChat: boolean;
+}
+
+const ChatContext = createContext<ChatContextType | null>(null);
+
+export const ChatProvider = ({ children }: { children: ReactNode }) => {
+  const {
+    quickBuyAmount: defaultAmount,
+    agentMode,
+    chatType,
+  } = useSettingsStore();
   const { getAccessToken } = usePrivy();
-  const { chatType } = useChatType();
   const {
     chatId,
     new: isNewChat,
@@ -32,6 +52,10 @@ export function useChat() {
   } = useSearch({ from: "/" });
   const navigate = useNavigate();
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
+  const { getSolanaAssets, getEvmAssets } = usePortfolioStore();
+
+  const solanaAssets = getSolanaAssets();
+  const evmAssets = getEvmAssets();
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -161,11 +185,11 @@ export function useChat() {
         }));
 
         const portfolio = [];
-        if (solanaPortfolio) {
-          portfolio.push(...compactPortfolio(solanaPortfolio));
+        if (solanaAssets) {
+          portfolio.push(...compactPortfolio(solanaAssets));
         }
-        if (evmPortfolio && chatType === "omni") {
-          portfolio.push(...compactPortfolio(evmPortfolio));
+        if (evmAssets && chatType === "omni") {
+          portfolio.push(...compactPortfolio(evmAssets));
         }
         const chat_history = messageHistory.filter((msg) => msg.content !== "");
         const preamble = pickSystemPrompt(
@@ -339,8 +363,8 @@ export function useChat() {
       chatId,
       updateAssistantMessage,
       getAccessToken,
-      solanaPortfolio,
-      evmPortfolio,
+      solanaAssets,
+      evmAssets,
       wallets,
       chatType,
       navigate,
@@ -353,24 +377,39 @@ export function useChat() {
       // Explicitly set chat to null first to ensure clean state
       setChat(null);
 
-      // Navigate to clean URLsearchParams
+      // Generate a new chat ID for new chats
+      const newChatId = uuidv4();
+
+      // Navigate to clean URLsearchParams with new chat ID
       setSentInitialMessage(false);
       navigate({
         to: "/",
         search: {
           message: initialMessage,
+          chatId: newChatId, // Add the new chat ID
         },
         replace: true,
       });
     }
-  }, [isNewChat, navigate, setChat]);
+  }, [isNewChat, navigate, setChat, initialMessage]);
 
   useEffect(() => {
     if (initialMessage && !sentInitialMessage) {
       setSentInitialMessage(true);
       sendMessage(initialMessage);
+
+      // Clear only the message from URL after sending, keep the chatId
+      navigate({
+        to: "/",
+        search: (prev) => ({
+          ...prev,
+          message: undefined,
+          // Keep the chatId in the URL
+        }),
+        replace: true,
+      });
     }
-  }, [initialMessage, isNewChat, sendMessage, sentInitialMessage]);
+  }, [initialMessage, isNewChat, sendMessage, sentInitialMessage, navigate]);
 
   const stopGeneration = () => {
     if (abortControllerRef.current) {
@@ -436,7 +475,7 @@ export function useChat() {
     }
   };
 
-  return {
+  const value = {
     messages: chat?.messages || [],
     isLoading: isLoadingWallets || isLoading,
     sendMessage,
@@ -461,4 +500,14 @@ export function useChat() {
     loadSharedChat,
     isSharedChat: !!useSearch({ from: "/" }).shared,
   };
-}
+
+  return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
+};
+
+export const useChat = () => {
+  const context = useContext(ChatContext);
+  if (!context) {
+    throw new Error("useChat must be used within a ChatProvider");
+  }
+  return context;
+};

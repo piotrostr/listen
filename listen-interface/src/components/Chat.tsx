@@ -1,7 +1,7 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { useChat } from "../hooks/useChat";
+import { useChat } from "../contexts/ChatContext";
 import { ToolCall, ToolCallSchema } from "../types/message";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
