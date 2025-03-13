@@ -99,7 +99,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             logoURI: asset.logoURI || "",
           }));
 
-          set((state) => ({
+          set(() => ({
             solanaAssets: normalizedAssets,
             isLoading: false,
             lastUpdated: Date.now(),
