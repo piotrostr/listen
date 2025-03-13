@@ -303,7 +303,17 @@ export function Layout({ children }: { children: React.ReactNode }) {
               ${isMobile ? "transform" : "pl-16"} 
               ${isMobile && isSidebarOpen ? "translate-x-64" : "translate-x-0"}
               ${activePanel && !isMobile ? "lg:pr-[420px]" : ""}
-              ${isMobile ? (isIOS ? "pb-24" : "pb-16") : ""}`}
+              ${
+                isMobile
+                  ? isIOS && user
+                    ? "pb-28" // iOS + user: maximum padding
+                    : isIOS
+                      ? "pb-8" // iOS but no user: base + 8px
+                      : user
+                        ? "pb-16" // User but no iOS: base + 16px
+                        : "pb-3" // Base case: just mobile
+                  : ""
+              }`}
           >
             <div className="flex-1 max-w-4xl flex flex-col overflow-hidden">
               {children}
