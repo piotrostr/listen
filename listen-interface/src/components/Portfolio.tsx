@@ -1,19 +1,23 @@
 import { useFundWallet } from "@privy-io/react-auth/solana";
-import { useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaApplePay, FaShoppingCart, FaSync } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
-import { usePortfolio } from "../hooks/usePortfolio";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { usePortfolioStore } from "../store/portfolioStore";
 import { BuySellModal } from "./BuySellModal";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
 
 export function Portfolio() {
-  const { data: assets, isLoading } = usePortfolio();
+  // Use the portfolio store instead of the usePortfolio hook
+  const {
+    combinedPortfolio: assets,
+    isLoading,
+    refreshPortfolio,
+  } = usePortfolioStore();
+
   const { data: wallets } = usePrivyWallets();
-  const queryClient = useQueryClient();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
@@ -21,6 +25,13 @@ export function Portfolio() {
   const { fundWallet } = useFundWallet();
 
   const { t } = useTranslation();
+
+  // Fetch portfolio data when wallets change
+  useEffect(() => {
+    if (wallets?.solanaWallet || wallets?.evmWallet) {
+      refreshPortfolio(wallets?.solanaWallet || "", wallets?.evmWallet || "");
+    }
+  }, [wallets?.solanaWallet, wallets?.evmWallet]);
 
   if (isLoading) {
     return <PortfolioSkeleton />;
@@ -37,10 +48,10 @@ export function Portfolio() {
   };
 
   const handleRefresh = async () => {
-    await queryClient.resetQueries({
-      queryKey: ["portfolio"],
-      exact: false,
-    });
+    await refreshPortfolio(
+      wallets?.solanaWallet || "",
+      wallets?.evmWallet || ""
+    );
   };
 
   const { openChart } = useModal();

@@ -3,7 +3,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IoRefreshOutline } from "react-icons/io5";
 import { useMobile } from "../contexts/MobileContext";
-import { usePortfolio } from "../hooks/usePortfolio";
+import { usePortfolioStore } from "../store/portfolioStore";
 import { Chat } from "./Chat";
 import { FloatingPanel } from "./FloatingPanel";
 import { Pipelines, PipelinesHeader } from "./Pipelines";
@@ -145,7 +145,7 @@ export function PanelSelector({
 // New Portfolio Header component
 function PortfolioHeader({ onRefresh }: { onRefresh: () => Promise<void> }) {
   const { t } = useTranslation();
-  const { portfolioValue, isLoading } = usePortfolio();
+  const { portfolioValue, isLoading } = usePortfolioStore();
 
   return (
     <div className="flex items-center justify-between w-full">

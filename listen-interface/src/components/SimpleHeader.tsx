@@ -6,7 +6,7 @@ import { IoMenu, IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
 import { RxDashboard } from "react-icons/rx";
 import { TbMoneybag } from "react-icons/tb";
 import { useMobile } from "../contexts/MobileContext";
-import { usePortfolio } from "../hooks/usePortfolio";
+import { usePortfolioStore } from "../store/portfolioStore";
 import { SidebarContext } from "./Layout";
 
 interface SimpleHeaderProps {
@@ -28,7 +28,7 @@ export function SimpleHeader({
     setActivePanel(activePanel === panelName ? null : panelName);
   };
 
-  const { portfolioValue } = usePortfolio();
+  const { portfolioValue } = usePortfolioStore();
 
   const panelButtonStyle = (active: boolean) =>
     `p-2 rounded-lg ${active ? "bg-[#2D2D2D]" : "bg-black/40"} hover:bg-[#2D2D2D] transition-colors`;

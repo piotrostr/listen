@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { v4 as uuidv4 } from "uuid";
 import { useSettings } from "../contexts/SettingsContext";
 import { pickSystemPrompt } from "../prompts";
+import { usePortfolioStore } from "../store/portfolioStore";
 import {
   Chat,
   Message,
@@ -14,15 +15,11 @@ import { JsonChunkReader } from "./chunk-reader";
 import { chatCache } from "./localStorage";
 import { useChatType } from "./useChatType";
 import { useDebounce } from "./useDebounce";
-import { useEvmPortfolio } from "./useEvmPortfolioAlchemy";
 import { usePrivyWallets } from "./usePrivyWallet";
-import { useSolanaPortfolio } from "./useSolanaPortfolio";
 import { compactPortfolio } from "./util";
 
 export function useChat() {
   const { quickBuyAmount: defaultAmount, agentMode } = useSettings();
-  const { data: solanaPortfolio } = useSolanaPortfolio();
-  const { data: evmPortfolio } = useEvmPortfolio();
   const { getAccessToken } = usePrivy();
   const { chatType } = useChatType();
   const {
@@ -32,6 +29,7 @@ export function useChat() {
   } = useSearch({ from: "/" });
   const navigate = useNavigate();
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
+  const { solanaAssets, evmAssets } = usePortfolioStore();
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -161,11 +159,11 @@ export function useChat() {
         }));
 
         const portfolio = [];
-        if (solanaPortfolio) {
-          portfolio.push(...compactPortfolio(solanaPortfolio));
+        if (solanaAssets) {
+          portfolio.push(...compactPortfolio(solanaAssets));
         }
-        if (evmPortfolio && chatType === "omni") {
-          portfolio.push(...compactPortfolio(evmPortfolio));
+        if (evmAssets && chatType === "omni") {
+          portfolio.push(...compactPortfolio(evmAssets));
         }
         const chat_history = messageHistory.filter((msg) => msg.content !== "");
         const preamble = pickSystemPrompt(
@@ -339,8 +337,8 @@ export function useChat() {
       chatId,
       updateAssistantMessage,
       getAccessToken,
-      solanaPortfolio,
-      evmPortfolio,
+      solanaAssets,
+      evmAssets,
       wallets,
       chatType,
       navigate,

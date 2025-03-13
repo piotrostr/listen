@@ -1,9 +1,7 @@
-import { useQuery } from "@tanstack/react-query";
 import { Alchemy, Network } from "alchemy-sdk";
 import { getAddress } from "viem";
 import { tokenMetadataCache } from "./localStorage";
 import { PortfolioItem, TokenMetadata } from "./types";
-import { usePrivyWallets } from "./usePrivyWallet";
 import { getAnyToken } from "./useToken";
 
 const SUPPORTED_NETWORKS = [
@@ -167,18 +165,4 @@ export async function getTokenHoldings(
     console.error("Error fetching token holdings:", error);
     throw error;
   }
-}
-
-export function useEvmPortfolio() {
-  const { data: wallets } = usePrivyWallets();
-
-  return useQuery({
-    queryKey: ["portfolio", wallets?.evmWallet],
-    queryFn: async () => {
-      if (!wallets?.evmWallet) throw new Error("No address provided");
-      return getTokenHoldings(wallets.evmWallet);
-    },
-    enabled: !!wallets?.evmWallet,
-    staleTime: 30000,
-  });
 }
