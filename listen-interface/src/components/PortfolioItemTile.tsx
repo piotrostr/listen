@@ -1,11 +1,12 @@
 import { FaApplePay, FaShoppingCart } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
+import { PortfolioItem } from "../hooks/types";
 
 interface PortfolioItemTileProps {
-  asset: any;
-  onBuy: (asset: any) => void;
-  onSell: (asset: any) => void;
+  asset: PortfolioItem;
+  onBuy: (asset: PortfolioItem) => void;
+  onSell: (asset: PortfolioItem) => void;
   onTopup: () => void;
 }
 
@@ -61,7 +62,7 @@ export function PortfolioItemTile({
               className="w-12 h-12 rounded-full"
             />
           ) : (
-            <div className="w-8 h-8 rounded-full bg-gray-200 flex items-center justify-center">
+            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
               <span className="text-gray-500 dark:text-gray-400">?</span>
             </div>
           )}
@@ -112,27 +113,26 @@ export function PortfolioItemTile({
                   : asset.price?.toFixed(2)}
               </p>
             </div>
+
+            {/* Buy/Sell buttons - moved to right side */}
+            {asset.chain === "solana" && (
+              <div className="flex flex-col gap-2 ml-2">
+                <button
+                  onClick={() => onBuy(asset)}
+                  className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center justify-center"
+                >
+                  <FaShoppingCart size={12} />
+                </button>
+                <button
+                  onClick={() => onSell(asset)}
+                  className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg text-xs transition-colors flex items-center justify-center"
+                >
+                  <IoArrowDown size={12} />
+                </button>
+              </div>
+            )}
           </div>
         </div>
-      </div>
-      <div className="flex justify-between items-center">
-        {/* Buy/Sell buttons - only show for Solana chain assets */}
-        {asset.chain === "solana" && (
-          <div className="flex gap-2">
-            <button
-              onClick={() => onBuy(asset)}
-              className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
-            >
-              <FaShoppingCart size={12} />
-            </button>
-            <button
-              onClick={() => onSell(asset)}
-              className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg text-xs transition-colors flex items-center gap-1"
-            >
-              <IoArrowDown size={12} />
-            </button>
-          </div>
-        )}
       </div>
     </div>
   );

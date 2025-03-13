@@ -9,6 +9,7 @@ import { useModal } from "../contexts/ModalContext";
 import { useListenMetadata } from "../hooks/useListenMetadata";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import i18n from "../i18n";
+import { useSettingsStore } from "../store/settingsStore";
 import { useTokenStore } from "../store/tokenStore";
 import { TokenMarketData } from "../types/metadata";
 import { Socials } from "./Socials";
@@ -20,8 +21,8 @@ interface TokenTileProps {
 export function TokenTile({ token }: TokenTileProps) {
   const { openChart } = useModal();
   const { data: metadata } = useListenMetadata(token.pubkey);
+  const { quickBuyAmount } = useSettingsStore();
   const [copied, setCopied] = useState(false);
-  const [quickBuyAmount, setQuickBuyAmount] = useState<number>(0.1);
   const { isExecuting, quickBuyToken } = usePipelineExecution();
   const [isHovered, setIsHovered] = useState(false);
   const [researchCooldown, setResearchCooldown] = useState(false);
@@ -34,13 +35,6 @@ export function TokenTile({ token }: TokenTileProps) {
       setTimeout(() => setCopied(false), 1000);
     }
   }, [copied]);
-
-  useEffect(() => {
-    const savedAmount = localStorage.getItem("quickBuyAmount");
-    if (savedAmount) {
-      setQuickBuyAmount(parseFloat(savedAmount));
-    }
-  }, []);
 
   const handleBuy = async () => {
     await quickBuyToken(token.pubkey, quickBuyAmount);

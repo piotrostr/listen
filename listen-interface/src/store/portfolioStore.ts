@@ -217,18 +217,12 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       // Initialize visibility listener and other portfolio management
       initializePortfolioManager: () => {
-        console.log("Initializing portfolio manager");
-
         // Function to handle visibility change
         const handleVisibilityChange = () => {
           if (document.visibilityState === "visible") {
-            console.log("Tab became visible, checking if refresh needed");
             // On becoming visible, check if data is fresh
             if (!get().isFresh()) {
-              console.log("Data is stale, refreshing");
               get().refreshPortfolio();
-            } else {
-              console.log("Data is fresh, no refresh needed");
             }
           }
         };
