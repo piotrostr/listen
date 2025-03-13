@@ -13,7 +13,6 @@ import {
 } from "../types/message";
 import { JsonChunkReader } from "./chunk-reader";
 import { chatCache } from "./localStorage";
-import { useChatType } from "./useChatType";
 import { useDebounce } from "./useDebounce";
 import { usePrivyWallets } from "./usePrivyWallet";
 import { compactPortfolio } from "./util";
@@ -21,7 +20,7 @@ import { compactPortfolio } from "./util";
 export function useChat() {
   const { quickBuyAmount: defaultAmount, agentMode } = useSettings();
   const { getAccessToken } = usePrivy();
-  const { chatType } = useChatType();
+  const { chatType } = useSettings();
   const {
     chatId,
     new: isNewChat,

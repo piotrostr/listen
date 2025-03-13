@@ -6,11 +6,15 @@ import {
   useState,
 } from "react";
 
+export type ChatType = "solana" | "omni";
+
 interface SettingsContextType {
   quickBuyAmount: number;
   setQuickBuyAmount: (amount: number) => void;
   agentMode: boolean;
   setAgentMode: (enabled: boolean) => void;
+  chatType: ChatType;
+  setChatType: (type: ChatType) => void;
 }
 
 const SettingsContext = createContext<SettingsContextType | null>(null);
@@ -18,6 +22,7 @@ const SettingsContext = createContext<SettingsContextType | null>(null);
 export function SettingsProvider({ children }: { children: ReactNode }) {
   const [quickBuyAmount, setQuickBuyAmount] = useState<number>(0.1);
   const [agentMode, setAgentMode] = useState<boolean>(false);
+  const [chatType, setChatType] = useState<ChatType>("solana");
 
   // Load settings from localStorage on initial render
   useEffect(() => {
@@ -31,6 +36,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     const savedAgentMode = localStorage.getItem("agentMode");
     if (savedAgentMode) {
       setAgentMode(savedAgentMode === "true");
+    }
+
+    // Load chat type setting
+    const savedChatType = localStorage.getItem("chatType_v3") as ChatType;
+    if (savedChatType) {
+      setChatType(savedChatType);
     }
   }, []);
 
@@ -48,6 +59,12 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
     localStorage.setItem("agentMode", enabled.toString());
   };
 
+  // Save chat type to localStorage when it changes
+  const updateChatType = (type: ChatType) => {
+    setChatType(type);
+    localStorage.setItem("chatType_v3", type);
+  };
+
   return (
     <SettingsContext.Provider
       value={{
@@ -55,6 +72,8 @@ export function SettingsProvider({ children }: { children: ReactNode }) {
         setQuickBuyAmount: updateQuickBuyAmount,
         agentMode,
         setAgentMode: updateAgentMode,
+        chatType,
+        setChatType: updateChatType,
       }}
     >
       {children}

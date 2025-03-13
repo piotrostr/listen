@@ -4,7 +4,7 @@ import { useTranslation } from "react-i18next";
 import { FaApplePay, FaShoppingCart, FaSync } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
-import { useChatType } from "../hooks/useChatType";
+import { useSettings } from "../contexts/SettingsContext";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { BuySellModal } from "./BuySellModal";
@@ -12,7 +12,7 @@ import { PortfolioSkeleton } from "./PortfolioSkeleton";
 
 export function Portfolio() {
   // Get chatType from useChatType hook
-  const { chatType } = useChatType();
+  const { chatType } = useSettings();
 
   // Use the portfolio store
   const {

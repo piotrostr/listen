@@ -1,14 +1,13 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../contexts/SettingsContext";
-import { useChatType } from "../hooks/useChatType";
 import { ChatSelector } from "./ChatSelector";
 import { ConnectedAccounts } from "./ConnectedAccounts";
 import { WalletAddresses } from "./WalletAddresses";
 
 export function Settings() {
   const { user } = usePrivy();
-  const { chatType, setChatType } = useChatType();
+  const { chatType, setChatType } = useSettings();
   const { quickBuyAmount, setQuickBuyAmount, agentMode, setAgentMode } =
     useSettings();
 

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
+import { ChatType } from "../contexts/SettingsContext";
 import { PortfolioItem } from "../hooks/types";
-import { ChatType } from "../hooks/useChatType";
 import { getTokenHoldings as fetchEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { fetchPortfolio as fetchSolanaPortfolio } from "../hooks/useSolanaPortfolio";
 
@@ -100,7 +100,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             logoURI: asset.logoURI || "",
           }));
 
-          set((state) => {
+          set((_state) => {
             // Store the Solana assets
             const newState = {
               solanaAssets: normalizedAssets,
