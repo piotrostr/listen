@@ -64,21 +64,17 @@ export const useTokenStore = create<TokenState>()(
       updateTokenData: (data) => {
         if (!data.is_pump) return;
 
-        // Instead of skipping updates, we'll prevent recursive/nested updates
-        // by tracking when we're in the middle of a set operation
-        const isNested = (window as any).__currentlyUpdatingTokenData;
-        if (isNested) {
-          // Queue this update for the next tick to avoid nested updates
-          setTimeout(() => {
-            get().updateTokenData(data);
-          }, 0);
-          return;
-        }
+        // Use a more robust approach to avoid update loops
+        set((state) => {
+          // Skip if this token is already being processed
+          const processingKey = `__processing_${data.pubkey}`;
+          if ((window as any)[processingKey]) {
+            return {}; // Return empty object to avoid state change
+          }
 
-        try {
-          (window as any).__currentlyUpdatingTokenData = true;
+          try {
+            (window as any)[processingKey] = true;
 
-          set((state) => {
             const newMap = new Map(state.tokenMap);
             const existing = newMap.get(data.pubkey);
 
@@ -104,10 +100,13 @@ export const useTokenStore = create<TokenState>()(
               tokenMap: newMap,
               latestUpdate: data,
             };
-          });
-        } finally {
-          (window as any).__currentlyUpdatingTokenData = false;
-        }
+          } finally {
+            // Use setTimeout to ensure the flag is cleared after the current call stack
+            setTimeout(() => {
+              (window as any)[processingKey] = false;
+            }, 0);
+          }
+        });
       },
 
       toggleWatchlist: (pubkey) => {
