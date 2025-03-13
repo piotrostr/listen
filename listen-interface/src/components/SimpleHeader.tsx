@@ -97,7 +97,10 @@ export function SimpleHeader({
         )}
       </div>
       {isMobile && portfolioValue > 0 && (
-        <div className="text-white text-sm pr-5 flex items-center gap-1">
+        <div
+          className="text-white text-sm pr-5 flex items-center gap-1"
+          onClick={() => setActivePanel("portfolio")}
+        >
           <TbMoneybag className="w-4 h-4" />${portfolioValue.toFixed(2)}
         </div>
       )}
