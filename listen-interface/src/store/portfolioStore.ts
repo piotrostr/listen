@@ -8,6 +8,9 @@ export function getPortfolioTotalValue(assets: PortfolioItem[]): number {
   return assets.reduce((total, asset) => total + asset.price * asset.amount, 0);
 }
 
+// Stale time in milliseconds (data considered fresh for 30 seconds)
+const STALE_TIME = 30 * 1000;
+
 interface PortfolioState {
   // Data
   solanaAssets: PortfolioItem[];
@@ -19,7 +22,7 @@ interface PortfolioState {
   // Status
   isLoading: boolean;
   error: Error | null;
-  lastUpdated: Date | null;
+  lastUpdated: number | null; // timestamp in ms
 
   // Actions
   fetchSolanaPortfolio: (address: string) => Promise<void>;
@@ -31,8 +34,10 @@ interface PortfolioState {
   setChatType: (type: "solana" | "all") => void;
   refreshPortfolio: (
     solanaAddress: string,
-    evmAddress: string
+    evmAddress: string,
+    force?: boolean
   ) => Promise<void>;
+  isFresh: () => boolean;
 }
 
 export const usePortfolioStore = create<PortfolioState>()(
@@ -49,6 +54,15 @@ export const usePortfolioStore = create<PortfolioState>()(
       isLoading: false,
       error: null,
       lastUpdated: null,
+
+      // Check if data is still fresh
+      isFresh: () => {
+        const lastUpdated = get().lastUpdated;
+        if (!lastUpdated) return false;
+
+        const now = Date.now();
+        return now - lastUpdated < STALE_TIME;
+      },
 
       // Actions
       fetchSolanaPortfolio: async (address: string) => {
@@ -80,7 +94,7 @@ export const usePortfolioStore = create<PortfolioState>()(
               combinedPortfolio,
               portfolioValue,
               isLoading: false,
-              lastUpdated: new Date(),
+              lastUpdated: Date.now(),
             };
           });
         } catch (error) {
@@ -118,7 +132,7 @@ export const usePortfolioStore = create<PortfolioState>()(
               combinedPortfolio,
               portfolioValue,
               isLoading: false,
-              lastUpdated: new Date(),
+              lastUpdated: Date.now(),
             };
           });
         } catch (error) {
@@ -187,7 +201,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             combinedPortfolio,
             portfolioValue,
             isLoading: false,
-            lastUpdated: new Date(),
+            lastUpdated: Date.now(),
           });
         } catch (error) {
           set({
@@ -217,7 +231,17 @@ export const usePortfolioStore = create<PortfolioState>()(
         });
       },
 
-      refreshPortfolio: async (solanaAddress: string, evmAddress: string) => {
+      refreshPortfolio: async (
+        solanaAddress: string,
+        evmAddress: string,
+        force = false
+      ) => {
+        // Skip refresh if data is fresh and force is false
+        if (!force && get().isFresh()) {
+          console.log("Portfolio data is fresh, skipping refresh");
+          return;
+        }
+
         // Reset data first to ensure UI shows loading state
         set((_state) => ({
           isLoading: true,

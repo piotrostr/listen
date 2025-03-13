@@ -15,27 +15,43 @@ export function Portfolio() {
     combinedPortfolio: assets,
     isLoading,
     refreshPortfolio,
+    isFresh,
   } = usePortfolioStore();
 
   const { data: wallets } = usePrivyWallets();
+  const { t } = useTranslation();
+  const { openChart } = useModal();
+  const { fundWallet } = useFundWallet();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
-  const { fundWallet } = useFundWallet();
 
-  const { t } = useTranslation();
-
-  // Fetch portfolio data when wallets change
+  // Initial fetch - only if not fresh
   useEffect(() => {
-    if (wallets?.solanaWallet || wallets?.evmWallet) {
+    if ((wallets?.solanaWallet || wallets?.evmWallet) && !isFresh()) {
       refreshPortfolio(wallets?.solanaWallet || "", wallets?.evmWallet || "");
     }
-  }, [wallets?.solanaWallet, wallets?.evmWallet]);
+  }, [wallets?.solanaWallet, wallets?.evmWallet, isFresh, refreshPortfolio]);
 
-  if (isLoading) {
-    return <PortfolioSkeleton />;
-  }
+  // Focus detection - must be in the same position in the hooks order
+  useEffect(() => {
+    // Function to handle visibility change
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === "visible" && wallets?.solanaWallet) {
+        // On becoming visible, refresh if needed
+        refreshPortfolio(wallets?.solanaWallet || "", wallets?.evmWallet || "");
+      }
+    };
+
+    // Add visibility listener
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    // Clean up
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [wallets?.solanaWallet, wallets?.evmWallet, refreshPortfolio]);
 
   const handleTopup = async () => {
     await fundWallet(wallets!.solanaWallet!);
@@ -48,13 +64,18 @@ export function Portfolio() {
   };
 
   const handleRefresh = async () => {
+    console.log("handleRefresh");
+    // Force refresh
     await refreshPortfolio(
       wallets?.solanaWallet || "",
-      wallets?.evmWallet || ""
+      wallets?.evmWallet || "",
+      true
     );
   };
 
-  const { openChart } = useModal();
+  if (isLoading && (!assets || assets.length === 0)) {
+    return <PortfolioSkeleton />;
+  }
 
   return (
     <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container pb-16 md:pb-0">

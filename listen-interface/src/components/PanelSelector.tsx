@@ -1,8 +1,8 @@
-import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IoRefreshOutline } from "react-icons/io5";
 import { useMobile } from "../contexts/MobileContext";
+import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { Chat } from "./Chat";
 import { FloatingPanel } from "./FloatingPanel";
@@ -21,18 +21,21 @@ export function PanelSelector({
 }) {
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const { isMobile } = useMobile();
-  const queryClient = useQueryClient();
+
+  const { data: wallets } = usePrivyWallets();
+  const { refreshPortfolio } = usePortfolioStore();
 
   const handleClose = useCallback(() => {
     setActivePanel(null);
   }, [setActivePanel]);
 
   const handlePortfolioRefresh = useCallback(async () => {
-    await queryClient.resetQueries({
-      queryKey: ["portfolio"],
-      exact: false,
-    });
-  }, [queryClient]);
+    await refreshPortfolio(
+      wallets?.solanaWallet || "",
+      wallets?.evmWallet || "",
+      true
+    );
+  }, [refreshPortfolio, wallets?.solanaWallet, wallets?.evmWallet]);
 
   if (!activePanel) return null;
 
