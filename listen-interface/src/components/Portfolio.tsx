@@ -4,25 +4,20 @@ import { useTranslation } from "react-i18next";
 import { FaApplePay, FaShoppingCart, FaSync } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
-import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { usePortfolioStore } from "../store/portfolioStore";
-import { useSettingsStore } from "../store/settingsStore";
+import { useWalletStore } from "../store/walletStore";
 import { BuySellModal } from "./BuySellModal";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
 
 export function Portfolio() {
-  // Get chatType from useChatType hook
-  const { chatType } = useSettingsStore();
-
-  // Use the portfolio store
+  const { solanaAddress } = useWalletStore();
   const {
     combinedPortfolio: assets,
     isLoading,
     refreshPortfolio,
-    isFresh,
+    initializePortfolioManager,
   } = usePortfolioStore();
 
-  const { data: wallets } = usePrivyWallets();
   const { t } = useTranslation();
   const { openChart } = useModal();
   const { fundWallet } = useFundWallet();
@@ -31,63 +26,21 @@ export function Portfolio() {
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
 
-  // Determine which wallet addresses to use based on chatType
-  const getSolanaAddress = () => wallets?.solanaWallet || "";
-  const getEvmAddress = () =>
-    chatType === "solana" ? "" : wallets?.evmWallet || "";
-
-  // Initial fetch - only if not fresh
+  // Initialize portfolio management once
   useEffect(() => {
-    if (
-      (wallets?.solanaWallet || (wallets?.evmWallet && chatType === "omni")) &&
-      !isFresh()
-    ) {
-      refreshPortfolio(getSolanaAddress(), getEvmAddress());
-    }
-  }, [
-    wallets?.solanaWallet,
-    wallets?.evmWallet,
-    isFresh,
-    refreshPortfolio,
-    chatType,
-  ]);
-
-  // Focus detection - must be in the same position in the hooks order
-  useEffect(() => {
-    // Function to handle visibility change
-    const handleVisibilityChange = () => {
-      if (
-        document.visibilityState === "visible" &&
-        (wallets?.solanaWallet || (wallets?.evmWallet && chatType === "omni"))
-      ) {
-        // On becoming visible, refresh if needed
-        refreshPortfolio(getSolanaAddress(), getEvmAddress());
-      }
-    };
-
-    // Add visibility listener
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-
-    // Clean up
-    return () => {
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [wallets?.solanaWallet, wallets?.evmWallet, refreshPortfolio, chatType]);
+    initializePortfolioManager();
+  }, [initializePortfolioManager]);
 
   const handleTopup = async () => {
-    await fundWallet(wallets!.solanaWallet!);
+    if (solanaAddress) {
+      await fundWallet(solanaAddress);
+    }
   };
 
   const handleOpenModal = (asset: any, action: "buy" | "sell") => {
     setSelectedAsset(asset);
     setModalAction(action);
     setModalOpen(true);
-  };
-
-  const handleRefresh = async () => {
-    console.log("handleRefresh");
-    // Force refresh
-    await refreshPortfolio(getSolanaAddress(), getEvmAddress(), true);
   };
 
   if (isLoading && (!assets || assets.length === 0)) {
@@ -196,7 +149,7 @@ export function Portfolio() {
         {(!assets || assets.length === 0) && (
           <div className="text-center text-gray-400 flex flex-col items-center gap-2">
             {t("portfolio.no_assets_found")}
-            <button onClick={handleRefresh}>
+            <button onClick={refreshPortfolio}>
               <FaSync size={12} />
             </button>
           </div>

@@ -3,7 +3,8 @@ import { persist } from "zustand/middleware";
 import { PortfolioItem } from "../hooks/types";
 import { getTokenHoldings as fetchEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { fetchPortfolio as fetchSolanaPortfolio } from "../hooks/useSolanaPortfolio";
-import { useSettingsStore } from "./settingsStore"; // Import the settings store
+import { useSettingsStore } from "./settingsStore";
+import { useWalletStore } from "./walletStore";
 
 export function getPortfolioTotalValue(assets: PortfolioItem[]): number {
   return assets.reduce((total, asset) => total + asset.price * asset.amount, 0);
@@ -27,17 +28,11 @@ interface PortfolioState {
   // Actions
   fetchSolanaPortfolio: (address: string) => Promise<void>;
   fetchEvmPortfolio: (address: string) => Promise<void>;
-  fetchAllPortfolios: (
-    solanaAddress: string,
-    evmAddress: string
-  ) => Promise<void>;
-  refreshPortfolio: (
-    solanaAddress: string,
-    evmAddress: string,
-    force?: boolean
-  ) => Promise<void>;
+  fetchAllPortfolios: () => Promise<void>;
+  refreshPortfolio: () => Promise<void>;
   isFresh: () => boolean;
   updateCombinedPortfolio: () => void;
+  initializePortfolioManager: () => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>()(
@@ -154,8 +149,14 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
-      fetchAllPortfolios: async (solanaAddress: string, evmAddress: string) => {
-        if (!solanaAddress && !evmAddress) return;
+      // Fetch portfolios using current wallet addresses
+      fetchAllPortfolios: async () => {
+        // Get addresses directly from wallet store
+        const { solanaAddress, evmAddress } = useWalletStore.getState();
+        const solAddr = solanaAddress || "";
+        const evmAddr = evmAddress || "";
+
+        if (!solAddr && !evmAddr) return;
 
         // Access chatType directly from settings store
         const chatType = useSettingsStore.getState().chatType;
@@ -164,13 +165,13 @@ export const usePortfolioStore = create<PortfolioState>()(
 
         try {
           // Always fetch Solana portfolio if solanaAddress is provided
-          if (solanaAddress) {
-            await get().fetchSolanaPortfolio(solanaAddress);
+          if (solAddr) {
+            await get().fetchSolanaPortfolio(solAddr);
           }
 
           // Only fetch EVM portfolio if chatType is "omni" and evmAddress is provided
-          if (evmAddress && chatType === "omni") {
-            await get().fetchEvmPortfolio(evmAddress);
+          if (evmAddr && chatType === "omni") {
+            await get().fetchEvmPortfolio(evmAddr);
           }
 
           // Update combined portfolio after both fetches
@@ -184,17 +185,8 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
-      refreshPortfolio: async (
-        solanaAddress: string,
-        evmAddress: string,
-        force = false
-      ) => {
-        // Skip refresh if data is fresh and force is false
-        if (!force && get().isFresh()) {
-          console.log("Portfolio data is fresh, skipping refresh");
-          return;
-        }
-
+      // Refresh portfolio data
+      refreshPortfolio: async () => {
         // Access chatType directly from settings store
         const chatType = useSettingsStore.getState().chatType;
         console.log("Refreshing portfolio, chatType:", chatType);
@@ -205,14 +197,35 @@ export const usePortfolioStore = create<PortfolioState>()(
           error: null,
         });
 
-        // Reuse the fetchAllPortfolios to refresh
-        await get().fetchAllPortfolios(solanaAddress, evmAddress);
+        // Fetch portfolios with current wallet addresses
+        await get().fetchAllPortfolios();
+      },
+
+      // Initialize visibility listener and other portfolio management
+      initializePortfolioManager: () => {
+        // Function to handle visibility change
+        const handleVisibilityChange = () => {
+          if (document.visibilityState === "visible") {
+            // On becoming visible, refresh if needed
+            get().refreshPortfolio();
+          }
+        };
+
+        // Add visibility listener
+        document.addEventListener("visibilitychange", handleVisibilityChange);
+
+        // Initial fetch if needed
+        if (!get().isFresh()) {
+          get().refreshPortfolio();
+        }
       },
     }),
     {
       name: "portfolio-storage",
-      // We don't need to persist anything
-      partialize: (_state) => ({}),
+      // We could persist the actual portfolio data if desired
+      partialize: (state) => ({
+        lastUpdated: state.lastUpdated,
+      }),
     }
   )
 );

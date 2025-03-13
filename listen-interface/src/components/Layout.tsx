@@ -15,6 +15,7 @@ import { RecentChats } from "./RecentChats";
 import { SimpleHeader } from "./SimpleHeader";
 import { SwipeHandler } from "./SwipeHandler";
 import { VersionAndLanguageDisplay } from "./VersionAndLanguage";
+import { WalletInitializer } from "./WalletInitializer";
 
 function balanceToUI(balance: UseBalanceReturnType["data"]) {
   if (!balance?.value || !balance?.decimals) return 0;
@@ -163,6 +164,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarContext.Provider value={setIsSidebarOpen}>
+      <WalletInitializer />
       <div className="relative h-screen flex flex-col text-white overflow-hidden">
         <Background />
 
