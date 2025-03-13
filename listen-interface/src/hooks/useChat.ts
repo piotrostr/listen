@@ -31,7 +31,10 @@ export function useChat() {
   } = useSearch({ from: "/" });
   const navigate = useNavigate();
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
-  const { solanaAssets, evmAssets } = usePortfolioStore();
+  const { getSolanaAssets, getEvmAssets } = usePortfolioStore();
+
+  const solanaAssets = getSolanaAssets();
+  const evmAssets = getEvmAssets();
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
