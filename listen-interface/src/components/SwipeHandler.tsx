@@ -7,7 +7,6 @@ interface SwipeHandlerProps {
 
 export function SwipeHandler({ onOpenSidebar, isOpen }: SwipeHandlerProps) {
   const [touchStartX, setTouchStartX] = useState<number | null>(null);
-  const [touchMoveX, setTouchMoveX] = useState<number | null>(null);
   const swipeAreaRef = useRef<HTMLDivElement>(null);
 
   // The threshold distance the user needs to swipe to trigger opening
@@ -24,15 +23,12 @@ export function SwipeHandler({ onOpenSidebar, isOpen }: SwipeHandlerProps) {
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (touchStartX !== null) {
-      setTouchMoveX(e.touches[0].clientX);
-
       // If we've moved far enough right, trigger the sidebar opening
       const distance = e.touches[0].clientX - touchStartX;
       if (distance > SWIPE_THRESHOLD) {
         onOpenSidebar();
         // Reset touch tracking after triggering
         setTouchStartX(null);
-        setTouchMoveX(null);
       }
     }
   };
@@ -40,7 +36,6 @@ export function SwipeHandler({ onOpenSidebar, isOpen }: SwipeHandlerProps) {
   const handleTouchEnd = () => {
     // Reset touch tracking
     setTouchStartX(null);
-    setTouchMoveX(null);
   };
 
   return (
