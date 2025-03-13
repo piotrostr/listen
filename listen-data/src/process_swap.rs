@@ -48,6 +48,7 @@ pub async fn process_swap(
 
     let mint_details =
         extra_mint_details_from_tx_metadata(&transaction_metadata);
+
     let inner_transfers = SPL_TOKEN_TRANSFER_PROCESSOR
         .decode_token_transfer_with_vaults_from_nested_instructions(
             &nested_instructions,

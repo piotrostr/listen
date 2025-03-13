@@ -1,6 +1,7 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
 import { recommendedQuestions } from "./translations/recommended-questions";
+import { settings } from "./translations/settings";
 import { toolCalls } from "./translations/tool-calls";
 
 const resources = {
@@ -90,6 +91,9 @@ const resources = {
         paused: "Paused",
         market_cap: "Market Cap",
         all: "Any",
+        filter: "Filter",
+        volume: "Volume",
+        sell: "Sell",
         waiting_for_updates: "Waiting for updates...",
       },
       chat: {
@@ -105,16 +109,7 @@ const resources = {
         close: "Close",
         open_in_new_tab: "Open in new tab",
       },
-      settings: {
-        title: "Settings",
-        quick_buy: "Quick Buy",
-        quick_buy_default_sol_amount: "Default SOL amount for quick buy",
-        quick_buy_default_sol_amount_description:
-          "This is the default amount of SOL that will be used for quick buys",
-        mode: "Mode",
-        wallet_addresses: "Wallet addresses",
-        connected_accounts: "Connected accounts",
-      },
+      settings: settings.en,
       wallet_addresses: {
         solana_wallet: "Solana Wallet",
         evm_wallet: "EVM Wallet",
@@ -230,6 +225,9 @@ const resources = {
         market_cap: "市值",
         all: "全部",
         waiting_for_updates: "等待更新...",
+        filter: "过滤",
+        volume: "成交量",
+        sell: "出售",
       },
       chat: {
         start_a_conversation: "开始对话",
@@ -244,16 +242,7 @@ const resources = {
         close: "关闭",
         open_in_new_tab: "在新标签页中打开",
       },
-      settings: {
-        title: "设置",
-        quick_buy: "快速购买",
-        quick_buy_default_sol_amount: "快速购买默认 SOL 数量",
-        quick_buy_default_sol_amount_description:
-          "快速购买功能使用的默认 SOL 数量",
-        mode: "模式",
-        wallet_addresses: "钱包地址",
-        connected_accounts: "已连接账户",
-      },
+      settings: settings.zh,
       wallet_addresses: {
         solana_wallet: "Solana 钱包",
         evm_wallet: "EVM 钱包",

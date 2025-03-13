@@ -47,7 +47,7 @@ export const PortfolioItemSchema = z.object({
   name: z.string(),
   symbol: z.string(),
   decimals: z.number(),
-  logoURI: z.string(),
+  logoURI: z.string().nullable().optional(),
   price: z.number(),
   amount: z.number(),
   chain: z.string(),

@@ -6,7 +6,7 @@ import {
 } from "@solana/web3.js";
 import { useQuery } from "@tanstack/react-query";
 import { tokenMetadataCache } from "./localStorage";
-import { Holding, PriceResponse, TokenMetadata } from "./types";
+import { Holding, PortfolioItem, PriceResponse, TokenMetadata } from "./types";
 import { fetchListenMetadata } from "./useListenMetadata";
 import { usePrivyWallets } from "./usePrivyWallet";
 import { decodeTokenAccount, imageMap } from "./util";
@@ -122,7 +122,7 @@ async function fetchPrices(mints: string[]): Promise<PriceResponse> {
 export const useSolanaPortfolio = () => {
   const { data: wallets } = usePrivyWallets();
 
-  const fetchPortfolio = async (address: string) => {
+  const fetchPortfolio = async (address: string): Promise<PortfolioItem[]> => {
     const pubkey = new PublicKey(address);
     const WSOL_MINT = "So11111111111111111111111111111111111111112";
     const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";

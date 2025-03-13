@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::engine::{
     order::{swap_order_to_transaction, SwapOrder, SwapOrderTransaction},
+    retry::retry_with_backoff,
     Engine, EngineError,
 };
 use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
@@ -79,14 +80,10 @@ impl Engine {
                     inject_blockhash_into_encoded_tx(&transaction, &latest_blockhash.to_string())
                         .map_err(EngineError::InjectBlockhashError)?;
                 privy_transaction.solana_transaction = Some(fresh_blockhash_tx);
-                match self.privy.execute_transaction(privy_transaction).await {
-                    Ok(transaction_hash) => Ok(transaction_hash),
-                    Err(e) => {
-                        // no log of tx for solana since its base64 encoded and solana transactions pretty much never fail
-                        tracing::error!(?order, error = %e, "Failed to execute solana order");
-                        Err(EngineError::TransactionError(e))
-                    }
-                }
+
+                // Execute Solana transaction with retry
+                execute_solana_transaction_with_retry(&privy_transaction, self.privy.clone(), order)
+                    .await
             }
         }
     }
@@ -123,6 +120,32 @@ pub async fn ensure_approvals(
             .map_err(EngineError::TransactionError)?;
     }
     Ok(())
+}
+
+pub async fn execute_solana_transaction_with_retry(
+    privy_transaction: &PrivyTransaction,
+    privy: Arc<Privy>,
+    order: &SwapOrder,
+) -> Result<String, EngineError> {
+    retry_with_backoff("execute_solana_transaction", || {
+        let privy_tx = privy_transaction.clone();
+        let privy_clone = privy.clone();
+
+        async move {
+            match privy_clone.execute_transaction(privy_tx).await {
+                Ok(transaction_hash) => Ok(transaction_hash),
+                Err(e) => {
+                    tracing::warn!(
+                        ?order,
+                        error = %e,
+                        "Solana transaction execution failed, will retry"
+                    );
+                    Err(EngineError::TransactionError(e))
+                }
+            }
+        }
+    })
+    .await
 }
 
 #[cfg(test)]

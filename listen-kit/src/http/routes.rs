@@ -9,6 +9,7 @@ use crate::reasoning_loop::StreamResponse;
 use crate::signer::privy::PrivySigner;
 use crate::signer::TransactionSigner;
 use crate::solana::agent::create_solana_agent;
+use crate::solana::agent::Features;
 use actix_web::{
     get, post, web, Error, HttpRequest, HttpResponse, Responder,
 };
@@ -30,6 +31,8 @@ pub struct ChatRequest {
     chain: Option<String>,
     #[serde(default)]
     preamble: Option<String>,
+    #[serde(default)]
+    features: Option<Features>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -122,7 +125,12 @@ async fn stream(
     // Select the appropriate agent based on the chain parameter and preamble
     let agent = match request.chain.as_deref() {
         #[cfg(feature = "solana")]
-        Some("solana") => match create_solana_agent(preamble).await {
+        Some("solana") => match create_solana_agent(
+            preamble,
+            request.features.clone().unwrap_or_default(),
+        )
+        .await
+        {
             Ok(agent) => Arc::new(agent),
             Err(e) => {
                 tracing::error!(

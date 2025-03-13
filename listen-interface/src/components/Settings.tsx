@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useSettings } from "../contexts/SettingsContext";
 import { useChatType } from "../hooks/useChatType";
 import { ChatSelector } from "./ChatSelector";
 import { ConnectedAccounts } from "./ConnectedAccounts";
@@ -9,25 +9,20 @@ import { WalletAddresses } from "./WalletAddresses";
 export function Settings() {
   const { user } = usePrivy();
   const { chatType, setChatType } = useChatType();
-  const [quickBuyAmount, setQuickBuyAmount] = useState<number>(0.1);
+  const { quickBuyAmount, setQuickBuyAmount, agentMode, setAgentMode } =
+    useSettings();
 
   const { t } = useTranslation();
 
-  // Load saved quick buy amount from localStorage
-  useEffect(() => {
-    const savedAmount = localStorage.getItem("quickBuyAmount");
-    if (savedAmount) {
-      setQuickBuyAmount(parseFloat(savedAmount));
-    }
-  }, []);
-
-  // Save quick buy amount to localStorage
+  // Handle quick buy amount change
   const handleAmountChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = parseFloat(e.target.value);
-    if (!isNaN(value) && value > 0) {
-      setQuickBuyAmount(value);
-      localStorage.setItem("quickBuyAmount", value.toString());
-    }
+    setQuickBuyAmount(value);
+  };
+
+  // Handle agent mode toggle
+  const handleAgentModeToggle = () => {
+    setAgentMode(!agentMode);
   };
 
   return (
@@ -36,6 +31,7 @@ export function Settings() {
         {t("settings.wallet_addresses")}
       </h2>
       <WalletAddresses />
+
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.quick_buy")}</h2>
       <div className="bg-black/40 backdrop-blur-sm rounded-lg p-4 mb-4">
         <label className="block text-sm text-white mb-2">
@@ -56,6 +52,28 @@ export function Settings() {
           {t("settings.quick_buy_default_sol_amount_description")}
         </p>
       </div>
+
+      <div className="flex items-center justify-between">
+        <h2 className="text-lg font-bold mb-2 mt-4">
+          {t("settings.agent_mode")}
+        </h2>
+        <button
+          onClick={handleAgentModeToggle}
+          className={`px-4 py-2 rounded-lg transition-colors ${
+            agentMode
+              ? "bg-green-500/30 text-green-300 hover:bg-green-500/40"
+              : "bg-gray-600/30 text-gray-400 hover:bg-gray-600/40"
+          }`}
+        >
+          {agentMode ? t("settings.enabled") : t("settings.disabled")}
+        </button>
+      </div>
+      <p className="text-xs text-gray-400 mt-2">
+        {t("settings.agent_mode_enabled")}
+      </p>
+      <p className="text-xs text-gray-400 mt-2">
+        {t("settings.agent_mode_disabled")}
+      </p>
 
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.mode")}</h2>
       <ChatSelector selectedChat={chatType} onSelectChat={setChatType} />

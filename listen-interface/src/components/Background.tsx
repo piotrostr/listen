@@ -165,8 +165,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint1_radial_2033_12053"
@@ -176,8 +176,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint2_radial_2033_12053"
@@ -187,8 +187,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint3_radial_2033_12053"
@@ -198,8 +198,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint4_radial_2033_12053"
@@ -209,8 +209,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint5_radial_2033_12053"
@@ -220,8 +220,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint6_radial_2033_12053"
@@ -231,8 +231,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint7_radial_2033_12053"
@@ -242,8 +242,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint8_radial_2033_12053"
@@ -253,8 +253,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint9_radial_2033_12053"
@@ -264,8 +264,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint10_radial_2033_12053"
@@ -275,8 +275,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint11_radial_2033_12053"
@@ -286,8 +286,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint12_radial_2033_12053"
@@ -297,8 +297,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint13_radial_2033_12053"
@@ -308,8 +308,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint14_radial_2033_12053"
@@ -319,8 +319,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint15_radial_2033_12053"
@@ -330,8 +330,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint16_radial_2033_12053"
@@ -341,8 +341,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint17_radial_2033_12053"
@@ -352,8 +352,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint18_radial_2033_12053"
@@ -363,8 +363,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
       <radialGradient
         id="paint19_radial_2033_12053"
@@ -374,8 +374,8 @@ export const Vector = () => (
         gradientUnits="userSpaceOnUse"
         gradientTransform="translate(199.803 422.479) rotate(90) scale(494.479 601.688)"
       >
-        <stop stop-color="white" />
-        <stop offset="1" stop-color="white" stop-opacity="0" />
+        <stop stopColor="white" />
+        <stop offset="1" stopColor="white" stopOpacity="0" />
       </radialGradient>
     </defs>
   </svg>

@@ -17,6 +17,20 @@ pub struct Candlestick {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct PriceTick {
+    pub timestamp: u64,
+    pub price: f64,
+    pub volume: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PriceChart {
+    pub price_ticks: Vec<PriceTick>,
+    pub pct_change: f64,
+    pub interval: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TopToken {
     pub name: String,
     pub pubkey: String,
@@ -160,8 +174,10 @@ pub async fn research_x_profile(
 #[tool(description = "
 Fetch top tokens from the Listen API.
 
+No point using limit of more than ~6, less is more, as long as the filters are right
+
 Parameters:
-- limit (string): Optional number of tokens to return (default: 20)
+- limit (string): Optional number of tokens to return
 - min_volume (string): Optional minimum 24h volume filter
 - min_market_cap (string): Optional minimum market cap filter
 - timeframe (string): Optional timeframe in seconds
@@ -214,15 +230,52 @@ pub async fn fetch_top_tokens(
 }
 
 #[tool(description = "
+Fetch price series for a token from the Listen API.
+
+Parameters:
+- mint (string): The token's mint/pubkey address
+- interval (string): The interval of the price data, one of:
+  * '5m'  (5 minutes)
+  * '15m' (15 minutes)
+  * '30m' (30 minutes)
+  * '1h'  (1 hour)
+  * '4h'  (4 hours)
+  * '1d'  (1 day)
+")]
+pub async fn fetch_price_chart(
+    mint: String,
+    interval: String,
+) -> Result<Vec<PriceTick>> {
+    let response = reqwest::get(format!(
+        "{}/candlesticks?mint={}&interval={}",
+        API_BASE, mint, interval
+    ))
+    .await
+    .map_err(|e| anyhow!("Failed to fetch chart: {}", e))?;
+
+    let candlesticks = response
+        .json::<Vec<Candlestick>>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
+
+    let price_ticks = candlesticks
+        .iter()
+        .map(|candlestick| PriceTick {
+            timestamp: candlestick.timestamp,
+            price: candlestick.close,
+            volume: candlestick.volume,
+        })
+        .collect::<Vec<PriceTick>>();
+
+    Ok(price_ticks)
+}
+
+#[tool(description = "
 Fetch candlestick data for a token from the Listen API.
 
 Parameters:
 - mint (string): The token's mint/pubkey address
 - interval (string): The candlestick interval, one of:
-  * '15s' (15 seconds)
-  * '30s' (30 seconds)
-  * '1m'  (1 minute)
-  * '5m'  (5 minutes)
   * '15m' (15 minutes)
   * '30m' (30 minutes)
   * '1h'  (1 hour)
