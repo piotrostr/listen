@@ -4,19 +4,29 @@ import { useTranslation } from "react-i18next";
 import { FaApplePay, FaShoppingCart, FaSync } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
+import { useChatType } from "../hooks/useChatType";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { BuySellModal } from "./BuySellModal";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
 
 export function Portfolio() {
-  // Use the portfolio store instead of the usePortfolio hook
+  // Get chatType from useChatType hook
+  const { chatType } = useChatType();
+
+  // Use the portfolio store
   const {
     combinedPortfolio: assets,
     isLoading,
     refreshPortfolio,
     isFresh,
+    setChatType: setStoreChatType,
   } = usePortfolioStore();
+
+  // Keep portfolio store chatType in sync with global chatType
+  useEffect(() => {
+    setStoreChatType(chatType);
+  }, [chatType, setStoreChatType]);
 
   const { data: wallets } = usePrivyWallets();
   const { t } = useTranslation();
@@ -27,20 +37,37 @@ export function Portfolio() {
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
 
+  // Determine which wallet addresses to use based on chatType
+  const getSolanaAddress = () => wallets?.solanaWallet || "";
+  const getEvmAddress = () =>
+    chatType === "solana" ? "" : wallets?.evmWallet || "";
+
   // Initial fetch - only if not fresh
   useEffect(() => {
-    if ((wallets?.solanaWallet || wallets?.evmWallet) && !isFresh()) {
-      refreshPortfolio(wallets?.solanaWallet || "", wallets?.evmWallet || "");
+    if (
+      (wallets?.solanaWallet || (wallets?.evmWallet && chatType === "omni")) &&
+      !isFresh()
+    ) {
+      refreshPortfolio(getSolanaAddress(), getEvmAddress());
     }
-  }, [wallets?.solanaWallet, wallets?.evmWallet, isFresh, refreshPortfolio]);
+  }, [
+    wallets?.solanaWallet,
+    wallets?.evmWallet,
+    isFresh,
+    refreshPortfolio,
+    chatType,
+  ]);
 
   // Focus detection - must be in the same position in the hooks order
   useEffect(() => {
     // Function to handle visibility change
     const handleVisibilityChange = () => {
-      if (document.visibilityState === "visible" && wallets?.solanaWallet) {
+      if (
+        document.visibilityState === "visible" &&
+        (wallets?.solanaWallet || (wallets?.evmWallet && chatType === "omni"))
+      ) {
         // On becoming visible, refresh if needed
-        refreshPortfolio(wallets?.solanaWallet || "", wallets?.evmWallet || "");
+        refreshPortfolio(getSolanaAddress(), getEvmAddress());
       }
     };
 
@@ -51,7 +78,7 @@ export function Portfolio() {
     return () => {
       document.removeEventListener("visibilitychange", handleVisibilityChange);
     };
-  }, [wallets?.solanaWallet, wallets?.evmWallet, refreshPortfolio]);
+  }, [wallets?.solanaWallet, wallets?.evmWallet, refreshPortfolio, chatType]);
 
   const handleTopup = async () => {
     await fundWallet(wallets!.solanaWallet!);
@@ -66,11 +93,7 @@ export function Portfolio() {
   const handleRefresh = async () => {
     console.log("handleRefresh");
     // Force refresh
-    await refreshPortfolio(
-      wallets?.solanaWallet || "",
-      wallets?.evmWallet || "",
-      true
-    );
+    await refreshPortfolio(getSolanaAddress(), getEvmAddress(), true);
   };
 
   if (isLoading && (!assets || assets.length === 0)) {

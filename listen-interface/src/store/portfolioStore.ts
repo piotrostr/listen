@@ -1,6 +1,7 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { PortfolioItem } from "../hooks/types";
+import { ChatType } from "../hooks/useChatType";
 import { getTokenHoldings as fetchEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { fetchPortfolio as fetchSolanaPortfolio } from "../hooks/useSolanaPortfolio";
 
@@ -17,7 +18,7 @@ interface PortfolioState {
   evmAssets: PortfolioItem[];
   combinedPortfolio: PortfolioItem[];
   portfolioValue: number;
-  chatType: "solana" | "all";
+  chatType: ChatType;
 
   // Status
   isLoading: boolean;
@@ -31,13 +32,14 @@ interface PortfolioState {
     solanaAddress: string,
     evmAddress: string
   ) => Promise<void>;
-  setChatType: (type: "solana" | "all") => void;
+  setChatType: (type: ChatType) => void;
   refreshPortfolio: (
     solanaAddress: string,
     evmAddress: string,
     force?: boolean
   ) => Promise<void>;
   isFresh: () => boolean;
+  updateCombinedPortfolio: () => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>()(
@@ -48,7 +50,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       evmAssets: [],
       combinedPortfolio: [],
       portfolioValue: 0,
-      chatType: "all",
+      chatType: "solana", // Default to solana-only mode
 
       // Initial status
       isLoading: false,
@@ -62,6 +64,25 @@ export const usePortfolioStore = create<PortfolioState>()(
 
         const now = Date.now();
         return now - lastUpdated < STALE_TIME;
+      },
+
+      // Helper to update combined portfolio based on current chatType
+      updateCombinedPortfolio: () => {
+        set((state) => {
+          // Only include Solana assets if chatType is "solana"
+          const combinedPortfolio =
+            state.chatType === "solana"
+              ? [...state.solanaAssets]
+              : [...state.solanaAssets, ...state.evmAssets];
+
+          // Calculate portfolio value
+          const portfolioValue = getPortfolioTotalValue(combinedPortfolio);
+
+          return {
+            combinedPortfolio,
+            portfolioValue,
+          };
+        });
       },
 
       // Actions
@@ -80,23 +101,18 @@ export const usePortfolioStore = create<PortfolioState>()(
           }));
 
           set((state) => {
-            // Recalculate the combined portfolio
-            const combinedPortfolio =
-              state.chatType === "solana"
-                ? normalizedAssets
-                : [...normalizedAssets, ...state.evmAssets];
-
-            // Calculate portfolio value
-            const portfolioValue = getPortfolioTotalValue(combinedPortfolio);
-
-            return {
+            // Store the Solana assets
+            const newState = {
               solanaAssets: normalizedAssets,
-              combinedPortfolio,
-              portfolioValue,
               isLoading: false,
               lastUpdated: Date.now(),
             };
+
+            return newState;
           });
+
+          // Update combined portfolio separately to ensure correct filtering
+          get().updateCombinedPortfolio();
         } catch (error) {
           set({
             error: error as Error,
@@ -109,6 +125,12 @@ export const usePortfolioStore = create<PortfolioState>()(
       fetchEvmPortfolio: async (address: string) => {
         if (!address) return;
 
+        // Skip fetching EVM assets if we're in Solana-only mode
+        if (get().chatType === "solana") {
+          console.log("Skipping EVM fetch in Solana-only mode");
+          return;
+        }
+
         set((state) => ({
           isLoading: !state.solanaAssets.length, // Only show loading if we have no data
           error: null,
@@ -117,24 +139,14 @@ export const usePortfolioStore = create<PortfolioState>()(
         try {
           const evmAssets = await fetchEvmPortfolio(address);
 
-          set((state) => {
-            // Recalculate the combined portfolio if not in Solana-only mode
-            const combinedPortfolio =
-              state.chatType === "solana"
-                ? state.solanaAssets
-                : [...state.solanaAssets, ...evmAssets];
-
-            // Calculate portfolio value
-            const portfolioValue = getPortfolioTotalValue(combinedPortfolio);
-
-            return {
-              evmAssets,
-              combinedPortfolio,
-              portfolioValue,
-              isLoading: false,
-              lastUpdated: Date.now(),
-            };
+          set({
+            evmAssets,
+            isLoading: false,
+            lastUpdated: Date.now(),
           });
+
+          // Update combined portfolio separately
+          get().updateCombinedPortfolio();
         } catch (error) {
           set({
             error: error as Error,
@@ -150,59 +162,18 @@ export const usePortfolioStore = create<PortfolioState>()(
         set({ isLoading: true, error: null });
 
         try {
-          // Start both fetches in parallel
-          const fetchPromises: Promise<any>[] = [];
-
+          // Always fetch Solana portfolio if solanaAddress is provided
           if (solanaAddress) {
-            fetchPromises.push(fetchSolanaPortfolio(solanaAddress));
+            await get().fetchSolanaPortfolio(solanaAddress);
           }
 
-          if (evmAddress && get().chatType !== "solana") {
-            fetchPromises.push(fetchEvmPortfolio(evmAddress));
+          // Only fetch EVM portfolio if chatType is "omni" and evmAddress is provided
+          if (evmAddress && get().chatType === "omni") {
+            await get().fetchEvmPortfolio(evmAddress);
           }
 
-          const [solanaAssetsResult, evmAssetsResult] =
-            await Promise.allSettled(fetchPromises);
-
-          // Handle the results
-          let solanaAssets: PortfolioItem[] = get().solanaAssets;
-          let evmAssets: PortfolioItem[] = get().evmAssets;
-
-          if (solanaAssetsResult.status === "fulfilled" && solanaAddress) {
-            // Normalize assets
-            solanaAssets = solanaAssetsResult.value.map(
-              (asset: PortfolioItem) => ({
-                ...asset,
-                logoURI: asset.logoURI || "",
-              })
-            );
-          }
-
-          if (
-            evmAssetsResult?.status === "fulfilled" &&
-            evmAddress &&
-            get().chatType !== "solana"
-          ) {
-            evmAssets = evmAssetsResult.value;
-          }
-
-          // Determine combined portfolio based on chat type
-          const combinedPortfolio =
-            get().chatType === "solana"
-              ? solanaAssets
-              : [...solanaAssets, ...evmAssets];
-
-          // Calculate portfolio value
-          const portfolioValue = getPortfolioTotalValue(combinedPortfolio);
-
-          set({
-            solanaAssets,
-            evmAssets,
-            combinedPortfolio,
-            portfolioValue,
-            isLoading: false,
-            lastUpdated: Date.now(),
-          });
+          // Update combined portfolio after both fetches
+          get().updateCombinedPortfolio();
         } catch (error) {
           set({
             error: error as Error,
@@ -212,23 +183,11 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
-      setChatType: (type: "solana" | "all") => {
-        set((state) => {
-          // Recalculate combined portfolio based on new chat type
-          const combinedPortfolio =
-            type === "solana"
-              ? state.solanaAssets
-              : [...state.solanaAssets, ...state.evmAssets];
+      setChatType: (type: ChatType) => {
+        set({ chatType: type });
 
-          // Recalculate portfolio value
-          const portfolioValue = getPortfolioTotalValue(combinedPortfolio);
-
-          return {
-            chatType: type,
-            combinedPortfolio,
-            portfolioValue,
-          };
-        });
+        // Update the combined portfolio whenever the chatType changes
+        get().updateCombinedPortfolio();
       },
 
       refreshPortfolio: async (
@@ -241,6 +200,8 @@ export const usePortfolioStore = create<PortfolioState>()(
           console.log("Portfolio data is fresh, skipping refresh");
           return;
         }
+
+        console.log("Refreshing portfolio, chatType:", get().chatType);
 
         // Reset data first to ensure UI shows loading state
         set((_state) => ({
