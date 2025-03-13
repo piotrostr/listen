@@ -37,7 +37,6 @@ interface PortfolioState {
   refreshPortfolio: () => Promise<void>;
   isFresh: () => boolean;
   initializePortfolioManager: () => void;
-  updateSolanaTokenPrices: () => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>()(
@@ -258,73 +257,52 @@ export const usePortfolioStore = create<PortfolioState>()(
           (window as any).__portfolioTokenStoreUnsubscribe();
         }
 
-        // Subscribe to tokenStore updates - with update prevention
+        // Subscribe to tokenStore updates - handle directly in the callback
         const unsubscribe = useTokenStore.subscribe((state, prevState) => {
+          // Only proceed if we have a new update and we're not loading
           if (
             state.latestUpdate !== prevState.latestUpdate &&
             state.latestUpdate &&
-            !get().isLoading // Prevent updates while loading
+            !get().isLoading
           ) {
-            // When token prices update, update our portfolio prices
-            get().updateSolanaTokenPrices();
+            const latestUpdate = state.latestUpdate;
+            const mintToUpdate = latestUpdate.pubkey;
+
+            // Skip token if not in portfolio (using our efficient HashMap lookup)
+            const portfolioItem = get().solanaAssetsMap.get(mintToUpdate);
+            if (!portfolioItem) return;
+
+            // Skip if already processing an update (prevents recursive updates)
+            if ((window as any).__updatingSolanaTokenPrices) return;
+
+            try {
+              (window as any).__updatingSolanaTokenPrices = true;
+
+              // Get token data for the price
+              const tokenData = state.tokenMap.get(mintToUpdate);
+              if (!tokenData) return;
+
+              set((currentState) => {
+                // Create new map (immutable update for React)
+                const updatedMap = new Map(currentState.solanaAssetsMap);
+
+                // Update just this one token
+                updatedMap.set(mintToUpdate, {
+                  ...portfolioItem,
+                  price: tokenData.lastPrice,
+                });
+
+                return { solanaAssetsMap: updatedMap };
+              });
+            } finally {
+              // Clear the guard immediately
+              (window as any).__updatingSolanaTokenPrices = false;
+            }
           }
         });
 
         // Store the unsubscribe function to prevent memory leaks
         (window as any).__portfolioTokenStoreUnsubscribe = unsubscribe;
-      },
-
-      // Add this new method to update prices from tokenStore
-      updateSolanaTokenPrices: () => {
-        const tokenMap = useTokenStore.getState().tokenMap;
-        const latestUpdate = useTokenStore.getState().latestUpdate;
-
-        if (!latestUpdate) return;
-
-        // Add a guard to prevent updates if we're already handling token price changes
-        if ((window as any).__updatingSolanaTokenPrices) {
-          return;
-        }
-
-        try {
-          // Set the guard
-          (window as any).__updatingSolanaTokenPrices = true;
-
-          set((state) => {
-            // Get the updated token's mint address
-            const mintToUpdate = latestUpdate.pubkey;
-            const tokenData = tokenMap.get(mintToUpdate);
-
-            // Check if this token is in our portfolio
-            const portfolioItem = state.solanaAssetsMap.get(mintToUpdate);
-
-            // Only update if needed
-            if (
-              portfolioItem &&
-              tokenData &&
-              tokenData.lastPrice !== portfolioItem.price
-            ) {
-              console.log("Updating token price for", mintToUpdate);
-              // Create new map (immutable update for React)
-              const updatedMap = new Map(state.solanaAssetsMap);
-
-              // Update just this one token
-              updatedMap.set(mintToUpdate, {
-                ...portfolioItem,
-                price: tokenData.lastPrice,
-              });
-
-              return { solanaAssetsMap: updatedMap };
-            }
-
-            return {}; // No updates needed
-          });
-        } finally {
-          // Clear the guard when done, using setTimeout to ensure it runs after React finishes rendering
-          setTimeout(() => {
-            (window as any).__updatingSolanaTokenPrices = false;
-          }, 0);
-        }
       },
     }),
     {
