@@ -10,6 +10,7 @@ import sqlite3
 import hashlib
 import time
 import queue
+import random
 from embed import embed, setup_embedding_db
 
 # Global token bucket rate limiter
@@ -129,10 +130,41 @@ def generate_embeddings(prompts, batch_size=64, max_workers=3):
 	progress_bar.close()
 	return processed
 
+def sample_embeddings(n=5):
+	"""Retrieve n random embedding entries from the database and display them"""
+	conn = sqlite3.connect('embeddings.db')
+	cursor = conn.cursor()
+	
+	# Get total count of embeddings
+	cursor.execute("SELECT COUNT(*) FROM embeddings")
+	total_count = cursor.fetchone()[0]
+	
+	if total_count == 0:
+		print("No embeddings found in the database.")
+		conn.close()
+		return
+	
+	# Get n random entries
+	cursor.execute("SELECT prompt_hash, prompt, count FROM embeddings ORDER BY RANDOM() LIMIT ?", (n,))
+	samples = cursor.fetchall()
+	
+	# Create a DataFrame for display
+	df = pd.DataFrame(samples, columns=['Hash', 'Prompt', 'Count'])
+	
+	# Truncate long prompts for display
+	df['Prompt'] = df['Prompt'].apply(lambda x: (x[:100] + '...') if len(x) > 100 else x)
+	
+	print(f"\nSample of {n} random embeddings from database (total: {total_count}):")
+	print(df)
+	
+	conn.close()
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Chat analysis and embedding generation")
 	parser.add_argument("--generate-embeddings", action="store_true", help="Generate embeddings for all prompts")
 	parser.add_argument("--analyze-embeddings", action="store_true", help="Analyze existing embeddings")
+	parser.add_argument("--sample-embeddings", action="store_true", help="Display random sample of embeddings")
+	parser.add_argument("--sample-size", type=int, default=5, help="Number of random embeddings to sample")
 	parser.add_argument("--batch-size", type=int, default=64, help="Batch size for embedding generation")
 	parser.add_argument("--workers", type=int, default=3, help="Maximum worker threads")
 	parser.add_argument("--max-rps", type=float, default=3.0, help="Maximum requests per second")
@@ -141,7 +173,10 @@ if __name__ == "__main__":
 	# Update rate limiter based on command line argument
 	rate_limiter.rate = args.max_rps
 	
-	if args.generate_embeddings:
+	if args.sample_embeddings:
+		# Sample random embeddings from the database
+		sample_embeddings(args.sample_size)
+	elif args.generate_embeddings:
 		print("Loading chats for embedding generation...")
 		chats = load_chats()
 		prompts = [chat.chat_request.get('prompt') for chat in chats if chat.chat_request.get('prompt')]
