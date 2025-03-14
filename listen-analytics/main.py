@@ -9,28 +9,44 @@ import argparse
 import sqlite3
 import hashlib
 import time
+import queue
 from embed import embed, setup_embedding_db
 
-# Global rate limiter
-class RateLimiter:
-	def __init__(self, max_per_second=3):
-		self.max_per_second = max_per_second
-		self.last_request_time = 0
+# Global token bucket rate limiter
+class TokenBucketRateLimiter:
+	def __init__(self, rate=3, capacity=3):
+		self.rate = rate  # tokens per second
+		self.capacity = capacity  # bucket size
+		self.tokens = capacity  # start with a full bucket
+		self.last_update = time.time()
 		self.lock = threading.Lock()
 	
-	def wait(self):
+	def _add_tokens(self):
+		now = time.time()
+		time_passed = now - self.last_update
+		new_tokens = time_passed * self.rate
+		
+		if new_tokens > 0:
+			self.tokens = min(self.capacity, self.tokens + new_tokens)
+			self.last_update = now
+	
+	def acquire(self):
 		with self.lock:
-			current_time = time.time()
-			time_since_last = current_time - self.last_request_time
-			time_to_wait = max(0, 1/self.max_per_second - time_since_last)
+			self._add_tokens()
 			
-			if time_to_wait > 0:
-				time.sleep(time_to_wait)
-			
-			self.last_request_time = time.time()
+			if self.tokens >= 1:
+				self.tokens -= 1
+				return True
+			else:
+				# Calculate time to wait for next token
+				wait_time = (1 - self.tokens) / self.rate
+				time.sleep(wait_time)
+				self.tokens = 0  # We've used the token that became available
+				self.last_update = time.time()
+				return True
 
 # Create a global rate limiter
-rate_limiter = RateLimiter(max_per_second=3)
+rate_limiter = TokenBucketRateLimiter(rate=3, capacity=3)
 
 def process_batch(batch):
 	"""Process a batch of prompts with thread-local SQLite connection"""
@@ -59,19 +75,24 @@ def process_batch(batch):
 			results.append(prompt)
 		else:
 			# Apply rate limiting before API call
-			rate_limiter.wait()
+			rate_limiter.acquire()
 			
-			# If not in database, get from API (using your embed function)
-			embeddings = embed([prompt])
-			if embeddings and len(embeddings) > 0:
-				embedding = embeddings[0]
-				# Store in database
-				cursor.execute(
-					"INSERT INTO embeddings (prompt_hash, prompt, embedding, count) VALUES (?, ?, ?, ?)",
-					(text_hash, prompt, embedding.embedding.tobytes(), 1)
-				)
-				conn.commit()
-				results.append(prompt)
+			# If not in database, get from API
+			try:
+				embeddings = embed([prompt])
+				if embeddings and len(embeddings) > 0:
+					embedding = embeddings[0]
+					# Store in database
+					cursor.execute(
+						"INSERT INTO embeddings (prompt_hash, prompt, embedding, count) VALUES (?, ?, ?, ?)",
+						(text_hash, prompt, embedding.embedding.tobytes(), 1)
+					)
+					conn.commit()
+					results.append(prompt)
+			except Exception as e:
+				print(f"Error embedding prompt: {e}")
+				# Sleep a bit longer on error to avoid hammering the API
+				time.sleep(1)
 	
 	conn.close()
 	return results
@@ -118,7 +139,7 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 	
 	# Update rate limiter based on command line argument
-	rate_limiter.max_per_second = args.max_rps
+	rate_limiter.rate = args.max_rps
 	
 	if args.generate_embeddings:
 		print("Loading chats for embedding generation...")
