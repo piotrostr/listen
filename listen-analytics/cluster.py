@@ -3,6 +3,7 @@ from preprocess import preprocess_text
 import numpy as np
 from umap.umap_ import UMAP
 import hdbscan
+import pandas as pd
 
 def get_prompt_distribution(conn):
     """Get distribution of prompts based on count"""

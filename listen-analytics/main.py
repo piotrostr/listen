@@ -1,13 +1,36 @@
-from analyze import load_chats, cluster_prompts, extract_chat_info
+from analyze import load_chats, cluster_prompts, extract_chat_info, analyze_embeddings
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
 import concurrent.futures
+import threading
 import tqdm
 import argparse
 import sqlite3
 import hashlib
+import time
 from embed import embed, setup_embedding_db
+
+# Global rate limiter
+class RateLimiter:
+	def __init__(self, max_per_second=3):
+		self.max_per_second = max_per_second
+		self.last_request_time = 0
+		self.lock = threading.Lock()
+	
+	def wait(self):
+		with self.lock:
+			current_time = time.time()
+			time_since_last = current_time - self.last_request_time
+			time_to_wait = max(0, 1/self.max_per_second - time_since_last)
+			
+			if time_to_wait > 0:
+				time.sleep(time_to_wait)
+			
+			self.last_request_time = time.time()
+
+# Create a global rate limiter
+rate_limiter = RateLimiter(max_per_second=3)
 
 def process_batch(batch):
 	"""Process a batch of prompts with thread-local SQLite connection"""
@@ -35,6 +58,9 @@ def process_batch(batch):
 			# We don't need to return the embedding here since we're just generating them
 			results.append(prompt)
 		else:
+			# Apply rate limiting before API call
+			rate_limiter.wait()
+			
 			# If not in database, get from API (using your embed function)
 			embeddings = embed([prompt])
 			if embeddings and len(embeddings) > 0:
@@ -85,9 +111,14 @@ def generate_embeddings(prompts, batch_size=64, max_workers=3):
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Chat analysis and embedding generation")
 	parser.add_argument("--generate-embeddings", action="store_true", help="Generate embeddings for all prompts")
+	parser.add_argument("--analyze-embeddings", action="store_true", help="Analyze existing embeddings")
 	parser.add_argument("--batch-size", type=int, default=64, help="Batch size for embedding generation")
 	parser.add_argument("--workers", type=int, default=3, help="Maximum worker threads")
+	parser.add_argument("--max-rps", type=float, default=3.0, help="Maximum requests per second")
 	args = parser.parse_args()
+	
+	# Update rate limiter based on command line argument
+	rate_limiter.max_per_second = args.max_rps
 	
 	if args.generate_embeddings:
 		print("Loading chats for embedding generation...")
@@ -98,6 +129,15 @@ if __name__ == "__main__":
 		# Run the parallel function
 		processed = generate_embeddings(prompts, args.batch_size, args.workers)
 		print(f"Embedding generation complete. Processed {len(processed)} prompts.")
+		
+		# Analyze embeddings after generation if requested
+		if args.analyze_embeddings:
+			print("\nAnalyzing embeddings...")
+			analyze_embeddings()
+	elif args.analyze_embeddings:
+		# Just analyze embeddings without generating new ones
+		print("Analyzing embeddings...")
+		analyze_embeddings()
 	else:
 		# Original clustering code
 		chats = load_chats(True)
