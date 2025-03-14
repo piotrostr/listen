@@ -149,7 +149,28 @@ if __name__ == "__main__":
             'prompt': df['prompt'].dropna(),
             'cluster': labels
         })
-        print(f"\nFound {len(set(labels) - {-1})} clusters")
+        
+        # Count occurrences of each prompt
+        prompt_counts = cluster_df['prompt'].value_counts().to_dict()
+        cluster_df['count'] = cluster_df['prompt'].map(prompt_counts)
+        
+        # Fix the syntax error in the set subtraction
+        num_clusters = len(set(labels)) - (1 if -1 in labels else 0)
+        print(f"\nFound {num_clusters} clusters")
+        
+        # Analyze clusters with counts
+        for cluster_id in sorted(set(labels)):
+            if cluster_id == -1:
+                continue  # Skip noise points
+                
+            cluster_prompts = cluster_df[cluster_df['cluster'] == cluster_id]
+            total_count = cluster_prompts['count'].sum()
+            print(f"Cluster {cluster_id}: {len(cluster_prompts)} unique prompts, {total_count} total occurrences")
+            
+            # Show top prompts by count in this cluster
+            top_prompts = cluster_prompts.sort_values('count', ascending=False).head(3)
+            for _, row in top_prompts.iterrows():
+                print(f"  - '{row['prompt'][:50]}...' ({row['count']} occurrences)")
         
         # Analyze the embedding database
         analyze_embeddings()

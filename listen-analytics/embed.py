@@ -93,14 +93,20 @@ def get_embedding(text, conn):
         # Convert stored blob back to numpy array
         return np.frombuffer(result[0], dtype=np.float32)
     
-    # If not in database, get from Gemini API
-    embedding = embed(text)
+    # If not in database, get from API
+    embeddings = embed([text])  # This returns a list of Embedding objects
+    
+    if not embeddings or len(embeddings) == 0:
+        raise ValueError(f"Failed to get embedding for text: {text}")
+    
+    # Get the first (and only) embedding from the list
+    embedding = embeddings[0]
     
     # Store in database
     cursor.execute(
         "INSERT INTO embeddings (prompt_hash, prompt, embedding, count) VALUES (?, ?, ?, ?)",
-        (text_hash, text, embedding.tobytes(), 1)
+        (text_hash, text, embedding.embedding.tobytes(), 1)
     )
     conn.commit()
     
-    return embedding
+    return embedding.embedding

@@ -175,6 +175,21 @@ def get_embedding_by_prompt(prompt):
 	
 	conn.close()
 
+def get_all_prompts_from_db():
+	"""Get all prompts from the embeddings database"""
+	conn = setup_embedding_db()
+	cursor = conn.cursor()
+	
+	# Get all prompts from the database
+	cursor.execute("SELECT prompt FROM embeddings")
+	results = cursor.fetchall()
+	
+	# Extract prompts from results
+	prompts = [row[0] for row in results]
+	
+	conn.close()
+	return prompts
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Chat analysis and embedding generation")
 	parser.add_argument("--generate-embeddings", action="store_true", help="Generate embeddings for all prompts")
@@ -184,6 +199,10 @@ if __name__ == "__main__":
 	parser.add_argument("--get-by-prompt", type=str, help="Retrieve embedding by prompt text")
 	parser.add_argument("--batch-size", type=int, default=100, help="Batch size for embedding generation")
 	parser.add_argument("--redis-port", type=int, default=6379, help="Redis port")
+	parser.add_argument("--use-db-only", action="store_true", help="Use only prompts from the database for clustering")
+	parser.add_argument("--min-cluster-size", type=int, default=3, help="Minimum cluster size for HDBSCAN")
+	parser.add_argument("--min-samples", type=int, default=2, help="Minimum samples parameter for HDBSCAN")
+	parser.add_argument("--cluster-epsilon", type=float, default=0.3, help="Cluster selection epsilon for HDBSCAN")
 	args = parser.parse_args()
 	
 	if args.get_by_prompt:
@@ -211,12 +230,24 @@ if __name__ == "__main__":
 		print("Analyzing embeddings...")
 		analyze_embeddings()
 	else:
-		# Original clustering code
-		chats = load_chats(True)
-		prompts = [chat.chat_request['prompt'] for chat in chats]
+		# Get prompts for clustering
+		if args.use_db_only:
+			# Get prompts directly from the database
+			print("Getting prompts from database for clustering...")
+			prompts = get_all_prompts_from_db()
+			print(f"Found {len(prompts)} prompts in database")
+		else:
+			# Original approach - load from chats
+			chats = load_chats(True)
+			prompts = [chat.chat_request['prompt'] for chat in chats]
 		
 		# Perform clustering
-		cluster_labels = cluster_prompts(prompts)
+		cluster_labels = cluster_prompts(
+			prompts,
+			min_cluster_size=args.min_cluster_size,
+			min_samples=args.min_samples,
+			cluster_epsilon=args.cluster_epsilon
+		)
 		
 		# Create DataFrame for analysis
 		df = pd.DataFrame({
