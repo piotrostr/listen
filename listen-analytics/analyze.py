@@ -1,11 +1,25 @@
+from dataclasses import dataclass
 import pandas as pd
 import json
 import glob
 import numpy as np
 from pprint import pprint
+import re
+from sklearn.feature_extraction.text import TfidfVectorizer
+from sentence_transformers import SentenceTransformer
+from umap.umap_ import UMAP
+import hdbscan
+from sklearn.metrics import silhouette_score
+import sqlite3
+import hashlib
 
 import pydantic
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Tuple
+import os
+from google import genai
+from google.genai import types
+
+client = genai.Client(api_key=os.environ['GEMINI_API_KEY'])
 
 class Chat(pydantic.BaseModel):
     _id: Optional[str] = None
@@ -111,7 +125,176 @@ def analyze_chats():
     
     return df
 
+def preprocess_text(text):
+    """Enhanced crypto-aware preprocessing"""
+    text = text.lower().strip()
+    
+    # Preserve crypto-specific patterns
+    text = re.sub(r'\$[a-z]+', '[TOKEN]', text)  # Normalize token names
+    text = re.sub(r'0x[a-f0-9]+', '[CONTRACT]', text)  # Contract addresses
+    text = re.sub(r'\b[a-z0-9]{40,}\b', '[HASH]', text)  # Long hashes
+    
+    # Remove non-essential punctuation but keep question marks
+    text = re.sub(r'[^\w\s$.-?]', '', text)
+    return text
+
+def setup_embedding_db():
+    """Set up SQLite database for storing embeddings"""
+    conn = sqlite3.connect('embeddings.db')
+    cursor = conn.cursor()
+    
+    # Create table if it doesn't exist
+    cursor.execute('''
+    CREATE TABLE IF NOT EXISTS embeddings (
+        prompt_hash TEXT PRIMARY KEY,
+        prompt TEXT,
+        embedding BLOB,
+        count INTEGER DEFAULT 1
+    )
+    ''')
+    
+    conn.commit()
+    return conn
+
+@dataclass
+class Embedding:
+    embedding: np.ndarray
+    prompt: str
+
+def embed(prompts: list[str]) -> List[Embedding]:
+    """Embed a prompt using Gemini API"""
+    result = client.models.embed_content(
+        model="gemini-embedding-exp-03-07",
+        contents=prompts,
+    )
+    embeddings = []
+    for embedding, prompt in zip(result.embeddings, prompts):
+        embeddings.append(Embedding(embedding=np.array(embedding.values, dtype=np.float32), prompt=prompt))
+    return embeddings
+
+def get_embedding(text, conn):
+    """Get embedding from database or Gemini API"""
+    cursor = conn.cursor()
+    
+    # Create a hash of the preprocessed text
+    text_hash = hashlib.md5(text.encode()).hexdigest()
+    
+    # Check if embedding exists in database
+    cursor.execute("SELECT embedding FROM embeddings WHERE prompt_hash = ?", (text_hash,))
+    result = cursor.fetchone()
+    
+    if result:
+        # Increment count for this prompt
+        cursor.execute("UPDATE embeddings SET count = count + 1 WHERE prompt_hash = ?", (text_hash,))
+        conn.commit()
+        # Convert stored blob back to numpy array
+        return np.frombuffer(result[0], dtype=np.float32)
+    
+    # If not in database, get from Gemini API
+    embedding = embed(text)
+    
+    # Store in database
+    cursor.execute(
+        "INSERT INTO embeddings (prompt_hash, prompt, embedding, count) VALUES (?, ?, ?, ?)",
+        (text_hash, text, embedding.tobytes(), 1)
+    )
+    conn.commit()
+    
+    return embedding
+
+def get_prompt_distribution(conn):
+    """Get distribution of prompts based on count"""
+    cursor = conn.cursor()
+    cursor.execute("SELECT prompt, count FROM embeddings ORDER BY count DESC")
+    results = cursor.fetchall()
+    
+    return pd.DataFrame(results, columns=['prompt', 'count'])
+
+def cluster_prompts(prompts):
+    """Enhanced clustering with semantic focus using Gemini embeddings"""
+    # Clean and normalize prompts
+    cleaned = [preprocess_text(p) for p in prompts]
+    
+    # Set up database connection
+    conn = setup_embedding_db()
+    
+    # Get embeddings (from DB or API)
+    vectors = []
+    for text in cleaned:
+        embedding = get_embedding(text, conn)
+        vectors.append(embedding)
+    
+    vectors = np.array(vectors)
+    
+    # Print prompt distribution
+    print("\nPrompt Distribution:")
+    distribution = get_prompt_distribution(conn)
+    print(distribution.head(10))  # Show top 10 most common prompts
+    
+    # Close connection
+    conn.close()
+
+    # Rest of the clustering pipeline remains the same...
+    umap_embeddings = UMAP(
+        n_neighbors=10,
+        n_components=10,
+        metric='cosine',
+        min_dist=0.1,
+        spread=1.0
+    ).fit_transform(vectors)
+
+    clusterer = hdbscan.HDBSCAN(
+        min_cluster_size=3,
+        min_samples=2,
+        cluster_selection_epsilon=0.3,
+        cluster_selection_method='leaf'
+    )
+    labels = clusterer.fit_predict(umap_embeddings)
+    
+    return labels
+
+def analyze_embeddings():
+    """Analyze the stored embeddings and their distribution"""
+    conn = setup_embedding_db()
+    
+    # Get distribution
+    distribution = get_prompt_distribution(conn)
+    
+    # Get total count of embeddings
+    cursor = conn.cursor()
+    cursor.execute("SELECT SUM(count) FROM embeddings")
+    total = cursor.fetchone()[0] or 0
+    
+    print(f"\nTotal unique prompts: {len(distribution)}")
+    print(f"Total prompt occurrences: {total}")
+    
+    # Show top prompts
+    if not distribution.empty:
+        print("\nTop 10 most common prompts:")
+        for i, (prompt, count) in enumerate(distribution.head(10).values):
+            print(f"{i+1}. '{prompt[:50]}...' - {count} occurrences ({count/total*100:.1f}%)")
+    
+    conn.close()
+    return distribution
+
 if __name__ == "__main__":
     df = analyze_chats()
+    
+    # If there are prompts in the dataframe, cluster them
+    if 'prompt' in df.columns and not df['prompt'].isna().all():
+        print("\nClustering prompts...")
+        prompts = df['prompt'].dropna().tolist()
+        labels = cluster_prompts(prompts)
+        
+        # Add cluster labels to dataframe
+        cluster_df = pd.DataFrame({
+            'prompt': df['prompt'].dropna(),
+            'cluster': labels
+        })
+        print(f"\nFound {len(set(labels) - {-1})} clusters")
+        
+        # Analyze the embedding database
+        analyze_embeddings()
+    
     # Optional: save to CSV
     # df.to_csv("chat_analysis.csv", index=False)
