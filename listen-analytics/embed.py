@@ -2,6 +2,7 @@ import hashlib
 import numpy as np
 from dataclasses import dataclass
 from typing import List
+import voyageai
 
 from google import genai
 from google.genai import types
@@ -34,6 +35,36 @@ class Embedding:
     prompt: str
 
 def embed(prompts: list[str]) -> List[Embedding]:
+    """
+    Embed a list of prompts using Voyage AI.
+    
+    Args:
+        prompts: List of text strings to embed
+        
+    Returns:
+        List of Embedding objects containing the embedding vectors and original prompts
+    """
+    # Create Voyage AI client using API key from environment variable
+    voyage_client = voyageai.Client(api_key=os.environ.get('VOYAGE_API_KEY'))
+    
+    # Get embeddings from Voyage AI
+    result = voyage_client.embed(
+        prompts, 
+        model="voyage-3",
+        input_type="document"
+    )
+    
+    # Convert to our Embedding format
+    embeddings = []
+    for i, embedding_vector in enumerate(result.embeddings):
+        embeddings.append(Embedding(
+            embedding=np.array(embedding_vector, dtype=np.float32),
+            prompt=prompts[i]
+        ))
+    
+    return embeddings
+
+def embed_gemini(prompts: list[str]) -> List[Embedding]:
     """Embed a prompt using Gemini API"""
     result = client.models.embed_content(
         model="gemini-embedding-exp-03-07",

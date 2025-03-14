@@ -10,9 +10,19 @@ def test_extract_chat_info():
 	print(chat_info.keys())
 
 def test_embed():
-	from analyze import embed
+	from embed import embed
 	prompts = ["What is the capital of France?", "What is the capital of Germany?"]
 	embeddings = embed(prompts)
 	assert len(embeddings) == 2
-	assert embeddings[0].embedding.shape == (3072,)
-	assert embeddings[1].embedding.shape == (3072,)
+	assert embeddings[0].embedding.shape == (1024,)
+	assert embeddings[1].embedding.shape == (1024,)
+
+
+def test_redis():
+	import redis
+	redis_client = redis.Redis(host='localhost', port=6379, db=0)
+	redis_client.set('test', 'test')
+	assert redis_client.get('test') == b'test'
+	redis_client.delete('test')
+	assert redis_client.get('test') is None
+	

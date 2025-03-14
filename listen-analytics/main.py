@@ -5,78 +5,111 @@ import numpy as np
 import tqdm
 import argparse
 import sqlite3
-import hashlib
 import time
-import random
+import redis
 from embed import embed, setup_embedding_db
 
-def generate_embeddings(prompts, batch_size=128):
-	"""Generate embeddings for prompts in batches with sequential processing"""
+def generate_embeddings(prompts, batch_size=50, redis_port=6379):
+	"""Generate embeddings for prompts in batches using a simple set-based approach"""
 	# Ensure the database table exists
 	conn = setup_embedding_db()
 	cursor = conn.cursor()
 	
-	# Create progress bar
-	progress_bar = tqdm.tqdm(total=len(prompts), desc="Generating embeddings")
+	# Connect to Redis to use as a persistent set of processed prompts
+	r = redis.Redis(host='localhost', port=redis_port, db=0)
 	
-	# Set to track unique prompts we've processed
-	processed_hashes = set()
+	# Filter out empty prompts
+	valid_prompts = [p for p in prompts if p]
+	total_prompts = len(valid_prompts)
+	
+	# Create progress bar
+	progress_bar = tqdm.tqdm(total=total_prompts, desc="Generating embeddings")
+	
+	# Track statistics
 	processed_count = 0
 	unique_count = 0
 	
-	# Process in batches to reduce database operations
-	for i in range(0, len(prompts), batch_size):
-		batch = prompts[i:i+batch_size]
-		
-		for prompt in batch:
-			# Skip empty prompts
-			if not prompt:
-				continue
-				
-			# Create a hash of the prompt
-			text_hash = hashlib.md5(prompt.encode()).hexdigest()
-			
-			# Skip if we've already processed this hash in the current run
-			if text_hash in processed_hashes:
-				progress_bar.update(1)
-				processed_count += 1
-				continue
-				
-			# Add to processed hashes
-			processed_hashes.add(text_hash)
-			unique_count += 1
-			
-			# Check if embedding exists in database
-			cursor.execute("SELECT embedding FROM embeddings WHERE prompt_hash = ?", (text_hash,))
-			result = cursor.fetchone()
-			
-			if not result:
-				# If not in database, get from API
-				try:
-					embeddings = embed([prompt])
-					if embeddings and len(embeddings) > 0:
-						embedding = embeddings[0]
-						# Store in database
-						cursor.execute(
-							"INSERT INTO embeddings (prompt_hash, prompt, embedding) VALUES (?, ?, ?)",
-							(text_hash, prompt, embedding.embedding.tobytes())
-						)
-						conn.commit()
-						# Simple rate limiting - just sleep a bit between API calls
-						time.sleep(4.3)  # ~15rpm
-				except Exception as e:
-					print(f"Error embedding prompt: {e}")
-					# Sleep a bit longer on error
-					time.sleep(1)
-			
+	# Process prompts in batches
+	pending_prompts = []
+	
+	for prompt in valid_prompts:
+		# Check if we've already processed this prompt (in Redis)
+		if r.sismember('processed_prompts', prompt):
 			progress_bar.update(1)
 			processed_count += 1
+			continue
+		
+		# Check if embedding exists in database
+		cursor.execute("SELECT embedding FROM embeddings WHERE prompt = ?", (prompt,))
+		result = cursor.fetchone()
+		
+		if result:
+			# Already in database, mark as processed in Redis
+			r.sadd('processed_prompts', prompt)
+			progress_bar.update(1)
+			processed_count += 1
+			continue
+		
+		# Add to pending batch
+		pending_prompts.append(prompt)
+		
+		# Process batch when it reaches the desired size
+		if len(pending_prompts) >= batch_size:
+			process_batch(pending_prompts, cursor, conn, r, progress_bar)
+			processed_count += len(pending_prompts)
+			unique_count += len(pending_prompts)
+			pending_prompts = []
+	
+	# Process any remaining prompts
+	if pending_prompts:
+		process_batch(pending_prompts, cursor, conn, r, progress_bar)
+		processed_count += len(pending_prompts)
+		unique_count += len(pending_prompts)
 	
 	progress_bar.close()
 	conn.close()
 	
-	print(f"Embedding generation complete. Processed {processed_count} prompts with {unique_count} unique prompts.")
-	return list(processed_hashes)
+	# Get total count of processed prompts from Redis
+	total_processed = r.scard('processed_prompts')
+	
+	print(f"Embedding generation complete. Processed {processed_count} prompts with {unique_count} new unique prompts.")
+	print(f"Total unique prompts in Redis: {total_processed}")
+	return unique_count
+
+def process_batch(pending_prompts, cursor, conn, redis_client, progress_bar):
+	"""Process a batch of pending prompts by sending them all at once"""
+	try:
+		# Send all prompts in a single API call
+		embeddings = embed(pending_prompts)
+		print(f"Generated {len(embeddings)} embeddings")
+		
+		if embeddings and len(embeddings) > 0:
+			# Process each embedding and store in database
+			for i, prompt in enumerate(pending_prompts):
+				if i < len(embeddings):  # Safety check
+					embedding = embeddings[i]
+					# Store in database
+					cursor.execute(
+						"INSERT INTO embeddings (prompt, embedding) VALUES (?, ?)",
+						(prompt, embedding.embedding.tobytes())
+					)
+					
+					# Mark as processed in Redis
+					redis_client.sadd('processed_prompts', prompt)
+			
+			# Commit all at once
+			conn.commit()
+			print(f"Committed {len(pending_prompts)} embeddings")
+			
+			# Simple rate limiting - just one sleep for the whole batch
+			time.sleep(1)
+	except Exception as e:
+		print(f"Error embedding batch: {e}")
+		# Sleep a bit longer on error
+		time.sleep(1)
+	
+	# Update progress bar for the whole batch
+	progress_bar.update(len(pending_prompts))
 
 def sample_embeddings(n=5):
 	"""Retrieve n random embedding entries from the database and display them"""
@@ -93,11 +126,11 @@ def sample_embeddings(n=5):
 		return
 	
 	# Get n random entries
-	cursor.execute("SELECT prompt_hash, prompt FROM embeddings ORDER BY RANDOM() LIMIT ?", (n,))
+	cursor.execute("SELECT prompt FROM embeddings ORDER BY RANDOM() LIMIT ?", (n,))
 	samples = cursor.fetchall()
 	
 	# Create a DataFrame for display
-	df = pd.DataFrame(samples, columns=['Hash', 'Prompt'])
+	df = pd.DataFrame(samples, columns=['Prompt'])
 	
 	# Truncate long prompts for display
 	df['Prompt'] = df['Prompt'].apply(lambda x: (x[:100] + '...') if len(x) > 100 else x)
@@ -107,26 +140,25 @@ def sample_embeddings(n=5):
 	
 	conn.close()
 
-def get_embedding_by_hash(hash_value):
-	"""Retrieve and display a specific embedding by its hash value"""
+def get_embedding_by_prompt(prompt):
+	"""Retrieve and display a specific embedding by its prompt"""
 	conn = sqlite3.connect('embeddings.db')
 	cursor = conn.cursor()
 	
-	# Query for the specific hash
-	cursor.execute("SELECT prompt_hash, prompt, embedding FROM embeddings WHERE prompt_hash = ?", (hash_value,))
+	# Query for the specific prompt
+	cursor.execute("SELECT prompt, embedding FROM embeddings WHERE prompt = ?", (prompt,))
 	result = cursor.fetchone()
 	
 	if not result:
-		print(f"No embedding found with hash: {hash_value}")
+		print(f"No embedding found for prompt: {prompt}")
 		conn.close()
 		return
 	
 	# Unpack the result
-	prompt_hash, prompt, embedding_bytes = result
+	prompt, embedding_bytes = result
 	
 	# Create a DataFrame for the basic info
 	df = pd.DataFrame([{
-		'Hash': prompt_hash,
 		'Prompt': prompt
 	}])
 	
@@ -149,13 +181,14 @@ if __name__ == "__main__":
 	parser.add_argument("--analyze-embeddings", action="store_true", help="Analyze existing embeddings")
 	parser.add_argument("--sample-embeddings", action="store_true", help="Display random sample of embeddings")
 	parser.add_argument("--sample-size", type=int, default=5, help="Number of random embeddings to sample")
-	parser.add_argument("--get-by-hash", type=str, help="Retrieve embedding by hash value")
-	parser.add_argument("--batch-size", type=int, default=128, help="Batch size for embedding generation")
+	parser.add_argument("--get-by-prompt", type=str, help="Retrieve embedding by prompt text")
+	parser.add_argument("--batch-size", type=int, default=100, help="Batch size for embedding generation")
+	parser.add_argument("--redis-port", type=int, default=6379, help="Redis port")
 	args = parser.parse_args()
 	
-	if args.get_by_hash:
-		# Get embedding by hash
-		get_embedding_by_hash(args.get_by_hash)
+	if args.get_by_prompt:
+		# Get embedding by prompt
+		get_embedding_by_prompt(args.get_by_prompt)
 	elif args.sample_embeddings:
 		# Sample random embeddings from the database
 		sample_embeddings(args.sample_size)
@@ -166,8 +199,8 @@ if __name__ == "__main__":
 		print(f"Found {len(prompts)} prompts for embedding")
 		
 		# Run the embedding generation
-		processed = generate_embeddings(prompts, args.batch_size)
-		print(f"Embedding generation complete. Processed {len(processed)} prompts.")
+		processed = generate_embeddings(prompts, args.batch_size, args.redis_port)
+		print(f"Embedding generation complete. Processed {processed} new unique prompts.")
 		
 		# Analyze embeddings after generation if requested
 		if args.analyze_embeddings:
