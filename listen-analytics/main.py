@@ -192,7 +192,7 @@ def get_all_prompts_from_db():
 	return prompts
 
 def export_clusters_to_files(df, output_dir="clusters"):
-	"""Export clusters to text files, one prompt per line"""
+	"""Export clusters to text files, one prompt per line, with counts in filenames"""
 	# Create output directory if it doesn't exist
 	os.makedirs(output_dir, exist_ok=True)
 	
@@ -205,27 +205,29 @@ def export_clusters_to_files(df, output_dir="clusters"):
 	
 	# Export each cluster to a file
 	for index, cluster_id in enumerate(valid_clusters):
-		# Use sequential index instead of cluster_id
-		filename = f"{output_dir}/cluster-{group_count}-{index}.txt"
-		
 		# Get prompts for this cluster
 		cluster_prompts = df[df['cluster'] == cluster_id]['prompt'].tolist()
+		prompt_count = len(cluster_prompts)
+		
+		# Include count in filename
+		filename = f"{output_dir}/cluster-{prompt_count}-{index}-{group_count}.txt"
 		
 		# Write to file, one prompt per line
 		with open(filename, 'w') as f:
 			for prompt in cluster_prompts:
 				f.write(f"{prompt}\n")
 		
-		print(f"Exported {len(cluster_prompts)} prompts to {filename}")
+		print(f"Exported {prompt_count} prompts to {filename}")
 	
 	# Handle noise points separately if they exist
 	if -1 in clusters:
 		noise_prompts = df[df['cluster'] == -1]['prompt'].tolist()
+		noise_count = len(noise_prompts)
 		if noise_prompts:
-			with open(f"{output_dir}/cluster-noise.txt", 'w') as f:
+			with open(f"{output_dir}/cluster-noise-{noise_count}.txt", 'w') as f:
 				for prompt in noise_prompts:
 					f.write(f"{prompt}\n")
-			print(f"Exported {len(noise_prompts)} noise prompts to {output_dir}/cluster-noise.txt")
+			print(f"Exported {noise_count} noise prompts to {output_dir}/cluster-noise-{noise_count}.txt")
 	
 	return group_count
 
