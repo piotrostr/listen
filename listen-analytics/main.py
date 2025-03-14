@@ -49,14 +49,15 @@ class TokenBucketRateLimiter:
 # Create a global rate limiter
 rate_limiter = TokenBucketRateLimiter(rate=3, capacity=3)
 
-def process_batch(batch):
+def process_batch(batch, processed_hashes=None):
 	"""Process a batch of prompts with thread-local SQLite connection"""
 	# Create a thread-local database connection
 	conn = sqlite3.connect('embeddings.db')
 	cursor = conn.cursor()
 	
-	# Dictionary to count occurrences of each prompt in this batch
-	prompt_counts = {}
+	# Initialize processed_hashes if not provided
+	if processed_hashes is None:
+		processed_hashes = set()
 	
 	results = []
 	for prompt in batch:
@@ -67,18 +68,19 @@ def process_batch(batch):
 		# Create a hash of the prompt
 		text_hash = hashlib.md5(prompt.encode()).hexdigest()
 		
-		# Count occurrences in this batch
-		if text_hash in prompt_counts:
-			prompt_counts[text_hash] += 1
-		else:
-			prompt_counts[text_hash] = 1
+		# Skip if we've already processed this hash in the current run
+		if text_hash in processed_hashes:
+			continue
+			
+		# Add to processed hashes
+		processed_hashes.add(text_hash)
 		
 		# Check if embedding exists in database
 		cursor.execute("SELECT embedding FROM embeddings WHERE prompt_hash = ?", (text_hash,))
 		result = cursor.fetchone()
 		
 		if result:
-			# We already have this embedding, just note it for counting later
+			# Already in database, nothing to do
 			results.append(prompt)
 		else:
 			# Apply rate limiting before API call
@@ -89,10 +91,10 @@ def process_batch(batch):
 				embeddings = embed([prompt])
 				if embeddings and len(embeddings) > 0:
 					embedding = embeddings[0]
-					# Store in database with count=0 (we'll update counts later)
+					# Store in database
 					cursor.execute(
-						"INSERT INTO embeddings (prompt_hash, prompt, embedding, count) VALUES (?, ?, ?, ?)",
-						(text_hash, prompt, embedding.embedding.tobytes(), 0)
+						"INSERT INTO embeddings (prompt_hash, prompt, embedding) VALUES (?, ?, ?)",
+						(text_hash, prompt, embedding.embedding.tobytes())
 					)
 					conn.commit()
 					results.append(prompt)
@@ -101,19 +103,13 @@ def process_batch(batch):
 				# Sleep a bit longer on error to avoid hammering the API
 				time.sleep(1)
 	
-	# Return the counts dictionary along with results
 	conn.close()
-	return results, prompt_counts
+	return results, processed_hashes
 
 def generate_embeddings(prompts, batch_size=64, max_workers=3):
 	"""Generate embeddings for prompts in batches with parallel execution"""
 	# Ensure the database table exists using your existing function
 	conn = setup_embedding_db()
-	
-	# Reset all counts to zero before starting
-	cursor = conn.cursor()
-	cursor.execute("UPDATE embeddings SET count = 0")
-	conn.commit()
 	conn.close()  # Close the main thread connection
 	
 	# Split prompts into batches
@@ -124,46 +120,28 @@ def generate_embeddings(prompts, batch_size=64, max_workers=3):
 	
 	processed = []
 	
-	# Dictionary to track counts across all batches
-	all_prompt_counts = {}
+	# Set to track hashes we've already processed in this run
+	processed_hashes = set()
 	
 	# Use ThreadPoolExecutor for I/O-bound operations (API calls)
 	with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
 		# Submit all batches to the executor
-		future_to_batch = {executor.submit(process_batch, batch): batch for batch in batches}
+		future_to_batch = {executor.submit(process_batch, batch, processed_hashes): batch for batch in batches}
 		
 		# Process results as they complete
 		for future in concurrent.futures.as_completed(future_to_batch):
 			batch = future_to_batch[future]
 			try:
-				batch_result, batch_counts = future.result()
+				batch_result, updated_hashes = future.result()
 				processed.extend(batch_result)
-				
-				# Merge counts from this batch
-				for hash_val, count in batch_counts.items():
-					if hash_val in all_prompt_counts:
-						all_prompt_counts[hash_val] += count
-					else:
-						all_prompt_counts[hash_val] = count
-					
+				# Update our set of processed hashes
+				processed_hashes.update(updated_hashes)
 				progress_bar.update(len(batch))
 			except Exception as e:
 				print(f"Error processing batch: {e}")
 	
 	progress_bar.close()
-	
-	# Update all counts in the database
-	conn = sqlite3.connect('embeddings.db')
-	cursor = conn.cursor()
-	
-	print(f"Updating counts for {len(all_prompt_counts)} unique prompts...")
-	for hash_val, count in all_prompt_counts.items():
-		cursor.execute("UPDATE embeddings SET count = ? WHERE prompt_hash = ?", (count, hash_val))
-	
-	conn.commit()
-	conn.close()
-	
-	print(f"Embedding generation complete. Processed {len(processed)} prompts with {len(all_prompt_counts)} unique prompts.")
+	print(f"Embedding generation complete. Processed {len(processed)} prompts with {len(processed_hashes)} unique prompts.")
 	return processed
 
 def sample_embeddings(n=5):
