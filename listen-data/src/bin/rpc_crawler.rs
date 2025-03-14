@@ -12,6 +12,7 @@ pub enum Command {
 #[tokio::main]
 async fn main() -> Result<()> {
     use listen_data::{
+        metrics::SwapMetrics,
         rpc::{
             account_pipeline::make_raydium_rpc_accounts_pipeline,
             instruction_pipeline::make_raydium_rpc_instruction_pipeline,
@@ -31,6 +32,7 @@ async fn main() -> Result<()> {
     let db = make_db().await?;
     let kv_store = make_kv_store().await?;
     let message_queue = make_message_queue().await?;
+    let metrics = Arc::new(SwapMetrics::new());
 
     // Initialize price cache for cold starts
     let price_cache =
@@ -44,7 +46,12 @@ async fn main() -> Result<()> {
     let mut pipeline = match command {
         Command::RaydiumAccountsRpc => make_raydium_rpc_accounts_pipeline()?,
         Command::RaydiumInstructionsRpc => {
-            make_raydium_rpc_instruction_pipeline(kv_store, message_queue, db)?
+            make_raydium_rpc_instruction_pipeline(
+                kv_store,
+                message_queue,
+                db,
+                metrics,
+            )?
         }
     };
 
