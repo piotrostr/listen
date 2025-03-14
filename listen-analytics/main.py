@@ -2,147 +2,81 @@ from analyze import load_chats, cluster_prompts, extract_chat_info, analyze_embe
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
-import concurrent.futures
-import threading
 import tqdm
 import argparse
 import sqlite3
 import hashlib
 import time
-import queue
 import random
 from embed import embed, setup_embedding_db
 
-# Global token bucket rate limiter
-class TokenBucketRateLimiter:
-	def __init__(self, rate=3, capacity=3):
-		self.rate = rate  # tokens per second
-		self.capacity = capacity  # bucket size
-		self.tokens = capacity  # start with a full bucket
-		self.last_update = time.time()
-		self.lock = threading.Lock()
-	
-	def _add_tokens(self):
-		now = time.time()
-		time_passed = now - self.last_update
-		new_tokens = time_passed * self.rate
-		
-		if new_tokens > 0:
-			self.tokens = min(self.capacity, self.tokens + new_tokens)
-			self.last_update = now
-	
-	def acquire(self):
-		with self.lock:
-			self._add_tokens()
-			
-			if self.tokens >= 1:
-				self.tokens -= 1
-				return True
-			else:
-				# Calculate time to wait for next token
-				wait_time = (1 - self.tokens) / self.rate
-				time.sleep(wait_time)
-				self.tokens = 0  # We've used the token that became available
-				self.last_update = time.time()
-				return True
-
-# Create a global rate limiter
-rate_limiter = TokenBucketRateLimiter(rate=3, capacity=3)
-
-def process_batch(batch, processed_hashes=None):
-	"""Process a batch of prompts with thread-local SQLite connection"""
-	# Create a thread-local database connection
-	conn = sqlite3.connect('embeddings.db')
-	cursor = conn.cursor()
-	
-	# Initialize processed_hashes if not provided
-	if processed_hashes is None:
-		processed_hashes = set()
-	
-	results = []
-	for prompt in batch:
-		# Skip empty prompts
-		if not prompt:
-			continue
-			
-		# Create a hash of the prompt
-		text_hash = hashlib.md5(prompt.encode()).hexdigest()
-		
-		# Skip if we've already processed this hash in the current run
-		if text_hash in processed_hashes:
-			continue
-			
-		# Add to processed hashes
-		processed_hashes.add(text_hash)
-		
-		# Check if embedding exists in database
-		cursor.execute("SELECT embedding FROM embeddings WHERE prompt_hash = ?", (text_hash,))
-		result = cursor.fetchone()
-		
-		if result:
-			# Already in database, nothing to do
-			results.append(prompt)
-		else:
-			# Apply rate limiting before API call
-			rate_limiter.acquire()
-			
-			# If not in database, get from API
-			try:
-				embeddings = embed([prompt])
-				if embeddings and len(embeddings) > 0:
-					embedding = embeddings[0]
-					# Store in database
-					cursor.execute(
-						"INSERT INTO embeddings (prompt_hash, prompt, embedding) VALUES (?, ?, ?)",
-						(text_hash, prompt, embedding.embedding.tobytes())
-					)
-					conn.commit()
-					results.append(prompt)
-			except Exception as e:
-				print(f"Error embedding prompt: {e}")
-				# Sleep a bit longer on error to avoid hammering the API
-				time.sleep(1)
-	
-	conn.close()
-	return results, processed_hashes
-
-def generate_embeddings(prompts, batch_size=64, max_workers=3):
-	"""Generate embeddings for prompts in batches with parallel execution"""
-	# Ensure the database table exists using your existing function
+def generate_embeddings(prompts, batch_size=128):
+	"""Generate embeddings for prompts in batches with sequential processing"""
+	# Ensure the database table exists
 	conn = setup_embedding_db()
-	conn.close()  # Close the main thread connection
-	
-	# Split prompts into batches
-	batches = [prompts[i:i+batch_size] for i in range(0, len(prompts), batch_size)]
+	cursor = conn.cursor()
 	
 	# Create progress bar
 	progress_bar = tqdm.tqdm(total=len(prompts), desc="Generating embeddings")
 	
-	processed = []
-	
-	# Set to track hashes we've already processed in this run
+	# Set to track unique prompts we've processed
 	processed_hashes = set()
+	processed_count = 0
+	unique_count = 0
 	
-	# Use ThreadPoolExecutor for I/O-bound operations (API calls)
-	with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
-		# Submit all batches to the executor
-		future_to_batch = {executor.submit(process_batch, batch, processed_hashes): batch for batch in batches}
+	# Process in batches to reduce database operations
+	for i in range(0, len(prompts), batch_size):
+		batch = prompts[i:i+batch_size]
 		
-		# Process results as they complete
-		for future in concurrent.futures.as_completed(future_to_batch):
-			batch = future_to_batch[future]
-			try:
-				batch_result, updated_hashes = future.result()
-				processed.extend(batch_result)
-				# Update our set of processed hashes
-				processed_hashes.update(updated_hashes)
-				progress_bar.update(len(batch))
-			except Exception as e:
-				print(f"Error processing batch: {e}")
+		for prompt in batch:
+			# Skip empty prompts
+			if not prompt:
+				continue
+				
+			# Create a hash of the prompt
+			text_hash = hashlib.md5(prompt.encode()).hexdigest()
+			
+			# Skip if we've already processed this hash in the current run
+			if text_hash in processed_hashes:
+				progress_bar.update(1)
+				processed_count += 1
+				continue
+				
+			# Add to processed hashes
+			processed_hashes.add(text_hash)
+			unique_count += 1
+			
+			# Check if embedding exists in database
+			cursor.execute("SELECT embedding FROM embeddings WHERE prompt_hash = ?", (text_hash,))
+			result = cursor.fetchone()
+			
+			if not result:
+				# If not in database, get from API
+				try:
+					embeddings = embed([prompt])
+					if embeddings and len(embeddings) > 0:
+						embedding = embeddings[0]
+						# Store in database
+						cursor.execute(
+							"INSERT INTO embeddings (prompt_hash, prompt, embedding) VALUES (?, ?, ?)",
+							(text_hash, prompt, embedding.embedding.tobytes())
+						)
+						conn.commit()
+						# Simple rate limiting - just sleep a bit between API calls
+						time.sleep(4.3)  # ~15rpm
+				except Exception as e:
+					print(f"Error embedding prompt: {e}")
+					# Sleep a bit longer on error
+					time.sleep(1)
+			
+			progress_bar.update(1)
+			processed_count += 1
 	
 	progress_bar.close()
-	print(f"Embedding generation complete. Processed {len(processed)} prompts with {len(processed_hashes)} unique prompts.")
-	return processed
+	conn.close()
+	
+	print(f"Embedding generation complete. Processed {processed_count} prompts with {unique_count} unique prompts.")
+	return list(processed_hashes)
 
 def sample_embeddings(n=5):
 	"""Retrieve n random embedding entries from the database and display them"""
@@ -159,11 +93,11 @@ def sample_embeddings(n=5):
 		return
 	
 	# Get n random entries
-	cursor.execute("SELECT prompt_hash, prompt, count FROM embeddings ORDER BY RANDOM() LIMIT ?", (n,))
+	cursor.execute("SELECT prompt_hash, prompt FROM embeddings ORDER BY RANDOM() LIMIT ?", (n,))
 	samples = cursor.fetchall()
 	
 	# Create a DataFrame for display
-	df = pd.DataFrame(samples, columns=['Hash', 'Prompt', 'Count'])
+	df = pd.DataFrame(samples, columns=['Hash', 'Prompt'])
 	
 	# Truncate long prompts for display
 	df['Prompt'] = df['Prompt'].apply(lambda x: (x[:100] + '...') if len(x) > 100 else x)
@@ -179,7 +113,7 @@ def get_embedding_by_hash(hash_value):
 	cursor = conn.cursor()
 	
 	# Query for the specific hash
-	cursor.execute("SELECT prompt_hash, prompt, count, embedding FROM embeddings WHERE prompt_hash = ?", (hash_value,))
+	cursor.execute("SELECT prompt_hash, prompt, embedding FROM embeddings WHERE prompt_hash = ?", (hash_value,))
 	result = cursor.fetchone()
 	
 	if not result:
@@ -188,13 +122,12 @@ def get_embedding_by_hash(hash_value):
 		return
 	
 	# Unpack the result
-	prompt_hash, prompt, count, embedding_bytes = result
+	prompt_hash, prompt, embedding_bytes = result
 	
 	# Create a DataFrame for the basic info
 	df = pd.DataFrame([{
 		'Hash': prompt_hash,
-		'Prompt': prompt,
-		'Count': count
+		'Prompt': prompt
 	}])
 	
 	print("\nEmbedding details:")
@@ -217,13 +150,8 @@ if __name__ == "__main__":
 	parser.add_argument("--sample-embeddings", action="store_true", help="Display random sample of embeddings")
 	parser.add_argument("--sample-size", type=int, default=5, help="Number of random embeddings to sample")
 	parser.add_argument("--get-by-hash", type=str, help="Retrieve embedding by hash value")
-	parser.add_argument("--batch-size", type=int, default=64, help="Batch size for embedding generation")
-	parser.add_argument("--workers", type=int, default=3, help="Maximum worker threads")
-	parser.add_argument("--max-rps", type=float, default=3.0, help="Maximum requests per second")
+	parser.add_argument("--batch-size", type=int, default=128, help="Batch size for embedding generation")
 	args = parser.parse_args()
-	
-	# Update rate limiter based on command line argument
-	rate_limiter.rate = args.max_rps
 	
 	if args.get_by_hash:
 		# Get embedding by hash
@@ -237,8 +165,8 @@ if __name__ == "__main__":
 		prompts = [chat.chat_request.get('prompt') for chat in chats if chat.chat_request.get('prompt')]
 		print(f"Found {len(prompts)} prompts for embedding")
 		
-		# Run the parallel function
-		processed = generate_embeddings(prompts, args.batch_size, args.workers)
+		# Run the embedding generation
+		processed = generate_embeddings(prompts, args.batch_size)
 		print(f"Embedding generation complete. Processed {len(processed)} prompts.")
 		
 		# Analyze embeddings after generation if requested
