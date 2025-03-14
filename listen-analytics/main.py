@@ -2,21 +2,59 @@ from analyze import load_chats, cluster_prompts, extract_chat_info
 import pandas as pd
 from sklearn.feature_extraction.text import TfidfVectorizer
 import numpy as np
-import asyncio
+import concurrent.futures
 import tqdm
 import argparse
+import sqlite3
+import hashlib
 from embed import embed, setup_embedding_db
 
-async def generate_embeddings(prompts, batch_size=48, max_concurrency=3):
-	"""Generate embeddings for prompts in batches with concurrency control"""
-	conn = setup_embedding_db()
-	semaphore = asyncio.Semaphore(max_concurrency)
+def process_batch(batch):
+	"""Process a batch of prompts with thread-local SQLite connection"""
+	# Create a thread-local database connection
+	conn = sqlite3.connect('embeddings.db')
+	cursor = conn.cursor()
 	
-	async def process_batch(batch):
-		async with semaphore:
-			# This would be async in a real implementation
-			# For now, we'll just call the synchronous function
-			return embed(batch)
+	results = []
+	for prompt in batch:
+		# Skip empty prompts
+		if not prompt:
+			continue
+			
+		# Create a hash of the prompt
+		text_hash = hashlib.md5(prompt.encode()).hexdigest()
+		
+		# Check if embedding exists in database
+		cursor.execute("SELECT embedding FROM embeddings WHERE prompt_hash = ?", (text_hash,))
+		result = cursor.fetchone()
+		
+		if result:
+			# Increment count for this prompt
+			cursor.execute("UPDATE embeddings SET count = count + 1 WHERE prompt_hash = ?", (text_hash,))
+			conn.commit()
+			# We don't need to return the embedding here since we're just generating them
+			results.append(prompt)
+		else:
+			# If not in database, get from API (using your embed function)
+			embeddings = embed([prompt])
+			if embeddings and len(embeddings) > 0:
+				embedding = embeddings[0]
+				# Store in database
+				cursor.execute(
+					"INSERT INTO embeddings (prompt_hash, prompt, embedding, count) VALUES (?, ?, ?, ?)",
+					(text_hash, prompt, embedding.embedding.tobytes(), 1)
+				)
+				conn.commit()
+				results.append(prompt)
+	
+	conn.close()
+	return results
+
+def generate_embeddings(prompts, batch_size=64, max_workers=3):
+	"""Generate embeddings for prompts in batches with parallel execution"""
+	# Ensure the database table exists using your existing function
+	conn = setup_embedding_db()
+	conn.close()  # Close the main thread connection
 	
 	# Split prompts into batches
 	batches = [prompts[i:i+batch_size] for i in range(0, len(prompts), batch_size)]
@@ -24,27 +62,31 @@ async def generate_embeddings(prompts, batch_size=48, max_concurrency=3):
 	# Create progress bar
 	progress_bar = tqdm.tqdm(total=len(prompts), desc="Generating embeddings")
 	
-	# Process batches with concurrency control
-	tasks = []
-	for batch in batches:
-		task = asyncio.create_task(process_batch(batch))
-		tasks.append(task)
+	processed = []
 	
-	# Wait for all tasks to complete
-	results = []
-	for task in asyncio.as_completed(tasks):
-		batch_result = await task
-		results.extend(batch_result)
-		progress_bar.update(len(batch_result))
+	# Use ThreadPoolExecutor for I/O-bound operations (API calls)
+	with concurrent.futures.ThreadPoolExecutor(max_workers=max_workers) as executor:
+		# Submit all batches to the executor
+		future_to_batch = {executor.submit(process_batch, batch): batch for batch in batches}
+		
+		# Process results as they complete
+		for future in concurrent.futures.as_completed(future_to_batch):
+			batch = future_to_batch[future]
+			try:
+				batch_result = future.result()
+				processed.extend(batch_result)
+				progress_bar.update(len(batch))
+			except Exception as e:
+				print(f"Error processing batch: {e}")
 	
 	progress_bar.close()
-	return results
+	return processed
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Chat analysis and embedding generation")
 	parser.add_argument("--generate-embeddings", action="store_true", help="Generate embeddings for all prompts")
-	parser.add_argument("--batch-size", type=int, default=48, help="Batch size for embedding generation")
-	parser.add_argument("--concurrency", type=int, default=3, help="Maximum concurrent requests")
+	parser.add_argument("--batch-size", type=int, default=64, help="Batch size for embedding generation")
+	parser.add_argument("--workers", type=int, default=3, help="Maximum worker threads")
 	args = parser.parse_args()
 	
 	if args.generate_embeddings:
@@ -53,9 +95,9 @@ if __name__ == "__main__":
 		prompts = [chat.chat_request.get('prompt') for chat in chats if chat.chat_request.get('prompt')]
 		print(f"Found {len(prompts)} prompts for embedding")
 		
-		# Run the async function in the event loop
-		asyncio.run(generate_embeddings(prompts, args.batch_size, args.concurrency))
-		print("Embedding generation complete")
+		# Run the parallel function
+		processed = generate_embeddings(prompts, args.batch_size, args.workers)
+		print(f"Embedding generation complete. Processed {len(processed)} prompts.")
 	else:
 		# Original clustering code
 		chats = load_chats(True)

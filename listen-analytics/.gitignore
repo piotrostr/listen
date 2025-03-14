@@ -1,3 +1,4 @@
+embeddings.db
 solana_transactions.json
 evm_transactions.json
 output

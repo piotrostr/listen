@@ -1,7 +1,8 @@
 import pandas as pd
 import json
 import glob
-from cluster import cluster_prompts
+from cluster import cluster_prompts, get_prompt_distribution
+from embed import setup_embedding_db
 
 import pydantic
 from typing import Optional, List, Dict, Any
@@ -109,14 +110,6 @@ def analyze_chats():
     # You can add more analysis here
     
     return df
-
-def get_prompt_distribution(conn):
-    """Get distribution of prompts based on count"""
-    cursor = conn.cursor()
-    cursor.execute("SELECT prompt, count FROM embeddings ORDER BY count DESC")
-    results = cursor.fetchall()
-    
-    return pd.DataFrame(results, columns=['prompt', 'count'])
 
 def analyze_embeddings():
     """Analyze the stored embeddings and their distribution"""

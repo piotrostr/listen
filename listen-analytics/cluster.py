@@ -1,9 +1,16 @@
 from embed import setup_embedding_db, get_embedding
 from preprocess import preprocess_text
-from analyze import get_prompt_distribution
 import numpy as np
 from umap.umap_ import UMAP
 import hdbscan
+
+def get_prompt_distribution(conn):
+    """Get distribution of prompts based on count"""
+    cursor = conn.cursor()
+    cursor.execute("SELECT prompt, count FROM embeddings ORDER BY count DESC")
+    results = cursor.fetchall()
+    
+    return pd.DataFrame(results, columns=['prompt', 'count'])
 
 def cluster_prompts(prompts):
     """Enhanced clustering with semantic focus using Gemini embeddings"""
