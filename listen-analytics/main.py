@@ -159,12 +159,50 @@ def sample_embeddings(n=5):
 	
 	conn.close()
 
+def get_embedding_by_hash(hash_value):
+	"""Retrieve and display a specific embedding by its hash value"""
+	conn = sqlite3.connect('embeddings.db')
+	cursor = conn.cursor()
+	
+	# Query for the specific hash
+	cursor.execute("SELECT prompt_hash, prompt, count, embedding FROM embeddings WHERE prompt_hash = ?", (hash_value,))
+	result = cursor.fetchone()
+	
+	if not result:
+		print(f"No embedding found with hash: {hash_value}")
+		conn.close()
+		return
+	
+	# Unpack the result
+	prompt_hash, prompt, count, embedding_bytes = result
+	
+	# Create a DataFrame for the basic info
+	df = pd.DataFrame([{
+		'Hash': prompt_hash,
+		'Prompt': prompt,
+		'Count': count
+	}])
+	
+	print("\nEmbedding details:")
+	print(df)
+	
+	# Convert embedding bytes to numpy array for visualization
+	embedding_array = np.frombuffer(embedding_bytes, dtype=np.float32)
+	
+	# Show embedding statistics
+	print(f"\nEmbedding vector (showing first 10 of {len(embedding_array)} dimensions):")
+	print(embedding_array[:10])
+	print(f"Min: {embedding_array.min():.6f}, Max: {embedding_array.max():.6f}, Mean: {embedding_array.mean():.6f}")
+	
+	conn.close()
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Chat analysis and embedding generation")
 	parser.add_argument("--generate-embeddings", action="store_true", help="Generate embeddings for all prompts")
 	parser.add_argument("--analyze-embeddings", action="store_true", help="Analyze existing embeddings")
 	parser.add_argument("--sample-embeddings", action="store_true", help="Display random sample of embeddings")
 	parser.add_argument("--sample-size", type=int, default=5, help="Number of random embeddings to sample")
+	parser.add_argument("--get-by-hash", type=str, help="Retrieve embedding by hash value")
 	parser.add_argument("--batch-size", type=int, default=64, help="Batch size for embedding generation")
 	parser.add_argument("--workers", type=int, default=3, help="Maximum worker threads")
 	parser.add_argument("--max-rps", type=float, default=3.0, help="Maximum requests per second")
@@ -173,7 +211,10 @@ if __name__ == "__main__":
 	# Update rate limiter based on command line argument
 	rate_limiter.rate = args.max_rps
 	
-	if args.sample_embeddings:
+	if args.get_by_hash:
+		# Get embedding by hash
+		get_embedding_by_hash(args.get_by_hash)
+	elif args.sample_embeddings:
 		# Sample random embeddings from the database
 		sample_embeddings(args.sample_size)
 	elif args.generate_embeddings:
