@@ -16,5 +16,3 @@ def test_embed():
 	assert len(embeddings) == 2
 	assert embeddings[0].embedding.shape == (3072,)
 	assert embeddings[1].embedding.shape == (3072,)
-
-test_embed()
