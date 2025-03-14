@@ -778,7 +778,7 @@ dependencies = [
 [[package]]
 name = "carbon-core"
 version = "0.6.0"
-source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#92100c81f353f0a014ce5658a6e2ea177097fcbc"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
 dependencies = [
  "async-trait",
  "borsh 0.10.4",
@@ -800,7 +800,7 @@ dependencies = [
 [[package]]
 name = "carbon-log-metrics"
 version = "0.6.0"
-source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#92100c81f353f0a014ce5658a6e2ea177097fcbc"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
 dependencies = [
  "async-trait",
  "carbon-core",
@@ -811,7 +811,7 @@ dependencies = [
 [[package]]
 name = "carbon-macros"
 version = "0.6.0"
-source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#92100c81f353f0a014ce5658a6e2ea177097fcbc"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
 dependencies = [
  "hex",
  "paste",
@@ -821,9 +821,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "carbon-meteora-dlmm-decoder"
+version = "0.6.0"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
+dependencies = [
+ "carbon-core",
+ "serde",
+ "serde-big-array",
+ "solana-sdk",
+]
+
+[[package]]
+name = "carbon-orca-whirlpool-decoder"
+version = "0.6.0"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
+dependencies = [
+ "carbon-core",
+ "serde",
+ "solana-sdk",
+]
+
+[[package]]
 name = "carbon-proc-macros"
 version = "0.6.0"
-source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#92100c81f353f0a014ce5658a6e2ea177097fcbc"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
 dependencies = [
  "borsh-derive-internal",
  "hex",
@@ -841,7 +862,7 @@ dependencies = [
 [[package]]
 name = "carbon-raydium-amm-v4-decoder"
 version = "0.6.0"
-source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#92100c81f353f0a014ce5658a6e2ea177097fcbc"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
 dependencies = [
  "carbon-core",
  "serde",
@@ -850,9 +871,33 @@ dependencies = [
 ]
 
 [[package]]
+name = "carbon-raydium-clmm-decoder"
+version = "0.6.0"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
+dependencies = [
+ "carbon-core",
+ "carbon-macros",
+ "carbon-proc-macros",
+ "serde",
+ "solana-sdk",
+]
+
+[[package]]
+name = "carbon-raydium-cpmm-decoder"
+version = "0.6.0"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
+dependencies = [
+ "carbon-core",
+ "carbon-macros",
+ "carbon-proc-macros",
+ "serde",
+ "solana-sdk",
+]
+
+[[package]]
 name = "carbon-rpc-block-subscribe-datasource"
 version = "0.6.0"
-source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#92100c81f353f0a014ce5658a6e2ea177097fcbc"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
 dependencies = [
  "async-trait",
  "carbon-core",
@@ -868,7 +913,7 @@ dependencies = [
 [[package]]
 name = "carbon-rpc-program-subscribe-datasource"
 version = "0.6.0"
-source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#92100c81f353f0a014ce5658a6e2ea177097fcbc"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
 dependencies = [
  "async-trait",
  "carbon-core",
@@ -884,7 +929,7 @@ dependencies = [
 [[package]]
 name = "carbon-rpc-transaction-crawler-datasource"
 version = "0.6.0"
-source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#92100c81f353f0a014ce5658a6e2ea177097fcbc"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -904,7 +949,7 @@ dependencies = [
 [[package]]
 name = "carbon-token-2022-decoder"
 version = "0.6.0"
-source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#92100c81f353f0a014ce5658a6e2ea177097fcbc"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
 dependencies = [
  "carbon-core",
  "carbon-macros",
@@ -917,7 +962,7 @@ dependencies = [
 [[package]]
 name = "carbon-token-program-decoder"
 version = "0.6.0"
-source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#92100c81f353f0a014ce5658a6e2ea177097fcbc"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
 dependencies = [
  "carbon-core",
  "serde",
@@ -928,7 +973,7 @@ dependencies = [
 [[package]]
 name = "carbon-yellowstone-grpc-datasource"
 version = "0.6.0"
-source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#92100c81f353f0a014ce5658a6e2ea177097fcbc"
+source = "git+https://github.com/sevenlabs-hq/carbon?branch=main#4e7c612b43ad384a2acabbb026ffcd681653e901"
 dependencies = [
  "async-trait",
  "carbon-core",
@@ -2617,7 +2662,11 @@ dependencies = [
  "bb8-redis",
  "carbon-core",
  "carbon-log-metrics",
+ "carbon-meteora-dlmm-decoder",
+ "carbon-orca-whirlpool-decoder",
  "carbon-raydium-amm-v4-decoder",
+ "carbon-raydium-clmm-decoder",
+ "carbon-raydium-cpmm-decoder",
  "carbon-rpc-block-subscribe-datasource",
  "carbon-rpc-program-subscribe-datasource",
  "carbon-rpc-transaction-crawler-datasource",

@@ -2,7 +2,7 @@ use tracing::info;
 
 use crate::constants::{USDC_MINT_KEY_STR, WSOL_MINT_KEY_STR};
 use crate::diffs::Diff;
-use crate::raydium_intruction_processor::RaydiumAmmV4InstructionProcessor;
+use crate::processor::RaydiumAmmV4InstructionProcessor;
 
 #[cfg(test)]
 impl RaydiumAmmV4InstructionProcessor {
@@ -18,7 +18,8 @@ impl RaydiumAmmV4InstructionProcessor {
             && swapped_tokens.contains(&USDC_MINT_KEY_STR)
         {
             for diff in diffs {
-                match self.kv_store.get_metadata(&diff.mint).await {
+                match self.swap_handler.kv_store.get_metadata(&diff.mint).await
+                {
                     Ok(Some(metadata)) => {
                         info!(
                             "{}: {} ({} -> {})",
