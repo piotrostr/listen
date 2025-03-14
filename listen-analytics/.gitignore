@@ -1,3 +1,5 @@
+solana_transactions.json
+evm_transactions.json
 output
 __pycache__
 raw_chats
