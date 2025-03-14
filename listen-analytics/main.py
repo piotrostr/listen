@@ -8,6 +8,7 @@ import sqlite3
 import time
 import redis
 from embed import embed, setup_embedding_db
+import os
 
 def generate_embeddings(prompts, batch_size=50, redis_port=6379):
 	"""Generate embeddings for prompts in batches using a simple set-based approach"""
@@ -190,6 +191,44 @@ def get_all_prompts_from_db():
 	conn.close()
 	return prompts
 
+def export_clusters_to_files(df, output_dir="clusters"):
+	"""Export clusters to text files, one prompt per line"""
+	# Create output directory if it doesn't exist
+	os.makedirs(output_dir, exist_ok=True)
+	
+	# Get unique clusters
+	clusters = sorted(df['cluster'].unique())
+	
+	# Count clusters (excluding noise if present)
+	valid_clusters = [c for c in clusters if c != -1]
+	group_count = len(valid_clusters)
+	
+	# Export each cluster to a file
+	for index, cluster_id in enumerate(valid_clusters):
+		# Use sequential index instead of cluster_id
+		filename = f"{output_dir}/cluster-{group_count}-{index}.txt"
+		
+		# Get prompts for this cluster
+		cluster_prompts = df[df['cluster'] == cluster_id]['prompt'].tolist()
+		
+		# Write to file, one prompt per line
+		with open(filename, 'w') as f:
+			for prompt in cluster_prompts:
+				f.write(f"{prompt}\n")
+		
+		print(f"Exported {len(cluster_prompts)} prompts to {filename}")
+	
+	# Handle noise points separately if they exist
+	if -1 in clusters:
+		noise_prompts = df[df['cluster'] == -1]['prompt'].tolist()
+		if noise_prompts:
+			with open(f"{output_dir}/cluster-noise.txt", 'w') as f:
+				for prompt in noise_prompts:
+					f.write(f"{prompt}\n")
+			print(f"Exported {len(noise_prompts)} noise prompts to {output_dir}/cluster-noise.txt")
+	
+	return group_count
+
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(description="Chat analysis and embedding generation")
 	parser.add_argument("--generate-embeddings", action="store_true", help="Generate embeddings for all prompts")
@@ -203,6 +242,8 @@ if __name__ == "__main__":
 	parser.add_argument("--min-cluster-size", type=int, default=3, help="Minimum cluster size for HDBSCAN")
 	parser.add_argument("--min-samples", type=int, default=2, help="Minimum samples parameter for HDBSCAN")
 	parser.add_argument("--cluster-epsilon", type=float, default=0.3, help="Cluster selection epsilon for HDBSCAN")
+	parser.add_argument("--export-clusters", action="store_true", help="Export clusters to text files")
+	parser.add_argument("--output-dir", type=str, default="clusters", help="Directory for exported clusters")
 	args = parser.parse_args()
 	
 	if args.get_by_prompt:
@@ -277,3 +318,8 @@ if __name__ == "__main__":
 			
 			print("Example prompts:")
 			print(clustered_prompts.head(3).tolist())
+		
+		# After clustering and analysis
+		if args.export_clusters:
+			print("\nExporting clusters to text files...")
+			export_clusters_to_files(df, args.output_dir)
