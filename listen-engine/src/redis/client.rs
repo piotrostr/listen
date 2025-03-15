@@ -106,7 +106,7 @@ impl RedisClient {
             .query_async(&mut *conn)
             .await?;
 
-        tracing::debug!("Found {} pipeline keys", keys.len());
+        tracing::info!("Found {} pipeline keys for user {}", keys.len(), user_id);
 
         let mut pipelines = Vec::with_capacity(keys.len());
 
