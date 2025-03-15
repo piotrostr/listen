@@ -6,6 +6,7 @@ pub mod error;
 pub mod evaluate;
 pub mod evaluator;
 pub mod execute;
+pub mod notifications;
 pub mod order;
 pub mod pipeline;
 pub mod retry;

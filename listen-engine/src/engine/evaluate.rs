@@ -255,9 +255,32 @@ impl Engine {
                                     }
                                 }
                                 Action::Notification(notification) => {
-                                    tracing::info!(%current_step_id, ?notification, "TODO: Notification");
-                                    step.status = Status::Completed;
-                                    step_status_changed = true;
+                                    tracing::info!(%current_step_id, ?notification, "Sending notification");
+                                    match self
+                                        .send_notification(&pipeline.user_id, notification)
+                                        .await
+                                    {
+                                        Ok(res) => {
+                                            tracing::info!(
+                                                %current_step_id,
+                                                ?res,
+                                                "Notification sent: {}",
+                                                res
+                                            );
+                                            step.status = Status::Completed;
+                                            step_status_changed = true;
+                                        }
+                                        Err(e) => {
+                                            tracing::error!(
+                                                %current_step_id,
+                                                "Failed to send notification: {}",
+                                                e
+                                            );
+                                            step.status = Status::Failed;
+                                            step.error = Some(e.to_string());
+                                            step_status_changed = true;
+                                        }
+                                    }
                                 }
                             },
                             Ok(false) => {
