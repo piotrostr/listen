@@ -1,5 +1,5 @@
 <p align="center">
-<img src="listen-interface/public/listen-more.png" width="35%" />
+<img src="listen-landing/public/listen-more.png" width="35%" />
 <br />
 </p>
 <p align="center">
