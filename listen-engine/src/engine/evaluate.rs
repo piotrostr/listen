@@ -255,9 +255,20 @@ impl Engine {
                                     }
                                 }
                                 Action::Notification(notification) => {
-                                    tracing::info!(%current_step_id, ?notification, "TODO: Notification");
-                                    step.status = Status::Completed;
-                                    step_status_changed = true;
+                                    match self
+                                        .send_notification(&pipeline.user_id, notification)
+                                        .await
+                                    {
+                                        Ok(_) => {
+                                            step.status = Status::Completed;
+                                            step_status_changed = true;
+                                        }
+                                        Err(e) => {
+                                            step.status = Status::Failed;
+                                            step.error = Some(e.to_string());
+                                            step_status_changed = true;
+                                        }
+                                    }
                                 }
                             },
                             Ok(false) => {
