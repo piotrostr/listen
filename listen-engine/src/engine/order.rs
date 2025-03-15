@@ -135,20 +135,20 @@ pub async fn swap_order_to_transaction(
         return Err(SwapOrderError::SolanaWalletNotAvailable);
     }
 
-    if pubkey.is_none() && wallet_address.is_none() {
-        return Err(SwapOrderError::NoWalletAddress);
-    }
-
-    let pubkey = pubkey.unwrap();
-    let wallet_address = wallet_address.unwrap();
-
     if from_chain_id == to_chain_id && is_solana(&order.from_chain_caip2) {
         tracing::info!("Solana swap order to transaction");
-        return retry_with_backoff("solana swap to transaction", || async {
-            try_solana_swap_order_to_transaction(order, &pubkey).await
-        })
-        .await;
+        if let Some(pubkey) = pubkey {
+            return retry_with_backoff("solana swap to transaction", || async {
+                try_solana_swap_order_to_transaction(order, &pubkey).await
+            })
+            .await;
+        } else {
+            return Err(SwapOrderError::NoWalletAddress);
+        }
     }
+
+    let wallet_address = wallet_address.unwrap();
+    let pubkey = pubkey.unwrap();
 
     retry_with_backoff("lifi swap to transaction", || async {
         try_lifi_swap_order_to_transaction(order, lifi, &wallet_address, &pubkey).await
