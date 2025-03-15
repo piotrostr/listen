@@ -1,0 +1,17 @@
+{
+  "name": "listen-analytics",
+  "module": "index.ts",
+  "type": "module",
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5.0.0"
+  },
+  "dependencies": {
+    "@solana/spl-token": "^0.4.12",
+    "@solana/web3.js": "^1.98.0",
+    "alchemy-sdk": "^3.5.3",
+    "zod": "^3.24.2"
+  }
+}
