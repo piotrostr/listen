@@ -271,6 +271,11 @@ impl Engine {
                                             step_status_changed = true;
                                         }
                                         Err(e) => {
+                                            tracing::error!(
+                                                %current_step_id,
+                                                "Failed to send notification: {}",
+                                                e
+                                            );
                                             step.status = Status::Failed;
                                             step.error = Some(e.to_string());
                                             step_status_changed = true;
