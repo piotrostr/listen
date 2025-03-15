@@ -46,6 +46,9 @@ pub enum SwapOrderError {
 
     #[error("Solana wallet not available")]
     SolanaWalletNotAvailable,
+
+    #[error("No wallet address")]
+    NoWalletAddress,
 }
 
 pub fn is_solana(caip2: &str) -> bool {
@@ -131,8 +134,13 @@ pub async fn swap_order_to_transaction(
     if pubkey.is_none() && order.is_solana() {
         return Err(SwapOrderError::SolanaWalletNotAvailable);
     }
-    let wallet_address = wallet_address.unwrap();
+
+    if pubkey.is_none() && wallet_address.is_none() {
+        return Err(SwapOrderError::NoWalletAddress);
+    }
+
     let pubkey = pubkey.unwrap();
+    let wallet_address = wallet_address.unwrap();
 
     if from_chain_id == to_chain_id && is_solana(&order.from_chain_caip2) {
         tracing::info!("Solana swap order to transaction");
