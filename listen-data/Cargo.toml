@@ -18,7 +18,11 @@ anyhow = "1.0.95"
 async-trait = "0.1.83"
 carbon-core = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.6.0" }
 carbon-log-metrics = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.6.0" }
+carbon-meteora-dlmm-decoder = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.6.0" }
+carbon-orca-whirlpool-decoder = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.6.0" }
 carbon-raydium-amm-v4-decoder = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.6.0" }
+carbon-raydium-clmm-decoder = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.6.0" }
+carbon-raydium-cpmm-decoder = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.6.0" }
 carbon-token-program-decoder = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.6.0" }
 carbon-token-2022-decoder = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.6.0" }
 ctor = "0.2.9"

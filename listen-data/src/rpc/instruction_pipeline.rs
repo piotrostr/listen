@@ -9,15 +9,19 @@ use std::{sync::Arc, time::Duration};
 
 use crate::{
     constants::RAYDIUM_AMM_V4_PROGRAM_ID, db::ClickhouseDb,
-    kv_store::RedisKVStore, message_queue::RedisMessageQueue,
-    raydium_intruction_processor::RaydiumAmmV4InstructionProcessor,
+    handler::TokenSwapHandler, kv_store::RedisKVStore,
+    message_queue::RedisMessageQueue, metrics::SwapMetrics,
+    processor::RaydiumAmmV4InstructionProcessor,
 };
 
 pub fn make_raydium_rpc_instruction_pipeline(
     kv_store: Arc<RedisKVStore>,
     message_queue: Arc<RedisMessageQueue>,
     db: Arc<ClickhouseDb>,
+    metrics: Arc<SwapMetrics>,
 ) -> Result<Pipeline> {
+    let token_swap_handler =
+        Arc::new(TokenSwapHandler::new(kv_store, message_queue, db, metrics));
     let pipeline = Pipeline::builder()
         .datasource(RpcTransactionCrawler::new(
             std::env::var("RPC_URL")?,
@@ -32,7 +36,7 @@ pub fn make_raydium_rpc_instruction_pipeline(
         .shutdown_strategy(ShutdownStrategy::Immediate)
         .instruction(
             RaydiumAmmV4Decoder,
-            RaydiumAmmV4InstructionProcessor::new(kv_store, message_queue, db),
+            RaydiumAmmV4InstructionProcessor::new(token_swap_handler),
         )
         .build()?;
 

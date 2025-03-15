@@ -214,7 +214,7 @@ pub fn get_token_balance_diff<T: TokenBalanceInfo + std::fmt::Debug>(
 /// * `amount` - The raw token amount being transferred (not adjusted for decimals)
 /// * `decimals` - Optional decimal precision of the token
 /// * `ui_amount` - The token amount in UI format (adjusted for decimals)
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, PartialEq)]
 pub struct TokenTransferDetails {
     pub program_id: String,
     pub source: String,
