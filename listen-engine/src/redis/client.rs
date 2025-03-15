@@ -123,7 +123,7 @@ impl RedisClient {
                 match serde_json::from_str(&json_str) {
                     Ok(pipeline) => pipelines.push(pipeline),
                     Err(e) => {
-                        tracing::warn!("Failed to deserialize pipeline: {}", e);
+                        tracing::error!("Failed to deserialize pipeline: {}", e);
                         continue;
                     }
                 }
