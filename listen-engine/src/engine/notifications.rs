@@ -20,7 +20,7 @@ impl Engine {
         }
 
         let recipient_email = self.privy.get_email_by_user_id(user_id).await?;
-        let api_key = std::env::var("EMAIL_API_KEY")?;
+        let api_key = std::env::var("RESEND_API_KEY")?;
         let resend = Resend::new(&api_key);
         let from = "listen@app.listen-rs.com";
         let to = [recipient_email.as_str()];
