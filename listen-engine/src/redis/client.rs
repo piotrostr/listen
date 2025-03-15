@@ -47,7 +47,7 @@ impl RedisClient {
             .map_err(RedisClientError::GetConnectionError)
     }
 
-    async fn set<T: Serialize>(&self, key: &str, value: &T) -> Result<(), RedisClientError> {
+    pub async fn set<T: Serialize>(&self, key: &str, value: &T) -> Result<(), RedisClientError> {
         let mut conn = self.pool.get().await?;
         let serialized = serde_json::to_string(value)?;
 
@@ -60,7 +60,7 @@ impl RedisClient {
         Ok(())
     }
 
-    async fn get<T: DeserializeOwned>(&self, key: &str) -> Result<Option<T>, RedisClientError> {
+    pub async fn get<T: DeserializeOwned>(&self, key: &str) -> Result<Option<T>, RedisClientError> {
         let mut conn = self.pool.get().await?;
 
         let json_str: Option<String> = cmd("GET").arg(key).query_async(&mut *conn).await?;
@@ -228,6 +228,46 @@ impl RedisClient {
             Some(price) => Ok(price.price),
             None => Err(RedisClientError::KeyNotFound(price_key)),
         }
+    }
+
+    pub async fn incr(&self, key: &str, increment: u32) -> Result<u32, RedisClientError> {
+        let mut conn = self.pool.get().await?;
+        let result: u32 = cmd("INCRBY")
+            .arg(key)
+            .arg(increment)
+            .query_async(&mut *conn)
+            .await?;
+        Ok(result)
+    }
+
+    pub async fn expire(&self, key: &str, seconds: usize) -> Result<(), RedisClientError> {
+        let mut conn = self.pool.get().await?;
+        let _: () = cmd("EXPIRE")
+            .arg(key)
+            .arg(seconds)
+            .query_async(&mut *conn)
+            .await?;
+        Ok(())
+    }
+
+    pub async fn ttl(&self, key: &str) -> Result<Option<i64>, RedisClientError> {
+        let mut conn = self.pool.get().await?;
+        let ttl: i64 = cmd("TTL").arg(key).query_async(&mut *conn).await?;
+
+        // Redis returns -2 if the key doesn't exist, -1 if it exists but has no expiry
+        if ttl == -2 {
+            Ok(None)
+        } else if ttl == -1 {
+            Ok(Some(0)) // No expiry
+        } else {
+            Ok(Some(ttl))
+        }
+    }
+
+    pub async fn del(&self, key: &str) -> Result<(), RedisClientError> {
+        let mut conn = self.pool.get().await?;
+        let _: () = cmd("DEL").arg(key).query_async(&mut *conn).await?;
+        Ok(())
     }
 }
 

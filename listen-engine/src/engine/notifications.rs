@@ -1,31 +1,41 @@
 use crate::engine::pipeline::Notification;
+use crate::redis::rate_limits::RateLimitType;
+use crate::Engine;
 use anyhow::Result;
-use privy::Privy;
 use resend_rs::types::CreateEmailBaseOptions;
 use resend_rs::Resend;
-use std::sync::Arc;
 
-pub async fn send_notification(
-    privy: Arc<Privy>,
-    user_id: &str,
-    notification: &Notification,
-) -> Result<()> {
-    let recipient_email = privy.get_email_by_user_id(user_id).await?;
-    let api_key = std::env::var("EMAIL_API_KEY")?;
-    let resend = Resend::new(&api_key);
-    let from = "listen@app.listen-rs.com";
-    let to = [recipient_email.as_str()];
+impl Engine {
+    pub async fn send_notification(
+        &self,
+        user_id: &str,
+        notification: &Notification,
+    ) -> Result<()> {
+        let rate_limit = self
+            .redis
+            .get_rate_limit(user_id, &RateLimitType::EmailNotifications)
+            .await?;
+        if rate_limit.remaining == 0 {
+            return Err(anyhow::anyhow!("Rate limit exceeded"));
+        }
 
-    let email = CreateEmailBaseOptions::new(from, to, &notification.message)
-        .with_text(&notification.message);
+        let recipient_email = self.privy.get_email_by_user_id(user_id).await?;
+        let api_key = std::env::var("EMAIL_API_KEY")?;
+        let resend = Resend::new(&api_key);
+        let from = "listen@app.listen-rs.com";
+        let to = [recipient_email.as_str()];
 
-    let result = resend
-        .emails
-        .send(email)
-        .await
-        .map_err(|e| anyhow::anyhow!("Failed to send email: {}", e))?;
+        let email = CreateEmailBaseOptions::new(from, to, &notification.message)
+            .with_text(&notification.message);
 
-    tracing::info!("Email sent with ID: {:?}", result.id);
+        let result = resend
+            .emails
+            .send(email)
+            .await
+            .map_err(|e| anyhow::anyhow!("Failed to send email: {}", e))?;
 
-    Ok(())
+        tracing::info!("Email sent with ID: {:?}", result.id);
+
+        Ok(())
+    }
 }
