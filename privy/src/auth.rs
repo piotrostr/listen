@@ -2,7 +2,7 @@ use anyhow::{anyhow, Result};
 use jsonwebtoken::{decode, Algorithm, DecodingKey, Validation};
 
 use crate::{
-    types::{LinkedAccount, PrivyClaims, User, WalletAccount},
+    types::{EmailAccount, LinkedAccount, PrivyClaims, User, WalletAccount},
     Privy,
 };
 
@@ -12,6 +12,7 @@ pub struct UserSession {
     pub session_id: String,
     pub wallet_address: Option<String>,
     pub pubkey: Option<String>,
+    pub email: Option<String>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -32,6 +33,12 @@ pub enum PrivyAuthError {
 }
 
 impl Privy {
+    pub async fn get_email_by_user_id(&self, user_id: &str) -> Result<String> {
+        let user = self.get_user_by_id(user_id).await?;
+        let email = find_email(&user.linked_accounts)?;
+        Ok(email.address.clone())
+    }
+
     pub async fn authenticate_user(
         &self,
         access_token: &str,
@@ -44,6 +51,7 @@ impl Privy {
             session_id: claims.session_id,
             wallet_address: None,
             pubkey: None,
+            email: None,
         };
 
         let solana_wallet = find_wallet(&user.linked_accounts, "solana", "privy");
@@ -54,6 +62,11 @@ impl Privy {
         let evm_wallet = find_wallet(&user.linked_accounts, "ethereum", "privy");
         if let Ok(wallet) = evm_wallet {
             session.wallet_address = Some(wallet.address.clone());
+        }
+
+        let email = find_email(&user.linked_accounts);
+        if let Ok(email) = email {
+            session.email = Some(email.address.clone());
         }
 
         Ok(session)
@@ -121,6 +134,16 @@ fn find_wallet<'a>(
             _ => None,
         })
         .ok_or_else(|| anyhow!("Could not find a delegated {} wallet", chain_type))
+}
+
+fn find_email<'a>(linked_accounts: &'a [LinkedAccount]) -> Result<&'a EmailAccount> {
+    linked_accounts
+        .iter()
+        .find_map(|account| match account {
+            LinkedAccount::Email(email) => Some(email),
+            _ => None,
+        })
+        .ok_or_else(|| anyhow!("Could not find an email account"))
 }
 
 #[cfg(test)]
