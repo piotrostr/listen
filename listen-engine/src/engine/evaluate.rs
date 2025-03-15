@@ -255,11 +255,18 @@ impl Engine {
                                     }
                                 }
                                 Action::Notification(notification) => {
+                                    tracing::info!(%current_step_id, ?notification, "Sending notification");
                                     match self
                                         .send_notification(&pipeline.user_id, notification)
                                         .await
                                     {
-                                        Ok(_) => {
+                                        Ok(res) => {
+                                            tracing::info!(
+                                                %current_step_id,
+                                                ?res,
+                                                "Notification sent: {}",
+                                                res
+                                            );
                                             step.status = Status::Completed;
                                             step_status_changed = true;
                                         }

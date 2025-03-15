@@ -10,7 +10,7 @@ impl Engine {
         &self,
         user_id: &str,
         notification: &Notification,
-    ) -> Result<()> {
+    ) -> Result<String> {
         let rate_limit = self
             .redis
             .get_rate_limit(user_id, &RateLimitType::EmailNotifications)
@@ -36,6 +36,6 @@ impl Engine {
 
         tracing::info!("Email sent with ID: {:?}", result.id);
 
-        Ok(())
+        Ok(result.id.to_string())
     }
 }
