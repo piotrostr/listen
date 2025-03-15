@@ -1,7 +1,7 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { z } from "zod";
 import { Chat } from "../components/Chat";
-import { IntroScreen } from "../components/IntroScreen";
+import { GettingStarted } from "../components/GettingStarted";
 import { Spinner } from "../components/Spinner";
 import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 
@@ -36,7 +36,7 @@ function Index() {
       ) : shouldShowChat ? (
         <Chat />
       ) : (
-        <IntroScreen />
+        <GettingStarted />
       )}
     </div>
   );

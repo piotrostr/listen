@@ -2,11 +2,12 @@ import { Link } from "@tanstack/react-router";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { BsLink } from "react-icons/bs";
-import { IoMenu, IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
+import { IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
 import { RxDashboard } from "react-icons/rx";
 import { TbMoneybag } from "react-icons/tb";
 import { useMobile } from "../contexts/MobileContext";
 import { usePortfolioStore } from "../store/portfolioStore";
+import { BurgerIcon } from "./Burger";
 import { SidebarContext } from "./Layout";
 
 interface SimpleHeaderProps {
@@ -21,7 +22,7 @@ export function SimpleHeader({
   toggleMobileSidebar,
 }: SimpleHeaderProps) {
   const { t } = useTranslation();
-  const setSidebarOpen = useContext(SidebarContext);
+  const { isSidebarOpen, setIsSidebarOpen } = useContext(SidebarContext);
   const { isMobile } = useMobile();
 
   const togglePanel = (panelName: string) => {
@@ -39,27 +40,26 @@ export function SimpleHeader({
       {/* Left side - Logo with hover effect */}
       <div className="flex items-center">
         {isMobile && (
-          <button
-            onClick={toggleMobileSidebar}
-            className="p-4 text-white focus:outline-none"
-          >
-            <IoMenu size={24} />
-          </button>
+          <div className="ml-3 mt-3">
+            <BurgerIcon isOpen={isSidebarOpen} onClick={toggleMobileSidebar} />
+          </div>
         )}
-        <Link
-          to="/"
-          search={{
-            new: true,
-          }}
-          className="flex items-center space-x-3 cursor-pointer"
-          onMouseEnter={() => setSidebarOpen(true)}
-          onMouseLeave={() => setSidebarOpen(false)}
-        >
-          <img src="/listen-new.svg" alt="Logo" className="w-8 h-8 rounded" />
-          {!isMobile && (
-            <span className="text-white text-lg font-bold">Listen</span>
-          )}
-        </Link>
+        {!isMobile && (
+          <Link
+            to="/"
+            search={{
+              new: true,
+            }}
+            className="flex items-center space-x-3 cursor-pointer"
+            onMouseEnter={() => setIsSidebarOpen(true)}
+            onMouseLeave={() => setIsSidebarOpen(false)}
+          >
+            <img src="/listen-new.svg" alt="Logo" className="w-8 h-8 rounded" />
+            {!isMobile && (
+              <span className="text-white text-lg font-bold">Listen</span>
+            )}
+          </Link>
+        )}
       </div>
 
       {/* Right side - Panel toggles */}
