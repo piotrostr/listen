@@ -89,11 +89,11 @@ export const ExtendedPipelineSchema = z.object({
   created_at: z.string().datetime(),
   current_steps: z.array(z.string().uuid()),
   id: z.string().uuid(),
-  pubkey: z.string(),
+  pubkey: z.string().optional().nullable(),
   status: StatusSchema,
   steps: z.record(z.string().uuid(), ExtendedPipelineStepSchema),
   user_id: z.string(),
-  wallet_address: z.string(),
+  wallet_address: z.string().optional().nullable(),
 });
 
 // Updated response schema
