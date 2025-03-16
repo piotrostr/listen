@@ -7,6 +7,7 @@ export const gettingStarted = {
     lets_make_a_trade: "Let's make a trade",
     create_an_automated_strategy: "Create an automated strategy",
     run_some_research: "Run some research",
+    skip: "Skip",
     how_it_works: "How it works",
     how_it_works_description:
       "Listen is your single stop for on-chain trading with natural language",
@@ -17,8 +18,7 @@ export const gettingStarted = {
     get_started: "Get Started",
     questions:
       "Should you have any questions - ask Listen directly, it understands the tools it has access to and has a view of the portfolio its managing",
-    warning:
-      "Listen is in beta, some things might not work as expected, use at own risk",
+    warning: "Listen is in beta, some things might not work as expected",
   },
   zh: {
     listen_hi: "嗨，我是 Listen，你的个人加密经纪人。",
@@ -27,6 +27,7 @@ export const gettingStarted = {
     lets_make_a_trade: "让我们做一个交易",
     create_an_automated_strategy: "创建一个自动化的策略",
     run_some_research: "运行一些研究",
+    skip: "跳过",
     how_it_works: "如何运作",
     how_it_works_description: "Listen 是您使用自然语言进行链上交易的一站式平台",
     step_1: "1. 创建账户（可使用邮箱或钱包）",
@@ -34,6 +35,6 @@ export const gettingStarted = {
     step_3: "3. 开始畅享！",
     get_started: "开始",
     questions: "如有疑问可直接询问 Listen，它了解可用工具并管理您的投资组合",
-    warning: "Listen 处于早期测试阶段，功能可能不稳定，使用风险自负",
+    warning: "Listen 处于早期测试阶段，功能可能不稳定",
   },
 };
