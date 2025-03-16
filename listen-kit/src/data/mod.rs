@@ -2,7 +2,10 @@ use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
 use serde::{Deserialize, Serialize};
 
-use crate::{common::wrap_unsafe, data::twitter::TwitterApi};
+use crate::{
+    chart_analyst::ChartAnalyst, common::wrap_unsafe,
+    data::twitter::TwitterApi,
+};
 
 pub mod twitter;
 
@@ -148,6 +151,7 @@ context and provide a summary of the profile.
 
 Parameters:
 - username (string): The X username, e.g. @elonmusk
+- language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
 
 This method might take around 10-15 seconds to return a response
 
@@ -271,7 +275,7 @@ pub async fn fetch_price_chart(
 }
 
 #[tool(description = "
-Fetch candlestick data for a token from the Listen API.
+Fetch price action analysis based on candlestick data for a token from the Listen API.
 
 Parameters:
 - mint (string): The token's mint/pubkey address
@@ -282,6 +286,7 @@ Parameters:
   * '4h'  (4 hours)
   * '1d'  (1 day)
 - limit (string): Optional number of candlesticks to return
+- language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
 
 for tokens under 1M market cap, use the 30s interval, 200 limit
 
@@ -289,13 +294,14 @@ for tokens over 1M market cap, use the 5m interval, 200 limit
 
 for tokens over 10M market cap, use the 15m interval, 200 limit
 
-Returns a list of candlesticks with OHLCV data.
+Returns an analysis of the chart from the Chart Analyst agent
 ")]
-pub async fn fetch_candlesticks(
+pub async fn fetch_price_action_analysis(
     mint: String,
     interval: String,
     limit: Option<String>,
-) -> Result<Vec<Candlestick>> {
+    language: Option<String>,
+) -> Result<String> {
     // Validate interval
     match interval.as_str() {
         "15s" | "30s" | "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d" => {}
@@ -320,7 +326,18 @@ pub async fn fetch_candlesticks(
         .await
         .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
 
-    Ok(candlesticks)
+    let chart_analyst = ChartAnalyst::from_env_with_locale(
+        language.unwrap_or("en".to_string()),
+    )
+    .map_err(|e| anyhow!("Failed to create ChartAnalyst: {}", e))?;
+
+    wrap_unsafe(move || async move {
+        chart_analyst
+            .analyze(&candlesticks, &interval)
+            .await
+            .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
+    })
+    .await
 }
 
 #[cfg(test)]
@@ -341,13 +358,14 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_fetch_candlesticks() {
-        let candlesticks = fetch_candlesticks(
-            "So11111111111111111111111111111111111111112".to_string(),
+    async fn test_fetch_price_action_analysis() {
+        let analysis = fetch_price_action_analysis(
+            "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump".to_string(),
             "5m".to_string(),
             Some("10".to_string()),
+            Some("en".to_string()),
         )
         .await;
-        println!("{:?}", candlesticks);
+        println!("{:?}", analysis);
     }
 }
