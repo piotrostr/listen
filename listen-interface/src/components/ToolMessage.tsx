@@ -84,12 +84,18 @@ export const ToolMessage = ({
       }, [matchingToolCall]);
 
       if (mint) {
+        let parsed = toolOutput.result;
+        try {
+          parsed = JSON.parse(toolOutput.result);
+        } catch (e) {
+          console.error("Failed to parse price action analysis:", e);
+        }
         return (
           <div className="text-gray-400">
             <div className="h-[300px] mb-3">
               <Chart mint={mint} interval={interval} />
             </div>
-            <ChatMessage message={toolOutput.result} direction="agent" />
+            <ChatMessage message={parsed} direction="agent" />
           </div>
         );
       }
