@@ -10,12 +10,12 @@ export class IndexedDBCache<T> implements CacheStore<T> {
   private db: Promise<IDBPDatabase>;
   private maxSize?: number;
   private ttl?: number; // milliseconds
-  public schema: z.ZodType<T>;
+  public schema: z.ZodType<any, any, any>;
 
   constructor(
     dbName: string,
     storeName: string,
-    schema: z.ZodType<T>,
+    schema: z.ZodType<any, any, any>,
     options: { maxSize?: number; ttl?: number } = {}
   ) {
     this.dbName = dbName;
