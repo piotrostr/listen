@@ -21,6 +21,8 @@ pub mod mongo;
 pub mod reasoning_loop;
 pub mod signer;
 
+pub mod tokenizer;
+
 #[ctor::ctor]
 fn init() {
     dotenv::dotenv().ok();

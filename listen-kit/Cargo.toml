@@ -44,7 +44,7 @@ chrono = "0.4.39"
 dotenv = "0.15.0"
 hex = "0.4.3"
 anyhow = "1.0.95"
-rig-core = { git = "https://github.com/piotrostr/rig", branch = "fix/content-block-err" }
+rig-core = { path = "../../rig-piotr/rig-core" }
 rig-tool-macro = "0.5.0"
 thiserror = "2.0.11"
 once_cell = "1.20.2"
@@ -89,3 +89,5 @@ actix-web-lab = { version = "0.20", optional = true }
 tokio-stream = { version = "0.1.17", optional = true }
 jsonwebtoken = { version = "9.3.0", optional = true }
 redis = { version = "0.28.2", features = ["tokio-comp"], optional = true }
+tokenizers = "0.21.1"
+lazy_static = "1.5.0"

@@ -289,6 +289,7 @@ mod tests {
                 pubkey: Some(TEST_ADDRESS_SOL.to_string()),
                 session_id: "test".to_string(),
                 user_id: "test".to_string(),
+                email: Some("test@test.com".to_string()),
             },
         );
 
