@@ -4,9 +4,13 @@ import { VectorArrow } from "./VectorArrow";
 export const GradientOutlineButton = ({
   text,
   arrow,
+  onClick,
+  disabled,
 }: {
   text: string;
   arrow?: boolean;
+  onClick?: () => void;
+  disabled?: boolean;
 }) => {
   const { isMobile, isVerySmallScreen } = useMobile();
 
@@ -49,6 +53,8 @@ export const GradientOutlineButton = ({
         className={`box-border flex flex-row justify-center items-center gap-1 ${isVerySmallScreen ? "py-4" : "py-5"} ${isVerySmallScreen ? "px-4" : "px-5"} ${isVerySmallScreen ? "h-[46px]" : "h-[52px]"} bg-[#151518] rounded-xl relative z-10 m-[2px] ${
           isMobile ? "w-[calc(100%-4px)]" : "w-[354px]"
         }`}
+        onClick={onClick}
+        disabled={disabled}
       >
         <p
           className={`font-['Space_Grotesk'] font-normal ${isVerySmallScreen ? "text-[14px] leading-[14px]" : "text-[16px] leading-[16px]"} text-white text-center`}

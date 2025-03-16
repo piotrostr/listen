@@ -1,3 +1,4 @@
+import { usePrivy } from "@privy-io/react-auth";
 import { useTranslation } from "react-i18next";
 import { useMobile } from "../contexts/MobileContext";
 import { BetaWarning } from "./BetaWarning";
@@ -8,6 +9,7 @@ import { VersionDisplay } from "./VersionAndLanguage";
 export function GettingStarted() {
   const { t } = useTranslation();
   const { isMobile, isVerySmallScreen } = useMobile();
+  const { login, ready } = usePrivy();
 
   return (
     <div
@@ -27,32 +29,53 @@ export function GettingStarted() {
           {t("getting_started.listen_intro")}
         </p>
       </div>
-      <div>
-        <p
-          className={`font-[500] ${isVerySmallScreen ? "text-[28px] leading-[36px]" : "text-[32px] leading-[40px]"} tracking-[-0.04em]`}
-        >
-          {t("getting_started.where_should_we_start")}
-        </p>
-      </div>
-      <div
-        className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full`}
-      >
-        <GradientOutlineButton
-          text={t("getting_started.lets_make_a_trade")}
-          arrow={true}
-        />
-        <OutlineButton
-          text={t("getting_started.create_an_automated_strategy")}
-        />
-        <OutlineButton text={t("getting_started.run_some_research")} />
-        <OutlineButton text={t("getting_started.skip")} />
-      </div>
-      <div
-        className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full text-center text-xs justify-center items-center mb-1`}
-      >
-        <BetaWarning />
-        <VersionDisplay />
-      </div>
+      {isMobile ? (
+        <>
+          <div>
+            <p
+              className={`font-[500] ${isVerySmallScreen ? "text-[28px] leading-[36px]" : "text-[32px] leading-[40px]"} tracking-[-0.04em]`}
+            >
+              {t("getting_started.where_should_we_start")}
+            </p>
+          </div>
+          <div
+            className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full`}
+          >
+            <GradientOutlineButton
+              text={t("getting_started.lets_make_a_trade")}
+              arrow={true}
+              onClick={login}
+              disabled={!ready}
+            />
+            <OutlineButton
+              text={t("getting_started.create_an_automated_strategy")}
+            />
+            <OutlineButton text={t("getting_started.run_some_research")} />
+            <OutlineButton text={t("getting_started.skip")} />
+          </div>
+          <div
+            className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full text-center text-xs justify-center items-center mb-1`}
+          >
+            <BetaWarning />
+            <VersionDisplay />
+          </div>
+        </>
+      ) : (
+        <>
+          <GradientOutlineButton
+            text={t("getting_started.get_started")}
+            arrow={true}
+            onClick={login}
+            disabled={!ready}
+          />
+          <div
+            className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full text-center text-xs justify-center items-center mb-1`}
+          >
+            <BetaWarning />
+            <VersionDisplay />
+          </div>
+        </>
+      )}
     </div>
   );
 }
