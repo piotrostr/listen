@@ -5445,6 +5445,7 @@ dependencies = [
 [[package]]
 name = "rig-core"
 version = "0.9.1"
+source = "git+https://github.com/piotrostr/rig?branch=fix%2Fcontent-block-err#6820b33b009430bd6c4ad3f6d73fe8c463059b57"
 dependencies = [
  "async-stream",
  "bytes",
