@@ -9,9 +9,9 @@ use std::collections::HashMap;
 pub struct Tweet {
     #[serde(default)]
     pub r#type: Option<String>,
-    pub id: String,
+    pub id: Option<String>,
     pub url: Option<String>,
-    pub text: String,
+    pub text: Option<String>,
     pub source: Option<String>,
     pub retweet_count: Option<u32>,
     pub reply_count: Option<u32>,
