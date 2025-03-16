@@ -12,7 +12,7 @@ import {
 } from "../types/quote";
 import { TweetSchema } from "../types/x";
 import { SolanaBalance, SplTokenBalance } from "./Balances";
-import { InnerChart } from "./Chart";
+import { Chart, InnerChart } from "./Chart";
 import { ChatMessage } from "./ChatMessage";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
@@ -71,6 +71,29 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "fetch_price_action_analysis") {
     try {
+      const [mint, interval] = useMemo(() => {
+        if (!matchingToolCall) return [null, "30s"];
+
+        try {
+          const params = JSON.parse(matchingToolCall.params);
+          return [params.mint, params.interval || "30s"];
+        } catch (e) {
+          console.error("Failed to parse tool call params:", e);
+          return [null, "30s"];
+        }
+      }, [matchingToolCall]);
+
+      if (mint) {
+        return (
+          <div className="text-gray-400">
+            <div className="h-[300px] mb-3">
+              <Chart mint={mint} interval={interval} />
+            </div>
+            <ChatMessage message={toolOutput.result} direction="agent" />
+          </div>
+        );
+      }
+
       return (
         <div className="text-gray-400">
           <ChatMessage message={toolOutput.result} direction="agent" />
@@ -78,6 +101,11 @@ export const ToolMessage = ({
       );
     } catch (e) {
       console.error("Failed to parse price action analysis:", e);
+      return (
+        <div className="text-gray-400">
+          <ChatMessage message={toolOutput.result} direction="agent" />
+        </div>
+      );
     }
   }
 
