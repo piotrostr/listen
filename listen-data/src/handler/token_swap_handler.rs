@@ -2,7 +2,7 @@ use crate::{
     db::ClickhouseDb, kv_store::RedisKVStore, message_queue::RedisMessageQueue,
     metrics::SwapMetrics, process_swap::process_swap,
 };
-use carbon_core::instruction::NestedInstruction;
+use carbon_core::instruction::{InstructionMetadata, NestedInstruction};
 use std::{collections::HashSet, sync::Arc};
 use tracing::{debug, error};
 
@@ -31,8 +31,8 @@ impl TokenSwapHandler {
     pub fn spawn_swap_processor(
         &self,
         vaults: &HashSet<String>,
-        meta: &carbon_core::instruction::InstructionMetadata,
-        nested_instructions: &Vec<NestedInstruction>,
+        meta: &InstructionMetadata,
+        nested_instructions: &[NestedInstruction],
     ) {
         debug!(
             "https://solscan.io/tx/{}",
@@ -46,7 +46,7 @@ impl TokenSwapHandler {
 
         let vaults = vaults.clone();
         let tx_meta = meta.transaction_metadata.clone();
-        let nested_instructions = nested_instructions.clone();
+        let nested_instructions = nested_instructions.to_vec();
 
         metrics.increment_total_swaps();
         metrics.increment_pending_swaps();
@@ -113,7 +113,7 @@ pub mod test_swaps {
 
     pub fn get_inner_token_transfers(
         transaction_metadata: &TransactionMetadata,
-        nested_instructions: &Vec<NestedInstruction>,
+        nested_instructions: &[NestedInstruction],
     ) -> Result<Vec<TokenTransferDetails>, DiffsError> {
         let mint_details =
             extra_mint_details_from_tx_metadata(transaction_metadata);
