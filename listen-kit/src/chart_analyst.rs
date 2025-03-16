@@ -38,6 +38,8 @@ pub const DEFAULT_PREAMBLE_ZH: &str = "
 
 #[async_trait::async_trait]
 pub trait ChartAnalystAgent: Send + Sync {
+    fn locale(&self) -> &str;
+
     async fn analyze(
         &self,
         candlesticks: &[Candlestick],
@@ -67,16 +69,37 @@ pub fn make_language_aware_analyst(
     if locale == "zh" {
         let deepseek_agent =
             make_deepseek_analyst(Some(DEFAULT_PREAMBLE_ZH.to_string()))?;
-        Ok(Box::new(deepseek_agent))
+        Ok(Box::new(DeepSeekAgentWrapper {
+            agent: deepseek_agent,
+            locale: "zh".to_string(),
+        }))
     } else {
         let gemini_agent =
             make_gemini_analyst(Some(DEFAULT_PREAMBLE.to_string()))?;
-        Ok(Box::new(gemini_agent))
+        Ok(Box::new(GeminiAgentWrapper {
+            agent: gemini_agent,
+            locale: "en".to_string(),
+        }))
     }
 }
 
+// Wrapper structs to implement the trait
+pub struct GeminiAgentWrapper {
+    agent: GeminiAgent,
+    locale: String,
+}
+
+pub struct DeepSeekAgentWrapper {
+    agent: DeepSeekAgent,
+    locale: String,
+}
+
 #[async_trait::async_trait]
-impl ChartAnalystAgent for GeminiAgent {
+impl ChartAnalystAgent for GeminiAgentWrapper {
+    fn locale(&self) -> &str {
+        &self.locale
+    }
+
     async fn analyze(
         &self,
         candlesticks: &[Candlestick],
@@ -85,17 +108,31 @@ impl ChartAnalystAgent for GeminiAgent {
         let candlesticks_json = serde_json::to_string(candlesticks)
             .map_err(|_| ChartAnalystError::SerializationError)?;
 
-        self.prompt(format!(
-            "Analyze these candlesticks with interval {}:\n{}",
-            interval, candlesticks_json
-        ))
-        .await
-        .map_err(ChartAnalystError::PromptError)
+        let prompt_text = if self.locale == "zh" {
+            format!(
+                "分析这些K线图数据，时间间隔为{}:\n{}",
+                interval, candlesticks_json
+            )
+        } else {
+            format!(
+                "Analyze these candlesticks with interval {}:\n{}",
+                interval, candlesticks_json
+            )
+        };
+
+        self.agent
+            .prompt(prompt_text)
+            .await
+            .map_err(ChartAnalystError::PromptError)
     }
 }
 
 #[async_trait::async_trait]
-impl ChartAnalystAgent for DeepSeekAgent {
+impl ChartAnalystAgent for DeepSeekAgentWrapper {
+    fn locale(&self) -> &str {
+        &self.locale
+    }
+
     async fn analyze(
         &self,
         candlesticks: &[Candlestick],
@@ -104,12 +141,22 @@ impl ChartAnalystAgent for DeepSeekAgent {
         let candlesticks_json = serde_json::to_string(candlesticks)
             .map_err(|_| ChartAnalystError::SerializationError)?;
 
-        self.prompt(format!(
-            "分析这些K线图数据，时间间隔为{}:\n{}",
-            interval, candlesticks_json
-        ))
-        .await
-        .map_err(ChartAnalystError::PromptError)
+        let prompt_text = if self.locale == "zh" {
+            format!(
+                "分析这些K线图数据，时间间隔为{}:\n{}",
+                interval, candlesticks_json
+            )
+        } else {
+            format!(
+                "Analyze these candlesticks with interval {}:\n{}",
+                interval, candlesticks_json
+            )
+        };
+
+        self.agent
+            .prompt(prompt_text)
+            .await
+            .map_err(ChartAnalystError::PromptError)
     }
 }
 
@@ -137,7 +184,7 @@ impl ChartAnalyst {
     pub fn from_env_with_locale(
         locale: String,
     ) -> Result<Self, ChartAnalystError> {
-        let agent = make_language_aware_analyst(locale)
+        let agent = make_language_aware_analyst(locale.clone())
             .map_err(|_| ChartAnalystError::ApiKeyNotSet)?;
         Ok(Self { agent })
     }
