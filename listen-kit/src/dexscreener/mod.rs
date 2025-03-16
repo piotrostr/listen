@@ -24,8 +24,9 @@ pub async fn search_ticker(ticker: String) -> Result<DexScreenerResponse> {
 
     let mut dex_response: DexScreenerResponse = serde_json::from_value(data)?;
 
-    // sort by liquidity (highest first)
+    // Sort by a combined score of liquidity and volume
     dex_response.pairs.sort_by(|a, b| {
+        // Get liquidity values (default to 0.0 if not available)
         let a_liq = if a.liquidity.is_some() {
             a.liquidity.as_ref().unwrap().usd.unwrap_or(0.0)
         } else {
@@ -38,13 +39,32 @@ pub async fn search_ticker(ticker: String) -> Result<DexScreenerResponse> {
             0.0
         };
 
-        // Compare in reverse order (b compared to a) for descending sort
-        b_liq
-            .partial_cmp(&a_liq)
+        // Get 24h volume values (default to 0.0 if not available)
+        let a_vol = if a.volume.is_some() {
+            a.volume.as_ref().unwrap().h24.unwrap_or(0.0)
+        } else {
+            0.0
+        };
+
+        let b_vol = if b.volume.is_some() {
+            b.volume.as_ref().unwrap().h24.unwrap_or(0.0)
+        } else {
+            0.0
+        };
+
+        // Normalize the values to prevent one metric from dominating
+        // We'll use a simple combined score: liquidity + volume/100
+        // This gives liquidity more weight but still considers volume
+        let a_score = a_liq + (a_vol / 100.0);
+        let b_score = b_liq + (b_vol / 100.0);
+
+        // Compare in reverse order for descending sort
+        b_score
+            .partial_cmp(&a_score)
             .unwrap_or(std::cmp::Ordering::Equal)
     });
 
-    // take top 6
+    // take top 5
     dex_response.pairs.truncate(5);
 
     Ok(dex_response)
@@ -78,5 +98,12 @@ mod tests {
         .unwrap();
         tracing::debug!(?response, "search_by_mint");
         assert_eq!(response.schema_version, "1.0.0");
+    }
+
+    #[tokio::test]
+    async fn test_search_ticker_by_phrase() {
+        let response = search_ticker("TheLion".to_string()).await.unwrap();
+        assert_eq!(response.schema_version, "1.0.0");
+        println!("{:?}", response);
     }
 }
