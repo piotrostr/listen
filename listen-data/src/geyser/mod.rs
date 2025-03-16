@@ -45,19 +45,19 @@ pub fn make_raydium_geyser_instruction_pipeline(
     // Set up transaction filters to only process Raydium transactions
     let mut transaction_filters = HashMap::new();
     transaction_filters.insert(
-        "raydium_transaction_filter".to_string(),
+        "swap_transaction_filter".to_string(),
         SubscribeRequestFilterTransactions {
             vote: Some(false),
             failed: Some(false),
-            account_include: vec![],
-            account_exclude: vec![],
-            account_required: vec![
+            account_include: vec![
                 RAYDIUM_AMM_V4_PROGRAM_ID.to_string(),
                 RAYDIUM_CLMM_PROGRAM_ID.to_string(),
                 RAYDIUM_CPMM_PROGRAM_ID.to_string(),
                 METEORA_DLMM_PROGRAM_ID.to_string(),
                 WHIRLPOOLS_PROGRAM_ID.to_string(),
             ],
+            account_exclude: vec![],
+            account_required: vec![],
             signature: None,
         },
     );
