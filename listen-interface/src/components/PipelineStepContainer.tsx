@@ -136,7 +136,7 @@ export const TransactionLink = ({
     <div className="text-xs sm:text-sm text-gray-400 flex flex-wrap items-center gap-2">
       {renderStatus(status, t, error)}{" "}
       {transactionHash && (
-        <span className="flex items-center gap-1 inline-flex">
+        <span className="items-center gap-1 inline-flex">
           <a
             href={
               transactionHash.startsWith("0x")
