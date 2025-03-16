@@ -324,11 +324,58 @@ export const renderAddressOrTx = (text: string): string => {
   // Process the text by replacing matches with HTML links
   let processedText = text;
 
+  // Handle backtick-enclosed addresses and transactions
+  const backtickPattern = /`([^`]+)`/g;
+  let backtickMatch;
+
+  while ((backtickMatch = backtickPattern.exec(text)) !== null) {
+    const fullMatch = backtickMatch[0]; // The entire match including backticks
+    const content = backtickMatch[1]; // Just the content part (without backticks)
+
+    // Check if the content is a valid address or transaction
+    const isSolanaAddress = isValidSolanaAddress(content);
+    const isSolanaTx = isValidSolanaTransactionSignature(content);
+    const isEvmAddress = isValidEvmAddress(content);
+    const isEvmTx = isValidEvmTransaction(content);
+
+    if (isSolanaAddress || isSolanaTx || isEvmAddress || isEvmTx) {
+      let url;
+      let displayText;
+
+      if (isSolanaTx) {
+        url = `https://solscan.io/tx/${content}`;
+        displayText = `${content.slice(0, 4)}..${content.slice(-4)}`;
+      } else if (isSolanaAddress) {
+        url = `https://solscan.io/address/${content}`;
+        displayText = `${content.slice(0, 4)}..${content.slice(-4)}`;
+      } else if (isEvmTx) {
+        url = `https://blockscan.com/tx/${content}`;
+        displayText = content;
+      } else {
+        // isEvmAddress
+        url = `https://blockscan.com/address/${content}`;
+        displayText = content;
+      }
+
+      // Create the replacement with the link (without backticks)
+      const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${displayText}</a>`;
+
+      // Replace this specific occurrence
+      processedText =
+        processedText.substring(0, backtickMatch.index) +
+        replacement +
+        processedText.substring(backtickMatch.index + fullMatch.length);
+
+      // Adjust the regex lastIndex to account for the replacement
+      backtickPattern.lastIndex += replacement.length - fullMatch.length;
+    }
+  }
+
   // Special case for quoted transaction signatures - they need a more specific pattern
   const quotedTxPattern = /"([1-9A-HJ-NP-Za-km-z]{87,88})"/g;
   let quotedMatch;
 
-  while ((quotedMatch = quotedTxPattern.exec(text)) !== null) {
+  while ((quotedMatch = quotedTxPattern.exec(processedText)) !== null) {
     const fullMatch = quotedMatch[0]; // The entire match including quotes
     const txSignature = quotedMatch[1]; // Just the signature part (without quotes)
 

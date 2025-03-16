@@ -1,7 +1,6 @@
 import { ChatMessage } from "./ChatMessage";
 
 function embedResearchAnchors(message: string): string {
-  console.log("embedResearchAnchors", message);
   // First, temporarily replace escaped underscores in usernames
   // This handles cases like @Felixxx\_on\_sol/1898668765270909366
   let processableMessage = message;
