@@ -1,3 +1,4 @@
+use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
 use futures::StreamExt;
 use rig::agent::Agent;
@@ -52,6 +53,13 @@ impl ReasoningLoop {
     ) -> Result<Vec<Message>> {
         if tx.is_none() && !self.stdout {
             panic!("enable stdout or provide tx channel");
+        }
+
+        // Simple character-based check for token limit
+        if exceeds_token_limit(&prompt, &messages, 40_000) {
+            return Err(anyhow::anyhow!(
+                "Ahoy! Context is getting long, please start a new conversation",
+            ));
         }
 
         let mut current_messages = messages.clone();
