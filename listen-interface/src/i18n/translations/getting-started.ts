@@ -5,6 +5,8 @@ export const gettingStarted = {
       "I can help you trade, run custom strategies, or learn and research.",
     where_should_we_start: "Where should we start?",
     lets_make_a_trade: "Let's make a trade",
+    create_an_automated_strategy: "Create an automated strategy",
+    run_some_research: "Run some research",
     how_it_works: "How it works",
     how_it_works_description:
       "Listen is your single stop for on-chain trading with natural language",
@@ -22,6 +24,9 @@ export const gettingStarted = {
     listen_hi: "嗨，我是 Listen，你的个人加密经纪人。",
     listen_intro: "我可以帮助你交易、运行自定义策略或学习研究。",
     where_should_we_start: "我们应该从哪里开始？",
+    lets_make_a_trade: "让我们做一个交易",
+    create_an_automated_strategy: "创建一个自动化的策略",
+    run_some_research: "运行一些研究",
     how_it_works: "如何运作",
     how_it_works_description: "Listen 是您使用自然语言进行链上交易的一站式平台",
     step_1: "1. 创建账户（可使用邮箱或钱包）",

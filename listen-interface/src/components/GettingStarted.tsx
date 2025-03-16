@@ -1,15 +1,31 @@
 import { useTranslation } from "react-i18next";
+import { useMobile } from "../contexts/MobileContext";
 import { BetaWarning } from "./BetaWarning";
 
-const OutlineButton = ({ children }: { children: React.ReactNode }) => {
-  return <button>{children}</button>;
+const OutlineButton = ({ text }: { text: string }) => {
+  return (
+    <div className="relative inline-block">
+      <button className="relative z-10 px-6 py-3 rounded-2xl bg-[#151518] border border-white border-opacity-50">
+        <p className="font-['Space_Grotesk'] font-normal text-[18px] leading-[16px] text-white">
+          {text}
+        </p>
+      </button>
+    </div>
+  );
 };
 
 const GradientOutlineButton = ({ text }: { text: string }) => {
+  const { isMobile } = useMobile();
   return (
-    <div className="relative inline-block">
-      <button className="relative z-10 px-6 py-3 rounded-2xl bg-transparent border-2 border-transparent">
-        <p className="text-sm lg:text-base text-white">{text}</p>
+    <div
+      className={`relative flex h-[70px] ${isMobile ? "w-full" : ""} justify-center items-center`}
+    >
+      <button
+        className={`relative z-10 px-6 py-3 rounded-2xl bg-transparent border-2 border-transparent ${isMobile ? "w-full" : ""}`}
+      >
+        <p className="font-['Space_Grotesk'] font-weight-400 text-[18px] leading-[16px] text-white">
+          {text}
+        </p>
       </button>
       <div className="absolute inset-0">
         <svg
@@ -48,21 +64,27 @@ const GradientOutlineButton = ({ text }: { text: string }) => {
 
 export function GettingStarted() {
   const { t } = useTranslation();
+  const { isMobile } = useMobile();
 
   return (
     <div className="flex flex-col items-center gap-4 p-2 w-full overflow-hidden">
-      <div className="w-full max-w-2xl mx-auto flex flex-col items-center text-center gap-2">
-        <h2 className="text-xl lg:text-2xl font-bold mt-5 mb-2">
+      <div
+        className={`w-full max-w-2xl flex flex-col items-center ${isMobile ? "text-left" : "text-center"} gap-2 p-2`}
+      >
+        <h2 className="font-light text-[28px] leading-[40px] tracking-[-0.03em] mt-5 mb-2">
           {t("getting_started.listen_hi")}
         </h2>
-        <p className="text-sm lg:text-base">
+        <p className="font-light text-[28px] leading-[40px] tracking-[-0.03em]">
           {t("getting_started.listen_intro")}
         </p>
-        <p className="text-sm lg:text-base">
+        <p className="font-bold text-[28px] leading-[40px] tracking-[-0.03em]">
           {t("getting_started.where_should_we_start")}
         </p>
       </div>
       <GradientOutlineButton text={t("getting_started.lets_make_a_trade")} />
+      <OutlineButton text={t("getting_started.create_an_automated_strategy")} />
+      <OutlineButton text={t("getting_started.run_some_research")} />
+
       <BetaWarning />
     </div>
   );
