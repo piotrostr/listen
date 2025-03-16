@@ -74,6 +74,8 @@ pub fn exceeds_token_limit(
 
     let result = estimated_tokens > adjusted_limit;
 
+    tracing::info!("Context estimated at {} tokens", estimated_tokens);
+
     if result {
         tracing::warn!(
             "Context estimated at {} tokens > {} limit",
