@@ -1,3 +1,4 @@
+import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { useContext } from "react";
 import { useTranslation } from "react-i18next";
@@ -24,6 +25,7 @@ export function SimpleHeader({
   const { t } = useTranslation();
   const { isSidebarOpen, setIsSidebarOpen } = useContext(SidebarContext);
   const { isMobile } = useMobile();
+  const { user } = usePrivy();
 
   const togglePanel = (panelName: string) => {
     setActivePanel(activePanel === panelName ? null : panelName);
@@ -39,7 +41,7 @@ export function SimpleHeader({
     <div className="flex items-center justify-between h-16 sm:px-4">
       {/* Left side - Logo with hover effect */}
       <div className="flex items-center">
-        {isMobile && (
+        {isMobile && user !== null && (
           <div className="ml-3 mt-3">
             <BurgerIcon isOpen={isSidebarOpen} onClick={toggleMobileSidebar} />
           </div>
