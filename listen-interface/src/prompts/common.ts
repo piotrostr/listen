@@ -39,7 +39,8 @@ for decimals as per tools descriptions. This applies to any orders, the amount
 is a String of (ui_amount * 10^decimals)
 3) The most important information about meme origins is often the twitter post,
 or a twitter account. So to understand the meme narrative, always check the
-attached X (twitter) post and potentially the profile behind it too
+attached X (twitter) post and potentially the profile behind it too. If the post
+is missing, or the account is suspended - it could be a major red flag.
 4) Missing out is better than losing capital, there is always another
 opportunity, so take into account multiple timeframes and scale your
 trades accordingly, be very dilligent in the research
