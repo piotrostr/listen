@@ -1,4 +1,5 @@
 import React from "react";
+import { useSettingsStore } from "../store/settingsStore";
 import { ToolResult, ToolResultSchema, type Message } from "../types/message";
 import { ChatMessage } from "./ChatMessage";
 import { FundWallet } from "./FundWallet";
@@ -127,6 +128,7 @@ export function MessageRendererBase({
   message: Message;
   messages: Message[];
 }) {
+  const { debugMode } = useSettingsStore();
   if (!msg.message) return null;
 
   // this is to support previous version of message schema
@@ -144,7 +146,9 @@ export function MessageRendererBase({
   }
 
   if (msg.type === "ToolCall") {
-    // tool calls are rendered in the top-level
+    if (debugMode) {
+      return <ChatMessage message={msg.message} direction={msg.direction} />;
+    }
     return null;
   }
 

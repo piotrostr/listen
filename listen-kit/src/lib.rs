@@ -23,6 +23,8 @@ pub mod signer;
 
 pub mod tokenizer;
 
+pub mod chart_analyst;
+
 #[ctor::ctor]
 fn init() {
     dotenv::dotenv().ok();

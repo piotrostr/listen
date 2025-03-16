@@ -12,7 +12,7 @@ import {
 } from "../types/quote";
 import { TweetSchema } from "../types/x";
 import { SolanaBalance, SplTokenBalance } from "./Balances";
-import { InnerChart } from "./Chart";
+import { Chart, InnerChart } from "./Chart";
 import { ChatMessage } from "./ChatMessage";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
@@ -69,6 +69,46 @@ export const ToolMessage = ({
     return null;
   }, [messages, currentMessage.id, toolOutput.id]);
 
+  if (toolOutput.name === "fetch_price_action_analysis") {
+    try {
+      const [mint, interval] = useMemo(() => {
+        if (!matchingToolCall) return [null, "30s"];
+
+        try {
+          const params = JSON.parse(matchingToolCall.params);
+          return [params.mint, params.interval || "30s"];
+        } catch (e) {
+          console.error("Failed to parse tool call params:", e);
+          return [null, "30s"];
+        }
+      }, [matchingToolCall]);
+
+      if (mint) {
+        return (
+          <div className="text-gray-400">
+            <div className="h-[300px] mb-3">
+              <Chart mint={mint} interval={interval} />
+            </div>
+            <ChatMessage message={toolOutput.result} direction="agent" />
+          </div>
+        );
+      }
+
+      return (
+        <div className="text-gray-400">
+          <ChatMessage message={toolOutput.result} direction="agent" />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse price action analysis:", e);
+      return (
+        <div className="text-gray-400">
+          <ChatMessage message={toolOutput.result} direction="agent" />
+        </div>
+      );
+    }
+  }
+
   if (toolOutput.name === "get_spl_token_balance") {
     try {
       const parsed = SplTokenBalanceSchema.parse(JSON.parse(toolOutput.result));
@@ -114,6 +154,15 @@ export const ToolMessage = ({
       return <FetchXPostDisplay tweet={parsed} />;
     } catch (e) {
       console.error("Failed to parse tweet:", e);
+      if (toolOutput.result.includes("No tweet found")) {
+        return (
+          <div className="p-3">
+            <div className="text-orange-500 flex items-center gap-1">
+              <FaExclamationTriangle /> {t("tool_messages.no_tweet_found")}
+            </div>
+          </div>
+        );
+      }
       return <ChatMessage message={toolOutput.result} direction="agent" />;
     }
   }
@@ -130,7 +179,7 @@ export const ToolMessage = ({
       if (toolOutput.result.includes("Account suspended")) {
         return (
           <div className="text-orange-500">
-            <FaExclamationTriangle /> {t("pipelines.account_suspended")}
+            <FaExclamationTriangle /> {t("tool_messages.account_suspended")}
           </div>
         );
       }

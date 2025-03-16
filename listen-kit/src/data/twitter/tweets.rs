@@ -18,7 +18,7 @@ pub struct Tweet {
     pub like_count: Option<u32>,
     pub quote_count: Option<u32>,
     pub view_count: Option<u32>,
-    pub created_at: String,
+    pub created_at: Option<String>,
     pub lang: Option<String>,
     pub bookmark_count: Option<u32>,
     pub is_reply: Option<bool>,
@@ -47,9 +47,9 @@ pub struct Hashtag {
 
 #[derive(Debug, Deserialize, Serialize, Clone)]
 pub struct UserMention {
-    pub id_str: String,
-    pub name: String,
-    pub screen_name: String,
+    pub id_str: Option<String>,
+    pub name: Option<String>,
+    pub screen_name: Option<String>,
 }
 
 #[derive(Debug, Deserialize, Serialize, Clone)]

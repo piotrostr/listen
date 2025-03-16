@@ -3,11 +3,13 @@ import { initReactI18next } from "react-i18next";
 import { recommendedQuestions } from "./translations/recommended-questions";
 import { settings } from "./translations/settings";
 import { toolCalls } from "./translations/tool-calls";
+import { toolMessages } from "./translations/tool-messages";
 
 const resources = {
   en: {
     translation: {
       tool_calls: toolCalls.en,
+      tool_messages: toolMessages.en,
       getting_started: {
         how_it_works: "How it works",
         how_it_works_description:
@@ -256,6 +258,7 @@ const resources = {
         sell: "出售",
         no_assets_found: "未找到资产",
       },
+      tool_messages: toolMessages.zh,
     },
   },
 };
