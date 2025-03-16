@@ -3,9 +3,14 @@ import { useMobile } from "../contexts/MobileContext";
 import { BetaWarning } from "./BetaWarning";
 
 const OutlineButton = ({ text }: { text: string }) => {
+  const { isMobile } = useMobile();
   return (
-    <div className="relative inline-block">
-      <button className="relative z-10 px-6 py-3 rounded-2xl bg-[#151518] border border-white border-opacity-50">
+    <div
+      className={`relative inline-block ${isMobile ? "w-full" : ""} ${isMobile ? "h-[70px]" : ""}`}
+    >
+      <button
+        className={`relative z-10 px-6 py-3 rounded-2xl bg-[#151518] border border-white border-opacity-50 ${isMobile ? "w-full" : ""} ${isMobile ? "h-[70px]" : ""}`}
+      >
         <p className="font-['Space_Grotesk'] font-normal text-[18px] leading-[16px] text-white">
           {text}
         </p>
@@ -69,7 +74,7 @@ export function GettingStarted() {
   return (
     <div className="flex flex-col items-center gap-4 p-2 w-full overflow-hidden">
       <div
-        className={`w-full max-w-2xl flex flex-col items-center ${isMobile ? "text-left" : "text-center"} gap-2 p-2`}
+        className={`w-full max-w-2xl flex flex-col ${isMobile ? "items-start" : "items-center"} ${isMobile ? "text-left" : "text-center"} gap-2 p-2`}
       >
         <h2 className="font-light text-[28px] leading-[40px] tracking-[-0.03em] mt-5 mb-2">
           {t("getting_started.listen_hi")}

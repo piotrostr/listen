@@ -64,7 +64,7 @@ export const BurgerIcon = memo(function BurgerIcon({
             height="40"
             rx="20"
             fill="white"
-            fillOpacity="0.08"
+            fill-opacity="0.08"
           />
           <rect
             x="0.5"
@@ -72,23 +72,39 @@ export const BurgerIcon = memo(function BurgerIcon({
             width="39"
             height="39"
             rx="19.5"
-            stroke="url(#paint0_linear_2039_14744)"
-            strokeOpacity="0.16"
+            stroke="url(#paint0_linear_2135_2332)"
+            stroke-opacity="0.16"
           />
-          <circle cx="13" cy="20" r="2.5" fill="#D9D9D9" />
-          <circle cx="20" cy="20" r="2.5" fill="#D9D9D9" />
-          <circle cx="27" cy="20" r="2.5" fill="#D9D9D9" />
+          <path
+            fill-rule="evenodd"
+            clip-rule="evenodd"
+            d="M17.6585 27H22.3191V26.9993C23.2174 26.9993 23.9455 26.2712 23.9455 25.3729C23.9455 24.4746 23.2174 23.7465 22.3191 23.7465H19.285V14.6264C19.285 13.7281 18.5569 13 17.6585 13C16.7602 13 16.0321 13.7281 16.0321 14.6264V25.3736C16.0321 26.2719 16.7602 27 17.6585 27ZM11.4226 23.1259C11.4226 24.0242 12.1507 24.7523 13.049 24.7523C13.9474 24.7523 14.6754 24.0242 14.6754 23.1259V16.8749C14.6754 15.9766 13.9474 15.2485 13.049 15.2485C12.1507 15.2485 11.4226 15.9766 11.4226 16.8749V23.1259ZM22.3191 22.5038C21.4208 22.5038 20.6927 21.7757 20.6927 20.8774V14.6264C20.6927 13.7281 21.4208 13 22.3191 13C23.2175 13 23.9455 13.7281 23.9455 14.6264V20.8774C23.9455 21.7757 23.2175 22.5038 22.3191 22.5038ZM25.3016 23.1259C25.3016 24.0242 26.0296 24.7523 26.928 24.7523C27.8263 24.7523 28.5544 24.0242 28.5544 23.1259V16.8749C28.5544 15.9766 27.8263 15.2485 26.928 15.2485C26.0296 15.2485 25.3016 15.9766 25.3016 16.8749V23.1259ZM8.44952 21.6389C9.35463 21.6389 10.0884 20.9051 10.0884 20C10.0884 19.0949 9.35463 18.3612 8.44952 18.3612C7.54441 18.3612 6.81067 19.0949 6.81067 20C6.81067 20.9051 7.54441 21.6389 8.44952 21.6389ZM33.1894 20C33.1894 20.9051 32.4557 21.6389 31.5506 21.6389C30.6455 21.6389 29.9117 20.9051 29.9117 20C29.9117 19.0949 30.6455 18.3612 31.5506 18.3612C32.4557 18.3612 33.1894 19.0949 33.1894 20Z"
+            fill="url(#paint1_linear_2135_2332)"
+          />
           <defs>
             <linearGradient
-              id="paint0_linear_2039_14744"
+              id="paint0_linear_2135_2332"
               x1="20"
               y1="40"
               x2="20"
               y2="0"
               gradientUnits="userSpaceOnUse"
             >
-              <stop stopColor="white" stopOpacity="0" />
-              <stop offset="1" stopColor="white" />
+              <stop stop-color="white" stop-opacity="0" />
+              <stop offset="1" stop-color="white" />
+            </linearGradient>
+            <linearGradient
+              id="paint1_linear_2135_2332"
+              x1="6.81067"
+              y1="28.75"
+              x2="22.3664"
+              y2="-0.760711"
+              gradientUnits="userSpaceOnUse"
+            >
+              <stop stop-color="#FD98A2" />
+              <stop offset="0.315" stop-color="#FB2671" />
+              <stop offset="0.675" stop-color="#A42CCD" />
+              <stop offset="1" stop-color="#7F4AFB" />
             </linearGradient>
           </defs>
         </svg>
