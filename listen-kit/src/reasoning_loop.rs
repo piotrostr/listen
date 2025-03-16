@@ -1,4 +1,4 @@
-use crate::tokenizer::count_tokens;
+use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
 use futures::StreamExt;
 use rig::agent::Agent;
@@ -55,8 +55,8 @@ impl ReasoningLoop {
             panic!("enable stdout or provide tx channel");
         }
 
-        let token_count = estimate_token_count(&prompt, &messages)?;
-        if token_count > 40_000 {
+        // Simple character-based check for token limit
+        if exceeds_token_limit(&prompt, &messages, 40_000) {
             return Err(anyhow::anyhow!(
                 "Ahoy! Context is getting long, please start a new conversation",
             ));
@@ -232,40 +232,4 @@ impl ReasoningLoop {
         self.stdout = enabled;
         self
     }
-}
-
-#[timed::timed]
-pub fn estimate_token_count(
-    prompt: &str,
-    messages: &[Message],
-) -> Result<usize> {
-    let mut token_count = 0;
-
-    token_count += count_tokens(prompt)?;
-
-    for message in messages {
-        match message {
-            Message::User { content } => match content.first() {
-                UserContent::Text(text) => {
-                    token_count += count_tokens(&text.text)?;
-                }
-                UserContent::ToolResult(tool_result) => {
-                    match tool_result.content.first() {
-                        ToolResultContent::Text(text) => {
-                            token_count += count_tokens(&text.text)?;
-                        }
-                        _ => {}
-                    }
-                }
-                _ => {}
-            },
-            Message::Assistant { content } => match content.first() {
-                AssistantContent::Text(text) => {
-                    token_count += count_tokens(&text.text)?;
-                }
-                _ => {}
-            },
-        }
-    }
-    Ok(token_count)
 }

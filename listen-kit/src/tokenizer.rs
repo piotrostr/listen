@@ -1,6 +1,9 @@
 use std::sync::Mutex;
 
 use anyhow::Result;
+use rig::message::{
+    AssistantContent, Message, ToolResultContent, UserContent,
+};
 use tokenizers::tokenizer::{EncodeInput, Tokenizer};
 use tokenizers::InputSequence;
 
@@ -14,6 +17,75 @@ pub fn get_tokenizer() -> Tokenizer {
     Tokenizer::from_bytes(tokenizer_data).unwrap()
 }
 
+// Fast character-based estimation (English text averages ~4 chars per token)
+pub fn estimate_tokens(text: &str) -> usize {
+    // Average ratio of characters to tokens for English text
+    const CHARS_PER_TOKEN: f32 = 4.0;
+
+    (text.chars().count() as f32 / CHARS_PER_TOKEN).ceil() as usize
+}
+
+// Estimate tokens for a conversation based on character count
+pub fn estimate_conversation_tokens(
+    prompt: &str,
+    messages: &[Message],
+) -> usize {
+    let mut estimated_tokens = estimate_tokens(prompt);
+
+    for message in messages {
+        match message {
+            Message::User { content } => match content.first() {
+                UserContent::Text(text) => {
+                    estimated_tokens += estimate_tokens(&text.text);
+                }
+                UserContent::ToolResult(tool_result) => {
+                    match tool_result.content.first() {
+                        ToolResultContent::Text(text) => {
+                            estimated_tokens += estimate_tokens(&text.text);
+                        }
+                        _ => {}
+                    }
+                }
+                _ => {}
+            },
+            Message::Assistant { content } => match content.first() {
+                AssistantContent::Text(text) => {
+                    estimated_tokens += estimate_tokens(&text.text);
+                }
+                _ => {}
+            },
+        }
+    }
+
+    estimated_tokens
+}
+
+// Check if a conversation exceeds token limit using character-based estimation
+pub fn exceeds_token_limit(
+    prompt: &str,
+    messages: &[Message],
+    limit: usize,
+) -> bool {
+    // Use a conservative ratio to avoid false negatives
+    const SAFETY_FACTOR: f32 = 0.8;
+
+    let estimated_tokens = estimate_conversation_tokens(prompt, messages);
+    let adjusted_limit = (limit as f32 * SAFETY_FACTOR) as usize;
+
+    let result = estimated_tokens > adjusted_limit;
+
+    if result {
+        tracing::warn!(
+            "Context estimated at {} tokens > {} limit",
+            estimated_tokens,
+            adjusted_limit
+        );
+    }
+
+    result
+}
+
+// Keep these for compatibility, but they won't be used in the fast path
 pub fn tokenize(text: &str) -> Result<Vec<(u32, String)>> {
     let tokenizer = TOKENIZER.lock().unwrap();
 
