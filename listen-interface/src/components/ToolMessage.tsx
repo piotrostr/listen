@@ -69,6 +69,18 @@ export const ToolMessage = ({
     return null;
   }, [messages, currentMessage.id, toolOutput.id]);
 
+  if (toolOutput.name === "fetch_price_action_analysis") {
+    try {
+      return (
+        <div className="text-gray-400">
+          <ChatMessage message={toolOutput.result} direction="agent" />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse price action analysis:", e);
+    }
+  }
+
   if (toolOutput.name === "get_spl_token_balance") {
     try {
       const parsed = SplTokenBalanceSchema.parse(JSON.parse(toolOutput.result));
@@ -114,6 +126,15 @@ export const ToolMessage = ({
       return <FetchXPostDisplay tweet={parsed} />;
     } catch (e) {
       console.error("Failed to parse tweet:", e);
+      if (toolOutput.result.includes("No tweet found")) {
+        return (
+          <div className="p-3">
+            <div className="text-orange-500 flex items-center gap-1">
+              <FaExclamationTriangle /> {t("tool_messages.no_tweet_found")}
+            </div>
+          </div>
+        );
+      }
       return <ChatMessage message={toolOutput.result} direction="agent" />;
     }
   }
@@ -130,7 +151,7 @@ export const ToolMessage = ({
       if (toolOutput.result.includes("Account suspended")) {
         return (
           <div className="text-orange-500">
-            <FaExclamationTriangle /> {t("pipelines.account_suspended")}
+            <FaExclamationTriangle /> {t("tool_messages.account_suspended")}
           </div>
         );
       }
