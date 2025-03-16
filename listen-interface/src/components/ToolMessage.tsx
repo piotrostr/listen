@@ -1,10 +1,10 @@
-import { ReactNode } from "react";
+import { ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { FaExclamationTriangle } from "react-icons/fa";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
-import { ToolResult } from "../types/message";
+import { Message, ToolCallSchema, ToolResult } from "../types/message";
 import { TokenMetadataSchema } from "../types/metadata";
 import {
   JupiterQuoteResponseSchema,
@@ -26,8 +26,48 @@ import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
 const SplTokenBalanceSchema = z.tuple([z.string(), z.number(), z.string()]);
 
-export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
+const formatError = (error: string) => {
+  if (error.includes("Invalid param: could not find account")) {
+    return "Account not found";
+  }
+  return error;
+};
+
+export const ToolMessage = ({
+  toolOutput,
+  messages,
+  currentMessage,
+}: {
+  toolOutput: ToolResult;
+  messages: Message[];
+  currentMessage: Message;
+}) => {
   const { t } = useTranslation();
+
+  // Find the corresponding tool call for this tool result
+  const matchingToolCall = useMemo(() => {
+    if (!toolOutput.id) return null;
+
+    // Find the index of the current message
+    const currentIndex = messages.findIndex((m) => m.id === currentMessage.id);
+    if (currentIndex === -1) return null;
+
+    // Look backwards through messages to find the matching tool call
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      const message = messages[i];
+      if (message.type === "ToolCall") {
+        try {
+          const toolCall = ToolCallSchema.parse(JSON.parse(message.message));
+          if (toolCall.id === toolOutput.id) {
+            return toolCall;
+          }
+        } catch (e) {
+          console.error("Failed to parse tool call:", e);
+        }
+      }
+    }
+    return null;
+  }, [messages, currentMessage.id, toolOutput.id]);
 
   if (toolOutput.name === "get_spl_token_balance") {
     try {
@@ -42,6 +82,28 @@ export const ToolMessage = ({ toolOutput }: { toolOutput: ToolResult }) => {
         </div>
       );
     } catch (e) {
+      if (toolOutput.result.includes("data: Empty") && matchingToolCall) {
+        try {
+          const mint = JSON.parse(matchingToolCall.params).mint;
+          return (
+            <div className="p-3">
+              <div className="flex items-center gap-1">
+                <SplTokenBalance amount={"0"} decimals={0} mint={mint} />
+                <div className="relative group">
+                  <span className="text-orange-500 flex items-center gap-1 cursor-help">
+                    <FaExclamationTriangle />
+                  </span>
+                  <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-black/90 text-orange-500 p-2 rounded shadow-lg z-10 max-w-xs break-words w-[200px]">
+                    {formatError(toolOutput.result)}
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        } catch (e) {
+          console.error("Failed to parse tool call:", e);
+        }
+      }
       console.error("Failed to parse spl token balance:", e);
     }
   }

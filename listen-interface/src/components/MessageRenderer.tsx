@@ -120,7 +120,13 @@ function processTagsInMessage(
   }
 }
 
-export function MessageRendererBase({ message: msg }: { message: Message }) {
+export function MessageRendererBase({
+  message: msg,
+  messages,
+}: {
+  message: Message;
+  messages: Message[];
+}) {
   if (!msg.message) return null;
 
   // this is to support previous version of message schema
@@ -128,7 +134,13 @@ export function MessageRendererBase({ message: msg }: { message: Message }) {
     // tool call was tool result in v1, v2 there is a distinction, tool call is
     // passing params, tool result is the "tool output"
     const toolResult = handleLegacyMessage(msg);
-    return <ToolMessage toolOutput={toolResult} />;
+    return (
+      <ToolMessage
+        toolOutput={toolResult}
+        messages={messages}
+        currentMessage={msg}
+      />
+    );
   }
 
   if (msg.type === "ToolCall") {
@@ -138,7 +150,13 @@ export function MessageRendererBase({ message: msg }: { message: Message }) {
 
   if (msg.type === "ToolResult") {
     const toolOutput = ToolResultSchema.parse(JSON.parse(msg.message));
-    return <ToolMessage toolOutput={toolOutput} />;
+    return (
+      <ToolMessage
+        toolOutput={toolOutput}
+        messages={messages}
+        currentMessage={msg}
+      />
+    );
   }
 
   // Process each supported tag type

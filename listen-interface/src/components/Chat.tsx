@@ -54,7 +54,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
   const { t } = useTranslation();
 
-  const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>();
+  const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>(null);
 
   const RECOMMENDED_QUESTIONS_CAROUSEL = [
     {
@@ -205,7 +205,11 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
             </div>
           )}
           {messages.map((message) => (
-            <MessageRenderer key={message.id} message={message} />
+            <MessageRenderer
+              key={message.id}
+              message={message}
+              messages={messages}
+            />
           ))}
           <div className="flex flex-row items-center gap-2 pl-3">
             {isLoading && <ThinkingIndicator />}
