@@ -5,37 +5,39 @@ const OutlineButton = ({ children }: { children: React.ReactNode }) => {
   return <button>{children}</button>;
 };
 
-const GradientOutlineButton = ({ children }: { children: React.ReactNode }) => {
+const GradientOutlineButton = ({ text }: { text: string }) => {
   return (
-    <div className="relative">
-      {children}
+    <div className="relative inline-block">
+      <button className="relative z-10 px-6 py-3 rounded-2xl bg-transparent border-2 border-transparent">
+        <p className="text-sm lg:text-base text-white">{text}</p>
+      </button>
       <div className="absolute inset-0">
         <svg
-          width="358"
-          height="70"
+          className="w-full h-full"
+          preserveAspectRatio="none"
           viewBox="0 0 358 70"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
           <rect
-            width="358"
-            height="70"
+            width="100%"
+            height="100%"
             rx="16"
             fill="url(#paint0_linear_2033_12189)"
           />
           <defs>
             <linearGradient
               id="paint0_linear_2033_12189"
-              x1="1.20047e-05"
-              y1="40"
-              x2="358"
-              y2="35"
+              x1="0%"
+              y1="50%"
+              x2="100%"
+              y2="50%"
               gradientUnits="userSpaceOnUse"
             >
-              <stop stop-color="#FD98A2" />
-              <stop offset="0.315" stop-color="#FB2671" />
-              <stop offset="0.675" stop-color="#A42CCD" />
-              <stop offset="1" stop-color="#7F4AFB" />
+              <stop stopColor="#FD98A2" />
+              <stop offset="0.315" stopColor="#FB2671" />
+              <stop offset="0.675" stopColor="#A42CCD" />
+              <stop offset="1" stopColor="#7F4AFB" />
             </linearGradient>
           </defs>
         </svg>
@@ -60,11 +62,7 @@ export function GettingStarted() {
           {t("getting_started.where_should_we_start")}
         </p>
       </div>
-      <GradientOutlineButton>
-        <p className="text-sm lg:text-base text-white">
-          {t("getting_started.lets_make_a_trade")}
-        </p>
-      </GradientOutlineButton>
+      <GradientOutlineButton text={t("getting_started.lets_make_a_trade")} />
       <BetaWarning />
     </div>
   );
