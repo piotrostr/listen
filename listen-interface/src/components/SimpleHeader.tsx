@@ -16,20 +16,24 @@ interface SimpleHeaderProps {
   toggleMobileSidebar: () => void;
 }
 
-const WalletIcon = () => (
-  <svg
-    width="20"
-    height="18"
-    viewBox="0 0 20 18"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-  >
-    <path
-      d="M18 4V2C18 0.897 17.103 0 16 0H3C1.346 0 0 1.346 0 3V15C0 17.201 1.794 18 3 18H18C19.103 18 20 17.103 20 16V6C20 4.897 19.103 4 18 4ZM16 13H14V9H16V13ZM3 4C2.74252 3.98848 2.49941 3.87809 2.32128 3.69182C2.14315 3.50554 2.04373 3.25774 2.04373 3C2.04373 2.74226 2.14315 2.49446 2.32128 2.30818C2.49941 2.12191 2.74252 2.01152 3 2H16V4H3Z"
-      fill="#8DFC63"
-    />
-  </svg>
-);
+const WalletIcon = () => {
+  const { isVerySmallScreen } = useMobile();
+
+  return (
+    <svg
+      width={isVerySmallScreen ? "18" : "20"}
+      height={isVerySmallScreen ? "16" : "18"}
+      viewBox="0 0 20 18"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+    >
+      <path
+        d="M18 4V2C18 0.897 17.103 0 16 0H3C1.346 0 0 1.346 0 3V15C0 17.201 1.794 18 3 18H18C19.103 18 20 17.103 20 16V6C20 4.897 19.103 4 18 4ZM16 13H14V9H16V13ZM3 4C2.74252 3.98848 2.49941 3.87809 2.32128 3.69182C2.14315 3.50554 2.04373 3.25774 2.04373 3C2.04373 2.74226 2.14315 2.49446 2.32128 2.30818C2.49941 2.12191 2.74252 2.01152 3 2H16V4H3Z"
+        fill="#8DFC63"
+      />
+    </svg>
+  );
+};
 
 export function SimpleHeader({
   activePanel,
@@ -38,7 +42,7 @@ export function SimpleHeader({
 }: SimpleHeaderProps) {
   const { t } = useTranslation();
   const { isSidebarOpen, setIsSidebarOpen } = useContext(SidebarContext);
-  const { isMobile } = useMobile();
+  const { isMobile, isVerySmallScreen } = useMobile();
   const { user } = usePrivy();
 
   const togglePanel = (panelName: string) => {
@@ -54,10 +58,12 @@ export function SimpleHeader({
   return (
     <>
       {isMobile ? (
-        <div className="flex justify-between items-center w-full p-[16px] mt-2">
+        <div
+          className={`flex justify-between items-center w-full ${isVerySmallScreen ? "p-[12px]" : "p-[16px]"} ${isVerySmallScreen ? "mt-1" : "mt-2"}`}
+        >
           <BurgerIcon isOpen={isSidebarOpen} onClick={toggleMobileSidebar} />
           <div
-            className="text-white text-lg flex items-center gap-3"
+            className={`text-white ${isVerySmallScreen ? "text-base" : "text-lg"} flex items-center ${isVerySmallScreen ? "gap-2" : "gap-3"}`}
             onClick={user ? () => setActivePanel("portfolio") : () => {}}
           >
             <WalletIcon />${portfolioValue.toFixed(2)}
