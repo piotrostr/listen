@@ -20,6 +20,10 @@ Focus on identifying key patterns such as:
 6. Volatility assessment
 
 Provide a concise summary that highlights the most important patterns and what they might indicate about future price direction.
+
+If there is a major price spike/drop, you can include the % change of the move.
+
+Your answer should be brief, to-the-point and formatted in markdown.
 ";
 
 pub const DEFAULT_PREAMBLE_ZH: &str = "
@@ -34,6 +38,8 @@ pub const DEFAULT_PREAMBLE_ZH: &str = "
 6. 波动性评估
 
 提供简明扼要的总结，突出最重要的模式以及它们可能预示的未来价格方向。
+
+你的回答应该简短且格式化为markdown。
 ";
 
 #[async_trait::async_trait]
