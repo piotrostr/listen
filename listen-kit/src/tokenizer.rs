@@ -1,16 +1,22 @@
+#[cfg(feature = "tokenizer")]
 use std::sync::Mutex;
 
+#[cfg(feature = "tokenizer")]
 use anyhow::Result;
 use rig::message::{
     AssistantContent, Message, ToolResultContent, UserContent,
 };
+#[cfg(feature = "tokenizer")]
 use tokenizers::tokenizer::{EncodeInput, Tokenizer};
+#[cfg(feature = "tokenizer")]
 use tokenizers::InputSequence;
 
+#[cfg(feature = "tokenizer")]
 lazy_static::lazy_static! {
     static ref TOKENIZER: Mutex<Tokenizer> = Mutex::new(get_tokenizer());
 }
 
+#[cfg(feature = "tokenizer")]
 pub fn get_tokenizer() -> Tokenizer {
     let tokenizer_data = include_bytes!("../claude-v3-tokenizer.json");
 
@@ -88,6 +94,7 @@ pub fn exceeds_token_limit(
 }
 
 // Keep these for compatibility, but they won't be used in the fast path
+#[cfg(feature = "tokenizer")]
 pub fn tokenize(text: &str) -> Result<Vec<(u32, String)>> {
     let tokenizer = TOKENIZER.lock().unwrap();
 
@@ -106,6 +113,7 @@ pub fn tokenize(text: &str) -> Result<Vec<(u32, String)>> {
     }
 }
 
+#[cfg(feature = "tokenizer")]
 pub fn count_tokens(text: &str) -> Result<usize> {
     let tokenizer = TOKENIZER.lock().unwrap();
 

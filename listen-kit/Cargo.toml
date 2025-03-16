@@ -27,6 +27,7 @@ solana = [
   "spl-associated-token-account",
 ]
 evm = ["alloy", "uniswap-v3-sdk", "uniswap-sdk-core"]
+tokenizer = ["tokenizers", "lazy_static"]
 
 [dependencies]
 # Core dependencies
@@ -89,5 +90,5 @@ actix-web-lab = { version = "0.20", optional = true }
 tokio-stream = { version = "0.1.17", optional = true }
 jsonwebtoken = { version = "9.3.0", optional = true }
 redis = { version = "0.28.2", features = ["tokio-comp"], optional = true }
-tokenizers = "0.21.1"
-lazy_static = "1.5.0"
+tokenizers = { version = "0.21.1", optional = true }
+lazy_static = { version = "1.5.0", optional = true }
