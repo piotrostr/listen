@@ -8,22 +8,26 @@ import {
 
 interface MobileContextType {
   isMobile: boolean;
+  isVerySmallScreen: boolean;
   isIOS: boolean;
 }
 
 const MobileContext = createContext<MobileContextType>({
   isMobile: false,
+  isVerySmallScreen: false,
   isIOS: false,
 });
 
 export function MobileProvider({ children }: { children: ReactNode }) {
   const [isMobile, setIsMobile] = useState(false);
+  const [isVerySmallScreen, setIsVerySmallScreen] = useState(false);
   const [isIOS, setIsIOS] = useState(false);
 
   useEffect(() => {
-    // Detect if device is mobile
-    const checkMobile = () => {
+    // Detect if device is mobile or very small screen
+    const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 600);
+      setIsVerySmallScreen(window.innerWidth < 400);
     };
 
     // Detect iOS device
@@ -32,15 +36,15 @@ export function MobileProvider({ children }: { children: ReactNode }) {
       setIsIOS(/iphone|ipad|ipod/.test(userAgent));
     };
 
-    checkMobile();
+    checkScreenSize();
     checkIOS();
 
-    window.addEventListener("resize", checkMobile);
-    return () => window.removeEventListener("resize", checkMobile);
+    window.addEventListener("resize", checkScreenSize);
+    return () => window.removeEventListener("resize", checkScreenSize);
   }, []);
 
   return (
-    <MobileContext.Provider value={{ isMobile, isIOS }}>
+    <MobileContext.Provider value={{ isMobile, isVerySmallScreen, isIOS }}>
       {children}
     </MobileContext.Provider>
   );

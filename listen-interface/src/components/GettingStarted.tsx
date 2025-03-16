@@ -19,7 +19,8 @@ const VectorArrow = () => (
 );
 
 const OutlineButton = ({ text, arrow }: { text: string; arrow?: boolean }) => {
-  const { isMobile } = useMobile();
+  const { isMobile, isVerySmallScreen } = useMobile();
+
   return (
     <div
       className={`relative flex ${isMobile ? "w-full" : "w-[358px]"} justify-center items-center`}
@@ -29,7 +30,9 @@ const OutlineButton = ({ text, arrow }: { text: string; arrow?: boolean }) => {
           isMobile ? "w-full" : "w-[358px]"
         }`}
       >
-        <p className="font-['Space_Grotesk'] font-normal text-[16px] leading-[16px] text-white flex-grow text-center">
+        <p
+          className={`font-['Space_Grotesk'] font-normal ${isVerySmallScreen ? "text-[14px] leading-[14px]" : "text-[16px] leading-[16px]"} text-white flex-grow text-center`}
+        >
           {text}
         </p>
         {arrow && <VectorArrow />}
@@ -45,7 +48,8 @@ const GradientOutlineButton = ({
   text: string;
   arrow?: boolean;
 }) => {
-  const { isMobile } = useMobile();
+  const { isMobile, isVerySmallScreen } = useMobile();
+
   return (
     <div
       className={`relative flex ${isMobile ? "w-full" : "w-[358px]"} h-[56px] justify-center items-center`}
@@ -86,7 +90,9 @@ const GradientOutlineButton = ({
           isMobile ? "w-[calc(100%-4px)]" : "w-[354px]"
         }`}
       >
-        <p className="font-['Space_Grotesk'] font-normal text-[16px] leading-[16px] text-white text-center">
+        <p
+          className={`font-['Space_Grotesk'] font-normal ${isVerySmallScreen ? "text-[14px] leading-[14px]" : "text-[16px] leading-[16px]"} text-white text-center`}
+        >
           {text}
         </p>
         {arrow && <VectorArrow />}
@@ -97,22 +103,28 @@ const GradientOutlineButton = ({
 
 export function GettingStarted() {
   const { t } = useTranslation();
-  const { isMobile } = useMobile();
+  const { isMobile, isVerySmallScreen } = useMobile();
 
   return (
     <div className="flex flex-col items-center gap-4 p-2 w-full h-full overflow-hidden justify-between">
       <div
         className={`w-full max-w-2xl flex flex-col ${isMobile ? "items-start" : "items-center"} ${isMobile ? "text-left" : "text-center"} gap-2 p-2`}
       >
-        <h2 className="font-light text-[28px] leading-[40px] tracking-[-0.03em] mb-2">
+        <h2
+          className={`font-light ${isVerySmallScreen ? "text-[24px] leading-[36px]" : "text-[28px] leading-[40px]"} tracking-[-0.03em] mb-2`}
+        >
           {t("getting_started.listen_hi")}
         </h2>
-        <p className="font-light text-[28px] leading-[40px] tracking-[-0.03em]">
+        <p
+          className={`font-light ${isVerySmallScreen ? "text-[24px] leading-[36px]" : "text-[28px] leading-[40px]"} tracking-[-0.03em]`}
+        >
           {t("getting_started.listen_intro")}
         </p>
       </div>
       <div>
-        <p className="font-[500] text-[32px] leading-[40px] tracking-[-0.04em]">
+        <p
+          className={`font-[500] ${isVerySmallScreen ? "text-[28px] leading-[36px]" : "text-[32px] leading-[40px]"} tracking-[-0.04em]`}
+        >
           {t("getting_started.where_should_we_start")}
         </p>
       </div>
