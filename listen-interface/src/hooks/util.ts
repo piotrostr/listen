@@ -318,7 +318,6 @@ export const isValidEvmTransaction = (hash: string): boolean => {
 };
 
 export const renderTimestamps = (text: string): string => {
-  console.log("text", text);
   const timestampPattern = /(\d{10})/g;
   let match;
 

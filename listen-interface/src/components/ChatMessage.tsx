@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
-import { renderAddressOrTx, renderTimestamps } from "../hooks/util";
+import { renderAddressOrTx } from "../hooks/util";
 
 const sanitizeOutput = (message: string) => {
   const isProd = process.env.NODE_ENV === "production";
@@ -18,7 +18,7 @@ export const ChatMessage = ({
   direction: "incoming" | "outgoing" | "agent";
 }) => {
   // Process the message to identify addresses and transactions
-  const embeddedMessage = renderAddressOrTx(renderTimestamps(message));
+  const embeddedMessage = renderAddressOrTx(message);
   const sanitizedMessage = sanitizeOutput(embeddedMessage);
 
   if (!sanitizedMessage) {
