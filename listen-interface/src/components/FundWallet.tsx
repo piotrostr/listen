@@ -2,6 +2,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useFundWallet } from "@privy-io/react-auth/solana";
 import { useState } from "react";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { SolanaWalletCreation } from "./SolanaWalletCreation";
 import { Spinner } from "./Spinner";
 
 interface FundWalletProps {
@@ -27,12 +28,16 @@ export const FundWallet = ({ error = null }: FundWalletProps) => {
     }
   };
 
-  if (!ready || !user || !wallets?.solanaWallet) {
+  if (!ready || !user) {
     return (
       <div className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center justify-center">
         <Spinner />
       </div>
     );
+  }
+
+  if (!wallets?.solanaWallet) {
+    return <SolanaWalletCreation error={error} />;
   }
 
   return (
