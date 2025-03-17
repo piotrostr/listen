@@ -49,15 +49,14 @@ createRoot(document.getElementById("root")!).render(
               walletChainType: "ethereum-and-solana",
               walletList: [
                 "phantom",
-                "detected_solana_wallets",
+                "metamask",
                 "okx_wallet",
                 "bybit_wallet",
                 "coinbase_wallet",
-                "metamask",
                 "rainbow",
                 "wallet_connect",
                 "rabby_wallet",
-                "universal_profile",
+                "detected_solana_wallets",
               ],
             },
             externalWallets: {
