@@ -163,22 +163,104 @@ export function MessageRendererBase({
     );
   }
 
-  // Process each supported tag type
-  for (const tagName of Object.keys(tagHandlers)) {
-    const results = processTagsInMessage(msg.message, tagName, msg);
-    if (results) {
-      // If a custom wrapper is defined, use it
-      const handler = tagHandlers[tagName];
-      if (handler.wrapResults) {
-        return handler.wrapResults(results);
-      }
-      // Otherwise, use a simple div
-      return <div>{results}</div>;
-    }
+  // Check if the message contains any of our special tags
+  const hasSpecialTags = Object.keys(tagHandlers).some((tagName) => {
+    const tagRegex = new RegExp(`<${tagName}>.*?<\\/${tagName}>`, "s");
+    return tagRegex.test(msg.message);
+  });
+
+  if (hasSpecialTags) {
+    // Process the message with all supported tags
+    return processMessageWithAllTags(msg.message, msg, messages);
   }
 
   // Default case: render as a regular message
   return <ChatMessage message={msg.message} direction={msg.direction} />;
+}
+
+// New function to process a message with all supported tags
+function processMessageWithAllTags(
+  message: string,
+  msg: Message,
+  messages: Message[]
+): JSX.Element {
+  // Create a structure to track all tag positions
+  type TagPosition = {
+    tagName: string;
+    startIndex: number;
+    endIndex: number;
+    content: string;
+  };
+
+  const tagPositions: TagPosition[] = [];
+
+  // Find all tag positions for all supported tag types
+  Object.keys(tagHandlers).forEach((tagName) => {
+    const tagRegex = new RegExp(`<${tagName}>(.*?)<\\/${tagName}>`, "gs");
+    let match;
+
+    while ((match = tagRegex.exec(message)) !== null) {
+      tagPositions.push({
+        tagName,
+        startIndex: match.index,
+        endIndex: match.index + match[0].length,
+        content: match[1],
+      });
+    }
+  });
+
+  // Sort tag positions by their start index to maintain order
+  tagPositions.sort((a, b) => a.startIndex - b.startIndex);
+
+  // If no tags were found, return the original message
+  if (tagPositions.length === 0) {
+    return <ChatMessage message={message} direction={msg.direction} />;
+  }
+
+  // Split the message into parts
+  const result: JSX.Element[] = [];
+  let lastIndex = 0;
+
+  tagPositions.forEach((pos, index) => {
+    // Add text before the tag if there is any
+    if (pos.startIndex > lastIndex) {
+      const textBefore = message.substring(lastIndex, pos.startIndex);
+      if (textBefore.trim()) {
+        result.push(
+          <ChatMessage
+            key={`text-${index}`}
+            message={textBefore}
+            direction={msg.direction}
+          />
+        );
+      }
+    }
+
+    // Process the tag content
+    const handler = tagHandlers[pos.tagName];
+    if (handler) {
+      const processedTag = handler.processTag(pos.content, index, msg);
+      result.push(processedTag);
+    }
+
+    lastIndex = pos.endIndex;
+  });
+
+  // Add any remaining text after the last tag
+  if (lastIndex < message.length) {
+    const textAfter = message.substring(lastIndex);
+    if (textAfter.trim()) {
+      result.push(
+        <ChatMessage
+          key={`text-final`}
+          message={textAfter}
+          direction={msg.direction}
+        />
+      );
+    }
+  }
+
+  return <div>{result}</div>;
 }
 
 const handleLegacyMessage = (msg: Message): ToolResult => {
