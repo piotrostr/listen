@@ -67,60 +67,6 @@ const tagHandlers: Record<string, TagHandler> = {
   },
 };
 
-// Generic function to process tags in a message
-function processTagsInMessage(
-  message: string,
-  tagName: string,
-  msg: Message
-): JSX.Element[] | null {
-  const tagRegex = new RegExp(`<${tagName}>(.*?)<\\/${tagName}>`, "gs");
-  const tagMatches = [...message.matchAll(tagRegex)];
-
-  if (tagMatches.length === 0) {
-    return null;
-  }
-
-  const handler = tagHandlers[tagName];
-  if (!handler) {
-    console.warn(`No handler registered for tag: ${tagName}`);
-    return null;
-  }
-
-  try {
-    // Split the message by tags to maintain order
-    const messageParts = message.split(
-      new RegExp(`<${tagName}>.*?<\\/${tagName}>`, "s")
-    );
-    const result: JSX.Element[] = [];
-
-    // Process each part and tag content in order
-    for (let i = 0; i < messageParts.length; i++) {
-      // Add text part if it's not empty
-      if (messageParts[i].trim()) {
-        result.push(
-          <ChatMessage
-            key={`text-${tagName}-${i}`}
-            message={messageParts[i].trim()}
-            direction={msg.direction}
-          />
-        );
-      }
-
-      // Add tag content if available
-      if (i < tagMatches.length) {
-        const tagContent = tagMatches[i][1];
-        const processedTag = handler.processTag(tagContent, i, msg);
-        result.push(processedTag);
-      }
-    }
-
-    return result;
-  } catch (e) {
-    console.error(`Failed to process ${tagName} tags:`, e);
-    return null;
-  }
-}
-
 export function MessageRendererBase({
   message: msg,
   messages,
