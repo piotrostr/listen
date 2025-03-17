@@ -17,7 +17,7 @@ export const recommendedQuestions = {
     what_does_lp_mean: "What does LP mean?",
     how_to_manage_risk_when_trading_memecoins:
       "How to manage risk when trading memecoins?",
-    buy_the_solana_dip: "Buy the Solana dip",
+    buy_the_solana_dip: "Buy the BONK dip",
     research_arcdotfun_for_me: "Research $arc for me",
   },
   zh: {
@@ -35,7 +35,7 @@ export const recommendedQuestions = {
     what_does_lp_mean: "什么是 LP？",
     how_to_manage_risk_when_trading_memecoins:
       "如何管理交易 memecoins 的风险？",
-    buy_the_solana_dip: "购买 Solana 的下跌",
+    buy_the_solana_dip: "购买 BONK 的下跌",
     research_arcdotfun_for_me: "帮我研究 $arc",
   },
 };
