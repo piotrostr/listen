@@ -171,7 +171,7 @@ export function MessageRendererBase({
 
   if (hasSpecialTags) {
     // Process the message with all supported tags
-    return processMessageWithAllTags(msg.message, msg, messages);
+    return processMessageWithAllTags(msg.message, msg);
   }
 
   // Default case: render as a regular message
@@ -179,11 +179,7 @@ export function MessageRendererBase({
 }
 
 // New function to process a message with all supported tags
-function processMessageWithAllTags(
-  message: string,
-  msg: Message,
-  messages: Message[]
-): JSX.Element {
+function processMessageWithAllTags(message: string, msg: Message): JSX.Element {
   // Create a structure to track all tag positions
   type TagPosition = {
     tagName: string;
