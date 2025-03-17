@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { FaExclamationTriangle } from "react-icons/fa";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
+import { renderTimestamps } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import { Message, ToolCallSchema, ToolResult } from "../types/message";
 import { TokenMetadataSchema } from "../types/metadata";
@@ -95,7 +96,7 @@ export const ToolMessage = ({
             <div className="h-[300px] mb-3">
               <Chart mint={mint} interval={interval} />
             </div>
-            <ChatMessage message={parsed} direction="agent" />
+            <ChatMessage message={renderTimestamps(parsed)} direction="agent" />
           </div>
         );
       }

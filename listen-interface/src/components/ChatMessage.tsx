@@ -119,10 +119,10 @@ export const ChatMessage = ({
           ),
           code: ({ ...props }) => (
             <code
-              className="block bg-transparent rounded overflow-x-auto"
+              className="bg-transparent rounded overflow-x-auto inline"
               style={{
-                wordBreak: "break-all",
-                whiteSpace: "pre-wrap",
+                wordBreak: "normal",
+                whiteSpace: "normal",
               }}
               {...props}
             />

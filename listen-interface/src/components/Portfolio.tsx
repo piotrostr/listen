@@ -1,3 +1,4 @@
+import { usePrivy } from "@privy-io/react-auth";
 import { useFundWallet } from "@privy-io/react-auth/solana";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -10,6 +11,7 @@ import { PortfolioSkeleton } from "./PortfolioSkeleton";
 
 export function Portfolio() {
   const { solanaAddress } = useWalletStore();
+  const { user } = usePrivy();
   const {
     getCombinedPortfolio,
     isLoading,
@@ -45,6 +47,10 @@ export function Portfolio() {
 
   // Get assets using the selector
   const assets = getCombinedPortfolio();
+
+  if (!user) {
+    return <></>;
+  }
 
   if (isLoading && (!assets || assets.length === 0)) {
     return <PortfolioSkeleton />;

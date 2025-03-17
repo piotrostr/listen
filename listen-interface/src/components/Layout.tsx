@@ -14,6 +14,7 @@ import { SwipeHandler } from "./SwipeHandler";
 import { VersionAndLanguageDisplay } from "./VersionAndLanguage";
 import { WalletInitializer } from "./WalletInitializer";
 import { WebsocketInitializer } from "./WebsocketInitializer";
+
 // Memoize the BottomLink component
 const MemoizedBottomLink = memo(function BottomLink({
   href,
@@ -46,7 +47,13 @@ const MemoizedBottomLink = memo(function BottomLink({
 });
 
 // Add this near the top of the file, after imports
-export const SidebarContext = createContext<(open: boolean) => void>(() => {});
+export const SidebarContext = createContext<{
+  setIsSidebarOpen: (open: boolean) => void;
+  isSidebarOpen: boolean;
+}>({
+  setIsSidebarOpen: () => {},
+  isSidebarOpen: false,
+});
 
 function getBottomItems(t: (key: string) => string) {
   return [
@@ -115,7 +122,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <SidebarContext.Provider value={setIsSidebarOpen}>
+    <SidebarContext.Provider value={{ setIsSidebarOpen, isSidebarOpen }}>
       <WalletInitializer />
       <WebsocketInitializer />
       <div className="relative h-screen flex flex-col text-white overflow-hidden">
