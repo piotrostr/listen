@@ -10,7 +10,7 @@ import { Chat } from "../types/message";
 export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const navigate = useNavigate();
-  const { isMobile } = useMobile();
+  const { isMobile, isVerySmallScreen } = useMobile();
 
   const loadRecentChats = async () => {
     const allChats = await chatCache.getAll();
@@ -49,7 +49,11 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   return (
     <div
       className={`overflow-y-auto ${
-        isMobile ? "max-h-[28vh]" : "max-h-[43vh]"
+        isMobile
+          ? isVerySmallScreen
+            ? "max-h-[16.5vh]"
+            : "max-h-[28vh]"
+          : "max-h-[43vh]"
       } scrollbar-thin scrollbar-thumb-[#212121] scrollbar-track-transparent transition-all duration-300 ease-in-out`}
     >
       {recentChats.map((chat) => (
