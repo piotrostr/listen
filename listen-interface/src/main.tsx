@@ -57,6 +57,7 @@ createRoot(document.getElementById("root")!).render(
                 "rainbow",
                 "wallet_connect",
                 "rabby_wallet",
+                "universal_profile",
               ],
             },
             externalWallets: {
