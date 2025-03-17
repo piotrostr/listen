@@ -1,4 +1,5 @@
-import { usePrivy } from "@privy-io/react-auth";
+import { useGuestAccounts, usePrivy } from "@privy-io/react-auth";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMobile } from "../contexts/MobileContext";
 import { BetaWarning } from "./BetaWarning";
@@ -9,7 +10,19 @@ import { VersionDisplay } from "./VersionAndLanguage";
 export function GettingStarted() {
   const { t } = useTranslation();
   const { isMobile, isVerySmallScreen } = useMobile();
-  const { login, ready } = usePrivy();
+  const { ready } = usePrivy();
+  const { createGuestAccount } = useGuestAccounts();
+  const [isCreatingGuestAccount, setIsCreatingGuestAccount] = useState(false);
+
+  const handleContinue = async () => {
+    try {
+      setIsCreatingGuestAccount(true);
+      await createGuestAccount();
+      setIsCreatingGuestAccount(false);
+    } catch (error) {
+      console.error("Error creating guest account:", error);
+    }
+  };
 
   return (
     <div
@@ -28,68 +41,45 @@ export function GettingStarted() {
         >
           {t("getting_started.listen_intro")}
         </p>
-        {!isMobile && (
-          <div className="mt-5">
-            <GradientOutlineButton
-              text={t("getting_started.get_started")}
-              arrow={true}
-              onClick={login}
-              disabled={!ready}
-            />
-          </div>
-        )}
       </div>
-      {isMobile ? (
-        <>
-          <div>
-            <p
-              className={`font-[500] ${isVerySmallScreen ? "text-[28px] leading-[36px]" : "text-[32px] leading-[40px]"} tracking-[-0.04em]`}
-            >
-              {t("getting_started.where_should_we_start")}
-            </p>
-          </div>
-          <div
-            className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full`}
-          >
-            <GradientOutlineButton
-              text={t("getting_started.lets_make_a_trade")}
-              arrow={true}
-              onClick={login}
-              disabled={!ready}
-            />
-            <OutlineButton
-              text={t("getting_started.create_an_automated_strategy")}
-              onClick={login}
-              disabled={!ready}
-            />
-            <OutlineButton
-              text={t("getting_started.run_some_research")}
-              onClick={login}
-              disabled={!ready}
-            />
-            <OutlineButton
-              text={t("getting_started.skip")}
-              onClick={login}
-              disabled={!ready}
-            />
-          </div>
-          <div
-            className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full text-center text-xs justify-center items-center mb-1`}
-          >
-            <BetaWarning />
-            <VersionDisplay />
-          </div>
-        </>
-      ) : (
-        <>
-          <div
-            className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full text-center text-xs justify-center items-center mb-1`}
-          >
-            <BetaWarning />
-            <VersionDisplay />
-          </div>
-        </>
-      )}
+      <div>
+        <p
+          className={`font-[500] ${isVerySmallScreen ? "text-[28px] leading-[36px]" : "text-[32px] leading-[40px]"} tracking-[-0.04em]`}
+        >
+          {t("getting_started.where_should_we_start")}
+        </p>
+      </div>
+      <div
+        className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full justify-center items-center`}
+      >
+        <GradientOutlineButton
+          text={t("getting_started.lets_make_a_trade")}
+          arrow={true}
+          onClick={handleContinue}
+          disabled={!ready || isCreatingGuestAccount}
+        />
+        <OutlineButton
+          text={t("getting_started.create_an_automated_strategy")}
+          onClick={handleContinue}
+          disabled={!ready || isCreatingGuestAccount}
+        />
+        <OutlineButton
+          text={t("getting_started.run_some_research")}
+          onClick={handleContinue}
+          disabled={!ready || isCreatingGuestAccount}
+        />
+        <OutlineButton
+          text={t("getting_started.skip")}
+          onClick={handleContinue}
+          disabled={!ready || isCreatingGuestAccount}
+        />
+      </div>
+      <div
+        className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full text-center text-xs justify-center items-center mb-1`}
+      >
+        <BetaWarning />
+        <VersionDisplay />
+      </div>
     </div>
   );
 }
