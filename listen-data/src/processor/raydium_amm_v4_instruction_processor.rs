@@ -29,6 +29,7 @@ impl Processor for RaydiumAmmV4InstructionProcessor {
         data: Self::InputType,
         _metrics: Arc<MetricsCollection>,
     ) -> CarbonResult<()> {
+        self.swap_handler.metrics.increment_raydium_amm_v4_swaps();
         let (meta, instruction, nested_instructions) = data;
         match &instruction.data {
             RaydiumAmmV4Instruction::SwapBaseIn(_) => {

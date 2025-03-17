@@ -19,6 +19,9 @@ use std::collections::HashSet;
 use std::sync::Arc;
 use tracing::{debug, warn};
 
+static DEBUG: once_cell::sync::Lazy<bool> =
+    once_cell::sync::Lazy::new(|| std::env::var("DEBUG").is_ok());
+
 /// Validates whether a token transfer involves a known vault account.
 ///
 /// This function checks if either the source or destination address of a token transfer
@@ -185,11 +188,15 @@ async fn process_two_token_swap(
 
     metrics.set_latest_update_slot(transaction_metadata.slot);
 
-    // println!(
-    //     "Finished processing swap for slot {}, current timestamp: {}",
-    //     transaction_metadata.slot,
-    //     Utc::now().timestamp() as u64
-    // );
+    if *DEBUG {
+        println!(
+            "https://solscan.io/tx/{} {}: {} - {}",
+            transaction_metadata.signature,
+            transaction_metadata.slot,
+            price_update.name,
+            price_update.price,
+        );
+    }
 
     // Run all three database operations in parallel
     let db_future = db.insert_price(&price_update);

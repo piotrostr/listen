@@ -20,11 +20,31 @@ pub struct SwapMetrics {
     pub kv_insert_failure: AtomicU64,
     pub pending_swaps: AtomicU64,
     pub latest_update_slot: AtomicU64,
+    pub raydium_amm_v4_swaps: AtomicU64,
+    // pub raydium_clmm_swaps: AtomicU64, // TODO
+    pub raydium_cpmm_swaps: AtomicU64,
+    pub meteora_dlmm_swaps: AtomicU64,
+    pub whirlpools_swaps: AtomicU64,
 }
 
 impl SwapMetrics {
     pub fn new() -> Self {
         Self::default()
+    }
+    pub fn increment_raydium_amm_v4_swaps(&self) {
+        self.raydium_amm_v4_swaps.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn increment_raydium_cpmm_swaps(&self) {
+        self.raydium_cpmm_swaps.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn increment_meteora_dlmm_swaps(&self) {
+        self.meteora_dlmm_swaps.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn increment_whirlpools_swaps(&self) {
+        self.whirlpools_swaps.fetch_add(1, Ordering::Relaxed);
     }
 
     pub fn increment_total_swaps(&self) {
@@ -105,6 +125,10 @@ impl SwapMetrics {
 
     fn log_metrics(&self) {
         let total = self.total_swaps_processed.load(Ordering::Relaxed);
+        let raydium_amm_v4 = self.raydium_amm_v4_swaps.load(Ordering::Relaxed);
+        let raydium_cpmm = self.raydium_cpmm_swaps.load(Ordering::Relaxed);
+        let meteora_dlmm = self.meteora_dlmm_swaps.load(Ordering::Relaxed);
+        let whirlpools = self.whirlpools_swaps.load(Ordering::Relaxed);
         let pending = self.pending_swaps.load(Ordering::Relaxed);
         let successful = self.successful_swaps.load(Ordering::Relaxed);
         let failed = self.failed_swaps.load(Ordering::Relaxed);
@@ -137,6 +161,10 @@ impl SwapMetrics {
         info!(
             "Swap Processing Metrics:\n\
              Total Processed: {}\n\
+             Raydium AMM V4: {}\n\
+             Raydium CPMM: {}\n\
+             Meteora DLMM: {}\n\
+             Whirlpools: {}\n\
              Pending: {}\n\
              Successful: {} ({:.1}%)\n\
              Failed: {}\n\
@@ -154,6 +182,10 @@ impl SwapMetrics {
              KV Insert Failure: {}\n\
              Latest Update Slot: {}",
             total,
+            raydium_amm_v4,
+            raydium_cpmm,
+            meteora_dlmm,
+            whirlpools,
             pending,
             successful,
             success_rate,
