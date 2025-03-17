@@ -48,7 +48,7 @@ export function Portfolio() {
   // Get assets using the selector
   const assets = getCombinedPortfolio();
 
-  if (!user) {
+  if (!user || !solanaAddress) {
     return <></>;
   }
 

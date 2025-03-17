@@ -8,17 +8,28 @@ export const pickSystemPrompt = (
   portfolio: CompactPortfolio,
   defaultAmount: string,
   solanaWallet: string | null,
-  evmWallet: string | null
+  evmWallet: string | null,
+  isGuest: boolean
 ) => {
   if (chatType === "evm") {
     return systemPromptEvm(portfolio, evmWallet, solanaWallet);
   }
   if (agentMode) {
-    return systemPromptSolanaAgent(
+    const res = systemPromptSolanaAgent(
       portfolio,
       solanaWallet || "",
-      defaultAmount.toString()
+      defaultAmount.toString(),
+      isGuest
     );
+    console.log(res);
+    return res;
   }
-  return systemPromptSolana(portfolio, solanaWallet, defaultAmount.toString());
+  const res = systemPromptSolana(
+    portfolio,
+    solanaWallet,
+    defaultAmount.toString(),
+    isGuest
+  );
+  console.log(res);
+  return res;
 };

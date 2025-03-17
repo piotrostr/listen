@@ -14,7 +14,7 @@ export function ConnectedAccounts({ user }: ConnectedAccountsProps) {
   const { wallets: solanaWallets } = useSolanaWallets();
 
   const injectedSolanaWallets = solanaWallets.filter(
-    (wallet) => wallet.connectorType !== "embedded"
+    (wallet) => wallet.connectorType !== "embedded" && wallet.linked
   );
 
   const accounts = [

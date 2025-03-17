@@ -1,4 +1,4 @@
-import { useSolanaWallets, useWallets } from "@privy-io/react-auth";
+import { usePrivy, useSolanaWallets, useWallets } from "@privy-io/react-auth";
 import { useEffect, useRef } from "react";
 import { useWalletStore } from "../store/walletStore";
 
@@ -6,6 +6,7 @@ import { useWalletStore } from "../store/walletStore";
  * This component handles synchronization between Privy wallet state and wallet store
  */
 export function WalletInitializer() {
+  const { user } = usePrivy();
   const { ready: solanaReady, wallets: solanaWallets } = useSolanaWallets();
   const { ready: evmReady, wallets: evmWallets } = useWallets();
   const {
@@ -20,7 +21,7 @@ export function WalletInitializer() {
 
   // Effect to synchronize Privy wallets with our store
   useEffect(() => {
-    if (!solanaReady || !evmReady) return;
+    if (!solanaReady || !evmReady || !user) return;
 
     // Find the Privy wallets
     const solanaWallet = solanaWallets.find(
@@ -48,7 +49,14 @@ export function WalletInitializer() {
       // Update the store
       setWalletAddresses(newSolanaAddress, newEvmAddress);
     }
-  }, [solanaReady, evmReady, solanaWallets, evmWallets, setWalletAddresses]);
+  }, [
+    solanaReady,
+    evmReady,
+    solanaWallets,
+    evmWallets,
+    setWalletAddresses,
+    user,
+  ]);
 
   // This component doesn't render anything
   return null;

@@ -44,7 +44,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     agentMode,
     chatType,
   } = useSettingsStore();
-  const { getAccessToken } = usePrivy();
+  const { getAccessToken, user } = usePrivy();
   const {
     chatId,
     new: isNewChat,
@@ -198,7 +198,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           portfolio,
           defaultAmount.toString(),
           wallets?.solanaWallet?.toString() || null,
-          wallets?.evmWallet?.toString() || null
+          wallets?.evmWallet?.toString() || null,
+          user?.isGuest || true
         );
 
         const body = JSON.stringify({
