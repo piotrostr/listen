@@ -27,7 +27,7 @@ export function MobileProvider({ children }: { children: ReactNode }) {
     // Detect if device is mobile or very small screen
     const checkScreenSize = () => {
       setIsMobile(window.innerWidth < 600);
-      setIsVerySmallScreen(window.innerWidth < 400);
+      setIsVerySmallScreen(window.innerWidth < 390);
     };
 
     // Detect iOS device

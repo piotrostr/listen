@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { useEffect, useState } from "react";
+import { useMobile } from "../contexts/MobileContext";
 import { chatCache } from "../hooks/localStorage";
 import i18n from "../i18n";
 import { Chat } from "../types/message";
@@ -9,6 +10,7 @@ import { Chat } from "../types/message";
 export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const navigate = useNavigate();
+  const { isMobile, isVerySmallScreen } = useMobile();
 
   const loadRecentChats = async () => {
     const allChats = await chatCache.getAll();
@@ -45,7 +47,15 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   };
 
   return (
-    <div className="overflow-y-auto max-h-[43vh] scrollbar-thin scrollbar-thumb-[#212121] scrollbar-track-transparent transition-all duration-300 ease-in-out">
+    <div
+      className={`overflow-y-auto ${
+        isMobile
+          ? isVerySmallScreen
+            ? "max-h-[16.5vh]"
+            : "max-h-[28vh]"
+          : "max-h-[43vh]"
+      } scrollbar-thin scrollbar-thumb-[#212121] scrollbar-track-transparent transition-all duration-300 ease-in-out`}
+    >
       {recentChats.map((chat) => (
         <div
           key={chat.id}

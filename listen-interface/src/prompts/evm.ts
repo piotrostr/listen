@@ -14,11 +14,10 @@ export function systemPromptEvm(
   walletAddress: string | null,
   pubkey: string | null
 ) {
-  const hasWallet = walletAddress !== null;
   return `
   <personality>${personality}</personality>
   <knowledge>${pipelineKnowledge("evm")}</knowledge>
-  <guidelines>${guidelines("evm", undefined, hasWallet)}</guidelines>
+  <guidelines>${guidelines("evm", undefined)}</guidelines>
   <evm_address>${walletAddress ?? "null"}</evm_address>
   <solana_address>${pubkey ?? "null"}</solana_address>
   <portfolio>Portfolio: ${JSON.stringify(portfolio)} (prices in USD)</portfolio>

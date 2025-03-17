@@ -1,5 +1,6 @@
 import {
   useDelegatedActions,
+  useLogin,
   usePrivy,
   useSolanaWallets,
   type WalletWithMetadata,
@@ -19,9 +20,10 @@ export const SolanaWalletCreation = ({ error }: SolanaWalletCreationProps) => {
     createWallet: createSolanaWallet,
   } = useSolanaWallets();
   const { delegateWallet } = useDelegatedActions();
+  const { login } = useLogin();
 
   const [isCreating, setIsCreating] = useState(false);
-
+  const [isSignup, setIsSignup] = useState(false);
   const onCreateWallet = async () => {
     try {
       setIsCreating(true);
@@ -32,6 +34,29 @@ export const SolanaWalletCreation = ({ error }: SolanaWalletCreationProps) => {
       setIsCreating(false);
     }
   };
+
+  const handleSignup = () => {
+    try {
+      setIsSignup(true);
+      login();
+    } catch (error) {
+      console.error("Error signing up:", error);
+    } finally {
+      setIsSignup(false);
+    }
+  };
+
+  if (user?.isGuest) {
+    return (
+      <button
+        disabled={isSignup}
+        onClick={handleSignup}
+        className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-[#2D2D2D]"
+      >
+        {isSignup ? "Signing up..." : "Sign up"}
+      </button>
+    );
+  }
 
   // Find Solana embedded wallet to delegate
   const solanaWalletToDelegate = solanaWallets.find(

@@ -1,5 +1,10 @@
 import { addressBook, CompactPortfolio } from "../hooks/util";
-import { guidelines, personality, personalityAgent } from "./common";
+import {
+  guidelines,
+  onboarding,
+  personality,
+  personalityAgent,
+} from "./common";
 import { pipelineKnowledge } from "./pipelines";
 
 const solanaErrors = `
@@ -16,11 +21,14 @@ Only discuss limitations if the user would ask about something you cannot do
 export function systemPromptSolana(
   solanaPortfolio: CompactPortfolio,
   pubkey: string | null,
-  defaultAmount: string
+  defaultAmount: string,
+  isGuest: boolean
 ) {
+  const hasWallet = pubkey !== null && pubkey !== "";
   return `
   <personality>${personality}</personality>
   <guidelines>${guidelines("solana", defaultAmount)}</guidelines>
+  ${!hasWallet || isGuest ? `<onboarding>${onboarding(hasWallet, isGuest, "solana")}</onboarding>` : ""}
   <solana_address>${pubkey}</solana_address>
   <portfolio>Portfolio: ${JSON.stringify(solanaPortfolio)} (prices in USD)</portfolio>
   <address_book>Address book: ${JSON.stringify(addressBook["solana"])}</address_book>
@@ -32,12 +40,15 @@ export function systemPromptSolana(
 
 export function systemPromptSolanaAgent(
   solanaPortfolio: CompactPortfolio,
-  pubkey: string,
-  defaultAmount: string
+  pubkey: string | null,
+  defaultAmount: string,
+  isGuest: boolean
 ) {
+  const hasWallet = pubkey !== null && pubkey !== "";
   return `
   <personality>${personalityAgent}</personality>
-  <guidelines>${guidelines("solana", defaultAmount, true)}</guidelines>
+  <guidelines>${guidelines("solana", defaultAmount)}</guidelines>
+  ${!hasWallet || isGuest ? `<onboarding>${onboarding(hasWallet, isGuest, "solana")}</onboarding>` : ""}
   <solana_address>${pubkey}</solana_address>
   <portfolio>${JSON.stringify(solanaPortfolio)}</portfolio>
   <errors>${solanaErrors}</errors>

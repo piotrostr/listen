@@ -54,7 +54,7 @@ export const FundWallet = ({ error = null }: FundWalletProps) => {
     );
   }
 
-  if (!user) {
+  if (!user || user.isGuest) {
     return (
       <button
         disabled={isLogin}
