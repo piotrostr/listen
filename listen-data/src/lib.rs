@@ -8,6 +8,8 @@ fn init() {
 
 pub mod constants;
 pub mod diffs;
+pub mod handler;
+pub mod processor;
 
 #[cfg(feature = "rpc")]
 pub mod rpc;
@@ -22,8 +24,6 @@ pub mod metadata;
 pub mod metrics;
 pub mod price;
 pub mod process_swap;
-pub mod raydium_intruction_processor;
-pub mod raydium_processor;
 pub mod sol_price_stream;
 pub mod util;
 

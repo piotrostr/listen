@@ -214,7 +214,7 @@ pub fn get_token_balance_diff<T: TokenBalanceInfo + std::fmt::Debug>(
 /// * `amount` - The raw token amount being transferred (not adjusted for decimals)
 /// * `decimals` - Optional decimal precision of the token
 /// * `ui_amount` - The token amount in UI format (adjusted for decimals)
-#[derive(Debug, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, serde::Serialize, serde::Deserialize, Clone, PartialEq)]
 pub struct TokenTransferDetails {
     pub program_id: String,
     pub source: String,
@@ -232,10 +232,11 @@ pub struct TokenTransferDetails {
 /// conversion from various account types to TokenTransferDetails.
 ///
 /// # Parameters
-/// * `$account_type`: The type of the account to convert from
-/// * `$has_mint`: Whether the account has a mint field
-/// * `$program_id`: The program ID of the token program
-/// Returns a TokenTransferDetails struct
+/// * `$account_type`: The type of the token account to convert from
+/// * `$program_id`: The program ID of the token program (Token or Token-2022)
+///
+/// # Returns
+/// * A TokenTransferDetails struct with basic fields populated from the account
 macro_rules! impl_into_token_transfer_details_with_mint {
     ($account_type:ty, $program_id:expr) => {
         impl From<$account_type> for TokenTransferDetails {
@@ -415,7 +416,7 @@ impl TokenTransferProcessor {
 
     pub fn decode_token_transfer_with_vaults_from_nested_instructions(
         &self,
-        nested_instructions: &Vec<NestedInstruction>,
+        nested_instructions: &[NestedInstruction],
         mint_details: &HashMap<String, MintDetail>,
     ) -> Vec<TokenTransferDetails> {
         nested_instructions
@@ -430,6 +431,11 @@ impl TokenTransferProcessor {
     }
 }
 
+impl Default for TokenTransferProcessor {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 #[derive(Clone, Debug, serde::Serialize, serde::Deserialize)]
 pub struct MintDetail {
     pub mint: String,

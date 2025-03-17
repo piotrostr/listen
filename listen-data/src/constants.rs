@@ -26,6 +26,21 @@ pub const RAYDIUM_AUTHORITY_MINT_KEY_STR: &str =
 pub const RAYDIUM_AMM_V4_PROGRAM_ID: Pubkey =
     pubkey!("675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8");
 
+pub const RAYDIUM_AMM_V4_PROGRAM_ID_STR: &str =
+    "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8";
+
+pub const RAYDIUM_CLMM_PROGRAM_ID: Pubkey =
+    pubkey!("CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grKgrWqK");
+
+pub const RAYDIUM_CLMM_PROGRAM_ID_STR: &str =
+    "CAMMCzo5YL8w4VFF8KVHrK22GGUsp5VTaW7grKgrWqK";
+
+pub const RAYDIUM_CPMM_PROGRAM_ID: Pubkey =
+    pubkey!("CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C");
+
+pub const RAYDIUM_CPMM_PROGRAM_ID_STR: &str =
+    "CPMMoo8L3F4NbTegBCKVNunggL7H1ZpdTHKxQB5qKP1C";
+
 pub const WHIRLPOOLS_PROGRAM_ID: Pubkey =
     pubkey!("whirLbMiicVdio4qvUfM5KAg6Ct8VwpYzGff3uctyCc");
 

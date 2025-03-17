@@ -37,7 +37,7 @@ pub fn is_valid_vault_transfer(
 pub async fn process_swap(
     vaults: &HashSet<String>,
     transaction_metadata: &TransactionMetadata,
-    nested_instructions: &Vec<NestedInstruction>,
+    nested_instructions: &[NestedInstruction],
     message_queue: &RedisMessageQueue,
     kv_store: &Arc<RedisKVStore>,
     db: &Arc<ClickhouseDb>,
@@ -47,11 +47,11 @@ pub async fn process_swap(
     let _pending_guard = PendingSwapGuard(metrics);
 
     let mint_details =
-        extra_mint_details_from_tx_metadata(&transaction_metadata);
+        extra_mint_details_from_tx_metadata(transaction_metadata);
 
     let inner_transfers = SPL_TOKEN_TRANSFER_PROCESSOR
         .decode_token_transfer_with_vaults_from_nested_instructions(
-            &nested_instructions,
+            nested_instructions,
             &mint_details,
         );
     let transfers = inner_transfers
@@ -83,7 +83,7 @@ pub async fn process_swap(
     }
 
     process_two_token_swap(
-        &vaults,
+        vaults,
         &transfers,
         transaction_metadata,
         message_queue,
@@ -230,7 +230,7 @@ async fn process_two_token_swap(
 // Helper struct to decrement pending swaps when dropped
 struct PendingSwapGuard<'a>(&'a SwapMetrics);
 
-impl<'a> Drop for PendingSwapGuard<'a> {
+impl Drop for PendingSwapGuard<'_> {
     fn drop(&mut self) {
         self.0.decrement_pending_swaps();
     }
@@ -301,7 +301,7 @@ mod tests {
             ..
         } = process_token_transfers(&vaults, &diffs, 201.36).unwrap();
         let rounded_price = round_to_decimals(price, 4);
-        assert!(is_buy == false, "is_buy: {}", is_buy);
+        assert!(!is_buy, "is_buy: {}", is_buy);
         assert!(rounded_price == 0.0062, "price: {}", rounded_price);
         assert!(
             swap_amount == 8.56978344 * 201.36,
@@ -364,7 +364,7 @@ mod tests {
             "swap_amount: {}",
             swap_amount
         );
-        assert!(is_buy == true, "is_buy: {}", is_buy);
+        assert!(is_buy, "is_buy: {}", is_buy);
     }
 
     async fn get_transaction(
@@ -434,7 +434,7 @@ mod tests {
         )
         .expect("Failed to extract instructions with metadata.");
         let mint_details =
-            extra_mint_details_from_tx_metadata(&transaction_metadata);
+            extra_mint_details_from_tx_metadata(transaction_metadata);
         let nested_instructions: NestedInstructions =
             instructions_with_metadata.into();
         let mut swap_instruction: NestedInstruction =
@@ -451,7 +451,7 @@ mod tests {
                 &inner_instructions,
                 &mint_details,
             );
-        return Ok(transfers);
+        Ok(transfers)
     }
 
     #[tokio::test]
@@ -480,7 +480,7 @@ mod tests {
             "swap_amount: {}",
             rounded_swap_amount
         );
-        assert!(is_buy == false, "is_buy: {}", is_buy);
+        assert!(!is_buy, "is_buy: {}", is_buy);
     }
 
     #[tokio::test]
@@ -516,7 +516,7 @@ mod tests {
                 "swap_amount: {}",
                 rounded_swap_amount
             );
-            assert!(is_buy == true, "is_buy: {}", is_buy);
+            assert!(is_buy, "is_buy: {}", is_buy);
         }
 
         // 2.5 - Meteora DLMM Program: swap
@@ -548,7 +548,7 @@ mod tests {
                 "swap_amount: {}",
                 rounded_swap_amount
             );
-            assert!(is_buy == false, "is_buy: {}", is_buy);
+            assert!(!is_buy, "is_buy: {}", is_buy);
         }
     }
 
@@ -585,7 +585,7 @@ mod tests {
                 "swap_amount: {}",
                 rounded_swap_amount
             );
-            assert!(is_buy == false, "is_buy: {}", is_buy);
+            assert!(!is_buy, "is_buy: {}", is_buy);
         }
 
         // 3.6 - Meteora DLMM Program: swap
@@ -617,7 +617,7 @@ mod tests {
                 "swap_amount: {}",
                 rounded_swap_amount
             );
-            assert!(is_buy == false, "is_buy: {}", is_buy);
+            assert!(!is_buy, "is_buy: {}", is_buy);
         }
 
         // 3.11 - Meteora DLMM Program: swap
@@ -650,7 +650,7 @@ mod tests {
                 "swap_amount: {}",
                 rounded_swap_amount
             );
-            assert!(is_buy == true, "is_buy: {}", is_buy);
+            assert!(is_buy, "is_buy: {}", is_buy);
         }
 
         // 3.16 - Raydium Liquidity Pool V4: raydium:swap
@@ -682,7 +682,7 @@ mod tests {
                 "swap_amount: {}",
                 rounded_swap_amount
             );
-            assert!(is_buy == true, "is_buy: {}", is_buy);
+            assert!(is_buy, "is_buy: {}", is_buy);
         }
     }
 }
