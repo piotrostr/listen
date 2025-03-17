@@ -47,6 +47,17 @@ createRoot(document.getElementById("root")!).render(
             appearance: {
               theme: "dark",
               walletChainType: "ethereum-and-solana",
+              walletList: [
+                "phantom",
+                "detected_solana_wallets",
+                "okx_wallet",
+                "bybit_wallet",
+                "coinbase_wallet",
+                "metamask",
+                "rainbow",
+                "wallet_connect",
+                "rabby_wallet",
+              ],
             },
             externalWallets: {
               solana: {
