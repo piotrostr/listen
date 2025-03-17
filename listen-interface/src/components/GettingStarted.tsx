@@ -1,8 +1,10 @@
 import { useGuestAccounts, usePrivy } from "@privy-io/react-auth";
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMobile } from "../contexts/MobileContext";
 import { BetaWarning } from "./BetaWarning";
+import { FullPageLoading } from "./FullPageLoading";
 import { GradientOutlineButton } from "./GradientOutlineButton";
 import { OutlineButton } from "./OutlineButton";
 import { VersionDisplay } from "./VersionAndLanguage";
@@ -13,16 +15,34 @@ export function GettingStarted() {
   const { ready } = usePrivy();
   const { createGuestAccount } = useGuestAccounts();
   const [isCreatingGuestAccount, setIsCreatingGuestAccount] = useState(false);
+  const navigate = useNavigate();
 
-  const handleContinue = async () => {
+  const handleContinue = async (prompt?: string) => {
     try {
       setIsCreatingGuestAccount(true);
       await createGuestAccount();
       setIsCreatingGuestAccount(false);
+      if (prompt) {
+        await navigate({
+          to: "/",
+          search: {
+            message: prompt,
+            new: true,
+          },
+        });
+      } else {
+        await navigate({
+          to: "/",
+        });
+      }
     } catch (error) {
       console.error("Error creating guest account:", error);
     }
   };
+
+  if (isCreatingGuestAccount) {
+    return <FullPageLoading />;
+  }
 
   return (
     <div
@@ -55,22 +75,24 @@ export function GettingStarted() {
         <GradientOutlineButton
           text={t("getting_started.lets_make_a_trade")}
           arrow={true}
-          onClick={handleContinue}
+          onClick={() => handleContinue(t("getting_started.lets_make_a_trade"))}
           disabled={!ready || isCreatingGuestAccount}
         />
         <OutlineButton
           text={t("getting_started.create_an_automated_strategy")}
-          onClick={handleContinue}
+          onClick={() =>
+            handleContinue(t("getting_started.create_an_automated_strategy"))
+          }
           disabled={!ready || isCreatingGuestAccount}
         />
         <OutlineButton
           text={t("getting_started.run_some_research")}
-          onClick={handleContinue}
+          onClick={() => handleContinue(t("getting_started.run_some_research"))}
           disabled={!ready || isCreatingGuestAccount}
         />
         <OutlineButton
           text={t("getting_started.skip")}
-          onClick={handleContinue}
+          onClick={() => handleContinue()}
           disabled={!ready || isCreatingGuestAccount}
         />
       </div>
