@@ -54,7 +54,7 @@ pub fn make_geyser_pipeline(
                 RAYDIUM_CPMM_PROGRAM_ID.to_string(),
                 METEORA_DLMM_PROGRAM_ID.to_string(),
                 WHIRLPOOLS_PROGRAM_ID.to_string(),
-                // RAYDIUM_CLMM_PROGRAM_ID.to_string(),
+                // RAYDIUM_CLMM_PROGRAM_ID.to_string()
             ],
             account_exclude: vec![],
             account_required: vec![],
