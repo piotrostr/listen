@@ -20,7 +20,7 @@ use yellowstone_grpc_proto::geyser::{
 use crate::{
     constants::{
         METEORA_DLMM_PROGRAM_ID, RAYDIUM_AMM_V4_PROGRAM_ID,
-        /*RAYDIUM_CLMM_PROGRAM_ID,*/ RAYDIUM_CPMM_PROGRAM_ID,
+        RAYDIUM_CLMM_PROGRAM_ID, RAYDIUM_CPMM_PROGRAM_ID,
         WHIRLPOOLS_PROGRAM_ID,
     },
     db::ClickhouseDb,
@@ -51,10 +51,10 @@ pub fn make_geyser_pipeline(
             failed: Some(false),
             account_include: vec![
                 RAYDIUM_AMM_V4_PROGRAM_ID.to_string(),
+                RAYDIUM_CLMM_PROGRAM_ID.to_string(),
                 RAYDIUM_CPMM_PROGRAM_ID.to_string(),
                 METEORA_DLMM_PROGRAM_ID.to_string(),
                 WHIRLPOOLS_PROGRAM_ID.to_string(),
-                // RAYDIUM_CLMM_PROGRAM_ID.to_string()
             ],
             account_exclude: vec![],
             account_required: vec![],

@@ -28,6 +28,7 @@ impl Processor for RaydiumClmmInstructionProcessor {
         data: Self::InputType,
         _metrics: Arc<MetricsCollection>,
     ) -> CarbonResult<()> {
+        self.swap_handler.metrics.increment_raydium_clmm_swaps();
         let (meta, instruction, nested_instructions) = data;
         match &instruction.data {
             RaydiumClmmInstruction::Swap(_e) => {

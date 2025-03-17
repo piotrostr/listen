@@ -21,7 +21,7 @@ pub struct SwapMetrics {
     pub pending_swaps: AtomicU64,
     pub latest_update_slot: AtomicU64,
     pub raydium_amm_v4_swaps: AtomicU64,
-    // pub raydium_clmm_swaps: AtomicU64, // TODO
+    pub raydium_clmm_swaps: AtomicU64,
     pub raydium_cpmm_swaps: AtomicU64,
     pub meteora_dlmm_swaps: AtomicU64,
     pub whirlpools_swaps: AtomicU64,
@@ -33,6 +33,10 @@ impl SwapMetrics {
     }
     pub fn increment_raydium_amm_v4_swaps(&self) {
         self.raydium_amm_v4_swaps.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn increment_raydium_clmm_swaps(&self) {
+        self.raydium_clmm_swaps.fetch_add(1, Ordering::Relaxed);
     }
 
     pub fn increment_raydium_cpmm_swaps(&self) {
