@@ -317,6 +317,21 @@ export const isValidEvmTransaction = (hash: string): boolean => {
   return evmTxRegex.test(hash);
 };
 
+export const renderTimestamps = (text: string): string => {
+  console.log("text", text);
+  const timestampPattern = /(\d{10})/g;
+  let match;
+
+  while ((match = timestampPattern.exec(text)) !== null) {
+    const timestamp = match[1];
+    const date = new Date(parseInt(timestamp) * 1000);
+    const formattedDate = date.toLocaleString();
+    text = text.replace(match[0], formattedDate);
+  }
+
+  return text;
+};
+
 // Render addresses and transaction hashes as links
 export const renderAddressOrTx = (text: string): string => {
   if (!text) return "";

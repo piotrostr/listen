@@ -1,6 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
-import { renderAddressOrTx } from "../hooks/util";
+import { renderAddressOrTx, renderTimestamps } from "../hooks/util";
 
 const sanitizeOutput = (message: string) => {
   const isProd = process.env.NODE_ENV === "production";
@@ -18,7 +18,7 @@ export const ChatMessage = ({
   direction: "incoming" | "outgoing" | "agent";
 }) => {
   // Process the message to identify addresses and transactions
-  const embeddedMessage = renderAddressOrTx(message);
+  const embeddedMessage = renderAddressOrTx(renderTimestamps(message));
   const sanitizedMessage = sanitizeOutput(embeddedMessage);
 
   if (!sanitizedMessage) {
@@ -119,10 +119,10 @@ export const ChatMessage = ({
           ),
           code: ({ ...props }) => (
             <code
-              className="block bg-transparent rounded overflow-x-auto"
+              className="bg-transparent rounded overflow-x-auto inline"
               style={{
-                wordBreak: "break-all",
-                whiteSpace: "pre-wrap",
+                wordBreak: "normal",
+                whiteSpace: "normal",
               }}
               {...props}
             />
