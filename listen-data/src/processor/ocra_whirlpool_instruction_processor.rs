@@ -28,6 +28,7 @@ impl Processor for OcraWhirlpoolInstructionProcessor {
         data: Self::InputType,
         _metrics: Arc<MetricsCollection>,
     ) -> CarbonResult<()> {
+        self.swap_handler.metrics.increment_whirlpools_swaps();
         let (meta, instruction, nested_instructions) = data;
         if let OrcaWhirlpoolInstruction::Swap(_) = &instruction.data {
             let accounts = Swap::arrange_accounts(&instruction.accounts);

@@ -1,7 +1,7 @@
 use anyhow::Result;
 use clap::Parser;
 use listen_data::{
-    geyser::make_raydium_geyser_instruction_pipeline,
+    geyser::make_geyser_pipeline,
     metrics::SwapMetrics,
     sol_price_stream::SolPriceCache,
     util::{make_db, make_kv_store, make_message_queue},
@@ -15,7 +15,7 @@ pub struct Args {}
 #[tokio::main]
 async fn main() -> Result<()> {
     listen_tracing::setup_tracing();
-    if !std::env::var("IS_SYSTEMD_SERVICE").is_ok() {
+    if std::env::var("IS_SYSTEMD_SERVICE").is_err() {
         dotenv::dotenv().expect("Failed to load .env file");
     }
     info!("Starting geyser indexer...");
@@ -30,12 +30,8 @@ async fn main() -> Result<()> {
 
     info!("Solana price: {}", price_cache.get_price().await);
 
-    let mut pipeline = make_raydium_geyser_instruction_pipeline(
-        kv_store,
-        message_queue,
-        db,
-        swap_metrics,
-    )?;
+    let mut pipeline =
+        make_geyser_pipeline(kv_store, message_queue, db, swap_metrics)?;
 
     tokio::spawn(async move {
         if let Err(e) = price_cache.start_price_stream().await {

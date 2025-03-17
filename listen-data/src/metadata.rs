@@ -99,10 +99,35 @@ impl TokenMetadata {
             .await
             .context("failed to get token account")?;
 
-        let data = token_account.value.context("Token account not found")?.data;
+        let account = token_account.value.context("Token account not found")?;
+        let data = &account.data;
 
-        let token_data =
-            Mint::unpack(&data).context("failed to unpack mint data")?;
+        // Check the owner to determine if it's a Token-2022 mint
+        let token_2022_program_id =
+            Pubkey::from_str("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb")
+                .unwrap();
+        let standard_token_program_id =
+            Pubkey::from_str("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
+                .unwrap();
+
+        let token_data = if account.owner == token_2022_program_id {
+            warn!(
+                mint,
+                "detected Token-2022 mint, FIXME: currently missing support"
+            );
+            // For Token-2022, we still use the same Mint structure for basic fields
+            // The structure is the same for the base fields we care about
+            Mint::unpack(data)
+                .context("failed to unpack Token-2022 mint data")?
+        } else if account.owner == standard_token_program_id {
+            debug!(mint, "detected standard SPL Token mint");
+            Mint::unpack(data).context("failed to unpack mint data")?
+        } else {
+            return Err(anyhow::anyhow!(
+                "Unknown token program owner: {}",
+                account.owner
+            ));
+        };
 
         debug!(mint, "spl metadata fetch ok");
 
@@ -291,5 +316,18 @@ mod tests {
             ),
             Some("QmNez6GhGsCYmcW34StMuRw4CWRHZurXmUurQdePV5XcAe".to_string())
         );
+    }
+
+    #[tokio::test]
+    #[ignore = "FIXME: currently missing support"]
+    async fn test_spl_2022_mint() {
+        let metadata = TokenMetadata::fetch_spl_by_mint(
+            "6J7mUbPXcAASzmG4k3umUnT1zaSw97WwduJM2aKJCeiF",
+        )
+        .await
+        .unwrap();
+
+        println!("{:?}", metadata);
+        assert!(metadata.is_initialized);
     }
 }

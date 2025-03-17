@@ -4,7 +4,7 @@ use carbon_log_metrics::LogMetrics;
 use carbon_meteora_dlmm_decoder::MeteoraDlmmDecoder;
 use carbon_orca_whirlpool_decoder::OrcaWhirlpoolDecoder;
 use carbon_raydium_amm_v4_decoder::RaydiumAmmV4Decoder;
-use carbon_raydium_clmm_decoder::RaydiumClmmDecoder;
+// use carbon_raydium_clmm_decoder::RaydiumClmmDecoder;
 use carbon_raydium_cpmm_decoder::RaydiumCpmmDecoder;
 use carbon_yellowstone_grpc_datasource::YellowstoneGrpcGeyserClient;
 use std::{
@@ -20,7 +20,7 @@ use yellowstone_grpc_proto::geyser::{
 use crate::{
     constants::{
         METEORA_DLMM_PROGRAM_ID, RAYDIUM_AMM_V4_PROGRAM_ID,
-        RAYDIUM_CLMM_PROGRAM_ID, RAYDIUM_CPMM_PROGRAM_ID,
+        /*RAYDIUM_CLMM_PROGRAM_ID,*/ RAYDIUM_CPMM_PROGRAM_ID,
         WHIRLPOOLS_PROGRAM_ID,
     },
     db::ClickhouseDb,
@@ -30,20 +30,20 @@ use crate::{
     metrics::SwapMetrics,
     processor::{
         MeteoraDlmmInstructionProcessor, OcraWhirlpoolInstructionProcessor,
-        RaydiumAmmV4InstructionProcessor, RaydiumClmmInstructionProcessor,
+        RaydiumAmmV4InstructionProcessor, /*RaydiumClmmInstructionProcessor,*/
         RaydiumCpmmInstructionProcessor,
     },
     util::must_get_env,
 };
 
-pub fn make_raydium_geyser_instruction_pipeline(
+pub fn make_geyser_pipeline(
     kv_store: Arc<RedisKVStore>,
     message_queue: Arc<RedisMessageQueue>,
     db: Arc<ClickhouseDb>,
     metrics: Arc<SwapMetrics>,
 ) -> Result<Pipeline> {
-    // Set up transaction filters to only process Raydium transactions
     let mut transaction_filters = HashMap::new();
+    // TODO support TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb (other token program)
     transaction_filters.insert(
         "swap_transaction_filter".to_string(),
         SubscribeRequestFilterTransactions {
@@ -51,10 +51,10 @@ pub fn make_raydium_geyser_instruction_pipeline(
             failed: Some(false),
             account_include: vec![
                 RAYDIUM_AMM_V4_PROGRAM_ID.to_string(),
-                RAYDIUM_CLMM_PROGRAM_ID.to_string(),
                 RAYDIUM_CPMM_PROGRAM_ID.to_string(),
                 METEORA_DLMM_PROGRAM_ID.to_string(),
                 WHIRLPOOLS_PROGRAM_ID.to_string(),
+                // RAYDIUM_CLMM_PROGRAM_ID.to_string()
             ],
             account_exclude: vec![],
             account_required: vec![],
@@ -85,10 +85,6 @@ pub fn make_raydium_geyser_instruction_pipeline(
             RaydiumAmmV4InstructionProcessor::new(token_swap_handler.clone()),
         )
         .instruction(
-            RaydiumClmmDecoder,
-            RaydiumClmmInstructionProcessor::new(token_swap_handler.clone()),
-        )
-        .instruction(
             RaydiumCpmmDecoder,
             RaydiumCpmmInstructionProcessor::new(token_swap_handler.clone()),
         )
@@ -100,6 +96,10 @@ pub fn make_raydium_geyser_instruction_pipeline(
             OrcaWhirlpoolDecoder,
             OcraWhirlpoolInstructionProcessor::new(token_swap_handler.clone()),
         )
+        // .instruction(
+        //     RaydiumClmmDecoder,
+        //     RaydiumClmmInstructionProcessor::new(token_swap_handler.clone()),
+        // )
         .build()?;
 
     Ok(pipeline)

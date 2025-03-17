@@ -28,6 +28,7 @@ impl Processor for MeteoraDlmmInstructionProcessor {
         data: Self::InputType,
         _metrics: Arc<MetricsCollection>,
     ) -> CarbonResult<()> {
+        self.swap_handler.metrics.increment_meteora_dlmm_swaps();
         let (meta, instruction, nested_instructions) = data;
         if let MeteoraDlmmInstruction::Swap(_) = &instruction.data {
             let accounts = Swap::arrange_accounts(&instruction.accounts);
