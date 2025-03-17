@@ -22,11 +22,12 @@ export const SolanaBalance = ({
 }: {
   solanaBalance: number | undefined;
 }) => {
+  const isNaN = Number.isNaN(solanaBalance);
   return (
     <div className="flex items-center gap-2 mr-4">
       <img src={imageMap.solana} alt="SOL" className="w-6 h-6 rounded-full" />
       <span className="text-sm text-gray-300">
-        {solanaBalance?.toFixed(2) || "0.00"}
+        {isNaN ? "0.00" : solanaBalance?.toFixed(2) || "0.00"}
       </span>
     </div>
   );
@@ -51,6 +52,9 @@ export const SplTokenBalance = ({
     numDecimals = 0;
   }
   let uiAmount = numAmount / 10 ** numDecimals;
+  if (isNaN(uiAmount)) {
+    uiAmount = 0;
+  }
   return (
     <div className="flex items-center gap-2 mr-4">
       {token?.logoURI ? (
