@@ -4,9 +4,15 @@ import { createContext, memo, useState } from "react";
 import { Background } from "./Background";
 
 import { useTranslation } from "react-i18next";
+import { BsLink } from "react-icons/bs";
 import { FaXTwitter } from "react-icons/fa6";
+import {
+  IoChatboxOutline,
+  IoSettingsOutline,
+  IoWalletOutline,
+} from "react-icons/io5";
+import { RxDashboard } from "react-icons/rx";
 import { useMobile } from "../contexts/MobileContext";
-import { MobileNavigation } from "./MobileNavigation";
 import { PanelSelector } from "./PanelSelector";
 import { RecentChats } from "./RecentChats";
 import { SimpleHeader } from "./SimpleHeader";
@@ -121,6 +127,22 @@ export function Layout({ children }: { children: React.ReactNode }) {
     setIsSidebarOpen(!isSidebarOpen);
   };
 
+  // Function to handle navigation item clicks
+  const handleNavClick = (navType: string | null) => {
+    if (navType === "chat") {
+      // Always show chat, hide any panel
+      setActivePanel(null);
+    } else {
+      // For other nav items, toggle the corresponding panel
+      setActivePanel(activePanel === navType ? null : navType);
+    }
+
+    // Close sidebar on mobile after selection
+    if (isMobile) {
+      setIsSidebarOpen(false);
+    }
+  };
+
   return (
     <SidebarContext.Provider value={{ setIsSidebarOpen, isSidebarOpen }}>
       <WalletInitializer />
@@ -169,8 +191,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
             {/* Content only shown when sidebar is open */}
             {(isSidebarOpen || !isMobile) && (
               <>
-                {/* New Chat Button */}
-                {isSidebarOpen && (
+                {/* New Chat Button - Only shown on desktop */}
+                {isSidebarOpen && !isMobile && (
                   <div className="p-4">
                     <Link
                       to="/"
@@ -195,6 +217,53 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         <span className="ml-3">{t("layout.new_chat")}</span>
                       </div>
                     </Link>
+                  </div>
+                )}
+
+                {/* Mobile Navigation Items - Only shown on mobile */}
+                {isMobile && user && isSidebarOpen && (
+                  <div className="px-4 mb-4 mt-5">
+                    <div className="space-y-1">
+                      <button
+                        onClick={() => handleNavClick("chat")}
+                        className={`flex items-center h-10 w-full rounded-lg ${activePanel === null ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
+                      >
+                        <IoChatboxOutline className="w-5 h-5" />
+                        <span className="ml-3">{t("layout.chat")}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleNavClick("portfolio")}
+                        className={`flex items-center h-10 w-full rounded-lg ${activePanel === "portfolio" ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
+                      >
+                        <IoWalletOutline className="w-5 h-5" />
+                        <span className="ml-3">{t("layout.portfolio")}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleNavClick("screener")}
+                        className={`flex items-center h-10 w-full rounded-lg ${activePanel === "screener" ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
+                      >
+                        <RxDashboard className="w-5 h-5" />
+                        <span className="ml-3">{t("layout.screener")}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleNavClick("pipelines")}
+                        className={`flex items-center h-10 w-full rounded-lg ${activePanel === "pipelines" ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
+                      >
+                        <BsLink className="w-5 h-5" />
+                        <span className="ml-3">{t("layout.pipelines")}</span>
+                      </button>
+
+                      <button
+                        onClick={() => handleNavClick("settings")}
+                        className={`flex items-center h-10 w-full rounded-lg ${activePanel === "settings" ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
+                      >
+                        <IoSettingsOutline className="w-5 h-5" />
+                        <span className="ml-3">{t("layout.settings")}</span>
+                      </button>
+                    </div>
                   </div>
                 )}
 
@@ -265,17 +334,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               ${isMobile ? "transform" : "pl-16"} 
               ${isMobile && isSidebarOpen ? "translate-x-64" : "translate-x-0"}
               ${activePanel && !isMobile ? "lg:pr-[440px]" : ""}
-              ${
-                isMobile
-                  ? isIOS && user
-                    ? "pb-28" // iOS + user: maximum padding
-                    : isIOS
-                      ? "pb-8" // iOS but no user: base + 8px
-                      : user
-                        ? "pb-16" // User but no iOS: base + 16px
-                        : "pb-3" // Base case: just mobile
-                  : ""
-              }`}
+              ${isIOS ? "pb-8" : "pb-3"}`}
           >
             <div className="flex-1 max-w-4xl flex flex-col overflow-hidden">
               {children}
@@ -302,18 +361,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
               }`}
             >
               <PanelSelector
-                activePanel={activePanel}
-                setActivePanel={setActivePanel}
-              />
-            </div>
-          )}
-
-          {/* Mobile Navigation - Shift with content */}
-          {isMobile && (
-            <div
-              className={`transition-transform duration-300 ${isSidebarOpen ? "transform translate-x-64" : ""}`}
-            >
-              <MobileNavigation
                 activePanel={activePanel}
                 setActivePanel={setActivePanel}
               />
