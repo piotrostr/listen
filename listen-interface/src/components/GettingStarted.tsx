@@ -13,7 +13,7 @@ export function GettingStarted() {
 
   return (
     <div
-      className={`flex flex-col items-center ${isVerySmallScreen ? "gap-3" : "gap-4"} ${isVerySmallScreen ? "p-1.5" : "p-2"} w-full h-full overflow-hidden justify-between`}
+      className={`flex flex-col items-center ${isVerySmallScreen ? "gap-3" : "gap-4"} ${isVerySmallScreen ? "p-1.5" : "p-2"} w-full h-full overflow-hidden ${isMobile ? "justify-between" : "justify-center"}`}
     >
       <div
         className={`w-full max-w-2xl flex flex-col ${isMobile ? "items-start" : "items-center"} ${isMobile ? "text-left" : "text-center"} ${isVerySmallScreen ? "gap-1.5" : "gap-2"} ${isVerySmallScreen ? "p-1.5" : "p-2"}`}
@@ -28,6 +28,16 @@ export function GettingStarted() {
         >
           {t("getting_started.listen_intro")}
         </p>
+        {!isMobile && (
+          <div className="mt-5">
+            <GradientOutlineButton
+              text={t("getting_started.get_started")}
+              arrow={true}
+              onClick={login}
+              disabled={!ready}
+            />
+          </div>
+        )}
       </div>
       {isMobile ? (
         <>
@@ -49,9 +59,19 @@ export function GettingStarted() {
             />
             <OutlineButton
               text={t("getting_started.create_an_automated_strategy")}
+              onClick={login}
+              disabled={!ready}
             />
-            <OutlineButton text={t("getting_started.run_some_research")} />
-            <OutlineButton text={t("getting_started.skip")} />
+            <OutlineButton
+              text={t("getting_started.run_some_research")}
+              onClick={login}
+              disabled={!ready}
+            />
+            <OutlineButton
+              text={t("getting_started.skip")}
+              onClick={login}
+              disabled={!ready}
+            />
           </div>
           <div
             className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full text-center text-xs justify-center items-center mb-1`}
@@ -62,12 +82,6 @@ export function GettingStarted() {
         </>
       ) : (
         <>
-          <GradientOutlineButton
-            text={t("getting_started.get_started")}
-            arrow={true}
-            onClick={login}
-            disabled={!ready}
-          />
           <div
             className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full text-center text-xs justify-center items-center mb-1`}
           >
