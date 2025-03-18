@@ -12,6 +12,7 @@ use privy::{config::PrivyConfig, Privy};
 
 pub mod create;
 pub mod get;
+pub mod internal;
 pub mod state;
 
 pub async fn run() -> std::io::Result<()> {
@@ -46,13 +47,20 @@ pub async fn run() -> std::io::Result<()> {
         std::io::Error::new(std::io::ErrorKind::Other, "Failed to create privy config")
     })?));
 
-    // Main application server with metrics endpoint
+    // Create a shared AppState for both servers
+    let app_state = Data::new(AppState {
+        engine_bridge_tx: server_tx.clone(),
+        privy: privy.clone(),
+    });
+
+    // Create separate app states for each server
+    let app_state_public = app_state.clone();
+    let app_state_internal = app_state;
+
+    // Main public server (unchanged)
     let server = HttpServer::new(move || {
         App::new()
-            .app_data(Data::new(AppState {
-                engine_bridge_tx: server_tx.clone(),
-                privy: privy.clone(),
-            }))
+            .app_data(app_state_public.clone())
             .wrap(
                 Cors::default()
                     .allow_any_origin()
@@ -70,15 +78,37 @@ pub async fn run() -> std::io::Result<()> {
             .route("/pipelines", web::get().to(get::get_pipelines))
             .route("/metrics", web::get().to(metrics_handler))
     })
-    .bind(("0.0.0.0", 6966))?
-    .run();
+    .bind(("0.0.0.0", 6966))?;
+
+    // Create internal service-only server that only binds to localhost
+    let internal_server = HttpServer::new(move || {
+        App::new()
+            .app_data(app_state_internal.clone())
+            .wrap(middleware::Logger::default())
+            .route(
+                "/internal/create_pipeline",
+                web::post().to(internal::create_pipeline_internal),
+            )
+    })
+    .bind(("127.0.0.1", 6901))?; // Different port, localhost only
+
+    // Run both servers
+    let server_future = server.run();
+    let internal_server_future = internal_server.run();
 
     tokio::select! {
-        result = server => {
+        result = server_future => {
             engine.shutdown().await;
             let _ = shutdown_tx.send(()).await;
             if let Err(e) = result {
                 tracing::error!("Server error: {}", e);
+            }
+        }
+        result = internal_server_future => {
+            engine.shutdown().await;
+            let _ = shutdown_tx.send(()).await;
+            if let Err(e) = result {
+                tracing::error!("Internal server error: {}", e);
             }
         }
         result = Engine::run(engine.clone(), price_rx, server_rx) => {
