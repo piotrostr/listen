@@ -1,6 +1,6 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { IoRefreshOutline } from "react-icons/io5";
+import { IoCloseOutline, IoRefreshOutline } from "react-icons/io5";
 import { useMobile } from "../contexts/MobileContext";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { Chat } from "./Chat";
@@ -20,6 +20,7 @@ export function PanelSelector({
 }) {
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const { isMobile } = useMobile();
+  const { t } = useTranslation();
 
   const { refreshPortfolio } = usePortfolioStore();
 
@@ -31,12 +32,26 @@ export function PanelSelector({
 
   // For mobile, render just the contents without the FloatingPanel wrapper
   if (isMobile) {
+    // Mobile header with close button
+    const MobileHeader = ({ children }: { children: React.ReactNode }) => (
+      <div className="flex items-center justify-between mb-4">
+        <div className="flex-1">{children}</div>
+        <button
+          onClick={handleClose}
+          className="bg-black/40 text-white border border-[#2D2D2D] rounded-lg w-8 h-8 flex items-center justify-center hover:bg-white/10 ml-2"
+          title={t("common.close")}
+        >
+          <IoCloseOutline className="w-5 h-5" />
+        </button>
+      </div>
+    );
+
     if (activePanel === "screener") {
       return (
         <div className="h-full bg-black">
-          <div className="mb-4">
+          <MobileHeader>
             <PriceUpdatesHeader />
-          </div>
+          </MobileHeader>
           <PriceUpdates />
         </div>
       );
@@ -45,27 +60,34 @@ export function PanelSelector({
     if (activePanel === "pipelines") {
       return (
         <div className="h-full bg-black">
-          <div className="mb-4">
+          <MobileHeader>
             <PipelinesHeader
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
             />
-          </div>
+          </MobileHeader>
           <Pipelines statusFilter={statusFilter} />
         </div>
       );
     }
 
     if (activePanel === "chat") {
-      return <Chat />;
+      return (
+        <div className="h-full bg-black">
+          <MobileHeader>
+            <div className="text-white font-medium">{t("layout.chat")}</div>
+          </MobileHeader>
+          <Chat />
+        </div>
+      );
     }
 
     if (activePanel === "portfolio") {
       return (
         <div className="h-full bg-black">
-          <div className="mb-4">
+          <MobileHeader>
             <PortfolioHeader onRefresh={refreshPortfolio} />
-          </div>
+          </MobileHeader>
           <Portfolio />
         </div>
       );
@@ -74,6 +96,9 @@ export function PanelSelector({
     if (activePanel === "settings") {
       return (
         <div className="h-full bg-black">
+          <MobileHeader>
+            <div className="text-white font-medium">{t("layout.settings")}</div>
+          </MobileHeader>
           <Settings />
         </div>
       );
