@@ -4,7 +4,7 @@ use carbon_log_metrics::LogMetrics;
 use carbon_meteora_dlmm_decoder::MeteoraDlmmDecoder;
 use carbon_orca_whirlpool_decoder::OrcaWhirlpoolDecoder;
 use carbon_raydium_amm_v4_decoder::RaydiumAmmV4Decoder;
-// use carbon_raydium_clmm_decoder::RaydiumClmmDecoder;
+use carbon_raydium_clmm_decoder::RaydiumClmmDecoder;
 use carbon_raydium_cpmm_decoder::RaydiumCpmmDecoder;
 use carbon_yellowstone_grpc_datasource::YellowstoneGrpcGeyserClient;
 use std::{
@@ -30,7 +30,7 @@ use crate::{
     metrics::SwapMetrics,
     processor::{
         MeteoraDlmmInstructionProcessor, OcraWhirlpoolInstructionProcessor,
-        RaydiumAmmV4InstructionProcessor, /*RaydiumClmmInstructionProcessor,*/
+        RaydiumAmmV4InstructionProcessor, RaydiumClmmInstructionProcessor,
         RaydiumCpmmInstructionProcessor,
     },
     util::must_get_env,
@@ -96,10 +96,10 @@ pub fn make_geyser_pipeline(
             OrcaWhirlpoolDecoder,
             OcraWhirlpoolInstructionProcessor::new(token_swap_handler.clone()),
         )
-        // .instruction(
-        //     RaydiumClmmDecoder,
-        //     RaydiumClmmInstructionProcessor::new(token_swap_handler.clone()),
-        // )
+        .instruction(
+            RaydiumClmmDecoder,
+            RaydiumClmmInstructionProcessor::new(token_swap_handler.clone()),
+        )
         .build()?;
 
     Ok(pipeline)

@@ -132,6 +132,7 @@ impl SwapMetrics {
         let raydium_amm_v4 = self.raydium_amm_v4_swaps.load(Ordering::Relaxed);
         let raydium_cpmm = self.raydium_cpmm_swaps.load(Ordering::Relaxed);
         let meteora_dlmm = self.meteora_dlmm_swaps.load(Ordering::Relaxed);
+        let raydium_clmm = self.raydium_clmm_swaps.load(Ordering::Relaxed);
         let whirlpools = self.whirlpools_swaps.load(Ordering::Relaxed);
         let pending = self.pending_swaps.load(Ordering::Relaxed);
         let successful = self.successful_swaps.load(Ordering::Relaxed);
@@ -167,6 +168,7 @@ impl SwapMetrics {
              Total Processed: {}\n\
              Raydium AMM V4: {}\n\
              Raydium CPMM: {}\n\
+             Raydium CLMM: {}\n\
              Meteora DLMM: {}\n\
              Whirlpools: {}\n\
              Pending: {}\n\
@@ -188,6 +190,7 @@ impl SwapMetrics {
             total,
             raydium_amm_v4,
             raydium_cpmm,
+            raydium_clmm,
             meteora_dlmm,
             whirlpools,
             pending,
