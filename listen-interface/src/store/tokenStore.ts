@@ -42,6 +42,9 @@ interface TokenState {
     volumeFilter: "bought" | "sold" | "all",
     limit?: number
   ) => TokenMarketData[];
+
+  // Add this new action
+  refreshTokenData: () => void;
 }
 
 export const useTokenStore = create<TokenState>()(
@@ -251,6 +254,11 @@ export const useTokenStore = create<TokenState>()(
       setShowHiddenOnly: (show) => set({ showHiddenOnly: show }),
       setMarketCapFilter: (filter) => set({ marketCapFilter: filter }),
       setVolumeFilter: (filter) => set({ volumeFilter: filter }),
+
+      // Add this new refresh function
+      refreshTokenData: () => {
+        set({ tokenMap: new Map<string, TokenMarketData>() });
+      },
     }),
     {
       name: "token-storage",

@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { BiSolidHide } from "react-icons/bi";
 import { FaCircle, FaPause, FaRegStar } from "react-icons/fa";
+import { IoRefreshOutline } from "react-icons/io5";
 import { LuFilter } from "react-icons/lu";
 import { useTokenStore } from "../store/tokenStore";
 
@@ -19,12 +20,17 @@ export function PriceUpdatesHeader() {
     volumeFilter,
     setVolumeFilter,
     setIsListFrozen,
+    refreshTokenData,
   } = useTokenStore();
 
   const toggleFilterPopup = () => setShowFilterPopup(!showFilterPopup);
 
+  const handleRefresh = () => {
+    refreshTokenData();
+  };
+
   return (
-    <div className="flex items-center gap-2 h-full">
+    <div className="flex items-center justify-between gap-2 h-full">
       <div className="flex gap-2 h-full items-center">
         {isListFrozen && (
           <div
@@ -101,8 +107,11 @@ export function PriceUpdatesHeader() {
             </div>
           )}
         </div>
+      </div>
 
-        {/* Keep watchlist and hidden buttons always visible */}
+      {/* Controls on right side, matching Portfolio style */}
+      <div className="flex gap-2 items-center">
+        {/* Watchlist button */}
         <button
           onClick={() => setShowWatchlistOnly(!showWatchlistOnly)}
           className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center ${
@@ -114,6 +123,8 @@ export function PriceUpdatesHeader() {
         >
           <FaRegStar size={14} />
         </button>
+
+        {/* Hidden button */}
         <button
           onClick={() => setShowHiddenOnly(!showHiddenOnly)}
           className={`w-8 h-8 rounded-lg text-sm flex items-center justify-center ${
@@ -124,6 +135,15 @@ export function PriceUpdatesHeader() {
           title={showHiddenOnly ? "Show all tokens" : "Show hidden tokens"}
         >
           <BiSolidHide size={14} />
+        </button>
+
+        {/* Refresh button - now in the right group, matching Portfolio style */}
+        <button
+          onClick={handleRefresh}
+          className="bg-black/40 text-white border border-[#2D2D2D] rounded-lg w-8 h-8 flex items-center justify-center hover:bg-white/10"
+          title={t("portfolio.refresh")}
+        >
+          <IoRefreshOutline className="w-4 h-4" />
         </button>
       </div>
     </div>
