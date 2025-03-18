@@ -12,9 +12,10 @@ import { VersionDisplay } from "./VersionAndLanguage";
 export function GettingStarted() {
   const { t } = useTranslation();
   const { isMobile, isVerySmallScreen } = useMobile();
-  const { ready } = usePrivy();
+  const { ready, login } = usePrivy();
   const { createGuestAccount } = useGuestAccounts();
   const [isCreatingGuestAccount, setIsCreatingGuestAccount] = useState(false);
+  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const navigate = useNavigate();
 
   const handleContinue = async (prompt?: string) => {
@@ -37,10 +38,22 @@ export function GettingStarted() {
       }
     } catch (error) {
       console.error("Error creating guest account:", error);
+      setIsCreatingGuestAccount(false);
     }
   };
 
-  if (isCreatingGuestAccount) {
+  const handleLogin = async () => {
+    try {
+      setIsLoggingIn(true);
+      await login();
+      // Navigation will be handled by Privy's auth flow
+    } catch (error) {
+      console.error("Error logging in:", error);
+      setIsLoggingIn(false);
+    }
+  };
+
+  if (isCreatingGuestAccount || isLoggingIn) {
     return <FullPageLoading />;
   }
 
@@ -91,8 +104,8 @@ export function GettingStarted() {
           disabled={!ready || isCreatingGuestAccount}
         />
         <OutlineButton
-          text={t("getting_started.skip")}
-          onClick={() => handleContinue()}
+          text={t("getting_started.login")}
+          onClick={() => login()}
           disabled={!ready || isCreatingGuestAccount}
         />
       </div>

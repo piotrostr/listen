@@ -7,6 +7,7 @@ export const gettingStarted = {
     lets_make_a_trade: "Let's make a trade",
     create_an_automated_strategy: "Create an automated strategy",
     run_some_research: "Run some research",
+    login: "Login",
     skip: "Skip",
     how_it_works: "How it works",
     how_it_works_description:
@@ -27,6 +28,7 @@ export const gettingStarted = {
     lets_make_a_trade: "让我们做一个交易",
     create_an_automated_strategy: "创建一个自动化的策略",
     run_some_research: "运行一些研究",
+    login: "登录",
     skip: "跳过",
     how_it_works: "如何运作",
     how_it_works_description: "Listen 是您使用自然语言进行链上交易的一站式平台",
