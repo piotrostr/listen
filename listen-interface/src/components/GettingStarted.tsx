@@ -15,7 +15,6 @@ export function GettingStarted() {
   const { ready, login } = usePrivy();
   const { createGuestAccount } = useGuestAccounts();
   const [isCreatingGuestAccount, setIsCreatingGuestAccount] = useState(false);
-  const [isLoggingIn, setIsLoggingIn] = useState(false);
   const navigate = useNavigate();
 
   const handleContinue = async (prompt?: string) => {
@@ -42,18 +41,7 @@ export function GettingStarted() {
     }
   };
 
-  const handleLogin = async () => {
-    try {
-      setIsLoggingIn(true);
-      await login();
-      // Navigation will be handled by Privy's auth flow
-    } catch (error) {
-      console.error("Error logging in:", error);
-      setIsLoggingIn(false);
-    }
-  };
-
-  if (isCreatingGuestAccount || isLoggingIn) {
+  if (isCreatingGuestAccount) {
     return <FullPageLoading />;
   }
 
