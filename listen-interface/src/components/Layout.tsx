@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { createContext, memo, useState } from "react";
+import { createContext, memo, useEffect, useState } from "react";
 import { Background } from "./Background";
 
 import { useTranslation } from "react-i18next";
@@ -99,6 +99,30 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = usePrivy();
   const { t } = useTranslation();
 
+  // Add useEffect to handle iOS viewport height
+  useEffect(() => {
+    // Function to set the correct viewport height
+    const setViewportHeight = () => {
+      // First we get the viewport height and multiply it by 1% to get a value for a vh unit
+      const vh = window.innerHeight * 0.01;
+      // Then we set the value in the --vh custom property to the root of the document
+      document.documentElement.style.setProperty("--vh", `${vh}px`);
+    };
+
+    // Set the height initially
+    setViewportHeight();
+
+    // Add event listener to reset height on resize/orientation change
+    window.addEventListener("resize", setViewportHeight);
+    window.addEventListener("orientationchange", setViewportHeight);
+
+    // Clean up
+    return () => {
+      window.removeEventListener("resize", setViewportHeight);
+      window.removeEventListener("orientationchange", setViewportHeight);
+    };
+  }, []);
+
   // Call the function with the current translation function
   const BOTTOM_ITEMS = getBottomItems(t);
 
@@ -147,7 +171,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <SidebarContext.Provider value={{ setIsSidebarOpen, isSidebarOpen }}>
       <WalletInitializer />
       <WebsocketInitializer />
-      <div className="relative h-screen flex flex-col text-white overflow-hidden">
+      <div
+        className="relative flex flex-col text-white overflow-hidden"
+        style={{ height: isIOS ? "calc(var(--vh, 1vh) * 100)" : "100vh" }}
+      >
         <Background />
 
         {/* Header */}
