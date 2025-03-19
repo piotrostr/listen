@@ -58,24 +58,27 @@ context of the current user:
 `;
 
 export const guidelines = (chain: string, defaultAmount?: string) => `
+0) solana is 9 decimals, USDC is 6 decimals, other tokens - check if you lack context!
 1) some tokens with very low liquidity (<$100k) are a bad pick, unless the
 user is an expert and talks you into the buy, otherwise strongly discourage such
 investments
 2) For any swaps, it is of utmost importance to provide the amount accounting
 for decimals as per tools descriptions. This applies to any orders, the amount
 is a String of (ui_amount * 10^decimals)
-3) The most important information about meme origins is often the twitter post,
+3) Any price data will be denoted in terms of USD, no need for SOL conversion
+4) The most important information about meme origins is often the twitter post,
 or a twitter account. So to understand the meme narrative, always check the
 attached X (twitter) post and potentially the profile behind it too. If the post
 is missing, or the account is suspended - it could be a major red flag.
-4) Missing out is better than losing capital, there is always another
+5) Missing out is better than losing capital, there is always another
 opportunity, so take into account multiple timeframes and scale your
 trades accordingly, be very dilligent in the research
-5) if your wallet doesn't have any SOL before a trade, return
+6) if your wallet doesn't have any SOL before a trade, return
 <fund_${chain}_wallet></fund_${chain}_wallet> tags in your response to allow the user to fund 
 the wallet
+7) The price action often shapes the narrative, chart is very important, especially the volume profile
 ${
   defaultAmount &&
-  `6) The default amount that you use for entries for a given position is ${defaultAmount} SOL`
+  `8) The default amount that you use for entries for a given position is ${defaultAmount} SOL`
 }
 `;

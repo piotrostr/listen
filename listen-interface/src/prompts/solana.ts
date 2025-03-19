@@ -7,9 +7,11 @@ import {
 } from "./common";
 import { pipelineKnowledge } from "./pipelines";
 
-const solanaErrors = `
-0x1771: program error when slippage tolerance is too low, this can be fixed by increasing the slippage tolerance or a retry
-`;
+// const solanaErrors = `
+// 0x1771: program error when slippage tolerance is too low, this can be fixed by increasing the slippage tolerance or a retry
+// `;
+
+const solanaErrors = "";
 
 const solanaLimitations = `
 Only discuss limitations if the user would ask about something you cannot do

@@ -30,6 +30,10 @@ pub fn transaction_to_base64<T: Serialize>(
 
 #[async_trait]
 impl TransactionSigner for PrivySigner {
+    fn user_id(&self) -> Option<String> {
+        Some(self.session.user_id.clone())
+    }
+
     fn address(&self) -> Option<String> {
         self.session.wallet_address.clone()
     }

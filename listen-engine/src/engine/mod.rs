@@ -30,7 +30,7 @@ use tokio::sync::Notify;
 use tokio::sync::RwLock;
 
 use self::pipeline::{Pipeline, Status};
-use crate::server::EngineMessage;
+use crate::server::state::EngineMessage;
 
 pub struct Engine {
     pub redis: Arc<RedisClient>,

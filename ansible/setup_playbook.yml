@@ -1,3 +1,7 @@
+# installation of mongodb, nginx and clickhouse is required too
+# then the challenge to get certificates for http/https
+# for migration its crucial to redis, mongodb and clickhouse
+# dump and restore
 - name: listen-vps
   hosts: your_target_hosts
   become: yes

@@ -32,6 +32,13 @@ pub enum PrivyAuthError {
     ReadDecodingKeyError(jsonwebtoken::errors::Error),
 }
 
+#[derive(Debug, Clone)]
+pub struct UserInfo {
+    pub pubkey: Option<String>,
+    pub wallet_address: Option<String>,
+    pub email: Option<String>,
+}
+
 impl Privy {
     pub async fn get_email_by_user_id(&self, user_id: &str) -> Result<String> {
         let user = self.get_user_by_id(user_id).await?;
@@ -47,29 +54,44 @@ impl Privy {
         let user = self.get_user_by_id(&claims.user_id).await?;
 
         let mut session = UserSession {
-            user_id: user.id,
+            user_id: user.id.clone(),
             session_id: claims.session_id,
             wallet_address: None,
             pubkey: None,
             email: None,
         };
 
+        let user_info = self.user_to_user_info(&user);
+        session.pubkey = user_info.pubkey;
+        session.wallet_address = user_info.wallet_address;
+        session.email = user_info.email;
+
+        Ok(session)
+    }
+
+    pub fn user_to_user_info(&self, user: &User) -> UserInfo {
+        let mut wallets = UserInfo {
+            pubkey: None,
+            wallet_address: None,
+            email: None,
+        };
+
         let solana_wallet = find_wallet(&user.linked_accounts, "solana", "privy");
         if let Ok(wallet) = solana_wallet {
-            session.pubkey = Some(wallet.address.clone());
+            wallets.pubkey = Some(wallet.address.clone());
         }
 
         let evm_wallet = find_wallet(&user.linked_accounts, "ethereum", "privy");
         if let Ok(wallet) = evm_wallet {
-            session.wallet_address = Some(wallet.address.clone());
+            wallets.wallet_address = Some(wallet.address.clone());
         }
 
         let email = find_email(&user.linked_accounts);
         if let Ok(email) = email {
-            session.email = Some(email.address.clone());
+            wallets.email = Some(email.address.clone());
         }
 
-        Ok(session)
+        wallets
     }
 
     pub fn validate_access_token(&self, access_token: &str) -> Result<PrivyClaims, PrivyAuthError> {

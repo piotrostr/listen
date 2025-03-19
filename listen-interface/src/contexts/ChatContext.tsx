@@ -199,7 +199,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           defaultAmount.toString(),
           wallets?.solanaWallet?.toString() || null,
           wallets?.evmWallet?.toString() || null,
-          user?.isGuest || true
+          user?.isGuest || false
         );
 
         const body = JSON.stringify({

@@ -34,6 +34,17 @@ fn create_rpc() -> RpcClient {
 }
 
 #[tool(description = "
+Runs risk checks for a token.
+
+Params:
+mint: string
+  public key of the token to analyze
+")]
+pub async fn analyze_risk(mint: String) -> Result<serde_json::Value> {
+    crate::solana::risk::get_risk_report(mint).await
+}
+
+#[tool(description = "
 Fetches a quote from Jupiter API.
 
 Params:

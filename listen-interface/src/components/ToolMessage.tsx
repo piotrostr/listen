@@ -1,6 +1,11 @@
 import { ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { FaExclamationTriangle } from "react-icons/fa";
+import {
+  FaChartLine,
+  FaCheckCircle,
+  FaExclamationTriangle,
+  FaSearch,
+} from "react-icons/fa";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
@@ -16,13 +21,14 @@ import { SolanaBalance, SplTokenBalance } from "./Balances";
 import { Chart, InnerChart } from "./Chart";
 import { ChatMessage } from "./ChatMessage";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
+import DropdownMessage from "./DropdownMessage";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
 import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
-import { ResearchOutputDisplay } from "./ResearchOutput";
-import { ToolOutputDisplay } from "./ToolOutputDisplay";
+import { embedResearchAnchors } from "./ResearchOutput";
+import { RiskAnalysisDisplay, RiskAnalysisSchema } from "./RiskDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
 const SplTokenBalanceSchema = z.tuple([z.string(), z.number(), z.string()]);
@@ -70,6 +76,28 @@ export const ToolMessage = ({
     return null;
   }, [messages, currentMessage.id, toolOutput.id]);
 
+  if (toolOutput.name === "create_advanced_order") {
+    try {
+      const parsed = JSON.parse(toolOutput.result);
+      return (
+        <div className="text-green-300 flex items-center gap-1 p-3 text-sm">
+          <FaCheckCircle /> {parsed}
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse advanced order:", e);
+    }
+  }
+
+  if (toolOutput.name === "analyze_risk") {
+    try {
+      const parsed = RiskAnalysisSchema.parse(JSON.parse(toolOutput.result));
+      return <RiskAnalysisDisplay riskAnalysis={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse risk analysis:", e);
+    }
+  }
+
   if (toolOutput.name === "fetch_price_action_analysis") {
     try {
       const [mint, interval] = useMemo(() => {
@@ -92,11 +120,15 @@ export const ToolMessage = ({
           console.error("Failed to parse price action analysis:", e);
         }
         return (
-          <div className="text-gray-400">
+          <div>
             <div className="h-[300px] mb-3">
               <Chart mint={mint} interval={interval} />
             </div>
-            <ChatMessage message={renderTimestamps(parsed)} direction="agent" />
+            <DropdownMessage
+              title={t("tool_messages.price_action_analysis")}
+              message={renderTimestamps(parsed)}
+              icon={<FaChartLine />}
+            />
           </div>
         );
       }
@@ -180,13 +212,31 @@ export const ToolMessage = ({
   ) {
     try {
       const message = JSON.parse(toolOutput.result);
-      return <ResearchOutputDisplay message={message} />;
+      const processedMessage = embedResearchAnchors(message);
+      return (
+        <DropdownMessage
+          title={t("tool_messages.research")}
+          message={processedMessage}
+          icon={<FaSearch />}
+        />
+      );
     } catch (e) {
       console.error("Failed to parse tweet:", e);
       if (toolOutput.result.includes("Account suspended")) {
         return (
-          <div className="text-orange-500">
-            <FaExclamationTriangle /> {t("tool_messages.account_suspended")}
+          <div className="p-3">
+            <div className="text-orange-500 flex items-center gap-1">
+              <FaExclamationTriangle /> {t("tool_messages.account_suspended")}
+            </div>
+          </div>
+        );
+      }
+      if (toolOutput.result.includes("not found")) {
+        return (
+          <div className="p-3">
+            <div className="text-orange-500 flex items-center gap-1">
+              <FaExclamationTriangle /> {t("tool_messages.user_does_not_exist")}
+            </div>
           </div>
         );
       }
@@ -355,8 +405,7 @@ export const ToolMessage = ({
   // Default tool output display
   return (
     <div className="text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
-      {toolOutput.name}
-      <ToolOutputDisplay toolOutput={toolOutput} />
+      <ChatMessage message={toolOutput.result} direction="incoming" />
     </div>
   );
 };
