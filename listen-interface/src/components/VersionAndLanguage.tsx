@@ -4,7 +4,7 @@ import { LanguageSwitcher } from "./LanguageSwitcher";
 export function VersionDisplay() {
   const { t } = useTranslation();
   return (
-    <span className="text-xs text-gray-400">{t("layout.version")}: 2.2.7</span>
+    <span className="text-xs text-gray-400">{t("layout.version")}: 2.2.8</span>
   );
 }
 
