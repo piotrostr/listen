@@ -206,8 +206,19 @@ export const ToolMessage = ({
       console.error("Failed to parse tweet:", e);
       if (toolOutput.result.includes("Account suspended")) {
         return (
-          <div className="text-orange-500">
-            <FaExclamationTriangle /> {t("tool_messages.account_suspended")}
+          <div className="p-3">
+            <div className="text-orange-500 flex items-center gap-1">
+              <FaExclamationTriangle /> {t("tool_messages.account_suspended")}
+            </div>
+          </div>
+        );
+      }
+      if (toolOutput.result.includes("user not found")) {
+        return (
+          <div className="p-3">
+            <div className="text-orange-500 flex items-center gap-1">
+              <FaExclamationTriangle /> {t("tool_messages.user_does_not_exist")}
+            </div>
           </div>
         );
       }
