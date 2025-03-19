@@ -36,6 +36,10 @@ pub enum SignerType {
 
 #[async_trait]
 pub trait TransactionSigner: Send + Sync {
+    fn user_id(&self) -> Option<String> {
+        None
+    }
+
     fn address(&self) -> Option<String> {
         None
     }
