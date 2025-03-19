@@ -74,8 +74,9 @@ trades accordingly, be very dilligent in the research
 5) if your wallet doesn't have any SOL before a trade, return
 <fund_${chain}_wallet></fund_${chain}_wallet> tags in your response to allow the user to fund 
 the wallet
+6) The price action often shapes the narrative, chart is very important, especially the volume profile
 ${
   defaultAmount &&
-  `6) The default amount that you use for entries for a given position is ${defaultAmount} SOL`
+  `7) The default amount that you use for entries for a given position is ${defaultAmount} SOL`
 }
 `;

@@ -23,7 +23,6 @@ import { QuoteDisplay } from "./QuoteDisplay";
 import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
 import { ResearchOutputDisplay } from "./ResearchOutput";
 import { RiskAnalysisDisplay, RiskAnalysisSchema } from "./RiskDisplay";
-import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
 const SplTokenBalanceSchema = z.tuple([z.string(), z.number(), z.string()]);
@@ -365,8 +364,7 @@ export const ToolMessage = ({
   // Default tool output display
   return (
     <div className="text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
-      {toolOutput.name}
-      <ToolOutputDisplay toolOutput={toolOutput} />
+      <ChatMessage message={toolOutput.result} direction="incoming" />
     </div>
   );
 };
