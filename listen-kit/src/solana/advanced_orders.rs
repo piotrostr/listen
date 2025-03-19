@@ -19,8 +19,13 @@ pub struct Order {
 #[tool(description = "
 Creates an advanced order
 
-price_asset_mint: the mint of the asset of which price is checked by the condition.
-condition: the condition of the order. Can be \"PriceBelow\" or \"PriceAbove\".
+Params:
+  input_token: the mint of the token to be swapped
+  output_token: the mint of the token to be received
+  amount: the amount of the input token to be swapped, accounting for decimals
+  price: the price of the price_asset_mint, denoted in USD
+  price_asset_mint: the mint of the asset of which price is checked by the condition.
+  condition: the condition of the order. Can be \"PriceBelow\" or \"PriceAbove\".
 
 returns the ID of the submitted order
 ")]
