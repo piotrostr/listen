@@ -12,7 +12,7 @@ export const settings = {
     enabled: "Enabled",
     agent_mode_enabled: `Listen will have a lot more autonomy and can execute
     direct trades without confirmation. It doesn't have pipelines enabled, but
-    will have access to order scheduling tools (WIP).`,
+    it has access to sequential order scheduling tools.`,
     disabled: "Disabled",
     agent_mode_disabled:
       "Every trade is confirmed by hand. Listen doesn't have access to direct swapping tools.",
@@ -28,7 +28,7 @@ export const settings = {
     agent_mode: "代理模式",
     enabled: "启用",
     agent_mode_enabled: `Listen 将拥有更多的自主权，并直接执行交易，无需任何确认。
-    Listen 没有启用管道，但可以（即将）安排订单。`,
+    Listen 没有启用管道，但可以安排顺序订单。`,
     disabled: "禁用",
     agent_mode_disabled:
       "每次交易都需要手动确认。Listen 没有访问直接交换工具的权限。",
