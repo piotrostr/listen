@@ -1,3 +1,4 @@
+import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -26,6 +27,8 @@ export function ChatInput({
   hasMessages = false,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const { user } = usePrivy();
 
   // Function to auto-resize the textarea
   const autoResizeTextarea = () => {
@@ -95,7 +98,6 @@ export function ChatInput({
           minHeight: "20px",
           maxHeight: "80px", // Approximately 4 lines
         }}
-        disabled={isSharedChat}
       />
 
       <div className="flex-shrink-0 ml-2 flex items-center gap-2">
@@ -149,9 +151,9 @@ export function ChatInput({
               e.stopPropagation();
               handleSend();
             }}
-            disabled={!inputMessage.trim() || !walletsReady || isSharedChat}
+            disabled={!inputMessage.trim() || !walletsReady || !user}
             className={`p-2 rounded-full ${
-              inputMessage.trim() && walletsReady && !isSharedChat
+              inputMessage.trim() && walletsReady && user
                 ? "bg-[#FB2671]/20 hover:bg-[#FB2671]/40 text-[#FB2671]"
                 : "bg-gray-500/10 text-gray-500"
             } transition-colors`}

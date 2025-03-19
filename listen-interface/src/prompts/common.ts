@@ -58,6 +58,7 @@ context of the current user:
 `;
 
 export const guidelines = (chain: string, defaultAmount?: string) => `
+0) solana is 9 decimals, USDC is 6 decimals, other tokens - check if you lack context!
 1) some tokens with very low liquidity (<$100k) are a bad pick, unless the
 user is an expert and talks you into the buy, otherwise strongly discourage such
 investments

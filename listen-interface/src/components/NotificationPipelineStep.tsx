@@ -33,7 +33,7 @@ export const NotificationPipelineStep = ({
         <div className="flex items-center gap-3">
           {tokenImage && (
             <img
-              src={tokenImage}
+              src={tokenImage.replace("cf-ipfs.com", "ipfs.io")}
               alt={tokenName}
               className="w-8 h-8 rounded-full"
             />
