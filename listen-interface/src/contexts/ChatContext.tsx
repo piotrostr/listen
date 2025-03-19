@@ -34,6 +34,8 @@ interface ChatContextType {
   shareChat: (chatId: string) => Promise<string>;
   loadSharedChat: (chatId: string) => Promise<Chat>;
   isSharedChat: boolean;
+  editMessage: (messageId: string, newContent: string) => void;
+  resendMessage: (messageId: string, content?: string) => Promise<void>;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -118,55 +120,73 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   );
 
   const sendMessage = useCallback(
-    async (userMessage: string) => {
+    async (
+      userMessage: string,
+      options?: { skipAddingUserMessage?: boolean; existingMessageId?: string }
+    ) => {
       setIsLoading(true);
 
       // Create a new abort controller for this request
       abortControllerRef.current = new AbortController();
       const signal = abortControllerRef.current.signal;
 
-      const userChatMessage: Message = {
-        id: crypto.randomUUID(),
-        message: userMessage,
-        direction: "outgoing",
-        timestamp: new Date(),
-        type: "Message",
-      };
-
-      // Initialize new chat if none exists
-      if (!chat) {
-        const newChatId = chatId || uuidv4();
-        const newChat: Chat = {
-          id: newChatId,
-          messages: [userChatMessage],
-          createdAt: new Date(),
-          lastMessageAt: new Date(),
-          title: userMessage.slice(0, 50),
+      // Only add a user message if not skipping (for resend/edit cases)
+      if (!options?.skipAddingUserMessage) {
+        const userChatMessage: Message = {
+          id: crypto.randomUUID(),
+          message: userMessage,
+          direction: "outgoing",
+          timestamp: new Date(),
+          type: "Message",
         };
-        setChat(newChat);
 
-        // Only navigate if this is truly a new chat (no chatId in URL)
-        if (!chatId) {
-          navigate({
-            to: "/",
-            search: { chatId: newChatId },
-            replace: true,
-          });
+        // Initialize new chat if none exists
+        if (!chat) {
+          const newChatId = chatId || uuidv4();
+          const newChat: Chat = {
+            id: newChatId,
+            messages: [userChatMessage],
+            createdAt: new Date(),
+            lastMessageAt: new Date(),
+            title: userMessage.slice(0, 50),
+          };
+          setChat(newChat);
+
+          // Only navigate if this is truly a new chat (no chatId in URL)
+          if (!chatId) {
+            navigate({
+              to: "/",
+              search: { chatId: newChatId },
+              replace: true,
+            });
+          }
+        } else {
+          setChat((prev) => ({
+            ...prev!,
+            messages: [...(prev?.messages || []), userChatMessage],
+            lastMessageAt: new Date(),
+          }));
         }
-      } else {
-        setChat((prev) => ({
-          ...prev!,
-          messages: [...(prev?.messages || []), userChatMessage],
-          lastMessageAt: new Date(),
-        }));
       }
 
       try {
-        const messageHistory =
-          chat?.messages.map((msg) => ({
-            role: msg.direction === "outgoing" ? "user" : "assistant",
-            content: msg.message,
-          })) || [];
+        // Calculate the history based on whether we're resending a message
+        const messageHistory = options?.existingMessageId
+          ? chat?.messages
+              .slice(
+                0,
+                chat.messages.findIndex(
+                  (msg) => msg.id === options.existingMessageId
+                ) + 1
+              )
+              .map((msg) => ({
+                role: msg.direction === "outgoing" ? "user" : "assistant",
+                content: msg.message,
+              })) || []
+          : chat?.messages.map((msg) => ({
+              role: msg.direction === "outgoing" ? "user" : "assistant",
+              content: msg.message,
+            })) || [];
 
         let currentAssistantMessageId = crypto.randomUUID();
         setChat((prev) => ({
@@ -226,6 +246,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             signal,
           }
         );
+
+        let _body = JSON.parse(body);
+        delete _body.preamble;
+        console.log("body", _body);
 
         if (!response.ok) {
           throw new Error("Failed to initialize stream");
@@ -476,6 +500,64 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const editMessage = useCallback((messageId: string, newContent: string) => {
+    setChat((prev) => {
+      if (!prev) return prev;
+      const updatedMessages = [...prev.messages];
+      const messageIndex = updatedMessages.findIndex(
+        (msg) => msg.id === messageId
+      );
+      if (messageIndex !== -1) {
+        updatedMessages[messageIndex] = {
+          ...updatedMessages[messageIndex],
+          message: newContent,
+          edited: true,
+        };
+      }
+      return {
+        ...prev,
+        messages: updatedMessages,
+      };
+    });
+  }, []);
+
+  const resendMessage = useCallback(
+    async (messageId: string, content?: string) => {
+      // If content is provided, use it. Otherwise, find the message by ID
+      let messageContent;
+      if (content !== undefined) {
+        messageContent = content;
+      } else {
+        const messageToResend = chat?.messages.find(
+          (msg) => msg.id === messageId
+        );
+        if (!messageToResend) return;
+        messageContent = messageToResend.message;
+      }
+
+      // Remove all messages after this one
+      setChat((prev) => {
+        if (!prev) return prev;
+        const messageIndex = prev.messages.findIndex(
+          (msg) => msg.id === messageId
+        );
+        if (messageIndex === -1) return prev;
+
+        return {
+          ...prev,
+          messages: prev.messages.slice(0, messageIndex + 1),
+        };
+      });
+
+      // Send the message content again, but skip adding a new user message
+      await sendMessage(messageContent, {
+        skipAddingUserMessage: true,
+        existingMessageId: messageId,
+      });
+    },
+    [chat, sendMessage]
+  );
+
   const value = {
     messages: chat?.messages || [],
     isLoading: isLoadingWallets || isLoading,
@@ -500,6 +582,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     shareChat,
     loadSharedChat,
     isSharedChat: !!useSearch({ from: "/" }).shared,
+    editMessage,
+    resendMessage,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;

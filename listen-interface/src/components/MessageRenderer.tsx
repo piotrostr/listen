@@ -2,6 +2,7 @@ import React from "react";
 import { useSettingsStore } from "../store/settingsStore";
 import { ToolResult, ToolResultSchema, type Message } from "../types/message";
 import { ChatMessage } from "./ChatMessage";
+import { EditableMessage } from "./EditableMessage";
 import { FundWallet } from "./FundWallet";
 import { PipelineDisplay } from "./Pipeline";
 import { SolanaWalletCreation } from "./SolanaWalletCreation";
@@ -77,6 +78,16 @@ export function MessageRendererBase({
   const { debugMode } = useSettingsStore();
   if (!msg.message) return null;
 
+  // Check if this is the last user message
+  const isLastUserMessage = (() => {
+    if (msg.direction !== "outgoing") return false;
+    const lastUserMessageIndex = [...messages]
+      .reverse()
+      .findIndex((m) => m.direction === "outgoing");
+    if (lastUserMessageIndex === -1) return false;
+    return messages[messages.length - 1 - lastUserMessageIndex].id === msg.id;
+  })();
+
   // this is to support previous version of message schema
   if (msg.isToolCall !== undefined && msg.isToolCall) {
     // tool call was tool result in v1, v2 there is a distinction, tool call is
@@ -106,6 +117,13 @@ export function MessageRendererBase({
         messages={messages}
         currentMessage={msg}
       />
+    );
+  }
+
+  // Check if this is a user message that can be edited
+  if (msg.direction === "outgoing" && msg.type === "Message") {
+    return (
+      <EditableMessage message={msg} isLastUserMessage={isLastUserMessage} />
     );
   }
 

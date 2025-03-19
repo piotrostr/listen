@@ -25,6 +25,7 @@ export const MessageSchema = z.object({
   timestamp: dateOrString,
   type: MessageTypeSchema.optional(), // new approach, message type
   isToolCall: z.boolean().optional(), // legacy, supported but migrated
+  edited: z.boolean().optional(), // New flag to indicate edited messages
 });
 export type Message = z.infer<typeof MessageSchema>;
 
