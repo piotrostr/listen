@@ -1,6 +1,11 @@
 import { ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { FaChartLine, FaExclamationTriangle, FaSearch } from "react-icons/fa";
+import {
+  FaChartLine,
+  FaCheckCircle,
+  FaExclamationTriangle,
+  FaSearch,
+} from "react-icons/fa";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
@@ -70,6 +75,19 @@ export const ToolMessage = ({
     }
     return null;
   }, [messages, currentMessage.id, toolOutput.id]);
+
+  if (toolOutput.name === "create_advanced_order") {
+    try {
+      const parsed = JSON.parse(toolOutput.result);
+      return (
+        <div className="text-green-300 flex items-center gap-1 p-3 text-sm">
+          <FaCheckCircle /> {parsed}
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse advanced order:", e);
+    }
+  }
 
   if (toolOutput.name === "analyze_risk") {
     try {
@@ -213,7 +231,7 @@ export const ToolMessage = ({
           </div>
         );
       }
-      if (toolOutput.result.includes("user not found")) {
+      if (toolOutput.result.includes("not found")) {
         return (
           <div className="p-3">
             <div className="text-orange-500 flex items-center gap-1">

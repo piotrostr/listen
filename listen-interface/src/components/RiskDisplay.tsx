@@ -53,12 +53,12 @@ export function RiskAnalysisDisplay({
 }) {
   const { t } = useTranslation();
   return (
-    <div className="p-3">
+    <div className="p-3 text-sm mb-2">
       {riskAnalysis.risks.map((risk) => (
         <RiskDisplay key={risk.name} risk={risk} />
       ))}
       {riskAnalysis.risks.length === 0 && (
-        <div className="text-green-500 flex items-center gap-2">
+        <div className="text-green-300 flex items-center gap-2">
           <FaCheckCircle /> {t("tool_messages.no_risks_found")}
         </div>
       )}
