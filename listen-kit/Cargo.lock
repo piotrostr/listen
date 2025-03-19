@@ -4032,7 +4032,7 @@ dependencies = [
  "rand 0.8.5",
  "redis",
  "reqwest 0.12.12",
- "rig-core 0.9.1",
+ "rig-core 0.10.0",
  "rig-tool-macro",
  "serde",
  "serde_json",
@@ -5444,15 +5444,18 @@ dependencies = [
 
 [[package]]
 name = "rig-core"
-version = "0.9.1"
-source = "git+https://github.com/piotrostr/rig?branch=fix%2Fcontent-block-err#6820b33b009430bd6c4ad3f6d73fe8c463059b57"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "92b71cce9455ff993d7bd41d90cae125127a41cb4f8b6da57877eb1598cb9206"
 dependencies = [
  "async-stream",
+ "base64 0.22.1",
  "bytes",
  "futures",
  "glob",
+ "mime_guess",
  "ordered-float",
- "reqwest 0.11.27",
+ "reqwest 0.12.12",
  "schemars",
  "serde",
  "serde_json",
