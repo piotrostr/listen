@@ -6,6 +6,7 @@ pub mod deploy_token;
 pub mod jup;
 pub mod price;
 pub mod pump;
+pub mod risk;
 pub mod scan;
 pub mod tools;
 pub mod trade;
