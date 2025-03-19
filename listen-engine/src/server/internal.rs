@@ -6,28 +6,27 @@ use crate::engine::api::{PipelineParams, WirePipeline};
 use crate::server::state::AppState;
 
 #[derive(Deserialize)]
-pub struct CreatePipelineSearchParams {
+pub struct CreatePipelineRequest {
     pub user_id: String,
+    pub pipeline: WirePipeline,
 }
 
 pub async fn create_pipeline_internal(
     data: web::Data<AppState>,
-    params: web::Query<CreatePipelineSearchParams>,
-    wire: web::Json<WirePipeline>,
+    json: web::Json<CreatePipelineRequest>,
 ) -> impl Responder {
-    let user_id = &params.user_id;
-
-    match data.privy.get_user_by_id(user_id).await {
+    let request = json.into_inner();
+    match data.privy.get_user_by_id(&request.user_id).await {
         Ok(user) => {
             let user_info = data.privy.user_to_user_info(&user);
 
             let pipeline_params = PipelineParams {
-                user_id: user_id.to_string(),
+                user_id: request.user_id.to_string(),
                 wallet_address: user_info.wallet_address.clone(),
                 pubkey: user_info.pubkey.clone(),
             };
 
-            create_pipeline_common(data, wire.into_inner(), pipeline_params).await
+            create_pipeline_common(data, request.pipeline, pipeline_params).await
         }
         Err(e) => {
             tracing::error!("Failed to get user from Privy: {:?}", e);

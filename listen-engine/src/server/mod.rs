@@ -19,6 +19,10 @@ pub async fn run() -> std::io::Result<()> {
     let (server_tx, server_rx) = mpsc::channel(1000);
     tracing::info!("Created channel with capacity 1000");
 
+    if std::env::var("IS_SYSTEMD_SERVICE").is_err() {
+        dotenv::dotenv().ok();
+    }
+
     // Create engine and get price update receiver
     let (engine, price_rx) = match Engine::from_env().await {
         Ok((engine, rx)) => (engine, rx),
