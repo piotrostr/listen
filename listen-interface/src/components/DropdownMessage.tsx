@@ -16,9 +16,9 @@ const DropdownMessage = ({ title, message, icon }: DropdownMessageProps) => {
   };
 
   return (
-    <div className="border border-gray-700 rounded-md overflow-hidden mb-2">
+    <div className="rounded-lg px-2 py-1 my-2 backdrop-blur-sm border border-[#2D2D2D] text-sm">
       <div
-        className="flex items-center justify-between p-3 bg-gray-800 cursor-pointer hover:bg-gray-700"
+        className="flex items-center justify-between p-2 cursor-pointer"
         onClick={toggleExpand}
       >
         <div className="flex items-center gap-2">
@@ -31,7 +31,7 @@ const DropdownMessage = ({ title, message, icon }: DropdownMessageProps) => {
       </div>
 
       {isExpanded && (
-        <div className="p-3 bg-gray-900 border-t border-gray-700">
+        <div className="p-2 border-t border-[#2D2D2D]">
           <ChatMessage message={message} direction="agent" />
         </div>
       )}

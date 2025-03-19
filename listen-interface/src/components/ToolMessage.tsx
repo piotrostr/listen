@@ -102,12 +102,12 @@ export const ToolMessage = ({
           console.error("Failed to parse price action analysis:", e);
         }
         return (
-          <div className="text-gray-400">
+          <div>
             <div className="h-[300px] mb-3">
               <Chart mint={mint} interval={interval} />
             </div>
             <DropdownMessage
-              title="Price Action Analysis"
+              title={t("tool_messages.price_action_analysis")}
               message={renderTimestamps(parsed)}
               icon={<FaChartLine />}
             />
