@@ -22,6 +22,7 @@ import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
 import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
 import { ResearchOutputDisplay } from "./ResearchOutput";
+import { RiskAnalysisDisplay, RiskAnalysisSchema } from "./RiskDisplay";
 import { ToolOutputDisplay } from "./ToolOutputDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
@@ -69,6 +70,15 @@ export const ToolMessage = ({
     }
     return null;
   }, [messages, currentMessage.id, toolOutput.id]);
+
+  if (toolOutput.name === "analyze_risk") {
+    try {
+      const parsed = RiskAnalysisSchema.parse(JSON.parse(toolOutput.result));
+      return <RiskAnalysisDisplay riskAnalysis={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse risk analysis:", e);
+    }
+  }
 
   if (toolOutput.name === "fetch_price_action_analysis") {
     try {
