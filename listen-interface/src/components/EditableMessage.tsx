@@ -50,60 +50,67 @@ export const EditableMessage = ({
 
   if (!isEditing) {
     return (
-      <div className="relative group">
-        <ChatMessage message={message.message} direction={message.direction} />
-        {isLastUserMessage && (
-          <button
-            onClick={() => setIsEditing(true)}
-            className="absolute right-2 top-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full bg-gray-600/50 hover:bg-gray-600/80 text-white"
-            title={t("chat.edit")}
-          >
-            <RiEdit2Line size={16} />
-          </button>
-        )}
+      <div className="flex w-full justify-end">
+        <div className="relative group inline-block">
+          <ChatMessage
+            message={message.message}
+            direction={message.direction}
+          />
+          {isLastUserMessage && (
+            <button
+              onClick={() => setIsEditing(true)}
+              className="absolute right-2 -bottom-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full bg-gray-600/50 hover:bg-gray-600/80 text-white"
+              title={t("chat.edit")}
+            >
+              <RiEdit2Line size={16} />
+            </button>
+          )}
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-lg px-4 py-1 my-2 bg-[#2f2f2f]/40">
-      <div className="flex flex-col">
-        <textarea
-          ref={textareaRef}
-          value={editedContent}
-          onChange={(e) => setEditedContent(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              handleSave();
-            }
-            if (e.key === "Escape") {
-              setIsEditing(false);
-              setEditedContent(message.message);
-            }
-          }}
-          className="w-full bg-transparent text-white outline-none resize-none chat-input p-1 rounded"
-          style={{
-            minHeight: "20px",
-          }}
-        />
-        <div className="flex justify-end mt-2">
-          <button
-            onClick={() => {
-              setIsEditing(false);
-              setEditedContent(message.message);
+    <div className="flex justify-end w-full">
+      <div className="rounded-3xl bg-[#2f2f2f]/40 px-4 py-3 my-2 max-w-[80%]">
+        <div className="flex flex-col">
+          <textarea
+            ref={textareaRef}
+            value={editedContent}
+            onChange={(e) => setEditedContent(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                handleSave();
+              }
+              if (e.key === "Escape") {
+                setIsEditing(false);
+                setEditedContent(message.message);
+              }
             }}
-            className="text-gray-400 hover:text-gray-200 text-sm mr-3"
-          >
-            {t("cancel")}
-          </button>
-          <button
-            onClick={handleSave}
-            className="flex items-center gap-1 text-[#FB2671] hover:text-[#FB2671]/80 text-sm"
-          >
-            <FiSend size={14} />
-            {t("send")}
-          </button>
+            className="w-full bg-transparent text-white outline-none resize-none chat-input p-1 rounded"
+            style={{
+              minHeight: "20px",
+            }}
+          />
+          <div className="flex justify-end mt-2">
+            <button
+              onClick={() => {
+                setIsEditing(false);
+                setEditedContent(message.message);
+              }}
+              className="text-gray-400 hover:text-gray-200 text-sm mr-3"
+            >
+              {t("cancel")}
+            </button>
+            <button
+              onClick={handleSave}
+              className="flex items-center gap-1 text-[#FB2671] hover:text-[#FB2671]/80 text-sm"
+            >
+              <FiSend size={14} />
+              {t("send")}
+            </button>
+          </div>
         </div>
       </div>
     </div>
