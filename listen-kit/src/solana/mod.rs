@@ -1,3 +1,4 @@
+pub mod advanced_orders;
 pub mod agent;
 pub mod balance;
 pub mod constants;
