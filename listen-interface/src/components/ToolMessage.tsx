@@ -1,6 +1,6 @@
 import { ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { FaExclamationTriangle } from "react-icons/fa";
+import { FaChartLine, FaExclamationTriangle, FaSearch } from "react-icons/fa";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
@@ -16,12 +16,13 @@ import { SolanaBalance, SplTokenBalance } from "./Balances";
 import { Chart, InnerChart } from "./Chart";
 import { ChatMessage } from "./ChatMessage";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
+import DropdownMessage from "./DropdownMessage";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
 import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
-import { ResearchOutputDisplay } from "./ResearchOutput";
+import { embedResearchAnchors } from "./ResearchOutput";
 import { RiskAnalysisDisplay, RiskAnalysisSchema } from "./RiskDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 
@@ -105,7 +106,11 @@ export const ToolMessage = ({
             <div className="h-[300px] mb-3">
               <Chart mint={mint} interval={interval} />
             </div>
-            <ChatMessage message={renderTimestamps(parsed)} direction="agent" />
+            <DropdownMessage
+              title="Price Action Analysis"
+              message={renderTimestamps(parsed)}
+              icon={<FaChartLine />}
+            />
           </div>
         );
       }
@@ -189,7 +194,14 @@ export const ToolMessage = ({
   ) {
     try {
       const message = JSON.parse(toolOutput.result);
-      return <ResearchOutputDisplay message={message} />;
+      const processedMessage = embedResearchAnchors(message);
+      return (
+        <DropdownMessage
+          title={t("tool_messages.research")}
+          message={processedMessage}
+          icon={<FaSearch />}
+        />
+      );
     } catch (e) {
       console.error("Failed to parse tweet:", e);
       if (toolOutput.result.includes("Account suspended")) {
