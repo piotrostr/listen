@@ -21,7 +21,6 @@ export const pickSystemPrompt = (
       defaultAmount.toString(),
       isGuest
     );
-    console.log(res);
     return res;
   }
   const res = systemPromptSolana(
@@ -30,6 +29,5 @@ export const pickSystemPrompt = (
     defaultAmount.toString(),
     isGuest
   );
-  console.log(res);
   return res;
 };
