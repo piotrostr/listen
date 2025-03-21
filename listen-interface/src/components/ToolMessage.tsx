@@ -124,7 +124,7 @@ export const ToolMessage = ({
           console.error("Failed to parse price action analysis:", e);
         }
         return (
-          <div>
+          <div className="mb-1">
             <div className="h-[300px] mb-3">
               <Chart mint={mint} interval={interval} />
             </div>
@@ -218,11 +218,13 @@ export const ToolMessage = ({
       const message = JSON.parse(toolOutput.result);
       const processedMessage = embedResearchAnchors(message);
       return (
-        <DropdownMessage
-          title={t("tool_messages.research")}
-          message={processedMessage}
-          icon={<FaSearch />}
-        />
+        <div className="mb-1">
+          <DropdownMessage
+            title={t("tool_messages.research")}
+            message={processedMessage}
+            icon={<FaSearch />}
+          />
+        </div>
       );
     } catch (e) {
       console.error("Failed to parse tweet:", e);
