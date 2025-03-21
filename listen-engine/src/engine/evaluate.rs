@@ -37,7 +37,7 @@ impl Engine {
         let mut price_cache = self.price_cache.read().await.clone();
 
         // Extract all assets needed for this pipeline
-        let needed_assets = self.extract_assets(pipeline).await;
+        let needed_assets = self.extract_assets(pipeline);
 
         // Check for missing prices and try to fetch them from Redis
         let missing_assets: Vec<_> = needed_assets
@@ -54,7 +54,7 @@ impl Engine {
 
                 // Collect steps that use the invalid asset
                 for (step_id, step) in &pipeline.steps {
-                    if self.step_uses_asset(step, asset).await {
+                    if self.step_uses_asset(step, asset) {
                         failed_steps.push(*step_id);
                         steps_to_cancel.extend(step.next_steps.clone());
                     }
@@ -481,10 +481,9 @@ impl Engine {
     }
 
     // Helper method to check if a step uses a specific asset
-    async fn step_uses_asset(&self, step: &PipelineStep, asset: &str) -> bool {
+    fn step_uses_asset(&self, step: &PipelineStep, asset: &str) -> bool {
         let mut assets = HashSet::new();
-        self.collect_assets_from_condition(&step.conditions, &mut assets)
-            .await;
+        self.collect_assets_from_condition(&step.conditions, &mut assets);
         assets.contains(asset)
     }
 

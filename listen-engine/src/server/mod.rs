@@ -10,6 +10,8 @@ use tokio::sync::mpsc;
 use crate::{engine::Engine, metrics::metrics_handler, server::state::AppState};
 use privy::{config::PrivyConfig, Privy};
 
+pub mod cancel;
+pub mod common;
 pub mod create;
 pub mod get;
 pub mod internal;
@@ -80,6 +82,14 @@ pub async fn run() -> std::io::Result<()> {
             .route("/healthz", web::get().to(healthz))
             .route("/pipeline", web::post().to(create::create_pipeline))
             .route("/pipelines", web::get().to(get::get_pipelines))
+            .route(
+                "/pipeline/{pipeline_id}/cancel",
+                web::post().to(cancel::cancel_pipeline),
+            )
+            .route(
+                "/pipeline/{pipeline_id}/step/{step_id}/cancel",
+                web::post().to(cancel::cancel_step),
+            )
             .route("/metrics", web::get().to(metrics_handler))
     })
     .bind(("0.0.0.0", 6966))?;

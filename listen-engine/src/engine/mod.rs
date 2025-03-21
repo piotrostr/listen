@@ -107,7 +107,7 @@ impl Engine {
 
         // load existing pipelines into active pipelines
         for pipeline in existing_pipelines {
-            let asset_ids = engine.extract_assets(&pipeline).await;
+            let asset_ids = engine.extract_assets(&pipeline);
             for asset_id in asset_ids {
                 engine
                     .active_pipelines
@@ -150,7 +150,7 @@ impl Engine {
                     tracing::debug!("Received engine message: {:?}", msg);
                     match msg {
                         EngineMessage::AddPipeline { pipeline, response_tx } => {
-                            let asset_ids = engine.extract_assets(&pipeline).await;
+                            let asset_ids = engine.extract_assets(&pipeline);
                             for asset_id in asset_ids {
                                 engine.active_pipelines.entry(asset_id.clone()).or_default().insert(format!("{}:{}", pipeline.user_id, pipeline.id));
                                 engine.redis.save_pipeline(&pipeline).await?;
@@ -171,6 +171,18 @@ impl Engine {
                                 Ok(pipelines) => tracing::debug!("Found {} pipelines for user", pipelines.len()),
                                 Err(e) => tracing::error!("Error getting pipelines: {}", e),
                             }
+                            if response_tx.send(result).is_err() {
+                                tracing::error!("Failed to send response - channel closed");
+                            }
+                        },
+                        EngineMessage::CancelPipeline { user_id, pipeline_id, response_tx } => {
+                            let result = engine.cancel_pipeline(&user_id, pipeline_id).await;
+                            if response_tx.send(result).is_err() {
+                                tracing::error!("Failed to send response - channel closed");
+                            }
+                        },
+                        EngineMessage::CancelStep { user_id, pipeline_id, step_id, response_tx } => {
+                            let result = engine.cancel_step(&user_id, pipeline_id, step_id).await;
                             if response_tx.send(result).is_err() {
                                 tracing::error!("Failed to send response - channel closed");
                             }

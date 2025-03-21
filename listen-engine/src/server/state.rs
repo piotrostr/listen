@@ -27,6 +27,17 @@ pub enum EngineMessage {
         user_id: String,
         response_tx: oneshot::Sender<Result<Vec<Pipeline>, EngineError>>,
     },
+    CancelPipeline {
+        user_id: String,
+        pipeline_id: Uuid,
+        response_tx: oneshot::Sender<Result<(), EngineError>>,
+    },
+    CancelStep {
+        user_id: String,
+        pipeline_id: Uuid,
+        step_id: Uuid,
+        response_tx: oneshot::Sender<Result<(), EngineError>>,
+    },
 }
 
 pub struct AppState {
