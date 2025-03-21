@@ -2,9 +2,9 @@ use anyhow::Result;
 use rig_tool_macro::tool;
 
 #[tool(description = "
-Use the tool to think about something. It will not obtain new information or
-change the database, but just append the thought to the log. Use it when complex
-reasoning or some cache memory is needed.
+Use the tool to think about something, treat it like a scratchpad. It will not
+obtain new information or change any state, but just append the thought to the
+log. Use it when complex reasoning or some cache memory is needed.
 ")]
 pub async fn think(thought: String) -> Result<String> {
     // This function doesn't perform any external actions
