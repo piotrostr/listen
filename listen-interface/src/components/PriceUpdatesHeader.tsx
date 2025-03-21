@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { BiSolidHide } from "react-icons/bi";
 import { FaCircle, FaPause, FaRegStar } from "react-icons/fa";
 import { IoRefreshOutline } from "react-icons/io5";
-import { LuFilter } from "react-icons/lu";
+import { LuFilter, LuSearch } from "react-icons/lu";
 import { useTokenStore } from "../store/tokenStore";
 
 export function PriceUpdatesHeader() {
@@ -21,6 +21,8 @@ export function PriceUpdatesHeader() {
     setVolumeFilter,
     setIsListFrozen,
     refreshTokenData,
+    searchQuery,
+    setSearchQuery,
   } = useTokenStore();
 
   const toggleFilterPopup = () => setShowFilterPopup(!showFilterPopup);
@@ -40,6 +42,28 @@ export function PriceUpdatesHeader() {
             <FaPause className="text-teal-300 text-[10px]" />
           </div>
         )}
+
+        {/* Search input */}
+        <div className="relative h-8">
+          <div className="absolute inset-y-0 left-0 flex items-center pl-2 pointer-events-none">
+            <LuSearch className="w-4 h-4 text-gray-400" />
+          </div>
+          <input
+            type="text"
+            value={searchQuery}
+            onChange={(e) => setSearchQuery(e.target.value)}
+            placeholder={t("price_updates.search") || "Search tokens..."}
+            className="h-full rounded-lg pl-8 pr-3 py-1 text-sm bg-black/40 border border-[#2D2D2D] focus:outline-none focus:border-teal-500 w-44"
+          />
+          {searchQuery && (
+            <button
+              onClick={() => setSearchQuery("")}
+              className="absolute inset-y-0 right-0 flex items-center pr-2 text-gray-400 hover:text-white"
+            >
+              ×
+            </button>
+          )}
+        </div>
 
         {/* Filter button with popup */}
         <div className="relative">

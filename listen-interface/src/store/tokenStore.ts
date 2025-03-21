@@ -45,6 +45,9 @@ interface TokenState {
 
   // Add this new action
   refreshTokenData: () => void;
+
+  searchQuery: string;
+  setSearchQuery: (query: string) => void;
 }
 
 export const useTokenStore = create<TokenState>()(
@@ -61,6 +64,8 @@ export const useTokenStore = create<TokenState>()(
       showHiddenOnly: false,
       marketCapFilter: "all",
       volumeFilter: "all",
+
+      searchQuery: "",
 
       setLatestUpdate: (update) => set({ latestUpdate: update }),
 
@@ -181,6 +186,7 @@ export const useTokenStore = create<TokenState>()(
         const showHiddenOnly = get().showHiddenOnly;
         const showWatchlistOnly = get().showWatchlistOnly;
         const watchlist = get().watchlist;
+        const searchQuery = get().searchQuery.toLowerCase().trim();
 
         // First apply watchlist/hidden filters
         let filteredTokens = tokens;
@@ -215,6 +221,13 @@ export const useTokenStore = create<TokenState>()(
             }
             return true;
           });
+        }
+
+        // Apply search filter if there's a query
+        if (searchQuery) {
+          filteredTokens = filteredTokens.filter((token) =>
+            token.name.toLowerCase().includes(searchQuery)
+          );
         }
 
         const marketCapFiltered = get()
@@ -254,6 +267,7 @@ export const useTokenStore = create<TokenState>()(
       setShowHiddenOnly: (show) => set({ showHiddenOnly: show }),
       setMarketCapFilter: (filter) => set({ marketCapFilter: filter }),
       setVolumeFilter: (filter) => set({ volumeFilter: filter }),
+      setSearchQuery: (query) => set({ searchQuery: query }),
 
       // Add this new refresh function
       refreshTokenData: () => {
@@ -270,6 +284,7 @@ export const useTokenStore = create<TokenState>()(
         showHiddenOnly: state.showHiddenOnly,
         marketCapFilter: state.marketCapFilter,
         volumeFilter: state.volumeFilter,
+        // Don't persist search query across sessions
       }),
       onRehydrateStorage: () => (state) => {
         if (state) {
