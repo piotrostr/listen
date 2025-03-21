@@ -180,6 +180,8 @@ Fetch top tokens from the Listen API.
 
 No point using limit of more than ~6, less is more, as long as the filters are right
 
+Lower timeframes work best, 7200 seconds is the sweet spot
+
 Parameters:
 - limit (string): Optional number of tokens to return
 - min_volume (string): Optional minimum 24h volume filter
