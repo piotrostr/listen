@@ -76,6 +76,10 @@ export const ToolMessage = ({
     return null;
   }, [messages, currentMessage.id, toolOutput.id]);
 
+  if (toolOutput.name === "think") {
+    return null;
+  }
+
   if (toolOutput.name === "create_advanced_order") {
     try {
       const parsed = JSON.parse(toolOutput.result);
