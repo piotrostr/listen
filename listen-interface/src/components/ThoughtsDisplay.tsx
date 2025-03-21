@@ -14,7 +14,7 @@ export function ThoughtsDisplay({ thought }: { thought: string }) {
   };
 
   return (
-    <div className="text-sm -mt-2 pl-2 text-gray-400">
+    <div className="text-sm pl-2 text-gray-400">
       <div
         className="flex items-center justify-between p-2 cursor-pointer"
         onClick={toggleExpand}

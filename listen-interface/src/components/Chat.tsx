@@ -214,7 +214,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
               messages={messages}
             />
           ))}
-          <div className="flex flex-row items-center gap-2 pl-3">
+          <div className="flex flex-row items-center gap-2 pl-3 mt-2">
             {isLoading && <ThinkingIndicator />}
             {isLoading && !toolBeingCalled && isLastMessageOutgoing && (
               <ToolCallMessage
