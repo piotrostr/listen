@@ -14,6 +14,8 @@ export const toolCalls = {
     fetch_top_tokens: "Fetching hottest picks...",
     fetch_price_action_analysis: "Analyzing price action...",
     analyze_risk: "Analyzing risk...",
+    thinking: "Thinking...",
+    thoughts: "Thoughts",
   },
   zh: {
     get_quote: "获取报价中...",
@@ -30,5 +32,7 @@ export const toolCalls = {
     fetch_top_tokens: "获取热门代币中...",
     fetch_price_action_analysis: "分析价格走势中...",
     analyze_risk: "分析风险中...",
+    thinking: "思考中...",
+    thoughts: "思考",
   },
 };

@@ -20,6 +20,7 @@ pub mod dexscreener;
 pub mod mongo;
 pub mod reasoning_loop;
 pub mod signer;
+pub mod think;
 
 pub mod tokenizer;
 

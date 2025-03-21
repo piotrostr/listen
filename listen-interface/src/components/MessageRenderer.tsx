@@ -1,11 +1,17 @@
 import React from "react";
 import { useSettingsStore } from "../store/settingsStore";
-import { ToolResult, ToolResultSchema, type Message } from "../types/message";
+import {
+  ToolCallSchema,
+  ToolResult,
+  ToolResultSchema,
+  type Message,
+} from "../types/message";
 import { ChatMessage } from "./ChatMessage";
 import { EditableMessage } from "./EditableMessage";
 import { FundWallet } from "./FundWallet";
 import { PipelineDisplay } from "./Pipeline";
 import { SolanaWalletCreation } from "./SolanaWalletCreation";
+import { ThoughtsDisplay } from "./ThoughtsDisplay";
 import { ToolMessage } from "./ToolMessage";
 
 // Type definitions for tag handlers
@@ -103,6 +109,16 @@ export function MessageRendererBase({
   }
 
   if (msg.type === "ToolCall") {
+    try {
+      const toolCall = ToolCallSchema.parse(JSON.parse(msg.message));
+      if (toolCall.name === "think") {
+        const thoughts = JSON.parse(toolCall.params);
+        const thought = thoughts["thought"];
+        return <ThoughtsDisplay thought={thought} />;
+      }
+    } catch (e) {
+      console.error("Failed to parse thoughts", e);
+    }
     if (debugMode) {
       return <ChatMessage message={msg.message} direction={msg.direction} />;
     }

@@ -9,6 +9,7 @@ use crate::data::{
 use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::solana::advanced_orders::CreateAdvancedOrder;
 use crate::solana::tools::AnalyzeRisk;
+use crate::think::Think;
 use anyhow::Result;
 use rig::agent::Agent;
 use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
@@ -43,7 +44,8 @@ pub async fn create_solana_agent(
         .tool(FetchXPost)
         .tool(SearchTweets)
         .tool(AnalyzeRisk)
-        .tool(FetchPriceActionAnalysis);
+        .tool(FetchPriceActionAnalysis)
+        .tool(Think);
 
     if features.autonomous {
         agent = agent.tool(Swap).tool(CreateAdvancedOrder);
