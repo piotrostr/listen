@@ -110,13 +110,9 @@ impl DistillerAgent for GeminiAgent {
         query: &str,
         response: &serde_json::Value,
     ) -> Result<String, DistillerError> {
-        self.prompt(format!(
-            "query: {}\nresponse: {}",
-            query,
-            response.to_string()
-        ))
-        .await
-        .map_err(DistillerError::PromptError)
+        self.prompt(format!("query: {}\nresponse: {}", query, response,))
+            .await
+            .map_err(DistillerError::PromptError)
     }
 }
 
@@ -128,13 +124,9 @@ impl DistillerAgent for DeepSeekAgent {
         query: &str,
         response: &serde_json::Value,
     ) -> Result<String, DistillerError> {
-        self.prompt(format!(
-            "query: {}\nresponse: {}",
-            query,
-            response.to_string()
-        ))
-        .await
-        .map_err(DistillerError::PromptError)
+        self.prompt(format!("query: {}\nresponse: {}", query, response))
+            .await
+            .map_err(DistillerError::PromptError)
     }
 }
 

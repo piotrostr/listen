@@ -45,21 +45,19 @@ pub fn estimate_conversation_tokens(
                     estimated_tokens += estimate_tokens(&text.text);
                 }
                 UserContent::ToolResult(tool_result) => {
-                    match tool_result.content.first() {
-                        ToolResultContent::Text(text) => {
-                            estimated_tokens += estimate_tokens(&text.text);
-                        }
-                        _ => {}
+                    if let ToolResultContent::Text(text) =
+                        tool_result.content.first()
+                    {
+                        estimated_tokens += estimate_tokens(&text.text);
                     }
                 }
                 _ => {}
             },
-            Message::Assistant { content } => match content.first() {
-                AssistantContent::Text(text) => {
+            Message::Assistant { content } => {
+                if let AssistantContent::Text(text) = content.first() {
                     estimated_tokens += estimate_tokens(&text.text);
                 }
-                _ => {}
-            },
+            }
         }
     }
 
