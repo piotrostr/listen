@@ -86,6 +86,7 @@ const resources = {
         volume: "Volume",
         sell: "Sell",
         waiting_for_updates: "Waiting for updates...",
+        search: "Search..",
       },
       chat: {
         start_a_conversation: "Start a conversation",
@@ -209,6 +210,7 @@ const resources = {
         filter: "过滤",
         volume: "成交量",
         sell: "出售",
+        search: "搜索..",
       },
       chat: {
         start_a_conversation: "开始对话",
