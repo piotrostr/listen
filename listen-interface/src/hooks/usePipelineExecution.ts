@@ -42,7 +42,7 @@ export function usePipelineExecution() {
     setIsExecuting(true);
     try {
       const token = await getAccessToken();
-      const res = await fetch(config.API_BASE_URL + "/v1/engine/pipeline", {
+      const res = await fetch(config.engineEndpoint + "/pipeline", {
         method: "POST",
         body: JSON.stringify(pipeline),
         headers: {
