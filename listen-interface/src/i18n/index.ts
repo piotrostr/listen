@@ -76,6 +76,7 @@ const resources = {
         error: "Error occured",
         buy_order_placed: "Buy order placed for",
         failed_to_buy_token: "Failed to buy token",
+        cancelled: "Cancelled",
       },
       price_updates: {
         paused: "Paused",
@@ -191,6 +192,7 @@ const resources = {
         error: "发生错误",
         buy_order_placed: "已为以下代币下单购买",
         failed_to_buy_token: "购买代币失败",
+        cancelled: "已取消",
       },
       buy_sell_modal: {
         available: "可用",

@@ -10,6 +10,9 @@ pub enum EngineError {
     #[error("[Engine] Failed to add pipeline: {0}")]
     AddPipelineError(RedisClientError),
 
+    #[error("[Engine] Pipeline not found: {0}")]
+    PipelineNotFound(String),
+
     #[error("[Engine] Failed to save pipeline: {0}")]
     SavePipelineError(RedisClientError),
 
@@ -60,4 +63,13 @@ pub enum EngineError {
 
     #[error("[Engine] Solana Wallet not available")]
     SolanaWalletNotAvailable,
+
+    #[error("[Engine] Step not found: {0}")]
+    StepNotFound(String),
+
+    #[error("[Engine] Step not cancellable")]
+    StepNotCancellable,
+
+    #[error("[Engine] Unauthorized")]
+    Unauthorized,
 }

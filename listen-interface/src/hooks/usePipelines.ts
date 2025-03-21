@@ -21,7 +21,7 @@ export const usePipelines = () => {
         throw new Error("No access token available");
       }
 
-      const url = `${config.API_BASE_URL}/v1/engine/pipelines`;
+      const url = `${config.engineEndpoint}/pipelines`;
       const response = await fetch(url, {
         method: "GET",
         headers: {

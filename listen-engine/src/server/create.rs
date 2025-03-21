@@ -1,7 +1,10 @@
 use super::state::{AppState, EngineMessage};
-use crate::engine::{
-    api::{PipelineParams, WirePipeline},
-    pipeline::Pipeline,
+use crate::{
+    engine::{
+        api::{PipelineParams, WirePipeline},
+        pipeline::Pipeline,
+    },
+    server::common::{handle_engine_response, verify_auth},
 };
 use actix_web::{
     web::{self, Data},
@@ -51,41 +54,10 @@ pub async fn create_pipeline_common(
     }
 
     // Wait for response with timeout
-    let result = match tokio::time::timeout(std::time::Duration::from_secs(5), response_rx).await {
-        Ok(response) => match response {
-            Ok(Ok(id)) => {
-                metrics::counter!("pipeline_creation_success", 1);
-                HttpResponse::Created().json(serde_json::json!({
-                    "status": "success",
-                    "message": "Pipeline created successfully",
-                    "id": id
-                }))
-            }
-            Ok(Err(e)) => {
-                metrics::counter!("pipeline_creation_errors", 1);
-                HttpResponse::InternalServerError().json(serde_json::json!({
-                    "status": "error",
-                    "message": format!("Failed to create pipeline: {}", e)
-                }))
-            }
-            Err(e) => {
-                metrics::counter!("pipeline_creation_errors", 1);
-                HttpResponse::InternalServerError().json(serde_json::json!({
-                    "status": "error",
-                    "message": format!("Failed to receive response from engine: {}", e)
-                }))
-            }
-        },
-        Err(_) => {
-            metrics::counter!("pipeline_creation_errors", 1);
-            HttpResponse::GatewayTimeout().json(serde_json::json!({
-                "status": "error",
-                "message": "Pipeline creation timed out"
-            }))
-        }
-    };
+    let result = handle_engine_response(response_rx, "Pipeline created successfully").await;
 
     metrics::histogram!("pipeline_creation_duration", start.elapsed());
+
     result
 }
 
@@ -94,30 +66,9 @@ pub async fn create_pipeline(
     req: HttpRequest,
     wire: web::Json<WirePipeline>,
 ) -> impl Responder {
-    let auth_token = match req.headers().get("authorization") {
-        Some(auth_token) => auth_token.to_str().unwrap(),
-        None => {
-            return HttpResponse::Unauthorized().json(serde_json::json!({
-                "status": "error",
-                "message": "Authorization header is required"
-            }));
-        }
-    };
-    let auth_token = auth_token.split(" ").nth(1).unwrap();
-
-    let user = match state
-        .privy
-        .authenticate_user(auth_token)
-        .await
-        .map_err(|_| HttpResponse::Unauthorized())
-    {
+    let user = match verify_auth(&state, &req).await {
         Ok(user) => user,
-        Err(_) => {
-            return HttpResponse::Unauthorized().json(serde_json::json!({
-                "status": "error",
-                "message": "Unauthorized"
-            }));
-        }
+        Err(response) => return response,
     };
 
     let pipeline_params = PipelineParams {

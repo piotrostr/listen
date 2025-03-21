@@ -1,4 +1,10 @@
 export const config = {
-  API_BASE_URL: "https://api.listen-rs.com",
-  // API_BASE_URL: "http://localhost:6969",
+  engineEndpoint:
+    process.env.NODE_ENV === "production"
+      ? "https://api.listen-rs.com/v1/engine"
+      : "http://localhost:6966",
+  kitEndpoint:
+    process.env.NODE_ENV === "production"
+      ? "https://api.listen-rs.com/v1/kit"
+      : "http://localhost:6969",
 };
