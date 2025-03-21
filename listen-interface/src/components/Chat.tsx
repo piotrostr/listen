@@ -44,6 +44,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     shareChat,
     loadSharedChat,
     isSharedChat,
+    isLastMessageOutgoing,
   } = useChat();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -179,6 +180,8 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     );
   }
 
+  console.log(isLoading, toolBeingCalled, isLastMessageOutgoing);
+
   return (
     <>
       <ChatContainer
@@ -213,6 +216,15 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
           ))}
           <div className="flex flex-row items-center gap-2 pl-3">
             {isLoading && <ThinkingIndicator />}
+            {isLoading && !toolBeingCalled && isLastMessageOutgoing && (
+              <ToolCallMessage
+                toolCall={{
+                  id: "non-relevant",
+                  params: "non-relevant",
+                  name: "thinking",
+                }}
+              />
+            )}
             {toolBeingCalled && <ToolCallMessage toolCall={toolBeingCalled} />}
           </div>
         </div>

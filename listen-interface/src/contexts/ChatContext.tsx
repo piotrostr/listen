@@ -36,6 +36,7 @@ interface ChatContextType {
   isSharedChat: boolean;
   editMessage: (messageId: string, newContent: string) => void;
   resendMessage: (messageId: string, content?: string) => Promise<void>;
+  isLastMessageOutgoing: boolean;
 }
 
 const ChatContext = createContext<ChatContextType | null>(null);
@@ -558,6 +559,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     [chat, sendMessage]
   );
 
+  const isLastMessageOutgoing = checkIfLastMessageIsOutgoing(
+    chat?.messages || []
+  );
+
   const value = {
     messages: chat?.messages || [],
     isLoading: isLoadingWallets || isLoading,
@@ -584,9 +589,28 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     isSharedChat: !!useSearch({ from: "/" }).shared,
     editMessage,
     resendMessage,
+    isLastMessageOutgoing,
   };
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
+};
+
+const checkIfLastMessageIsOutgoing = (messages: Message[]) => {
+  if (messages.length === 0) {
+    return false;
+  }
+
+  const lastMessage = messages[messages.length - 1];
+
+  if (lastMessage.direction === "outgoing") {
+    return true;
+  }
+
+  if (lastMessage.direction === "incoming" && lastMessage.message === "") {
+    return true;
+  }
+
+  return false;
 };
 
 export const useChat = () => {
