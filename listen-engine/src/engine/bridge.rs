@@ -68,6 +68,20 @@ impl Engine {
             }
         }
 
+        let assets_mentioned = self.extract_assets(&pipeline);
+
+        for asset in assets_mentioned {
+            match self.active_pipelines.get_mut(&asset) {
+                Some(mut pipeline_ids) => {
+                    pipeline_ids.remove(&pipeline.id.to_string());
+                    drop(pipeline_ids);
+                }
+                None => {
+                    tracing::error!("Asset {} not found in active pipelines", asset);
+                }
+            }
+        }
+
         if let Err(e) = self.redis.save_pipeline(&pipeline).await {
             return Err(EngineError::RedisClientError(e));
         }
@@ -130,6 +144,7 @@ impl Engine {
                     match self.active_pipelines.get_mut(&asset) {
                         Some(mut pipeline_ids) => {
                             pipeline_ids.remove(&pipeline.id.to_string());
+                            drop(pipeline_ids);
                         }
                         None => {
                             tracing::error!("Asset {} not found in active pipelines", asset);
