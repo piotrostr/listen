@@ -101,7 +101,7 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
         {orderedSteps.map((step) => {
           // Only show cancel button for steps that can be cancelled (not completed or failed)
           // And only when there are multiple steps in the pipeline
-          const canCancel = step.status !== "Pending" && hasMultipleSteps;
+          const canCancel = step.status === "Pending" && hasMultipleSteps;
 
           if ("Order" in step.action) {
             return (
