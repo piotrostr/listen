@@ -1,5 +1,4 @@
 import { useNavigate } from "@tanstack/react-router";
-import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -82,6 +81,53 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const { isMobile, isVerySmallScreen } = useMobile();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const { t } = useTranslation();
+
+  // Group chats by time periods
+  const groupChatsByTimePeriod = (chats: Chat[]) => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const last7Days = new Date(today);
+    last7Days.setDate(last7Days.getDate() - 7);
+
+    const groups: { [key: string]: Chat[] } = {
+      today: [],
+      yesterday: [],
+      last7Days: [],
+    };
+
+    // Object to store chats by month
+    const monthGroups: { [key: string]: Chat[] } = {};
+
+    chats.forEach((chat) => {
+      const chatDate = new Date(chat.lastMessageAt);
+      chatDate.setHours(0, 0, 0, 0);
+
+      if (chatDate.getTime() === today.getTime()) {
+        groups.today.push(chat);
+      } else if (chatDate.getTime() === yesterday.getTime()) {
+        groups.yesterday.push(chat);
+      } else if (chatDate.getTime() > last7Days.getTime()) {
+        groups.last7Days.push(chat);
+      } else {
+        // Group by month and year
+        const monthYear = chatDate.toLocaleString(i18n.language, {
+          month: "long",
+          year: "numeric",
+        });
+        if (!monthGroups[monthYear]) {
+          monthGroups[monthYear] = [];
+        }
+        monthGroups[monthYear].push(chat);
+      }
+    });
+
+    return { timePeriods: groups, monthGroups };
+  };
 
   const loadRecentChats = async () => {
     const allChats = await chatCache.getAll();
@@ -229,6 +275,23 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
     setEditingChatId(null);
   };
 
+  // Group the chats
+  const { timePeriods, monthGroups } = groupChatsByTimePeriod(recentChats);
+
+  const PeriodHeader = ({
+    timePeriod,
+    isMonthPeriod,
+  }: {
+    timePeriod: string;
+    isMonthPeriod?: boolean;
+  }) => {
+    return (
+      <div className="px-4 py-1 text-xs text-gray-400 font-semibold">
+        {!isMonthPeriod ? t(`recent_chats.${timePeriod}`) : timePeriod}
+      </div>
+    );
+  };
+
   return (
     <div
       className={`overflow-y-auto ${
@@ -239,58 +302,43 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
           : "max-h-[43vh]"
       } scrollbar-thin scrollbar-thumb-[#212121] scrollbar-track-transparent transition-all duration-300 ease-in-out`}
     >
-      {recentChats.map((chat) => (
-        <div
-          key={chat.id}
-          onClick={() => selectChat(chat.id)}
-          className="relative flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-[#212121] transition-colors cursor-pointer group"
-        >
-          <div className="flex-1 min-w-0">
-            {editingChatId === chat.id ? (
-              <textarea
-                ref={textareaRef}
-                className="w-full p-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded text-xs text-white resize-none focus:outline-none focus:border-blue-500"
-                rows={2}
-                value={editingText}
-                onClick={(e) => e.stopPropagation()}
-                onChange={(e) => setEditingText(e.target.value)}
-                onBlur={saveRename}
-                onKeyDown={(e) => {
-                  if (e.key === "Enter" && !e.shiftKey) {
-                    e.preventDefault();
-                    saveRename();
-                  } else if (e.key === "Escape") {
-                    cancelRename();
-                  }
-                }}
-              />
-            ) : (
-              <>
-                <div className="truncate text-xs">
-                  {chat.title || chat.messages[0]?.message.slice(0, 20) + "..."}
-                </div>
-                <div className="text-[10px] text-gray-500">
-                  {formatDistanceToNow(chat.lastMessageAt, {
-                    addSuffix: true,
-                    locale: getLocale(),
-                  })}
-                </div>
-              </>
-            )}
-          </div>
+      {/* Today's chats */}
+      {timePeriods.today.length > 0 && (
+        <>
+          <PeriodHeader timePeriod="today" />
+          {timePeriods.today.map((chat) => renderChatItem(chat))}
+        </>
+      )}
 
-          {editingChatId !== chat.id && (
-            <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
-              <button
-                onClick={(e) => toggleDropdown(chat.id, e)}
-                className="p-1 rounded-full hover:bg-[#333333] transition-colors shadow-sm"
-              >
-                <BsThreeDots className="text-gray-400 hover:text-white" />
-              </button>
-            </div>
-          )}
+      {/* Yesterday's chats */}
+      {timePeriods.yesterday.length > 0 && (
+        <div className="mt-4">
+          <PeriodHeader timePeriod="yesterday" />
+          {timePeriods.yesterday.map((chat) => renderChatItem(chat))}
+        </div>
+      )}
+
+      {/* Last 7 days chats */}
+      {timePeriods.last7Days.length > 0 && (
+        <div className="mt-4">
+          <PeriodHeader timePeriod="last7Days" />
+          {timePeriods.last7Days.map((chat) => renderChatItem(chat))}
+        </div>
+      )}
+
+      {/* Older chats grouped by month */}
+      {Object.entries(monthGroups).map(([monthYear, chats]) => (
+        <div key={monthYear} className="mt-4">
+          <PeriodHeader timePeriod={monthYear} isMonthPeriod={true} />
+          {chats.map((chat) => renderChatItem(chat))}
         </div>
       ))}
+
+      {recentChats.length === 0 && (
+        <div className="px-4 py-2 text-xs text-gray-400">
+          {t("no_recent_chats")}
+        </div>
+      )}
 
       {openDropdownId && (
         <DropdownMenu
@@ -303,4 +351,54 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
       )}
     </div>
   );
+
+  // Helper function to render chat items
+  function renderChatItem(chat: Chat) {
+    return (
+      <div
+        key={chat.id}
+        onClick={() => selectChat(chat.id)}
+        className="relative flex items-center h-8 px-4 text-sm text-gray-300 hover:text-white hover:bg-[#212121] transition-colors cursor-pointer group"
+      >
+        <div className="flex-1 min-w-0">
+          {editingChatId === chat.id ? (
+            <textarea
+              ref={textareaRef}
+              className="w-full p-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded text-xs text-white resize-none focus:outline-none focus:border-blue-500"
+              rows={1}
+              value={editingText}
+              onClick={(e) => e.stopPropagation()}
+              onChange={(e) => setEditingText(e.target.value)}
+              onBlur={saveRename}
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  saveRename();
+                } else if (e.key === "Escape") {
+                  cancelRename();
+                }
+              }}
+            />
+          ) : (
+            <>
+              <div className="truncate text-xs">
+                {chat.title || chat.messages[0]?.message.slice(0, 20) + "..."}
+              </div>
+            </>
+          )}
+        </div>
+
+        {editingChatId !== chat.id && (
+          <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
+            <button
+              onClick={(e) => toggleDropdown(chat.id, e)}
+              className="p-1 rounded-full hover:bg-[#333333] transition-colors shadow-sm"
+            >
+              <BsThreeDots className="text-gray-400 hover:text-white" />
+            </button>
+          </div>
+        )}
+      </div>
+    );
+  }
 }

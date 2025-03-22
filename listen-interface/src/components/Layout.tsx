@@ -292,11 +292,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
                 {/* Recent Chats Section */}
                 <div className="px-4 mb-2">
-                  {isSidebarOpen && (
-                    <div className="text-xs text-gray-400 uppercase tracking-wider mb-1 px-4">
-                      {t("layout.recent_chats")}
-                    </div>
-                  )}
                   <div className={isSidebarOpen ? "block" : "hidden"}>
                     <RecentChats
                       onItemClick={() => isMobile && setIsSidebarOpen(false)}
