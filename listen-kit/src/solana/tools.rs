@@ -4,6 +4,7 @@
 #![allow(non_upper_case_globals)]
 
 use anyhow::{anyhow, Result};
+use chrono::Local;
 use once_cell::sync::Lazy;
 use reqwest::Client;
 use rig_tool_macro::tool;
@@ -329,4 +330,9 @@ pub async fn get_portfolio() -> Result<Vec<PortfolioItem>> {
     .map_err(|e| anyhow!("{:#?}", e))?;
 
     holdings_to_portfolio(holdings).await
+}
+
+#[tool(description = "Returns the current date and time")]
+pub async fn get_current_time() -> Result<String> {
+    Ok(Local::now().to_rfc3339())
 }

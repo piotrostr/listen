@@ -1,5 +1,6 @@
 use super::tools::{
-    DeployPumpFunToken, GetQuote, GetSolBalance, GetSplTokenBalance, Swap,
+    DeployPumpFunToken, GetCurrentTime, GetQuote, GetSolBalance,
+    GetSplTokenBalance, Swap,
 };
 use crate::common::{claude_agent_builder, PREAMBLE_COMMON};
 use crate::data::{
@@ -45,7 +46,8 @@ pub async fn create_solana_agent(
         .tool(SearchTweets)
         .tool(AnalyzeRisk)
         .tool(FetchPriceActionAnalysis)
-        .tool(Think);
+        .tool(Think)
+        .tool(GetCurrentTime);
 
     if features.autonomous {
         agent = agent.tool(Swap).tool(CreateAdvancedOrder);
