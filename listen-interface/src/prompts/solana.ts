@@ -37,7 +37,6 @@ export function systemPromptSolana(
   <knowledge>${pipelineKnowledge("solana")}</knowledge>
   <errors>${solanaErrors}</errors>
   <limitations>${solanaLimitations}</limitations>
-  <current_date>${new Date().toISOString()}</current_date>
   `;
 }
 
@@ -55,6 +54,5 @@ export function systemPromptSolanaAgent(
   <solana_address>${pubkey}</solana_address>
   <portfolio>${JSON.stringify(solanaPortfolio)}</portfolio>
   <errors>${solanaErrors}</errors>
-  <current_date>${new Date().toISOString()}</current_date>
   `;
 }

@@ -16,6 +16,7 @@ export const toolCalls = {
     analyze_risk: "Analyzing risk...",
     thinking: "Thinking...",
     thoughts: "Thoughts",
+    get_current_time: "Checking the calendar...",
   },
   zh: {
     get_quote: "获取报价中...",
@@ -34,5 +35,6 @@ export const toolCalls = {
     analyze_risk: "分析风险中...",
     thinking: "思考中...",
     thoughts: "思考",
+    get_current_time: "检查日历中...",
   },
 };

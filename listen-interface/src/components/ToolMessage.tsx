@@ -1,5 +1,6 @@
 import { ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
+import { BsClock } from "react-icons/bs";
 import {
   FaChartLine,
   FaCheckCircle,
@@ -78,6 +79,19 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "think") {
     return null;
+  }
+
+  if (toolOutput.name === "get_current_time") {
+    try {
+      const parsed = JSON.parse(toolOutput.result);
+      return (
+        <div className="text-blue-300 flex items-center gap-1 p-3 text-sm">
+          <BsClock /> {new Date(parsed).toLocaleString()}
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse current time:", e);
+    }
   }
 
   if (toolOutput.name === "create_advanced_order") {
