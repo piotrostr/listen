@@ -3,6 +3,7 @@ import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { useTranslation } from "react-i18next";
 import { BsThreeDots } from "react-icons/bs";
 import { RiDeleteBin5Line, RiEdit2Line, RiShare2Line } from "react-icons/ri";
 import { useChat } from "../contexts/ChatContext";
@@ -28,6 +29,8 @@ const DropdownMenu = ({
 }) => {
   if (!position) return null;
 
+  const { t } = useTranslation();
+
   return createPortal(
     <div
       className="fixed bg-[#1a1a1a] shadow-lg rounded py-1 z-[1000]"
@@ -42,21 +45,21 @@ const DropdownMenu = ({
         className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors rounded-lg flex items-center"
       >
         <RiShare2Line className="mr-2" />
-        Share
+        {t("share_modal.share")}
       </button>
       <button
         onClick={onRename}
         className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors rounded-lg flex items-center"
       >
         <RiEdit2Line className="mr-2" />
-        Rename
+        {t("share_modal.rename")}
       </button>
       <button
         onClick={onDelete}
         className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors text-red-400 rounded-lg flex items-center"
       >
         <RiDeleteBin5Line className="mr-2" />
-        Delete
+        {t("share_modal.delete")}
       </button>
     </div>,
     document.body
