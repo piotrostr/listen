@@ -7,6 +7,23 @@ import { chatCache } from "../hooks/localStorage";
 import i18n from "../i18n";
 import { Chat } from "../types/message";
 
+const DropdownMenu = ({
+  onShare,
+  onRename,
+  onDelete,
+}: {
+  onShare: () => void;
+  onRename: () => void;
+  onDelete: () => void;
+}) => {
+  return (
+    <div>
+      <button onClick={onShare}>Share</button>
+      <button onClick={onRename}>Rename</button>
+      <button onClick={onDelete}>Delete</button>
+    </div>
+  );
+};
 export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const navigate = useNavigate();
@@ -21,6 +38,26 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
       );
       setRecentChats(recent);
     }
+  };
+
+  const renameChat = async (chatId: string, newName: string) => {
+    const chat = await chatCache.get(chatId);
+    if (chat) {
+      chat.title = newName;
+      await chatCache.set(chatId, chat);
+      const index = recentChats.findIndex((c) => c.id === chatId);
+      if (index !== -1) {
+        const newChats = [...recentChats];
+        newChats[index] = chat;
+        setRecentChats(newChats);
+      }
+    }
+  };
+
+  const deleteChat = async (chatId: string) => {
+    await chatCache.delete(chatId);
+    const newChats = recentChats.filter((c) => c.id !== chatId);
+    setRecentChats(newChats);
   };
 
   useEffect(() => {
