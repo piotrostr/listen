@@ -121,7 +121,6 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
                       conditions: step.conditions.map((condition) =>
                         renderCondition(condition)
                       ),
-                      status: step.status,
                     }}
                     status={step.status}
                     transactionHash={step.transaction_hash}
@@ -152,7 +151,6 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
                       conditions: step.conditions.map((condition) =>
                         renderCondition(condition)
                       ),
-                      status: step.status,
                     }}
                     status={step.status}
                   />

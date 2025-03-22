@@ -1,5 +1,4 @@
 import { z } from "zod";
-import { StatusSchema } from "./api";
 
 export enum PipelineActionType {
   SwapOrder = "SwapOrder",
@@ -41,7 +40,6 @@ export const PipelineConditionSchema = z.object({
 export const PipelineStepSchema = z.object({
   action: PipelineActionSchema,
   conditions: z.array(PipelineConditionSchema).optional(),
-  status: StatusSchema,
 });
 
 export const PipelineSchema = z.object({
