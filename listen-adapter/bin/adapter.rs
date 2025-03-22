@@ -55,6 +55,7 @@ async fn main() -> std::io::Result<()> {
             // get and save chat routes are unauthenticated, those are for "shared" chats
             .route("/get-chat", web::get().to(get_chat))
             .route("/save-chat", web::post().to(save_chat))
+            .route("/version", web::get().to(version))
     };
 
     let port = 6968;
