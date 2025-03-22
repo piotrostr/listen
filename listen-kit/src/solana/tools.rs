@@ -332,7 +332,10 @@ pub async fn get_portfolio() -> Result<Vec<PortfolioItem>> {
     holdings_to_portfolio(holdings).await
 }
 
-#[tool(description = "Returns the current date and time")]
+#[tool(description = "
+Returns the current date and time, in UTC
+Note: user will see the output formatted to their local time in the UI
+")]
 pub async fn get_current_time() -> Result<String> {
-    Ok(Local::now().to_rfc3339())
+    Ok(Local::now().to_utc().to_string())
 }
