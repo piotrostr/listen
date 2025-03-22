@@ -5,7 +5,9 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BsThreeDots } from "react-icons/bs";
 import { RiDeleteBin5Line, RiEdit2Line, RiShare2Line } from "react-icons/ri";
+import { useChat } from "../contexts/ChatContext";
 import { useMobile } from "../contexts/MobileContext";
+import { useModal } from "../contexts/ModalContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { chatCache } from "../hooks/localStorage";
 import i18n from "../i18n";
@@ -63,6 +65,8 @@ const DropdownMenu = ({
 
 export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const { setIsDropdownOpen } = useSidebar();
+  const { openShareModal } = useModal();
+  const { shareChat } = useChat();
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
@@ -177,9 +181,11 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
     setDropdownPosition(null);
   };
 
-  const handleShare = (chatId: string, e: React.MouseEvent) => {
+  const handleShare = async (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    console.log(`Share chat ${chatId}`);
+    const sharedChatId = await shareChat(chatId, true); // cached: true
+    const url = `${window.location.origin}/?chatId=${sharedChatId}&shared=true`;
+    openShareModal(url);
     closeDropdown();
   };
 

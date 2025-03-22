@@ -31,7 +31,7 @@ interface ChatContextType {
   sendMessage: (message: string) => Promise<void>;
   setMessages: (messages: Message[]) => void;
   stopGeneration: () => void;
-  shareChat: (chatId: string) => Promise<string>;
+  shareChat: (chatId: string, cached?: boolean) => Promise<string>;
   loadSharedChat: (chatId: string) => Promise<Chat>;
   isSharedChat: boolean;
   editMessage: (messageId: string, newContent: string) => void;
@@ -445,8 +445,15 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const shareChat = async (chatId: string) => {
-    if (!chat) return chatId;
+  const shareChat = async (chatId: string, cached?: boolean) => {
+    let _chat = chat;
+    if (!_chat && !cached) {
+      return chatId;
+    }
+
+    if (cached) {
+      _chat = await fetchChatFromCache(chatId);
+    }
 
     try {
       const response = await fetch(
@@ -458,7 +465,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           },
           body: JSON.stringify({
             chat_id: chatId,
-            chat: chat, // The entire chat object
+            chat: _chat, // The entire chat object
           }),
         }
       );
@@ -474,6 +481,11 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       console.error("Error sharing chat:", error);
       throw error;
     }
+  };
+
+  const fetchChatFromCache = async (chatId: string) => {
+    const chat = await chatCache.get(chatId);
+    return chat;
   };
 
   const loadSharedChat = async (chatId: string) => {
