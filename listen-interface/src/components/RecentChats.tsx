@@ -4,6 +4,7 @@ import { zhCN } from "date-fns/locale";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BsThreeDots } from "react-icons/bs";
+import { RiDeleteBin5Line, RiEdit2Line, RiShare2Line } from "react-icons/ri";
 import { useMobile } from "../contexts/MobileContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { chatCache } from "../hooks/localStorage";
@@ -36,20 +37,23 @@ const DropdownMenu = ({
     >
       <button
         onClick={onShare}
-        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors rounded-lg"
+        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors rounded-lg flex items-center"
       >
+        <RiShare2Line className="mr-2" />
         Share
       </button>
       <button
         onClick={onRename}
-        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors rounded-lg"
+        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors rounded-lg flex items-center"
       >
+        <RiEdit2Line className="mr-2" />
         Rename
       </button>
       <button
         onClick={onDelete}
-        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors text-red-400 rounded-lg"
+        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors text-red-400 rounded-lg flex items-center"
       >
+        <RiDeleteBin5Line className="mr-2" />
         Delete
       </button>
     </div>,
