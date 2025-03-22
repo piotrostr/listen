@@ -286,7 +286,7 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
     isMonthPeriod?: boolean;
   }) => {
     return (
-      <div className="px-4 py-1 text-xs text-gray-400 font-semibold">
+      <div className="px-2 py-1 text-xs text-white font-semibold">
         {!isMonthPeriod ? t(`recent_chats.${timePeriod}`) : timePeriod}
       </div>
     );
@@ -335,9 +335,7 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
       ))}
 
       {recentChats.length === 0 && (
-        <div className="px-4 py-2 text-xs text-gray-400">
-          {t("no_recent_chats")}
-        </div>
+        <div className="py-2 text-xs text-gray-400">{t("no_recent_chats")}</div>
       )}
 
       {openDropdownId && (
@@ -358,7 +356,7 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
       <div
         key={chat.id}
         onClick={() => selectChat(chat.id)}
-        className="relative flex items-center h-8 px-4 text-sm text-gray-300 hover:text-white hover:bg-[#212121] transition-colors cursor-pointer group"
+        className="relative flex items-center h-8 px-2 text-sm text-gray-300 hover:text-white hover:bg-[#212121] transition-colors cursor-pointer group rounded-lg"
       >
         <div className="flex-1 min-w-0">
           {editingChatId === chat.id ? (
