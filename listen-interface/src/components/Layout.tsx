@@ -90,7 +90,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout } = usePrivy();
   const { t } = useTranslation();
 
-  const { isSidebarOpen, setIsSidebarOpen, toggleSidebar } = useSidebar();
+  const { isSidebarOpen, setIsSidebarOpen, toggleSidebar, isDropdownOpen } =
+    useSidebar();
 
   // Add useEffect to handle iOS viewport height
   useEffect(() => {
@@ -136,7 +137,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const handleSidebarMouseLeave = () => {
-    if (!isMobile) setIsSidebarOpen(false);
+    if (!isMobile && !isDropdownOpen) {
+      setIsSidebarOpen(false);
+    }
   };
 
   // Handle burger menu click for mobile

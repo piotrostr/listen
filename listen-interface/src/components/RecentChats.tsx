@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { BsThreeDots } from "react-icons/bs";
 import { useMobile } from "../contexts/MobileContext";
+import { useSidebar } from "../contexts/SidebarContext";
 import { chatCache } from "../hooks/localStorage";
 import i18n from "../i18n";
 import { Chat } from "../types/message";
@@ -54,6 +55,7 @@ const DropdownMenu = ({
 };
 
 export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
+  const { isSidebarOpen, setIsDropdownOpen } = useSidebar();
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
@@ -116,14 +118,17 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
         !dropdownRef.current.contains(event.target as Node)
       ) {
         setOpenDropdownId(null);
+        setDropdownPosition(null);
+        setIsDropdownOpen(false);
       }
     };
 
     document.addEventListener("mousedown", handleClickOutside);
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
+      setIsDropdownOpen(false);
     };
-  }, []);
+  }, [setIsDropdownOpen]);
 
   const getLocale = () => {
     return i18n.language.startsWith("zh") ? zhCN : undefined;
@@ -134,34 +139,12 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
     if (onItemClick) onItemClick();
   };
 
-  const handleShare = (chatId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    console.log(`Share chat ${chatId}`);
-    setOpenDropdownId(null);
-  };
-
-  const handleRename = (chatId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    const newName = prompt("Enter new name for this chat:");
-    if (newName) {
-      renameChat(chatId, newName);
-    }
-    setOpenDropdownId(null);
-  };
-
-  const handleDelete = (chatId: string, e: React.MouseEvent) => {
-    e.stopPropagation();
-    if (confirm("Are you sure you want to delete this chat?")) {
-      deleteChat(chatId);
-    }
-    setOpenDropdownId(null);
-  };
-
   const toggleDropdown = (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
     if (openDropdownId === chatId) {
       setOpenDropdownId(null);
       setDropdownPosition(null);
+      setIsDropdownOpen(false);
     } else {
       setOpenDropdownId(chatId);
       const button = e.currentTarget as HTMLElement;
@@ -170,7 +153,37 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
         x: rect.left - 100,
         y: rect.bottom + 5,
       });
+      setIsDropdownOpen(true);
     }
+  };
+
+  const closeDropdown = () => {
+    setOpenDropdownId(null);
+    setDropdownPosition(null);
+    setIsDropdownOpen(false);
+  };
+
+  const handleShare = (chatId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    console.log(`Share chat ${chatId}`);
+    closeDropdown();
+  };
+
+  const handleRename = (chatId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    const newName = prompt("Enter new name for this chat:");
+    if (newName) {
+      renameChat(chatId, newName);
+    }
+    closeDropdown();
+  };
+
+  const handleDelete = (chatId: string, e: React.MouseEvent) => {
+    e.stopPropagation();
+    if (confirm("Are you sure you want to delete this chat?")) {
+      deleteChat(chatId);
+    }
+    closeDropdown();
   };
 
   return (

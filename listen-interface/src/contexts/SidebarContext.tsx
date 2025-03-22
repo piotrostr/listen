@@ -4,16 +4,21 @@ type SidebarContextType = {
   setIsSidebarOpen: (open: boolean) => void;
   isSidebarOpen: boolean;
   toggleSidebar: () => void;
+  isDropdownOpen: boolean;
+  setIsDropdownOpen: (open: boolean) => void;
 };
 
 const SidebarContext = createContext<SidebarContextType>({
   setIsSidebarOpen: () => {},
   isSidebarOpen: false,
   toggleSidebar: () => {},
+  isDropdownOpen: false,
+  setIsDropdownOpen: () => {},
 });
 
 export const SidebarProvider = ({ children }: { children: ReactNode }) => {
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const toggleSidebar = () => setIsSidebarOpen((prev) => !prev);
 
@@ -23,6 +28,8 @@ export const SidebarProvider = ({ children }: { children: ReactNode }) => {
         isSidebarOpen,
         setIsSidebarOpen,
         toggleSidebar,
+        isDropdownOpen,
+        setIsDropdownOpen,
       }}
     >
       {children}
