@@ -28,7 +28,7 @@ const DropdownMenu = ({
 
   return createPortal(
     <div
-      className="fixed bg-[#1a1a1a] shadow-lg rounded py-1 min-w-[120px] z-[1000]"
+      className="fixed bg-[#1a1a1a] shadow-lg rounded py-1 z-[1000]"
       style={{
         left: `${position.x}px`,
         top: `${position.y}px`,
