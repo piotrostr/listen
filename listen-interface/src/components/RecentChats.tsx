@@ -69,9 +69,12 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
     x: number;
     y: number;
   } | null>(null);
+  const [editingChatId, setEditingChatId] = useState<string | null>(null);
+  const [editingText, setEditingText] = useState("");
   const navigate = useNavigate();
   const { isMobile, isVerySmallScreen } = useMobile();
   const dropdownRef = useRef<HTMLDivElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const loadRecentChats = async () => {
     const allChats = await chatCache.getAll();
@@ -182,19 +185,39 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
 
   const handleRename = (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    const newName = prompt("Enter new name for this chat:");
-    if (newName) {
-      renameChat(chatId, newName);
+    const chat = recentChats.find((c) => c.id === chatId);
+    if (chat) {
+      setEditingChatId(chatId);
+      setEditingText(
+        chat.title || chat.messages[0]?.message.slice(0, 20) + "..." || ""
+      );
+
+      // Focus the textarea in the next tick after rendering
+      setTimeout(() => {
+        if (textareaRef.current) {
+          textareaRef.current.focus();
+          textareaRef.current.select();
+        }
+      }, 0);
     }
     closeDropdown();
   };
 
   const handleDelete = (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    if (confirm("Are you sure you want to delete this chat?")) {
-      deleteChat(chatId);
-    }
+    deleteChat(chatId);
     closeDropdown();
+  };
+
+  const saveRename = async () => {
+    if (editingChatId && editingText.trim()) {
+      await renameChat(editingChatId, editingText);
+      setEditingChatId(null);
+    }
+  };
+
+  const cancelRename = () => {
+    setEditingChatId(null);
   };
 
   return (
@@ -214,25 +237,49 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
           className="relative flex items-center h-10 px-4 text-sm text-gray-300 hover:text-white hover:bg-[#212121] transition-colors cursor-pointer group"
         >
           <div className="flex-1 min-w-0">
-            <div className="truncate text-xs">
-              {chat.title || chat.messages[0]?.message.slice(0, 20) + "..."}
-            </div>
-            <div className="text-[10px] text-gray-500">
-              {formatDistanceToNow(chat.lastMessageAt, {
-                addSuffix: true,
-                locale: getLocale(),
-              })}
-            </div>
+            {editingChatId === chat.id ? (
+              <textarea
+                ref={textareaRef}
+                className="w-full p-1 bg-[#2a2a2a] border border-[#3a3a3a] rounded text-xs text-white resize-none focus:outline-none focus:border-blue-500"
+                rows={2}
+                value={editingText}
+                onClick={(e) => e.stopPropagation()}
+                onChange={(e) => setEditingText(e.target.value)}
+                onBlur={saveRename}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter" && !e.shiftKey) {
+                    e.preventDefault();
+                    saveRename();
+                  } else if (e.key === "Escape") {
+                    cancelRename();
+                  }
+                }}
+              />
+            ) : (
+              <>
+                <div className="truncate text-xs">
+                  {chat.title || chat.messages[0]?.message.slice(0, 20) + "..."}
+                </div>
+                <div className="text-[10px] text-gray-500">
+                  {formatDistanceToNow(chat.lastMessageAt, {
+                    addSuffix: true,
+                    locale: getLocale(),
+                  })}
+                </div>
+              </>
+            )}
           </div>
 
-          <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              onClick={(e) => toggleDropdown(chat.id, e)}
-              className="p-1 rounded-full hover:bg-[#333333] transition-colors shadow-sm"
-            >
-              <BsThreeDots className="text-gray-400 hover:text-white" />
-            </button>
-          </div>
+          {editingChatId !== chat.id && (
+            <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={(e) => toggleDropdown(chat.id, e)}
+                className="p-1 rounded-full hover:bg-[#333333] transition-colors shadow-sm"
+              >
+                <BsThreeDots className="text-gray-400 hover:text-white" />
+              </button>
+            </div>
+          )}
         </div>
       ))}
 
