@@ -5,10 +5,12 @@ import { PipelineStepContainer } from "./PipelineStepContainer";
 
 interface NotificationPipelineStepProps {
   step: PipelineStep;
+  status?: "Pending" | "Completed" | "Failed" | "Cancelled";
 }
 
 export const NotificationPipelineStep = ({
   step,
+  status,
 }: NotificationPipelineStepProps) => {
   const { t } = useTranslation();
 
@@ -26,6 +28,7 @@ export const NotificationPipelineStep = ({
   return (
     <PipelineStepContainer
       conditions={step.conditions ?? []}
+      status={status}
       transactionHash={null}
       error={null}
     >

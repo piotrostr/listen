@@ -102,14 +102,14 @@ export function useCancelPipeline() {
       invalidatePipelines();
       invalidateSolanaPortfolio();
 
-      showToast(t("pipeline_execution.step_cancelled"), "success");
+      showToast(t("pipelines.step_cancelled"), "success");
       options?.onSuccess?.();
       return true;
     } catch (error) {
       const errorMessage =
         error instanceof Error
           ? error.message
-          : t("pipeline_execution.cancel_step_error");
+          : t("pipelines.cancel_step_error");
       showToast(errorMessage, "error");
       options?.onError?.(
         error instanceof Error ? error : new Error(errorMessage)

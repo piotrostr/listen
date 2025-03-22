@@ -48,7 +48,12 @@ const ConditionSchema = z.object({
 });
 
 // Update status enum
-const StatusSchema = z.enum(["Pending", "Completed", "Failed", "Cancelled"]);
+export const StatusSchema = z.enum([
+  "Pending",
+  "Completed",
+  "Failed",
+  "Cancelled",
+]);
 
 const OrderActionSchema = z.object({
   Order: z.object({

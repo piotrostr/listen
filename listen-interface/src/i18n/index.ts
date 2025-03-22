@@ -63,6 +63,8 @@ const resources = {
         reject: "Reject",
         pipeline_rejected: "Pipeline rejected",
         pipeline_scheduled_for_execution: "Pipeline scheduled for execution",
+        step_cancelled: "Step cancelled",
+        cancel_step_error: "Failed to cancel step",
         invalid_timestamp: "Invalid timestamp",
         amount: "Amount",
       },
@@ -182,6 +184,9 @@ const resources = {
         pipeline_rejected: "自动化任务已被拒绝",
         pipeline_scheduled_for_execution: "自动化任务已安排执行",
         invalid_timestamp: "无效的时间戳",
+        pipeline_cancelled: "自动化任务已取消",
+        step_cancelled: "步骤已取消",
+        cancel_step_error: "取消步骤失败",
       },
       token_tile: {
         traders: "交易者",
