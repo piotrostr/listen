@@ -15,11 +15,13 @@ const DropdownMenu = ({
   onRename,
   onDelete,
   position,
+  dropdownRef,
 }: {
   onShare: (e: React.MouseEvent) => void;
   onRename: (e: React.MouseEvent) => void;
   onDelete: (e: React.MouseEvent) => void;
   position: { x: number; y: number } | null;
+  dropdownRef: React.RefObject<HTMLDivElement>;
 }) => {
   if (!position) return null;
 
@@ -30,6 +32,7 @@ const DropdownMenu = ({
         left: `${position.x}px`,
         top: `${position.y}px`,
       }}
+      ref={dropdownRef}
     >
       <button
         onClick={onShare}
@@ -112,20 +115,27 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   }, []);
 
   useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (
-        dropdownRef.current &&
-        !dropdownRef.current.contains(event.target as Node)
-      ) {
-        setOpenDropdownId(null);
-        setDropdownPosition(null);
-        setIsDropdownOpen(false);
-      }
-    };
+    setIsDropdownOpen(openDropdownId !== null);
 
-    document.addEventListener("mousedown", handleClickOutside);
+    if (openDropdownId !== null) {
+      const handleClickOutside = (event: MouseEvent) => {
+        if (
+          dropdownRef.current &&
+          !dropdownRef.current.contains(event.target as Node)
+        ) {
+          closeDropdown();
+        }
+      };
+
+      document.addEventListener("mousedown", handleClickOutside);
+      return () => {
+        document.removeEventListener("mousedown", handleClickOutside);
+      };
+    }
+  }, [openDropdownId, setIsDropdownOpen]);
+
+  useEffect(() => {
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
       setIsDropdownOpen(false);
     };
   }, [setIsDropdownOpen]);
@@ -144,7 +154,6 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
     if (openDropdownId === chatId) {
       setOpenDropdownId(null);
       setDropdownPosition(null);
-      setIsDropdownOpen(false);
     } else {
       setOpenDropdownId(chatId);
       const button = e.currentTarget as HTMLElement;
@@ -153,14 +162,12 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
         x: rect.left - 100,
         y: rect.bottom + 5,
       });
-      setIsDropdownOpen(true);
     }
   };
 
   const closeDropdown = () => {
     setOpenDropdownId(null);
     setDropdownPosition(null);
-    setIsDropdownOpen(false);
   };
 
   const handleShare = (chatId: string, e: React.MouseEvent) => {
@@ -231,6 +238,7 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
           onRename={(e) => handleRename(openDropdownId, e)}
           onDelete={(e) => handleDelete(openDropdownId, e)}
           position={dropdownPosition}
+          dropdownRef={dropdownRef}
         />
       )}
     </div>
