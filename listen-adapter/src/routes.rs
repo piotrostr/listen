@@ -31,6 +31,12 @@ pub async fn health_check() -> HttpResponse {
     }))
 }
 
+pub async fn version() -> HttpResponse {
+    HttpResponse::Ok().json(json!({
+        "version": "2.4.0"
+    }))
+}
+
 #[derive(Deserialize)]
 pub struct TopTokensQuery {
     pub limit: Option<usize>,

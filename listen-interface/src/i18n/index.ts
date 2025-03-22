@@ -16,11 +16,13 @@ import { shareModal } from "./translations/share-modal";
 import { tokenTile } from "./translations/token-tile";
 import { toolCalls } from "./translations/tool-calls";
 import { toolMessages } from "./translations/tool-messages";
+import { version } from "./translations/version";
 import { walletAddresses } from "./translations/wallet-addresses";
 
 const resources = {
   en: {
     translation: {
+      version: version.en,
       tool_calls: toolCalls.en,
       tool_messages: toolMessages.en,
       getting_started: gettingStarted.en,
@@ -42,6 +44,7 @@ const resources = {
   },
   zh: {
     translation: {
+      version: version.zh,
       tool_calls: toolCalls.zh,
       tool_messages: toolMessages.zh,
       getting_started: gettingStarted.zh,

@@ -19,6 +19,7 @@ import { RecentChats } from "./RecentChats";
 import { SimpleHeader } from "./SimpleHeader";
 import { SwipeHandler } from "./SwipeHandler";
 import { VersionAndLanguageDisplay } from "./VersionAndLanguage";
+import { VersionInitializer } from "./VersionInitializer";
 import { WalletInitializer } from "./WalletInitializer";
 import { WebsocketInitializer } from "./WebsocketInitializer";
 
@@ -167,6 +168,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
     <>
       <WalletInitializer />
       <WebsocketInitializer />
+      <VersionInitializer />
       <div
         className="relative flex flex-col text-white overflow-hidden"
         style={{ height: isIOS ? "calc(var(--vh, 1vh) * 100)" : "100vh" }}
