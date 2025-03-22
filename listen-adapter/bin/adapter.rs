@@ -10,7 +10,7 @@ use listen_adapter::{
     redis_subscriber::create_redis_subscriber,
     routes::{
         get_candlesticks, get_chat, get_metadata, get_price, health_check, query_db, save_chat,
-        top_tokens, ws_route,
+        top_tokens, version, ws_route,
     },
     state::AppState,
 };
