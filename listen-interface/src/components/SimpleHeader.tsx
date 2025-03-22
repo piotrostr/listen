@@ -1,14 +1,13 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { useContext } from "react";
 import { useTranslation } from "react-i18next";
 import { BsLink } from "react-icons/bs";
 import { IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
 import { RxDashboard } from "react-icons/rx";
 import { useMobile } from "../contexts/MobileContext";
+import { useSidebar } from "../contexts/SidebarContext";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { BurgerIcon } from "./Burger";
-import { SidebarContext } from "./Layout";
 
 interface SimpleHeaderProps {
   activePanel: string | null;
@@ -41,7 +40,7 @@ export function SimpleHeader({
   toggleMobileSidebar,
 }: SimpleHeaderProps) {
   const { t } = useTranslation();
-  const { isSidebarOpen, setIsSidebarOpen } = useContext(SidebarContext);
+  const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
   const { isMobile, isVerySmallScreen } = useMobile();
   const { user } = usePrivy();
 

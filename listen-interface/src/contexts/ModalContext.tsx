@@ -1,22 +1,43 @@
 import { createContext, ReactNode, useContext, useState } from "react";
 import { createPortal } from "react-dom";
 import { Chart } from "../components/Chart";
+import { ShareModal } from "../components/ShareModal";
 
 interface ModalContextType {
   openChart: (mint: string) => void;
   closeChart: () => void;
+  openShareModal: (url: string) => void;
+  closeShareModal: () => void;
 }
 
 const ModalContext = createContext<ModalContextType | null>(null);
 
 export function ModalProvider({ children }: { children: ReactNode }) {
   const [chartMint, setChartMint] = useState<string | null>(null);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
+  const [shareUrl, setShareUrl] = useState("");
 
   const openChart = (mint: string) => setChartMint(mint);
   const closeChart = () => setChartMint(null);
 
+  const openShareModal = (url: string) => {
+    setShareUrl(url);
+    setIsShareModalOpen(true);
+  };
+
+  const closeShareModal = () => {
+    setIsShareModalOpen(false);
+  };
+
   return (
-    <ModalContext.Provider value={{ openChart, closeChart }}>
+    <ModalContext.Provider
+      value={{
+        openChart,
+        closeChart,
+        openShareModal,
+        closeShareModal,
+      }}
+    >
       {children}
       {chartMint &&
         createPortal(
@@ -37,6 +58,9 @@ export function ModalProvider({ children }: { children: ReactNode }) {
           </div>,
           document.body
         )}
+      {isShareModalOpen && (
+        <ShareModal url={shareUrl} onClose={closeShareModal} />
+      )}
     </ModalContext.Provider>
   );
 }

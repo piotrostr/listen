@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { createContext, memo, useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Background } from "./Background";
 
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,7 @@ import {
 } from "react-icons/io5";
 import { RxDashboard } from "react-icons/rx";
 import { useMobile } from "../contexts/MobileContext";
+import { useSidebar } from "../contexts/SidebarContext";
 import { PanelSelector } from "./PanelSelector";
 import { RecentChats } from "./RecentChats";
 import { SimpleHeader } from "./SimpleHeader";
@@ -52,15 +53,6 @@ const MemoizedBottomLink = memo(function BottomLink({
   );
 });
 
-// Add this near the top of the file, after imports
-export const SidebarContext = createContext<{
-  setIsSidebarOpen: (open: boolean) => void;
-  isSidebarOpen: boolean;
-}>({
-  setIsSidebarOpen: () => {},
-  isSidebarOpen: false,
-});
-
 function getBottomItems(t: (key: string) => string) {
   return [
     // TODO update docs when ready
@@ -94,10 +86,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [activePanel, setActivePanel] = useState(
     localStorage.getItem("activePanel") || null
   );
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { isMobile, isIOS } = useMobile();
   const { user, logout } = usePrivy();
   const { t } = useTranslation();
+
+  const { isSidebarOpen, setIsSidebarOpen, toggleSidebar, isDropdownOpen } =
+    useSidebar();
 
   // Add useEffect to handle iOS viewport height
   useEffect(() => {
@@ -143,12 +137,14 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   const handleSidebarMouseLeave = () => {
-    if (!isMobile) setIsSidebarOpen(false);
+    if (!isMobile && !isDropdownOpen) {
+      setIsSidebarOpen(false);
+    }
   };
 
   // Handle burger menu click for mobile
   const toggleMobileSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+    toggleSidebar();
   };
 
   // Function to handle navigation item clicks
@@ -168,7 +164,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <SidebarContext.Provider value={{ setIsSidebarOpen, isSidebarOpen }}>
+    <>
       <WalletInitializer />
       <WebsocketInitializer />
       <div
@@ -205,7 +201,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             />
           )}
 
-          {/* Collapsible Sidebar - Modified for X-style animation */}
+          {/* Collapsible Sidebar */}
           <div
             className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 
               ${isMobile ? "w-64" : isSidebarOpen ? "w-64" : "w-16"} 
@@ -220,7 +216,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <>
                 {/* New Chat Button - Only shown on desktop */}
                 {isSidebarOpen && !isMobile && (
-                  <div className="p-4">
+                  <div className="p-4 flex-shrink-0">
                     <Link
                       to="/"
                       search={{ new: true }}
@@ -249,7 +245,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
                 {/* Mobile Navigation Items - Only shown on mobile */}
                 {isMobile && user && isSidebarOpen && (
-                  <div className="px-4 mb-4 mt-5">
+                  <div className="px-4 mb-4 mt-5 flex-shrink-0">
                     <div className="space-y-1">
                       <button
                         onClick={() => handleNavClick("chat")}
@@ -294,14 +290,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </div>
                 )}
 
-                {/* Recent Chats Section */}
-                <div className="px-4 mb-2">
-                  {isSidebarOpen && (
-                    <div className="text-xs text-gray-400 uppercase tracking-wider mb-1 px-4">
-                      {t("layout.recent_chats")}
-                    </div>
-                  )}
-                  <div className={isSidebarOpen ? "block" : "hidden"}>
+                {/* Recent Chats Section - Modified to use flex-grow */}
+                <div className="px-4 flex-grow flex flex-col min-h-0">
+                  <div
+                    className={`${isSidebarOpen ? "block" : "hidden"} h-full`}
+                  >
                     <RecentChats
                       onItemClick={() => isMobile && setIsSidebarOpen(false)}
                     />
@@ -309,7 +302,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {/* Bottom section */}
-                <div className="mt-auto p-4 space-y-1">
+                <div className="mt-auto p-4 space-y-1 flex-shrink-0">
                   {isSidebarOpen && <VersionAndLanguageDisplay />}
                   {memoizedBottomItems}
                   {user && (
@@ -395,6 +388,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </div>
-    </SidebarContext.Provider>
+    </>
   );
 }

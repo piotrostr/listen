@@ -2,11 +2,11 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../contexts/ChatContext";
+import { useModal } from "../contexts/ModalContext";
 import { ToolCall, ToolCallSchema } from "../types/message";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
 import { NewChatCarousel } from "./NewChatCarousel";
-import { ShareModal } from "./ShareModal";
 import { ThinkingIndicator } from "./ThinkingIndicator";
 import { ToolCallMessage } from "./ToolCallMessage";
 
@@ -49,11 +49,10 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputMessage, setInputMessage] = useState("");
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [shareUrl, setShareUrl] = useState("");
   const { getAccessToken } = usePrivy();
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
   const { t } = useTranslation();
+  const { openShareModal } = useModal();
 
   const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>(null);
 
@@ -147,8 +146,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       const sharedChatId = await shareChat(currentChatId);
       // Create a shareable URL that always uses the root path
       const url = `${window.location.origin}/?chatId=${sharedChatId}&shared=true`;
-      setShareUrl(url);
-      setIsShareModalOpen(true);
+      openShareModal(url);
     } catch (error) {
       console.error("Failed to share chat:", error);
     }
@@ -233,11 +231,6 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
           <div className="flex-grow min-h-[68vh] md:min-h-[85vh]" />
         )}
       </ChatContainer>
-
-      {/* Share Modal */}
-      {isShareModalOpen && (
-        <ShareModal url={shareUrl} onClose={() => setIsShareModalOpen(false)} />
-      )}
     </>
   );
 }
