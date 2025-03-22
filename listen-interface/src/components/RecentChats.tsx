@@ -6,7 +6,6 @@ import { useTranslation } from "react-i18next";
 import { BsThreeDots } from "react-icons/bs";
 import { RiDeleteBin5Line, RiEdit2Line, RiShare2Line } from "react-icons/ri";
 import { useChat } from "../contexts/ChatContext";
-import { useMobile } from "../contexts/MobileContext";
 import { useModal } from "../contexts/ModalContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { chatCache } from "../hooks/localStorage";
@@ -78,7 +77,6 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const [editingChatId, setEditingChatId] = useState<string | null>(null);
   const [editingText, setEditingText] = useState("");
   const navigate = useNavigate();
-  const { isMobile, isVerySmallScreen } = useMobile();
   const dropdownRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { t } = useTranslation();
@@ -293,15 +291,7 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   };
 
   return (
-    <div
-      className={`overflow-y-auto ${
-        isMobile
-          ? isVerySmallScreen
-            ? "max-h-[16.5vh]"
-            : "max-h-[28vh]"
-          : "max-h-[43vh]"
-      } scrollbar-thin scrollbar-thumb-[#212121] scrollbar-track-transparent transition-all duration-300 ease-in-out`}
-    >
+    <div className="overflow-y-auto h-full scrollbar-thin scrollbar-thumb-[#212121] scrollbar-track-transparent transition-all duration-300 ease-in-out">
       {/* Today's chats */}
       {timePeriods.today.length > 0 && (
         <>

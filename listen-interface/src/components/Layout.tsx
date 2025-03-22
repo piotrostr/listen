@@ -201,7 +201,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             />
           )}
 
-          {/* Collapsible Sidebar - Modified for X-style animation */}
+          {/* Collapsible Sidebar */}
           <div
             className={`fixed left-0 top-16 bottom-0 z-40 transition-all duration-300 
               ${isMobile ? "w-64" : isSidebarOpen ? "w-64" : "w-16"} 
@@ -216,7 +216,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               <>
                 {/* New Chat Button - Only shown on desktop */}
                 {isSidebarOpen && !isMobile && (
-                  <div className="p-4">
+                  <div className="p-4 flex-shrink-0">
                     <Link
                       to="/"
                       search={{ new: true }}
@@ -245,7 +245,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
                 {/* Mobile Navigation Items - Only shown on mobile */}
                 {isMobile && user && isSidebarOpen && (
-                  <div className="px-4 mb-4 mt-5">
+                  <div className="px-4 mb-4 mt-5 flex-shrink-0">
                     <div className="space-y-1">
                       <button
                         onClick={() => handleNavClick("chat")}
@@ -290,9 +290,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </div>
                 )}
 
-                {/* Recent Chats Section */}
-                <div className="px-4 mb-2">
-                  <div className={isSidebarOpen ? "block" : "hidden"}>
+                {/* Recent Chats Section - Modified to use flex-grow */}
+                <div className="px-4 flex-grow flex flex-col min-h-0">
+                  <div
+                    className={`${isSidebarOpen ? "block" : "hidden"} h-full`}
+                  >
                     <RecentChats
                       onItemClick={() => isMobile && setIsSidebarOpen(false)}
                     />
@@ -300,7 +302,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 </div>
 
                 {/* Bottom section */}
-                <div className="mt-auto p-4 space-y-1">
+                <div className="mt-auto p-4 space-y-1 flex-shrink-0">
                   {isSidebarOpen && <VersionAndLanguageDisplay />}
                   {memoizedBottomItems}
                   {user && (
