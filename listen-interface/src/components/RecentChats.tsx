@@ -1,5 +1,4 @@
 import { useNavigate } from "@tanstack/react-router";
-import { zhCN } from "date-fns/locale";
 import { useEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
@@ -197,10 +196,6 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
       setIsDropdownOpen(false);
     };
   }, [setIsDropdownOpen]);
-
-  const getLocale = () => {
-    return i18n.language.startsWith("zh") ? zhCN : undefined;
-  };
 
   const selectChat = (chatId: string) => {
     navigate({ to: "/", search: { chatId }, replace: true });
