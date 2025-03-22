@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { IoCloudDownloadOutline } from "react-icons/io5";
+import { FaInfoCircle } from "react-icons/fa";
 import { useVersionStore } from "../store/versionStore";
 
 export const VersionInitializer = () => {
   const { version, latestVersion, startPolling, stopPolling } =
     useVersionStore();
-  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [showUpdateNotification, setShowUpdateNotification] = useState(false);
   const { t } = useTranslation();
 
   // Start polling on component mount
@@ -17,10 +17,10 @@ export const VersionInitializer = () => {
     };
   }, [startPolling, stopPolling]);
 
-  // Check if version updated and show modal
+  // Check if version updated and show notification
   useEffect(() => {
     if (version && latestVersion && version !== latestVersion) {
-      setShowUpdateModal(true);
+      setShowUpdateNotification(true);
     }
   }, [version, latestVersion]);
 
@@ -31,38 +31,25 @@ export const VersionInitializer = () => {
 
   return (
     <>
-      {showUpdateModal && (
-        <div className="fixed inset-0 flex items-center justify-center z-50 bg-black/60">
-          <div className="bg-gray-800 rounded-lg p-6 max-w-md w-full mx-4 shadow-xl">
-            <div className="flex items-center justify-center mb-4 text-blue-400">
-              <IoCloudDownloadOutline size={48} />
+      {showUpdateNotification && (
+        <div className="fixed top-4 left-1/2 transform -translate-x-1/2 z-50 bg-black border border-[#2d2d2d] px-6 py-3 rounded-lg shadow-lg flex items-center justify-between gap-4 transition-all duration-300 ease-in-out opacity-100">
+          <div className="flex items-center gap-3">
+            <FaInfoCircle className="text-white text-lg flex-shrink-0" />
+            <div className="flex flex-col">
+              <div className="font-medium">
+                {t("version.client_out_of_date")}
+              </div>
+              <div className="text-sm opacity-80">
+                {t("version.please_refresh")}
+              </div>
             </div>
-            <h3 className="text-xl font-semibold text-center mb-2">
-              {t("version.update_available")}
-            </h3>
-            <p className="text-gray-300 text-center mb-4">
-              {t("version.new_version_message", { version })}
-            </p>
-            <div className="flex justify-between gap-4">
-              <button
-                onClick={() => setShowUpdateModal(false)}
-                className="flex-1 px-4 py-2 rounded border border-gray-600 text-gray-300 hover:bg-gray-700 transition-colors"
-              >
-                {t("version.later")}
-              </button>
-              <button
-                onClick={handleRefresh}
-                className="flex-1 px-4 py-2 rounded bg-blue-600 text-white hover:bg-blue-700 transition-colors"
-              >
-                {t("version.update_now")}
-              </button>
-            </div>
-            <p className="text-xs text-gray-400 mt-4 text-center">
-              {t("version.current_version")}: {version}
-              <br />
-              {t("version.new_version")}: {latestVersion}
-            </p>
           </div>
+          <button
+            className="bg-[#FB2771]/50 hover:bg-[#FB2771]/60 text-white py-1.5 px-3 rounded-md text-sm transition-colors ml-2"
+            onClick={handleRefresh}
+          >
+            {t("version.refresh_now")}
+          </button>
         </div>
       )}
     </>
