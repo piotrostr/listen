@@ -2,6 +2,7 @@ import { useNavigate } from "@tanstack/react-router";
 import { formatDistanceToNow } from "date-fns";
 import { zhCN } from "date-fns/locale";
 import { useEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { BsThreeDots } from "react-icons/bs";
 import { useMobile } from "../contexts/MobileContext";
 import { chatCache } from "../hooks/localStorage";
@@ -12,38 +13,53 @@ const DropdownMenu = ({
   onShare,
   onRename,
   onDelete,
+  position,
 }: {
   onShare: (e: React.MouseEvent) => void;
   onRename: (e: React.MouseEvent) => void;
   onDelete: (e: React.MouseEvent) => void;
+  position: { x: number; y: number } | null;
 }) => {
-  return (
-    <div className="absolute right-2 top-10 bg-[#1a1a1a] shadow-lg rounded py-1 z-10 min-w-[120px]">
+  if (!position) return null;
+
+  return createPortal(
+    <div
+      className="fixed bg-[#1a1a1a] shadow-lg rounded py-1 min-w-[120px] z-[1000]"
+      style={{
+        left: `${position.x}px`,
+        top: `${position.y}px`,
+      }}
+    >
       <button
         onClick={onShare}
-        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors"
+        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors rounded-lg"
       >
         Share
       </button>
       <button
         onClick={onRename}
-        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors"
+        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors rounded-lg"
       >
         Rename
       </button>
       <button
         onClick={onDelete}
-        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors text-red-400"
+        className="w-full text-left px-3 py-1.5 text-sm hover:bg-[#2a2a2a] transition-colors text-red-400 rounded-lg"
       >
         Delete
       </button>
-    </div>
+    </div>,
+    document.body
   );
 };
 
 export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
+  const [dropdownPosition, setDropdownPosition] = useState<{
+    x: number;
+    y: number;
+  } | null>(null);
   const navigate = useNavigate();
   const { isMobile, isVerySmallScreen } = useMobile();
   const dropdownRef = useRef<HTMLDivElement>(null);
@@ -143,7 +159,18 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
 
   const toggleDropdown = (chatId: string, e: React.MouseEvent) => {
     e.stopPropagation();
-    setOpenDropdownId(openDropdownId === chatId ? null : chatId);
+    if (openDropdownId === chatId) {
+      setOpenDropdownId(null);
+      setDropdownPosition(null);
+    } else {
+      setOpenDropdownId(chatId);
+      const button = e.currentTarget as HTMLElement;
+      const rect = button.getBoundingClientRect();
+      setDropdownPosition({
+        x: rect.left - 100,
+        y: rect.bottom + 5,
+      });
+    }
   };
 
   return (
@@ -174,27 +201,25 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
             </div>
           </div>
 
-          <div
-            className="relative opacity-0 group-hover:opacity-100 transition-opacity"
-            ref={openDropdownId === chat.id ? dropdownRef : null}
-          >
+          <div className="relative opacity-0 group-hover:opacity-100 transition-opacity">
             <button
               onClick={(e) => toggleDropdown(chat.id, e)}
               className="p-1 rounded-full hover:bg-[#333333] transition-colors shadow-sm"
             >
               <BsThreeDots className="text-gray-400 hover:text-white" />
             </button>
-
-            {openDropdownId === chat.id && (
-              <DropdownMenu
-                onShare={(e) => handleShare(chat.id, e)}
-                onRename={(e) => handleRename(chat.id, e)}
-                onDelete={(e) => handleDelete(chat.id, e)}
-              />
-            )}
           </div>
         </div>
       ))}
+
+      {openDropdownId && (
+        <DropdownMenu
+          onShare={(e) => handleShare(openDropdownId, e)}
+          onRename={(e) => handleRename(openDropdownId, e)}
+          onDelete={(e) => handleDelete(openDropdownId, e)}
+          position={dropdownPosition}
+        />
+      )}
     </div>
   );
 }
