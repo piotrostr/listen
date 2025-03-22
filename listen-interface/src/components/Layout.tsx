@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { createContext, memo, useEffect, useState } from "react";
+import { memo, useEffect, useState } from "react";
 import { Background } from "./Background";
 
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,7 @@ import {
 } from "react-icons/io5";
 import { RxDashboard } from "react-icons/rx";
 import { useMobile } from "../contexts/MobileContext";
+import { useSidebar } from "../contexts/SidebarContext";
 import { PanelSelector } from "./PanelSelector";
 import { RecentChats } from "./RecentChats";
 import { SimpleHeader } from "./SimpleHeader";
@@ -52,15 +53,6 @@ const MemoizedBottomLink = memo(function BottomLink({
   );
 });
 
-// Add this near the top of the file, after imports
-export const SidebarContext = createContext<{
-  setIsSidebarOpen: (open: boolean) => void;
-  isSidebarOpen: boolean;
-}>({
-  setIsSidebarOpen: () => {},
-  isSidebarOpen: false,
-});
-
 function getBottomItems(t: (key: string) => string) {
   return [
     // TODO update docs when ready
@@ -94,10 +86,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const [activePanel, setActivePanel] = useState(
     localStorage.getItem("activePanel") || null
   );
-  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const { isMobile, isIOS } = useMobile();
   const { user, logout } = usePrivy();
   const { t } = useTranslation();
+
+  const { isSidebarOpen, setIsSidebarOpen, toggleSidebar } = useSidebar();
 
   // Add useEffect to handle iOS viewport height
   useEffect(() => {
@@ -148,7 +141,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   // Handle burger menu click for mobile
   const toggleMobileSidebar = () => {
-    setIsSidebarOpen(!isSidebarOpen);
+    toggleSidebar();
   };
 
   // Function to handle navigation item clicks
@@ -168,7 +161,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   };
 
   return (
-    <SidebarContext.Provider value={{ setIsSidebarOpen, isSidebarOpen }}>
+    <>
       <WalletInitializer />
       <WebsocketInitializer />
       <div
@@ -395,6 +388,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           )}
         </div>
       </div>
-    </SidebarContext.Provider>
+    </>
   );
 }
