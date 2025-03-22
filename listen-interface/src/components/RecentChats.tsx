@@ -58,7 +58,7 @@ const DropdownMenu = ({
 };
 
 export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
-  const { isSidebarOpen, setIsDropdownOpen } = useSidebar();
+  const { setIsDropdownOpen } = useSidebar();
   const [recentChats, setRecentChats] = useState<Chat[]>([]);
   const [openDropdownId, setOpenDropdownId] = useState<string | null>(null);
   const [dropdownPosition, setDropdownPosition] = useState<{
