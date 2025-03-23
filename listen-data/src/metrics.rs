@@ -25,6 +25,7 @@ pub struct SwapMetrics {
     pub raydium_cpmm_swaps: AtomicU64,
     pub meteora_dlmm_swaps: AtomicU64,
     pub whirlpools_swaps: AtomicU64,
+    pub pump_swaps: AtomicU64,
 }
 
 impl SwapMetrics {
@@ -49,6 +50,10 @@ impl SwapMetrics {
 
     pub fn increment_whirlpools_swaps(&self) {
         self.whirlpools_swaps.fetch_add(1, Ordering::Relaxed);
+    }
+
+    pub fn increment_pump_swaps(&self) {
+        self.pump_swaps.fetch_add(1, Ordering::Relaxed);
     }
 
     pub fn increment_total_swaps(&self) {
@@ -134,6 +139,7 @@ impl SwapMetrics {
         let meteora_dlmm = self.meteora_dlmm_swaps.load(Ordering::Relaxed);
         let raydium_clmm = self.raydium_clmm_swaps.load(Ordering::Relaxed);
         let whirlpools = self.whirlpools_swaps.load(Ordering::Relaxed);
+        let pump = self.pump_swaps.load(Ordering::Relaxed);
         let pending = self.pending_swaps.load(Ordering::Relaxed);
         let successful = self.successful_swaps.load(Ordering::Relaxed);
         let failed = self.failed_swaps.load(Ordering::Relaxed);
@@ -171,6 +177,7 @@ impl SwapMetrics {
              Raydium CLMM: {}\n\
              Meteora DLMM: {}\n\
              Whirlpools: {}\n\
+             PumpSwap: {}\n\
              Pending: {}\n\
              Successful: {} ({:.1}%)\n\
              Failed: {}\n\
@@ -193,6 +200,7 @@ impl SwapMetrics {
             raydium_clmm,
             meteora_dlmm,
             whirlpools,
+            pump,
             pending,
             successful,
             success_rate,
