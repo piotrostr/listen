@@ -53,6 +53,12 @@ pub const METEORA_DLMM_PROGRAM_ID: Pubkey =
 pub const METEORA_DLMM_PROGRAM_ID_STR: &str =
     "LBUZKhRxPF3XUpBCjp4YzTKgLccjZhTSDM9YuVaPwxo";
 
+pub const PUMP_SWAP_PROGRAM_ID: Pubkey =
+    pubkey!("pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA");
+
+pub const PUMP_SWAP_PROGRAM_ID_STR: &str =
+    "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA";
+
 // hardcoded program ids
 pub const TOKEN_PROGRAM_ID: Pubkey =
     pubkey!("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA");
