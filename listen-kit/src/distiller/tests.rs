@@ -10,6 +10,7 @@ async fn test_twitter_analyst() {
                 .unwrap()
                 .parse::<serde_json::Value>()
                 .unwrap(),
+            None,
         )
         .await
         .unwrap();
@@ -41,6 +42,9 @@ async fn test_chart_analyst() {
     ];
 
     let analyst = Analyst::from_env_with_locale("en".to_string()).unwrap();
-    let result = analyst.analyze_chart(&candlesticks, "1d").await.unwrap();
+    let result = analyst
+        .analyze_chart(&candlesticks, "1d", None)
+        .await
+        .unwrap();
     println!("{}", result);
 }

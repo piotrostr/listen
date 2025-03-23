@@ -33,9 +33,19 @@ impl TwitterAnalystAgent for GeminiAnalystAgent {
         &self,
         query: &str,
         response: &serde_json::Value,
+        intent: Option<String>,
     ) -> Result<String, AnalystError> {
+        let prompt_text = if let Some(intent) = intent {
+            format!(
+                "query: {}\nresponse: {}\nintent: {}",
+                query, response, intent
+            )
+        } else {
+            format!("query: {}\nresponse: {}", query, response)
+        };
+
         self.agent
-            .prompt(format!("query: {}\nresponse: {}", query, response))
+            .prompt(prompt_text)
             .await
             .map_err(AnalystError::PromptError)
     }
@@ -48,20 +58,31 @@ impl ChartAnalystAgent for GeminiAnalystAgent {
         &self,
         candlesticks: &[crate::data::listen_api_tools::Candlestick],
         interval: &str,
+        intent: Option<String>,
     ) -> Result<String, AnalystError> {
         let candlesticks_json = serde_json::to_string(candlesticks)
             .map_err(|_| AnalystError::SerializationError)?;
 
         let prompt_text = if self.locale == "zh" {
-            format!(
+            let base = format!(
                 "分析这些K线图数据，时间间隔为{}:\n{}",
                 interval, candlesticks_json
-            )
+            );
+            if let Some(intent) = intent {
+                format!("{}意图是{}", base, intent)
+            } else {
+                base
+            }
         } else {
-            format!(
+            let base = format!(
                 "Analyze these candlesticks with interval {}:\n{}",
                 interval, candlesticks_json
-            )
+            );
+            if let Some(intent) = intent {
+                format!("{}Intent is: {}", base, intent)
+            } else {
+                base
+            }
         };
 
         self.agent
@@ -77,11 +98,26 @@ impl WebAnalystAgent for GeminiAnalystAgent {
         &self,
         url: &str,
         content: &str,
+        intent: Option<String>,
     ) -> Result<String, AnalystError> {
         let prompt_text = if self.locale == "zh" {
-            format!("分析以下网页内容，URL为{}:\n{}", url, content)
+            let base =
+                format!("分析以下网页内容，URL为{}:\n{}", url, content);
+            if let Some(intent) = intent {
+                format!("{}意图是{}", base, intent)
+            } else {
+                base
+            }
         } else {
-            format!("Analyze this web content from URL {}:\n{}", url, content)
+            let base = format!(
+                "Analyze this web content from URL {}:\n{}",
+                url, content
+            );
+            if let Some(intent) = intent {
+                format!("{}Intent is: {}", base, intent)
+            } else {
+                base
+            }
         };
 
         self.agent

@@ -185,6 +185,7 @@ Parameters:
   * '1d'  (1 day)
 - limit (string): Optional number of candlesticks to return
 - language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
+- intent (string): The intent of the analysis, passed on to the Chart Analyst agent
 
 for tokens under 1M market cap, use the 30s interval, 200 limit
 
@@ -199,6 +200,7 @@ pub async fn fetch_price_action_analysis(
     interval: String,
     limit: Option<String>,
     language: Option<String>,
+    intent: Option<String>,
 ) -> Result<String> {
     // Validate interval
     match interval.as_str() {
@@ -230,7 +232,7 @@ pub async fn fetch_price_action_analysis(
 
     wrap_unsafe(move || async move {
         analyst
-            .analyze_chart(&candlesticks, &interval)
+            .analyze_chart(&candlesticks, &interval, intent)
             .await
             .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
     })
@@ -262,6 +264,7 @@ mod tests {
             "5m".to_string(),
             Some("10".to_string()),
             Some("en".to_string()),
+            None,
         )
         .await;
         println!("{:?}", analysis);

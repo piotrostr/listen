@@ -47,6 +47,7 @@ pub trait TwitterAnalystAgent: AnalystAgent {
         &self,
         query: &str,
         response: &serde_json::Value,
+        intent: Option<String>,
     ) -> Result<String, AnalystError>;
 }
 
@@ -57,6 +58,7 @@ pub trait ChartAnalystAgent: AnalystAgent {
         &self,
         candlesticks: &[crate::data::Candlestick],
         interval: &str,
+        intent: Option<String>,
     ) -> Result<String, AnalystError>;
 }
 
@@ -67,6 +69,7 @@ pub trait WebAnalystAgent: AnalystAgent {
         &self,
         url: &str,
         content: &str,
+        intent: Option<String>,
     ) -> Result<String, AnalystError>;
 }
 

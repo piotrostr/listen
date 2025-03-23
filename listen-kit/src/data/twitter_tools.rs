@@ -12,6 +12,7 @@ Parameters:
 - query_type (string): The type of search (Latest or Top)
 - locale (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
 - cursor (string): Optional cursor for pagination
+- intent (string): The intent of the analysis, passed on to the Twitter Analyst agent
 
 Core Query Structure:
 Terms combine with implicit AND: term1 term2
@@ -34,6 +35,7 @@ pub async fn search_tweets(
     query: String,
     query_type: String,
     locale: String,
+    intent: Option<String>,
     cursor: Option<String>,
 ) -> Result<String> {
     let twitter = TwitterApi::from_env()
@@ -48,7 +50,11 @@ pub async fn search_tweets(
     let response = twitter.search_tweets(&query, query_type, cursor).await?;
     let distilled = wrap_unsafe(move || async move {
         analyst
-            .analyze_twitter(&query, &serde_json::to_value(&response)?)
+            .analyze_twitter(
+                &query,
+                &serde_json::to_value(&response)?,
+                intent,
+            )
             .await
             .map_err(|e| anyhow!("Failed to distill: {}", e))
     })
@@ -85,6 +91,7 @@ context and provide a summary of the profile.
 Parameters:
 - username (string): The X username, e.g. @elonmusk
 - language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
+- intent (string): The intent of the analysis, passed on to the Twitter Analyst agent
 
 This method might take around 10-15 seconds to return a response
 
@@ -96,6 +103,7 @@ re-research those proflies calling this same tool
 pub async fn research_x_profile(
     username: String,
     language: String,
+    intent: Option<String>,
 ) -> Result<String> {
     let twitter = TwitterApi::from_env()
         .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
@@ -107,7 +115,11 @@ pub async fn research_x_profile(
             .await
             .map_err(|e| anyhow!("{:#?}", e))?;
         let distilled = analyst
-            .analyze_twitter(&username, &serde_json::to_value(&profile)?)
+            .analyze_twitter(
+                &username,
+                &serde_json::to_value(&profile)?,
+                intent,
+            )
             .await
             .map_err(|e| anyhow!("Failed to distill: {}", e))?;
         Ok(distilled)

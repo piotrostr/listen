@@ -16,9 +16,10 @@ impl Analyst {
         &self,
         query: &str,
         response: &serde_json::Value,
+        intent: Option<String>,
     ) -> Result<String, AnalystError> {
         if let Some(agent) = &self.twitter_agent {
-            agent.analyze_twitter(query, response).await
+            agent.analyze_twitter(query, response, intent).await
         } else {
             Err(AnalystError::UnsupportedOperation)
         }
@@ -28,9 +29,10 @@ impl Analyst {
         &self,
         candlesticks: &[crate::data::Candlestick],
         interval: &str,
+        intent: Option<String>,
     ) -> Result<String, AnalystError> {
         if let Some(agent) = &self.chart_agent {
-            agent.analyze_chart(candlesticks, interval).await
+            agent.analyze_chart(candlesticks, interval, intent).await
         } else {
             Err(AnalystError::UnsupportedOperation)
         }
@@ -40,9 +42,10 @@ impl Analyst {
         &self,
         url: &str,
         content: &str,
+        intent: Option<String>,
     ) -> Result<String, AnalystError> {
         if let Some(agent) = &self.web_agent {
-            agent.analyze_web(url, content).await
+            agent.analyze_web(url, content, intent).await
         } else {
             Err(AnalystError::UnsupportedOperation)
         }
