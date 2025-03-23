@@ -28,7 +28,7 @@ impl Processor for PumpAmmInstructionProcessor {
         data: Self::InputType,
         _metrics: Arc<MetricsCollection>,
     ) -> CarbonResult<()> {
-        self.swap_handler.metrics.increment_whirlpools_swaps();
+        self.swap_handler.metrics.increment_pump_swaps();
         let (meta, instruction, nested_instructions) = data;
 
         match &instruction.data {
