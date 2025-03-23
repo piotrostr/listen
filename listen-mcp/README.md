@@ -1,8 +1,13 @@
+<img width="743" alt="image" src="https://github.com/user-attachments/assets/47e5c150-f9b5-4416-8d54-d28c1017a41e" />
+
+
 # Listen MCP Server 🔍
 
 A Model Context Protocol (MCP) server that lets AI assistants like Claude use
 the Listen API for crypto token data. This setup allows AI models to get
 real-time Solana tokens information in a controlled and reliable way.
+
+Example usage: https://claude.ai/share/b3a423ec-d953-4dce-9bc6-e2c6b1b10a77
 
 ## What is MCP? 🤔
 
