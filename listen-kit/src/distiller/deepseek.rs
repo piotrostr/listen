@@ -94,13 +94,12 @@ impl ChartAnalystAgent for DeepSeekAnalystAgent {
 impl WebAnalystAgent for DeepSeekAnalystAgent {
     async fn analyze_web(
         &self,
-        url: &str,
+        query: &str,
         content: &str,
         intent: Option<String>,
     ) -> Result<String, AnalystError> {
         let prompt_text = if self.locale == "zh" {
-            let base =
-                format!("分析以下网页内容，URL为{}:\n{}", url, content);
+            let base = format!("分析以下网页内容，为{}:\n{}", query, content);
             if let Some(intent) = intent {
                 format!("{}意图是{}", base, intent)
             } else {
@@ -108,8 +107,8 @@ impl WebAnalystAgent for DeepSeekAnalystAgent {
             }
         } else {
             let base = format!(
-                "Analyze this web content from URL {}:\n{}",
-                url, content
+                "Analyze this web content from {}:\n{}",
+                query, content
             );
             if let Some(intent) = intent {
                 format!("{}Intent is: {}", base, intent)
