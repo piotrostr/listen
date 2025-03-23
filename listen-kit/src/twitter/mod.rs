@@ -15,12 +15,7 @@ pub use user_tweets::UserTweet;
 // Common types shared across modules
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    data::twitter::user_tweets::FetchUserTweetsOptions,
-    distiller::{
-        Distiller, DistillerError, DEFAULT_PREAMBLE, DEFAULT_PREAMBLE_ZH,
-    },
-};
+use crate::twitter::user_tweets::FetchUserTweetsOptions;
 
 #[derive(Debug, Deserialize, Serialize)]
 #[serde(rename_all = "lowercase")]
@@ -39,7 +34,6 @@ pub struct ApiResponse<T> {
 // Twitter API Implementation
 pub struct TwitterApi {
     pub client: TwitterApiClient,
-    pub distiller: Distiller,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -58,16 +52,12 @@ pub enum TwitterApiError {
 
     #[error("[TwitterAPI] Invalid input: {0}")]
     InvalidInput(anyhow::Error),
-
-    #[error("[TwitterAPI] Distiller error: {0}")]
-    DistillerError(DistillerError),
 }
 
 impl TwitterApi {
-    pub fn new(api_key: String, distiller: Distiller) -> Self {
+    pub fn new(api_key: String) -> Self {
         Self {
             client: TwitterApiClient::new(api_key, None),
-            distiller,
         }
     }
 
@@ -76,45 +66,13 @@ impl TwitterApi {
             std::env::var("TWITTERAPI_API_KEY").unwrap(),
             Some("https://api.twitterapi.io".to_string()),
         );
-        let distiller =
-            Distiller::from_env().map_err(TwitterApiError::DistillerError)?;
-        Ok(Self { client, distiller })
+        Ok(Self { client })
     }
 
-    pub fn from_env_with_locale(
-        locale: String,
-    ) -> Result<Self, TwitterApiError> {
-        let client = TwitterApiClient::new(
-            std::env::var("TWITTERAPI_API_KEY").unwrap(),
-            Some("https://api.twitterapi.io".to_string()),
-        );
-
-        // Use our new language-aware distiller functionality
-        let distiller = match locale.as_str() {
-            "en" => Distiller::from_env_with_language(
-                Some(DEFAULT_PREAMBLE.to_string()),
-                false, // Use Gemini for English
-            )
-            .map_err(TwitterApiError::DistillerError)?,
-            "zh" => Distiller::from_env_with_language(
-                Some(DEFAULT_PREAMBLE_ZH.to_string()),
-                true, // Use DeepSeek for Chinese
-            )
-            .map_err(TwitterApiError::DistillerError)?,
-            _ => {
-                return Err(TwitterApiError::InvalidInput(anyhow::anyhow!(
-                    "Invalid locale: {}",
-                    locale
-                )));
-            }
-        };
-
-        Ok(Self { client, distiller })
-    }
     pub async fn research_profile(
         &self,
         username: &str,
-    ) -> Result<String, TwitterApiError> {
+    ) -> Result<serde_json::Value, TwitterApiError> {
         let profile =
             self.fetch_user_info(&username.replace("@", "")).await?;
         let tweets_response = self
@@ -144,13 +102,7 @@ impl TwitterApi {
             "tweets": tweets_response.tweets,
         });
 
-        // TODO might make sense to return the actual tweets here too, extract
-        // the core contents and leave the interpretation to core model rather than distiller
-
-        self.distiller
-            .distill(username, &res)
-            .await
-            .map_err(TwitterApiError::DistillerError)
+        Ok(res)
     }
 }
 

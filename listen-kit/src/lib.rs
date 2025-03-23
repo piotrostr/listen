@@ -21,10 +21,10 @@ pub mod mongo;
 pub mod reasoning_loop;
 pub mod signer;
 pub mod think;
+pub mod twitter;
+pub mod web;
 
 pub mod tokenizer;
-
-pub mod chart_analyst;
 
 #[ctor::ctor]
 fn init() {
