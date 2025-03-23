@@ -17,6 +17,8 @@ export const toolCalls = {
     thinking: "Thinking...",
     thoughts: "Thoughts",
     get_current_time: "Checking the calendar...",
+    search_web: "Searching the web...",
+    analyze_web_page: "Analyzing page content...",
   },
   zh: {
     get_quote: "获取报价中...",
@@ -36,5 +38,7 @@ export const toolCalls = {
     thinking: "思考中...",
     thoughts: "思考",
     get_current_time: "检查日历中...",
+    search_web: "搜索网页中...",
+    analyze_web_page: "分析网页内容中...",
   },
 };
