@@ -5,7 +5,8 @@ use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
 
 #[tool(description = "
-Performs an advanced search for tweets
+Performs an advanced search for tweets, passes the search results to an Twitter Analyst,
+and returns the summary of the search results given the intent
 
 Parameters:
 - query (string): The search query string (e.g. \"AI\" OR \"Twitter\" from:elonmusk)
@@ -28,8 +29,6 @@ Engagement: min_retweets:10, min_faves:5, min_replies:3
 Type: filter:replies, filter:nativeretweets, filter:quote
 Location: near:city, within:10km
 Multiple operators can be combined to narrow results: from:nasa filter:images since:2023-01-01 \"mars rover\"
-
-Returns a distilled summary of the search response from another AI agent
 ")]
 pub async fn search_tweets(
     query: String,
@@ -64,12 +63,12 @@ pub async fn search_tweets(
 
 #[tool(description = "
 Fetch a single X (twitter) post by its ID
+This is useful for finding out the context of any token or project quickly.
 
 Parameters:
 - id (string): The id of the post
 
-Returns a JSON object with the tweet data. This is useful for finding out the
-context of any token or project.
+Returns a JSON object with the tweet data. 
 ")]
 pub async fn fetch_x_post(id: String) -> Result<serde_json::Value> {
     let twitter = TwitterApi::from_env()
@@ -85,20 +84,18 @@ pub async fn fetch_x_post(id: String) -> Result<serde_json::Value> {
 }
 
 #[tool(description = "
-Delegate the x (twitter) profile name to your helper agent that will fetch the
-context and provide a summary of the profile.
+Delegate the X (Twitter) profile name to your Twitter Analyst agent that will fetch the
+context and provide a summary of the profile given the intent.
+
+This method might take around 10-15 seconds to return a response
+
+It might contain other profiles, if those are relevant to the context, you can
+re-research those proflies calling this same tool
 
 Parameters:
 - username (string): The X username, e.g. @elonmusk
 - language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
 - intent (string): The intent of the analysis, passed on to the Twitter Analyst agent
-
-This method might take around 10-15 seconds to return a response
-
-The response will be markdown summary
-
-It might contain other profiles, if those are relevant to the context, you can
-re-research those proflies calling this same tool
 ")]
 pub async fn research_x_profile(
     username: String,

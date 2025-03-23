@@ -48,9 +48,8 @@ Parameters:
 - locale (string): The language of the output of the analysis, either \"en\" (English) or \"zh\" (Chinese)
 - intent (string): Optional intent of the analysis, helps guide the analysis process
 
-This tool fetches the content of the specified URL, processes it, and returns a distilled analysis
-
-Returns a markdown formatted analysis of the page content
+This tool fetches the content of the specified URL, passes it to an Web Analyst,
+and returns the summary of the content given the intent
 ")]
 pub async fn analyze_page_content(
     url: String,
