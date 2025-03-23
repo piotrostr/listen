@@ -23,11 +23,18 @@ enum TransportType {
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    tracing_subscriber::fmt()
-        .with_max_level(tracing::Level::DEBUG)
-        .init();
-
     let cli = Cli::parse();
+
+    if matches!(cli.transport, TransportType::Stdio) {
+        tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::DEBUG)
+            .with_writer(std::io::stderr)
+            .init();
+    } else {
+        tracing_subscriber::fmt()
+            .with_max_level(tracing::Level::DEBUG)
+            .init();
+    }
 
     let server_protocol = Server::builder("listen-mcp".to_string(), "1.0".to_string())
         .capabilities(ServerCapabilities {
