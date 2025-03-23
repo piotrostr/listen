@@ -4,8 +4,8 @@ use super::tools::{
 };
 use crate::common::{claude_agent_builder, PREAMBLE_COMMON};
 use crate::data::{
-    FetchPriceActionAnalysis, FetchTokenMetadata, FetchTopTokens, FetchXPost,
-    ResearchXProfile, SearchTweets,
+    AnalyzePageContent, FetchPriceActionAnalysis, FetchTokenMetadata,
+    FetchTopTokens, FetchXPost, ResearchXProfile, SearchTweets, SearchWeb,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::solana::advanced_orders::CreateAdvancedOrder;
@@ -47,7 +47,9 @@ pub async fn create_solana_agent(
         .tool(AnalyzeRisk)
         .tool(FetchPriceActionAnalysis)
         .tool(Think)
-        .tool(GetCurrentTime);
+        .tool(GetCurrentTime)
+        .tool(SearchWeb)
+        .tool(AnalyzePageContent);
 
     if features.autonomous {
         agent = agent.tool(Swap).tool(CreateAdvancedOrder);

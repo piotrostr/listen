@@ -1,6 +1,4 @@
-use crate::data::twitter::TwitterApiError;
-
-use super::{ApiResponse, TwitterApi};
+use super::{ApiResponse, TwitterApi, TwitterApiError};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;

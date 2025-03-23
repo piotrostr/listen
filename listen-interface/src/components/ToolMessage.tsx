@@ -7,6 +7,7 @@ import {
   FaExclamationTriangle,
   FaSearch,
 } from "react-icons/fa";
+import { FaXTwitter } from "react-icons/fa6";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
@@ -224,19 +225,67 @@ export const ToolMessage = ({
     }
   }
 
-  if (
-    toolOutput.name === "research_x_profile" ||
-    toolOutput.name === "search_tweets"
-  ) {
+  if (toolOutput.name === "search_web") {
+    try {
+      const message = JSON.parse(toolOutput.result);
+      return (
+        <div className="mb-1">
+          <DropdownMessage
+            title={t("tool_messages.search_web")}
+            message={message}
+            icon={<FaSearch />}
+          />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse web search:", e);
+    }
+  }
+  if (toolOutput.name === "analyze_page_content") {
+    try {
+      const message = JSON.parse(toolOutput.result);
+      return (
+        <div className="mb-1">
+          <DropdownMessage
+            title={t("tool_messages.analyze_page_content")}
+            message={message}
+            icon={<FaSearch />}
+          />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse page content:", e);
+    }
+  }
+
+  if (toolOutput.name === "search_tweets") {
     try {
       const message = JSON.parse(toolOutput.result);
       const processedMessage = embedResearchAnchors(message);
       return (
         <div className="mb-1">
           <DropdownMessage
-            title={t("tool_messages.research")}
+            title={t("tool_messages.search_tweets")}
             message={processedMessage}
-            icon={<FaSearch />}
+            icon={<FaXTwitter />}
+          />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse tweet:", e);
+    }
+  }
+
+  if (toolOutput.name === "research_x_profile") {
+    try {
+      const message = JSON.parse(toolOutput.result);
+      const processedMessage = embedResearchAnchors(message);
+      return (
+        <div className="mb-1">
+          <DropdownMessage
+            title={t("tool_messages.research_x_profile")}
+            message={processedMessage}
+            icon={<FaXTwitter />}
           />
         </div>
       );
