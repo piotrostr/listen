@@ -42,6 +42,7 @@ pub struct TopTokensQuery {
     pub limit: Option<usize>,
     pub min_volume: Option<f64>,
     pub min_market_cap: Option<f64>,
+    pub max_market_cap: Option<f64>,
     pub timeframe: Option<u64>,
     pub only_pumpfun_tokens: Option<bool>,
 }
@@ -56,6 +57,7 @@ pub async fn top_tokens(
             query.limit.unwrap_or(20),
             query.min_volume,
             query.min_market_cap,
+            query.max_market_cap,
             query.timeframe,
             query.only_pumpfun_tokens.unwrap_or(true),
         )
