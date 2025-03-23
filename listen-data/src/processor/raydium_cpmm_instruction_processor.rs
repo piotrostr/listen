@@ -42,6 +42,7 @@ impl Processor for RaydiumCpmmInstructionProcessor {
                     ]);
                     self.swap_handler.spawn_swap_processor(
                         &vaults,
+                        None,
                         &meta,
                         &nested_instructions,
                     );
@@ -57,6 +58,7 @@ impl Processor for RaydiumCpmmInstructionProcessor {
                     ]);
                     self.swap_handler.spawn_swap_processor(
                         &vaults,
+                        None,
                         &meta,
                         &nested_instructions,
                     );

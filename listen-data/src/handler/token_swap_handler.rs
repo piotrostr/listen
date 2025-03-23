@@ -31,6 +31,7 @@ impl TokenSwapHandler {
     pub fn spawn_swap_processor(
         &self,
         vaults: &HashSet<String>,
+        fee_adas: Option<&HashSet<String>>,
         meta: &InstructionMetadata,
         nested_instructions: &[NestedInstruction],
     ) {
@@ -45,6 +46,7 @@ impl TokenSwapHandler {
         let metrics = self.metrics.clone();
 
         let vaults = vaults.clone();
+        let fee_adas = fee_adas.cloned();
         let tx_meta = meta.transaction_metadata.clone();
         let nested_instructions = nested_instructions.to_vec();
 
@@ -54,6 +56,7 @@ impl TokenSwapHandler {
         tokio::spawn(async move {
             match process_swap(
                 &vaults,
+                fee_adas.as_ref(),
                 &tx_meta,
                 &nested_instructions,
                 &message_queue,
