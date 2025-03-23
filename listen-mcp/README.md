@@ -1,5 +1,4 @@
-<img width="743" alt="image" src="https://github.com/user-attachments/assets/47e5c150-f9b5-4416-8d54-d28c1017a41e" />
-
+<img src="https://app.listen-rs.com/listen-icon.png" width="250"/>
 
 # Listen MCP Server 🔍
 
@@ -147,3 +146,13 @@ The server will:
 - Top Tokens Analysis: Find trending tokens with customizable volume and market cap filters
 - Price Charts: Retrieve historical price data with multiple interval options
 - Token Metadata: Access on-chain and IPFS metadata for tokens
+
+## Examples
+
+- Independent research
+
+<img src="https://github.com/user-attachments/assets/47e5c150-f9b5-4416-8d54-d28c1017a41e" alt="Sample Usage 1" style="max-width: 100%;">
+
+- Price action analysis
+  
+<img src="https://github.com/user-attachments/assets/3e675be9-db4c-48a0-a24d-7a7afbdcf529" alt="Sample Usage 2" style="max-width: 100%;">
