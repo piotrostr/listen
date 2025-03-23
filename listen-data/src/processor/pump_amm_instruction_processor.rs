@@ -1,4 +1,4 @@
-use crate::handler::TokenSwapHandler;
+use crate::handler::{token_swap_handler::Dex, TokenSwapHandler};
 use carbon_core::{
     deserialize::ArrangeAccounts, error::CarbonResult,
     instruction::InstructionProcessorInputType, metrics::MetricsCollection,
@@ -48,6 +48,7 @@ impl Processor for PumpAmmInstructionProcessor {
                         Some(&fee_adas),
                         &meta,
                         &nested_instructions,
+                        Dex::PumpSwap,
                     );
                 }
             }
@@ -67,6 +68,7 @@ impl Processor for PumpAmmInstructionProcessor {
                         Some(&fee_adas),
                         &meta,
                         &nested_instructions,
+                        Dex::PumpSwap,
                     );
                 }
             }

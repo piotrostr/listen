@@ -6,6 +6,16 @@ use carbon_core::instruction::{InstructionMetadata, NestedInstruction};
 use std::{collections::HashSet, sync::Arc};
 use tracing::{debug, error};
 
+#[derive(Debug)]
+pub enum Dex {
+    RaydiumAmmV4,
+    RaydiumClmm,
+    RaydiumCpmm,
+    MeteoraDlmm,
+    Whirlpools,
+    PumpSwap,
+}
+
 pub struct TokenSwapHandler {
     pub kv_store: Arc<RedisKVStore>,
     pub message_queue: Arc<RedisMessageQueue>,
@@ -34,6 +44,7 @@ impl TokenSwapHandler {
         fee_adas: Option<&HashSet<String>>,
         meta: &InstructionMetadata,
         nested_instructions: &[NestedInstruction],
+        dex: Dex,
     ) {
         debug!(
             "https://solscan.io/tx/{}",
@@ -67,6 +78,7 @@ impl TokenSwapHandler {
             .await
             {
                 Ok(_) => {
+                    println!("successful swap for {:?}", dex);
                     metrics.increment_successful_swaps();
                 }
                 Err(e) => {

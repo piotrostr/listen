@@ -1,4 +1,4 @@
-use crate::handler::TokenSwapHandler;
+use crate::handler::{token_swap_handler::Dex, TokenSwapHandler};
 use carbon_core::{
     deserialize::ArrangeAccounts, error::CarbonResult,
     instruction::InstructionProcessorInputType, metrics::MetricsCollection,
@@ -43,6 +43,7 @@ impl Processor for RaydiumClmmInstructionProcessor {
                         None,
                         &meta,
                         &nested_instructions,
+                        Dex::RaydiumClmm,
                     );
                 }
             }
@@ -58,6 +59,7 @@ impl Processor for RaydiumClmmInstructionProcessor {
                         None,
                         &meta,
                         &nested_instructions,
+                        Dex::RaydiumClmm,
                     );
                 }
             }

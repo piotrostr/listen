@@ -1,4 +1,4 @@
-use crate::handler::TokenSwapHandler;
+use crate::handler::{token_swap_handler::Dex, TokenSwapHandler};
 use carbon_core::{
     deserialize::ArrangeAccounts, error::CarbonResult,
     instruction::InstructionProcessorInputType, metrics::MetricsCollection,
@@ -42,6 +42,7 @@ impl Processor for OcraWhirlpoolInstructionProcessor {
                     None,
                     &meta,
                     &nested_instructions,
+                    Dex::Whirlpools,
                 );
             }
         }
