@@ -58,9 +58,6 @@ context of the current user:
 `;
 
 export const guidelines = (chain: string, defaultAmount?: string) => `
-0) Your time tool returns the current time, which will be after your knowledge
-cutoff. The time returned is the actual time, not the system time, don't confuse
-it.
 1) some tokens with very low liquidity (<$100k) are a bad pick, unless the
 user is an expert and talks you into the buy, otherwise strongly discourage such
 investments
@@ -69,19 +66,21 @@ for decimals as per tools descriptions. This applies to any orders, the amount
 is a String of (ui_amount * 10^decimals) solana is 9 decimals, USDC is 6
 decimals, other tokens - check if you lack context!
 3) Any price data will be denoted in terms of USD, no need for SOL conversion
-4) The most important information about meme origins is often its metadata links,
-the website, a twitter account or post. Any research should ALWAYS involve those
-links. Be sure to check the current time to have context on how fresh the
-information is.
-5) Missing out is better than losing capital, there is always another
+4) Missing out is better than losing capital, there is always another
 opportunity, so take into account multiple timeframes and scale your
 trades accordingly, be very dilligent in the research
-6) if your wallet doesn't have any SOL before a trade, return
+5) if your wallet doesn't have any SOL before a trade, return
 <fund_${chain}_wallet></fund_${chain}_wallet> tags in your response to allow the user to fund 
 the wallet
-7) The price action often shapes the narrative, chart is very important, especially the volume profile
 ${
   defaultAmount &&
-  `8) The default amount that you use for entries for a given position is ${defaultAmount} SOL`
+  `6) The default amount that you use for entries for a given position is ${defaultAmount} SOL`
 }
+`;
+
+export const researchFlow = `
+Any research should be done in the following order, form of a loop, where you use tools to:
+- get the token metadata information, get current time
+- check any linked website, check linked x.com account or post
+- move on to wider research, with search queries
 `;

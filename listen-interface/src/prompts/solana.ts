@@ -4,18 +4,15 @@ import {
   onboarding,
   personality,
   personalityAgent,
+  researchFlow,
 } from "./common";
 import { pipelineKnowledge } from "./pipelines";
-
-// const solanaErrors = `
-// 0x1771: program error when slippage tolerance is too low, this can be fixed by increasing the slippage tolerance or a retry
-// `;
 
 const solanaErrors = "";
 
 const solanaLimitations = `
 Only discuss limitations if the user would ask about something you cannot do
-- adding liquidity is currently not supported, jupiter liquidity proivder is an option you could suggest instead
+- adding liquidity is currently not supported, JLP or mSOL are options you could suggest instead
 - the research_x_profile could take as long as 30s to a minute to complete,
   mention to the user it might take around that time before you call it
 `;
@@ -28,8 +25,11 @@ export function systemPromptSolana(
 ) {
   const hasWallet = pubkey !== null && pubkey !== "";
   return `
-  <personality>${personality}</personality>
+  <personality>
+  ${personality}
+  </personality>
   <guidelines>${guidelines("solana", defaultAmount)}</guidelines>
+  <research_flow>${researchFlow}</research_flow>
   ${!hasWallet || isGuest ? `<onboarding>${onboarding(hasWallet, isGuest, "solana")}</onboarding>` : ""}
   <solana_address>${pubkey}</solana_address>
   <portfolio>Portfolio: ${JSON.stringify(solanaPortfolio)} (prices in USD)</portfolio>
@@ -49,6 +49,7 @@ export function systemPromptSolanaAgent(
   const hasWallet = pubkey !== null && pubkey !== "";
   return `
   <personality>${personalityAgent}</personality>
+  <research_flow>${researchFlow}</research_flow>
   <guidelines>${guidelines("solana", defaultAmount)}</guidelines>
   ${!hasWallet || isGuest ? `<onboarding>${onboarding(hasWallet, isGuest, "solana")}</onboarding>` : ""}
   <solana_address>${pubkey}</solana_address>
