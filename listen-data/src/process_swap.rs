@@ -33,12 +33,20 @@ static DEBUG: once_cell::sync::Lazy<bool> =
 pub fn is_valid_vault_transfer(
     transfer: &TokenTransferDetails,
     vaults: &HashSet<String>,
+    fee_adas: Option<&HashSet<String>>,
 ) -> bool {
+    // Early return if it's a fee transfer
+    if let Some(fee_adas) = fee_adas {
+        if fee_adas.contains(&transfer.destination) {
+            return false;
+        }
+    }
     vaults.contains(&transfer.destination) || vaults.contains(&transfer.source)
 }
 
 pub async fn process_swap(
     vaults: &HashSet<String>,
+    fee_adas: Option<&HashSet<String>>,
     transaction_metadata: &TransactionMetadata,
     nested_instructions: &[NestedInstruction],
     message_queue: &RedisMessageQueue,
@@ -59,7 +67,7 @@ pub async fn process_swap(
         );
     let transfers = inner_transfers
         .into_iter()
-        .filter(|d| is_valid_vault_transfer(d, vaults))
+        .filter(|d| is_valid_vault_transfer(d, vaults, fee_adas))
         .collect::<Vec<_>>();
 
     if transfers.iter().all(|d| d.ui_amount < 0.01) {
@@ -691,5 +699,136 @@ mod tests {
             );
             assert!(is_buy, "is_buy: {}", is_buy);
         }
+    }
+
+    #[tokio::test]
+    async fn test_sell_swap() {
+        let vaults = HashSet::from([
+            "GHs3Cs9J6NoX79Nr2KvR1Nnzm82R34Jmqh1A8Bb84zgc".to_string(),
+            "4UKfPxrJGEXggv637xCbzethVUGtkv6vay5zCjDSg1Yb".to_string(),
+        ]);
+        let fee_adas = HashSet::from([
+            "Bvtgim23rfocUzxVX9j9QFxTbBnH8JZxnaGLCEkXvjKS".to_string(),
+        ]);
+        let transfers = vec![
+            TokenTransferDetails {
+                amount: 2523000000,
+                ui_amount: 2523.0,
+                decimals: 6,
+                program_id: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+                    .to_string(),
+                authority: "G2gUder2Y934cm8ufSQxjbhjrfJsiBBAox1jgLqEDx75"
+                    .to_string(),
+                destination: "GHs3Cs9J6NoX79Nr2KvR1Nnzm82R34Jmqh1A8Bb84zgc"
+                    .to_string(),
+                mint: "2WZuixz3wohXbib7Ze2gRjVeGeESiMw9hsizDwbjM4YK"
+                    .to_string(),
+                source: "yAcYcbC9Qr9SBpeG9SbT1zAEFwHd8j6EFFWomjQjVtn"
+                    .to_string(),
+            },
+            TokenTransferDetails {
+                amount: 7229486,
+                ui_amount: 0.007229486,
+                decimals: 9,
+                program_id: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+                    .to_string(),
+                authority: "ezWtvReswwZaEBThCnW23qtH5uANic2akGY7yh7vZR9"
+                    .to_string(),
+                destination: "6qxghyVLU7sVYhQn6JKziDqb2VMPuDS6Q6rGngnkXdxx"
+                    .to_string(),
+                mint: "So11111111111111111111111111111111111111112".to_string(),
+                source: "4UKfPxrJGEXggv637xCbzethVUGtkv6vay5zCjDSg1Yb"
+                    .to_string(),
+            },
+            TokenTransferDetails {
+                amount: 3624,
+                ui_amount: 0.000003624,
+                decimals: 9,
+                program_id: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+                    .to_string(),
+                authority: "ezWtvReswwZaEBThCnW23qtH5uANic2akGY7yh7vZR9"
+                    .to_string(),
+                destination: "Bvtgim23rfocUzxVX9j9QFxTbBnH8JZxnaGLCEkXvjKS"
+                    .to_string(),
+                mint: "So11111111111111111111111111111111111111112".to_string(),
+                source: "4UKfPxrJGEXggv637xCbzethVUGtkv6vay5zCjDSg1Yb"
+                    .to_string(),
+            },
+        ];
+        let is_valid =
+            is_valid_vault_transfer(&transfers[0], &vaults, Some(&fee_adas));
+        assert!(is_valid, "token should be valid");
+
+        let is_valid =
+            is_valid_vault_transfer(&transfers[1], &vaults, Some(&fee_adas));
+        assert!(is_valid, "wsol ix should be valid");
+
+        let is_valid =
+            is_valid_vault_transfer(&transfers[2], &vaults, Some(&fee_adas));
+        assert!(!is_valid, "the fee ix should be invalid");
+    }
+
+    #[tokio::test]
+    async fn test_buy_swap() {
+        let vaults: HashSet<String> = HashSet::from([
+            "GkcKiF8ku7e54A8NK4UPHW6rmoGfhMeiMHGPpn4yUTkG".to_string(),
+            "39NaF7ehkzNcxXLq9WZdtQ18RFu1rVxs3oQR1a2safoT".to_string(),
+        ]);
+        let fee_adas = HashSet::from([
+            "94qWNrtmfn42h3ZjUZwWvK1MEo9uVmmrBPd2hpNjYDjb".to_string(),
+        ]);
+        let transfers = vec![
+            TokenTransferDetails {
+                amount: 540059097867,
+                ui_amount: 540059.097867,
+                decimals: 6,
+                program_id: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+                    .to_string(),
+                authority: "B67fRazWFUd4DPgFgLjKXX9dC8vS1UMbXmzYo7YDAqeA"
+                    .to_string(),
+                destination: "9qr6mtX3fELoWGQJyVzHgxuQZptZhmHRMdgZNyGDZkjB"
+                    .to_string(),
+                mint: "2Y6GkQJR93PNL1iYwGcjggoaBRaeTM1p9pC7oCzTpump"
+                    .to_string(),
+                source: "GkcKiF8ku7e54A8NK4UPHW6rmoGfhMeiMHGPpn4yUTkG"
+                    .to_string(),
+            },
+            TokenTransferDetails {
+                authority: "4sDjn4xpDBzd2QiKKGqmprCxeSLaDygC5oijyLLo6qUX"
+                    .to_string(),
+                destination: "39NaF7ehkzNcxXLq9WZdtQ18RFu1rVxs3oQR1a2safoT"
+                    .to_string(),
+                mint: "So11111111111111111111111111111111111111112".to_string(),
+                source: "GHjM41KiTeTiRR2m42RQF4jSpho4C4KKSx4D1ZX7D3Qb"
+                    .to_string(),
+                amount: 501000002,
+                decimals: 9,
+                ui_amount: 0.501000002,
+                program_id: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+                    .to_string(),
+            },
+            TokenTransferDetails {
+                amount: 250001,
+                ui_amount: 0.000250001,
+                decimals: 9,
+                program_id: "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+                    .to_string(),
+                authority: "4sDjn4xpDBzd2QiKKGqmprCxeSLaDygC5oijyLLo6qUX"
+                    .to_string(),
+                destination: "94qWNrtmfn42h3ZjUZwWvK1MEo9uVmmrBPd2hpNjYDjb"
+                    .to_string(),
+                mint: "So11111111111111111111111111111111111111112".to_string(),
+                source: "GHjM41KiTeTiRR2m42RQF4jSpho4C4KKSx4D1ZX7D3Qb"
+                    .to_string(),
+            },
+        ];
+
+        let is_valid =
+            is_valid_vault_transfer(&transfers[0], &vaults, Some(&fee_adas));
+        assert!(is_valid, "token should be valid");
+
+        let is_valid =
+            is_valid_vault_transfer(&transfers[1], &vaults, Some(&fee_adas));
+        assert!(is_valid, "wsol ix should be valid");
     }
 }

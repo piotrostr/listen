@@ -39,6 +39,7 @@ impl Processor for MeteoraDlmmInstructionProcessor {
                 ]);
                 self.swap_handler.spawn_swap_processor(
                     &vaults,
+                    None,
                     &meta,
                     &nested_instructions,
                 );
