@@ -186,6 +186,7 @@ Parameters:
 - limit (string): Optional number of tokens to return
 - min_volume (string): Optional minimum 24h volume filter
 - min_market_cap (string): Optional minimum market cap filter
+- max_market_cap (string): Optional maximum market cap filter
 - timeframe (string): Optional timeframe in seconds
 - only_pumpfun_tokens (string): Optional boolean to filter only PumpFun tokens (default: \"true\")
 
@@ -197,6 +198,7 @@ pub async fn fetch_top_tokens(
     limit: Option<String>,
     min_volume: Option<String>,
     min_market_cap: Option<String>,
+    max_market_cap: Option<String>,
     timeframe: Option<String>,
     only_pumpfun_tokens: Option<String>,
 ) -> Result<Vec<TopToken>> {
@@ -211,6 +213,9 @@ pub async fn fetch_top_tokens(
     }
     if let Some(min_market_cap) = min_market_cap {
         query_params.push(format!("min_market_cap={}", min_market_cap));
+    }
+    if let Some(max_market_cap) = max_market_cap {
+        query_params.push(format!("max_market_cap={}", max_market_cap));
     }
     if let Some(timeframe) = timeframe {
         query_params.push(format!("timeframe={}", timeframe));
@@ -350,6 +355,7 @@ mod tests {
     async fn test_fetch_top_tokens() {
         fetch_top_tokens(
             Some("10".to_string()),
+            None,
             None,
             None,
             None,
