@@ -37,8 +37,9 @@ Lower timeframes work best, 7200 seconds is the sweet spot
 Parameters:
 - limit (string): Optional number of tokens to return
 - min_volume (string): Optional minimum 24h volume filter
-- min_market_cap (string): Optional minimum market cap filter
-- timeframe (string): Optional timeframe in seconds
+- min_market_cap (string): Minimum market cap filter
+- max_market_cap (string): Maximum market cap filter, ~3B is the max to include all tokens
+- timeframe (string): Optional timeframe in seconds, e.g. 86400 for the last 24 hours
 - only_pumpfun_tokens (string): Optional boolean to filter only PumpFun tokens (default: \"true\")
 
 Use the min_market_cap of 100k unless specified otherwise.
@@ -49,6 +50,7 @@ pub async fn fetch_top_tokens(
     limit: String,
     min_volume: String,
     min_market_cap: String,
+    max_market_cap: String,
     timeframe: String,
     only_pumpfun_tokens: String,
 ) -> Result<ToolResponseContent> {
@@ -58,6 +60,7 @@ pub async fn fetch_top_tokens(
     query_params.push(format!("limit={}", limit));
     query_params.push(format!("min_volume={}", min_volume));
     query_params.push(format!("min_market_cap={}", min_market_cap));
+    query_params.push(format!("max_market_cap={}", max_market_cap));
     query_params.push(format!("timeframe={}", timeframe));
     query_params.push(format!("only_pumpfun_tokens={}", only_pumpfun_tokens));
 
