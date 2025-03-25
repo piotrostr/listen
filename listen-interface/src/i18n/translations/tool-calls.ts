@@ -19,6 +19,7 @@ export const toolCalls = {
     get_current_time: "Checking the calendar...",
     search_web: "Searching the web...",
     analyze_web_page: "Analyzing page content...",
+    create_advanced_order: "Scheduling an order...",
   },
   zh: {
     get_quote: "获取报价中...",
@@ -40,5 +41,6 @@ export const toolCalls = {
     get_current_time: "检查日历中...",
     search_web: "搜索网页中...",
     analyze_web_page: "分析网页内容中...",
+    create_advanced_order: "安排订单中...",
   },
 };
