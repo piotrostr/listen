@@ -12,8 +12,8 @@ Parameters:
 - query (string): The search query string (e.g. \"AI\" OR \"Twitter\" from:elonmusk)
 - query_type (string): The type of search (Latest or Top)
 - locale (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
-- cursor (string): Optional cursor for pagination
-- intent (string): The intent of the analysis, passed on to the Twitter Analyst agent
+- intent (string): The intent of the analysis, passed on to the Twitter Analyst agent, possible to pass \"\" for no specific intent
+- cursor (string): Optional cursor for pagination, \"\" for the first page, then returned cursor for subsequent pages
 
 Core Query Structure:
 Terms combine with implicit AND: term1 term2
@@ -34,8 +34,8 @@ pub async fn search_tweets(
     query: String,
     query_type: String,
     locale: String,
-    intent: Option<String>,
-    cursor: Option<String>,
+    intent: String,
+    cursor: String,
 ) -> Result<String> {
     let twitter = TwitterApi::from_env()
         .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
@@ -46,13 +46,18 @@ pub async fn search_tweets(
         "Top" => QueryType::Top,
         _ => return Err(anyhow!("Invalid query type: {}", query_type)),
     };
+    let cursor = if cursor.is_empty() {
+        None
+    } else {
+        Some(cursor)
+    };
     let response = twitter.search_tweets(&query, query_type, cursor).await?;
     let distilled = wrap_unsafe(move || async move {
         analyst
             .analyze_twitter(
                 &query,
                 &serde_json::to_value(&response)?,
-                intent,
+                Some(intent),
             )
             .await
             .map_err(|e| anyhow!("Failed to distill: {}", e))
@@ -95,12 +100,12 @@ re-research those proflies calling this same tool
 Parameters:
 - username (string): The X username, e.g. @elonmusk
 - language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
-- intent (string): The intent of the analysis, passed on to the Twitter Analyst agent
+- intent (string): The intent of the analysis, passed on to the Twitter Analyst agent, possible to pass \"\" for no specific intent
 ")]
 pub async fn research_x_profile(
     username: String,
     language: String,
-    intent: Option<String>,
+    intent: String,
 ) -> Result<String> {
     let twitter = TwitterApi::from_env()
         .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
@@ -115,7 +120,7 @@ pub async fn research_x_profile(
             .analyze_twitter(
                 &username,
                 &serde_json::to_value(&profile)?,
-                intent,
+                Some(intent),
             )
             .await
             .map_err(|e| anyhow!("Failed to distill: {}", e))?;

@@ -4049,6 +4049,7 @@ dependencies = [
  "tokio",
  "tokio-stream",
  "tracing",
+ "tracing-subscriber",
  "uniswap-sdk-core",
  "uniswap-v3-sdk",
 ]
@@ -5466,8 +5467,6 @@ dependencies = [
 [[package]]
 name = "rig-tool-macro"
 version = "0.5.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5f2bcd5d4497dd4429f073fe3d9933bda786f7a412725c4c4c882240efc63281"
 dependencies = [
  "anyhow",
  "proc-macro2",

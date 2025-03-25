@@ -163,8 +163,13 @@ pub async fn transfer_spl_token(
     .await
 }
 
-#[tool]
-pub async fn get_public_key() -> Result<String> {
+#[tool(description = "
+Returns the public key of the delegated wallet
+noop is a dummy parameter
+")]
+pub async fn get_public_key(
+    #[allow(unused_variables)] noop: String,
+) -> Result<String> {
     let signer = SignerContext::current().await;
     if signer.pubkey().is_none() {
         return Err(anyhow::anyhow!("Wallet unavailable"));
@@ -172,25 +177,42 @@ pub async fn get_public_key() -> Result<String> {
     Ok(signer.pubkey().unwrap())
 }
 
-#[tool]
-pub async fn get_sol_balance() -> Result<u64> {
-    let signer = SignerContext::current().await.clone();
-    if signer.pubkey().is_none() {
-        return Err(anyhow::anyhow!("Wallet unavailable"));
-    }
-    let owner = Pubkey::from_str(&signer.pubkey().unwrap())?;
+#[tool(description = "
+Returns the current SOL balance of the a wallet
 
-    wrap_unsafe(move || async move {
-        create_rpc()
-            .get_balance(&owner)
+To get the balance of delegated wallet you can access, pass \"\" as pubkey
+")]
+pub async fn get_sol_balance(pubkey: String) -> Result<u64> {
+    match pubkey.as_str() {
+        "" => {
+            wrap_unsafe(move || async move {
+                create_rpc()
+                    .get_balance(&Pubkey::from_str(&pubkey)?)
+                    .await
+                    .map_err(|e| anyhow!("{:#?}", e))
+            })
             .await
-            .map_err(|e| anyhow!("{:#?}", e))
-    })
-    .await
+        }
+        _ => {
+            let signer = SignerContext::current().await.clone();
+            if signer.pubkey().is_none() {
+                return Err(anyhow::anyhow!("Wallet unavailable"));
+            }
+            let owner = Pubkey::from_str(&signer.pubkey().unwrap())?;
+
+            wrap_unsafe(move || async move {
+                create_rpc()
+                    .get_balance(&owner)
+                    .await
+                    .map_err(|e| anyhow!("{:#?}", e))
+            })
+            .await
+        }
+    }
 }
 
 #[tool(description = "
-get_token_balance returns (amount as String, decimals as u8, mint as String)
+get_token_balance returns (amount as String, decimals as u8, mint as String) - your current balance of the any SPL token
 in order to convert to UI amount: amount / 10^decimals
 ")]
 pub async fn get_spl_token_balance(
@@ -335,7 +357,10 @@ pub async fn get_portfolio() -> Result<Vec<PortfolioItem>> {
 #[tool(description = "
 Returns the current date and time, in UTC
 Note: user will see the output formatted to their local time in the UI
+noop is a dummy parameter
 ")]
-pub async fn get_current_time() -> Result<String> {
+pub async fn get_current_time(
+    #[allow(unused_variables)] noop: String,
+) -> Result<String> {
     Ok(Local::now().to_utc().to_string())
 }

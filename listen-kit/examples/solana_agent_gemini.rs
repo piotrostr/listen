@@ -14,11 +14,17 @@ async fn main() -> Result<()> {
 
     let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
 
+    dotenv::dotenv().ok();
+
     SignerContext::with_signer(Arc::new(signer), async {
         let trader_agent = Arc::new(create_solana_agent_gemini(
-            None,
+            Some("NEVER assume any tokens addresses, using the wrong address leads to
+            irreversible damage ALWAYS use the tools to find the relevant addresses".to_string()),
             Features { autonomous: false },
         ));
+        for tool in trader_agent.tools.schemas().iter() {
+            println!("{}", serde_json::to_string(tool).unwrap());
+        }
         let trader_agent =
             ReasoningLoop::new(Model::Gemini(trader_agent)).with_stdout(true);
 
@@ -26,7 +32,7 @@ async fn main() -> Result<()> {
             .stream(
                 "
                 we are testing the reasoning loop, constantly check my usdc
-                balance and swap 0.01 usdc into solana
+                balance and get quote for 0.01 sol into usdc
                 "
                 .to_string(),
                 vec![],

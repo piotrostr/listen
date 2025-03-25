@@ -18,6 +18,10 @@ async fn main() -> Result<()> {
         let trader_agent = Arc::new(
             create_solana_agent(None, Features { autonomous: false }).await?,
         );
+        println!(
+            "total tools available: {}",
+            trader_agent.tools.schemas().unwrap().len()
+        );
         let trader_agent = ReasoningLoop::new(Model::Anthropic(trader_agent))
             .with_stdout(true);
 
@@ -25,7 +29,7 @@ async fn main() -> Result<()> {
             .stream(
                 "
                 we are testing the reasoning loop, constantly check my usdc
-                balance and swap 0.01 usdc into solana
+                balance and get quote for 0.01 sol into usdc
                 "
                 .to_string(),
                 vec![],
