@@ -3,7 +3,7 @@ use {
     anyhow::Result, listen_kit::reasoning_loop::ReasoningLoop,
     listen_kit::signer::solana::LocalSolanaSigner,
     listen_kit::signer::SignerContext,
-    listen_kit::solana::agent::create_solana_agent,
+    listen_kit::solana::agent::create_solana_agent_gemini,
     listen_kit::solana::util::env, std::sync::Arc,
 };
 
@@ -15,11 +15,12 @@ async fn main() -> Result<()> {
     let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
 
     SignerContext::with_signer(Arc::new(signer), async {
-        let trader_agent = Arc::new(
-            create_solana_agent(None, Features { autonomous: false }).await?,
-        );
-        let trader_agent = ReasoningLoop::new(Model::Anthropic(trader_agent))
-            .with_stdout(true);
+        let trader_agent = Arc::new(create_solana_agent_gemini(
+            None,
+            Features { autonomous: false },
+        ));
+        let trader_agent =
+            ReasoningLoop::new(Model::Gemini(trader_agent)).with_stdout(true);
 
         trader_agent
             .stream(

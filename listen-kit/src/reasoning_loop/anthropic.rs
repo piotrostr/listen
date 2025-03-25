@@ -1,69 +1,29 @@
-use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
 use futures::StreamExt;
 use rig::agent::Agent;
 use rig::completion::AssistantContent;
 use rig::completion::Message;
 use rig::message::{ToolResultContent, UserContent};
-use rig::providers::anthropic::completion::CompletionModel;
+use rig::providers::anthropic::completion::CompletionModel as AnthropicModel;
 use rig::streaming::StreamingChoice;
 use rig::streaming::StreamingCompletion;
 use rig::OneOrMany;
-use serde::Deserialize;
-use serde::Serialize;
 use std::io::Write;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-#[derive(Serialize, Debug, Deserialize)]
-#[serde(tag = "type", content = "content")]
-pub enum StreamResponse {
-    Message(String),
-    ToolCall {
-        id: String,
-        name: String,
-        params: String,
-    },
-    ToolResult {
-        id: String,
-        name: String,
-        result: String,
-    },
-    Error(String),
-}
-
-pub struct ReasoningLoop {
-    agent: Arc<Agent<CompletionModel>>,
-    stdout: bool,
-}
+use super::{ReasoningLoop, StreamResponse};
 
 impl ReasoningLoop {
-    pub fn new(agent: Arc<Agent<CompletionModel>>) -> Self {
-        Self {
-            agent,
-            stdout: true,
-        }
-    }
-
-    pub async fn stream(
+    pub async fn stream_anthropic(
         &self,
+        agent: &Arc<Agent<AnthropicModel>>,
         prompt: String,
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
     ) -> Result<Vec<Message>> {
-        if tx.is_none() && !self.stdout {
-            panic!("enable stdout or provide tx channel");
-        }
-
-        // Simple character-based check for token limit
-        if exceeds_token_limit(&prompt, &messages, 40_000) {
-            return Err(anyhow::anyhow!(
-                "Ahoy! Context is getting long, please start a new conversation",
-            ));
-        }
-
         let mut current_messages = messages.clone();
-        let agent = self.agent.clone();
+        let agent = agent.clone();
         let stdout = self.stdout;
 
         // Start with the user's original prompt
@@ -164,11 +124,8 @@ impl ReasoningLoop {
                         }
 
                         // Call the tool and get result
-                        let result = self
-                            .agent
-                            .tools
-                            .call(&name, params.to_string())
-                            .await;
+                        let result =
+                            agent.tools.call(&name, params.to_string()).await;
 
                         if stdout {
                             println!("Tool result: {:?}", result);
@@ -226,10 +183,5 @@ impl ReasoningLoop {
         }
 
         Ok(current_messages)
-    }
-
-    pub fn with_stdout(mut self, enabled: bool) -> Self {
-        self.stdout = enabled;
-        self
     }
 }

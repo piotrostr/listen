@@ -10,6 +10,8 @@ use {
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> Result<()> {
+    use listen_kit::reasoning_loop::Model;
+
     let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
 
     SignerContext::with_signer(Arc::new(signer), async {
@@ -20,7 +22,7 @@ async fn main() -> Result<()> {
             .tool(GetPortfolio)
             .build();
 
-        let agent = ReasoningLoop::new(Arc::new(agent));
+        let agent = ReasoningLoop::new(Model::Anthropic(Arc::new(agent)));
 
         agent.stream(
             "whats the portfolio looking like?".to_string(),
