@@ -78,10 +78,10 @@ impl TokenSwapHandler {
             .await
             {
                 Ok(_) => {
-                    println!(
-                        "successful swap for {:?}: https://solscan.io/tx/{}",
-                        dex, tx_meta.signature
-                    );
+                    // println!(
+                    //     "successful swap for {:?}: https://solscan.io/tx/{}",
+                    //     dex, tx_meta.signature
+                    // );
                     metrics.increment_successful_swaps();
                 }
                 Err(e) => {

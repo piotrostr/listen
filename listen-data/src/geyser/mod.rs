@@ -20,9 +20,10 @@ use yellowstone_grpc_proto::geyser::{
 
 use crate::{
     constants::{
-        METEORA_DLMM_PROGRAM_ID, PUMP_SWAP_PROGRAM_ID,
-        RAYDIUM_AMM_V4_PROGRAM_ID, RAYDIUM_CLMM_PROGRAM_ID,
-        RAYDIUM_CPMM_PROGRAM_ID, TOKEN_PROGRAM_ID, WHIRLPOOLS_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        // METEORA_DLMM_PROGRAM_ID, PUMP_SWAP_PROGRAM_ID,
+        // RAYDIUM_AMM_V4_PROGRAM_ID, RAYDIUM_CLMM_PROGRAM_ID,
+        // RAYDIUM_CPMM_PROGRAM_ID,  WHIRLPOOLS_PROGRAM_ID,
     },
     db::ClickhouseDb,
     handler::TokenSwapHandler,
