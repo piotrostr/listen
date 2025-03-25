@@ -70,7 +70,7 @@ pub async fn process_swap(
         .filter(|d| is_valid_vault_transfer(d, vaults, fee_adas))
         .collect::<Vec<_>>();
 
-    if transfers.iter().all(|d| d.ui_amount < 0.01) {
+    if transfers.iter().all(|d| d.ui_amount < 0.1) {
         debug!("skipping tiny diffs");
         metrics.increment_skipped_tiny_swaps();
         return Ok(());

@@ -84,10 +84,10 @@ function getBottomItems(t: (key: string) => string) {
 }
 
 export function Layout({ children }: { children: React.ReactNode }) {
-  const [activePanel, setActivePanel] = useState(
-    localStorage.getItem("activePanel") || null
-  );
   const { isMobile, isIOS } = useMobile();
+  const [activePanel, setActivePanel] = useState(
+    isMobile ? null : localStorage.getItem("activePanel") || null
+  );
   const { user, logout } = usePrivy();
   const { t } = useTranslation();
 
@@ -171,7 +171,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
       <VersionInitializer />
       <div
         className="relative flex flex-col text-white overflow-hidden"
-        style={{ height: isIOS ? "calc(var(--vh, 1vh) * 100)" : "100vh" }}
+        style={{ height: "100dvh" }}
       >
         <Background />
 

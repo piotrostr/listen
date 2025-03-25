@@ -20,9 +20,10 @@ use yellowstone_grpc_proto::geyser::{
 
 use crate::{
     constants::{
-        METEORA_DLMM_PROGRAM_ID, PUMP_SWAP_PROGRAM_ID,
-        RAYDIUM_AMM_V4_PROGRAM_ID, RAYDIUM_CLMM_PROGRAM_ID,
-        RAYDIUM_CPMM_PROGRAM_ID, WHIRLPOOLS_PROGRAM_ID,
+        TOKEN_PROGRAM_ID,
+        // METEORA_DLMM_PROGRAM_ID, PUMP_SWAP_PROGRAM_ID,
+        // RAYDIUM_AMM_V4_PROGRAM_ID, RAYDIUM_CLMM_PROGRAM_ID,
+        // RAYDIUM_CPMM_PROGRAM_ID,  WHIRLPOOLS_PROGRAM_ID,
     },
     db::ClickhouseDb,
     handler::TokenSwapHandler,
@@ -51,12 +52,13 @@ pub fn make_geyser_pipeline(
             vote: Some(false),
             failed: Some(false),
             account_include: vec![
-                RAYDIUM_AMM_V4_PROGRAM_ID.to_string(),
-                RAYDIUM_CLMM_PROGRAM_ID.to_string(),
-                RAYDIUM_CPMM_PROGRAM_ID.to_string(),
-                METEORA_DLMM_PROGRAM_ID.to_string(),
-                WHIRLPOOLS_PROGRAM_ID.to_string(),
-                PUMP_SWAP_PROGRAM_ID.to_string(),
+                TOKEN_PROGRAM_ID.to_string(),
+                // RAYDIUM_AMM_V4_PROGRAM_ID.to_string(),
+                // RAYDIUM_CLMM_PROGRAM_ID.to_string(),
+                // RAYDIUM_CPMM_PROGRAM_ID.to_string(),
+                // METEORA_DLMM_PROGRAM_ID.to_string(),
+                // WHIRLPOOLS_PROGRAM_ID.to_string(),
+                // PUMP_SWAP_PROGRAM_ID.to_string(),
             ],
             account_exclude: vec![],
             account_required: vec![],

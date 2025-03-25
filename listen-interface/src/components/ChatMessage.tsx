@@ -7,7 +7,11 @@ const sanitizeOutput = (message: string) => {
   if (isProd && message.includes("EOF while parsing an object")) {
     return null;
   }
-  return message;
+  return removeMarkdownTags(message);
+};
+
+const removeMarkdownTags = (message: string) => {
+  return message.replace(/^```markdown\s*|\s*```$/g, "");
 };
 
 export const ChatMessage = ({
@@ -17,13 +21,15 @@ export const ChatMessage = ({
   message: string;
   direction: "incoming" | "outgoing" | "agent";
 }) => {
-  // Process the message to identify addresses and transactions
-  const embeddedMessage = renderAddressOrTx(message);
-  const sanitizedMessage = sanitizeOutput(embeddedMessage);
+  // First sanitize the message
+  const sanitizedMessage = sanitizeOutput(message);
 
   if (!sanitizedMessage) {
     return null;
   }
+
+  // Then process addresses and transactions
+  const embeddedMessage = renderAddressOrTx(sanitizedMessage);
 
   return (
     <div
