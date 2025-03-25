@@ -58,7 +58,7 @@ impl SwapMetrics {
 
     pub fn increment_total_swaps(&self) {
         let count = self.total_swaps_processed.fetch_add(1, Ordering::Relaxed);
-        println!("total swaps processed: {}", count);
+        // println!("total swaps processed: {}", count);
         if (count + 1) % 5000 == 0 {
             self.log_metrics();
         }
