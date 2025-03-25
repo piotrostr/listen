@@ -116,7 +116,7 @@ pub async fn submit_order_internal(order: &Order) -> Result<String> {
     let result = response.json::<serde_json::Value>().await?;
 
     // Extract pipeline ID or relevant information
-    let pipeline_id = result["id"]
+    let pipeline_id = result["response"]
         .as_str()
         .ok_or_else(|| anyhow::anyhow!("Missing pipeline ID in response"))?;
 
