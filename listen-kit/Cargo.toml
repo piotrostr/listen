@@ -45,8 +45,8 @@ chrono = "0.4.39"
 dotenv = "0.15.0"
 hex = "0.4.3"
 anyhow = "1.0.95"
-rig-core = { path = "../../rig-piotr/rig-core" }
-rig-tool-macro = { path = "../../rig-tool-macro" }
+rig-core = { git = "https://github.com/piotrostr/rig", branch = "fix/no-param-tool-definitions-gemini" }
+rig-tool-macro = { git = "https://github.com/piotrostr/rig-tool-macro" }
 thiserror = "2.0.11"
 once_cell = "1.20.2"
 tokio = { version = "1.37.0", features = ["full"] }

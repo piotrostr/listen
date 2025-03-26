@@ -4032,7 +4032,7 @@ dependencies = [
  "rand 0.8.5",
  "redis",
  "reqwest 0.12.12",
- "rig-core 0.10.0",
+ "rig-core",
  "rig-tool-macro",
  "serde",
  "serde_json",
@@ -5336,7 +5336,6 @@ dependencies = [
  "url",
  "wasm-bindgen",
  "wasm-bindgen-futures",
- "wasm-streams",
  "web-sys",
  "webpki-roots 0.25.4",
  "winreg",
@@ -5426,26 +5425,8 @@ dependencies = [
 
 [[package]]
 name = "rig-core"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7aaf53f8631db9cc12287b5595b14964ae36a213f0d247055efcd26714f2da2b"
-dependencies = [
- "async-stream",
- "bytes",
- "futures",
- "glob",
- "ordered-float",
- "reqwest 0.11.27",
- "schemars",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "rig-core"
 version = "0.10.0"
+source = "git+https://github.com/piotrostr/rig?branch=fix%2Fno-param-tool-definitions-gemini#88f36b46a0bf32ceda80fa478d73765c07049a8d"
 dependencies = [
  "async-stream",
  "base64 0.22.1",
@@ -5465,11 +5446,12 @@ dependencies = [
 [[package]]
 name = "rig-tool-macro"
 version = "0.5.0"
+source = "git+https://github.com/piotrostr/rig-tool-macro#7fa7744b7cdd15cf0326ab74f011bf2c7cfcff31"
 dependencies = [
  "anyhow",
  "proc-macro2",
  "quote",
- "rig-core 0.8.0",
+ "rig-core",
  "serde",
  "serde_json",
  "syn 1.0.109",
