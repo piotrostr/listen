@@ -291,6 +291,7 @@ mod tests {
                 user_id: "test".to_string(),
                 email: Some("test@test.com".to_string()),
             },
+            "en".to_string(),
         );
 
         privy_signer

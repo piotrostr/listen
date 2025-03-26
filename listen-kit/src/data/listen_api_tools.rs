@@ -1,9 +1,9 @@
+use crate::common::wrap_unsafe;
+use crate::distiller::analyst::Analyst;
+use crate::signer::SignerContext;
 use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
 use serde::{Deserialize, Serialize};
-
-use crate::common::wrap_unsafe;
-use crate::distiller::analyst::Analyst;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Candlestick {
@@ -169,7 +169,6 @@ Parameters:
   * '1h'  (1 hour)
   * '4h'  (4 hours)
   * '1d'  (1 day)
-- language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
 - intent (string): The intent of the analysis, passed on to the Chart Analyst agent, possible to pass \"\" for no intent
 
 start with 1m interval, 200 limit and work up the timeframes if required
@@ -179,7 +178,6 @@ Returns an analysis of the chart from the Chart Analyst agent
 pub async fn fetch_price_action_analysis(
     mint: String,
     interval: String,
-    language: String,
     intent: String,
 ) -> Result<String> {
     // Validate interval
@@ -202,7 +200,8 @@ pub async fn fetch_price_action_analysis(
         .await
         .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
 
-    let analyst = Analyst::from_env_with_locale(language)
+    let locale = SignerContext::current().await.locale();
+    let analyst = Analyst::from_env_with_locale(locale)
         .map_err(|e| anyhow!("Failed to create Analyst: {}", e))?;
 
     wrap_unsafe(move || async move {
@@ -232,10 +231,10 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_price_action_analysis() {
+        // FIXME thread local signer needs init
         let analysis = fetch_price_action_analysis(
             "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump".to_string(),
             "5m".to_string(),
-            "en".to_string(),
             "".to_string(),
         )
         .await;
