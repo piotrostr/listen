@@ -39,6 +39,11 @@ where
                 {
                     // This is a tool result - should always be a User message
                     let id = json_value["id"].as_str().unwrap().to_string();
+                    let id = if id == "" {
+                        json_value["name"].as_str().unwrap().to_string()
+                    } else {
+                        id
+                    };
                     let result_content =
                         json_value["result"].as_str().unwrap().to_string();
 

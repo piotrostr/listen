@@ -3,11 +3,13 @@ use futures::StreamExt;
 use rig::agent::Agent;
 use rig::completion::AssistantContent;
 use rig::completion::Message;
+use rig::message::ToolResult;
 use rig::message::{ToolResultContent, UserContent};
 use rig::providers::gemini::completion::CompletionModel as GeminiModel;
 use rig::streaming::StreamingChoice;
 use rig::streaming::StreamingCompletion;
 use rig::OneOrMany;
+use serde_json::json;
 use std::io::Write;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
@@ -15,6 +17,67 @@ use tokio::sync::mpsc::Sender;
 use super::{ReasoningLoop, StreamResponse};
 
 impl ReasoningLoop {
+    fn geminify_chat_history(messages: Vec<Message>) -> Vec<Message> {
+        messages
+            .into_iter()
+            .map(|msg| {
+                match msg {
+                    Message::User { content } => {
+                        if let UserContent::ToolResult(tool_result) =
+                            content.first()
+                        {
+                            // Wrap tool result content in the expected format
+                            let result_content = tool_result
+                                .content
+                                .into_iter()
+                                .next()
+                                .map(|c| match c {
+                                    ToolResultContent::Text(text) => {
+                                        text.text
+                                    }
+                                    _ => panic!(
+                                        "Tool result content is not a text"
+                                    ),
+                                })
+                                .unwrap_or_default();
+
+                            // Check if it contains "error" to determine format
+                            let wrapped_content = if result_content
+                                .to_lowercase()
+                                .contains("error")
+                            {
+                                json!({"error": result_content})
+                            } else {
+                                json!({"result": result_content})
+                            }
+                            .to_string();
+
+                            Message::User {
+                                content: OneOrMany::one(
+                                    UserContent::ToolResult(ToolResult {
+                                        id: tool_result.id,
+                                        content: OneOrMany::one(
+                                            ToolResultContent::text(
+                                                wrapped_content,
+                                            ),
+                                        ),
+                                    }),
+                                ),
+                            }
+                        } else {
+                            // Not a tool result, leave as-is
+                            Message::User { content }
+                        }
+                    }
+                    // Leave assistant messages unchanged
+                    Message::Assistant { content } => {
+                        Message::Assistant { content }
+                    }
+                }
+            })
+            .collect()
+    }
+
     pub async fn stream_gemini(
         &self,
         agent: &Arc<Agent<GeminiModel>>,
@@ -22,7 +85,8 @@ impl ReasoningLoop {
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
     ) -> Result<Vec<Message>> {
-        let mut current_messages = messages.clone();
+        let mut current_messages =
+            Self::geminify_chat_history(messages.clone());
         let agent = agent.clone();
         let stdout = self.stdout;
 
