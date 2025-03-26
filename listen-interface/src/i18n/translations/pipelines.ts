@@ -33,6 +33,7 @@ export const pipelines = {
     cancel_step_error: "Failed to cancel step",
     invalid_timestamp: "Invalid timestamp",
     amount: "Amount",
+    failed_to_fetch_quote: "Failed to fetch quote",
   },
   zh: {
     pipelines: "自动化任务",
@@ -55,6 +56,7 @@ export const pipelines = {
     insufficient_balance: "余额不足",
     cancelled: "已取消",
     amount: "金额",
+    failed_to_fetch_quote: "获取报价失败",
     pipeline_status: {
       Pending: "处理中",
       Completed: "已完成",
