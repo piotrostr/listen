@@ -143,51 +143,32 @@ impl ClickhouseDb {
 
 /// Filter out extreme price wicks from candlestick data
 fn filter_extreme_wicks(candlesticks: &mut Vec<Candlestick>) {
-    if candlesticks.is_empty() {
+    if candlesticks.len() <= 1 {
         return;
     }
 
-    // Calculate the median close price as a baseline
-    let mut close_prices: Vec<f64> = candlesticks.iter().map(|c| c.close).collect();
-    close_prices.sort_by(|a, b| a.partial_cmp(b).unwrap_or(std::cmp::Ordering::Equal));
+    // Find the highest and lowest close prices in the dataset
+    let max_close = candlesticks
+        .iter()
+        .map(|c| c.close)
+        .fold(f64::NEG_INFINITY, f64::max);
 
-    let median_close = if close_prices.len() % 2 == 0 {
-        (close_prices[close_prices.len() / 2 - 1] + close_prices[close_prices.len() / 2]) / 2.0
-    } else {
-        close_prices[close_prices.len() / 2]
-    };
+    // Process all candles except the most recent one
+    for i in 0..candlesticks.len() - 1 {
+        let candle = &mut candlesticks[i];
 
-    // Calculate a reasonable price range based on median close
-    // Using a percentage-based approach rather than standard deviation
-    const MAX_PRICE_DEVIATION: f64 = 4.0; // 400% deviation
-
-    let min_reasonable_price = median_close / MAX_PRICE_DEVIATION;
-    let max_reasonable_price = median_close * MAX_PRICE_DEVIATION;
-
-    // Adjust extreme wicks in each candlestick
-    for candle in candlesticks.iter_mut() {
-        // Don't adjust open/close as they're more important for continuity
-        // Just focus on the high/low for wick filtering
-
-        // Cap the high price
-        if candle.high > max_reasonable_price {
-            // Set high to the maximum of close price and max reasonable price
-            candle.high = candle.close.max(max_reasonable_price);
-        }
-
-        // Cap the low price
-        if candle.low < min_reasonable_price {
-            // Set low to the minimum of close price and min reasonable price
-            candle.low = candle.close.min(min_reasonable_price);
+        // If high is above the max close, remove the high wick by setting it to close
+        if candle.high > max_close {
+            candle.high = candle.close;
         }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::db::make_db;
+    use crate::db::{candlesticks::Candlestick, make_db};
 
-    use super::CandlestickInterval;
+    use super::{filter_extreme_wicks, CandlestickInterval};
     use crate::routes::CandlestickParams;
 
     #[test]
@@ -234,5 +215,20 @@ mod tests {
             "now: {:#?}",
             chrono::DateTime::from_timestamp(chrono::Utc::now().timestamp(), 0)
         );
+    }
+
+    #[tokio::test]
+    async fn test_filter_extreme_wicks() {
+        let mut candlesticks: Vec<Candlestick> = reqwest::get(format!(
+            "https://api.listen-rs.com/v1/adapter/candlesticks?mint=34HDZNbUkTyTrgYKy2ox43yp2f8PJ5hoM7xsrfNApump&interval=1h&limit=200"
+        ))
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+        println!("{:#?}", &candlesticks[4]);
+        filter_extreme_wicks(&mut candlesticks);
+        println!("{:#?}", &candlesticks[4]);
     }
 }
