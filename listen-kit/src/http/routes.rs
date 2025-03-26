@@ -36,6 +36,8 @@ pub struct ChatRequest {
     #[serde(default)]
     features: Option<Features>,
     model_type: Option<String>,
+    #[serde(default)]
+    locale: Option<String>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -209,9 +211,13 @@ async fn stream(
 
     let prompt = request.prompt.clone();
     let messages = request.chat_history.clone();
+    let locale = request.locale.clone().unwrap_or("en".to_string());
 
-    let signer: Arc<dyn TransactionSigner> =
-        Arc::new(PrivySigner::new(state.privy.clone(), user_session.clone()));
+    let signer: Arc<dyn TransactionSigner> = Arc::new(PrivySigner::new(
+        state.privy.clone(),
+        user_session.clone(),
+        locale,
+    ));
 
     // Create a channel for collecting responses - this stays put
     let (response_tx, response_rx) =

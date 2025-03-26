@@ -1,5 +1,6 @@
 use crate::common::wrap_unsafe;
 use crate::distiller::analyst::Analyst;
+use crate::signer::SignerContext;
 use crate::twitter::{search::QueryType, TwitterApi};
 use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
@@ -11,7 +12,6 @@ and returns the summary of the search results given the intent
 Parameters:
 - query (string): The search query string (e.g. \"AI\" OR \"Twitter\" from:elonmusk)
 - query_type (string): The type of search (Latest or Top)
-- locale (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
 - intent (string): The intent of the analysis, passed on to the Twitter Analyst agent, possible to pass \"\" for no specific intent
 - cursor (string): Optional cursor for pagination, \"\" for the first page, then returned cursor for subsequent pages
 
@@ -33,10 +33,10 @@ Multiple operators can be combined to narrow results: from:nasa filter:images si
 pub async fn search_tweets(
     query: String,
     query_type: String,
-    locale: String,
     intent: String,
     cursor: String,
 ) -> Result<String> {
+    let locale = SignerContext::current().await.locale();
     let twitter = TwitterApi::from_env()
         .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
     let analyst = Analyst::from_env_with_locale(locale)
