@@ -233,6 +233,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             autonomous: agentMode,
           },
           model_type: modelType,
+          locale: "en",
         });
 
         const response = await fetch(

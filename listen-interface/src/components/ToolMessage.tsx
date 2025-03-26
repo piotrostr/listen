@@ -55,7 +55,7 @@ export const ToolMessage = ({
 
   // Find the corresponding tool call for this tool result
   const matchingToolCall = useMemo(() => {
-    if (!toolOutput.id) return null;
+    if (!toolOutput.id && !toolOutput.name) return null;
 
     // Find the index of the current message
     const currentIndex = messages.findIndex((m) => m.id === currentMessage.id);

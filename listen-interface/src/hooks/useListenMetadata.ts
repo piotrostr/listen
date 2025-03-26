@@ -10,7 +10,6 @@ export async function fetchListenMetadata(
 
   if (!response.ok) {
     const text = await response.text();
-    console.log(text);
     throw new Error(text || response.statusText);
   }
 

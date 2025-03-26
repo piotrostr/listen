@@ -178,8 +178,6 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     );
   }
 
-  console.log(isLoading, toolBeingCalled, isLastMessageOutgoing);
-
   return (
     <>
       <ChatContainer
