@@ -3,11 +3,12 @@ import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "../store/settingsStore";
 import { ChatSelector } from "./ChatSelector";
 import { ConnectedAccounts } from "./ConnectedAccounts";
+import { ModelSelector } from "./ModelSelector";
 import { WalletAddresses } from "./WalletAddresses";
 
 export function Settings() {
   const { user } = usePrivy();
-  const { chatType, setChatType } = useSettingsStore();
+  const { chatType, setChatType, modelType, setModelType } = useSettingsStore();
   const {
     quickBuyAmount,
     setQuickBuyAmount,
@@ -82,6 +83,9 @@ export function Settings() {
 
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.mode")}</h2>
       <ChatSelector selectedChat={chatType} onSelectChat={setChatType} />
+
+      <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.model")}</h2>
+      <ModelSelector selectedModel={modelType} onSelectModel={setModelType} />
 
       <h2 className="text-lg font-bold mb-2 mt-4">
         {t("settings.connected_accounts")}
