@@ -13,7 +13,6 @@ Parameters:
 - query (string): The search query string (e.g. \"AI\" OR \"Twitter\" from:elonmusk)
 - query_type (string): The type of search (Latest or Top)
 - intent (string): The intent of the analysis, passed on to the Twitter Analyst agent, possible to pass \"\" for no specific intent
-- cursor (string): Optional cursor for pagination, \"\" for the first page, then returned cursor for subsequent pages
 
 Core Query Structure:
 Terms combine with implicit AND: term1 term2
@@ -34,7 +33,6 @@ pub async fn search_tweets(
     query: String,
     query_type: String,
     intent: String,
-    cursor: String,
 ) -> Result<String> {
     let locale = SignerContext::current().await.locale();
     let twitter = TwitterApi::from_env()
@@ -46,12 +44,7 @@ pub async fn search_tweets(
         "Top" => QueryType::Top,
         _ => return Err(anyhow!("Invalid query type: {}", query_type)),
     };
-    let cursor = if cursor.is_empty() {
-        None
-    } else {
-        Some(cursor)
-    };
-    let response = twitter.search_tweets(&query, query_type, cursor).await?;
+    let response = twitter.search_tweets(&query, query_type, None).await?;
     let distilled = wrap_unsafe(move || async move {
         analyst
             .analyze_twitter(
@@ -99,16 +92,15 @@ re-research those proflies calling this same tool
 
 Parameters:
 - username (string): The X username, e.g. @elonmusk
-- language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
 - intent (string): The intent of the analysis, passed on to the Twitter Analyst agent, possible to pass \"\" for no specific intent
 ")]
 pub async fn research_x_profile(
     username: String,
-    language: String,
     intent: String,
 ) -> Result<String> {
     let twitter = TwitterApi::from_env()
         .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
+    let language = SignerContext::current().await.locale();
     let analyst = Analyst::from_env_with_locale(language)
         .map_err(|_| anyhow!("Failed to create Analyst"))?;
     wrap_unsafe(move || async move {
