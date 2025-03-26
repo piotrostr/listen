@@ -62,13 +62,13 @@ different from the Swap tool, works for any Solana token
 ")]
 pub async fn get_quote(
     input_mint: String,
-    input_amount: u64,
+    input_amount: String,
     output_mint: String,
 ) -> Result<String> {
     let quote = crate::solana::jup::Jupiter::fetch_quote(
         &input_mint,
         &output_mint,
-        input_amount,
+        input_amount.parse::<u64>()?,
     )
     .await
     .map_err(|e| anyhow!("{:#?}", e))?;
