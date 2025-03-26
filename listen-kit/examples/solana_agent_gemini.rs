@@ -18,8 +18,7 @@ async fn main() -> Result<()> {
 
     SignerContext::with_signer(Arc::new(signer), async {
         let trader_agent = Arc::new(create_solana_agent_gemini(
-            Some("NEVER assume any tokens addresses, using the wrong address leads to
-            irreversible damage ALWAYS use the tools to find the relevant addresses".to_string()),
+            None,
             Features { autonomous: false },
         ));
         for tool in trader_agent.tools.schemas().iter() {
@@ -31,8 +30,11 @@ async fn main() -> Result<()> {
         trader_agent
             .stream(
                 "
-                we are testing the reasoning loop, constantly check my usdc
-                balance and get quote for 0.01 sol into usdc
+                we are testing the resoning loop, first grab my solana pubkey then my solana balance,
+                then search for Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump and research it on x
+                don't give up when you encounter a roadblock, keep going strong
+                you are autonomous and can call any number of tool to satisfy
+                the requirements
                 "
                 .to_string(),
                 vec![],
