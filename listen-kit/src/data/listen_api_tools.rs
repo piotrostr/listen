@@ -75,18 +75,17 @@ Lower timeframes work best, 7200 seconds is the sweet spot
 
 Parameters:
 - limit (string): number of tokens to return
-- min_volume (string): minimum 24h volume filter
 - min_market_cap (string): minimum market cap filter
 - max_market_cap (string): maximum market cap filter
 - timeframe (string): timeframe in seconds
 
 Use the min_market_cap of 100k unless specified otherwise.
+For max market cap, pass \"0\" for any market cap unless specified otherwise
 
 Returns a list of top tokens with their market data.
 ")]
 pub async fn fetch_top_tokens(
     limit: String,
-    min_volume: String,
     min_market_cap: String,
     max_market_cap: String,
     timeframe: String,
@@ -95,9 +94,10 @@ pub async fn fetch_top_tokens(
     let mut query_params = vec![];
 
     query_params.push(format!("limit={}", limit));
-    query_params.push(format!("min_volume={}", min_volume));
     query_params.push(format!("min_market_cap={}", min_market_cap));
-    query_params.push(format!("max_market_cap={}", max_market_cap));
+    if max_market_cap != "0" {
+        query_params.push(format!("max_market_cap={}", max_market_cap));
+    }
     query_params.push(format!("timeframe={}", timeframe));
     query_params.push("only_pumpfun_tokens=true".to_string());
 
@@ -169,22 +169,16 @@ Parameters:
   * '1h'  (1 hour)
   * '4h'  (4 hours)
   * '1d'  (1 day)
-- limit (string): number of candlesticks to return
 - language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
 - intent (string): The intent of the analysis, passed on to the Chart Analyst agent, possible to pass \"\" for no intent
 
-for tokens under 1M market cap, use the 30s interval, 200 limit
-
-for tokens over 1M market cap, use the 5m interval, 200 limit
-
-for tokens over 10M market cap, use the 30m interval, 200 limit
+start with 1m interval, 200 limit and work up the timeframes if required
 
 Returns an analysis of the chart from the Chart Analyst agent
 ")]
 pub async fn fetch_price_action_analysis(
     mint: String,
     interval: String,
-    limit: String,
     language: String,
     intent: String,
 ) -> Result<String> {
@@ -194,12 +188,10 @@ pub async fn fetch_price_action_analysis(
         _ => return Err(anyhow!("Invalid interval: {}", interval)),
     }
 
-    let mut url = format!(
+    let url = format!(
         "{}/candlesticks?mint={}&interval={}",
         API_BASE, mint, interval
     );
-
-    url = format!("{}&limit={}", url, limit);
 
     let response = reqwest::get(&url)
         .await
@@ -230,7 +222,6 @@ mod tests {
     async fn test_fetch_top_tokens() {
         fetch_top_tokens(
             "10".to_string(),
-            "0".to_string(),
             "1000000000000000000".to_string(),
             "1000000000000000000".to_string(),
             "1d".to_string(),
@@ -244,7 +235,6 @@ mod tests {
         let analysis = fetch_price_action_analysis(
             "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump".to_string(),
             "5m".to_string(),
-            "10".to_string(),
             "en".to_string(),
             "".to_string(),
         )

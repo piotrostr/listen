@@ -23,6 +23,8 @@ where
 
     let raw_messages: Vec<RawMessage> = Vec::deserialize(deserializer)?;
 
+    println!("Deserializing messages: {:?}", raw_messages);
+
     raw_messages
         .into_iter()
         .map(|raw| {

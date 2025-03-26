@@ -272,7 +272,7 @@ async fn stream(
             )));
             ReasoningLoop::new(model).with_stdout(false)
         } else {
-            ReasoningLoop::new(Model::Anthropic(agent))
+            ReasoningLoop::new(Model::Anthropic(agent)).with_stdout(false)
         };
 
         // Create a channel for the reasoning loop to send responses

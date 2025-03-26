@@ -187,6 +187,7 @@ impl ReasoningLoop {
                 }
             }
 
+            println!("current_response: {:?}", current_response);
             // Add any remaining response to messages
             if !current_response.is_empty() {
                 current_messages.push(Message::Assistant {

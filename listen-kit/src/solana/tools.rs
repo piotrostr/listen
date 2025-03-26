@@ -163,14 +163,10 @@ pub async fn transfer_spl_token(
     .await
 }
 
-// FIXME get rid of noops (required for Gemini compat)
 #[tool(description = "
 Returns the public key of the delegated wallet
-noop is a dummy parameter
 ")]
-pub async fn get_public_key(
-    #[allow(unused_variables)] noop: String,
-) -> Result<String> {
+pub async fn get_public_key() -> Result<String> {
     let signer = SignerContext::current().await;
     if signer.pubkey().is_none() {
         return Err(anyhow::anyhow!("Wallet unavailable"));
@@ -179,9 +175,7 @@ pub async fn get_public_key(
 }
 
 #[tool(description = "
-Returns the current SOL balance of the a wallet
-
-To get the balance of delegated wallet you can access, pass \"\" as pubkey
+Returns the current SOL balance of the a wallet (given as pubkey param)
 ")]
 pub async fn get_sol_balance(pubkey: String) -> Result<u64> {
     match pubkey.as_str() {
@@ -358,10 +352,7 @@ pub async fn get_portfolio() -> Result<Vec<PortfolioItem>> {
 #[tool(description = "
 Returns the current date and time, in UTC
 Note: user will see the output formatted to their local time in the UI
-noop is a dummy parameter
 ")]
-pub async fn get_current_time(
-    #[allow(unused_variables)] noop: String,
-) -> Result<String> {
+pub async fn get_current_time() -> Result<String> {
     Ok(Local::now().to_utc().to_string())
 }
