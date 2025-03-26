@@ -163,6 +163,7 @@ pub async fn transfer_spl_token(
     .await
 }
 
+// FIXME get rid of noops (required for Gemini compat)
 #[tool(description = "
 Returns the public key of the delegated wallet
 noop is a dummy parameter

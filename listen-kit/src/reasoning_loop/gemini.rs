@@ -132,16 +132,21 @@ impl ReasoningLoop {
                         }
 
                         // Create the tool result message to use directly as next input
+                        let mut is_err = false;
                         let result_str = match &result {
-                            Ok(content) => content.to_string(),
-                            Err(err) => err.to_string(),
+                            Ok(content) => serde_json::json!({"result": content.to_string()}).to_string(),
+                            Err(err) => {
+                                is_err = true;
+                                serde_json::json!({"error": err.to_string()})
+                                    .to_string()
+                            }
                         };
 
                         // Create the tool result message to be used as the next input
                         next_input = Message::User {
                             content: OneOrMany::one(
                                 UserContent::tool_result(
-                                    tool_id.clone(),
+                                    name.clone(), // TODO gemini doesn't have tool IDs, not sure if `name` is the param
                                     OneOrMany::one(ToolResultContent::text(
                                         result_str.clone(),
                                     )),
@@ -153,7 +158,20 @@ impl ReasoningLoop {
                             tx.send(StreamResponse::ToolResult {
                                 id: tool_id,
                                 name,
-                                result: result_str,
+                                result: match is_err {
+                                    true => serde_json::from_str::<
+                                        serde_json::Value,
+                                    >(
+                                        &result_str
+                                    )?["error"]
+                                        .to_string(),
+                                    false => serde_json::from_str::<
+                                        serde_json::Value,
+                                    >(
+                                        &result_str
+                                    )?["result"]
+                                        .to_string(),
+                                },
                             })
                             .await
                             .map_err(|e| {
