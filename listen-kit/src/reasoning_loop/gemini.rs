@@ -164,13 +164,28 @@ impl ReasoningLoop {
                                     >(
                                         &result_str
                                     )?["error"]
+                                        .as_str()
+                                        .unwrap_or_default()
                                         .to_string(),
                                     false => serde_json::from_str::<
                                         serde_json::Value,
                                     >(
                                         &result_str
                                     )?["result"]
-                                        .to_string(),
+                                        .as_str()
+                                        .map(|s| s.to_string())
+                                        .unwrap_or_else(|| {
+                                            // If it's not a string, serialize the value directly
+                                            serde_json::to_string(
+                                                &serde_json::from_str::<
+                                                    serde_json::Value,
+                                                >(
+                                                    &result_str
+                                                )
+                                                .unwrap()["result"],
+                                            )
+                                            .unwrap_or_default()
+                                        }),
                                 },
                             })
                             .await
