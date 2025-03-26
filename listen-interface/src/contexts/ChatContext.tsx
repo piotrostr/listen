@@ -46,6 +46,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     quickBuyAmount: defaultAmount,
     agentMode,
     chatType,
+    modelType,
   } = useSettingsStore();
   const { getAccessToken, user } = usePrivy();
   const {
@@ -231,6 +232,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           features: {
             autonomous: agentMode,
           },
+          model_type: modelType,
         });
 
         const response = await fetch(
