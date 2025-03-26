@@ -13,5 +13,9 @@ returns: a list of pairs that match the search phrase, the liquidity, volume, pr
 pub async fn search_on_dex_screener(
     phrase: String,
 ) -> Result<DexScreenerResponse> {
-    search_ticker(phrase).await
+    if phrase.starts_with("$") {
+        search_ticker(phrase.replace("$", "").to_lowercase()).await
+    } else {
+        search_ticker(phrase).await
+    }
 }
