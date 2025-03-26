@@ -14,6 +14,7 @@ import { chatCache } from "../hooks/localStorage";
 import { useDebounce } from "../hooks/useDebounce";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { compactPortfolio } from "../hooks/util";
+import i18n from "../i18n";
 import { pickSystemPrompt } from "../prompts";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useSettingsStore } from "../store/settingsStore";
@@ -233,7 +234,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             autonomous: agentMode,
           },
           model_type: modelType,
-          locale: "en",
+          locale: i18n.language,
         });
 
         const response = await fetch(
