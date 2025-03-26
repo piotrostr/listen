@@ -143,7 +143,7 @@ impl ClickhouseDb {
 
 /// Filter out extreme price wicks from candlestick data
 fn filter_extreme_wicks(candlesticks: &mut Vec<Candlestick>) {
-    if candlesticks.len() <= 1 {
+    if candlesticks.len() <= 2 {
         return;
     }
 
@@ -153,13 +153,23 @@ fn filter_extreme_wicks(candlesticks: &mut Vec<Candlestick>) {
         .map(|c| c.close)
         .fold(f64::NEG_INFINITY, f64::max);
 
-    // Process all candles except the most recent one
-    for i in 0..candlesticks.len() - 1 {
+    let min_close = candlesticks
+        .iter()
+        .map(|c| c.close)
+        .fold(f64::INFINITY, f64::min);
+
+    // Process all candles except the first and last
+    for i in 1..candlesticks.len() - 1 {
         let candle = &mut candlesticks[i];
 
         // If high is above the max close, remove the high wick by setting it to close
         if candle.high > max_close {
             candle.high = candle.close;
+        }
+
+        // If low is below the min close, remove the low wick by setting it to close
+        if candle.low < min_close {
+            candle.low = candle.close;
         }
     }
 }
