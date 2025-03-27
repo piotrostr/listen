@@ -1,12 +1,8 @@
 import { create } from "zustand";
 import { Message } from "../types/message";
 
-interface Suggestion {
-  text: string;
-}
-
 interface SuggestState {
-  suggestions: Suggestion[];
+  suggestions: string[];
   isLoading: boolean;
   error: string | null;
   lastMessageId: string | null;
@@ -46,6 +42,11 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
 
     set({ isLoading: true, error: null });
 
+    const chatHistory = messages.map((msg) => ({
+      role: msg.direction === "outgoing" ? "user" : "assistant",
+      content: msg.message,
+    }));
+
     const attemptFetch = async (attempt: number): Promise<void> => {
       try {
         const token = await getAccessToken();
@@ -60,7 +61,7 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
               Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              chat_history: messages,
+              chat_history: chatHistory,
               locale,
             }),
           }

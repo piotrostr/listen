@@ -230,19 +230,6 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
               messages={messages}
             />
           ))}
-          {!isLoading && suggestions.length > 0 && (
-            <div className="flex flex-wrap gap-2 px-4 py-2 mt-2">
-              {suggestions.map((suggestion, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleQuestionClick(suggestion.text)}
-                  className="bg-gray-700 hover:bg-gray-600 text-white rounded-full px-4 py-2 text-sm"
-                >
-                  {suggestion.text}
-                </button>
-              ))}
-            </div>
-          )}
           <div className="flex flex-row items-center gap-2 pl-3 mt-2">
             {isLoading && <ThinkingIndicator />}
             {isLoading && !toolBeingCalled && isLastMessageOutgoing && (
