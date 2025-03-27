@@ -12,7 +12,7 @@ pub struct SuggestRequest {
     locale: Option<String>,
 }
 
-#[post("/suggest")]
+serde#[post("/suggest")]
 async fn suggest(
     req: HttpRequest,
     body: web::Json<SuggestRequest>,
@@ -27,6 +27,10 @@ async fn suggest(
             })));
         }
     };
+    // tmp
+    Ok(HttpResponse::Ok().json(json!({
+        "suggestions": []
+    })))
     let suggestions = match suggester::suggest(
         &chat_history,
         body.locale.as_deref().unwrap_or("en"),
