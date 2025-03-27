@@ -183,7 +183,8 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       messages.length > 0 && // Has messages
       !isLoading && // Not currently generating
       !isSuggestionsLoading && // Not already fetching suggestions
-      suggestions.length === 0 // No existing suggestions
+      suggestions.length === 0 && // No existing suggestions
+      !useSuggestStore.getState().hasFailedForMessage // Haven't failed for this message
     ) {
       fetchSuggestions(messages, getAccessToken, i18n.language);
     }
