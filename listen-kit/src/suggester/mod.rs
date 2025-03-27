@@ -5,33 +5,35 @@ use rig::{
     message::{AssistantContent, Message, ToolResultContent, UserContent},
 };
 
-const PREAMBLE_EN: &str = r#"You are a helpful AI assistant focused on
-suggesting relevant follow-up questions.  Based on the conversation history,
-dynamically suggest follow-up prompts that are most likely to be useful. Focus
-on questions that explore underlying concepts, technical details, or practical
-applications. Make suggestions concise and specific."#;
+const PROMPT_EN: &str = r#"
+Strictly based on this conversation, generate 2-3 follow-up questions for what I can do next. One per line:
+"#;
 
-const PREAMBLE_ZH: &str = r#"你是一个专注于提供相关后续问题的AI助手。
-根据对话历史，建议2个后续提示，这些提示有助于加深理解并触发额外研究。
-重点关注探索基本概念、技术细节或实际应用的问题。建议要简洁具体。"#;
+const PROMPT_ZH: &str = r#"
+严格基于这段对话，生成2-3个后续问题，告诉我接下来可以做什么。每行一个：
+"#;
+
+const MAX_CHARS: usize = 30000;
 
 pub async fn suggest(
     messages: &[Message],
     locale: &str,
 ) -> Result<Vec<String>> {
-    let preamble = if locale == "zh" {
-        PREAMBLE_ZH
+    let prompt = if locale == "zh" {
+        format!(
+            "{}\n\n{}",
+            PROMPT_ZH,
+            messages_to_string(messages, MAX_CHARS)
+        )
     } else {
-        PREAMBLE_EN
+        format!(
+            "{}\n\n{}",
+            PROMPT_EN,
+            messages_to_string(messages, MAX_CHARS)
+        )
     };
 
-    let agent = gemini_agent_builder().preamble(preamble).build();
-    let max_chars = 30000;
-
-    let prompt = format!(
-        "{}\n\nBased on this conversation, provide exactly 2 follow-up questions, one per line:",
-        messages_to_string(messages, max_chars)
-    );
+    let agent = gemini_agent_builder().build();
 
     let response = agent.prompt(Message::user(prompt)).await?;
 
@@ -39,7 +41,7 @@ pub async fn suggest(
     let suggestions: Vec<String> = response
         .lines()
         .filter(|line| !line.is_empty())
-        .take(4)
+        .take(3)
         .map(|s| s.trim().to_string())
         .collect();
 

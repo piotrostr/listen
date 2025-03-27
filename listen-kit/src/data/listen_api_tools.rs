@@ -67,6 +67,32 @@ pub async fn fetch_token_metadata(mint: String) -> Result<serde_json::Value> {
 }
 
 #[tool(description = "
+Fetch token price from the Listen API.
+
+Parameters:
+- mint (string): The token's mint/pubkey address
+
+Returns the price of the token in USD.
+")]
+pub async fn fetch_token_price(mint: String) -> Result<f64> {
+    let response = reqwest::get(format!("{}/price?mint={}", API_BASE, mint))
+        .await
+        .map_err(|e| anyhow!("Failed to fetch token price: {}", e))?;
+
+    let data = response
+        .json::<serde_json::Value>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
+
+    let price = match data["price"].as_f64() {
+        Some(price) => price,
+        None => return Err(anyhow!("Failed to parse price: {}", data)),
+    };
+
+    Ok(price)
+}
+
+#[tool(description = "
 Fetch top tokens from the Listen API.
 
 No point using limit of more than ~6, less is more, as long as the filters are right

@@ -175,9 +175,10 @@ pub async fn get_public_key() -> Result<String> {
 }
 
 #[tool(description = "
-Returns the current SOL balance of the a wallet (given as pubkey param)
+Returns the current Solana balance of the delegated wallet wallet
 ")]
-pub async fn get_sol_balance(pubkey: String) -> Result<u64> {
+pub async fn get_sol_balance() -> Result<u64> {
+    let pubkey = "".to_string();
     match pubkey.as_str() {
         "" => {
             wrap_unsafe(move || async move {
@@ -208,6 +209,7 @@ pub async fn get_sol_balance(pubkey: String) -> Result<u64> {
 
 #[tool(description = "
 get_token_balance returns (amount as String, decimals as u8, mint as String) - your current balance of the any SPL token
+SPL token is any solana token that is not SOL
 in order to convert to UI amount: amount / 10^decimals
 ")]
 pub async fn get_spl_token_balance(
