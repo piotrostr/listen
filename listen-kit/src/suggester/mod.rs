@@ -7,11 +7,14 @@ use rig::{
 
 const PROMPT_EN: &str = r#"
 Strictly based on this conversation, generate 2-3 follow-up suggestions for what
-I can do next. One per line, each 4-5 words.
+I can do next. One per line, each 4-5 words, provide only the suggestions, no other text.
+Special case: if the last assistant message is a question, where specific
+choices are provided, provide those choices
 "#;
 
 const PROMPT_ZH: &str = r#"
-严格基于这段对话，生成2-3个后续建议，告诉我接下来可以做什么。每行一个，每个4-5个字。
+严格基于这段对话，生成2-3个后续建议，告诉我接下来可以做什么。每行一个，每个4-5个字，只提供建议，不要其他文字。
+特殊情况：如果最后一条助手消息是一个问题，并且提供了具体的选择，请提供这些选择。
 "#;
 
 const MAX_CHARS: usize = 30000;
