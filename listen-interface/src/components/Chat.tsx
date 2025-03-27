@@ -49,10 +49,11 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   } = useChat();
 
   const {
-    suggestions,
+    getSuggestions,
     isLoading: isSuggestionsLoading,
     fetchSuggestions,
   } = useSuggestStore();
+  const suggestions = urlParams.chatId ? getSuggestions(urlParams.chatId) : [];
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputMessage, setInputMessage] = useState("");
@@ -100,12 +101,15 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         sendMessage(message);
       }
       setInputMessage("");
+      if (urlParams.chatId) {
+        useSuggestStore.getState().clearSuggestions(urlParams.chatId);
+      }
 
       if (messages?.length > 0) {
         scrollToBottom();
       }
     },
-    [sendMessage, setMessages]
+    [sendMessage, setMessages, urlParams.chatId]
   );
 
   // Focus the input field when creating a new chat
@@ -177,22 +181,43 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     }
   }, [messages]);
 
-  // Handle initial load suggestions
   useEffect(() => {
     if (
       messages.length > 0 && // Has messages
       !isLoading && // Not currently generating
       !isSuggestionsLoading && // Not already fetching suggestions
       suggestions.length === 0 && // No existing suggestions
-      !useSuggestStore.getState().hasFailedForMessage // Haven't failed for this message
+      urlParams.chatId // Has a chat ID
     ) {
-      fetchSuggestions(messages, getAccessToken, i18n.language);
+      fetchSuggestions(
+        urlParams.chatId,
+        messages,
+        getAccessToken,
+        i18n.language
+      );
     }
-  }, [messages, isLoading, isSuggestionsLoading, suggestions.length]);
+  }, [
+    messages,
+    isLoading,
+    isSuggestionsLoading,
+    suggestions.length,
+    urlParams.chatId,
+  ]);
+
+  // Add effect to clear suggestions when chat changes
+  useEffect(() => {
+    if (urlParams.chatId) {
+      useSuggestStore.getState().clearSuggestions(urlParams.chatId);
+    }
+  }, [urlParams.chatId]);
 
   if (IS_DISABLED) {
     return (
-      <ChatContainer inputMessage="" isGenerating={false}>
+      <ChatContainer
+        inputMessage=""
+        isGenerating={false}
+        chatId={urlParams.chatId}
+      >
         <div className="text-white px-4 py-2">disabled</div>
       </ChatContainer>
     );
@@ -211,6 +236,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         handleQuestionClick={handleQuestionClick}
         displayTiles={messages.length === 0}
         hasMessages={messages.length > 0}
+        chatId={urlParams.chatId}
       >
         <div className="h-full flex flex-col">
           {messages.length === 0 && (

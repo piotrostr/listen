@@ -1,38 +1,48 @@
 import { create } from "zustand";
 import { Message } from "../types/message";
 
+interface SuggestionsPerChat {
+  [chatId: string]: {
+    suggestions: string[];
+    lastMessageId: string | null;
+    hasFailedForMessage: string | null;
+  };
+}
+
 interface SuggestState {
-  suggestions: string[];
+  suggestionsPerChat: SuggestionsPerChat;
   isLoading: boolean;
   error: string | null;
-  lastMessageId: string | null;
-  retryCount: number;
-  hasFailedForMessage: string | null;
   fetchSuggestions: (
+    chatId: string,
     messages: Message[],
     getAccessToken: () => Promise<string | null>,
     locale?: string
   ) => Promise<void>;
-  clearSuggestions: () => void;
+  clearSuggestions: (chatId?: string) => void;
+  getSuggestions: (chatId: string) => string[];
 }
 
 export const useSuggestStore = create<SuggestState>((set, get) => ({
-  suggestions: [],
+  suggestionsPerChat: {},
   isLoading: false,
   error: null,
-  lastMessageId: null,
-  retryCount: 0,
-  hasFailedForMessage: null,
-  fetchSuggestions: async (messages, getAccessToken, locale = "en") => {
+
+  getSuggestions: (chatId: string) => {
+    return get().suggestionsPerChat[chatId]?.suggestions || [];
+  },
+
+  fetchSuggestions: async (chatId, messages, getAccessToken, locale = "en") => {
     if (messages.length === 0) return;
 
     const lastMessage = messages[messages.length - 1];
+    const currentChatSuggestions = get().suggestionsPerChat[chatId];
 
     // Don't refetch if we already have suggestions for this message
     // or if we've already failed for this message
     if (
-      lastMessage.id === get().lastMessageId ||
-      lastMessage.id === get().hasFailedForMessage
+      lastMessage.id === currentChatSuggestions?.lastMessageId ||
+      lastMessage.id === currentChatSuggestions?.hasFailedForMessage
     ) {
       return;
     }
@@ -68,27 +78,45 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
       }
 
       const data = await response.json();
-      set({
-        suggestions: data.suggestions,
+      set((state) => ({
+        suggestionsPerChat: {
+          ...state.suggestionsPerChat,
+          [chatId]: {
+            suggestions: data.suggestions,
+            lastMessageId: lastMessage.id,
+            hasFailedForMessage: null,
+          },
+        },
         isLoading: false,
-        lastMessageId: lastMessage.id,
-        hasFailedForMessage: null,
-      });
+      }));
     } catch (error) {
-      set({
+      set((state) => ({
         error: error instanceof Error ? error.message : "Unknown error",
         isLoading: false,
-        hasFailedForMessage: lastMessage.id,
-      });
+        suggestionsPerChat: {
+          ...state.suggestionsPerChat,
+          [chatId]: {
+            ...state.suggestionsPerChat[chatId],
+            hasFailedForMessage: lastMessage.id,
+          },
+        },
+      }));
       console.error("Failed to fetch suggestions:", error);
     }
   },
-  clearSuggestions: () =>
-    set({
-      suggestions: [],
-      lastMessageId: null,
-      retryCount: 0,
+
+  clearSuggestions: (chatId?: string) =>
+    set((state) => ({
+      suggestionsPerChat: chatId
+        ? {
+            ...state.suggestionsPerChat,
+            [chatId]: {
+              suggestions: [],
+              lastMessageId: null,
+              hasFailedForMessage: null,
+            },
+          }
+        : {}, // Clear all if no chatId provided
       error: null,
-      hasFailedForMessage: null,
-    }),
+    })),
 }));
