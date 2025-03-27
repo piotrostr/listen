@@ -1,5 +1,7 @@
+import { motion } from "framer-motion";
 import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useSuggestStore } from "../store/suggestStore";
 import { ChatInput } from "./ChatInput";
 import { NewChatTiles } from "./NewChatTiles";
 
@@ -30,6 +32,7 @@ export function ChatContainer({
   displayTiles = false,
   hasMessages = false,
 }: ChatContainerProps) {
+  const { suggestions } = useSuggestStore();
   const { t } = useTranslation();
   const RECOMMENDED_QUESTIONS_TILES = [
     {
@@ -58,8 +61,6 @@ export function ChatContainer({
     },
   ];
 
-  // const { suggestions } = useSuggestStore();
-
   return (
     <div className="relative mx-auto flex h-full w-full max-w-3xl flex-col md:px-2">
       <div
@@ -78,31 +79,34 @@ export function ChatContainer({
           onSelect={handleQuestionClick || (() => {})}
         />
       )}
-      {/*!isGenerating && handleQuestionClick && suggestions.length > 0 && (
-        <div className="w-full overflow-x-auto scrollbar-hide px-4 md:px-0">
-          <div className="flex flex-nowrap gap-3 pb-4 min-w-min md:flex md:justify-center pt-2">
-            {suggestions.map((suggestion, index) => (
-              <motion.div
-                key={index}
-                className="flex-none snap-start"
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div
-                  onClick={() => handleQuestionClick(suggestion)}
-                  className="flex-row min-w-[160px] max-w-[300px] h-[55px] bg-transparent
-                             border border-[#2D2D2D] rounded-[20px] cursor-pointer 
-                             flex justify-center items-center p-4"
+      {!isGenerating &&
+        handleQuestionClick &&
+        suggestions.length > 0 &&
+        !displayTiles && (
+          <div className="w-full overflow-x-auto scrollbar-hide px-4 md:px-0">
+            <div className="flex flex-nowrap gap-3 pb-4 min-w-min md:flex md:justify-center pt-2">
+              {suggestions.map((suggestion, index) => (
+                <motion.div
+                  key={index}
+                  className="flex-none snap-start"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
                 >
-                  <span className="font-space-grotesk text-sm text-white line-clamp-2 text-center">
-                    {suggestion}
-                  </span>
-                </div>
-              </motion.div>
-            ))}
+                  <div
+                    onClick={() => handleQuestionClick(suggestion)}
+                    className="flex-row min-w-[130px] max-w-[280px] h-[45px] bg-transparent
+                             border border-[#2D2D2D] rounded-[20px] cursor-pointer 
+                             flex justify-center items-center p-2"
+                  >
+                    <span className="font-space-grotesk text-xs text-white line-clamp-2 text-center">
+                      {suggestion}
+                    </span>
+                  </div>
+                </motion.div>
+              ))}
+            </div>
           </div>
-        </div>
-      )}*/}
+        )}
       <div className="sticky bottom-0 left-0 right-0 bg-[#151518]/80 backdrop-blur-sm pb-2 px-4 lg:px-0 pt-3">
         <ChatInput
           inputMessage={inputMessage}
