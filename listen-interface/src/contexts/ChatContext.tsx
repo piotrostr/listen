@@ -59,7 +59,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
   const { getSolanaAssets, getEvmAssets } = usePortfolioStore();
-  const { fetchSuggestions } = useSuggestStore();
 
   const solanaAssets = getSolanaAssets();
   const evmAssets = getEvmAssets();
@@ -273,17 +272,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) {
-            // After message generation is complete, fetch suggestions
-            await useSuggestStore
-              .getState()
-              .fetchSuggestions(
-                chat?.messages || [],
-                getAccessToken,
-                i18n.language
-              );
-            break;
-          }
+          if (done) break;
 
           const chunk = decoder.decode(value);
           const messages = jsonReader.append(chunk);
@@ -413,7 +402,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       wallets,
       chatType,
       navigate,
-      fetchSuggestions,
     ]
   );
 
