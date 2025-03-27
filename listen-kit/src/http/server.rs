@@ -22,7 +22,7 @@ pub async fn run_server(
             .service(healthz)
             .service(stream)
             .service(auth)
-            .service(suggest)
+        // .service(suggest)
     })
     .bind("0.0.0.0:6969")?
     .run()
