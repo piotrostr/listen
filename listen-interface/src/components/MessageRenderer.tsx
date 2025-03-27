@@ -82,10 +82,10 @@ export function MessageRendererBase({
   message: Message;
   messages: Message[];
 }) {
-  const { debugMode } = useSettingsStore();
   if (!msg.message) return null;
 
   const { t } = useTranslation();
+  const { debugMode } = useSettingsStore();
 
   // Check if this is the last user message
   const isLastUserMessage = (() => {
