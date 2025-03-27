@@ -58,7 +58,7 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
       const token = await getAccessToken();
       const response = await fetch(
         process.env.NODE_ENV === "production"
-          ? "https://api.listen-rs.com/v1/suggest"
+          ? "https://api.listen-rs.com/v1/kit/suggest"
           : "http://localhost:6969/suggest",
         {
           method: "POST",
