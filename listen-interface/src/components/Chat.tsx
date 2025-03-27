@@ -203,11 +203,6 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         i18n.language
       );
     }
-
-    // Cleanup function to clear suggestions when chat changes
-    return () => {
-      useSuggestStore.getState().clearSuggestions(urlParams.chatId);
-    };
   }, [
     urlParams.chatId,
     messages,
@@ -220,11 +215,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
 
   if (IS_DISABLED) {
     return (
-      <ChatContainer
-        inputMessage=""
-        isGenerating={false}
-        suggestions={suggestions}
-      >
+      <ChatContainer inputMessage="" isGenerating={false}>
         <div className="text-white px-4 py-2">disabled</div>
       </ChatContainer>
     );
@@ -243,7 +234,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         handleQuestionClick={handleQuestionClick}
         displayTiles={messages.length === 0}
         hasMessages={messages.length > 0}
-        suggestions={suggestions}
+        chatId={urlParams.chatId}
       >
         <div className="h-full flex flex-col">
           {messages.length === 0 && (

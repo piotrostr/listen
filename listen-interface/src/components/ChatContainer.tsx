@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useSuggestStore } from "../store/suggestStore";
 import { ChatInput } from "./ChatInput";
 import { NewChatTiles } from "./NewChatTiles";
 import { SuggestionTiles } from "./SuggestionTiles";
@@ -16,7 +17,7 @@ interface ChatContainerProps {
   handleQuestionClick?: (question: string) => void;
   displayTiles?: boolean;
   hasMessages?: boolean;
-  suggestions: any[];
+  chatId?: string;
 }
 
 export function ChatContainer({
@@ -31,9 +32,11 @@ export function ChatContainer({
   handleQuestionClick,
   displayTiles = false,
   hasMessages = false,
-  suggestions,
+  chatId,
 }: ChatContainerProps) {
   const { t } = useTranslation();
+  const { getSuggestions } = useSuggestStore();
+  const suggestions = chatId ? getSuggestions(chatId) : [];
 
   const RECOMMENDED_QUESTIONS_TILES = [
     {
