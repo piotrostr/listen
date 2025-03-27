@@ -6,11 +6,12 @@ use rig::{
 };
 
 const PROMPT_EN: &str = r#"
-Strictly based on this conversation, generate 2-3 follow-up questions for what I can do next. One per line:
+Strictly based on this conversation, generate 2-3 follow-up suggestions for what
+I can do next. One per line, each 4-5 words.
 "#;
 
 const PROMPT_ZH: &str = r#"
-严格基于这段对话，生成2-3个后续问题，告诉我接下来可以做什么。每行一个：
+严格基于这段对话，生成2-3个后续建议，告诉我接下来可以做什么。每行一个，每个4-5个字。
 "#;
 
 const MAX_CHARS: usize = 30000;
