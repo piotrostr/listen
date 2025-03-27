@@ -27,10 +27,6 @@ async fn suggest(
             })));
         }
     };
-    // tmp
-    return Ok(HttpResponse::Ok().json(json!({
-        "suggestions": []
-    })));
     let suggestions = match suggester::suggest(
         &chat_history,
         body.locale.as_deref().unwrap_or("en"),
