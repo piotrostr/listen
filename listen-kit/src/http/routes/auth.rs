@@ -1,5 +1,5 @@
 use crate::http::middleware::verify_auth;
-use actix_web::{get, Error, HttpRequest, HttpResponse, Responder};
+use actix_web::{get, Error, HttpRequest, HttpResponse};
 use anyhow::Result;
 use serde_json::json;
 
