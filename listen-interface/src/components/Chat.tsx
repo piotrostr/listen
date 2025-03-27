@@ -1,5 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../contexts/ChatContext";
 import { useModal } from "../contexts/ModalContext";
@@ -53,7 +53,11 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     isLoading: isSuggestionsLoading,
     fetchSuggestions,
   } = useSuggestStore();
-  const suggestions = urlParams.chatId ? getSuggestions(urlParams.chatId) : [];
+
+  // Memoize the suggestions selector
+  const suggestions = useMemo(() => {
+    return urlParams.chatId ? getSuggestions(urlParams.chatId) : [];
+  }, [urlParams.chatId, getSuggestions]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputMessage, setInputMessage] = useState("");
@@ -181,14 +185,17 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     }
   }, [messages]);
 
+  // Combine the suggestion fetching effects into one
   useEffect(() => {
-    if (
-      messages.length > 0 && // Has messages
-      !isLoading && // Not currently generating
-      !isSuggestionsLoading && // Not already fetching suggestions
-      suggestions.length === 0 && // No existing suggestions
-      urlParams.chatId // Has a chat ID
-    ) {
+    if (!urlParams.chatId) return;
+
+    const shouldFetchSuggestions =
+      messages.length > 0 &&
+      !isLoading &&
+      !isSuggestionsLoading &&
+      suggestions.length === 0;
+
+    if (shouldFetchSuggestions) {
       fetchSuggestions(
         urlParams.chatId,
         messages,
@@ -196,27 +203,27 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         i18n.language
       );
     }
+
+    // Cleanup function to clear suggestions when chat changes
+    return () => {
+      useSuggestStore.getState().clearSuggestions(urlParams.chatId);
+    };
   }, [
+    urlParams.chatId,
     messages,
     isLoading,
     isSuggestionsLoading,
     suggestions.length,
-    urlParams.chatId,
+    getAccessToken,
+    i18n.language,
   ]);
-
-  // Add effect to clear suggestions when chat changes
-  useEffect(() => {
-    if (urlParams.chatId) {
-      useSuggestStore.getState().clearSuggestions(urlParams.chatId);
-    }
-  }, [urlParams.chatId]);
 
   if (IS_DISABLED) {
     return (
       <ChatContainer
         inputMessage=""
         isGenerating={false}
-        chatId={urlParams.chatId}
+        suggestions={suggestions}
       >
         <div className="text-white px-4 py-2">disabled</div>
       </ChatContainer>
@@ -236,7 +243,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         handleQuestionClick={handleQuestionClick}
         displayTiles={messages.length === 0}
         hasMessages={messages.length > 0}
-        chatId={urlParams.chatId}
+        suggestions={suggestions}
       >
         <div className="h-full flex flex-col">
           {messages.length === 0 && (
