@@ -17,6 +17,7 @@ export const settings = {
     agent_mode_disabled:
       "Every trade is confirmed by hand. Listen doesn't have access to direct swapping tools.",
     model: "Model",
+    suggestions: "Suggestions",
   },
   zh: {
     title: "设置",
@@ -34,5 +35,6 @@ export const settings = {
     agent_mode_disabled:
       "每次交易都需要手动确认。Listen 没有访问直接交换工具的权限。",
     model: "模型",
+    suggestions: "建议",
   },
 };
