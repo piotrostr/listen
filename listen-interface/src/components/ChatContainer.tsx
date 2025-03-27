@@ -16,7 +16,6 @@ interface ChatContainerProps {
   handleQuestionClick?: (question: string) => void;
   displayTiles?: boolean;
   hasMessages?: boolean;
-  chatId?: string;
   suggestions: any[];
 }
 
@@ -32,7 +31,6 @@ export function ChatContainer({
   handleQuestionClick,
   displayTiles = false,
   hasMessages = false,
-  chatId,
   suggestions,
 }: ChatContainerProps) {
   const { t } = useTranslation();
