@@ -3,6 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../contexts/ChatContext";
 import { useModal } from "../contexts/ModalContext";
+import { useSuggestStore } from "../store/suggestStore";
 import { ToolCall, ToolCallSchema } from "../types/message";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
@@ -46,6 +47,8 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     isSharedChat,
     isLastMessageOutgoing,
   } = useChat();
+
+  const { suggestions, isLoading: isSuggestionsLoading } = useSuggestStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputMessage, setInputMessage] = useState("");
@@ -210,6 +213,19 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
               messages={messages}
             />
           ))}
+          {!isLoading && suggestions.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-4 py-2 mt-2">
+              {suggestions.map((suggestion, index) => (
+                <button
+                  key={index}
+                  onClick={() => handleQuestionClick(suggestion.text)}
+                  className="bg-gray-700 hover:bg-gray-600 text-white rounded-full px-4 py-2 text-sm"
+                >
+                  {suggestion.text}
+                </button>
+              ))}
+            </div>
+          )}
           <div className="flex flex-row items-center gap-2 pl-3 mt-2">
             {isLoading && <ThinkingIndicator />}
             {isLoading && !toolBeingCalled && isLastMessageOutgoing && (

@@ -18,6 +18,7 @@ import i18n from "../i18n";
 import { pickSystemPrompt } from "../prompts";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useSettingsStore } from "../store/settingsStore";
+import { useSuggestStore } from "../store/suggestStore";
 import {
   Chat,
   Message,
@@ -58,6 +59,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
   const { getSolanaAssets, getEvmAssets } = usePortfolioStore();
+  const { fetchSuggestions } = useSuggestStore();
 
   const solanaAssets = getSolanaAssets();
   const evmAssets = getEvmAssets();
@@ -398,6 +400,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       wallets,
       chatType,
       navigate,
+      fetchSuggestions,
     ]
   );
 
