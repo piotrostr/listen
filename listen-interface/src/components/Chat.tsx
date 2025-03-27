@@ -48,13 +48,17 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     isLastMessageOutgoing,
   } = useChat();
 
-  const { suggestions, isLoading: isSuggestionsLoading } = useSuggestStore();
+  const {
+    suggestions,
+    isLoading: isSuggestionsLoading,
+    fetchSuggestions,
+  } = useSuggestStore();
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputMessage, setInputMessage] = useState("");
   const { getAccessToken } = usePrivy();
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { openShareModal } = useModal();
 
   const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>(null);
@@ -172,6 +176,18 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       }
     }
   }, [messages]);
+
+  // Handle initial load suggestions
+  useEffect(() => {
+    if (
+      messages.length > 0 && // Has messages
+      !isLoading && // Not currently generating
+      !isSuggestionsLoading && // Not already fetching suggestions
+      suggestions.length === 0 // No existing suggestions
+    ) {
+      fetchSuggestions(messages, getAccessToken, i18n.language);
+    }
+  }, [messages, isLoading, isSuggestionsLoading, suggestions.length]);
 
   if (IS_DISABLED) {
     return (

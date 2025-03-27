@@ -9,22 +9,30 @@ interface SuggestState {
   suggestions: Suggestion[];
   isLoading: boolean;
   error: string | null;
+  lastMessageId: string | null;
   fetchSuggestions: (
-    chatHistory: Message[],
-    getAccessToken: () => Promise<string>,
+    messages: Message[],
+    getAccessToken: () => Promise<string | null>,
     locale?: string
   ) => Promise<void>;
+  clearSuggestions: () => void;
 }
 
 export const useSuggestStore = create<SuggestState>((set) => ({
   suggestions: [],
   isLoading: false,
   error: null,
-  fetchSuggestions: async (
-    chatHistory: Message[],
-    getAccessToken: () => Promise<string>,
-    locale = "en"
-  ) => {
+  lastMessageId: null,
+  fetchSuggestions: async (messages, getAccessToken, locale = "en") => {
+    if (messages.length === 0) return;
+
+    const lastMessage = messages[messages.length - 1];
+
+    // Don't refetch if we already have suggestions for this message
+    if (lastMessage.id === useSuggestStore.getState().lastMessageId) {
+      return;
+    }
+
     set({ isLoading: true, error: null });
     try {
       const token = await getAccessToken();
@@ -39,7 +47,7 @@ export const useSuggestStore = create<SuggestState>((set) => ({
             Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({
-            chat_history: chatHistory,
+            chat_history: messages,
             locale,
           }),
         }
@@ -50,7 +58,11 @@ export const useSuggestStore = create<SuggestState>((set) => ({
       }
 
       const data = await response.json();
-      set({ suggestions: data.suggestions, isLoading: false });
+      set({
+        suggestions: data.suggestions,
+        isLoading: false,
+        lastMessageId: lastMessage.id,
+      });
     } catch (error) {
       set({
         error: error instanceof Error ? error.message : "Unknown error",
@@ -58,4 +70,5 @@ export const useSuggestStore = create<SuggestState>((set) => ({
       });
     }
   },
+  clearSuggestions: () => set({ suggestions: [], lastMessageId: null }),
 }));

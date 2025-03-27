@@ -129,6 +129,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       userMessage: string,
       options?: { skipAddingUserMessage?: boolean; existingMessageId?: string }
     ) => {
+      // Clear suggestions when starting a new message
+      useSuggestStore.getState().clearSuggestions();
+
       setIsLoading(true);
 
       // Create a new abort controller for this request
@@ -270,7 +273,17 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            // After message generation is complete, fetch suggestions
+            await useSuggestStore
+              .getState()
+              .fetchSuggestions(
+                chat?.messages || [],
+                getAccessToken,
+                i18n.language
+              );
+            break;
+          }
 
           const chunk = decoder.decode(value);
           const messages = jsonReader.append(chunk);
