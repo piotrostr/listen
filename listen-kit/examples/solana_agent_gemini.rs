@@ -31,10 +31,7 @@ async fn main() -> Result<()> {
             .stream(
                 "
                 we are testing the resoning loop, first grab my solana pubkey then my solana balance,
-                then search for Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump and research it on x
-                don't give up when you encounter a roadblock, keep going strong
-                you are autonomous and can call any number of tool to satisfy
-                the requirements
+                then get metadata for Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump, the repeat the operation 3 times
                 "
                 .to_string(),
                 vec![],
