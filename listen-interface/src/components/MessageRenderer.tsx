@@ -84,6 +84,8 @@ export function MessageRendererBase({
   const { debugMode } = useSettingsStore();
   if (!msg.message) return null;
 
+  console.log(msg);
+
   // Check if this is the last user message
   const isLastUserMessage = (() => {
     if (msg.direction !== "outgoing") return false;

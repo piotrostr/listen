@@ -16,9 +16,6 @@ interface SuggestState {
   clearSuggestions: () => void;
 }
 
-const MAX_RETRIES = 3;
-const RETRY_DELAY = 1000; // 1 second
-
 export const useSuggestStore = create<SuggestState>((set, get) => ({
   suggestions: [],
   isLoading: false,
@@ -47,59 +44,44 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
       content: msg.message,
     }));
 
-    const attemptFetch = async (attempt: number): Promise<void> => {
-      try {
-        const token = await getAccessToken();
-        const response = await fetch(
-          process.env.NODE_ENV === "production"
-            ? "https://api.listen-rs.com/v1/suggest"
-            : "http://localhost:6969/suggest",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: `Bearer ${token}`,
-            },
-            body: JSON.stringify({
-              chat_history: chatHistory,
-              locale,
-            }),
-          }
-        );
-
-        if (!response.ok) {
-          throw new Error("Failed to fetch suggestions");
+    try {
+      const token = await getAccessToken();
+      const response = await fetch(
+        process.env.NODE_ENV === "production"
+          ? "https://api.listen-rs.com/v1/suggest"
+          : "http://localhost:6969/suggest",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+          body: JSON.stringify({
+            chat_history: chatHistory,
+            locale,
+          }),
         }
+      );
 
-        const data = await response.json();
-        set({
-          suggestions: data.suggestions,
-          isLoading: false,
-          lastMessageId: lastMessage.id,
-          retryCount: 0,
-          hasFailedForMessage: null,
-        });
-      } catch (error) {
-        if (attempt < MAX_RETRIES) {
-          await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY));
-          return attemptFetch(attempt + 1);
-        }
-
-        // If all retries failed, mark this message as failed
-        set({
-          error: error instanceof Error ? error.message : "Unknown error",
-          isLoading: false,
-          retryCount: 0,
-          hasFailedForMessage: lastMessage.id,
-        });
-        console.error(
-          `Failed to fetch suggestions after ${MAX_RETRIES} attempts:`,
-          error
-        );
+      if (!response.ok) {
+        throw new Error("Failed to fetch suggestions");
       }
-    };
 
-    await attemptFetch(1);
+      const data = await response.json();
+      set({
+        suggestions: data.suggestions,
+        isLoading: false,
+        lastMessageId: lastMessage.id,
+        hasFailedForMessage: null,
+      });
+    } catch (error) {
+      set({
+        error: error instanceof Error ? error.message : "Unknown error",
+        isLoading: false,
+        hasFailedForMessage: lastMessage.id,
+      });
+      console.error("Failed to fetch suggestions:", error);
+    }
   },
   clearSuggestions: () =>
     set({
