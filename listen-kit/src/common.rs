@@ -4,7 +4,6 @@ use std::sync::Arc;
 use tokio::sync::mpsc;
 
 use crate::signer::{SignerContext, TransactionSigner};
-
 pub async fn wrap_unsafe<F, Fut, T>(f: F) -> Result<T>
 where
     F: FnOnce() -> Fut + Send + 'static,
@@ -37,6 +36,7 @@ where
 
 use rig::agent::{Agent, AgentBuilder};
 use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
+use rig::providers::gemini::completion::CompletionModel as GeminiCompletionModel;
 
 pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
     rig::providers::anthropic::Client::from_env()
@@ -49,6 +49,12 @@ pub async fn plain_agent() -> Result<Agent<AnthropicCompletionModel>> {
         .preamble("be nice to the users")
         .max_tokens(1024 * 4)
         .build())
+}
+
+pub fn gemini_agent_builder() -> AgentBuilder<GeminiCompletionModel> {
+    rig::providers::gemini::Client::from_env()
+        .agent(rig::providers::gemini::completion::GEMINI_2_0_FLASH)
+        .max_tokens(1024 * 4)
 }
 
 pub const PREAMBLE_COMMON: &str = "";

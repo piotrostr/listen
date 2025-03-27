@@ -18,7 +18,7 @@ export const toolCalls = {
     thoughts: "Thoughts",
     get_current_time: "Checking the calendar...",
     search_web: "Searching the web...",
-    analyze_web_page: "Analyzing page content...",
+    analyze_page_content: "Analyzing page content...",
     create_advanced_order: "Scheduling an order...",
   },
   zh: {
@@ -40,7 +40,7 @@ export const toolCalls = {
     thoughts: "思考",
     get_current_time: "检查日历中...",
     search_web: "搜索网页中...",
-    analyze_web_page: "分析网页内容中...",
+    analyze_page_content: "分析网页内容中...",
     create_advanced_order: "安排订单中...",
   },
 };

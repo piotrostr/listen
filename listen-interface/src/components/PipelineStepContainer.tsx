@@ -77,15 +77,29 @@ const renderStatus = (status: string, t: TFunction, error: string | null) => {
       );
     case "Failed":
       return (
-        <div className="relative group">
-          <span className="text-red-300 flex items-center gap-1 cursor-help">
+        <div className="relative">
+          <span
+            className="text-red-300 flex items-center gap-1 cursor-help"
+            onMouseEnter={(e) => {
+              if (error) {
+                const rect = e.currentTarget.getBoundingClientRect();
+                const tooltipElement = document.createElement("div");
+                tooltipElement.id = "error-tooltip";
+                tooltipElement.className =
+                  "fixed bg-black/90 text-red-300 p-2 rounded shadow-lg z-[1000] max-w-xs break-words w-[150px] text-xs";
+                tooltipElement.style.left = `${rect.left}px`;
+                tooltipElement.style.top = `${rect.top - 5 - 40}px`; // Above the element with some margin
+                tooltipElement.textContent = formatError(error, t);
+                document.body.appendChild(tooltipElement);
+              }
+            }}
+            onMouseLeave={() => {
+              const tooltip = document.getElementById("error-tooltip");
+              if (tooltip) document.body.removeChild(tooltip);
+            }}
+          >
             <FaTimesCircle /> {t("pipelines.failed")}
           </span>
-          {error && (
-            <div className="absolute left-0 bottom-full mb-2 hidden group-hover:block bg-black/90 text-red-300 p-2 rounded shadow-lg z-10 max-w-xs break-words w-[150px]">
-              {formatError(error, t)}
-            </div>
-          )}
         </div>
       );
     case "Cancelled":
@@ -106,6 +120,9 @@ function formatError(error: string, t: TFunction) {
   }
   if (error.includes("program error: 0x1786")) {
     return t("pipelines.invalid_timestamp");
+  }
+  if (error.includes("Failed to fetch quote")) {
+    return t("pipelines.failed_to_fetch_quote");
   }
   try {
     // Look for JSON between curly braces

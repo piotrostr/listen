@@ -29,6 +29,7 @@ actix-cors = "0.7.0"
 url = "2.5.4"
 regex = "1.10.2"
 listen-tracing = { path = "../listen-tracing" }
+reqwest = { version = "0.12.15", features = ["json"] }
 
 [[bin]]
 name = "adapter"

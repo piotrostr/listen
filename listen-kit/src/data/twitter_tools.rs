@@ -1,5 +1,6 @@
 use crate::common::wrap_unsafe;
 use crate::distiller::analyst::Analyst;
+use crate::signer::SignerContext;
 use crate::twitter::{search::QueryType, TwitterApi};
 use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
@@ -11,9 +12,7 @@ and returns the summary of the search results given the intent
 Parameters:
 - query (string): The search query string (e.g. \"AI\" OR \"Twitter\" from:elonmusk)
 - query_type (string): The type of search (Latest or Top)
-- locale (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
-- cursor (string): Optional cursor for pagination
-- intent (string): The intent of the analysis, passed on to the Twitter Analyst agent
+- intent (string): The intent of the analysis, passed on to the Twitter Analyst agent, possible to pass \"\" for no specific intent
 
 Core Query Structure:
 Terms combine with implicit AND: term1 term2
@@ -33,10 +32,9 @@ Multiple operators can be combined to narrow results: from:nasa filter:images si
 pub async fn search_tweets(
     query: String,
     query_type: String,
-    locale: String,
-    intent: Option<String>,
-    cursor: Option<String>,
+    intent: String,
 ) -> Result<String> {
+    let locale = SignerContext::current().await.locale();
     let twitter = TwitterApi::from_env()
         .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
     let analyst = Analyst::from_env_with_locale(locale)
@@ -46,13 +44,13 @@ pub async fn search_tweets(
         "Top" => QueryType::Top,
         _ => return Err(anyhow!("Invalid query type: {}", query_type)),
     };
-    let response = twitter.search_tweets(&query, query_type, cursor).await?;
+    let response = twitter.search_tweets(&query, query_type, None).await?;
     let distilled = wrap_unsafe(move || async move {
         analyst
             .analyze_twitter(
                 &query,
                 &serde_json::to_value(&response)?,
-                intent,
+                Some(intent),
             )
             .await
             .map_err(|e| anyhow!("Failed to distill: {}", e))
@@ -94,16 +92,15 @@ re-research those proflies calling this same tool
 
 Parameters:
 - username (string): The X username, e.g. @elonmusk
-- language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
-- intent (string): The intent of the analysis, passed on to the Twitter Analyst agent
+- intent (string): The intent of the analysis, passed on to the Twitter Analyst agent, possible to pass \"\" for no specific intent
 ")]
 pub async fn research_x_profile(
     username: String,
-    language: String,
-    intent: Option<String>,
+    intent: String,
 ) -> Result<String> {
     let twitter = TwitterApi::from_env()
         .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
+    let language = SignerContext::current().await.locale();
     let analyst = Analyst::from_env_with_locale(language)
         .map_err(|_| anyhow!("Failed to create Analyst"))?;
     wrap_unsafe(move || async move {
@@ -115,7 +112,7 @@ pub async fn research_x_profile(
             .analyze_twitter(
                 &username,
                 &serde_json::to_value(&profile)?,
-                intent,
+                Some(intent),
             )
             .await
             .map_err(|e| anyhow!("Failed to distill: {}", e))?;

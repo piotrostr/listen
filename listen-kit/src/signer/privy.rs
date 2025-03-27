@@ -12,11 +12,20 @@ use super::TransactionSigner;
 pub struct PrivySigner {
     privy: Arc<Privy>,
     session: UserSession,
+    locale: String,
 }
 
 impl PrivySigner {
-    pub fn new(privy: Arc<Privy>, session: UserSession) -> Self {
-        Self { privy, session }
+    pub fn new(
+        privy: Arc<Privy>,
+        session: UserSession,
+        locale: String,
+    ) -> Self {
+        Self {
+            privy,
+            session,
+            locale,
+        }
     }
 }
 
@@ -30,6 +39,10 @@ pub fn transaction_to_base64<T: Serialize>(
 
 #[async_trait]
 impl TransactionSigner for PrivySigner {
+    fn locale(&self) -> String {
+        self.locale.clone()
+    }
+
     fn user_id(&self) -> Option<String> {
         Some(self.session.user_id.clone())
     }

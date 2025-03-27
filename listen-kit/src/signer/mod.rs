@@ -36,6 +36,10 @@ pub enum SignerType {
 
 #[async_trait]
 pub trait TransactionSigner: Send + Sync {
+    fn locale(&self) -> String {
+        "en".to_string()
+    }
+
     fn user_id(&self) -> Option<String> {
         None
     }

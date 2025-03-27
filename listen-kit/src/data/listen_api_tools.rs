@@ -1,9 +1,9 @@
+use crate::common::wrap_unsafe;
+use crate::distiller::analyst::Analyst;
+use crate::signer::SignerContext;
 use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
 use serde::{Deserialize, Serialize};
-
-use crate::common::wrap_unsafe;
-use crate::distiller::analyst::Analyst;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Candlestick {
@@ -71,49 +71,36 @@ Fetch top tokens from the Listen API.
 
 No point using limit of more than ~6, less is more, as long as the filters are right
 
-Lower timeframes work best, 7200 seconds is the sweet spot
+Lower timeframes work best, 7200 seconds is the sweet spot, you can request any
+timeframe though, up to 24 hours
 
 Parameters:
-- limit (string): Optional number of tokens to return
-- min_volume (string): Optional minimum 24h volume filter
-- min_market_cap (string): Optional minimum market cap filter
-- max_market_cap (string): Optional maximum market cap filter
-- timeframe (string): Optional timeframe in seconds
-- only_pumpfun_tokens (string): Optional boolean to filter only PumpFun tokens (default: \"true\")
+- limit (string): number of tokens to return
+- min_market_cap (string): minimum market cap filter
+- max_market_cap (string): maximum market cap filter
+- timeframe (string): timeframe in seconds
 
 Use the min_market_cap of 100k unless specified otherwise.
+For max market cap, pass \"0\" for any market cap unless specified otherwise
 
 Returns a list of top tokens with their market data.
 ")]
 pub async fn fetch_top_tokens(
-    limit: Option<String>,
-    min_volume: Option<String>,
-    min_market_cap: Option<String>,
-    max_market_cap: Option<String>,
-    timeframe: Option<String>,
-    only_pumpfun_tokens: Option<String>,
+    limit: String,
+    min_market_cap: String,
+    max_market_cap: String,
+    timeframe: String,
 ) -> Result<Vec<TopToken>> {
     let mut url = format!("{}/top-tokens", API_BASE);
     let mut query_params = vec![];
 
-    if let Some(limit) = limit {
-        query_params.push(format!("limit={}", limit));
-    }
-    if let Some(min_volume) = min_volume {
-        query_params.push(format!("min_volume={}", min_volume));
-    }
-    if let Some(min_market_cap) = min_market_cap {
-        query_params.push(format!("min_market_cap={}", min_market_cap));
-    }
-    if let Some(max_market_cap) = max_market_cap {
+    query_params.push(format!("limit={}", limit));
+    query_params.push(format!("min_market_cap={}", min_market_cap));
+    if max_market_cap != "0" {
         query_params.push(format!("max_market_cap={}", max_market_cap));
     }
-    if let Some(timeframe) = timeframe {
-        query_params.push(format!("timeframe={}", timeframe));
-    }
-    if let Some(only_pumpfun) = only_pumpfun_tokens {
-        query_params.push(format!("only_pumpfun_tokens={}", only_pumpfun));
-    }
+    query_params.push(format!("timeframe={}", timeframe));
+    query_params.push("only_pumpfun_tokens=true".to_string());
 
     if !query_params.is_empty() {
         url = format!("{}?{}", url, query_params.join("&"));
@@ -183,24 +170,16 @@ Parameters:
   * '1h'  (1 hour)
   * '4h'  (4 hours)
   * '1d'  (1 day)
-- limit (string): Optional number of candlesticks to return
-- language (string): The language of the output of the research, either \"en\" (English) or \"zh\" (Chinese)
-- intent (string): The intent of the analysis, passed on to the Chart Analyst agent
+- intent (string): The intent of the analysis, passed on to the Chart Analyst agent, possible to pass \"\" for no intent
 
-for tokens under 1M market cap, use the 30s interval, 200 limit
-
-for tokens over 1M market cap, use the 5m interval, 200 limit
-
-for tokens over 10M market cap, use the 15m interval, 200 limit
+start with 1m interval, 200 limit and work up the timeframes if required
 
 Returns an analysis of the chart from the Chart Analyst agent
 ")]
 pub async fn fetch_price_action_analysis(
     mint: String,
     interval: String,
-    limit: Option<String>,
-    language: Option<String>,
-    intent: Option<String>,
+    intent: String,
 ) -> Result<String> {
     // Validate interval
     match interval.as_str() {
@@ -208,14 +187,10 @@ pub async fn fetch_price_action_analysis(
         _ => return Err(anyhow!("Invalid interval: {}", interval)),
     }
 
-    let mut url = format!(
+    let url = format!(
         "{}/candlesticks?mint={}&interval={}",
         API_BASE, mint, interval
     );
-
-    if let Some(limit) = limit {
-        url = format!("{}&limit={}", url, limit);
-    }
 
     let response = reqwest::get(&url)
         .await
@@ -226,13 +201,13 @@ pub async fn fetch_price_action_analysis(
         .await
         .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
 
-    let analyst =
-        Analyst::from_env_with_locale(language.unwrap_or("en".to_string()))
-            .map_err(|e| anyhow!("Failed to create Analyst: {}", e))?;
+    let locale = SignerContext::current().await.locale();
+    let analyst = Analyst::from_env_with_locale(locale)
+        .map_err(|e| anyhow!("Failed to create Analyst: {}", e))?;
 
     wrap_unsafe(move || async move {
         analyst
-            .analyze_chart(&candlesticks, &interval, intent)
+            .analyze_chart(&candlesticks, &interval, Some(intent))
             .await
             .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
     })
@@ -246,12 +221,10 @@ mod tests {
     #[tokio::test]
     async fn test_fetch_top_tokens() {
         fetch_top_tokens(
-            Some("10".to_string()),
-            None,
-            None,
-            None,
-            None,
-            Some("true".to_string()),
+            "10".to_string(),
+            "1000000000000000000".to_string(),
+            "1000000000000000000".to_string(),
+            "1d".to_string(),
         )
         .await
         .unwrap();
@@ -259,12 +232,11 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_price_action_analysis() {
+        // FIXME thread local signer needs init
         let analysis = fetch_price_action_analysis(
             "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump".to_string(),
             "5m".to_string(),
-            Some("10".to_string()),
-            Some("en".to_string()),
-            None,
+            "".to_string(),
         )
         .await;
         println!("{:?}", analysis);

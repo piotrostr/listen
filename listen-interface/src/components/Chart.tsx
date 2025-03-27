@@ -16,6 +16,7 @@ import { Socials } from "./Socials";
 // Props for the inner chart component that receives data directly
 interface InnerChartProps {
   data: CandlestickData;
+  displayOhlc?: boolean;
 }
 
 // Props for the outer chart component that can either fetch or receive data
@@ -38,13 +39,22 @@ const TV_COLORS = {
   RED_TRANSPARENT: "rgba(239, 83, 80, 0.3)",
 } as const;
 
-export function InnerChart({ data }: InnerChartProps) {
+export function InnerChart({ data, displayOhlc }: InnerChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartRef = useRef<ReturnType<typeof createChart>>(null);
   const candlestickSeriesRef = useRef<ISeriesApi<"Candlestick"> | null>(null);
   const volumeSeriesRef = useRef<ISeriesApi<"Histogram"> | null>(null);
   const isDisposed = useRef(false);
   const lastDataRef = useRef<CandlestickData>([]);
+  // Add state for crosshair data
+  const [crosshairData, setCrosshairData] = useState<{
+    open?: number;
+    high?: number;
+    low?: number;
+    close?: number;
+    volume?: number;
+    time?: string;
+  } | null>(null);
 
   useEffect(() => {
     if (!chartContainerRef.current) return;
@@ -158,6 +168,58 @@ export function InnerChart({ data }: InnerChartProps) {
       });
     }
 
+    // Subscribe to crosshair movement
+    if (displayOhlc) {
+      chart.subscribeCrosshairMove((param) => {
+        if (
+          isDisposed.current ||
+          !param.time ||
+          !candlestickSeriesRef.current ||
+          !volumeSeriesRef.current
+        )
+          return;
+
+        const candleData = param.seriesData.get(
+          candlestickSeriesRef.current
+        ) as
+          | {
+              open: number;
+              high: number;
+              low: number;
+              close: number;
+              time: UTCTimestamp;
+            }
+          | undefined;
+
+        const volumeData = param.seriesData.get(volumeSeriesRef.current) as
+          | {
+              value: number;
+              time: UTCTimestamp;
+            }
+          | undefined;
+
+        if (candleData) {
+          const date = new Date(candleData.time * 1000);
+          const formattedTime = date.toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+            hour12: false,
+          });
+
+          setCrosshairData({
+            open: candleData.open,
+            high: candleData.high,
+            low: candleData.low,
+            close: candleData.close,
+            volume: volumeData?.value,
+            time: formattedTime,
+          });
+        } else {
+          setCrosshairData(null);
+        }
+      });
+    }
+
     // @ts-ignore
     chartRef.current = chart;
 
@@ -212,12 +274,43 @@ export function InnerChart({ data }: InnerChartProps) {
     });
   }, [data]);
 
+  const formatNumber = (num: number | undefined): string => {
+    if (num === undefined) return "-";
+
+    if (num >= 1000000000) {
+      return (num / 1000000000).toFixed(2) + "B";
+    } else if (num >= 1000000) {
+      return (num / 1000000).toFixed(2) + "M";
+    } else if (num >= 1000) {
+      return (num / 1000).toFixed(2) + "K";
+    } else {
+      return num.toFixed(2);
+    }
+  };
+
   return (
-    <div
-      ref={chartContainerRef}
-      className="w-full h-full"
-      style={{ minHeight: "100%" }}
-    />
+    <div className="w-full h-full relative">
+      <div
+        ref={chartContainerRef}
+        className="w-full h-full"
+        style={{ minHeight: "100%" }}
+      />
+
+      {/* Updated OHLC Display - single line format */}
+      {crosshairData && displayOhlc && (
+        <div className="absolute top-3 left-3 bg-[#121621] py-1 px-2 rounded text-xs font-mono z-10">
+          <div className="flex space-x-3">
+            <span>O {crosshairData.open}</span>
+            <span>H {crosshairData.high}</span>
+            <span>L {crosshairData.low}</span>
+            <span>C {crosshairData.close}</span>
+            <span className="text-[#3CD2B9]">
+              {formatNumber(crosshairData.volume)}
+            </span>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }
 

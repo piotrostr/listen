@@ -62,13 +62,13 @@ different from the Swap tool, works for any Solana token
 ")]
 pub async fn get_quote(
     input_mint: String,
-    input_amount: u64,
+    input_amount: String,
     output_mint: String,
 ) -> Result<String> {
     let quote = crate::solana::jup::Jupiter::fetch_quote(
         &input_mint,
         &output_mint,
-        input_amount,
+        input_amount.parse::<u64>()?,
     )
     .await
     .map_err(|e| anyhow!("{:#?}", e))?;
@@ -163,7 +163,9 @@ pub async fn transfer_spl_token(
     .await
 }
 
-#[tool]
+#[tool(description = "
+Returns the public key of the delegated wallet
+")]
 pub async fn get_public_key() -> Result<String> {
     let signer = SignerContext::current().await;
     if signer.pubkey().is_none() {
@@ -172,25 +174,40 @@ pub async fn get_public_key() -> Result<String> {
     Ok(signer.pubkey().unwrap())
 }
 
-#[tool]
-pub async fn get_sol_balance() -> Result<u64> {
-    let signer = SignerContext::current().await.clone();
-    if signer.pubkey().is_none() {
-        return Err(anyhow::anyhow!("Wallet unavailable"));
-    }
-    let owner = Pubkey::from_str(&signer.pubkey().unwrap())?;
-
-    wrap_unsafe(move || async move {
-        create_rpc()
-            .get_balance(&owner)
+#[tool(description = "
+Returns the current SOL balance of the a wallet (given as pubkey param)
+")]
+pub async fn get_sol_balance(pubkey: String) -> Result<u64> {
+    match pubkey.as_str() {
+        "" => {
+            wrap_unsafe(move || async move {
+                create_rpc()
+                    .get_balance(&Pubkey::from_str(&pubkey)?)
+                    .await
+                    .map_err(|e| anyhow!("{:#?}", e))
+            })
             .await
-            .map_err(|e| anyhow!("{:#?}", e))
-    })
-    .await
+        }
+        _ => {
+            let signer = SignerContext::current().await.clone();
+            if signer.pubkey().is_none() {
+                return Err(anyhow::anyhow!("Wallet unavailable"));
+            }
+            let owner = Pubkey::from_str(&signer.pubkey().unwrap())?;
+
+            wrap_unsafe(move || async move {
+                create_rpc()
+                    .get_balance(&owner)
+                    .await
+                    .map_err(|e| anyhow!("{:#?}", e))
+            })
+            .await
+        }
+    }
 }
 
 #[tool(description = "
-get_token_balance returns (amount as String, decimals as u8, mint as String)
+get_token_balance returns (amount as String, decimals as u8, mint as String) - your current balance of the any SPL token
 in order to convert to UI amount: amount / 10^decimals
 ")]
 pub async fn get_spl_token_balance(

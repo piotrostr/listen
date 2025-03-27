@@ -134,15 +134,51 @@ impl ClickhouseDb {
         // Reverse to maintain chronological order (oldest first)
         candlesticks.reverse();
 
+        // Post-process to remove extreme wicks
+        filter_extreme_wicks(&mut candlesticks);
+
         Ok(candlesticks)
+    }
+}
+
+/// Filter out extreme price wicks from candlestick data
+fn filter_extreme_wicks(candlesticks: &mut Vec<Candlestick>) {
+    if candlesticks.len() <= 2 {
+        return;
+    }
+
+    // Find the highest and lowest close prices in the dataset
+    let max_close = candlesticks
+        .iter()
+        .map(|c| c.close)
+        .fold(f64::NEG_INFINITY, f64::max);
+
+    let min_close = candlesticks
+        .iter()
+        .map(|c| c.close)
+        .fold(f64::INFINITY, f64::min);
+
+    // Process all candles except the first and last
+    for i in 1..candlesticks.len() - 1 {
+        let candle = &mut candlesticks[i];
+
+        // If high is above the max close, remove the high wick by setting it to close
+        if candle.high > max_close {
+            candle.high = candle.close;
+        }
+
+        // If low is below the min close, remove the low wick by setting it to close
+        if candle.low < min_close {
+            candle.low = candle.close;
+        }
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use crate::db::make_db;
+    use crate::db::{candlesticks::Candlestick, make_db};
 
-    use super::CandlestickInterval;
+    use super::{filter_extreme_wicks, CandlestickInterval};
     use crate::routes::CandlestickParams;
 
     #[test]
@@ -189,5 +225,20 @@ mod tests {
             "now: {:#?}",
             chrono::DateTime::from_timestamp(chrono::Utc::now().timestamp(), 0)
         );
+    }
+
+    #[tokio::test]
+    async fn test_filter_extreme_wicks() {
+        let mut candlesticks: Vec<Candlestick> = reqwest::get(format!(
+            "https://api.listen-rs.com/v1/adapter/candlesticks?mint=34HDZNbUkTyTrgYKy2ox43yp2f8PJ5hoM7xsrfNApump&interval=1h&limit=200"
+        ))
+        .await
+        .unwrap()
+        .json()
+        .await
+        .unwrap();
+        println!("{:#?}", &candlesticks[4]);
+        filter_extreme_wicks(&mut candlesticks);
+        println!("{:#?}", &candlesticks[4]);
     }
 }

@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { FiSend } from "react-icons/fi";
+import { FiRefreshCw, FiSend } from "react-icons/fi";
 import { RiEdit2Line } from "react-icons/ri";
 import { useChat } from "../contexts/ChatContext";
 import { Message } from "../types/message";
@@ -57,13 +57,22 @@ export const EditableMessage = ({
             direction={message.direction}
           />
           {isLastUserMessage && (
-            <button
-              onClick={() => setIsEditing(true)}
-              className="absolute right-2 -bottom-2 opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full bg-gray-600/50 hover:bg-gray-600/80 text-white"
-              title={t("chat.edit")}
-            >
-              <RiEdit2Line size={16} />
-            </button>
+            <div className="absolute right-2 -bottom-2 flex gap-1">
+              <button
+                onClick={() => resendMessage(message.id, message.message)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full bg-gray-600/50 hover:bg-gray-600/80 text-white"
+                title={t("chat.resend")}
+              >
+                <FiRefreshCw size={16} />
+              </button>
+              <button
+                onClick={() => setIsEditing(true)}
+                className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded-full bg-gray-600/50 hover:bg-gray-600/80 text-white"
+                title={t("chat.edit")}
+              >
+                <RiEdit2Line size={16} />
+              </button>
+            </div>
           )}
         </div>
       </div>
