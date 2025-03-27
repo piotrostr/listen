@@ -9,6 +9,7 @@ export const toolMessages = {
     analyze_page_content: "Page Analysis",
     search_tweets: "Search Results",
     search_web: "Web Search Results",
+    tool_call_error: "Tool call error",
   },
   zh: {
     account_suspended: "账户被暂停",
@@ -20,5 +21,6 @@ export const toolMessages = {
     analyze_page_content: "页面分析",
     search_tweets: "搜索结果",
     search_web: "网页搜索结果",
+    tool_call_error: "工具调用错误",
   },
 };

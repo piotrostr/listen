@@ -471,10 +471,14 @@ export const ToolMessage = ({
       );
     }
   }
-  // Default tool output display
-  return (
-    <div className="text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500 overflow-hidden">
-      <ChatMessage message={toolOutput.result} direction="incoming" />
-    </div>
-  );
+
+  if (toolOutput.result.includes("ToolCallError")) {
+    return (
+      <div className="text-red-400 flex items-center gap-1 p-3 text-sm">
+        <FaExclamationTriangle /> {t("tool_messages.tool_call_error")}
+      </div>
+    );
+  }
+
+  return <ChatMessage message={toolOutput.result} direction="incoming" />;
 };
