@@ -178,7 +178,7 @@ pub async fn get_public_key() -> Result<String> {
 Returns the current Solana balance of the delegated wallet wallet
 ")]
 pub async fn get_sol_balance() -> Result<u64> {
-    let pubkey = "".to_string();
+    let pubkey = " ".to_string();
     match pubkey.as_str() {
         "" => {
             wrap_unsafe(move || async move {
