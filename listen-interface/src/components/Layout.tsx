@@ -85,9 +85,7 @@ function getBottomItems(t: (key: string) => string) {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { isMobile, isIOS } = useMobile();
-  const [activePanel, setActivePanel] = useState(
-    isMobile ? null : localStorage.getItem("activePanel") || null
-  );
+  const [activePanel, setActivePanel] = useState<string | null>(null);
   const { user, logout } = usePrivy();
   const { t } = useTranslation();
 
