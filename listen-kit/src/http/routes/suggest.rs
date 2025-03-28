@@ -10,6 +10,7 @@ pub struct SuggestRequest {
     #[serde(deserialize_with = "deserialize_messages")]
     chat_history: Vec<Message>,
     locale: Option<String>,
+    context: Option<String>,
 }
 
 #[post("/suggest")]
@@ -30,6 +31,7 @@ async fn suggest(
     let suggestions = match suggester::suggest(
         &chat_history,
         body.locale.as_deref().unwrap_or("en"),
+        body.context.as_deref(),
     )
     .await
     {

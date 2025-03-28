@@ -1,5 +1,8 @@
 import { create } from "zustand";
+import { compactPortfolio } from "../hooks/util";
 import { Message } from "../types/message";
+import { usePortfolioStore } from "./portfolioStore";
+import { useSettingsStore } from "./settingsStore";
 
 interface SuggestionsPerChat {
   [chatId: string]: {
@@ -47,6 +50,20 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
       return;
     }
 
+    // Instead of using the hook, access the store directly
+    const chatType = useSettingsStore.getState().chatType;
+    const portfolioStore = usePortfolioStore.getState();
+    const solanaAssets = portfolioStore.getSolanaAssets();
+    const evmAssets = portfolioStore.getEvmAssets();
+
+    const portfolio = [];
+    if (solanaAssets) {
+      portfolio.push(...compactPortfolio(solanaAssets));
+    }
+    if (evmAssets && chatType === "omni") {
+      portfolio.push(...compactPortfolio(evmAssets));
+    }
+
     set({ isLoading: true, error: null });
 
     const chatHistory = messages.map((msg) => ({
@@ -69,6 +86,7 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
           body: JSON.stringify({
             chat_history: chatHistory,
             locale,
+            context: JSON.stringify(portfolio),
           }),
         }
       );

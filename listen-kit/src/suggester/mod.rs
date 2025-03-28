@@ -26,8 +26,9 @@ const MAX_CHARS: usize = 30000;
 pub async fn suggest(
     messages: &[Message],
     locale: &str,
+    context: Option<&str>,
 ) -> Result<Vec<String>> {
-    let prompt = if locale == "zh" {
+    let mut prompt = if locale == "zh" {
         format!(
             "{}\n\n{}",
             PROMPT_ZH,
@@ -40,6 +41,9 @@ pub async fn suggest(
             messages_to_string(messages, MAX_CHARS)
         )
     };
+    if let Some(context) = context {
+        prompt = format!("portfolio context: {}\n\n{}", context, prompt);
+    }
 
     let agent = gemini_agent_builder().build();
 
@@ -118,7 +122,7 @@ mod tests {
             ),
         ];
 
-        let suggestions = suggest(&messages, "en").await.unwrap();
+        let suggestions = suggest(&messages, "en", None).await.unwrap();
         println!("{:?}", suggestions);
     }
 
@@ -131,7 +135,7 @@ mod tests {
             ),
         ];
 
-        let suggestions = suggest(&messages, "zh").await.unwrap();
+        let suggestions = suggest(&messages, "zh", None).await.unwrap();
         println!("{:?}", suggestions);
     }
 
@@ -151,7 +155,7 @@ mod tests {
             ),
         ];
 
-        let suggestions = suggest(&messages, "en").await.unwrap();
+        let suggestions = suggest(&messages, "en", None).await.unwrap();
         println!("{:?}", suggestions);
     }
 }
