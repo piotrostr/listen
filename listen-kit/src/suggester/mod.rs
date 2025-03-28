@@ -9,6 +9,7 @@ const PROMPT_EN: &str = r#"
 Based on this conversation, predict 2-3 most likely concrete user responses.
 Focus on direct answers, not questions.
 One per line, keep each response short and specific.
+For research-based conversations, predict subsequent x/website/searches
 For questions with options, predict the most likely option the user would choose.
 Provide only the predictions, no other text.
 "#;
