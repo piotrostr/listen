@@ -6,15 +6,19 @@ use rig::{
 };
 
 const PROMPT_EN: &str = r#"
-Strictly based on this conversation, generate 2-3 follow-up suggestions for what
-I can do next. One per line, each 4-5 words, provide only the suggestions, no other text.
-Special case: if the last assistant message is a question, where specific
-choices are provided, provide those choices
+Based on this conversation, predict 2-3 most likely concrete user responses.
+Focus on direct answers, not questions.
+One per line, keep each response short and specific.
+For questions with options, predict the most likely option the user would choose.
+Provide only the predictions, no other text.
 "#;
 
 const PROMPT_ZH: &str = r#"
-严格基于这段对话，生成2-3个后续建议，告诉我接下来可以做什么。每行一个，每个4-5个字，只提供建议，不要其他文字。
-特殊情况：如果最后一条助手消息是一个问题，并且提供了具体的选择，请提供这些选择。
+根据此对话，预测2-3个最可能的具体用户回应。
+注重直接的答复，而不是问题。
+每行一个回应，保持简短具体。
+对于有选项的问题，预测用户最可能选择的选项。
+仅提供预测内容，不要其他文字。
 "#;
 
 const MAX_CHARS: usize = 30000;
@@ -128,6 +132,26 @@ mod tests {
         ];
 
         let suggestions = suggest(&messages, "zh").await.unwrap();
+        println!("{:?}", suggestions);
+    }
+
+    // TODO fix empty assistant message in the reasoning loop
+    #[tokio::test]
+    async fn test_suggest_real_case() {
+        let messages = vec![
+            Message::user("my balnace".to_string()),
+            Message::assistant(
+                "Your SOL balance is 0.19 SOL. That's like having a few bucks in your digital wallet! Anything I can help you with today?\n"
+                    .to_string(),
+            ),
+            Message::user("Explore DeFi earning options".to_string()),
+            Message::assistant(
+                "I can't directly explore DeFi earning options for you in the sense of connecting to different platforms and displaying yields. However, I can help you find potential tokens to invest in that might be related to DeFi, or help you analyze existing tokens in your portfolio.\n\nTo give you the best suggestions, could you tell me:\n\n1.  **What kind of risk are you comfortable with?** (High, Medium, Low)\n2.  **Are there any specific DeFi sectors you're interested in?** (e.g., Lending, DEXs, Yield Aggregators)\n3.  **What's your timeframe?** (Are you looking for short-term opportunities or something more long-term?)\n\nIn the meantime, I can analyze tokens already in your portfolio, if you would like.\n"
+                    .to_string(),
+            ),
+        ];
+
+        let suggestions = suggest(&messages, "en").await.unwrap();
         println!("{:?}", suggestions);
     }
 }
