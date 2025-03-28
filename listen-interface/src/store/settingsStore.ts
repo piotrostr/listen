@@ -26,8 +26,8 @@ export const useSettingsStore = create<SettingsState>()(
       agentMode: false,
       chatType: "solana" as ChatType,
       debugMode: false,
-      modelType: "claude" as ModelType,
-      displaySuggestions: false,
+      modelType: "gemini" as ModelType,
+      displaySuggestions: true,
 
       setQuickBuyAmount: (amount: number) => {
         if (!isNaN(amount) && amount > 0) {
