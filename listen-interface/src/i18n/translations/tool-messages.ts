@@ -9,6 +9,9 @@ export const toolMessages = {
     analyze_page_content: "Page Analysis",
     search_tweets: "Search Results",
     search_web: "Web Search Results",
+    tool_call_error: "Tool call error",
+    switch_model_error:
+      "It is not possible to switch from Gemini to Claude in an ongoing chat. Please start a new chat.",
   },
   zh: {
     account_suspended: "账户被暂停",
@@ -20,5 +23,8 @@ export const toolMessages = {
     analyze_page_content: "页面分析",
     search_tweets: "搜索结果",
     search_web: "网页搜索结果",
+    tool_call_error: "工具调用错误",
+    switch_model_error:
+      "无法在正在进行中的聊天中途从Gemini切换到Claude。请开始新的聊天。",
   },
 };

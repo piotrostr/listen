@@ -1,9 +1,9 @@
-use super::middleware::verify_auth;
-use super::serde::deserialize_messages;
-use super::state::AppState;
 use crate::common::spawn_with_signer;
 use crate::cross_chain::agent::create_cross_chain_agent;
 use crate::evm::agent::create_evm_agent;
+use crate::http::middleware::verify_auth;
+use crate::http::serde::deserialize_messages;
+use crate::http::state::AppState;
 use crate::reasoning_loop::Model;
 use crate::reasoning_loop::ReasoningLoop;
 use crate::reasoning_loop::StreamResponse;
@@ -12,16 +12,12 @@ use crate::signer::TransactionSigner;
 use crate::solana::agent::create_solana_agent;
 use crate::solana::agent::create_solana_agent_gemini;
 use crate::solana::agent::Features;
-use actix_web::{
-    get, post, web, Error, HttpRequest, HttpResponse, Responder,
-};
+use actix_web::{post, web, HttpRequest, Responder};
 use actix_web_lab::sse;
-use anyhow::Result;
 use futures::StreamExt;
 use mongodb::bson::doc;
 use rig::completion::Message;
 use serde::{Deserialize, Serialize};
-use serde_json::json;
 use std::sync::Arc;
 
 #[derive(Deserialize, Serialize, Clone)]
@@ -395,28 +391,4 @@ fn join_responses(
     }
 
     output_responses
-}
-
-#[get("/healthz")]
-async fn healthz() -> Result<HttpResponse, Error> {
-    Ok(HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "timestamp": chrono::Utc::now().to_rfc3339()
-    })))
-}
-
-#[get("/auth")]
-async fn auth(req: HttpRequest) -> Result<HttpResponse, Error> {
-    let user_session = match verify_auth(&req).await {
-        Ok(session) => session,
-        Err(e) => {
-            return Ok(HttpResponse::Unauthorized()
-                .json(json!({ "error": e.to_string() })))
-        }
-    };
-
-    Ok(HttpResponse::Ok().json(json!({
-        "status": "ok",
-        "wallet_address": user_session.wallet_address,
-    })))
 }

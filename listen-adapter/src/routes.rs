@@ -33,7 +33,7 @@ pub async fn health_check() -> HttpResponse {
 
 pub async fn version() -> HttpResponse {
     HttpResponse::Ok().json(json!({
-        "version": "2.5.0"
+        "version": "2.6.2"
     }))
 }
 

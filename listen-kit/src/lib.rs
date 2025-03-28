@@ -26,6 +26,8 @@ pub mod web;
 
 pub mod tokenizer;
 
+pub mod suggester;
+
 #[ctor::ctor]
 fn init() {
     dotenv::dotenv().ok();

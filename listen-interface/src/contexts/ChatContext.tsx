@@ -18,6 +18,7 @@ import i18n from "../i18n";
 import { pickSystemPrompt } from "../prompts";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useSettingsStore } from "../store/settingsStore";
+import { useSuggestStore } from "../store/suggestStore";
 import {
   Chat,
   Message,
@@ -127,6 +128,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       userMessage: string,
       options?: { skipAddingUserMessage?: boolean; existingMessageId?: string }
     ) => {
+      // Clear suggestions when starting a new message
+      useSuggestStore.getState().clearSuggestions(chatId);
+
       setIsLoading(true);
 
       // Create a new abort controller for this request

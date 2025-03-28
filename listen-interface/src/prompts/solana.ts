@@ -25,9 +25,7 @@ export function systemPromptSolana(
 ) {
   const hasWallet = pubkey !== null && pubkey !== "";
   return `
-  <personality>
   ${personality}
-  </personality>
   <guidelines>${guidelines("solana", defaultAmount)}</guidelines>
   <research_flow>${researchFlow}</research_flow>
   ${!hasWallet || isGuest ? `<onboarding>${onboarding(hasWallet, isGuest, "solana")}</onboarding>` : ""}
@@ -48,7 +46,7 @@ export function systemPromptSolanaAgent(
 ) {
   const hasWallet = pubkey !== null && pubkey !== "";
   return `
-  <personality>${personalityAgent}</personality>
+  ${personalityAgent}
   <research_flow>${researchFlow}</research_flow>
   <guidelines>${guidelines("solana", defaultAmount)}</guidelines>
   ${!hasWallet || isGuest ? `<onboarding>${onboarding(hasWallet, isGuest, "solana")}</onboarding>` : ""}

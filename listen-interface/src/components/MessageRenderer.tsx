@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "../store/settingsStore";
 import {
   ToolCallSchema,
@@ -81,8 +82,10 @@ export function MessageRendererBase({
   message: Message;
   messages: Message[];
 }) {
-  const { debugMode } = useSettingsStore();
   if (!msg.message) return null;
+
+  const { t } = useTranslation();
+  const { debugMode } = useSettingsStore();
 
   // Check if this is the last user message
   const isLastUserMessage = (() => {
@@ -152,6 +155,15 @@ export function MessageRendererBase({
   if (hasSpecialTags) {
     // Process the message with all supported tags
     return processMessageWithAllTags(msg.message, msg);
+  }
+
+  if (msg.message.includes("String should match pattern '^[a-zA-Z0-9_-]+$'")) {
+    return (
+      <ChatMessage
+        message={t("tool_messages.switch_model_error")}
+        direction={msg.direction}
+      />
+    );
   }
 
   // Default case: render as a regular message

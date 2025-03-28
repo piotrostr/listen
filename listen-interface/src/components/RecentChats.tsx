@@ -79,6 +79,7 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
   const dropdownRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const { t } = useTranslation();
+  const [currentChatId, setCurrentChatId] = useState<string | null>(null);
 
   // Group chats by time periods
   const groupChatsByTimePeriod = (chats: Chat[]) => {
@@ -196,6 +197,11 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
       setIsDropdownOpen(false);
     };
   }, [setIsDropdownOpen]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    setCurrentChatId(params.get("chatId"));
+  }, [window.location.search]);
 
   const selectChat = (chatId: string) => {
     navigate({ to: "/", search: { chatId }, replace: true });
@@ -337,11 +343,15 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
 
   // Helper function to render chat items
   function renderChatItem(chat: Chat) {
+    const isCurrentChat = chat.id === currentChatId;
+
     return (
       <div
         key={chat.id}
         onClick={() => selectChat(chat.id)}
-        className="relative flex items-center h-8 px-2 text-sm text-gray-300 hover:text-white hover:bg-[#212121] transition-colors cursor-pointer group rounded-lg"
+        className={`relative flex items-center h-8 px-2 text-sm text-gray-300 hover:text-white hover:bg-[#212121] transition-colors cursor-pointer group rounded-lg ${
+          isCurrentChat ? "bg-[#1a1a1a] text-white" : ""
+        }`}
       >
         <div className="flex-1 min-w-0">
           {editingChatId === chat.id ? (

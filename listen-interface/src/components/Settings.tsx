@@ -6,6 +6,32 @@ import { ConnectedAccounts } from "./ConnectedAccounts";
 import { ModelSelector } from "./ModelSelector";
 import { WalletAddresses } from "./WalletAddresses";
 
+const Toggle = ({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: () => void;
+  label: string;
+}) => {
+  return (
+    <div className="flex items-center justify-between">
+      <h2 className="text-lg font-bold">{label}</h2>
+      <button
+        onClick={onChange}
+        className={`px-4 py-2 rounded-lg transition-colors ${
+          checked
+            ? "bg-green-500/30 text-green-300 hover:bg-green-500/40"
+            : "bg-gray-600/30 text-gray-400 hover:bg-gray-600/40"
+        }`}
+      >
+        {checked ? "Enabled" : "Disabled"}
+      </button>
+    </div>
+  );
+};
+
 export function Settings() {
   const { user } = usePrivy();
   const { chatType, setChatType, modelType, setModelType } = useSettingsStore();
@@ -16,6 +42,8 @@ export function Settings() {
     setAgentMode,
     debugMode,
     setDebugMode,
+    displaySuggestions,
+    setDisplaySuggestions,
   } = useSettingsStore();
 
   const { t } = useTranslation();
@@ -29,6 +57,11 @@ export function Settings() {
   // Handle agent mode toggle
   const handleAgentModeToggle = () => {
     setAgentMode(!agentMode);
+  };
+
+  // Handle display suggestions toggle
+  const handleDisplaySuggestionsToggle = () => {
+    setDisplaySuggestions(!displaySuggestions);
   };
 
   return (
@@ -59,21 +92,11 @@ export function Settings() {
         </p>
       </div>
 
-      <div className="flex items-center justify-between">
-        <h2 className="text-lg font-bold mb-2 mt-4">
-          {t("settings.agent_mode")}
-        </h2>
-        <button
-          onClick={handleAgentModeToggle}
-          className={`px-4 py-2 rounded-lg transition-colors ${
-            agentMode
-              ? "bg-green-500/30 text-green-300 hover:bg-green-500/40"
-              : "bg-gray-600/30 text-gray-400 hover:bg-gray-600/40"
-          }`}
-        >
-          {agentMode ? t("settings.enabled") : t("settings.disabled")}
-        </button>
-      </div>
+      <Toggle
+        label={t("settings.agent_mode")}
+        checked={agentMode}
+        onChange={handleAgentModeToggle}
+      />
       <p className="text-xs text-gray-400 mt-2">
         {t("settings.agent_mode_enabled")}
       </p>
@@ -86,6 +109,12 @@ export function Settings() {
 
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.model")}</h2>
       <ModelSelector selectedModel={modelType} onSelectModel={setModelType} />
+
+      <Toggle
+        label={t("settings.suggestions")}
+        checked={displaySuggestions}
+        onChange={handleDisplaySuggestionsToggle}
+      />
 
       <h2 className="text-lg font-bold mb-2 mt-4">
         {t("settings.connected_accounts")}

@@ -34,7 +34,7 @@ const pipelineSchemaEvm = `
   const PipelineConditionSchema = z.object({
     type: z.nativeEnum(PipelineConditionType),
     asset: z.string(), // address or mint
-    value: z.number(), // Now can take any value, its not used
+    value: z.number(), // price denoted in usd, if \"Now\" type, price is not used
   });
 
   const PipelineStepSchema = z.object({
@@ -81,7 +81,7 @@ const pipelineSchemaSolana = `
   const PipelineConditionSchema = z.object({
     type: z.nativeEnum(PipelineConditionType),
     asset: z.string(), // address or mint
-    value: z.number(), // Now can take any value, its not used
+    value: z.number(), // price denoted in usd, if \"Now\" type, price is not used
   });
 
   const PipelineStepSchema = z.object({
@@ -101,5 +101,5 @@ export const pipelineKnowledge = (chain: "evm" | "solana") => `
   ${chain === "evm" ? pipelineSchemaEvm : pipelineSchemaSolana}
   When generating a pipeline, put it into <pipeline></pipeline> tags
   If any step is to be executed immediately, don't include the "conditions" key, it will be filled automatically
-  Always include the tags! Otherwise the pipeline will neither be rendered for the user to see nor executed
+  Always include the <pipeline></pipeline> tags! Otherwise the pipeline will neither be rendered
 `;

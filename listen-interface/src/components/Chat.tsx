@@ -1,8 +1,9 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../contexts/ChatContext";
 import { useModal } from "../contexts/ModalContext";
+import { useSuggestStore } from "../store/suggestStore";
 import { ToolCall, ToolCallSchema } from "../types/message";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
@@ -47,11 +48,22 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     isLastMessageOutgoing,
   } = useChat();
 
+  const {
+    getSuggestions,
+    isLoading: isSuggestionsLoading,
+    fetchSuggestions,
+  } = useSuggestStore();
+
+  // Memoize the suggestions selector
+  const suggestions = useMemo(() => {
+    return urlParams.chatId ? getSuggestions(urlParams.chatId) : [];
+  }, [urlParams.chatId, getSuggestions]);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [inputMessage, setInputMessage] = useState("");
   const { getAccessToken } = usePrivy();
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { openShareModal } = useModal();
 
   const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>(null);
@@ -93,12 +105,15 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         sendMessage(message);
       }
       setInputMessage("");
+      if (urlParams.chatId) {
+        useSuggestStore.getState().clearSuggestions(urlParams.chatId);
+      }
 
       if (messages?.length > 0) {
         scrollToBottom();
       }
     },
-    [sendMessage, setMessages]
+    [sendMessage, setMessages, urlParams.chatId]
   );
 
   // Focus the input field when creating a new chat
@@ -170,6 +185,34 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     }
   }, [messages]);
 
+  // Combine the suggestion fetching effects into one
+  useEffect(() => {
+    if (!urlParams.chatId) return;
+
+    const shouldFetchSuggestions =
+      messages.length > 0 &&
+      !isLoading &&
+      !isSuggestionsLoading &&
+      suggestions.length === 0;
+
+    if (shouldFetchSuggestions) {
+      fetchSuggestions(
+        urlParams.chatId,
+        messages,
+        getAccessToken,
+        i18n.language
+      );
+    }
+  }, [
+    urlParams.chatId,
+    messages,
+    isLoading,
+    isSuggestionsLoading,
+    suggestions.length,
+    getAccessToken,
+    i18n.language,
+  ]);
+
   if (IS_DISABLED) {
     return (
       <ChatContainer inputMessage="" isGenerating={false}>
@@ -191,6 +234,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         handleQuestionClick={handleQuestionClick}
         displayTiles={messages.length === 0}
         hasMessages={messages.length > 0}
+        chatId={urlParams.chatId}
       >
         <div className="h-full flex flex-col">
           {messages.length === 0 && (
