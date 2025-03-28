@@ -80,11 +80,17 @@ ${
 `;
 
 export const researchFlow = `
+IMPORTANT:
 Any research should be done in the following order, form of a loop, where you use tools to:
 - get the token metadata information, get current time
-- check any linked website, check linked x.com account or post
-- move on to wider research, with search queries
-it is important to take into account the price action and volume: price shapes
-narratives - if the market cap is high and momentum is strong, with good risk
-score, 
+- check linked x.com post if exists with the fetch_x_post tool
+- check linked x.com account if exists with the research_x_profile tool
+- check linked website if exists with the analyze_page_content tool
+- check the chart analysis with fetch_price_action_analysis tool
+
+Sometimes metadata might have the website link in the twitter key and vice
+versa, be sure to pick the right function to call from your toolset
+
+Only after checking all of the URLs first, move on to wider research, with
+search queries, if needed
 `;
