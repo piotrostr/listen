@@ -1,5 +1,5 @@
 use crate::http::serde::deserialize_messages;
-use crate::{http::middleware::verify_auth, suggester};
+use crate::{agents::suggester, http::middleware::verify_auth};
 use actix_web::{post, web, Error, HttpRequest, HttpResponse};
 use rig::message::Message;
 use serde::{Deserialize, Serialize};

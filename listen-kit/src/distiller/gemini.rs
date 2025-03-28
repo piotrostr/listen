@@ -1,7 +1,7 @@
 use anyhow::Result;
 use rig::completion::Prompt;
-use rig::providers::gemini::completion::CompletionModel as GeminiCompletionModel;
-pub type GeminiAgent = rig::agent::Agent<GeminiCompletionModel>;
+
+use crate::common::GeminiAgent;
 
 use super::analyst::{
     AnalystAgent, AnalystError, AnalystType, ChartAnalystAgent,
