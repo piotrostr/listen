@@ -8,6 +8,7 @@ export const MessageTypeSchema = z.enum([
   "ToolCall",
   "ToolResult",
   "Error",
+  "NestedAgentOutput",
 ]);
 export type MessageType = z.infer<typeof MessageTypeSchema>;
 
@@ -43,9 +44,19 @@ export const ToolCallSchema = z.object({
 });
 export type ToolCall = z.infer<typeof ToolCallSchema>;
 
+export const NestedAgentOutputSchema = z.object({
+  agent_type: z.string(),
+  content: z.string(),
+});
+
 export const StreamResponseSchema = z.object({
   type: MessageTypeSchema,
-  content: z.union([z.string(), ToolResultSchema, ToolCallSchema]),
+  content: z.union([
+    z.string(),
+    ToolResultSchema,
+    ToolCallSchema,
+    NestedAgentOutputSchema,
+  ]),
 });
 export type StreamResponse = z.infer<typeof StreamResponseSchema>;
 

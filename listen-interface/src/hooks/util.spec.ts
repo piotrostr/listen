@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { embedResearchAnchors } from "../components/ResearchOutput";
+import { parseAgentOutput } from "../parse-agent-output";
 import { renderAddressOrTx } from "./util";
 
 describe("renderAddressOrTx", () => {
@@ -201,5 +202,42 @@ describe("embedResearchAnchors", () => {
     const matches = [...result.matchAll(linkPattern)];
     expect(matches.length).toBe(2); // Now appears twice in the text
     expect(matches[0][1]).toBe(matches[1][1]); // Same reference number for both occurrences
+  });
+});
+
+describe("parseAgentOutput", () => {
+  it("should parse concatenated JSON strings into an array of StreamResponse objects", () => {
+    // Use the new format with <content> tags
+    const sampleOutput = `
+      <content>{"type":"Message","content":"Okay"}</content>
+      <content>{"type":"Message","content":", I'll investigate how hedging impermanent loss with options works. I"}</content>
+      <content>{"type":"Message","content":"'ll start by searching the web for information on this topic to get a general understanding"}</content>
+      <content>{"type":"Message","content":".\n\n"}</content>
+      <content>{"type":"ToolCall","content":{"id":"","name":"search_web","params":"{\\\"query\\\":\\\"hedge impermanent loss with options\\\",\\\"intent\\\":\\\"Understand how to hedge impermanent loss in DeFi using options strategies, including specific strategies, pros, and cons.\\\"}"}</content>
+      <content>{"type":"ToolResult","content":{"id":"","name":"search_web","result":"Test result"}}</content>
+    `;
+
+    const result = parseAgentOutput(sampleOutput);
+
+    // Check the number of items
+    expect(result.length).toBe(6);
+
+    // Check that each item is properly parsed
+    expect(result[0].type).toBe("Message");
+    expect(result[0].content).toBe("Okay");
+
+    expect(result[1].type).toBe("Message");
+    expect(result[1].content).toBe(
+      ", I'll investigate how hedging impermanent loss with options works. I"
+    );
+
+    expect(result[4].type).toBe("ToolCall");
+    const toolCall = result[4].content as any;
+    expect(toolCall.name).toBe("search_web");
+    expect(typeof toolCall.params).toBe("string");
+
+    expect(result[5].type).toBe("ToolResult");
+    const toolResult = result[5].content as any;
+    expect(toolResult.name).toBe("search_web");
   });
 });

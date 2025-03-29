@@ -7,7 +7,7 @@ import {
   FaExclamationTriangle,
   FaSearch,
 } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
+import { FaRobot, FaXTwitter } from "react-icons/fa6";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
@@ -115,6 +115,18 @@ export const ToolMessage = ({
     } catch (e) {
       console.error("Failed to parse risk analysis:", e);
     }
+  }
+
+  if (toolOutput.name === "delegate_to_research_agent") {
+    return (
+      <div className="text-gray-400">
+        <DropdownMessage
+          title={t("tool_messages.delegate_to_research_agent")}
+          message={toolOutput.result}
+          icon={<FaRobot />}
+        />
+      </div>
+    );
   }
 
   if (toolOutput.name === "fetch_price_action_analysis") {

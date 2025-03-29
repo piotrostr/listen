@@ -7,6 +7,7 @@ import { useSuggestStore } from "../store/suggestStore";
 import { ToolCall, ToolCallSchema } from "../types/message";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
+import { NestedAgentOutputDisplay } from "./NestedAgentOutputDisplay";
 import { NewChatCarousel } from "./NewChatCarousel";
 import { ThinkingIndicator } from "./ThinkingIndicator";
 import { ToolCallMessage } from "./ToolCallMessage";
@@ -46,6 +47,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     loadSharedChat,
     isSharedChat,
     isLastMessageOutgoing,
+    nestedAgentOutput,
   } = useChat();
 
   const {
@@ -267,6 +269,9 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
             )}
             {toolBeingCalled && <ToolCallMessage toolCall={toolBeingCalled} />}
           </div>
+          {nestedAgentOutput && isLoading && (
+            <NestedAgentOutputDisplay content={nestedAgentOutput.content} />
+          )}
         </div>
         <div ref={messagesEndRef} />
         {messages.length !== 0 && (
