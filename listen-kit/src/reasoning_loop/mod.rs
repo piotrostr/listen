@@ -6,8 +6,10 @@ use rig::providers::anthropic::completion::CompletionModel as AnthropicModel;
 use rig::providers::gemini::completion::CompletionModel as GeminiModel;
 use serde::Deserialize;
 use serde::Serialize;
+use std::cell::RefCell;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
+use tokio::task_local;
 
 pub mod anthropic;
 pub mod gemini;
@@ -26,6 +28,10 @@ pub enum StreamResponse {
         result: String,
     },
     Error(String),
+    NestedAgentOutput {
+        agent_type: String,
+        content: String,
+    },
 }
 
 impl StreamResponse {
@@ -39,6 +45,12 @@ impl StreamResponse {
                 format!("{}({}) [ID: {}]", name, result, id)
             }
             StreamResponse::Error(error) => error.clone(),
+            StreamResponse::NestedAgentOutput {
+                agent_type,
+                content,
+            } => {
+                format!("{}: {}", agent_type, content)
+            }
         }
     }
 }
@@ -52,6 +64,7 @@ pub enum Model {
 pub struct ReasoningLoop {
     model: Model,
     stdout: bool,
+    tx: Option<Sender<StreamResponse>>,
 }
 
 impl ReasoningLoop {
@@ -59,6 +72,7 @@ impl ReasoningLoop {
         Self {
             model,
             stdout: true,
+            tx: None,
         }
     }
 
@@ -79,18 +93,48 @@ impl ReasoningLoop {
             ));
         }
 
-        match &self.model {
-            Model::Anthropic(agent) => {
-                self.stream_anthropic(agent, prompt, messages, tx).await
-            }
-            Model::Gemini(agent) => {
-                self.stream_gemini(agent, prompt, messages, tx).await
-            }
-        }
+        // Use the task-local scope for the entire stream operation
+        CURRENT_STREAM_CHANNEL
+            .scope(RefCell::new(tx.clone()), async {
+                match &self.model {
+                    Model::Anthropic(agent) => {
+                        self.stream_anthropic(agent, prompt, messages, tx)
+                            .await
+                    }
+                    Model::Gemini(agent) => {
+                        self.stream_gemini(agent, prompt, messages, tx).await
+                    }
+                }
+            })
+            .await
     }
 
     pub fn with_stdout(mut self, enabled: bool) -> Self {
         self.stdout = enabled;
         self
     }
+}
+
+// Define a task-local variable to hold the current stream channel
+task_local! {
+    static CURRENT_STREAM_CHANNEL: RefCell<Option<Sender<StreamResponse>>>;
+}
+
+// Function to get the current stream channel
+pub async fn get_current_stream_channel() -> Option<Sender<StreamResponse>> {
+    match CURRENT_STREAM_CHANNEL.try_with(|c| c.borrow().clone()) {
+        Ok(channel) => channel,
+        Err(_) => None,
+    }
+}
+
+// Set the current stream channel
+pub async fn set_current_stream_channel(
+    channel: Option<Sender<StreamResponse>>,
+) {
+    let _ = CURRENT_STREAM_CHANNEL
+        .scope(RefCell::new(channel), async {
+            // Any code here will have access to the channel
+        })
+        .await;
 }

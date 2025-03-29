@@ -22,7 +22,10 @@ async fn main() -> Result<()> {
     SignerContext::with_signer(Arc::new(signer), async {
         let trader_agent = Arc::new(create_solana_agent_gemini(
             None,
-            Features { autonomous: false },
+            Features {
+                autonomous: false,
+                deep_research: false,
+            },
         ));
         for tool in trader_agent.tools.schemas().iter() {
             println!("{}", serde_json::to_string(tool).unwrap());

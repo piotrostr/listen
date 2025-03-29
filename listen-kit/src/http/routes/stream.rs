@@ -1,3 +1,4 @@
+use crate::agents::listen::create_listen_agent_gemini;
 use crate::common::spawn_with_signer;
 use crate::cross_chain::agent::create_cross_chain_agent;
 use crate::evm::agent::create_evm_agent;
@@ -265,10 +266,14 @@ async fn stream(
     // Do the main processing with the signer
     spawn_with_signer(signer, || async move {
         let reasoning_loop = if model_type == "gemini" {
-            let model = Model::Gemini(Arc::new(create_solana_agent_gemini(
-                preamble.clone(),
-                features,
-            )));
+            let model = if features.deep_research {
+                Model::Gemini(Arc::new(create_listen_agent_gemini()))
+            } else {
+                Model::Gemini(Arc::new(create_solana_agent_gemini(
+                    preamble.clone(),
+                    features,
+                )))
+            };
             ReasoningLoop::new(model).with_stdout(false)
         } else {
             ReasoningLoop::new(Model::Anthropic(agent)).with_stdout(false)
@@ -302,6 +307,13 @@ async fn stream(
             // Close the response channel to signal completion
             drop(response_tx_clone);
         });
+
+        // Make the current channel available in the global task context
+        // so nested agents can access it
+        crate::reasoning_loop::set_current_stream_channel(Some(
+            internal_tx.clone(),
+        ))
+        .await;
 
         // Run the reasoning loop in the current task (with signer context)
         let loop_result = reasoning_loop
@@ -343,6 +355,21 @@ fn join_responses(
         match response {
             StreamResponse::Message(message) => {
                 message_acc.push_str(&message);
+            }
+            StreamResponse::NestedAgentOutput {
+                agent_type,
+                content,
+            } => {
+                // Pass through nested agent outputs unchanged
+                if !message_acc.is_empty() {
+                    output_responses
+                        .push(StreamResponse::Message(message_acc));
+                    message_acc = String::new();
+                }
+                output_responses.push(StreamResponse::NestedAgentOutput {
+                    agent_type,
+                    content,
+                });
             }
             StreamResponse::ToolCall { id, name, params } => {
                 // Only push accumulated message if it's not empty

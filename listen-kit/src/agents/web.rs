@@ -30,19 +30,42 @@ pub fn create_web_agent() -> GeminiAgent {
 
 #[tool(description = "Delegate a task to web agent")]
 pub async fn delegate_to_web_agent(prompt: String) -> Result<String> {
+    let with_stdout = false;
     let reasoning_loop =
         ReasoningLoop::new(Model::Gemini(Arc::new(create_web_agent())))
-            .with_stdout(false);
+            .with_stdout(with_stdout);
+
+    // Get the parent agent's stream channel from the task-local variable
+    let parent_tx = crate::reasoning_loop::get_current_stream_channel().await;
+
+    // Create a channel for collecting the web agent's output
     let (tx, mut rx) = tokio::sync::mpsc::channel::<StreamResponse>(1024);
     let res = Arc::new(RwLock::new(String::new()));
-
     let res_ptr = res.clone();
 
     let reader_handle = tokio::spawn(async move {
         while let Some(response) = rx.recv().await {
             let s = response.stringify();
             res_ptr.write().await.push_str(&s);
-            if matches!(response, StreamResponse::Message(_)) {
+
+            // Forward to parent if available, as a NestedAgentOutput
+            if let Some(parent_tx) = &parent_tx {
+                match &response {
+                    StreamResponse::Message(msg) => {
+                        let nested_output =
+                            StreamResponse::NestedAgentOutput {
+                                agent_type: "web_agent".to_string(),
+                                content: msg.clone(),
+                            };
+                        let _ = parent_tx.send(nested_output).await;
+                    }
+                    // Handle other response types if needed
+                    _ => {}
+                }
+            }
+
+            // Still log to console if needed
+            if with_stdout && matches!(response, StreamResponse::Message(_)) {
                 print!("{}", s);
             }
         }
