@@ -23,12 +23,11 @@ pub fn create_chart_agent() -> GeminiAgent {
     description = "Delegate a task to chart analysis agent. It can fetch and analyze charts across different timeframes"
 )]
 pub async fn delegate_to_chart_agent(prompt: String) -> Result<String> {
-    let signer = SignerContext::current().await;
     delegate_to_agent(
         prompt,
         create_chart_agent(),
         "chart_agent".to_string(),
-        signer,
+        SignerContext::current().await,
         false,
     )
     .await

@@ -3,8 +3,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::{
-    agents::key_information::extract_key_information,
-    common::{spawn_with_signer, wrap_unsafe, GeminiAgent},
+    common::{spawn_with_signer, GeminiAgent},
     reasoning_loop::{Model, ReasoningLoop, StreamResponse},
     signer::TransactionSigner,
 };
@@ -65,8 +64,5 @@ pub async fn delegate_to_agent(
 
     let response = res.read().await.to_string();
 
-    wrap_unsafe(
-        move || async move { extract_key_information(response).await },
-    )
-    .await
+    Ok(response)
 }

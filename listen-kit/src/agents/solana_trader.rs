@@ -1,16 +1,14 @@
-use std::sync::Arc;
-use tokio::sync::RwLock;
-
 use crate::{
-    agents::key_information::extract_key_information,
-    common::{
-        gemini_agent_builder, spawn_with_signer, wrap_unsafe, GeminiAgent,
-    },
-    reasoning_loop::{Model, ReasoningLoop, StreamResponse},
+    agents::delegate::delegate_to_agent,
+    common::{gemini_agent_builder, GeminiAgent},
+    data::{FetchTokenMetadata, FetchTokenPrice},
     signer::SignerContext,
     solana::{
         advanced_orders::CreateAdvancedOrder,
-        tools::{DeployPumpFunToken, GetQuote, Swap},
+        tools::{
+            AnalyzeRisk, DeployPumpFunToken, GetQuote, GetSolBalance,
+            GetSplTokenBalance, Swap,
+        },
     },
 };
 use anyhow::Result;
@@ -18,56 +16,37 @@ use rig_tool_macro::tool;
 
 pub fn create_solana_trader_agent() -> GeminiAgent {
     gemini_agent_builder()
-        .preamble("You are a deep Solana trading analysis agent. Your goal is to perform thorough trading analysis:
-        1. For each trading opportunity, analyze market conditions and liquidity
-        2. If you find interesting trading setups, investigate the risk/reward
-        3. Build a comprehensive picture by analyzing multiple market factors
-        4. Don't stop at surface-level analysis - dig deeper into each opportunity
-        5. If you find something promising, verify it with quotes and market depth")
+        .preamble("You are a comprehensive Solana analysis and trading agent. Your goal is to perform thorough research and trading:
+        1. Analyze market conditions, liquidity, and trading opportunities
+        2. Investigate tokens, addresses, and entities on-chain
+        3. Follow interesting leads and dig deeper into findings
+        4. Build complete pictures by analyzing on-chain data and market factors
+        5. Verify opportunities with token metadata, balances, and quotes
+        6. Recommend actions based on comprehensive risk/reward analysis")
         .tool(GetQuote)
         .tool(DeployPumpFunToken)
         .tool(CreateAdvancedOrder)
         .tool(Swap)
+        .tool(FetchTokenMetadata)
+        .tool(GetSolBalance)
+        .tool(GetSplTokenBalance)
+        .tool(FetchTokenPrice)
+        .tool(AnalyzeRisk)
         .build()
 }
 
 #[tool(
-    description = "Delegate a task to Solana trading agent. It can perform swaps and schedule advanced orders"
+    description = "Delegate a task to Solana trader agent. It can analyze on-chain data, perform swaps, fetch token info, check balances, and schedule advanced orders"
 )]
 pub async fn delegate_to_solana_trader_agent(
     prompt: String,
 ) -> Result<String> {
-    let reasoning_loop = ReasoningLoop::new(Model::Gemini(Arc::new(
+    delegate_to_agent(
+        prompt,
         create_solana_trader_agent(),
-    )))
-    .with_stdout(false);
-    let (tx, mut rx) = tokio::sync::mpsc::channel::<StreamResponse>(1024);
-    let res = Arc::new(RwLock::new(String::new()));
-
-    let res_ptr = res.clone();
-
-    let reader_handle = tokio::spawn(async move {
-        while let Some(response) = rx.recv().await {
-            let s = response.stringify();
-            res_ptr.write().await.push_str(&s);
-            if matches!(response, StreamResponse::Message(_)) {
-                print!("{}", s);
-            }
-        }
-    });
-
-    let signer = SignerContext::current().await;
-    let loop_handle = spawn_with_signer(signer, || async move {
-        reasoning_loop.stream(prompt, vec![], Some(tx)).await
-    })
-    .await;
-
-    let _ = tokio::try_join!(reader_handle, loop_handle);
-
-    let response = res.read().await.to_string();
-
-    wrap_unsafe(
-        move || async move { extract_key_information(response).await },
+        "solana_trader_agent".to_string(),
+        SignerContext::current().await,
+        false,
     )
     .await
 }

@@ -1,8 +1,7 @@
 use crate::{
     agents::{
-        chart::DelegateToChartAgent,
-        solana_trader::DelegateToSolanaTraderAgent, web::DelegateToWebAgent,
-        x::DelegateToXAgent,
+        chart::DelegateToChartAgent, research::DelegateToResearchAgent,
+        solana_trader::DelegateToSolanaTraderAgent,
     },
     common::{
         claude_agent_builder, gemini_agent_builder, ClaudeAgent, GeminiAgent,
@@ -42,8 +41,7 @@ pub fn create_listen_agent_claude() -> ClaudeAgent {
     claude_agent_builder()
         .tool(FetchTokenMetadata)
         .tool(SearchOnDexScreener)
-        .tool(DelegateToXAgent)
-        .tool(DelegateToWebAgent)
+        .tool(DelegateToResearchAgent)
         .tool(DelegateToSolanaTraderAgent)
         .tool(DelegateToChartAgent)
         .tool(Think)
@@ -57,8 +55,7 @@ pub fn create_listen_agent_gemini() -> GeminiAgent {
     gemini_agent_builder()
         .tool(FetchTokenMetadata)
         .tool(SearchOnDexScreener)
-        .tool(DelegateToXAgent)
-        .tool(DelegateToWebAgent)
+        .tool(DelegateToResearchAgent)
         .tool(DelegateToSolanaTraderAgent)
         .tool(DelegateToChartAgent)
         .tool(Think)

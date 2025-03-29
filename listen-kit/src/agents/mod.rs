@@ -1,9 +1,10 @@
 pub mod chart;
 pub mod delegate;
-pub mod key_information;
 pub mod listen;
-pub mod on_chain_analytics;
+pub mod research;
 pub mod solana_trader;
 pub mod suggester;
 pub mod web;
 pub mod x;
+
+pub use research::{create_research_agent, delegate_to_research_agent};
