@@ -1,5 +1,5 @@
 pub mod chart;
-pub mod image;
+pub mod delegate;
 pub mod key_information;
 pub mod listen;
 pub mod on_chain_analytics;

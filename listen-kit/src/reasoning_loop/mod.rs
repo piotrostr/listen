@@ -64,7 +64,6 @@ pub enum Model {
 pub struct ReasoningLoop {
     model: Model,
     stdout: bool,
-    tx: Option<Sender<StreamResponse>>,
 }
 
 impl ReasoningLoop {
@@ -72,7 +71,6 @@ impl ReasoningLoop {
         Self {
             model,
             stdout: true,
-            tx: None,
         }
     }
 

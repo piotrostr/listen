@@ -1,13 +1,7 @@
-use std::sync::Arc;
-use tokio::sync::RwLock;
-
 use crate::{
-    agents::key_information::extract_key_information,
-    common::{
-        gemini_agent_builder, spawn_with_signer, wrap_unsafe, GeminiAgent,
-    },
+    agents::delegate::delegate_to_agent,
+    common::{gemini_agent_builder, GeminiAgent},
     data::listen_api_tools::FetchPriceActionAnalysis,
-    reasoning_loop::{Model, ReasoningLoop, StreamResponse},
     signer::SignerContext,
 };
 use anyhow::Result;
@@ -25,38 +19,17 @@ pub fn create_chart_agent() -> GeminiAgent {
         .build()
 }
 
-#[tool(description = "Delegate a task to chart analysis agent")]
+#[tool(
+    description = "Delegate a task to chart analysis agent. It can fetch and analyze charts across different timeframes"
+)]
 pub async fn delegate_to_chart_agent(prompt: String) -> Result<String> {
-    let reasoning_loop =
-        ReasoningLoop::new(Model::Gemini(Arc::new(create_chart_agent())))
-            .with_stdout(false);
-    let (tx, mut rx) = tokio::sync::mpsc::channel::<StreamResponse>(1024);
-    let res = Arc::new(RwLock::new(String::new()));
-
-    let res_ptr = res.clone();
-
-    let reader_handle = tokio::spawn(async move {
-        while let Some(response) = rx.recv().await {
-            let s = response.stringify();
-            res_ptr.write().await.push_str(&s);
-            if matches!(response, StreamResponse::Message(_)) {
-                print!("{}", s);
-            }
-        }
-    });
-
     let signer = SignerContext::current().await;
-    let loop_handle = spawn_with_signer(signer, || async move {
-        reasoning_loop.stream(prompt, vec![], Some(tx)).await
-    })
-    .await;
-
-    let _ = tokio::try_join!(reader_handle, loop_handle);
-
-    let response = res.read().await.to_string();
-
-    wrap_unsafe(
-        move || async move { extract_key_information(response).await },
+    delegate_to_agent(
+        prompt,
+        create_chart_agent(),
+        "chart_agent".to_string(),
+        signer,
+        false,
     )
     .await
 }

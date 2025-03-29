@@ -1,18 +1,17 @@
-use std::sync::Arc;
-use tokio::sync::RwLock;
+use anyhow::Result;
+use privy::util::base64encode;
+use rig::{
+    completion::Prompt,
+    message::{ContentFormat, Image, ImageMediaType},
+};
+use rig_tool_macro::tool;
 
 use crate::{
-    agents::image::ViewImage,
-    agents::key_information::extract_key_information,
-    common::{
-        gemini_agent_builder, spawn_with_signer, wrap_unsafe, GeminiAgent,
-    },
+    agents::delegate::delegate_to_agent,
+    common::{gemini_agent_builder, wrap_unsafe, GeminiAgent},
     data::{AnalyzePageContent, SearchWeb},
-    reasoning_loop::{Model, ReasoningLoop, StreamResponse},
     signer::SignerContext,
 };
-use anyhow::Result;
-use rig_tool_macro::tool;
 
 pub fn create_web_agent() -> GeminiAgent {
     gemini_agent_builder()
@@ -28,61 +27,49 @@ pub fn create_web_agent() -> GeminiAgent {
         .build()
 }
 
-#[tool(description = "Delegate a task to web agent")]
+#[tool(
+    description = "Delegate a task to web agent. It can search the web, analyze pages and view images"
+)]
 pub async fn delegate_to_web_agent(prompt: String) -> Result<String> {
-    let with_stdout = false;
-    let reasoning_loop =
-        ReasoningLoop::new(Model::Gemini(Arc::new(create_web_agent())))
-            .with_stdout(with_stdout);
-
-    // Get the parent agent's stream channel from the task-local variable
-    let parent_tx = crate::reasoning_loop::get_current_stream_channel().await;
-
-    // Create a channel for collecting the web agent's output
-    let (tx, mut rx) = tokio::sync::mpsc::channel::<StreamResponse>(1024);
-    let res = Arc::new(RwLock::new(String::new()));
-    let res_ptr = res.clone();
-
-    let reader_handle = tokio::spawn(async move {
-        while let Some(response) = rx.recv().await {
-            let s = response.stringify();
-            res_ptr.write().await.push_str(&s);
-
-            // Forward to parent if available, as a NestedAgentOutput
-            if let Some(parent_tx) = &parent_tx {
-                match &response {
-                    StreamResponse::Message(msg) => {
-                        let nested_output =
-                            StreamResponse::NestedAgentOutput {
-                                agent_type: "web_agent".to_string(),
-                                content: msg.clone(),
-                            };
-                        let _ = parent_tx.send(nested_output).await;
-                    }
-                    // Handle other response types if needed
-                    _ => {}
-                }
-            }
-
-            // Still log to console if needed
-            if with_stdout && matches!(response, StreamResponse::Message(_)) {
-                print!("{}", s);
-            }
-        }
-    });
-
     let signer = SignerContext::current().await;
-    let loop_handle = spawn_with_signer(signer, || async move {
-        reasoning_loop.stream(prompt, vec![], Some(tx)).await
-    })
-    .await;
-
-    let _ = tokio::try_join!(reader_handle, loop_handle);
-
-    let response = res.read().await.to_string();
-
-    wrap_unsafe(
-        move || async move { extract_key_information(response).await },
+    delegate_to_agent(
+        prompt,
+        create_web_agent(),
+        "web_agent".to_string(),
+        signer,
+        false,
     )
     .await
+}
+
+#[tool(description = "View an image")]
+pub async fn view_image(image_url: String) -> Result<String> {
+    let agent = gemini_agent_builder().preamble("You are a helpful assistant that can read images and describe them").build();
+    let image_data = reqwest::get(image_url).await?.bytes().await?;
+    let data = base64encode(&image_data);
+    wrap_unsafe(move || async move {
+        agent
+            .prompt(Image {
+                data,
+                format: Some(ContentFormat::Base64),
+                media_type: Some(ImageMediaType::PNG), // this doesn't matter for Gemini
+                detail: None,
+            })
+            .await
+            .map_err(|e| anyhow::anyhow!("Error viewing image: {}", e))
+    })
+    .await
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_read_image() {
+        let res = view_image("https://ipfs.io/ipfs/QmX1UG3uu6dzQaEycNnwea9xRSwZbGPFEdv8XPXJjBUVsT".to_string())
+            .await
+            .unwrap();
+        println!("{}", res);
+    }
 }
