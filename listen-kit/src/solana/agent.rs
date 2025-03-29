@@ -12,7 +12,7 @@ use crate::data::{
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::solana::advanced_orders::CreateAdvancedOrder;
-use crate::solana::tools::AnalyzeRisk;
+use crate::solana::tools::{AnalyzeRisk, GetPublicKey};
 use crate::think::Think;
 use anyhow::Result;
 use rig::agent::Agent;
@@ -42,8 +42,8 @@ pub async fn create_solana_agent(
         .tool(GetSolBalance)
         .tool(GetSplTokenBalance)
         .tool(SearchOnDexScreener)
-        .tool(FetchTokenPrice)
         .tool(FetchTopTokens)
+        .tool(FetchTokenPrice)
         .tool(DeployPumpFunToken)
         .tool(FetchTokenMetadata)
         .tool(ResearchXProfile)
@@ -78,11 +78,14 @@ pub fn create_solana_agent_gemini(
         .tool(GetQuote)
         .tool(GetSolBalance)
         .tool(GetSplTokenBalance)
+        .tool(GetPublicKey)
         .tool(SearchOnDexScreener)
         .tool(FetchTopTokens)
-        .tool(FetchTokenPrice)
         .tool(DeployPumpFunToken)
         .tool(FetchTokenMetadata)
+        .tool(ResearchXProfile)
+        .tool(FetchXPost)
+        .tool(SearchTweets)
         .tool(AnalyzeRisk)
         .tool(FetchPriceActionAnalysis)
         .tool(Think)
