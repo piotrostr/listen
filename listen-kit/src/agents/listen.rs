@@ -35,9 +35,15 @@ pub fn create_listen_agent() -> ClaudeAgent {
 
 pub async fn extract_key_information(output: String) -> Result<String> {
     let agent = gemini_agent_builder().preamble("Extract the key information from the given output. Keep your answer brief").build();
-    agent.prompt(output).await.map_err(|e| {
+    let res = agent.prompt(output.clone()).await.map_err(|e| {
         anyhow::anyhow!("Error extracting key information: {}", e)
-    })
+    })?;
+
+    println!("extract key information input: {}", output);
+
+    println!("extract key information result: {}", res);
+
+    Ok(res)
 }
 
 // TODO possibly pass in a summary of the conversation, can be done once and re-used on per-agent pass
@@ -57,17 +63,20 @@ pub async fn delegate_to_on_chain_analytics(
 
     let res_ptr = res.clone();
 
-    tokio::spawn(async move {
+    let reader_handle = tokio::spawn(async move {
         while let Some(response) = rx.recv().await {
             let s = response.stringify();
             res_ptr.write().await.push_str(&s);
         }
     });
 
-    wrap_unsafe(move || async move {
+    let signer = SignerContext::current().await;
+    let loop_handle = spawn_with_signer(signer, || async move {
         reasoning_loop.stream(prompt, vec![], Some(tx)).await
     })
-    .await?;
+    .await;
+
+    let _ = tokio::try_join!(reader_handle, loop_handle);
 
     let result = res.read().await.to_string();
 
@@ -85,7 +94,7 @@ pub async fn delegate_to_x_agent(prompt: String) -> Result<String> {
 
     let res_ptr = res.clone();
 
-    tokio::spawn(async move {
+    let reader_handle = tokio::spawn(async move {
         while let Some(response) = rx.recv().await {
             let s = response.stringify();
             res_ptr.write().await.push_str(&s);
@@ -93,10 +102,12 @@ pub async fn delegate_to_x_agent(prompt: String) -> Result<String> {
     });
 
     let signer = SignerContext::current().await;
-    let _ = spawn_with_signer(signer, || async move {
+    let loop_handle = spawn_with_signer(signer, || async move {
         reasoning_loop.stream(prompt, vec![], Some(tx)).await
     })
     .await;
+
+    let _ = tokio::try_join!(reader_handle, loop_handle);
 
     let response = res.read().await.to_string();
 
