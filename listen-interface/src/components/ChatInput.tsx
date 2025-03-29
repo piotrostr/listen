@@ -1,7 +1,7 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { FiPlus, FiSend, FiStopCircle } from "react-icons/fi";
+import { FiPlus, FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { LuTelescope } from "react-icons/lu";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
@@ -155,32 +155,55 @@ export function ChatInput({
 
         {/* Arrow up button on the far right */}
         {isGenerating ? (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              onStopGeneration();
-            }}
-            className="p-2 rounded-full bg-red-500/20 hover:bg-red-500/40 transition-colors ml-auto"
-            aria-label="Stop generating"
-          >
-            <FiStopCircle className="text-red-400" size={18} />
-          </button>
+          <div className="flex items-center gap-2 ml-auto">
+            {!isSharedChat && onShareChat && (
+              <button
+                onClick={onShareChat}
+                className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 transition-colors"
+                title="Share this chat"
+              >
+                <FiShare2 size={18} />
+              </button>
+            )}
+
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onStopGeneration();
+              }}
+              className="p-2 rounded-full bg-red-500/20 hover:bg-red-500/40 transition-colors"
+              aria-label="Stop generating"
+            >
+              <FiStopCircle className="text-red-400" size={18} />
+            </button>
+          </div>
         ) : (
-          <button
-            onClick={(e) => {
-              e.stopPropagation();
-              handleSend();
-            }}
-            disabled={!inputMessage.trim() || !walletsReady || !user}
-            className={`p-2 rounded-full ${
-              inputMessage.trim() && walletsReady && user
-                ? "bg-[#FB2671]/20 hover:bg-[#FB2671]/40 text-[#FB2671]"
-                : "bg-gray-500/10 text-gray-500"
-            } transition-colors ml-auto`}
-            aria-label="Send message"
-          >
-            <FiSend size={18} />
-          </button>
+          <div className="flex items-center gap-2 ml-auto">
+            {!isSharedChat && onShareChat && (
+              <button
+                onClick={onShareChat}
+                className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 transition-colors"
+                title="Share this chat"
+              >
+                <FiShare2 size={18} />
+              </button>
+            )}
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                handleSend();
+              }}
+              disabled={!inputMessage.trim() || !walletsReady || !user}
+              className={`p-2 rounded-full ${
+                inputMessage.trim() && walletsReady && user
+                  ? "bg-[#FB2671]/20 hover:bg-[#FB2671]/40 text-[#FB2671]"
+                  : "bg-gray-500/10 text-gray-500"
+              } transition-colors`}
+              aria-label="Send message"
+            >
+              <FiSend size={18} />
+            </button>
+          </div>
         )}
       </div>
     </div>
