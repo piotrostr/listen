@@ -28,6 +28,21 @@ pub enum StreamResponse {
     Error(String),
 }
 
+impl StreamResponse {
+    pub fn stringify(&self) -> String {
+        match self {
+            StreamResponse::Message(message) => message.clone(),
+            StreamResponse::ToolCall { id, name, params } => {
+                format!("called {}({}) [ID: {}]", name, params, id)
+            }
+            StreamResponse::ToolResult { id, name, result } => {
+                format!("{}({}) [ID: {}]", name, result, id)
+            }
+            StreamResponse::Error(error) => error.clone(),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub enum Model {
     Anthropic(Arc<Agent<AnthropicModel>>),
