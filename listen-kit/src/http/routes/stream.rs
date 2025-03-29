@@ -60,13 +60,13 @@ async fn stream(
     mut body: web::Payload,
 ) -> impl Responder {
     // Extract and collect the body
+    let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
     let mut bytes = web::BytesMut::new();
     while let Some(item) = body.next().await {
         let item = match item {
             Ok(item) => item,
             Err(e) => {
                 tracing::error!("Error: reading request body: {}", e);
-                let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
                 let error_event = sse::Event::Data(sse::Data::new(
                     serde_json::to_string(&StreamResponse::Error(format!(
                         "Error reading request body: {}",
@@ -89,7 +89,6 @@ async fn stream(
         Ok(req) => req,
         Err(e) => {
             tracing::error!("Error: deserializing request: {}", e);
-            let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
             let error_event = sse::Event::Data(sse::Data::new(
                 serde_json::to_string(&StreamResponse::Error(format!(
                     "Error deserializing request: {}",
@@ -106,7 +105,6 @@ async fn stream(
         Ok(s) => s,
         Err(e) => {
             tracing::error!("Error: unauthorized: {}", e);
-            let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
             let error_event = sse::Event::Data(sse::Data::new(
                 serde_json::to_string(&StreamResponse::Error(format!(
                     "Error: unauthorized: {}",
@@ -118,8 +116,6 @@ async fn stream(
             return sse::Sse::from_infallible_receiver(rx);
         }
     };
-
-    let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1024);
 
     let preamble = request.preamble.clone();
     let features = request.features.clone().unwrap_or_default();
@@ -219,7 +215,8 @@ async fn stream(
     let (response_tx, response_rx) =
         tokio::sync::mpsc::channel::<StreamResponse>(1024);
 
-    // Store all responses in this vec
+    // Store all responses in this vec TODO move this to a separate method to be used by swarm leader calls
+    // to collect the subresponses (potentailly, in case it'd be to run offline)
     let response_collector = {
         let mut rx = response_rx;
         let mongo = state.mongo.clone();

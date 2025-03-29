@@ -26,7 +26,7 @@ pub mod web;
 
 pub mod tokenizer;
 
-pub mod suggester;
+pub mod agents;
 
 #[ctor::ctor]
 fn init() {

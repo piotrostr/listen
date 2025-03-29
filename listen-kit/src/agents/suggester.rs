@@ -1,9 +1,6 @@
-use crate::common::gemini_agent_builder;
+use crate::common::{gemini_agent_builder, messages_to_string};
 use anyhow::Result;
-use rig::{
-    completion::Prompt,
-    message::{AssistantContent, Message, ToolResultContent, UserContent},
-};
+use rig::{completion::Prompt, message::Message};
 
 const PROMPT_EN: &str = r#"
 Based on this conversation, predict 2-3 most likely concrete user responses.
@@ -59,54 +56,6 @@ pub async fn suggest(
         .collect();
 
     Ok(suggestions)
-}
-
-fn messages_to_string(messages: &[Message], max_chars: usize) -> String {
-    let snippet = messages
-        .iter()
-        .map(|m| format!("{}: {}", role(m), content(m)))
-        .collect::<Vec<_>>()
-        .join("\n");
-
-    if snippet.len() > max_chars {
-        "...".to_string() + &snippet[snippet.len() - max_chars..]
-    } else {
-        snippet
-    }
-}
-
-fn role(message: &Message) -> String {
-    match message {
-        Message::User { .. } => "user".to_string(),
-        Message::Assistant { .. } => "assistant".to_string(),
-    }
-}
-
-fn content(message: &Message) -> String {
-    match message {
-        Message::User { content } => match content.first() {
-            UserContent::Text(text) => text.text.clone(),
-            UserContent::ToolResult(tool_result) => {
-                match tool_result.content.first() {
-                    ToolResultContent::Text(text) => text.text.clone(),
-                    _ => "".to_string(),
-                }
-            }
-            UserContent::Image(_) => "".to_string(),
-            UserContent::Audio(_) => "".to_string(),
-            UserContent::Document(_) => "".to_string(),
-        },
-        Message::Assistant { content } => match content.first() {
-            AssistantContent::Text(text) => text.text.clone(),
-            AssistantContent::ToolCall(tool_call) => {
-                let call = format!(
-                    "called {} with {}",
-                    tool_call.function.name, tool_call.function.arguments
-                );
-                call
-            }
-        },
-    }
 }
 
 #[cfg(test)]

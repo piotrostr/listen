@@ -1,4 +1,7 @@
 use anyhow::{anyhow, Result};
+use rig::message::{
+    AssistantContent, Message, ToolResultContent, UserContent,
+};
 use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -38,6 +41,9 @@ use rig::agent::{Agent, AgentBuilder};
 use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
 use rig::providers::gemini::completion::CompletionModel as GeminiCompletionModel;
 
+pub type GeminiAgent = rig::agent::Agent<GeminiCompletionModel>;
+pub type ClaudeAgent = rig::agent::Agent<AnthropicCompletionModel>;
+
 pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
     rig::providers::anthropic::Client::from_env()
         .agent(rig::providers::anthropic::CLAUDE_3_5_SONNET)
@@ -58,3 +64,51 @@ pub fn gemini_agent_builder() -> AgentBuilder<GeminiCompletionModel> {
 }
 
 pub const PREAMBLE_COMMON: &str = "";
+
+pub fn messages_to_string(messages: &[Message], max_chars: usize) -> String {
+    let snippet = messages
+        .iter()
+        .map(|m| format!("{}: {}", role(m), content(m)))
+        .collect::<Vec<_>>()
+        .join("\n");
+
+    if snippet.len() > max_chars {
+        "...".to_string() + &snippet[snippet.len() - max_chars..]
+    } else {
+        snippet
+    }
+}
+
+pub fn role(message: &Message) -> String {
+    match message {
+        Message::User { .. } => "user".to_string(),
+        Message::Assistant { .. } => "assistant".to_string(),
+    }
+}
+
+pub fn content(message: &Message) -> String {
+    match message {
+        Message::User { content } => match content.first() {
+            UserContent::Text(text) => text.text.clone(),
+            UserContent::ToolResult(tool_result) => {
+                match tool_result.content.first() {
+                    ToolResultContent::Text(text) => text.text.clone(),
+                    _ => "".to_string(),
+                }
+            }
+            UserContent::Image(_) => "".to_string(),
+            UserContent::Audio(_) => "".to_string(),
+            UserContent::Document(_) => "".to_string(),
+        },
+        Message::Assistant { content } => match content.first() {
+            AssistantContent::Text(text) => text.text.clone(),
+            AssistantContent::ToolCall(tool_call) => {
+                let call = format!(
+                    "called {} with {}",
+                    tool_call.function.name, tool_call.function.arguments
+                );
+                call
+            }
+        },
+    }
+}
