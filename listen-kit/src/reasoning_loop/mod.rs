@@ -34,27 +34,6 @@ pub enum StreamResponse {
     },
 }
 
-impl StreamResponse {
-    pub fn stringify(&self) -> String {
-        match self {
-            StreamResponse::Message(message) => message.clone(),
-            StreamResponse::ToolCall { id, name, params } => {
-                format!("called {}({}) [ID: {}]", name, params, id)
-            }
-            StreamResponse::ToolResult { id, name, result } => {
-                format!("{}({}) [ID: {}]", name, result, id)
-            }
-            StreamResponse::Error(error) => error.clone(),
-            StreamResponse::NestedAgentOutput {
-                agent_type,
-                content,
-            } => {
-                format!("{}: {}", agent_type, content)
-            }
-        }
-    }
-}
-
 #[derive(Clone)]
 pub enum Model {
     Anthropic(Arc<Agent<AnthropicModel>>),

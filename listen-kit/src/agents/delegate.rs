@@ -8,6 +8,8 @@ use crate::{
     signer::TransactionSigner,
 };
 
+// FIXME this has to break as the signal is sent to cancel the request!
+
 /// Delegate a task to a specific agent and handle the response
 pub async fn delegate_to_agent(
     prompt: String,
@@ -29,28 +31,27 @@ pub async fn delegate_to_agent(
 
     let reader_handle = tokio::spawn(async move {
         while let Some(response) = rx.recv().await {
-            let s = response.stringify();
-            res_ptr.write().await.push_str(&s);
+            res_ptr.write().await.push_str(
+                &serde_json::to_string(&response).unwrap_or_default(),
+            );
 
             // Forward to parent if available, as a NestedAgentOutput
             if let Some(parent_tx) = &parent_tx {
-                match &response {
-                    StreamResponse::Message(msg) => {
-                        let nested_output =
-                            StreamResponse::NestedAgentOutput {
-                                agent_type: agent_type.clone(),
-                                content: msg.clone(),
-                            };
-                        let _ = parent_tx.send(nested_output).await;
-                    }
-                    // Handle other response types if needed
-                    _ => {}
-                }
+                let nested_output = StreamResponse::NestedAgentOutput {
+                    agent_type: agent_type.clone(),
+                    content: format!(
+                        "<content>{}</content>",
+                        serde_json::to_string(&response).unwrap_or_default()
+                    ),
+                };
+                let _ = parent_tx.send(nested_output).await;
             }
 
             // Still log to console if needed
-            if with_stdout && matches!(response, StreamResponse::Message(_)) {
-                print!("{}", s);
+            if with_stdout {
+                if let StreamResponse::Message(msg) = &response {
+                    print!("{}", msg);
+                }
             }
         }
     });
