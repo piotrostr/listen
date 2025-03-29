@@ -49,6 +49,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     agentMode,
     chatType,
     modelType,
+    researchEnabled,
   } = useSettingsStore();
   const { getAccessToken, user } = usePrivy();
   const {
@@ -236,6 +237,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           preamble,
           features: {
             autonomous: agentMode,
+            deep_research: researchEnabled,
           },
           model_type: modelType,
           locale: i18n.language,

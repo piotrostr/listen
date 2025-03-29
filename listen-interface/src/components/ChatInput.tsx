@@ -169,7 +169,6 @@ export function ChatInput({
         {/* Research Feature */}
         <button
           onClick={toggleResearch}
-          disabled={true}
           className={`flex items-center gap-2 px-4 py-2 rounded-full ${
             researchEnabled
               ? "bg-blue-600/20 text-blue-400"
