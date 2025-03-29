@@ -3,7 +3,11 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
+import { IoSwapHorizontal } from "react-icons/io5";
+import { LuTelescope } from "react-icons/lu";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { useSettingsStore } from "../store/settingsStore";
+import { Feature } from "./Feature";
 
 interface ChatInputProps {
   inputMessage: string;
@@ -27,6 +31,13 @@ export function ChatInput({
   hasMessages = false,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const {
+    researchEnabled,
+    tradingEnabled,
+    setResearchEnabled,
+    setTradingEnabled,
+  } = useSettingsStore();
 
   const { user } = usePrivy();
 
@@ -69,6 +80,16 @@ export function ChatInput({
 
   const { t } = useTranslation();
 
+  // Toggle the research mode
+  const toggleResearch = () => {
+    setResearchEnabled(!researchEnabled);
+  };
+
+  // Toggle the trading mode
+  const toggleTrading = () => {
+    setTradingEnabled(!tradingEnabled);
+  };
+
   return (
     <div
       className={`flex flex-row items-center gap-1 px-1 pl-4 py-1 bg-[#151518]/40 backdrop-blur-sm border border-[#2D2D2D] rounded-3xl mb-2`}
@@ -100,7 +121,37 @@ export function ChatInput({
         }}
       />
 
-      <div className="flex-shrink-0 ml-2 flex items-center gap-2">
+      <div className="flex items-center gap-2 max-xs:gap-1">
+        {/* Research Feature */}
+        <Feature
+          isEnabled={researchEnabled}
+          onToggle={toggleResearch}
+          icon={<LuTelescope size={18} />}
+          label="Deep research"
+          enabledColors={{
+            bgLight: "#DAEEFF",
+            textLight: "blue-1000",
+            bgDark: "#2A4A6D",
+            textDark: "#48AAFF",
+          }}
+        />
+
+        {/* Trading Feature */}
+        <Feature
+          isEnabled={tradingEnabled}
+          onToggle={toggleTrading}
+          icon={<IoSwapHorizontal size={18} />}
+          label="Trading"
+          enabledColors={{
+            bgLight: "#DAEEFF",
+            textLight: "blue-1000",
+            bgDark: "#2A4A6D",
+            textDark: "#48AAFF",
+          }}
+        />
+      </div>
+
+      <div className="flex-shrink-0 ml-auto flex items-center gap-2">
         {!isSharedChat && onShareChat && (
           <button
             onClick={onShareChat}
