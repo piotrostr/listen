@@ -7,7 +7,8 @@ use crate::common::{
 };
 use crate::data::{
     AnalyzePageContent, FetchPriceActionAnalysis, FetchTokenMetadata,
-    FetchTokenPrice, FetchTopTokens, SearchWeb,
+    FetchTokenPrice, FetchTopTokens, FetchXPost, ResearchXProfile,
+    SearchTweets, SearchWeb,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::solana::advanced_orders::CreateAdvancedOrder;
@@ -46,6 +47,9 @@ pub async fn create_solana_agent(
         .tool(FetchTopTokens)
         .tool(DeployPumpFunToken)
         .tool(FetchTokenMetadata)
+        .tool(ResearchXProfile)
+        .tool(FetchXPost)
+        .tool(SearchTweets)
         .tool(AnalyzeRisk)
         .tool(FetchPriceActionAnalysis)
         .tool(Think)
