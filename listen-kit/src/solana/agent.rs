@@ -37,15 +37,9 @@ pub async fn create_solana_agent(
 
     let mut agent = claude_agent_builder()
         .preamble(&preamble)
-        .tool(GetQuote)
-        .tool(FetchTopTokens)
-        .tool(DeployPumpFunToken)
-        .tool(AnalyzeRisk)
         .tool(FetchPriceActionAnalysis)
         .tool(Think)
-        .tool(GetCurrentTime)
-        .tool(SearchWeb)
-        .tool(AnalyzePageContent);
+        .tool(GetCurrentTime);
 
     if features.autonomous {
         agent = agent.tool(Swap).tool(CreateAdvancedOrder);

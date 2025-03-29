@@ -2,36 +2,33 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::{
-    agents::image::ViewImage,
     agents::key_information::extract_key_information,
     common::{
         gemini_agent_builder, spawn_with_signer, wrap_unsafe, GeminiAgent,
     },
-    data::{AnalyzePageContent, SearchWeb},
+    data::listen_api_tools::FetchPriceActionAnalysis,
     reasoning_loop::{Model, ReasoningLoop, StreamResponse},
     signer::SignerContext,
 };
 use anyhow::Result;
 use rig_tool_macro::tool;
 
-pub fn create_web_agent() -> GeminiAgent {
+pub fn create_chart_agent() -> GeminiAgent {
     gemini_agent_builder()
-        .preamble("You are a deep web research agent. Your goal is to perform thorough recursive analysis:
-        1. For each tool call result, analyze if there are more leads to explore
-        2. If you find new pages, links, or topics, investigate them
-        3. Build a comprehensive picture by following all relevant leads
-        4. Don't stop at surface-level information - dig deeper into each finding
-        5. If you find something interesting, use other tools to verify and expand on it")
-        .tool(ViewImage)
-        .tool(SearchWeb)
-        .tool(AnalyzePageContent)
+        .preamble("You are a deep chart analysis agent. Your goal is to perform thorough technical analysis:
+        1. For each price action analysis, look for significant patterns and signals
+        2. If you find interesting price movements, investigate the timeframes around them
+        3. Build a comprehensive picture by analyzing multiple technical indicators
+        4. Don't stop at surface-level patterns - dig deeper into each finding
+        5. If you find something interesting, verify it against other timeframes and indicators")
+        .tool(FetchPriceActionAnalysis)
         .build()
 }
 
-#[tool(description = "Delegate a task to web agent")]
-pub async fn delegate_to_web_agent(prompt: String) -> Result<String> {
+#[tool(description = "Delegate a task to chart analysis agent")]
+pub async fn delegate_to_chart_agent(prompt: String) -> Result<String> {
     let reasoning_loop =
-        ReasoningLoop::new(Model::Gemini(Arc::new(create_web_agent())))
+        ReasoningLoop::new(Model::Gemini(Arc::new(create_chart_agent())))
             .with_stdout(false);
     let (tx, mut rx) = tokio::sync::mpsc::channel::<StreamResponse>(1024);
     let res = Arc::new(RwLock::new(String::new()));
