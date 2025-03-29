@@ -1,5 +1,7 @@
 use crate::common::{gemini_agent_builder, GeminiAgent};
 use crate::data::listen_api_tools::FetchTokenMetadata;
+use crate::data::FetchTokenPrice;
+use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::solana::tools::{GetSolBalance, GetSplTokenBalance};
 
 pub fn create_on_chain_analytics_agent() -> GeminiAgent {
@@ -12,5 +14,7 @@ pub fn create_on_chain_analytics_agent() -> GeminiAgent {
         .tool(FetchTokenMetadata)
         .tool(GetSolBalance)
         .tool(GetSplTokenBalance)
+        .tool(SearchOnDexScreener)
+        .tool(FetchTokenPrice)
         .build()
 }

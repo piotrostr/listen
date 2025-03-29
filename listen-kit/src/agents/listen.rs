@@ -6,9 +6,9 @@ use super::on_chain_analytics::create_on_chain_analytics_agent;
 use crate::{
     agents::x::create_x_agent,
     common::{
-        claude_agent_builder, gemini_agent_builder, spawn_with_signer,
-        wrap_unsafe, ClaudeAgent,
+        gemini_agent_builder, spawn_with_signer, wrap_unsafe, GeminiAgent,
     },
+    data::FetchTokenMetadata,
     reasoning_loop::{Model, ReasoningLoop, StreamResponse},
     signer::SignerContext,
 };
@@ -22,13 +22,27 @@ pub struct ListenBridge {}
 // Listen, as the swarm leader, plans out the task which is delegated to subsequent agents
 // it then can assess the outputs and evaluate as done or needs more information, or a retry
 
-pub fn create_listen_agent() -> ClaudeAgent {
-    claude_agent_builder()
-        .tool(DelegateToOnChainAnalytics)
+pub fn create_listen_agent() -> GeminiAgent {
+    gemini_agent_builder()
         .tool(DelegateToXAgent)
+        .tool(FetchTokenMetadata)
         .preamble(
-            r#"Use your agents to perform deep research, for each task, provide
-            a prompt that encapsulates the problem."#,
+            r#"You are a planning agent, a coordinator that delegates tasks to specialized agents.
+            Your goal is to dig as deep as possible into each topic by:
+            1. Breaking down complex queries into smaller, focused questions
+            2. Delegating each question to appropriate agents
+            3. Analyzing their responses to identify gaps or areas needing deeper investigation
+            4. Continuing to delegate follow-up questions until you have comprehensive insights
+            
+            Always make multiple tool calls to build a complete picture. Never be satisfied with surface-level information.
+            For each task, provide a series of prompts that progressively dig deeper into the topic.
+            
+            Format your investigation plan like this:
+            1. Initial question: [delegate to appropriate agent]
+            2. Follow-up areas based on response
+            3. Deep-dive questions for each area
+            
+            Keep investigating until you have explored all relevant angles."#,
         )
         .build()
 }
@@ -39,9 +53,9 @@ pub async fn extract_key_information(output: String) -> Result<String> {
         anyhow::anyhow!("Error extracting key information: {}", e)
     })?;
 
-    println!("extract key information input: {}", output);
+    tracing::info!("extract key information input: {}", output);
 
-    println!("extract key information result: {}", res);
+    tracing::info!("extract key information result: {}", res);
 
     Ok(res)
 }
@@ -67,6 +81,9 @@ pub async fn delegate_to_on_chain_analytics(
         while let Some(response) = rx.recv().await {
             let s = response.stringify();
             res_ptr.write().await.push_str(&s);
+            if matches!(response, StreamResponse::Message(_)) {
+                print!("{}", s);
+            }
         }
     });
 
@@ -98,6 +115,9 @@ pub async fn delegate_to_x_agent(prompt: String) -> Result<String> {
         while let Some(response) = rx.recv().await {
             let s = response.stringify();
             res_ptr.write().await.push_str(&s);
+            if matches!(response, StreamResponse::Message(_)) {
+                print!("{}", s);
+            }
         }
     });
 

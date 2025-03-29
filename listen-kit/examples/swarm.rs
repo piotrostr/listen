@@ -10,7 +10,7 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<()> {
     let leader_reasoning_loop =
-        ReasoningLoop::new(Model::Anthropic(Arc::new(create_listen_agent())))
+        ReasoningLoop::new(Model::Gemini(Arc::new(create_listen_agent())))
             .with_stdout(true);
 
     let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));

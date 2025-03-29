@@ -1,3 +1,4 @@
+pub mod image;
 pub mod listen;
 pub mod on_chain_analytics;
 pub mod solana_trader;
