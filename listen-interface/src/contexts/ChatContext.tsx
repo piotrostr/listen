@@ -91,8 +91,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const debouncedBackup = useDebounce(async (chatToBackup: Chat) => {
     try {
       await chatCache.set(chatToBackup.id, chatToBackup);
-      console.log("Chat backed up successfully:", chatToBackup.id);
-
       // Dispatch a custom event to notify about chat updates
       window.dispatchEvent(new Event("chatUpdated"));
     } catch (error) {
@@ -264,10 +262,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           }
         );
 
-        let _body = JSON.parse(body);
-        delete _body.preamble;
-        console.log("body", _body);
-
         if (!response.ok) {
           throw new Error("Failed to initialize stream");
         }
@@ -393,7 +387,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         // Check if this was an abort error
         if (error instanceof DOMException && error.name === "AbortError") {
-          console.log("Request was aborted");
+          console.debug("Request was aborted");
           // You might want to add a message indicating the generation was stopped
           setChat((prev) => ({
             ...prev!,

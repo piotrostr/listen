@@ -214,8 +214,6 @@ describe("parseAgentOutput", () => {
 
     const result = parseAgentOutput(sampleOutput);
 
-    console.log("result", result);
-
     // Check the number of items
     expect(result.length).toBe(1);
     expect(result[0].type).toBe("Message");

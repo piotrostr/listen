@@ -83,7 +83,7 @@ export function TokenPriceProvider({
     };
 
     ws.onclose = () => {
-      console.log("WebSocket connection closed");
+      console.info("WebSocket connection closed");
     };
 
     return () => {

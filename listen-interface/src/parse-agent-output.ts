@@ -45,22 +45,47 @@ export function renderAgentOutputString(
   streamResponses: StreamResponse[]
 ): string {
   let output = "";
+  let accumulatedMessage = "";
+
   for (const streamResponse of streamResponses) {
-    console.log("streamResponse", streamResponse);
     switch (streamResponse.type) {
       case "Message":
-        output += `<p>${streamResponse.content}</p>`;
+        // Accumulate message content
+        accumulatedMessage += streamResponse.content;
         break;
       case "ToolCall":
+        // First render any accumulated message
+        if (accumulatedMessage) {
+          output += `<p>${accumulatedMessage}</p>`;
+          accumulatedMessage = "";
+        }
         let call = ToolCallSchema.parse(streamResponse.content);
-        output += `<p>${call.name}: ${call.params}</p>`;
+        output += `<p>${call.name} with ${Object.entries(
+          JSON.parse(call.params)
+        )
+          .map(([key, value]) => `<li>${key}: ${value}</li>`)
+          .join("")}</p>`;
         break;
       case "ToolResult":
+        // First render any accumulated message
+        if (accumulatedMessage) {
+          output += `<p>${accumulatedMessage}</p>`;
+          accumulatedMessage = "";
+        }
         let result = ToolResultSchema.parse(streamResponse.content);
-        output += `<p>${result.name}: ${result.result}</p>`;
+        output += `<p>${
+          result.result.includes("{")
+            ? result.result
+            : JSON.parse(result.result)
+        }</p>`;
         break;
     }
-    console.log("output", output);
   }
+
+  // Don't forget to render any remaining accumulated message
+  if (accumulatedMessage) {
+    output += `<p>${accumulatedMessage}</p>`;
+  }
+
   return output;
 }

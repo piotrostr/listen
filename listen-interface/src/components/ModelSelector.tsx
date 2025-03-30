@@ -20,6 +20,7 @@ function ModelOption({
   return (
     <button
       onClick={() => onClick(id)}
+      disabled={id === "claude"} // tmp disable claude till get GCP credits
       className={`p-4 border-2 ${
         isSelected ? "border-[#2D2D2D]" : "border-transparent"
       } rounded-lg bg-black/40 backdrop-blur-sm hover:border-[#2D2D2D] transition-all`}

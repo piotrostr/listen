@@ -120,7 +120,6 @@ export const usePortfolioStore = create<PortfolioState>()(
 
         // Skip fetching EVM assets if we're in Solana-only mode
         if (chatType === "solana") {
-          console.log("Skipping EVM fetch in Solana-only mode");
           return;
         }
 
@@ -202,10 +201,6 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       // Refresh portfolio data - always forces a refresh
       refreshPortfolio: async () => {
-        // Access chatType directly from settings store
-        const chatType = useSettingsStore.getState().chatType;
-        console.log("Force refreshing portfolio, chatType:", chatType);
-
         // Reset data first to ensure UI shows loading state and indicate force refresh
         set({
           isLoading: true,
@@ -224,17 +219,15 @@ export const usePortfolioStore = create<PortfolioState>()(
         );
 
         if (!visibilityListenerAlreadyAdded) {
-          console.log("Adding portfolio visibility listener");
-
           // Function to handle visibility change
           const handleVisibilityChange = () => {
             if (document.visibilityState === "visible") {
               // On becoming visible, check if data is fresh
               if (!get().isFresh()) {
-                console.log("Data is stale, refreshing");
+                console.debug("Data is stale, refreshing");
                 get().refreshPortfolio();
               } else {
-                console.log("Data is fresh, no refresh needed");
+                console.debug("Data is fresh, no refresh needed");
               }
             }
           };
@@ -248,7 +241,7 @@ export const usePortfolioStore = create<PortfolioState>()(
 
         // Initial fetch if needed - run this only if we have no data
         if (get().solanaAssetsMap.size === 0 && !get().isLoading) {
-          console.log("Initial portfolio load");
+          console.debug("Initial portfolio load");
           get().refreshPortfolio();
         }
 

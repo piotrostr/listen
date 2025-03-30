@@ -8,6 +8,7 @@ import {
   FaSearch,
 } from "react-icons/fa";
 import { FaRobot, FaXTwitter } from "react-icons/fa6";
+import { IoSwapHorizontal } from "react-icons/io5";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
@@ -127,13 +128,17 @@ export const ToolMessage = ({
     toolOutput.name === "delegate_to_solana_trader_agent"
   ) {
     const contents = parseAgentOutput(toolOutput.result);
-    console.log("parsed contents", contents);
+    const icons = {
+      delegate_to_research_agent: <FaRobot />,
+      delegate_to_chart_agent: <FaChartLine />,
+      delegate_to_solana_trader_agent: <IoSwapHorizontal />,
+    };
     return (
       <div className="text-gray-400">
         <DropdownMessage
-          title={t("tool_messages.delegate_to_research_agent")}
+          title={t(`tool_messages.${toolOutput.name}`)}
           message={renderAgentOutputString(contents)}
-          icon={<FaRobot />}
+          icon={icons[toolOutput.name]}
         />
       </div>
     );
