@@ -20,13 +20,13 @@ pub struct Faster100xData {
     pub status: String,
     pub message: Option<String>,
     pub data: Option<ResponseData>,
-    pub token_address: Option<String>,
-    pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct ResponseData {
+    pub token_address: Option<String>,
     pub response: InnerResponseData,
+    pub updated_at: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]

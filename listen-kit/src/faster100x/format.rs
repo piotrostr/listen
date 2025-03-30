@@ -12,12 +12,18 @@ pub fn format_wallet_analysis(
             a.get_percentage().partial_cmp(&b.get_percentage()).unwrap()
         })
     });
+    let token_address = faster_data
+        .data
+        .as_ref()
+        .and_then(|d| d.token_address.clone());
+    let updated_at =
+        faster_data.data.as_ref().and_then(|d| d.updated_at.clone());
 
     let analysis = if let Some(metrics) = risk_metrics {
         serde_json::json!({
             "status": "success",
-            "token_address": faster_data.token_address,
-            "updated_at": faster_data.updated_at,
+            "token_address": token_address,
+            "updated_at": updated_at,
             "max_holder": max_holder.map(|h| {
                 serde_json::json!({
                     "address": h.address,
@@ -50,8 +56,8 @@ pub fn format_wallet_analysis(
     } else {
         serde_json::json!({
             "status": "error",
-            "message": "Impossibile calcolare le metriche di rischio",
-            "token_address": faster_data.token_address,
+            "message": "Failed to compute risk metrics",
+            "token_address": token_address,
         })
     };
 

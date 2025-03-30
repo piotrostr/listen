@@ -34,7 +34,7 @@ pub async fn get_faster100x_data(
         .map_err(|e| anyhow!("[Faster100x] Error reading response: {}", e))?;
 
     // Log raw response in debug mode
-    tracing::debug!("[Faster100x] Raw response: {}", response_text);
+    tracing::info!("[Faster100x] Raw response: {}", response_text);
 
     // Parse response
     let data: Vec<Faster100xResponse> = serde_json::from_str(&response_text)
@@ -60,4 +60,18 @@ pub async fn get_faster100x_data(
     }
 
     Ok(result)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_get_faster100x_data() {
+        let data = get_faster100x_data(
+            "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump",
+        )
+        .await;
+        println!("{:?}", data);
+    }
 }
