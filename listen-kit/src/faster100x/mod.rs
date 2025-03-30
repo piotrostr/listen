@@ -23,7 +23,7 @@ Returns:
 - Gini index for distribution
 - Possible risk signals like high concentration
 ")]
-pub async fn analyze_wallet_concentration(
+pub async fn analyze_holder_distribution(
     token_address: String,
 ) -> Result<serde_json::Value> {
     let data = get_faster100x_data(&token_address)
