@@ -11,6 +11,10 @@ import { FaRobot, FaXTwitter } from "react-icons/fa6";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
+import {
+  parseAgentOutput,
+  renderAgentOutputString,
+} from "../parse-agent-output";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import { Message, ToolCallSchema, ToolResult } from "../types/message";
 import { TokenMetadataSchema } from "../types/metadata";
@@ -117,12 +121,18 @@ export const ToolMessage = ({
     }
   }
 
-  if (toolOutput.name === "delegate_to_research_agent") {
+  if (
+    toolOutput.name === "delegate_to_research_agent" ||
+    toolOutput.name === "delegate_to_chart_agent" ||
+    toolOutput.name === "delegate_to_solana_trader_agent"
+  ) {
+    const contents = parseAgentOutput(toolOutput.result);
+    console.log("parsed contents", contents);
     return (
       <div className="text-gray-400">
         <DropdownMessage
           title={t("tool_messages.delegate_to_research_agent")}
-          message={toolOutput.result}
+          message={renderAgentOutputString(contents)}
           icon={<FaRobot />}
         />
       </div>
