@@ -2,7 +2,7 @@ import { motion } from "framer-motion";
 
 const sanitizeSuggestion = (suggestion: string) => {
   return suggestion
-    .replace(/^"|\s+"$/g, "") // Remove quotes
+    .replace(/^"|\s*"$/g, "") // Remove quotes (including when right before a question mark)
     .replace(/^[-*•]\s+/g, "") // Remove bullet points and dashes
     .replace(/^\d+[.)]?\s+/g, ""); // Remove numbered items like 1. or 1)
 };

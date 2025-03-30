@@ -22,6 +22,7 @@ import { useSuggestStore } from "../store/suggestStore";
 import {
   Chat,
   Message,
+  NestedAgentOutputSchema,
   ToolCallSchema,
   ToolResultSchema,
 } from "../types/message";
@@ -30,6 +31,7 @@ import { JsonChunkReader } from "./chunk-reader";
 interface ChatContextType {
   messages: Message[];
   isLoading: boolean;
+  nestedAgentOutput: { agentType: string; content: string } | null;
   sendMessage: (message: string) => Promise<void>;
   setMessages: (messages: Message[]) => void;
   stopGeneration: () => void;
@@ -49,6 +51,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     agentMode,
     chatType,
     modelType,
+    researchEnabled,
   } = useSettingsStore();
   const { getAccessToken, user } = usePrivy();
   const {
@@ -67,6 +70,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const [sentInitialMessage, setSentInitialMessage] = useState(false);
+  const [nestedAgentOutput, setNestedAgentOutput] = useState<{
+    agentType: string;
+    content: string;
+  } | null>(null);
 
   // Load existing chat if chatId is present and not creating a new chat
   useEffect(() => {
@@ -84,8 +91,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const debouncedBackup = useDebounce(async (chatToBackup: Chat) => {
     try {
       await chatCache.set(chatToBackup.id, chatToBackup);
-      console.log("Chat backed up successfully:", chatToBackup.id);
-
       // Dispatch a custom event to notify about chat updates
       window.dispatchEvent(new Event("chatUpdated"));
     } catch (error) {
@@ -236,6 +241,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           preamble,
           features: {
             autonomous: agentMode,
+            deep_research: researchEnabled,
           },
           model_type: modelType,
           locale: i18n.language,
@@ -255,10 +261,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             signal,
           }
         );
-
-        let _body = JSON.parse(body);
-        delete _body.preamble;
-        console.log("body", _body);
 
         if (!response.ok) {
           throw new Error("Failed to initialize stream");
@@ -285,7 +287,32 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
                   data.content as string
                 );
                 break;
+              case "NestedAgentOutput": {
+                const nestedOutput = NestedAgentOutputSchema.parse(
+                  data.content
+                );
+
+                setNestedAgentOutput((prev) => {
+                  // If this is a new agent or type, start fresh
+                  if (!prev || prev.agentType !== nestedOutput.agent_type) {
+                    return {
+                      agentType: nestedOutput.agent_type,
+                      content: nestedOutput.content, // Start with first chunk
+                    };
+                  }
+
+                  // Otherwise, append to existing content
+                  return {
+                    ...prev,
+                    content: prev.content + nestedOutput.content, // Accumulate directly in content
+                  };
+                });
+                break;
+              }
               case "ToolResult": {
+                // When we get a tool result, clear any nested agent output
+                setNestedAgentOutput(null);
+
                 const toolResult = ToolResultSchema.parse(data.content);
                 setChat((prev) => ({
                   ...prev!,
@@ -360,7 +387,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       } catch (error) {
         // Check if this was an abort error
         if (error instanceof DOMException && error.name === "AbortError") {
-          console.log("Request was aborted");
+          console.debug("Request was aborted");
           // You might want to add a message indicating the generation was stopped
           setChat((prev) => ({
             ...prev!,
@@ -586,6 +613,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const value = {
     messages: chat?.messages || [],
     isLoading: isLoadingWallets || isLoading,
+    nestedAgentOutput,
     sendMessage,
     setMessages: (messages: Message[]) =>
       setChat((prev) =>

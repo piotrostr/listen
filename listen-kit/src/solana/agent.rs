@@ -24,6 +24,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Default, Serialize, Deserialize, Clone)]
 pub struct Features {
     pub autonomous: bool,
+    pub deep_research: bool,
 }
 
 pub async fn create_solana_agent(

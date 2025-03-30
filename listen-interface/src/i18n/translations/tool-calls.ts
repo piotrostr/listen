@@ -20,6 +20,9 @@ export const toolCalls = {
     search_web: "Searching the web...",
     analyze_page_content: "Analyzing page content...",
     create_advanced_order: "Scheduling an order...",
+    delegate_to_research_agent: "Researching...",
+    delegate_to_chart_agent: "Charting...",
+    delegate_to_solana_trader_agent: "Trading...",
   },
   zh: {
     get_quote: "获取报价中...",
@@ -42,5 +45,8 @@ export const toolCalls = {
     search_web: "搜索网页中...",
     analyze_page_content: "分析网页内容中...",
     create_advanced_order: "安排订单中...",
+    delegate_to_research_agent: "研究中...",
+    delegate_to_chart_agent: "图表中...",
+    delegate_to_solana_trader_agent: "交易中...",
   },
 };

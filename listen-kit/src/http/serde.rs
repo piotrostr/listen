@@ -37,7 +37,7 @@ where
                 {
                     // This is a tool result - should always be a User message
                     let id = json_value["id"].as_str().unwrap().to_string();
-                    let id = if id == "" {
+                    let id = if id.is_empty() {
                         json_value["name"].as_str().unwrap().to_string()
                     } else {
                         id

@@ -7,10 +7,15 @@ import {
   FaExclamationTriangle,
   FaSearch,
 } from "react-icons/fa";
-import { FaXTwitter } from "react-icons/fa6";
+import { FaRobot, FaXTwitter } from "react-icons/fa6";
+import { IoSwapHorizontal } from "react-icons/io5";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
+import {
+  parseAgentOutput,
+  renderAgentOutputString,
+} from "../parse-agent-output";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import { Message, ToolCallSchema, ToolResult } from "../types/message";
 import { TokenMetadataSchema } from "../types/metadata";
@@ -115,6 +120,28 @@ export const ToolMessage = ({
     } catch (e) {
       console.error("Failed to parse risk analysis:", e);
     }
+  }
+
+  if (
+    toolOutput.name === "delegate_to_research_agent" ||
+    toolOutput.name === "delegate_to_chart_agent" ||
+    toolOutput.name === "delegate_to_solana_trader_agent"
+  ) {
+    const contents = parseAgentOutput(toolOutput.result);
+    const icons = {
+      delegate_to_research_agent: <FaRobot />,
+      delegate_to_chart_agent: <FaChartLine />,
+      delegate_to_solana_trader_agent: <IoSwapHorizontal />,
+    };
+    return (
+      <div className="text-gray-400">
+        <DropdownMessage
+          title={t(`tool_messages.${toolOutput.name}`)}
+          message={renderAgentOutputString(contents)}
+          icon={icons[toolOutput.name]}
+        />
+      </div>
+    );
   }
 
   if (toolOutput.name === "fetch_price_action_analysis") {

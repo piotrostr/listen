@@ -1,5 +1,6 @@
 import { describe, expect, it } from "bun:test";
 import { embedResearchAnchors } from "../components/ResearchOutput";
+import { parseAgentOutput } from "../parse-agent-output";
 import { renderAddressOrTx } from "./util";
 
 describe("renderAddressOrTx", () => {
@@ -201,5 +202,23 @@ describe("embedResearchAnchors", () => {
     const matches = [...result.matchAll(linkPattern)];
     expect(matches.length).toBe(2); // Now appears twice in the text
     expect(matches[0][1]).toBe(matches[1][1]); // Same reference number for both occurrences
+  });
+});
+
+describe("parseAgentOutput", () => {
+  it("should parse concatenated JSON strings into an array of StreamResponse objects", () => {
+    // Use the new format with <content> tags
+    const sampleOutput = `
+    {"type":"NestedAgentOutput","content":{"agent_type":"solana_trader_agent","content":"<content>eyJ0eXBlIjoiTWVzc2FnZSIsImNvbnRlbnQiOiI5NDcsMTQgd2l0aCA2IGRlY2ltYWxzLiBUaGVyZSdzIG5vIG1lbnRpb24gb2Ygc3BlY2lmaWMgdXRpbGl0eSBiZXlvbmQgYmVpbmcgYSBtZW1lIHRva2VuLiJ9</content>"}}
+    `;
+
+    const result = parseAgentOutput(sampleOutput);
+
+    // Check the number of items
+    expect(result.length).toBe(1);
+    expect(result[0].type).toBe("Message");
+    expect(result[0].content).toBe(
+      "947,14 with 6 decimals. There's no mention of specific utility beyond being a meme token."
+    );
   });
 });

@@ -16,7 +16,14 @@ async fn main() -> Result<()> {
 
     SignerContext::with_signer(Arc::new(signer), async {
         let trader_agent = Arc::new(
-            create_solana_agent(None, Features { autonomous: false }).await?,
+            create_solana_agent(
+                None,
+                Features {
+                    autonomous: false,
+                    deep_research: false,
+                },
+            )
+            .await?,
         );
         println!(
             "total tools available: {}",

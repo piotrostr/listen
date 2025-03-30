@@ -1,10 +1,13 @@
 #[cfg(feature = "solana")]
 use {
-    anyhow::Result, listen_kit::reasoning_loop::ReasoningLoop,
+    anyhow::Result,
+    listen_kit::common::{content, role},
+    listen_kit::reasoning_loop::ReasoningLoop,
     listen_kit::signer::solana::LocalSolanaSigner,
     listen_kit::signer::SignerContext,
     listen_kit::solana::agent::create_solana_agent_gemini,
-    listen_kit::solana::util::env, std::sync::Arc,
+    listen_kit::solana::util::env,
+    std::sync::Arc,
 };
 
 #[cfg(feature = "solana")]
@@ -19,7 +22,10 @@ async fn main() -> Result<()> {
     SignerContext::with_signer(Arc::new(signer), async {
         let trader_agent = Arc::new(create_solana_agent_gemini(
             None,
-            Features { autonomous: false },
+            Features {
+                autonomous: false,
+                deep_research: false,
+            },
         ));
         for tool in trader_agent.tools.schemas().iter() {
             println!("{}", serde_json::to_string(tool).unwrap());
@@ -27,7 +33,7 @@ async fn main() -> Result<()> {
         let trader_agent =
             ReasoningLoop::new(Model::Gemini(trader_agent)).with_stdout(true);
 
-        trader_agent
+        let messages = trader_agent
             .stream(
                 "
                 we are testing the resoning loop, first grab my solana pubkey then my solana balance,
@@ -38,6 +44,14 @@ async fn main() -> Result<()> {
                 None,
             )
             .await?;
+
+        println!(
+            "messages: {:#?}",
+            messages
+                .iter()
+                .map(|m| format!("{}: {}", role(m), content(m)))
+                .collect::<Vec<_>>()
+        );
 
         Ok(())
     })

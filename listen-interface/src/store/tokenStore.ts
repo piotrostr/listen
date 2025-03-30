@@ -295,13 +295,6 @@ export const useTokenStore = create<TokenState>()(
           state.hiddenTokens = new Set(
             Array.isArray(state.hiddenTokens) ? state.hiddenTokens : []
           );
-
-          console.log(
-            "Store rehydrated, watchlist size:",
-            state.watchlist.size,
-            "hiddenTokens size:",
-            state.hiddenTokens.size
-          );
         }
       },
     }

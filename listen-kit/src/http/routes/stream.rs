@@ -1,3 +1,4 @@
+use crate::agents::listen::create_listen_agent_gemini;
 use crate::common::spawn_with_signer;
 use crate::cross_chain::agent::create_cross_chain_agent;
 use crate::evm::agent::create_evm_agent;
@@ -60,13 +61,13 @@ async fn stream(
     mut body: web::Payload,
 ) -> impl Responder {
     // Extract and collect the body
+    let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
     let mut bytes = web::BytesMut::new();
     while let Some(item) = body.next().await {
         let item = match item {
             Ok(item) => item,
             Err(e) => {
                 tracing::error!("Error: reading request body: {}", e);
-                let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
                 let error_event = sse::Event::Data(sse::Data::new(
                     serde_json::to_string(&StreamResponse::Error(format!(
                         "Error reading request body: {}",
@@ -89,7 +90,6 @@ async fn stream(
         Ok(req) => req,
         Err(e) => {
             tracing::error!("Error: deserializing request: {}", e);
-            let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
             let error_event = sse::Event::Data(sse::Data::new(
                 serde_json::to_string(&StreamResponse::Error(format!(
                     "Error deserializing request: {}",
@@ -106,7 +106,6 @@ async fn stream(
         Ok(s) => s,
         Err(e) => {
             tracing::error!("Error: unauthorized: {}", e);
-            let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1);
             let error_event = sse::Event::Data(sse::Data::new(
                 serde_json::to_string(&StreamResponse::Error(format!(
                     "Error: unauthorized: {}",
@@ -118,8 +117,6 @@ async fn stream(
             return sse::Sse::from_infallible_receiver(rx);
         }
     };
-
-    let (tx, rx) = tokio::sync::mpsc::channel::<sse::Event>(1024);
 
     let preamble = request.preamble.clone();
     let features = request.features.clone().unwrap_or_default();
@@ -219,7 +216,8 @@ async fn stream(
     let (response_tx, response_rx) =
         tokio::sync::mpsc::channel::<StreamResponse>(1024);
 
-    // Store all responses in this vec
+    // Store all responses in this vec TODO move this to a separate method to be used by swarm leader calls
+    // to collect the subresponses (potentailly, in case it'd be to run offline)
     let response_collector = {
         let mut rx = response_rx;
         let mongo = state.mongo.clone();
@@ -268,10 +266,14 @@ async fn stream(
     // Do the main processing with the signer
     spawn_with_signer(signer, || async move {
         let reasoning_loop = if model_type == "gemini" {
-            let model = Model::Gemini(Arc::new(create_solana_agent_gemini(
-                preamble.clone(),
-                features,
-            )));
+            let model = if features.deep_research {
+                Model::Gemini(Arc::new(create_listen_agent_gemini()))
+            } else {
+                Model::Gemini(Arc::new(create_solana_agent_gemini(
+                    preamble.clone(),
+                    features,
+                )))
+            };
             ReasoningLoop::new(model).with_stdout(false)
         } else {
             ReasoningLoop::new(Model::Anthropic(agent)).with_stdout(false)
@@ -305,6 +307,13 @@ async fn stream(
             // Close the response channel to signal completion
             drop(response_tx_clone);
         });
+
+        // Make the current channel available in the global task context
+        // so nested agents can access it
+        crate::reasoning_loop::set_current_stream_channel(Some(
+            internal_tx.clone(),
+        ))
+        .await;
 
         // Run the reasoning loop in the current task (with signer context)
         let loop_result = reasoning_loop
@@ -346,6 +355,21 @@ fn join_responses(
         match response {
             StreamResponse::Message(message) => {
                 message_acc.push_str(&message);
+            }
+            StreamResponse::NestedAgentOutput {
+                agent_type,
+                content,
+            } => {
+                // Pass through nested agent outputs unchanged
+                if !message_acc.is_empty() {
+                    output_responses
+                        .push(StreamResponse::Message(message_acc));
+                    message_acc = String::new();
+                }
+                output_responses.push(StreamResponse::NestedAgentOutput {
+                    agent_type,
+                    content,
+                });
             }
             StreamResponse::ToolCall { id, name, params } => {
                 // Only push accumulated message if it's not empty

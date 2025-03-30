@@ -12,6 +12,9 @@ export const toolMessages = {
     tool_call_error: "Tool call error",
     switch_model_error:
       "It is not possible to switch from Gemini to Claude in an ongoing chat. Please start a new chat.",
+    delegate_to_research_agent: "Research Agent",
+    delegate_to_chart_agent: "Chart Agent",
+    delegate_to_solana_trader_agent: "Trader Agent",
   },
   zh: {
     account_suspended: "账户被暂停",
@@ -26,5 +29,8 @@ export const toolMessages = {
     tool_call_error: "工具调用错误",
     switch_model_error:
       "无法在正在进行中的聊天中途从Gemini切换到Claude。请开始新的聊天。",
+    delegate_to_research_agent: "研究代理",
+    delegate_to_chart_agent: "图表代理",
+    delegate_to_solana_trader_agent: "交易代理",
   },
 };

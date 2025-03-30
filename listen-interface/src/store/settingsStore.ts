@@ -11,12 +11,16 @@ interface SettingsState {
   debugMode: boolean;
   modelType: ModelType;
   displaySuggestions: boolean;
+  researchEnabled: boolean;
+  tradingEnabled: boolean;
   setQuickBuyAmount: (amount: number) => void;
   setAgentMode: (enabled: boolean) => void;
   setChatType: (type: ChatType) => void;
   setDebugMode: (enabled: boolean) => void;
   setModelType: (type: ModelType) => void;
   setDisplaySuggestions: (enabled: boolean) => void;
+  setResearchEnabled: (enabled: boolean) => void;
+  setTradingEnabled: (enabled: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -28,6 +32,8 @@ export const useSettingsStore = create<SettingsState>()(
       debugMode: false,
       modelType: "gemini" as ModelType,
       displaySuggestions: true,
+      researchEnabled: false,
+      tradingEnabled: false,
 
       setQuickBuyAmount: (amount: number) => {
         if (!isNaN(amount) && amount > 0) {
@@ -53,6 +59,14 @@ export const useSettingsStore = create<SettingsState>()(
 
       setDisplaySuggestions: (enabled: boolean) => {
         set({ displaySuggestions: enabled });
+      },
+
+      setResearchEnabled: (enabled: boolean) => {
+        set({ researchEnabled: enabled });
+      },
+
+      setTradingEnabled: (enabled: boolean) => {
+        set({ tradingEnabled: enabled });
       },
     }),
     {
