@@ -74,7 +74,7 @@ export function renderAgentOutputString(
         }
         let result = ToolResultSchema.parse(streamResponse.content);
         output += `<p>${
-          result.result.includes("{")
+          result.result.includes("{") || result.result.includes("ToolCallError")
             ? result.result
             : JSON.parse(result.result)
         }</p>`;
