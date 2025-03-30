@@ -7,6 +7,7 @@ use crate::{
     reasoning_loop::{Model, ReasoningLoop, StreamResponse},
     signer::TransactionSigner,
 };
+use privy::util::base64encode;
 
 // FIXME this has to break as the signal is sent to cancel the request!
 
@@ -31,9 +32,12 @@ pub async fn delegate_to_agent(
 
     let reader_handle = tokio::spawn(async move {
         while let Some(response) = rx.recv().await {
-            res_ptr.write().await.push_str(
-                &serde_json::to_string(&response).unwrap_or_default(),
-            );
+            res_ptr.write().await.push_str(&format!(
+                "<content>{}</content>",
+                base64encode(
+                    &serde_json::to_vec(&response).unwrap_or_default()
+                )
+            ));
 
             // Forward to parent if available, as a NestedAgentOutput
             if let Some(parent_tx) = &parent_tx {
@@ -41,7 +45,10 @@ pub async fn delegate_to_agent(
                     agent_type: agent_type.clone(),
                     content: format!(
                         "<content>{}</content>",
-                        serde_json::to_string(&response).unwrap_or_default()
+                        base64encode(
+                            &serde_json::to_vec(&response)
+                                .unwrap_or_default()
+                        )
                     ),
                 };
                 let _ = parent_tx.send(nested_output).await;
