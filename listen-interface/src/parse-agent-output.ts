@@ -5,9 +5,12 @@ import {
   ToolResultSchema,
 } from "./types/message";
 
-export const renderAgentOutput = (output: string): string => {
+export const renderAgentOutput = (
+  output: string,
+  messageOnly: boolean
+): string => {
   const streamResponses = parseAgentOutput(output);
-  return renderAgentOutputString(streamResponses);
+  return renderAgentOutputString(streamResponses, messageOnly);
 };
 
 /**
@@ -47,10 +50,20 @@ export function parseAgentOutput(output: string): StreamResponse[] {
 }
 
 export function renderAgentOutputString(
-  streamResponses: StreamResponse[]
+  streamResponses: StreamResponse[],
+  messageOnly: boolean
 ): string {
   let output = "";
   let accumulatedMessage = "";
+
+  if (messageOnly) {
+    for (const streamResponse of streamResponses) {
+      if (streamResponse.type === "Message") {
+        output += streamResponse.content;
+      }
+    }
+    return output;
+  }
 
   for (const streamResponse of streamResponses) {
     switch (streamResponse.type) {

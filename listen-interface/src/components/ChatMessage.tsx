@@ -24,7 +24,7 @@ export const ChatMessage = ({
   direction: "incoming" | "outgoing" | "agent";
 }) => {
   if (message.includes("<content>")) {
-    message = renderAgentOutput(message);
+    message = renderAgentOutput(message, true);
   }
   // First sanitize the message
   const sanitizedMessage = sanitizeOutput(message);

@@ -365,7 +365,7 @@ export const ToolMessage = ({
       <div className="text-gray-400">
         <DropdownMessage
           title={t(`tool_messages.${toolOutput.name}`)}
-          message={renderAgentOutputString(contents)}
+          message={renderAgentOutputString(contents, false)}
           icon={icons[toolOutput.name]}
         />
       </div>
