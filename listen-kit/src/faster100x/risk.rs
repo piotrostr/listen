@@ -11,17 +11,17 @@ pub fn determine_risk_level(metrics: &HolderRisk) -> &'static str {
     let centralization = metrics.isolated.top70_centralization;
 
     if gini > 80.0 || centralization > 90.0 {
-        "Extremely high"
+        "extremely_high"
     } else if gini > 70.0 || centralization > 80.0 {
-        "Very high"
+        "very_high"
     } else if gini > 60.0 || centralization > 70.0 {
-        "High"
-    } else if gini > 50.0 || centralization > 60.0 {
-        "Moderate"
+        "high"
+    } else if gini > 52.0 || centralization > 60.0 {
+        "moderate"
     } else if gini > 40.0 || centralization > 50.0 {
-        "Low"
+        "low"
     } else {
-        "Very low"
+        "very_low"
     }
 }
 
