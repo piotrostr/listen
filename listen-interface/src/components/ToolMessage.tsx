@@ -41,6 +41,7 @@ import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
 import { embedResearchAnchors } from "./ResearchOutput";
 import { RiskAnalysisDisplay, RiskAnalysisSchema } from "./RiskDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
+import { TopicDisplay, TopicSchema } from "./TopicDisplay";
 
 const SplTokenBalanceSchema = z.tuple([z.string(), z.number(), z.string()]);
 
@@ -133,6 +134,15 @@ export const ToolMessage = ({
       return <BubbleMapDisplay topHolderAnalysis={parsed} />;
     } catch (e) {
       console.error("Failed to parse holder distribution:", e);
+    }
+  }
+
+  if (toolOutput.name === "analyze_sentiment") {
+    try {
+      const parsed = TopicSchema.parse(JSON.parse(toolOutput.result));
+      return <TopicDisplay topic={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse sentiment:", e);
     }
   }
 
