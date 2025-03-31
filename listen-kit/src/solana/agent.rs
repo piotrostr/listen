@@ -12,7 +12,7 @@ use crate::data::{
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::faster100x::AnalyzeHolderDistribution;
-use crate::lunarcrush::AnalyzeTopic;
+use crate::lunarcrush::AnalyzeSentiment;
 use crate::solana::advanced_orders::CreateAdvancedOrder;
 use crate::solana::tools::{AnalyzeRisk, GetPublicKey};
 use crate::think::Think;
@@ -57,7 +57,8 @@ pub async fn create_solana_agent(
         .tool(Think)
         .tool(GetCurrentTime)
         .tool(SearchWeb)
-        .tool(AnalyzePageContent);
+        .tool(AnalyzePageContent)
+        .tool(AnalyzeSentiment);
 
     if features.autonomous {
         agent = agent.tool(Swap).tool(CreateAdvancedOrder);
@@ -93,7 +94,7 @@ pub fn create_solana_agent_gemini(
         .tool(FetchPriceActionAnalysis)
         .tool(Think)
         .tool(AnalyzeHolderDistribution)
-        .tool(AnalyzeTopic)
+        .tool(AnalyzeSentiment)
         .tool(GetCurrentTime)
         .tool(SearchWeb)
         .tool(AnalyzePageContent);

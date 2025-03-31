@@ -1,3 +1,4 @@
+import { useTranslation } from "react-i18next";
 import { FaExternalLinkAlt } from "react-icons/fa";
 import { DexScreenerPair } from "../types/dexscreener";
 
@@ -17,17 +18,22 @@ const formatNumber = (num: number) => {
 };
 
 export const DexscreenerDisplay = ({ pairs }: DexscreenerDisplayProps) => {
+  const { t } = useTranslation();
   return (
     <div className="rounded-lg px-2 py-1 lg:px-4 lg:py-3 my-2 backdrop-blur-sm border border-[#2D2D2D]">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
             <tr className="text-xs text-white">
-              <th className="text-left p-2 font-normal">Token</th>
-              <th className="text-right p-2 font-normal w-[100px]">
-                Liquidity
+              <th className="text-left p-2 font-normal">
+                {t("dexscreener_display.token")}
               </th>
-              <th className="text-right p-2 font-normal w-[100px]">24h Vol</th>
+              <th className="text-right p-2 font-normal w-[100px]">
+                {t("dexscreener_display.liquidity")}
+              </th>
+              <th className="text-right p-2 font-normal w-[100px]">
+                {t("dexscreener_display.volume")}
+              </th>
             </tr>
           </thead>
           <tbody className="divide-y divide-[#2D2D2D]">

@@ -1,5 +1,6 @@
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
+import remarkGfm from "remark-gfm";
 import { renderAddressOrTx } from "../hooks/util";
 
 const sanitizeOutput = (message: string) => {
@@ -52,6 +53,8 @@ export const Markdown = ({ message }: { message: string }) => {
   return (
     <ReactMarkdown
       className="markdown-content"
+      remarkPlugins={[remarkGfm]}
+      rehypePlugins={[rehypeRaw]}
       components={{
         p: ({ children, ...props }) => (
           <p
@@ -148,24 +151,33 @@ export const Markdown = ({ message }: { message: string }) => {
           />
         ),
         table: ({ ...props }) => (
-          <table className="border-collapse my-3 w-full" {...props} />
+          <div className="w-full overflow-x-auto">
+            <table
+              className="border-collapse my-3 w-full text-sm whitespace-nowrap md:whitespace-normal"
+              {...props}
+            />
+          </div>
         ),
         th: ({ ...props }) => (
           <th
-            className="border border-gray-600 px-2 py-1 bg-gray-800"
+            className="border border-[#2D2D2D] px-4 py-2 bg-[#2d2d2d] font-bold text-left"
             {...props}
           />
         ),
         td: ({ children, ...props }) => (
-          <td className="border border-gray-600 px-2 py-1" {...props}>
+          <td className="border border-[#2D2D2D] px-4 py-2" {...props}>
             {children}
           </td>
         ),
         hr: ({ ...props }) => (
-          <hr className="my-4 border-gray-600" {...props} />
+          <hr className="my-4 border-[#2D2D2D]" {...props} />
+        ),
+        em: ({ children, ...props }) => (
+          <em className="italic text-gray-300" {...props}>
+            {children}
+          </em>
         ),
       }}
-      rehypePlugins={[rehypeRaw]}
     >
       {message}
     </ReactMarkdown>
