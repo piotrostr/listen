@@ -55,7 +55,7 @@ Returns information about:
 - Topic overview and metrics
 - Social engagement and sentiment analysis
 ")]
-pub async fn analyze_topic(topic: String) -> Result<serde_json::Value> {
+pub async fn analyze_sentiment(topic: String) -> Result<serde_json::Value> {
     let lunarcrush = LunarCrushApi::from_env()?;
 
     let result = lunarcrush
