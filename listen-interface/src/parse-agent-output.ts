@@ -5,6 +5,11 @@ import {
   ToolResultSchema,
 } from "./types/message";
 
+export const renderAgentOutput = (output: string): string => {
+  const streamResponses = parseAgentOutput(output);
+  return renderAgentOutputString(streamResponses);
+};
+
 /**
  * Parses a string of concatenated JSON objects into an array of StreamResponse objects
  * Each JSON object is enclosed in <content>{...}</content> tags

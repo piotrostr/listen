@@ -2,6 +2,7 @@ import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
 import { renderAddressOrTx } from "../hooks/util";
+import { renderAgentOutput } from "../parse-agent-output";
 
 const sanitizeOutput = (message: string) => {
   const isProd = process.env.NODE_ENV === "production";
@@ -22,6 +23,9 @@ export const ChatMessage = ({
   message: string;
   direction: "incoming" | "outgoing" | "agent";
 }) => {
+  if (message.includes("<content>")) {
+    message = renderAgentOutput(message);
+  }
   // First sanitize the message
   const sanitizedMessage = sanitizeOutput(message);
 
