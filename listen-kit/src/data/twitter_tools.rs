@@ -1,5 +1,6 @@
 use crate::common::spawn_with_signer_and_channel;
 use crate::distiller::analyst::Analyst;
+use crate::reasoning_loop::ReasoningLoop;
 use crate::signer::SignerContext;
 use crate::twitter::{search::QueryType, TwitterApi};
 use anyhow::{anyhow, Result};
@@ -47,7 +48,7 @@ pub async fn search_tweets(
     let response = twitter.search_tweets(&query, query_type, None).await?;
     spawn_with_signer_and_channel(
         SignerContext::current().await,
-        crate::reasoning_loop::get_current_stream_channel().await,
+        ReasoningLoop::get_current_stream_channel().await,
         move || async move {
             analyst
                 .analyze_twitter(
@@ -113,7 +114,7 @@ pub async fn research_x_profile(
         .map_err(|e| anyhow!("{:#?}", e))?;
     spawn_with_signer_and_channel(
         SignerContext::current().await,
-        crate::reasoning_loop::get_current_stream_channel().await,
+        ReasoningLoop::get_current_stream_channel().await,
         move || async move {
             analyst
                 .analyze_twitter(

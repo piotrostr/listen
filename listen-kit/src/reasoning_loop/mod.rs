@@ -73,7 +73,7 @@ impl ReasoningLoop {
             ));
         }
 
-        with_stream_channel(tx.clone(), || async {
+        Self::with_stream_channel(tx.clone(), || async {
             match &self.model {
                 Model::Anthropic(agent) => {
                     self.stream_anthropic(agent, prompt, messages, tx).await
@@ -98,35 +98,38 @@ task_local! {
     static CURRENT_STREAM_CHANNEL: RefCell<Option<Sender<StreamResponse>>>;
 }
 
-// Add this new helper function
-pub async fn with_stream_channel<F, Fut, T>(
-    channel: Option<Sender<StreamResponse>>,
-    f: F,
-) -> T
-where
-    F: FnOnce() -> Fut,
-    Fut: Future<Output = T>,
-{
-    CURRENT_STREAM_CHANNEL
-        .scope(RefCell::new(channel), f())
-        .await
-}
-
-// Function to get the current stream channel
-pub async fn get_current_stream_channel() -> Option<Sender<StreamResponse>> {
-    match CURRENT_STREAM_CHANNEL.try_with(|c| c.borrow().clone()) {
-        Ok(channel) => channel,
-        Err(_) => None,
+impl ReasoningLoop {
+    // Add this new helper function
+    pub async fn with_stream_channel<F, Fut, T>(
+        channel: Option<Sender<StreamResponse>>,
+        f: F,
+    ) -> T
+    where
+        F: FnOnce() -> Fut,
+        Fut: Future<Output = T>,
+    {
+        CURRENT_STREAM_CHANNEL
+            .scope(RefCell::new(channel), f())
+            .await
     }
-}
 
-// Set the current stream channel
-pub async fn set_current_stream_channel(
-    channel: Option<Sender<StreamResponse>>,
-) {
-    let _ = CURRENT_STREAM_CHANNEL
-        .scope(RefCell::new(channel), async {
-            // Any code here will have access to the channel
-        })
-        .await;
+    // Function to get the current stream channel
+    pub async fn get_current_stream_channel() -> Option<Sender<StreamResponse>>
+    {
+        match CURRENT_STREAM_CHANNEL.try_with(|c| c.borrow().clone()) {
+            Ok(channel) => channel,
+            Err(_) => None,
+        }
+    }
+
+    // Set the current stream channel
+    pub async fn set_current_stream_channel(
+        channel: Option<Sender<StreamResponse>>,
+    ) {
+        let _ = CURRENT_STREAM_CHANNEL
+            .scope(RefCell::new(channel), async {
+                // Any code here will have access to the channel
+            })
+            .await;
+    }
 }

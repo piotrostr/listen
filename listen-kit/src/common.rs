@@ -1,4 +1,4 @@
-use crate::reasoning_loop::{with_stream_channel, StreamResponse};
+use crate::reasoning_loop::{ReasoningLoop, StreamResponse};
 use anyhow::{anyhow, Result};
 use rig::message::{
     AssistantContent, Message, ToolResultContent, UserContent,
@@ -127,7 +127,7 @@ where
 {
     tokio::spawn(async move {
         SignerContext::with_signer(signer, async {
-            with_stream_channel(channel, f).await
+            ReasoningLoop::with_stream_channel(channel, f).await
         })
         .await
     })

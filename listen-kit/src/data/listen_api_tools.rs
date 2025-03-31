@@ -1,5 +1,6 @@
 use crate::common::spawn_with_signer_and_channel;
 use crate::distiller::analyst::Analyst;
+use crate::reasoning_loop::ReasoningLoop;
 use crate::signer::SignerContext;
 use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
@@ -232,7 +233,7 @@ pub async fn fetch_price_action_analysis(
     let analyst = Analyst::from_env_with_locale(locale)
         .map_err(|e| anyhow!("Failed to create Analyst: {}", e))?;
 
-    let channel = crate::reasoning_loop::get_current_stream_channel().await;
+    let channel = ReasoningLoop::get_current_stream_channel().await;
 
     spawn_with_signer_and_channel(ctx, channel, move || async move {
         analyst

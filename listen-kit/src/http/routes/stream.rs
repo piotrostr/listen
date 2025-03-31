@@ -310,10 +310,8 @@ async fn stream(
 
         // Make the current channel available in the global task context
         // so nested agents can access it
-        crate::reasoning_loop::set_current_stream_channel(Some(
-            internal_tx.clone(),
-        ))
-        .await;
+        ReasoningLoop::set_current_stream_channel(Some(internal_tx.clone()))
+            .await;
 
         // Run the reasoning loop in the current task (with signer context)
         let loop_result = reasoning_loop

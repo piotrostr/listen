@@ -22,7 +22,7 @@ pub async fn delegate_to_agent(
     let reasoning_loop = ReasoningLoop::new(agent).with_stdout(with_stdout);
 
     // Get the parent agent's stream channel from the task-local variable
-    let parent_tx = crate::reasoning_loop::get_current_stream_channel().await;
+    let parent_tx = ReasoningLoop::get_current_stream_channel().await;
 
     // Create a channel for collecting the agent's output
     let (tx, mut rx) = tokio::sync::mpsc::channel::<StreamResponse>(1024);
