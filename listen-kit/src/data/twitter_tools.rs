@@ -1,4 +1,4 @@
-use crate::common::wrap_unsafe;
+use crate::common::spawn_with_signer_and_channel;
 use crate::distiller::analyst::Analyst;
 use crate::signer::SignerContext;
 use crate::twitter::{search::QueryType, TwitterApi};
@@ -45,18 +45,22 @@ pub async fn search_tweets(
         _ => return Err(anyhow!("Invalid query type: {}", query_type)),
     };
     let response = twitter.search_tweets(&query, query_type, None).await?;
-    let distilled = wrap_unsafe(move || async move {
-        analyst
-            .analyze_twitter(
-                &query,
-                &serde_json::to_value(&response)?,
-                Some(intent),
-            )
-            .await
-            .map_err(|e| anyhow!("Failed to distill: {}", e))
-    })
-    .await?;
-    Ok(distilled)
+    spawn_with_signer_and_channel(
+        SignerContext::current().await,
+        crate::reasoning_loop::get_current_stream_channel().await,
+        move || async move {
+            analyst
+                .analyze_twitter(
+                    &query,
+                    &serde_json::to_value(&response)?,
+                    Some(intent),
+                )
+                .await
+                .map_err(|e| anyhow!("Failed to distill: {}", e))
+        },
+    )
+    .await
+    .await?
 }
 
 #[tool(description = "
@@ -103,20 +107,24 @@ pub async fn research_x_profile(
     let language = SignerContext::current().await.locale();
     let analyst = Analyst::from_env_with_locale(language)
         .map_err(|_| anyhow!("Failed to create Analyst"))?;
-    wrap_unsafe(move || async move {
-        let profile = twitter
-            .research_profile(&username)
-            .await
-            .map_err(|e| anyhow!("{:#?}", e))?;
-        let distilled = analyst
-            .analyze_twitter(
-                &username,
-                &serde_json::to_value(&profile)?,
-                Some(intent),
-            )
-            .await
-            .map_err(|e| anyhow!("Failed to distill: {}", e))?;
-        Ok(distilled)
-    })
+    let profile = twitter
+        .research_profile(&username)
+        .await
+        .map_err(|e| anyhow!("{:#?}", e))?;
+    spawn_with_signer_and_channel(
+        SignerContext::current().await,
+        crate::reasoning_loop::get_current_stream_channel().await,
+        move || async move {
+            analyst
+                .analyze_twitter(
+                    &username,
+                    &serde_json::to_value(&profile)?,
+                    Some(intent),
+                )
+                .await
+                .map_err(|e| anyhow!("Failed to distill: {}", e))
+        },
+    )
     .await
+    .await?
 }

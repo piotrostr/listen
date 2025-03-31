@@ -1,4 +1,4 @@
-use crate::common::wrap_unsafe;
+use crate::common::spawn_with_signer_and_channel;
 use crate::distiller::analyst::Analyst;
 use crate::signer::SignerContext;
 use crate::web::Web;
@@ -22,19 +22,22 @@ pub async fn search_web(query: String, intent: String) -> Result<String> {
 
     let search_results = web.search(&query).await?;
 
-    let distilled = wrap_unsafe(move || async move {
-        analyst
-            .analyze_web(
-                &query,
-                &serde_json::to_string(&search_results)?,
-                Some(intent),
-            )
-            .await
-            .map_err(|e| anyhow!("Failed to distill: {}", e))
-    })
-    .await?;
-
-    Ok(distilled)
+    spawn_with_signer_and_channel(
+        SignerContext::current().await,
+        crate::reasoning_loop::get_current_stream_channel().await,
+        move || async move {
+            analyst
+                .analyze_web(
+                    &query,
+                    &serde_json::to_string(&search_results)?,
+                    Some(intent),
+                )
+                .await
+                .map_err(|e| anyhow!("Failed to distill: {}", e))
+        },
+    )
+    .await
+    .await?
 }
 
 #[tool(description = "
@@ -58,17 +61,20 @@ pub async fn analyze_page_content(
 
     let page_content = web.contents(url.clone()).await?;
 
-    let distilled = wrap_unsafe(move || async move {
-        analyst
-            .analyze_web(
-                &url,
-                &serde_json::to_string(&page_content)?,
-                Some(intent),
-            )
-            .await
-            .map_err(|e| anyhow!("Failed to distill: {}", e))
-    })
-    .await?;
-
-    Ok(distilled)
+    spawn_with_signer_and_channel(
+        SignerContext::current().await,
+        crate::reasoning_loop::get_current_stream_channel().await,
+        move || async move {
+            analyst
+                .analyze_web(
+                    &url,
+                    &serde_json::to_string(&page_content)?,
+                    Some(intent),
+                )
+                .await
+                .map_err(|e| anyhow!("Failed to distill: {}", e))
+        },
+    )
+    .await
+    .await?
 }
