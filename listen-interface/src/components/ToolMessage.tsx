@@ -25,6 +25,10 @@ import {
 } from "../types/quote";
 import { TweetSchema } from "../types/x";
 import { SolanaBalance, SplTokenBalance } from "./Balances";
+import {
+  BubbleMapDisplay,
+  TokenHolderAnalysisSchema,
+} from "./BubbleMapDisplay";
 import { Chart, InnerChart } from "./Chart";
 import { ChatMessage } from "./ChatMessage";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
@@ -119,6 +123,16 @@ export const ToolMessage = ({
       return <RiskAnalysisDisplay riskAnalysis={parsed} />;
     } catch (e) {
       console.error("Failed to parse risk analysis:", e);
+    }
+  }
+  if (toolOutput.name === "analyze_holder_distribution") {
+    try {
+      const parsed = TokenHolderAnalysisSchema.parse(
+        JSON.parse(toolOutput.result)
+      );
+      return <BubbleMapDisplay topHolderAnalysis={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse holder distribution:", e);
     }
   }
 

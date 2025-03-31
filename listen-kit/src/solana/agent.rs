@@ -11,6 +11,8 @@ use crate::data::{
     SearchTweets, SearchWeb,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
+use crate::faster100x::AnalyzeHolderDistribution;
+use crate::lunarcrush::AnalyzeTopic;
 use crate::solana::advanced_orders::CreateAdvancedOrder;
 use crate::solana::tools::{AnalyzeRisk, GetPublicKey};
 use crate::think::Think;
@@ -90,6 +92,8 @@ pub fn create_solana_agent_gemini(
         .tool(AnalyzeRisk)
         .tool(FetchPriceActionAnalysis)
         .tool(Think)
+        .tool(AnalyzeHolderDistribution)
+        .tool(AnalyzeTopic)
         .tool(GetCurrentTime)
         .tool(SearchWeb)
         .tool(AnalyzePageContent);
