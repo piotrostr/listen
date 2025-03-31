@@ -4,6 +4,7 @@ import { bubbleMap } from "./translations/bubble-map";
 import { buySellModal } from "./translations/buy-sell-modal";
 import { chat } from "./translations/chat";
 import { chatHistory } from "./translations/chat-history";
+import { dexscreenerDisplay } from "./translations/dexscreener-display";
 import { gettingStarted } from "./translations/getting-started";
 import { layout } from "./translations/layout";
 import { pipelineExecution } from "./translations/pipeline-execution";
@@ -24,6 +25,7 @@ import { walletAddresses } from "./translations/wallet-addresses";
 const resources = {
   en: {
     translation: {
+      dexscreener_display: dexscreenerDisplay.en,
       topic_display: topicDisplay.en,
       bubble_map: bubbleMap.en,
       version: version.en,
@@ -49,6 +51,7 @@ const resources = {
   zh: {
     translation: {
       topic_display: topicDisplay.zh,
+      dexscreener_display: dexscreenerDisplay.zh,
       bubble_map: bubbleMap.zh,
       version: version.zh,
       tool_calls: toolCalls.zh,
