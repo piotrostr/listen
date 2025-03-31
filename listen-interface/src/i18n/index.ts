@@ -1,5 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { bubbleMap } from "./translations/bubble-map";
 import { buySellModal } from "./translations/buy-sell-modal";
 import { chat } from "./translations/chat";
 import { chatHistory } from "./translations/chat-history";
@@ -22,6 +23,7 @@ import { walletAddresses } from "./translations/wallet-addresses";
 const resources = {
   en: {
     translation: {
+      bubble_map: bubbleMap.en,
       version: version.en,
       tool_calls: toolCalls.en,
       tool_messages: toolMessages.en,
@@ -44,6 +46,7 @@ const resources = {
   },
   zh: {
     translation: {
+      bubble_map: bubbleMap.zh,
       version: version.zh,
       tool_calls: toolCalls.zh,
       tool_messages: toolMessages.zh,
