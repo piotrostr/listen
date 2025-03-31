@@ -72,6 +72,6 @@ mod tests {
             "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump",
         )
         .await;
-        println!("{:?}", data);
+        tracing::info!("{:?}", data);
     }
 }

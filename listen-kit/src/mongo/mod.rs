@@ -193,12 +193,12 @@ mod tests {
         };
 
         let user_id = repo.insert_one("sample_objects", user).await?;
-        println!("Inserted user with ID: {}", user_id);
+        tracing::info!("Inserted user with ID: {}", user_id);
 
         let found_user = repo
             .find_by_id::<SampleObject>("sample_objects", &user_id)
             .await?;
-        println!("Found user: {:?}", found_user);
+        tracing::info!("Found user: {:?}", found_user);
 
         let user2 = SampleObject {
             name: "Jane Smith".to_string(),
@@ -209,13 +209,16 @@ mod tests {
         let user2_id = repo
             .insert_with_key("sample_objects", "profile", user2)
             .await?;
-        println!("Inserted user with key 'profile' and ID: {}", user2_id);
+        tracing::info!(
+            "Inserted user with key 'profile' and ID: {}",
+            user2_id
+        );
 
         // Find all users
         let all_users = repo
             .find::<SampleObject>("sample_objects", doc! {}, None)
             .await?;
-        println!("Found {} users", all_users.len());
+        tracing::info!("Found {} users", all_users.len());
 
         // cleanup
         repo.database()

@@ -26,6 +26,9 @@ mod tests {
             .contents("https://www.infinitebackrooms.com/dreams/conversation-1721540624-scenario-terminal-of-truths-txt".to_string())
             .await
             .unwrap();
-        println!("{}", serde_json::to_string_pretty(&contents).unwrap());
+        tracing::info!(
+            "{}",
+            serde_json::to_string_pretty(&contents).unwrap()
+        );
     }
 }

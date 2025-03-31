@@ -78,14 +78,14 @@ mod tests {
     async fn test_search_ticker_base() {
         let response = search_ticker("brett".to_string()).await.unwrap();
         assert_eq!(response.schema_version, "1.0.0");
-        println!("{:?}", response);
+        tracing::info!("{:?}", response);
     }
 
     #[tokio::test]
     async fn test_search_ticker() {
         let response = search_ticker("BONK".to_string()).await.unwrap();
         assert_eq!(response.schema_version, "1.0.0");
-        println!("{:#?}", response);
+        tracing::info!("{:#?}", response);
     }
 
     #[tokio::test]
@@ -104,6 +104,6 @@ mod tests {
     async fn test_search_ticker_by_phrase() {
         let response = search_ticker("TheLion".to_string()).await.unwrap();
         assert_eq!(response.schema_version, "1.0.0");
-        println!("{:?}", response);
+        tracing::info!("{:?}", response);
     }
 }

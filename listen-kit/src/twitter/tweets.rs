@@ -104,6 +104,6 @@ mod tests {
             serde_json::to_string(&tweets).unwrap(),
         )
         .unwrap();
-        println!("{:#?}", tweets);
+        tracing::info!("{:#?}", tweets);
     }
 }

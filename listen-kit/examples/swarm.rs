@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
 
     tokio::spawn(async move {
         while let Some(response) = rx.recv().await {
-            println!("{:?}", response);
+            print!("{:?}\n", response);
         }
     });
 

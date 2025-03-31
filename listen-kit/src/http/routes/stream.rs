@@ -83,7 +83,7 @@ async fn stream(
     }
 
     // Log the raw request body
-    // println!("Raw request body: {}", String::from_utf8_lossy(&bytes));
+    // tracing::info!("Raw request body: {}", String::from_utf8_lossy(&bytes));
 
     // Deserialize into ChatRequest
     let request: ChatRequest = match serde_json::from_slice(&bytes) {

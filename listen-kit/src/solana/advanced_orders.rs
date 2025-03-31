@@ -142,6 +142,6 @@ mod tests {
             user_id: "did:privy:cm6cxky3i00ondmuatkemmffm".to_string(),
         };
         let id = submit_order_internal(&order).await.unwrap();
-        println!("{}", id);
+        tracing::info!("{}", id);
     }
 }

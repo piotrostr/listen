@@ -77,6 +77,6 @@ mod tests {
         let res = view_image("https://ipfs.io/ipfs/QmX1UG3uu6dzQaEycNnwea9xRSwZbGPFEdv8XPXJjBUVsT".to_string())
             .await
             .unwrap();
-        println!("{}", res);
+        tracing::info!("{}", res);
     }
 }

@@ -25,5 +25,5 @@ async fn main() -> std::io::Result<()> {
 
 #[cfg(not(feature = "http"))]
 fn main() {
-    println!("This binary requires the 'http' feature");
+    tracing::warn!("This binary requires the 'http' feature");
 }

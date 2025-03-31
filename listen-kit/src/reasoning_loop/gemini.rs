@@ -192,7 +192,7 @@ impl ReasoningLoop {
                             agent.tools.call(&name, params.to_string()).await;
 
                         if stdout {
-                            println!("Tool result: {:?}", result);
+                            print!("Tool result: {:?}\n", result);
                         }
 
                         // Create the tool result message to use directly as next input

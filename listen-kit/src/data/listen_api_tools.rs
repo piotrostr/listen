@@ -269,6 +269,6 @@ mod tests {
             "".to_string(),
         )
         .await;
-        println!("{:?}", analysis);
+        tracing::info!("{:?}", analysis);
     }
 }

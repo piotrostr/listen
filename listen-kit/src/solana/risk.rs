@@ -38,6 +38,6 @@ mod tests {
     async fn test_get_risk_report() {
         let mint = "mMzPeKPgvnosRiVGDYWAgH8ArUsyxfRxYyE3vZ5pump";
         let report = get_risk_report(mint.to_string()).await.unwrap();
-        println!("{:?}", report);
+        tracing::info!("{:?}", report);
     }
 }
