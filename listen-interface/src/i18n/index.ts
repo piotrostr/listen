@@ -17,12 +17,14 @@ import { shareModal } from "./translations/share-modal";
 import { tokenTile } from "./translations/token-tile";
 import { toolCalls } from "./translations/tool-calls";
 import { toolMessages } from "./translations/tool-messages";
+import { topicDisplay } from "./translations/topic-display";
 import { version } from "./translations/version";
 import { walletAddresses } from "./translations/wallet-addresses";
 
 const resources = {
   en: {
     translation: {
+      topic_display: topicDisplay.en,
       bubble_map: bubbleMap.en,
       version: version.en,
       tool_calls: toolCalls.en,
@@ -46,6 +48,7 @@ const resources = {
   },
   zh: {
     translation: {
+      topic_display: topicDisplay.zh,
       bubble_map: bubbleMap.zh,
       version: version.zh,
       tool_calls: toolCalls.zh,
