@@ -3,7 +3,7 @@ use std::sync::Arc;
 use tokio::sync::RwLock;
 
 use crate::{
-    common::{spawn_with_signer, GeminiAgent},
+    common::spawn_with_signer,
     reasoning_loop::{Model, ReasoningLoop, StreamResponse},
     signer::TransactionSigner,
 };
@@ -14,16 +14,16 @@ use privy::util::base64encode;
 /// Delegate a task to a specific agent and handle the response
 pub async fn delegate_to_agent(
     prompt: String,
-    agent: GeminiAgent,
+    agent: Model,
     agent_type: String,
     signer: Arc<dyn TransactionSigner>,
     with_stdout: bool,
 ) -> Result<String> {
-    let reasoning_loop = ReasoningLoop::new(Model::Gemini(Arc::new(agent)))
-        .with_stdout(with_stdout);
+    let reasoning_loop = ReasoningLoop::new(agent).with_stdout(with_stdout);
 
     // Get the parent agent's stream channel from the task-local variable
     let parent_tx = crate::reasoning_loop::get_current_stream_channel().await;
+    println!("parent_tx: {:?}", parent_tx);
 
     // Create a channel for collecting the agent's output
     let (tx, mut rx) = tokio::sync::mpsc::channel::<StreamResponse>(1024);

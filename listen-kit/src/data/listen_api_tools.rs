@@ -1,4 +1,4 @@
-use crate::common::wrap_unsafe;
+use crate::common::spawn_with_signer_and_channel;
 use crate::distiller::analyst::Analyst;
 use crate::signer::SignerContext;
 use anyhow::{anyhow, Result};
@@ -227,17 +227,21 @@ pub async fn fetch_price_action_analysis(
         .await
         .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
 
-    let locale = SignerContext::current().await.locale();
+    let ctx = SignerContext::current().await;
+    let locale = ctx.locale();
     let analyst = Analyst::from_env_with_locale(locale)
         .map_err(|e| anyhow!("Failed to create Analyst: {}", e))?;
 
-    wrap_unsafe(move || async move {
+    let channel = crate::reasoning_loop::get_current_stream_channel().await;
+
+    spawn_with_signer_and_channel(ctx, channel, move || async move {
         analyst
             .analyze_chart(&candlesticks, &interval, Some(intent))
             .await
             .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
     })
     .await
+    .await?
 }
 
 #[cfg(test)]

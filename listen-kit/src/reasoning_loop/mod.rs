@@ -3,10 +3,12 @@ use anyhow::Result;
 use rig::agent::Agent;
 use rig::completion::Message;
 use rig::providers::anthropic::completion::CompletionModel as AnthropicModel;
+use rig::providers::deepseek::DeepSeekCompletionModel as DeepSeekModel;
 use rig::providers::gemini::completion::CompletionModel as GeminiModel;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cell::RefCell;
+use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 use tokio::task_local;
@@ -38,6 +40,7 @@ pub enum StreamResponse {
 pub enum Model {
     Anthropic(Arc<Agent<AnthropicModel>>),
     Gemini(Arc<Agent<GeminiModel>>),
+    DeepSeek(Arc<Agent<DeepSeekModel>>),
 }
 
 pub struct ReasoningLoop {
@@ -70,20 +73,18 @@ impl ReasoningLoop {
             ));
         }
 
-        // Use the task-local scope for the entire stream operation
-        CURRENT_STREAM_CHANNEL
-            .scope(RefCell::new(tx.clone()), async {
-                match &self.model {
-                    Model::Anthropic(agent) => {
-                        self.stream_anthropic(agent, prompt, messages, tx)
-                            .await
-                    }
-                    Model::Gemini(agent) => {
-                        self.stream_gemini(agent, prompt, messages, tx).await
-                    }
+        with_stream_channel(tx.clone(), || async {
+            match &self.model {
+                Model::Anthropic(agent) => {
+                    self.stream_anthropic(agent, prompt, messages, tx).await
                 }
-            })
-            .await
+                Model::Gemini(agent) => {
+                    self.stream_gemini(agent, prompt, messages, tx).await
+                }
+                _ => panic!("Unsupported model"), // FIXME support Deepseek (OpenAI compat)
+            }
+        })
+        .await
     }
 
     pub fn with_stdout(mut self, enabled: bool) -> Self {
@@ -95,6 +96,20 @@ impl ReasoningLoop {
 // Define a task-local variable to hold the current stream channel
 task_local! {
     static CURRENT_STREAM_CHANNEL: RefCell<Option<Sender<StreamResponse>>>;
+}
+
+// Add this new helper function
+pub async fn with_stream_channel<F, Fut, T>(
+    channel: Option<Sender<StreamResponse>>,
+    f: F,
+) -> T
+where
+    F: FnOnce() -> Fut,
+    Fut: Future<Output = T>,
+{
+    CURRENT_STREAM_CHANNEL
+        .scope(RefCell::new(channel), f())
+        .await
 }
 
 // Function to get the current stream channel

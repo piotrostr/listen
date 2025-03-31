@@ -1,15 +1,20 @@
+use std::sync::Arc;
+
+use crate::agents::delegate::delegate_to_agent;
+use crate::reasoning_loop::Model;
+use crate::signer::SignerContext;
+
 use super::analyst::{
     AnalystAgent, AnalystError, AnalystType, ChartAnalystAgent,
     TwitterAnalystAgent, WebAnalystAgent,
 };
 use super::preambles;
 use anyhow::Result;
-use rig::completion::Prompt;
 use rig::providers::deepseek::DeepSeekCompletionModel;
 pub type DeepSeekAgent = rig::agent::Agent<DeepSeekCompletionModel>;
 
 pub struct DeepSeekAnalystAgent {
-    agent: DeepSeekAgent,
+    agent: Model,
     locale: String,
     analyst_type: AnalystType,
 }
@@ -42,10 +47,15 @@ impl TwitterAnalystAgent for DeepSeekAnalystAgent {
             format!("query: {}\nresponse: {}", query, response)
         };
 
-        self.agent
-            .prompt(prompt_text)
-            .await
-            .map_err(AnalystError::PromptError)
+        delegate_to_agent(
+            prompt_text,
+            self.agent.clone(),
+            "twitter_analyst".to_string(),
+            SignerContext::current().await,
+            false, // with stdout
+        )
+        .await
+        .map_err(|e| AnalystError::DelegateError(e.to_string()))
     }
 }
 
@@ -82,10 +92,15 @@ impl ChartAnalystAgent for DeepSeekAnalystAgent {
             }
         };
 
-        self.agent
-            .prompt(prompt_text)
-            .await
-            .map_err(AnalystError::PromptError)
+        delegate_to_agent(
+            prompt_text,
+            self.agent.clone(),
+            "chart_analyst".to_string(),
+            SignerContext::current().await,
+            false, // with stdout
+        )
+        .await
+        .map_err(|e| AnalystError::DelegateError(e.to_string()))
     }
 }
 
@@ -117,10 +132,15 @@ impl WebAnalystAgent for DeepSeekAnalystAgent {
             }
         };
 
-        self.agent
-            .prompt(prompt_text)
-            .await
-            .map_err(AnalystError::PromptError)
+        delegate_to_agent(
+            prompt_text,
+            self.agent.clone(),
+            "web_analyst".to_string(),
+            SignerContext::current().await,
+            false, // with stdout
+        )
+        .await
+        .map_err(|e| AnalystError::DelegateError(e.to_string()))
     }
 }
 
@@ -144,7 +164,7 @@ pub fn make_deepseek_analyst(
         .build();
 
     DeepSeekAnalystAgent {
-        agent,
+        agent: Model::DeepSeek(Arc::new(agent)),
         locale: locale.to_string(),
         analyst_type,
     }

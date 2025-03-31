@@ -23,6 +23,12 @@ pub enum AnalystError {
 
     #[error("Unsupported operation for this analyst type")]
     UnsupportedOperation,
+
+    #[error("Streaming error")]
+    StreamingError(rig::completion::CompletionError),
+
+    #[error("Delegate error")]
+    DelegateError(String),
 }
 
 // Common trait for all analyst types
