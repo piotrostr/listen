@@ -14,7 +14,9 @@ use tokio::sync::mpsc::Sender;
 use tokio::task_local;
 
 pub mod anthropic;
+pub mod debase64;
 pub mod gemini;
+
 #[derive(Serialize, Debug, Deserialize)]
 #[serde(tag = "type", content = "content")]
 pub enum StreamResponse {
