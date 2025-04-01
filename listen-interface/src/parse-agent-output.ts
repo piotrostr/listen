@@ -1,4 +1,5 @@
 import {
+  NestedAgentOutputSchema,
   StreamResponse,
   StreamResponseSchema,
   ToolCallSchema,
@@ -39,7 +40,48 @@ export function parseAgentOutput(output: string): StreamResponse[] {
         .replace(/\n/g, "\\n") // Properly escape newlines
         .replace(/\r/g, "\\r"); // Properly escape carriage returns
       const parsed = JSON.parse(jsonStr);
+      if (parsed.type === "NestedAgentOutput") {
+        console.log("parsed", parsed);
+      }
       const validated = StreamResponseSchema.parse(parsed);
+      if (validated.type === "NestedAgentOutput") {
+        const safeParsed = NestedAgentOutputSchema.safeParse(validated.content);
+        if (safeParsed.success) {
+          let content = safeParsed.data.content;
+          // Create a new regex instance for nested content
+          const nestedContentRegex = /<content>([\s\S]*?)<\/content>/g;
+          const subres = [];
+          let nestedMatch;
+          let lastIndex = 0;
+
+          while ((nestedMatch = nestedContentRegex.exec(content)) !== null) {
+            try {
+              const decodedStr = Buffer.from(
+                nestedMatch[1],
+                "base64"
+              ).toString();
+              const jsonStr = decodedStr
+                .replace(/\n/g, "\\n")
+                .replace(/\r/g, "\\r");
+              const parsed = StreamResponseSchema.parse(JSON.parse(jsonStr));
+              subres.push(parsed);
+              lastIndex = nestedContentRegex.lastIndex;
+            } catch (error) {
+              console.error("Error parsing nested content:", error);
+            }
+          }
+
+          if (subres.length > 0) {
+            results.push(...subres);
+          }
+          continue; // Skip adding the nested agent output itself
+        }
+      }
+      // in the nested output, the tool result it not to be included.
+      // it is already the body and will arrive as a separate, non-nested message
+      if (validated.type === "ToolResult") {
+        continue;
+      }
       results.push(validated);
     } catch (error) {
       console.error("Error parsing content:", error, "Raw string:", match[1]);

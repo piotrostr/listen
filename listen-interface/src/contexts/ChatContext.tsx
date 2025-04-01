@@ -15,6 +15,7 @@ import { useDebounce } from "../hooks/useDebounce";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { compactPortfolio } from "../hooks/util";
 import i18n from "../i18n";
+import { renderAgentOutput } from "../parse-agent-output";
 import { pickSystemPrompt } from "../prompts";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useSettingsStore } from "../store/settingsStore";
@@ -223,7 +224,23 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         if (evmAssets && chatType === "omni") {
           portfolio.push(...compactPortfolio(evmAssets));
         }
-        const chat_history = messageHistory.filter((msg) => msg.content !== "");
+        const chat_history = messageHistory
+          .filter((msg) => msg.content !== "")
+          .map((msg) => {
+            if (msg.content.includes("<content>")) {
+              const content = JSON.parse(msg.content);
+              if (content.result) {
+                return {
+                  ...msg,
+                  content: JSON.stringify({
+                    ...content,
+                    result: renderAgentOutput(content.result, false),
+                  }),
+                };
+              }
+            }
+            return msg;
+          });
         const preamble = pickSystemPrompt(
           chatType,
           agentMode,

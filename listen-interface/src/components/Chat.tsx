@@ -269,7 +269,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
             )}
             {toolBeingCalled && <ToolCallMessage toolCall={toolBeingCalled} />}
           </div>
-          {nestedAgentOutput && isLoading && (
+          {nestedAgentOutput && !isLoading && (
             <NestedAgentOutputDisplay content={nestedAgentOutput.content} />
           )}
         </div>
