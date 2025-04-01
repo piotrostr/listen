@@ -11,8 +11,11 @@ use rig_tool_macro::tool;
 use crate::{
     agents::delegate::delegate_to_agent,
     common::{gemini_agent_builder, wrap_unsafe, GeminiAgent},
-    data::twitter_tools::{FetchXPost, ResearchXProfile, SearchTweets},
-    data::{AnalyzePageContent, SearchWeb},
+    data::{
+        twitter_tools::{FetchXPost, ResearchXProfile, SearchTweets},
+        AnalyzePageContent, SearchWeb,
+    },
+    lunarcrush::AnalyzeSentiment,
     reasoning_loop::Model,
     signer::SignerContext,
 };
@@ -30,6 +33,7 @@ pub fn create_research_agent() -> GeminiAgent {
         .tool(AnalyzePageContent)
         .tool(ResearchXProfile)
         .tool(FetchXPost)
+        .tool(AnalyzeSentiment)
         .tool(SearchTweets)
         .build()
 }

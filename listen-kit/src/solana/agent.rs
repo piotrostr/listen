@@ -2,6 +2,7 @@ use super::tools::{
     DeployPumpFunToken, GetCurrentTime, GetQuote, GetSolBalance,
     GetSplTokenBalance, Swap,
 };
+use crate::agents::research::ViewImage;
 use crate::common::{
     claude_agent_builder, gemini_agent_builder, PREAMBLE_COMMON,
 };
@@ -50,6 +51,7 @@ pub async fn create_solana_agent(
         .tool(DeployPumpFunToken)
         .tool(FetchTokenMetadata)
         .tool(ResearchXProfile)
+        .tool(ViewImage)
         .tool(FetchXPost)
         .tool(SearchTweets)
         .tool(AnalyzeRisk)
@@ -97,6 +99,7 @@ pub fn create_solana_agent_gemini(
         .tool(AnalyzeSentiment)
         .tool(GetCurrentTime)
         .tool(SearchWeb)
+        .tool(ViewImage)
         .tool(AnalyzePageContent);
 
     if features.autonomous {

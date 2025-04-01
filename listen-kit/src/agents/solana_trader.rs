@@ -2,6 +2,7 @@ use crate::{
     agents::delegate::delegate_to_agent,
     common::{gemini_agent_builder, GeminiAgent},
     data::{FetchTokenMetadata, FetchTokenPrice},
+    faster100x::AnalyzeHolderDistribution,
     reasoning_loop::Model,
     signer::SignerContext,
     solana::{
@@ -31,6 +32,7 @@ pub fn create_solana_trader_agent() -> GeminiAgent {
         .tool(Swap)
         .tool(FetchTokenMetadata)
         .tool(GetSolBalance)
+        .tool(AnalyzeHolderDistribution)
         .tool(GetSplTokenBalance)
         .tool(FetchTokenPrice)
         .tool(AnalyzeRisk)
