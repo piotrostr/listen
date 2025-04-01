@@ -12,10 +12,6 @@ import { IoSwapHorizontal } from "react-icons/io5";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
-import {
-  parseAgentOutput,
-  renderAgentOutputString,
-} from "../parse-agent-output";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import { Message, ToolCallSchema, ToolResult } from "../types/message";
 import { TokenMetadataSchema } from "../types/metadata";
@@ -50,6 +46,42 @@ const formatError = (error: string) => {
     return "Account not found";
   }
   return error;
+};
+
+const parseAndCleanMessage = (input: string): string => {
+  try {
+    let parsed = JSON.parse(input);
+
+    // Keep trying to parse as long as we get a string that looks like JSON
+    while (
+      typeof parsed === "string" &&
+      (parsed.startsWith("{") ||
+        parsed.startsWith("[") ||
+        parsed.includes('\\\"') ||
+        parsed.includes("\\\\"))
+    ) {
+      try {
+        parsed = JSON.parse(parsed);
+      } catch (e) {
+        break;
+      }
+    }
+
+    // Handle nested quotes in the string that might contain markdown
+    if (typeof parsed === "string") {
+      // Replace escaped quotes that are part of markdown content
+      parsed = parsed.replace(/\\?"([^"]*\*\*[^"]*)"\\?/g, "$1");
+      parsed = parsed.replace(/\\?"([^"]*- [^"]*)"\\?/g, "$1");
+      parsed = parsed.replace(/\\?"([^"]*```[^"]*)"\\?/g, "$1");
+    }
+
+    return typeof parsed === "string"
+      ? parsed
+      : JSON.stringify(parsed, null, 2);
+  } catch (e) {
+    console.error("[parsing error]:", e);
+    return input;
+  }
 };
 
 export const ToolMessage = ({
@@ -355,17 +387,19 @@ export const ToolMessage = ({
     toolOutput.name === "delegate_to_chart_agent" ||
     toolOutput.name === "delegate_to_solana_trader_agent"
   ) {
-    const contents = parseAgentOutput(toolOutput.result);
     const icons = {
       delegate_to_research_agent: <FaRobot />,
       delegate_to_chart_agent: <FaChartLine />,
       delegate_to_solana_trader_agent: <IoSwapHorizontal />,
     };
+
+    const escapedMessage = parseAndCleanMessage(toolOutput.result);
+
     return (
       <div className="text-gray-400">
         <DropdownMessage
           title={t(`tool_messages.${toolOutput.name}`)}
-          message={renderAgentOutputString(contents, false)}
+          message={escapedMessage}
           icon={icons[toolOutput.name]}
         />
       </div>
