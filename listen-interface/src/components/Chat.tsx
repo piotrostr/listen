@@ -274,9 +274,12 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
           )}
         </div>
         <div ref={messagesEndRef} />
-        {messages.length !== 0 && (
-          <div className="flex-grow min-h-[68vh] md:min-h-[85vh]" />
-        )}
+        {messages.length !== 0 &&
+          (suggestions.length === 0 ? (
+            <div className="flex-grow min-h-[68vh] md:min-h-[80vh]" />
+          ) : (
+            <div className="flex-grow min-h-[60vh] md:min-h-[72vh]" />
+          ))}
       </ChatContainer>
     </>
   );
