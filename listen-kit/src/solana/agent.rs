@@ -15,7 +15,7 @@ use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::faster100x::AnalyzeHolderDistribution;
 use crate::lunarcrush::AnalyzeSentiment;
 use crate::solana::advanced_orders::CreateAdvancedOrder;
-use crate::solana::tools::{AnalyzeRisk, GetPublicKey};
+use crate::solana::tools::AnalyzeRisk;
 use crate::think::Think;
 use anyhow::Result;
 use rig::agent::Agent;
@@ -84,7 +84,6 @@ pub fn create_solana_agent_gemini(
         .tool(GetQuote)
         .tool(GetSolBalance)
         .tool(GetSplTokenBalance)
-        .tool(GetPublicKey)
         .tool(SearchOnDexScreener)
         .tool(FetchTopTokens)
         .tool(DeployPumpFunToken)
