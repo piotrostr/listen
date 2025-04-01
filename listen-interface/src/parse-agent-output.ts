@@ -40,9 +40,6 @@ export function parseAgentOutput(output: string): StreamResponse[] {
         .replace(/\n/g, "\\n") // Properly escape newlines
         .replace(/\r/g, "\\r"); // Properly escape carriage returns
       const parsed = JSON.parse(jsonStr);
-      if (parsed.type === "NestedAgentOutput") {
-        console.log("parsed", parsed);
-      }
       const validated = StreamResponseSchema.parse(parsed);
       if (validated.type === "NestedAgentOutput") {
         const safeParsed = NestedAgentOutputSchema.safeParse(validated.content);

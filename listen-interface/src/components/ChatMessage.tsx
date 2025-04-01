@@ -10,23 +10,6 @@ const sanitizeOutput = (message: string) => {
   // Handle null/undefined
   if (!message) return "";
 
-  try {
-    // If the message is a stringified JSON, try to parse it once
-    if (message.startsWith('"') && message.endsWith('"')) {
-      const parsed = JSON.parse(message);
-      if (typeof parsed === "string") {
-        message = parsed;
-      }
-    }
-  } catch (e) {
-    // If parsing fails, keep original message
-  }
-
-  // Remove any incomplete markdown blocks
-  message = message.replace(/```[^`]*$/, ""); // Remove incomplete code blocks
-  message = message.replace(/\*\*[^\*]*$/, ""); // Remove incomplete bold
-  message = message.replace(/_[^_]*$/, ""); // Remove incomplete italics
-
   if (isProd && message.includes("EOF while parsing an object")) {
     return "";
   }

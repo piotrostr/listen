@@ -50,13 +50,14 @@ const formatError = (error: string) => {
 
 const parseAndCleanMessage = (input: string): string => {
   try {
-    let parsed = JSON.parse(input);
+    let parsed = input;
 
-    // Keep trying to parse as long as we get a string that looks like JSON
+    // First, try to parse any JSON strings
     while (
       typeof parsed === "string" &&
       (parsed.startsWith("{") ||
         parsed.startsWith("[") ||
+        parsed.startsWith('"') ||
         parsed.includes('\\\"') ||
         parsed.includes("\\\\"))
     ) {
@@ -67,17 +68,38 @@ const parseAndCleanMessage = (input: string): string => {
       }
     }
 
-    // Handle nested quotes in the string that might contain markdown
+    // If we have a string, clean up any remaining escape sequences
     if (typeof parsed === "string") {
-      // Replace escaped quotes that are part of markdown content
-      parsed = parsed.replace(/\\?"([^"]*\*\*[^"]*)"\\?/g, "$1");
-      parsed = parsed.replace(/\\?"([^"]*- [^"]*)"\\?/g, "$1");
-      parsed = parsed.replace(/\\?"([^"]*```[^"]*)"\\?/g, "$1");
+      // Remove any remaining escaped newlines that should be actual newlines
+      parsed = parsed.replace(/\\n/g, "\n");
+
+      // Remove any remaining double backslashes
+      parsed = parsed.replace(/\\\\/g, "\\");
+
+      // Remove unnecessary escaping of quotes around markdown content
+      parsed = parsed.replace(
+        /\\?"((?:[^"\\]|\\.)*)\\?"/g,
+        (match, content) => {
+          // If content contains markdown symbols, remove the quotes
+          if (
+            content.includes("**") ||
+            content.includes("*") ||
+            content.includes("```") ||
+            content.includes("#") ||
+            content.startsWith("- ") ||
+            content.includes("\n- ")
+          ) {
+            return content;
+          }
+          return match;
+        }
+      );
     }
 
-    return typeof parsed === "string"
-      ? parsed
-      : JSON.stringify(parsed, null, 2);
+    // If it's not a string, stringify it nicely
+    const res =
+      typeof parsed === "string" ? parsed : JSON.stringify(parsed, null, 2);
+    return res;
   } catch (e) {
     console.error("[parsing error]:", e);
     return input;
