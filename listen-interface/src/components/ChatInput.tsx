@@ -1,4 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
+import * as Tooltip from "@radix-ui/react-tooltip";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
@@ -36,6 +37,7 @@ export function ChatInput({
     tradingEnabled,
     setResearchEnabled,
     setTradingEnabled,
+    modelType,
   } = useSettingsStore();
 
   const { user } = usePrivy();
@@ -90,6 +92,8 @@ export function ChatInput({
     setResearchEnabled(false);
     setTradingEnabled(!tradingEnabled);
   };
+
+  const sendDisabled = modelType === "claude" && researchEnabled;
 
   return (
     <div className="flex flex-col rounded-3xl overflow-hidden border border-[#2D2D2D] bg-[#151518]/40 backdrop-blur-sm mb-2">
@@ -214,21 +218,48 @@ export function ChatInput({
                 <FiShare2 size={18} />
               </button>
             )}
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                handleSend();
-              }}
-              disabled={!inputMessage.trim() || !walletsReady || !user}
-              className={`p-2 rounded-full ${
-                inputMessage.trim() && walletsReady && user
-                  ? "bg-[#FB2671]/20 hover:bg-[#FB2671]/40 text-[#FB2671]"
-                  : "bg-gray-500/10 text-gray-500"
-              } transition-colors`}
-              aria-label="Send message"
-            >
-              <FiSend size={18} />
-            </button>
+            <Tooltip.Provider>
+              <Tooltip.Root>
+                <Tooltip.Trigger asChild>
+                  <div className="relative">
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        handleSend();
+                      }}
+                      disabled={
+                        !inputMessage.trim() ||
+                        !walletsReady ||
+                        !user ||
+                        sendDisabled
+                      }
+                      className={`p-2 rounded-full ${
+                        inputMessage.trim() &&
+                        walletsReady &&
+                        user &&
+                        !sendDisabled
+                          ? "bg-[#FB2671]/20 hover:bg-[#FB2671]/40 text-[#FB2671]"
+                          : "bg-gray-500/10 text-gray-500"
+                      } transition-colors`}
+                      aria-label="Send message"
+                    >
+                      <FiSend size={18} />
+                    </button>
+                  </div>
+                </Tooltip.Trigger>
+                {sendDisabled && (
+                  <Tooltip.Portal>
+                    <Tooltip.Content
+                      className="rounded-md bg-[#2d2d2d] px-4 py-2 text-sm text-white"
+                      sideOffset={5}
+                    >
+                      {t("chat.research_disabled")}
+                      <Tooltip.Arrow className="fill-[#2d2d2d]" />
+                    </Tooltip.Content>
+                  </Tooltip.Portal>
+                )}
+              </Tooltip.Root>
+            </Tooltip.Provider>
           </div>
         )}
       </div>

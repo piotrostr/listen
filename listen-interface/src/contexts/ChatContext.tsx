@@ -251,6 +251,11 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           user?.isGuest || false
         );
 
+        if (researchEnabled && modelType === "claude") {
+          // no-go atm
+          return;
+        }
+
         const body = JSON.stringify({
           prompt: userMessage,
           chat_history: chat_history,
