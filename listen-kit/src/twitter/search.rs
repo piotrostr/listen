@@ -80,8 +80,8 @@ mod tests {
         )
         .unwrap();
 
-        println!("Found {} tweets", search_results.tweets.len());
-        println!("Has next page: {}", search_results.has_next_page);
-        println!("Next cursor: {:?}", search_results.next_cursor);
+        tracing::info!("Found {} tweets", search_results.tweets.len());
+        tracing::info!("Has next page: {}", search_results.has_next_page);
+        tracing::info!("Next cursor: {:?}", search_results.next_cursor);
     }
 }

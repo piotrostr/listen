@@ -30,6 +30,9 @@ mod tests {
     async fn test_search() {
         let web = Web::from_env().unwrap();
         let response = web.search("tesla").await.unwrap();
-        println!("{}", serde_json::to_string_pretty(&response).unwrap());
+        tracing::info!(
+            "{}",
+            serde_json::to_string_pretty(&response).unwrap()
+        );
     }
 }

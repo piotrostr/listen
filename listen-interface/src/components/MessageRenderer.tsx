@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "../store/settingsStore";
 import {
@@ -82,25 +82,23 @@ export function MessageRendererBase({
   message: Message;
   messages: Message[];
 }) {
-  if (!msg.message) return null;
-
   const { t } = useTranslation();
   const { debugMode } = useSettingsStore();
 
-  // Check if this is the last user message
-  const isLastUserMessage = (() => {
+  // Move the isLastUserMessage calculation into a useMemo
+  const isLastUserMessage = useMemo(() => {
     if (msg.direction !== "outgoing") return false;
     const lastUserMessageIndex = [...messages]
       .reverse()
       .findIndex((m) => m.direction === "outgoing");
     if (lastUserMessageIndex === -1) return false;
     return messages[messages.length - 1 - lastUserMessageIndex].id === msg.id;
-  })();
+  }, [messages, msg.direction, msg.id]);
 
-  // this is to support previous version of message schema
+  if (!msg.message) return null;
+
+  // Handle legacy tool call messages
   if (msg.isToolCall !== undefined && msg.isToolCall) {
-    // tool call was tool result in v1, v2 there is a distinction, tool call is
-    // passing params, tool result is the "tool output"
     const toolResult = handleLegacyMessage(msg);
     return (
       <ToolMessage
@@ -292,5 +290,13 @@ const handleLegacyMessage = (msg: Message): ToolResult => {
   return { name, id, result };
 };
 
-// Export a memoized version of MessageRenderer
-export const MessageRenderer = React.memo(MessageRendererBase);
+// Update the memo to use proper comparison
+export const MessageRenderer = React.memo(
+  MessageRendererBase,
+  (prevProps, nextProps) => {
+    return (
+      prevProps.message === nextProps.message &&
+      prevProps.messages === nextProps.messages
+    );
+  }
+);

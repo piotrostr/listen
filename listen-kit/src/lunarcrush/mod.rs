@@ -159,6 +159,6 @@ mod tests {
             .await
             .unwrap();
 
-        println!("{:#?}", summary);
+        tracing::info!("{:#?}", summary);
     }
 }

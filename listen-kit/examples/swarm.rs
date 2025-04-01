@@ -20,7 +20,7 @@ async fn main() -> Result<()> {
         ))),
         _ => anyhow::bail!("Invalid model"),
     }
-    .with_stdout(true);
+    .with_stdout(false);
 
     let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
 
@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
 
     tokio::spawn(async move {
         while let Some(response) = rx.recv().await {
-            println!("{:?}", response);
+            print!("{:?}\n", response);
         }
     });
 

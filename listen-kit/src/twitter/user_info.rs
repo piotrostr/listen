@@ -94,6 +94,6 @@ mod tests {
     async fn twitter_fetch_user_info() {
         let twitter = TwitterApi::from_env().unwrap();
         let user_info = twitter.fetch_user_info("listenonsol").await.unwrap();
-        println!("{:#?}", user_info);
+        tracing::info!("{:#?}", user_info);
     }
 }

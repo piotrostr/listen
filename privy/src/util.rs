@@ -1,8 +1,15 @@
 use super::config::PrivyConfig;
+use anyhow::Result;
 use base64::{engine::general_purpose::STANDARD, Engine as _};
 
 pub fn base64encode(data: &[u8]) -> String {
     STANDARD.encode(data)
+}
+
+pub fn base64decode(data: &str) -> Result<Vec<u8>> {
+    STANDARD
+        .decode(data)
+        .map_err(|_| anyhow::anyhow!("Failed to decode base64"))
 }
 
 pub fn create_privy_client(privy_config: &PrivyConfig) -> reqwest::Client {

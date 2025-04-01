@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 use privy::util::base64encode;
 use rig::{
@@ -11,6 +13,7 @@ use crate::{
     common::{gemini_agent_builder, wrap_unsafe, GeminiAgent},
     data::twitter_tools::{FetchXPost, ResearchXProfile, SearchTweets},
     data::{AnalyzePageContent, SearchWeb},
+    reasoning_loop::Model,
     signer::SignerContext,
 };
 
@@ -35,17 +38,17 @@ pub fn create_research_agent() -> GeminiAgent {
     description = "Delegate a task to research agent. It can search the web, analyze pages, view images, and research X (Twitter)"
 )]
 pub async fn delegate_to_research_agent(prompt: String) -> Result<String> {
-    let signer = SignerContext::current().await;
     delegate_to_agent(
         prompt,
-        create_research_agent(),
+        Model::Gemini(Arc::new(create_research_agent())),
         "research_agent".to_string(),
-        signer,
+        SignerContext::current().await,
         false,
     )
     .await
 }
 
+// TODO delegate with channel pass
 #[tool(description = "View an image")]
 pub async fn view_image(image_url: String) -> Result<String> {
     let agent = gemini_agent_builder().preamble("You are a helpful assistant that can read images and describe them").build();
@@ -74,6 +77,6 @@ mod tests {
         let res = view_image("https://ipfs.io/ipfs/QmX1UG3uu6dzQaEycNnwea9xRSwZbGPFEdv8XPXJjBUVsT".to_string())
             .await
             .unwrap();
-        println!("{}", res);
+        tracing::info!("{}", res);
     }
 }

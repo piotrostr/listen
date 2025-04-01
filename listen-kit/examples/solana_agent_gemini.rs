@@ -28,7 +28,7 @@ async fn main() -> Result<()> {
             },
         ));
         for tool in trader_agent.tools.schemas().iter() {
-            println!("{}", serde_json::to_string(tool).unwrap());
+            tracing::info!("{}", serde_json::to_string(tool).unwrap());
         }
         let trader_agent =
             ReasoningLoop::new(Model::Gemini(trader_agent)).with_stdout(true);
@@ -45,7 +45,7 @@ async fn main() -> Result<()> {
             )
             .await?;
 
-        println!(
+        tracing::info!(
             "messages: {:#?}",
             messages
                 .iter()
@@ -62,5 +62,5 @@ async fn main() -> Result<()> {
 
 #[cfg(not(feature = "solana"))]
 fn main() {
-    println!("enable the 'solana' feature to run this example.");
+    tracing::warn!("enable the 'solana' feature to run this example.");
 }

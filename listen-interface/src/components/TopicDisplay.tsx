@@ -25,7 +25,7 @@ export const TopicSchema = z.object({
     num_contributors: z.number().optional(),
     num_posts: z.number().optional(),
     categories: z.array(z.string()).optional(),
-    trend: z.enum(["up", "down", "stable"]).optional(),
+    trend: z.enum(["up", "down", "flat"]).optional(),
   }),
 });
 
@@ -47,10 +47,19 @@ export const TopicDisplay = ({ topic }: { topic: Topic }) => {
         <div className="flex items-center gap-2">
           <div
             className={`text-sm ${
-              topic.topic.trend === "up" ? "text-green-500" : "text-red-500"
+              topic.topic.trend === "up"
+                ? "text-green-500"
+                : topic.topic.trend === "down"
+                  ? "text-red-500"
+                  : "text-gray-400"
             }`}
           >
-            {t("topic_display.trend")} {topic.topic.trend === "up" ? "↑" : "↓"}
+            {t("topic_display.trend")}{" "}
+            {topic.topic.trend === "up"
+              ? "↑"
+              : topic.topic.trend === "down"
+                ? "↓"
+                : "-"}
           </div>
         </div>
       </div>

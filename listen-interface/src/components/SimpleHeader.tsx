@@ -85,9 +85,6 @@ export function SimpleHeader({
                 alt="Logo"
                 className="w-8 h-8 rounded"
               />
-              {!isMobile && (
-                <span className="text-white text-lg font-bold">Listen</span>
-              )}
             </Link>
           </div>
 

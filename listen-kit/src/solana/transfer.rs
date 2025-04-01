@@ -69,7 +69,7 @@ mod tests {
     #[tokio::test]
     async fn test_transfer_sol() {
         let signer = make_test_signer();
-        println!("signer: {:?}", signer.pubkey());
+        tracing::info!("signer: {:?}", signer.pubkey());
         let owner = Pubkey::from_str(&signer.pubkey().unwrap()).unwrap();
         let amount = sol_to_lamports(0.0001);
         let mut tx = create_transfer_sol_tx(&owner, amount, &owner)

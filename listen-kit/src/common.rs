@@ -1,3 +1,4 @@
+use crate::reasoning_loop::{ReasoningLoop, StreamResponse};
 use anyhow::{anyhow, Result};
 use rig::message::{
     AssistantContent, Message, ToolResultContent, UserContent,
@@ -5,6 +6,7 @@ use rig::message::{
 use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::mpsc;
+use tokio::sync::mpsc::Sender;
 
 use crate::signer::{SignerContext, TransactionSigner};
 pub async fn wrap_unsafe<F, Fut, T>(f: F) -> Result<T>
@@ -104,11 +106,29 @@ pub fn content(message: &Message) -> String {
             AssistantContent::Text(text) => text.text.clone(),
             AssistantContent::ToolCall(tool_call) => {
                 let call = format!(
-                    "called {} with {}",
+                    "calling {} with {} ...",
                     tool_call.function.name, tool_call.function.arguments
                 );
                 call
             }
         },
     }
+}
+
+pub async fn spawn_with_signer_and_channel<F, Fut, T>(
+    signer: Arc<dyn TransactionSigner>,
+    channel: Option<Sender<StreamResponse>>,
+    f: F,
+) -> tokio::task::JoinHandle<Result<T>>
+where
+    F: FnOnce() -> Fut + Send + 'static,
+    Fut: Future<Output = Result<T>> + Send + 'static,
+    T: Send + 'static,
+{
+    tokio::spawn(async move {
+        SignerContext::with_signer(signer, async {
+            ReasoningLoop::with_stream_channel(channel, f).await
+        })
+        .await
+    })
 }

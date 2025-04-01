@@ -5,11 +5,13 @@ use rig::{
     message::{ContentFormat, Image, ImageMediaType},
 };
 use rig_tool_macro::tool;
+use std::sync::Arc;
 
 use crate::{
     agents::delegate::delegate_to_agent,
     common::{gemini_agent_builder, wrap_unsafe, GeminiAgent},
     data::{AnalyzePageContent, SearchWeb},
+    reasoning_loop::Model,
     signer::SignerContext,
 };
 
@@ -31,17 +33,17 @@ pub fn create_web_agent() -> GeminiAgent {
     description = "Delegate a task to web agent. It can search the web, analyze pages and view images"
 )]
 pub async fn delegate_to_web_agent(prompt: String) -> Result<String> {
-    let signer = SignerContext::current().await;
     delegate_to_agent(
         prompt,
-        create_web_agent(),
+        Model::Gemini(Arc::new(create_web_agent())),
         "web_agent".to_string(),
-        signer,
+        SignerContext::current().await,
         false,
     )
     .await
 }
 
+// FIXME this could be streamed too
 #[tool(description = "View an image")]
 pub async fn view_image(image_url: String) -> Result<String> {
     let agent = gemini_agent_builder().preamble("You are a helpful assistant that can read images and describe them").build();
@@ -70,6 +72,6 @@ mod tests {
         let res = view_image("https://ipfs.io/ipfs/QmX1UG3uu6dzQaEycNnwea9xRSwZbGPFEdv8XPXJjBUVsT".to_string())
             .await
             .unwrap();
-        println!("{}", res);
+        tracing::info!("{}", res);
     }
 }

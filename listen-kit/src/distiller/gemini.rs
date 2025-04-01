@@ -1,16 +1,18 @@
-use anyhow::Result;
-use rig::completion::Prompt;
+use std::sync::Arc;
 
-use crate::common::GeminiAgent;
+use anyhow::Result;
 
 use super::analyst::{
     AnalystAgent, AnalystError, AnalystType, ChartAnalystAgent,
     TwitterAnalystAgent, WebAnalystAgent,
 };
 use super::preambles;
+use crate::agents::delegate::delegate_to_agent;
+use crate::reasoning_loop::Model;
+use crate::signer::SignerContext;
 
 pub struct GeminiAnalystAgent {
-    pub agent: GeminiAgent,
+    pub agent: Model,
     pub locale: String,
     pub analyst_type: AnalystType,
 }
@@ -44,10 +46,15 @@ impl TwitterAnalystAgent for GeminiAnalystAgent {
             format!("query: {}\nresponse: {}", query, response)
         };
 
-        self.agent
-            .prompt(prompt_text)
-            .await
-            .map_err(AnalystError::PromptError)
+        delegate_to_agent(
+            prompt_text,
+            self.agent.clone(),
+            "twitter_analyst".to_string(),
+            SignerContext::current().await,
+            false, // with stdout
+        )
+        .await
+        .map_err(|e| AnalystError::DelegateError(e.to_string()))
     }
 }
 
@@ -85,10 +92,15 @@ impl ChartAnalystAgent for GeminiAnalystAgent {
             }
         };
 
-        self.agent
-            .prompt(prompt_text)
-            .await
-            .map_err(AnalystError::PromptError)
+        delegate_to_agent(
+            prompt_text,
+            self.agent.clone(),
+            "chart_analyst".to_string(),
+            SignerContext::current().await,
+            false, // with stdout
+        )
+        .await
+        .map_err(|e| AnalystError::DelegateError(e.to_string()))
     }
 }
 // Web analyst implementation for Gemini
@@ -120,10 +132,15 @@ impl WebAnalystAgent for GeminiAnalystAgent {
             }
         };
 
-        self.agent
-            .prompt(prompt_text)
-            .await
-            .map_err(AnalystError::PromptError)
+        delegate_to_agent(
+            prompt_text,
+            self.agent.clone(),
+            "web_analyst".to_string(),
+            SignerContext::current().await,
+            false, // with stdout
+        )
+        .await
+        .map_err(|e| AnalystError::DelegateError(e.to_string()))
     }
 }
 
@@ -147,7 +164,7 @@ pub fn make_gemini_analyst(
         .build();
 
     GeminiAnalystAgent {
-        agent,
+        agent: Model::Gemini(Arc::new(agent)),
         locale: locale.to_string(),
         analyst_type,
     }

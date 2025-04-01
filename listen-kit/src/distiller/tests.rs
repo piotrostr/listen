@@ -14,7 +14,7 @@ async fn test_twitter_analyst() {
         )
         .await
         .unwrap();
-    println!("{:#?}", result);
+    tracing::info!("{:#?}", result);
 }
 
 #[tokio::test]
@@ -46,5 +46,5 @@ async fn test_chart_analyst() {
         .analyze_chart(&candlesticks, "1d", None)
         .await
         .unwrap();
-    println!("{}", result);
+    tracing::info!("{}", result);
 }

@@ -20,7 +20,7 @@ async fn main() -> anyhow::Result<()> {
     SignerContext::with_signer(Arc::new(signer), async {
         let agent = create_solana_agent();
         let response = agent.prompt("what is my public key?")?);
-        println!("{}", response);
+        tracing::info!("{}", response);
     });
 
     Ok(())

@@ -133,6 +133,6 @@ mod tests {
             .await
             .unwrap();
 
-        println!("{:#?}", posts);
+        tracing::info!("{:#?}", posts);
     }
 }

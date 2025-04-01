@@ -2,6 +2,7 @@ use crate::{
     agents::delegate::delegate_to_agent,
     common::{gemini_agent_builder, GeminiAgent},
     data::{FetchTokenMetadata, FetchTokenPrice},
+    reasoning_loop::Model,
     signer::SignerContext,
     solana::{
         advanced_orders::CreateAdvancedOrder,
@@ -13,6 +14,7 @@ use crate::{
 };
 use anyhow::Result;
 use rig_tool_macro::tool;
+use std::sync::Arc;
 
 pub fn create_solana_trader_agent() -> GeminiAgent {
     gemini_agent_builder()
@@ -43,7 +45,7 @@ pub async fn delegate_to_solana_trader_agent(
 ) -> Result<String> {
     delegate_to_agent(
         prompt,
-        create_solana_trader_agent(),
+        Model::Gemini(Arc::new(create_solana_trader_agent())),
         "solana_trader_agent".to_string(),
         SignerContext::current().await,
         false,

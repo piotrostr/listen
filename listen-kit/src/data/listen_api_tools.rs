@@ -1,5 +1,6 @@
-use crate::common::wrap_unsafe;
+use crate::common::spawn_with_signer_and_channel;
 use crate::distiller::analyst::Analyst;
+use crate::reasoning_loop::ReasoningLoop;
 use crate::signer::SignerContext;
 use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
@@ -227,17 +228,21 @@ pub async fn fetch_price_action_analysis(
         .await
         .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
 
-    let locale = SignerContext::current().await.locale();
+    let ctx = SignerContext::current().await;
+    let locale = ctx.locale();
     let analyst = Analyst::from_env_with_locale(locale)
         .map_err(|e| anyhow!("Failed to create Analyst: {}", e))?;
 
-    wrap_unsafe(move || async move {
+    let channel = ReasoningLoop::get_current_stream_channel().await;
+
+    spawn_with_signer_and_channel(ctx, channel, move || async move {
         analyst
             .analyze_chart(&candlesticks, &interval, Some(intent))
             .await
             .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
     })
     .await
+    .await?
 }
 
 #[cfg(test)]
@@ -265,6 +270,6 @@ mod tests {
             "".to_string(),
         )
         .await;
-        println!("{:?}", analysis);
+        tracing::info!("{:?}", analysis);
     }
 }

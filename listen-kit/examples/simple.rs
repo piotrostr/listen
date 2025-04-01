@@ -38,5 +38,5 @@ async fn main() -> Result<()> {
 
 #[cfg(not(feature = "solana"))]
 fn main() {
-    println!("enable the solana feature to run this example");
+    tracing::warn!("enable the solana feature to run this example");
 }

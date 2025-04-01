@@ -73,7 +73,7 @@ mod tests {
         ];
 
         let suggestions = suggest(&messages, "en", None).await.unwrap();
-        println!("{:?}", suggestions);
+        tracing::info!("{:?}", suggestions);
     }
 
     #[tokio::test]
@@ -86,7 +86,7 @@ mod tests {
         ];
 
         let suggestions = suggest(&messages, "zh", None).await.unwrap();
-        println!("{:?}", suggestions);
+        tracing::info!("{:?}", suggestions);
     }
 
     // TODO fix empty assistant message in the reasoning loop
@@ -106,6 +106,6 @@ mod tests {
         ];
 
         let suggestions = suggest(&messages, "en", None).await.unwrap();
-        println!("{:?}", suggestions);
+        tracing::info!("{:?}", suggestions);
     }
 }

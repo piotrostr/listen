@@ -134,7 +134,7 @@ mod tests {
         let twitter = TwitterApi::from_env().unwrap();
         let summary = twitter.research_profile("listenonsol").await.unwrap();
 
-        println!("{:#?}", summary);
+        tracing::info!("{:#?}", summary);
     }
 
     #[timed::timed]
@@ -143,6 +143,6 @@ mod tests {
         let twitter = TwitterApi::from_env().unwrap();
         let summary = twitter.research_profile("arcdotfun").await.unwrap();
 
-        println!("{:#?}", summary);
+        tracing::info!("{:#?}", summary);
     }
 }

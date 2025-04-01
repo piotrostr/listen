@@ -3,9 +3,11 @@ use crate::common::{gemini_agent_builder, GeminiAgent};
 use crate::data::twitter_tools::{
     FetchXPost, ResearchXProfile, SearchTweets,
 };
+use crate::reasoning_loop::Model;
 use crate::signer::SignerContext;
 use anyhow::Result;
 use rig_tool_macro::tool;
+use std::sync::Arc;
 
 pub fn create_x_agent() -> GeminiAgent {
     gemini_agent_builder()
@@ -26,7 +28,7 @@ pub async fn delegate_to_x_agent(prompt: String) -> Result<String> {
     let signer = SignerContext::current().await;
     delegate_to_agent(
         prompt,
-        create_x_agent(),
+        Model::Gemini(Arc::new(create_x_agent())),
         "x_agent".to_string(),
         signer,
         false,

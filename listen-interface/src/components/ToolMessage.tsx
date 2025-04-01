@@ -12,10 +12,6 @@ import { IoSwapHorizontal } from "react-icons/io5";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
-import {
-  parseAgentOutput,
-  renderAgentOutputString,
-} from "../parse-agent-output";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import { Message, ToolCallSchema, ToolResult } from "../types/message";
 import { TokenMetadataSchema } from "../types/metadata";
@@ -50,6 +46,64 @@ const formatError = (error: string) => {
     return "Account not found";
   }
   return error;
+};
+
+const parseAndCleanMessage = (input: string): string => {
+  try {
+    let parsed = input;
+
+    // First, try to parse any JSON strings
+    while (
+      typeof parsed === "string" &&
+      (parsed.startsWith("{") ||
+        parsed.startsWith("[") ||
+        parsed.startsWith('"') ||
+        parsed.includes('\\\"') ||
+        parsed.includes("\\\\"))
+    ) {
+      try {
+        parsed = JSON.parse(parsed);
+      } catch (e) {
+        break;
+      }
+    }
+
+    // If we have a string, clean up any remaining escape sequences
+    if (typeof parsed === "string") {
+      // Remove any remaining escaped newlines that should be actual newlines
+      parsed = parsed.replace(/\\n/g, "\n");
+
+      // Remove any remaining double backslashes
+      parsed = parsed.replace(/\\\\/g, "\\");
+
+      // Remove unnecessary escaping of quotes around markdown content
+      parsed = parsed.replace(
+        /\\?"((?:[^"\\]|\\.)*)\\?"/g,
+        (match, content) => {
+          // If content contains markdown symbols, remove the quotes
+          if (
+            content.includes("**") ||
+            content.includes("*") ||
+            content.includes("```") ||
+            content.includes("#") ||
+            content.startsWith("- ") ||
+            content.includes("\n- ")
+          ) {
+            return content;
+          }
+          return match;
+        }
+      );
+    }
+
+    // If it's not a string, stringify it nicely
+    const res =
+      typeof parsed === "string" ? parsed : JSON.stringify(parsed, null, 2);
+    return res;
+  } catch (e) {
+    console.error("[parsing error]:", e);
+    return input;
+  }
 };
 
 export const ToolMessage = ({
@@ -90,82 +144,6 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "think") {
     return null;
-  }
-
-  if (toolOutput.name === "get_current_time") {
-    try {
-      const parsed = JSON.parse(toolOutput.result);
-      return (
-        <div className="text-blue-300 flex items-center gap-1 p-3 text-sm">
-          <BsClock /> {new Date(parsed).toLocaleString()}
-        </div>
-      );
-    } catch (e) {
-      console.error("Failed to parse current time:", e);
-    }
-  }
-
-  if (toolOutput.name === "create_advanced_order") {
-    try {
-      const parsed = JSON.parse(toolOutput.result);
-      return (
-        <div className="text-green-300 flex items-center gap-1 p-3 text-sm">
-          <FaCheckCircle /> {parsed}
-        </div>
-      );
-    } catch (e) {
-      console.error("Failed to parse advanced order:", e);
-    }
-  }
-
-  if (toolOutput.name === "analyze_risk") {
-    try {
-      const parsed = RiskAnalysisSchema.parse(JSON.parse(toolOutput.result));
-      return <RiskAnalysisDisplay riskAnalysis={parsed} />;
-    } catch (e) {
-      console.error("Failed to parse risk analysis:", e);
-    }
-  }
-  if (toolOutput.name === "analyze_holder_distribution") {
-    try {
-      const parsed = TokenHolderAnalysisSchema.parse(
-        JSON.parse(toolOutput.result)
-      );
-      return <BubbleMapDisplay topHolderAnalysis={parsed} />;
-    } catch (e) {
-      console.error("Failed to parse holder distribution:", e);
-    }
-  }
-
-  if (toolOutput.name === "analyze_sentiment") {
-    try {
-      const parsed = TopicSchema.parse(JSON.parse(toolOutput.result));
-      return <TopicDisplay topic={parsed} />;
-    } catch (e) {
-      console.error("Failed to parse sentiment:", e);
-    }
-  }
-
-  if (
-    toolOutput.name === "delegate_to_research_agent" ||
-    toolOutput.name === "delegate_to_chart_agent" ||
-    toolOutput.name === "delegate_to_solana_trader_agent"
-  ) {
-    const contents = parseAgentOutput(toolOutput.result);
-    const icons = {
-      delegate_to_research_agent: <FaRobot />,
-      delegate_to_chart_agent: <FaChartLine />,
-      delegate_to_solana_trader_agent: <IoSwapHorizontal />,
-    };
-    return (
-      <div className="text-gray-400">
-        <DropdownMessage
-          title={t(`tool_messages.${toolOutput.name}`)}
-          message={renderAgentOutputString(contents)}
-          icon={icons[toolOutput.name]}
-        />
-      </div>
-    );
   }
 
   if (toolOutput.name === "fetch_price_action_analysis") {
@@ -276,6 +254,51 @@ export const ToolMessage = ({
     }
   }
 
+  if (toolOutput.name === "research_x_profile") {
+    try {
+      const message = JSON.parse(toolOutput.result);
+      const processedMessage = embedResearchAnchors(message);
+      return (
+        <div className="mb-1">
+          <DropdownMessage
+            title={t("tool_messages.research_x_profile")}
+            message={processedMessage}
+            icon={<FaXTwitter />}
+          />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse tweet:", e);
+      if (toolOutput.result.includes("Account suspended")) {
+        return (
+          <div className="p-3">
+            <div className="text-orange-500 flex items-center gap-1">
+              <FaExclamationTriangle /> {t("tool_messages.account_suspended")}
+            </div>
+          </div>
+        );
+      }
+      if (toolOutput.result.includes("not found")) {
+        return (
+          <div className="p-3">
+            <div className="text-orange-500 flex items-center gap-1">
+              <FaExclamationTriangle /> {t("tool_messages.user_does_not_exist")}
+            </div>
+          </div>
+        );
+      }
+      return <ChatMessage message={toolOutput.result} direction="agent" />;
+    }
+  }
+
+  if (toolOutput.result.includes("ToolCallError")) {
+    return (
+      <div className="text-red-400 flex items-center gap-1 p-3 text-sm">
+        <FaExclamationTriangle /> {t("tool_messages.tool_call_error")}
+      </div>
+    );
+  }
+
   if (toolOutput.name === "search_web") {
     try {
       const message = JSON.parse(toolOutput.result);
@@ -327,41 +350,82 @@ export const ToolMessage = ({
     }
   }
 
-  if (toolOutput.name === "research_x_profile") {
+  if (toolOutput.name === "get_current_time") {
     try {
-      const message = JSON.parse(toolOutput.result);
-      const processedMessage = embedResearchAnchors(message);
+      const parsed = JSON.parse(toolOutput.result);
       return (
-        <div className="mb-1">
-          <DropdownMessage
-            title={t("tool_messages.research_x_profile")}
-            message={processedMessage}
-            icon={<FaXTwitter />}
-          />
+        <div className="text-blue-300 flex items-center gap-1 p-3 text-sm">
+          <BsClock /> {new Date(parsed).toLocaleString()}
         </div>
       );
     } catch (e) {
-      console.error("Failed to parse tweet:", e);
-      if (toolOutput.result.includes("Account suspended")) {
-        return (
-          <div className="p-3">
-            <div className="text-orange-500 flex items-center gap-1">
-              <FaExclamationTriangle /> {t("tool_messages.account_suspended")}
-            </div>
-          </div>
-        );
-      }
-      if (toolOutput.result.includes("not found")) {
-        return (
-          <div className="p-3">
-            <div className="text-orange-500 flex items-center gap-1">
-              <FaExclamationTriangle /> {t("tool_messages.user_does_not_exist")}
-            </div>
-          </div>
-        );
-      }
-      return <ChatMessage message={toolOutput.result} direction="agent" />;
+      console.error("Failed to parse current time:", e);
     }
+  }
+
+  if (toolOutput.name === "create_advanced_order") {
+    try {
+      const parsed = JSON.parse(toolOutput.result);
+      return (
+        <div className="text-green-300 flex items-center gap-1 p-3 text-sm">
+          <FaCheckCircle /> {parsed}
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse advanced order:", e);
+    }
+  }
+
+  if (toolOutput.name === "analyze_risk") {
+    try {
+      const parsed = RiskAnalysisSchema.parse(JSON.parse(toolOutput.result));
+      return <RiskAnalysisDisplay riskAnalysis={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse risk analysis:", e);
+    }
+  }
+  if (toolOutput.name === "analyze_holder_distribution") {
+    try {
+      const parsed = TokenHolderAnalysisSchema.parse(
+        JSON.parse(toolOutput.result)
+      );
+      return <BubbleMapDisplay topHolderAnalysis={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse holder distribution:", e);
+    }
+  }
+
+  if (toolOutput.name === "analyze_sentiment") {
+    try {
+      const parsed = TopicSchema.parse(JSON.parse(toolOutput.result));
+      return <TopicDisplay topic={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse sentiment:", e);
+    }
+  }
+
+  if (
+    toolOutput.name === "delegate_to_research_agent" ||
+    toolOutput.name === "delegate_to_chart_agent" ||
+    toolOutput.name === "delegate_to_solana_trader_agent"
+  ) {
+    const icons = {
+      delegate_to_research_agent: <FaRobot />,
+      delegate_to_chart_agent: <FaChartLine />,
+      delegate_to_solana_trader_agent: <IoSwapHorizontal />,
+    };
+
+    const escapedMessage = parseAndCleanMessage(toolOutput.result);
+
+    return (
+      <div className="text-gray-400">
+        <DropdownMessage
+          title={t(`tool_messages.${toolOutput.name}`)}
+          message={escapedMessage}
+          icon={icons[toolOutput.name]}
+        />
+      </div>
+    );
   }
 
   if (toolOutput.name === "fetch_token_metadata") {
@@ -521,14 +585,6 @@ export const ToolMessage = ({
         </div>
       );
     }
-  }
-
-  if (toolOutput.result.includes("ToolCallError")) {
-    return (
-      <div className="text-red-400 flex items-center gap-1 p-3 text-sm">
-        <FaExclamationTriangle /> {t("tool_messages.tool_call_error")}
-      </div>
-    );
   }
 
   return <ChatMessage message={toolOutput.result} direction="incoming" />;
