@@ -87,7 +87,7 @@ export function ChatInput({
 
   // Toggle the research mode
   const toggleResearch = () => {
-    setTradingEnabled(false);
+    setAgentMode(false);
     setResearchEnabled(!researchEnabled);
   };
 
