@@ -4,6 +4,7 @@ export const chat = {
     placeholder: "I'm listening",
     trading: "Trading",
     research: "Deep Research",
+    direct_trades: "Direct Tx",
     research_disabled: "Deep research is only available with Gemini",
   },
   zh: {
@@ -11,6 +12,7 @@ export const chat = {
     placeholder: "我正在倾听",
     trading: "交易",
     research: "深度研究",
+    direct_trades: "直接交易",
     research_disabled: "深度研究仅在Gemini模型上可用",
   },
 };

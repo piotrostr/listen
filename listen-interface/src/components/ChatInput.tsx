@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { FiPlus, FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { LuTelescope } from "react-icons/lu";
+import { useMobile } from "../contexts/MobileContext";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSettingsStore } from "../store/settingsStore";
 
@@ -34,11 +35,14 @@ export function ChatInput({
 
   const {
     researchEnabled,
-    tradingEnabled,
+    agentMode,
+    setAgentMode,
     setResearchEnabled,
     setTradingEnabled,
     modelType,
   } = useSettingsStore();
+
+  const { isMobile } = useMobile();
 
   const { user } = usePrivy();
 
@@ -90,7 +94,7 @@ export function ChatInput({
   // Toggle the trading mode
   const toggleTrading = () => {
     setResearchEnabled(false);
-    setTradingEnabled(!tradingEnabled);
+    setAgentMode(!agentMode);
   };
 
   const sendDisabled = modelType === "claude" && researchEnabled;
@@ -161,13 +165,13 @@ export function ChatInput({
         <button
           onClick={toggleTrading}
           className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-            tradingEnabled
+            agentMode
               ? "bg-blue-600/20 text-blue-400"
               : "bg-gray-600/20 text-gray-400"
-          } hover:bg-gray-600/30 transition-colors text-sm hidden`} // tmp hidden
+          } hover:bg-gray-600/30 transition-colors text-sm`}
         >
           <IoSwapHorizontal size={18} />
-          <span>{t("chat.trading")}</span>
+          {!isMobile && <span>{t("chat.direct_trades")}</span>}
         </button>
 
         {/* Research Feature */}
@@ -180,7 +184,7 @@ export function ChatInput({
           } hover:bg-gray-600/30 transition-colors text-sm`}
         >
           <LuTelescope size={18} />
-          <span>{t("chat.research")}</span>
+          {!isMobile && <span>{t("chat.research")}</span>}
         </button>
 
         {/* Arrow up button on the far right */}
