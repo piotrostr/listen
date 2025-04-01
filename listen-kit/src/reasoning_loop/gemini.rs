@@ -97,7 +97,6 @@ impl ReasoningLoop {
         'outer: loop {
             let mut current_response = String::new();
 
-            println!("next_input: {:?}", next_input);
             // Stream using the next input (original prompt or tool result)
             let mut stream = match agent
                 .stream_completion(
