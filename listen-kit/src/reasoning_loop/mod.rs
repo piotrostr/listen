@@ -38,6 +38,35 @@ pub enum StreamResponse {
     },
 }
 
+impl StreamResponse {
+    pub fn render(&self) -> String {
+        match self {
+            StreamResponse::Message(message) => message.clone(),
+            StreamResponse::ToolCall { name, params, .. } => {
+                let params =
+                    serde_json::from_str::<serde_json::Value>(&params)
+                        .unwrap_or_default();
+                let params_str = match params {
+                    serde_json::Value::Object(obj) => obj
+                        .iter()
+                        .map(|(k, v)| format!("- {}: {}", k, v))
+                        .collect::<Vec<String>>()
+                        .join("\n"),
+                    _ => params.to_string(),
+                };
+                format!("\nCalling {} with:\n{}", name, params_str)
+            }
+            StreamResponse::ToolResult { result, .. } => {
+                format!("\n\n{}", result)
+            }
+            StreamResponse::Error(error) => error.clone(),
+            // dont consume the nested output, this is only required by the frontend
+            // to show the reasoning thoughts, it will be returned again in the tool result
+            StreamResponse::NestedAgentOutput { .. } => "".to_string(),
+        }
+    }
+}
+
 #[derive(Clone)]
 pub enum Model {
     Anthropic(Arc<Agent<AnthropicModel>>),

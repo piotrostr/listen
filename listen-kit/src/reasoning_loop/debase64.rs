@@ -1,6 +1,8 @@
 use anyhow::Result;
 use privy::util::base64decode;
 
+use crate::reasoning_loop::StreamResponse;
+
 pub fn ensure_base64_rendered(content: &str) -> Result<String> {
     // Check if this is a JSON result wrapper
     if content.contains("<content>") {
@@ -21,12 +23,13 @@ fn decode_content_tags(content: &str) -> Result<String> {
             let base64_content = &result[start + "<content>".len()..end];
 
             let decoded_bytes = base64decode(base64_content)?;
-            let decoded_str = String::from_utf8(decoded_bytes)?;
+            let decoded_message =
+                serde_json::from_slice::<StreamResponse>(&decoded_bytes)?;
 
             // Replace the entire tag including content
             result.replace_range(
                 start..end + "</content>".len(),
-                &format!("{{{}}}", decoded_str),
+                &serde_json::to_string(&decoded_message)?,
             );
 
             position = start + 1;

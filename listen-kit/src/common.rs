@@ -106,7 +106,7 @@ pub fn content(message: &Message) -> String {
             AssistantContent::Text(text) => text.text.clone(),
             AssistantContent::ToolCall(tool_call) => {
                 let call = format!(
-                    "called {} with {}",
+                    "calling {} with {} ...",
                     tool_call.function.name, tool_call.function.arguments
                 );
                 call
