@@ -1,5 +1,6 @@
 import { usePrivy, useSolanaWallets, useWallets } from "@privy-io/react-auth";
 import { useEffect, useRef } from "react";
+import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 
 /**
@@ -48,6 +49,9 @@ export function WalletInitializer() {
 
       // Update the store
       setWalletAddresses(newSolanaAddress, newEvmAddress);
+
+      // ensure portfolio is refreshed
+      usePortfolioStore.getState().refreshPortfolio();
     }
   }, [
     solanaReady,

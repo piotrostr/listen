@@ -37,6 +37,8 @@ interface PortfolioState {
   refreshPortfolio: () => Promise<void>;
   isFresh: () => boolean;
   initializePortfolioManager: () => void;
+
+  clearPortfolio: () => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>()(
@@ -296,6 +298,13 @@ export const usePortfolioStore = create<PortfolioState>()(
 
         // Store the unsubscribe function to prevent memory leaks
         (window as any).__portfolioTokenStoreUnsubscribe = unsubscribe;
+      },
+
+      clearPortfolio: () => {
+        set({
+          solanaAssetsMap: new Map(),
+          evmAssetsMap: new Map(),
+        });
       },
     }),
     {

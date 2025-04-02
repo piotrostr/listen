@@ -11,6 +11,8 @@ interface WalletState {
     solanaAddress: string | null,
     evmAddress: string | null
   ) => void;
+
+  clearWalletAddresses: () => void;
 }
 
 export const useWalletStore = create<WalletState>()(
@@ -28,6 +30,13 @@ export const useWalletStore = create<WalletState>()(
         set({
           solanaAddress,
           evmAddress,
+        });
+      },
+
+      clearWalletAddresses: () => {
+        set({
+          solanaAddress: null,
+          evmAddress: null,
         });
       },
     }),
