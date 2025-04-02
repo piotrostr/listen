@@ -54,14 +54,24 @@ pub struct Link {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
+#[serde(untagged)]
+pub enum PercentageValue {
+    String(String),
+    Float(f64),
+}
+
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Holder {
     pub address: String,
-    pub amount_percentage: String,
+    pub amount_percentage: PercentageValue,
 }
 
 impl Holder {
     pub fn get_percentage(&self) -> f64 {
-        self.amount_percentage.parse().unwrap_or(0.0)
+        match &self.amount_percentage {
+            PercentageValue::String(s) => s.parse().unwrap_or(0.0),
+            PercentageValue::Float(f) => *f,
+        }
     }
 }
 
