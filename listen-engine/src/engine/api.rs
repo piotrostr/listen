@@ -74,37 +74,14 @@ pub struct PipelineParams {
 impl From<(WirePipeline, PipelineParams)> for Pipeline {
     fn from((wire, params): (WirePipeline, PipelineParams)) -> Self {
         let mut steps: HashMap<Uuid, PipelineStep> = HashMap::new();
-        let mut current_steps = Vec::new();
-
         let step_ids: Vec<Uuid> = wire.steps.iter().map(|_| Uuid::new_v4()).collect();
 
-        let now_step_indices: Vec<usize> = wire
-            .steps
-            .iter()
-            .enumerate()
-            .filter(|(_, step)| {
-                step.conditions
-                    .iter()
-                    .any(|c| matches!(c.r#type, WireConditionType::Now))
-            })
-            .map(|(i, _)| i)
-            .collect();
+        // All steps are current steps - they can be evaluated independently
+        // TODO add DAG-based steps
+        let current_steps = step_ids.clone();
 
-        if now_step_indices.is_empty() && !wire.steps.is_empty() {
-            current_steps.push(step_ids[step_ids.len() - 1]);
-        } else {
-            for &idx in &now_step_indices {
-                current_steps.push(step_ids[idx]);
-            }
-        }
-
-        for (i, (step, id)) in wire.steps.iter().zip(step_ids.iter()).enumerate() {
-            let mut pipeline_step: PipelineStep = step.into();
-
-            if !now_step_indices.contains(&i) && i > 0 {
-                pipeline_step.next_steps.push(step_ids[i - 1]);
-            }
-
+        for (step, id) in wire.steps.iter().zip(step_ids.iter()) {
+            let pipeline_step: PipelineStep = step.into();
             steps.insert(*id, pipeline_step);
         }
 
