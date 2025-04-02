@@ -1,11 +1,5 @@
 import { addressBook, CompactPortfolio } from "../hooks/util";
-import {
-  guidelines,
-  onboarding,
-  personality,
-  personalityAgent,
-  researchFlow,
-} from "./common";
+import { guidelines, onboarding, personality, researchFlow } from "./common";
 import { pipelineKnowledge } from "./pipelines";
 
 const solanaErrors = "";
@@ -46,7 +40,7 @@ export function systemPromptSolanaAgent(
 ) {
   const hasWallet = pubkey !== null && pubkey !== "";
   return `
-  ${personalityAgent}
+  ${personality}
   <research_flow>${researchFlow}</research_flow>
   <guidelines>${guidelines("solana", defaultAmount)}</guidelines>
   ${!hasWallet || isGuest ? `<onboarding>${onboarding(hasWallet, isGuest, "solana")}</onboarding>` : ""}

@@ -61,7 +61,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     return urlParams.chatId ? getSuggestions(urlParams.chatId) : [];
   }, [urlParams.chatId, getSuggestions]);
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const lastUserMessageRef = useRef<HTMLDivElement>(null);
   const [inputMessage, setInputMessage] = useState("");
   const { getAccessToken } = usePrivy();
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
@@ -69,6 +69,8 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const { openShareModal } = useModal();
 
   const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>(null);
+
+  const [justSentMessage, setJustSentMessage] = useState(false);
 
   const RECOMMENDED_QUESTIONS_CAROUSEL = [
     {
@@ -90,14 +92,20 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       enabled: true,
     },
     {
-      question: t("recommended_questions.research_arcdotfun_for_me"), // TODO X search
+      question: t("recommended_questions.research_arcdotfun_for_me"),
       enabled: true,
     },
   ];
 
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+  useEffect(() => {
+    if (messages.length > 0 && lastUserMessageRef.current && justSentMessage) {
+      setTimeout(() => {
+        lastUserMessageRef.current?.scrollIntoView({ behavior: "smooth" });
+      }, 100);
+      // Reset the flag after scrolling
+      setJustSentMessage(false);
+    }
+  }, [messages, justSentMessage]);
 
   const handleSendMessage = useCallback(
     (message: string) => {
@@ -105,14 +113,12 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         setMessages([]);
       } else {
         sendMessage(message);
+        // Set the flag when sending a new message
+        setJustSentMessage(true);
       }
       setInputMessage("");
       if (urlParams.chatId) {
         useSuggestStore.getState().clearSuggestions(urlParams.chatId);
-      }
-
-      if (messages?.length > 0) {
-        scrollToBottom();
       }
     },
     [sendMessage, setMessages, urlParams.chatId]
@@ -254,6 +260,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
               key={message.id}
               message={message}
               messages={messages}
+              lastUserMessageRef={lastUserMessageRef}
             />
           ))}
           <div className="flex flex-row items-center gap-2 pl-3 mt-2">
@@ -273,13 +280,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
             <NestedAgentOutputDisplay content={nestedAgentOutput.content} />
           )}
         </div>
-        <div ref={messagesEndRef} />
-        {messages.length !== 0 &&
-          (suggestions.length === 0 ? (
-            <div className="flex-grow min-h-[68vh] md:min-h-[80vh]" />
-          ) : (
-            <div className="flex-grow min-h-[60vh] md:min-h-[72vh]" />
-          ))}
+        {messages.length !== 0 && <div className="flex-grow min-h-[70vh]" />}
       </ChatContainer>
     </>
   );

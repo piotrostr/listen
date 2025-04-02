@@ -33,8 +33,7 @@ pub async fn get_faster100x_data(
         .await
         .map_err(|e| anyhow!("[Faster100x] Error reading response: {}", e))?;
 
-    // Log raw response in debug mode
-    tracing::info!("[Faster100x] Raw response: {}", response_text);
+    tracing::debug!("[Faster100x] Raw response: {}", response_text);
 
     // Parse response
     let data: Vec<Faster100xResponse> = serde_json::from_str(&response_text)

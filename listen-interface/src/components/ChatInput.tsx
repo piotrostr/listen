@@ -38,7 +38,6 @@ export function ChatInput({
     agentMode,
     setAgentMode,
     setResearchEnabled,
-    setTradingEnabled,
     modelType,
   } = useSettingsStore();
 

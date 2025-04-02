@@ -26,9 +26,16 @@ Returns:
 pub async fn analyze_holder_distribution(
     token_address: String,
 ) -> Result<serde_json::Value> {
-    let data = get_faster100x_data(&token_address)
-        .await
-        .map_err(|e| anyhow!("Error getting data from Faster100x: {}", e))?;
+    let data = match get_faster100x_data(&token_address).await {
+        Ok(data) => data,
+        Err(e) => {
+            tracing::error!("Error getting data from Faster100x: {}", e);
+            return Err(anyhow!(
+                "No data found for token address: {}",
+                token_address
+            ));
+        }
+    };
 
     format_wallet_analysis(&data)
 }

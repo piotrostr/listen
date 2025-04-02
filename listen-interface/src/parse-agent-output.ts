@@ -49,7 +49,6 @@ export function parseAgentOutput(output: string): StreamResponse[] {
           const nestedContentRegex = /<content>([\s\S]*?)<\/content>/g;
           const subres = [];
           let nestedMatch;
-          let lastIndex = 0;
 
           while ((nestedMatch = nestedContentRegex.exec(content)) !== null) {
             try {
@@ -62,7 +61,6 @@ export function parseAgentOutput(output: string): StreamResponse[] {
                 .replace(/\r/g, "\\r");
               const parsed = StreamResponseSchema.parse(JSON.parse(jsonStr));
               subres.push(parsed);
-              lastIndex = nestedContentRegex.lastIndex;
             } catch (error) {
               console.error("Error parsing nested content:", error);
             }

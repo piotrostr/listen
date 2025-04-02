@@ -83,16 +83,18 @@ export function ChatContainer({
           onSelect={handleQuestionClick || (() => {})}
         />
       )}
-      {!isGenerating &&
-        handleQuestionClick &&
-        suggestions.length > 0 &&
-        !displayTiles && (
-          <SuggestionTiles
-            suggestions={suggestions}
-            handleQuestionClick={handleQuestionClick}
-          />
-        )}
-      <div className="sticky bottom-0 left-0 right-0 bg-[#151518]/80 backdrop-blur-sm pb-2 px-4 lg:px-0 pt-3">
+      <div className="mt-auto sticky bottom-0 left-0 right-0 bg-[#151518]/80 backdrop-blur-sm pb-2 px-4 lg:px-0 pt-3">
+        {!isGenerating &&
+          handleQuestionClick &&
+          suggestions.length > 0 &&
+          !displayTiles && (
+            <div className="absolute bottom-full w-full">
+              <SuggestionTiles
+                suggestions={suggestions}
+                handleQuestionClick={handleQuestionClick}
+              />
+            </div>
+          )}
         <ChatInput
           inputMessage={inputMessage}
           isGenerating={isGenerating}

@@ -1,7 +1,18 @@
-import { describe, expect, it } from "bun:test";
+import { describe, expect, it, test } from "bun:test";
 import { embedResearchAnchors } from "../components/ResearchOutput";
 import { parseAgentOutput } from "../parse-agent-output";
+import { convertMarkdownToXmlTags } from "../process-tags";
 import { renderAddressOrTx } from "./util";
+
+describe("process model fuckups with codeblock instead of tags", () => {
+  const message =
+    '```pipeline\n{\n  "steps": [\n    {\n      "action": {\n        "type": "SwapOrder",\n        "input_token": "So11111111111111111111111111111111111111112",\n        "output_token": "UbCSotjZpnDYrFk8vydbJWxYEuoJiSptyujPojApump",\n        "amount": "37000000"\n      }\n    }\n  ]\n}\n```';
+
+  test("convertMarkdownToXmlTags", () => {
+    const result = convertMarkdownToXmlTags(message);
+    console.log(result);
+  });
+});
 
 describe("renderAddressOrTx", () => {
   it("should render a solana transaction signature as a link", () => {

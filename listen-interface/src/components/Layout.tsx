@@ -14,6 +14,8 @@ import {
 import { RxDashboard } from "react-icons/rx";
 import { useMobile } from "../contexts/MobileContext";
 import { useSidebar } from "../contexts/SidebarContext";
+import { usePortfolioStore } from "../store/portfolioStore";
+import { useWalletStore } from "../store/walletStore";
 import { PanelSelector } from "./PanelSelector";
 import { RecentChats } from "./RecentChats";
 import { SimpleHeader } from "./SimpleHeader";
@@ -87,6 +89,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { isMobile, isIOS } = useMobile();
   const [activePanel, setActivePanel] = useState<string | null>(null);
   const { user, logout } = usePrivy();
+  const { clearPortfolio } = usePortfolioStore();
+  const { clearWalletAddresses } = useWalletStore();
+  const handleLogout = () => {
+    logout();
+    clearPortfolio();
+    clearWalletAddresses();
+  };
   const { t } = useTranslation();
 
   const { isSidebarOpen, setIsSidebarOpen, toggleSidebar, isDropdownOpen } =
@@ -307,7 +316,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   {memoizedBottomItems}
                   {user && (
                     <button
-                      onClick={() => logout()}
+                      onClick={handleLogout}
                       className="flex items-center h-10 w-full rounded-lg text-gray-300 hover:text-white hover:bg-[#212121] transition-colors"
                     >
                       <div
