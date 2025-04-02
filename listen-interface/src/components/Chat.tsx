@@ -92,7 +92,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       enabled: true,
     },
     {
-      question: t("recommended_questions.research_arcdotfun_for_me"), // TODO X search
+      question: t("recommended_questions.research_arcdotfun_for_me"),
       enabled: true,
     },
   ];
