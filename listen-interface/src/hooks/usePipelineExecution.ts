@@ -105,17 +105,11 @@ export function usePipelineExecution() {
 
     return executePipeline(buyPipeline, {
       onSuccess: () => {
-        showToast(
-          `${t("pipeline_execution.buy_order_placed")} ${tokenAddress}`,
-          "success"
-        );
+        showToast(`${t("pipeline_execution.buy_order_placed")}`, "success");
         options?.onSuccess?.();
       },
       onError: (error) => {
-        showToast(
-          `${t("pipeline_execution.failed_to_buy_token")} ${error.message}`,
-          "error"
-        );
+        showToast(`${t("pipeline_execution.failed_to_buy_token")}`, "error");
         options?.onError?.(error);
       },
     });
