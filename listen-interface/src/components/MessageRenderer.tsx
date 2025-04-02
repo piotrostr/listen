@@ -78,9 +78,11 @@ const tagHandlers: Record<string, TagHandler> = {
 export function MessageRendererBase({
   message: msg,
   messages,
+  lastUserMessageRef,
 }: {
   message: Message;
   messages: Message[];
+  lastUserMessageRef: React.RefObject<HTMLDivElement>;
 }) {
   const { t } = useTranslation();
   const { debugMode } = useSettingsStore();
@@ -140,7 +142,9 @@ export function MessageRendererBase({
   // Check if this is a user message that can be edited
   if (msg.direction === "outgoing" && msg.type === "Message") {
     return (
-      <EditableMessage message={msg} isLastUserMessage={isLastUserMessage} />
+      <div ref={isLastUserMessage ? lastUserMessageRef : undefined}>
+        <EditableMessage message={msg} isLastUserMessage={isLastUserMessage} />
+      </div>
     );
   }
 
@@ -296,7 +300,8 @@ export const MessageRenderer = React.memo(
   (prevProps, nextProps) => {
     return (
       prevProps.message === nextProps.message &&
-      prevProps.messages === nextProps.messages
+      prevProps.messages === nextProps.messages &&
+      prevProps.lastUserMessageRef === nextProps.lastUserMessageRef
     );
   }
 );
