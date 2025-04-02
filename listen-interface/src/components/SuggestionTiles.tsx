@@ -16,7 +16,7 @@ export const SuggestionTiles = ({
 }) => {
   return (
     <div className="w-full overflow-x-auto scrollbar-hide px-4 md:px-0">
-      <div className="flex flex-nowrap gap-3 pb-4 min-w-min md:flex md:justify-center pt-2">
+      <div className="flex flex-nowrap gap-3 min-w-min md:flex md:justify-center pt-2">
         {suggestions.map((suggestion, index) => (
           <motion.div
             key={index}
