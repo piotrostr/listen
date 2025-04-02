@@ -28,6 +28,7 @@ export const ChatMessage = ({
   message: string;
   direction: "incoming" | "outgoing" | "agent";
 }) => {
+  console.log({ message });
   if (message.includes("<content>")) {
     message = renderAgentOutput(message, true);
   }
