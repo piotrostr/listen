@@ -4,11 +4,27 @@ import { PipelineDisplay } from "./components/Pipeline";
 import { SolanaWalletCreation } from "./components/SolanaWalletCreation";
 import { Message } from "./types/message";
 
+// Function to convert markdown code blocks to XML tags
+export function convertMarkdownToXmlTags(message: string): string {
+  // Match markdown code blocks with language specifier
+  const markdownRegex = /```(\w+)\n([\s\S]*?)```/g;
+  return message.replace(markdownRegex, (match, lang, content) => {
+    // Only convert if the language matches one of our supported tags
+    if (Object.keys(tagHandlers).includes(lang)) {
+      return `<${lang}>${content}</${lang}>`;
+    }
+    return match; // Keep original if language doesn't match our tags
+  });
+}
+
 // New function to process a message with all supported tags
 export function processMessageWithAllTags(
   message: string,
   msg: Message
 ): JSX.Element {
+  // Preprocess message to convert markdown code blocks to XML tags
+  const processedMessage = convertMarkdownToXmlTags(message);
+
   // Create a structure to track all tag positions
   type TagPosition = {
     tagName: string;
@@ -24,7 +40,7 @@ export function processMessageWithAllTags(
     const tagRegex = new RegExp(`<${tagName}>(.*?)<\\/${tagName}>`, "gs");
     let match;
 
-    while ((match = tagRegex.exec(message)) !== null) {
+    while ((match = tagRegex.exec(processedMessage)) !== null) {
       tagPositions.push({
         tagName,
         startIndex: match.index,
@@ -49,7 +65,7 @@ export function processMessageWithAllTags(
   tagPositions.forEach((pos, index) => {
     // Add text before the tag if there is any
     if (pos.startIndex > lastIndex) {
-      const textBefore = message.substring(lastIndex, pos.startIndex);
+      const textBefore = processedMessage.substring(lastIndex, pos.startIndex);
       if (textBefore.trim()) {
         result.push(
           <ChatMessage
@@ -72,8 +88,8 @@ export function processMessageWithAllTags(
   });
 
   // Add any remaining text after the last tag
-  if (lastIndex < message.length) {
-    const textAfter = message.substring(lastIndex);
+  if (lastIndex < processedMessage.length) {
+    const textAfter = processedMessage.substring(lastIndex);
     if (textAfter.trim()) {
       result.push(
         <ChatMessage

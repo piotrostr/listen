@@ -130,7 +130,16 @@ export function MessageRendererBase({
   // Check if the message contains any of our special tags
   const hasSpecialTags = Object.keys(tagHandlers).some((tagName) => {
     const tagRegex = new RegExp(`<${tagName}>.*?<\\/${tagName}>`, "s");
-    return tagRegex.test(msg.message);
+    const markdownTagRegex = new RegExp(`\`\`\`${tagName}.*?\`\`\``, "s");
+    const hasTag = tagRegex.test(msg.message);
+    if (hasTag) {
+      return true;
+    }
+    const hasMarkdownTag = markdownTagRegex.test(msg.message);
+    if (hasMarkdownTag) {
+      return true;
+    }
+    return false;
   });
 
   if (hasSpecialTags) {
