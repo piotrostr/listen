@@ -1,5 +1,7 @@
 import claudeIcon from "../assets/icons/claude.png";
+import deepseekIcon from "../assets/icons/deepseek.png";
 import geminiIcon from "../assets/icons/gemini.webp";
+import openaiIcon from "../assets/icons/openai.png";
 import { ModelType } from "../store/settingsStore";
 
 interface ModelOptionProps {
@@ -25,8 +27,7 @@ function ModelOption({
       } rounded-lg bg-black/40 backdrop-blur-sm hover:border-[#2D2D2D] transition-all`}
     >
       <div className="flex flex-row items-center justify-center gap-2">
-        <img src={iconPath} alt={label} className="w-6 h-6" />
-        <span className="text-sm">{label}</span>
+        <img src={iconPath} alt={label} className="h-6" />
       </div>
     </button>
   );
@@ -42,6 +43,16 @@ const MODEL_OPTIONS = [
     id: "gemini" as const,
     label: "Gemini",
     iconPath: geminiIcon,
+  },
+  {
+    id: "openai" as const,
+    label: "OpenAI",
+    iconPath: openaiIcon,
+  },
+  {
+    id: "deepseek" as const,
+    label: "DeepSeek",
+    iconPath: deepseekIcon,
   },
 ] as const;
 

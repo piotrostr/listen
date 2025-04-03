@@ -2,7 +2,7 @@ import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
 export type ChatType = "solana" | "omni";
-export type ModelType = "gemini" | "claude";
+export type ModelType = "gemini" | "claude" | "openai" | "deepseek";
 
 interface SettingsState {
   quickBuyAmount: number;
