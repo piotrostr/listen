@@ -1,29 +1,26 @@
 use anyhow::Result;
 use futures::StreamExt;
-use rig::agent::Agent;
 use rig::completion::AssistantContent;
 use rig::completion::Message;
 use rig::message::{ToolResultContent, UserContent};
-use rig::providers::anthropic::completion::CompletionModel as AnthropicModel;
 use rig::streaming::StreamingChoice;
-use rig::streaming::StreamingCompletion;
 use rig::OneOrMany;
 use std::io::Write;
-use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
+
+use crate::reasoning_loop::Model;
 
 use super::{ReasoningLoop, StreamResponse};
 
 impl ReasoningLoop {
-    pub async fn stream_anthropic(
+    pub async fn stream_generic(
         &self,
-        agent: &Arc<Agent<AnthropicModel>>,
+        model: Model,
         prompt: String,
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
     ) -> Result<Vec<Message>> {
         let mut current_messages = messages.clone();
-        let agent = agent.clone();
         let stdout = self.stdout;
 
         // Start with the user's original prompt
@@ -34,13 +31,11 @@ impl ReasoningLoop {
             let mut current_response = String::new();
 
             // Stream using the next input (original prompt or tool result)
-            let mut stream = match agent
+            let mut stream = match model
                 .stream_completion(
                     next_input.clone(),
                     current_messages.clone(),
                 )
-                .await?
-                .stream()
                 .await
             {
                 Ok(stream) => stream,
@@ -124,8 +119,9 @@ impl ReasoningLoop {
                         }
 
                         // Call the tool and get result
-                        let result =
-                            agent.tools.call(&name, params.to_string()).await;
+                        let result = model
+                            .call_tool(name.to_string(), params.to_string())
+                            .await;
 
                         if stdout {
                             print!("Tool result: {:?}\n", result);

@@ -30,7 +30,7 @@ async fn main() -> anyhow::Result<()> {
         let trader_agent =
             ReasoningLoop::new(Model::DeepSeek(trader_agent)).with_stdout(true);
 
-        let _ = trader_agent
+        let messages = trader_agent
             .stream(
                 "
                 we are testing the resoning loop, first grab my solana pubkey then my solana balance,
@@ -41,6 +41,11 @@ async fn main() -> anyhow::Result<()> {
                 None,
             )
             .await?;
+
+        tracing::info!(
+            "messages: {}",
+            serde_json::to_string_pretty(&messages).unwrap()
+        );
 
         Ok(())
     })

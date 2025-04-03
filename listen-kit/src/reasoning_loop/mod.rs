@@ -13,11 +13,11 @@ use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 use tokio::task_local;
 
-pub mod anthropic;
 pub mod debase64;
 pub mod deepseek;
-pub mod gemini;
-pub mod openai;
+pub mod model;
+pub mod stream_gemini;
+pub mod stream_generic;
 
 #[derive(Serialize, Debug, Deserialize)]
 #[serde(tag = "type", content = "content")]
@@ -109,17 +109,17 @@ impl ReasoningLoop {
 
         Self::with_stream_channel(tx.clone(), || async {
             match &self.model {
-                Model::Anthropic(agent) => {
-                    self.stream_anthropic(agent, prompt, messages, tx).await
-                }
                 Model::Gemini(agent) => {
                     self.stream_gemini(agent, prompt, messages, tx).await
                 }
-                Model::DeepSeek(agent) => {
-                    self.stream_deepseek(agent, prompt, messages, tx).await
-                }
-                Model::OpenAI(agent) => {
-                    self.stream_openai(agent, prompt, messages, tx).await
+                _ => {
+                    self.stream_generic(
+                        self.model.clone(),
+                        prompt,
+                        messages,
+                        tx,
+                    )
+                    .await
                 }
             }
         })

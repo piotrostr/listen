@@ -27,16 +27,19 @@ async fn main() -> anyhow::Result<()> {
         )))
         .with_stdout(true);
 
-        trader_agent
+        let messages =trader_agent
             .stream(
                 "
-                can you check the chart of Fartcoin please (search for the mint)
+                we are testing the resoning loop, first grab my solana pubkey then my solana balance,
+                then get metadata for Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump, the repeat the operation 3 times
                 "
                 .to_string(),
                 vec![],
                 None,
             )
             .await?;
+
+        println!("messages: {}", serde_json::to_string_pretty(&messages).unwrap());
 
         Ok(())
     })

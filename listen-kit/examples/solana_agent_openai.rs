@@ -6,11 +6,9 @@ async fn main() -> anyhow::Result<()> {
         solana::agent::{create_solana_agent_openai, Features},
     };
     use {
-        listen_kit::common::{content, role},
         listen_kit::reasoning_loop::ReasoningLoop,
         listen_kit::signer::solana::LocalSolanaSigner,
-        listen_kit::signer::SignerContext,
-        listen_kit::solana::util::env,
+        listen_kit::signer::SignerContext, listen_kit::solana::util::env,
         std::sync::Arc,
     };
 
@@ -45,11 +43,8 @@ async fn main() -> anyhow::Result<()> {
             .await?;
 
         tracing::info!(
-            "messages: {:#?}",
-            messages
-                .iter()
-                .map(|m| format!("{}: {}", role(m), content(m)))
-                .collect::<Vec<_>>()
+            "messages: {}",
+            serde_json::to_string_pretty(&messages).unwrap()
         );
 
         Ok(())
