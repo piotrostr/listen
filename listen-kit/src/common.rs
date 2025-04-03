@@ -4,6 +4,7 @@ use rig::message::{
     AssistantContent, Message, ToolResultContent, UserContent,
 };
 use rig::providers::deepseek::DeepSeekCompletionModel;
+use rig::providers::openai::CompletionModel as OpenAICompletionModel;
 use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -65,6 +66,7 @@ use rig::providers::gemini::completion::CompletionModel as GeminiCompletionModel
 pub type GeminiAgent = rig::agent::Agent<GeminiCompletionModel>;
 pub type ClaudeAgent = rig::agent::Agent<AnthropicCompletionModel>;
 pub type DeepSeekAgent = rig::agent::Agent<DeepSeekCompletionModel>;
+pub type OpenAIAgent = rig::agent::Agent<OpenAICompletionModel>;
 
 pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
     rig::providers::anthropic::Client::from_env()
@@ -88,6 +90,12 @@ pub fn gemini_agent_builder() -> AgentBuilder<GeminiCompletionModel> {
 pub fn deepseek_agent_builder() -> AgentBuilder<DeepSeekCompletionModel> {
     rig::providers::deepseek::Client::from_env()
         .agent(rig::providers::deepseek::DEEPSEEK_CHAT)
+        .max_tokens(1024 * 4)
+}
+
+pub fn openai_agent_builder() -> AgentBuilder<OpenAICompletionModel> {
+    rig::providers::openai::Client::from_env()
+        .agent(rig::providers::openai::GPT_4O)
         .max_tokens(1024 * 4)
 }
 

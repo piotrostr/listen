@@ -1,17 +1,11 @@
-use anyhow::Result;
-use rig::agent::Agent;
-use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
-
 use crate::{
-    common::claude_agent_builder,
+    common::{claude_agent_builder, ClaudeAgent},
     cross_chain::tools::{ApproveToken, CheckApproval, GetQuote, Swap},
     data::{FetchPriceActionAnalysis, FetchTopTokens},
     dexscreener::tools::SearchOnDexScreener,
 };
 
-pub async fn create_cross_chain_agent(
-    preamble: Option<String>,
-) -> Result<Agent<AnthropicCompletionModel>> {
+pub fn create_cross_chain_agent(preamble: Option<String>) -> ClaudeAgent {
     let preamble =
         preamble.unwrap_or("you are a cross-chain trading agent".to_string());
     let agent_builder = claude_agent_builder()
@@ -23,5 +17,5 @@ pub async fn create_cross_chain_agent(
         .tool(CheckApproval)
         .tool(FetchPriceActionAnalysis)
         .tool(FetchTopTokens);
-    Ok(agent_builder.build())
+    agent_builder.build()
 }

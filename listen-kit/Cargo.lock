@@ -4039,7 +4039,7 @@ dependencies = [
  "rand 0.8.5",
  "redis",
  "reqwest 0.12.12",
- "rig-core",
+ "rig-core 0.10.0",
  "rig-tool-macro",
  "serde",
  "serde_json",
@@ -5443,6 +5443,25 @@ dependencies = [
 [[package]]
 name = "rig-core"
 version = "0.10.0"
+dependencies = [
+ "async-stream",
+ "base64 0.22.1",
+ "bytes",
+ "futures",
+ "glob",
+ "mime_guess",
+ "ordered-float",
+ "reqwest 0.12.12",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
+name = "rig-core"
+version = "0.10.0"
 source = "git+https://github.com/piotrostr/rig?branch=fix%2Fno-param-tool-definitions-gemini#88f36b46a0bf32ceda80fa478d73765c07049a8d"
 dependencies = [
  "async-stream",
@@ -5468,7 +5487,7 @@ dependencies = [
  "anyhow",
  "proc-macro2",
  "quote",
- "rig-core",
+ "rig-core 0.10.0 (git+https://github.com/piotrostr/rig?branch=fix%2Fno-param-tool-definitions-gemini)",
  "serde",
  "serde_json",
  "syn 1.0.109",

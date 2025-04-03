@@ -33,6 +33,9 @@ impl ReasoningLoop {
         'outer: loop {
             let mut current_response = String::new();
 
+            println!("next_input: {:?}", next_input);
+            println!("current_messages: {:?}", current_messages);
+
             // Stream using the next input (original prompt or tool result)
             let mut stream = match agent
                 .stream_completion(
@@ -67,6 +70,7 @@ impl ReasoningLoop {
             }
 
             while let Some(chunk) = stream.next().await {
+                println!("chunk: {:?}", chunk);
                 match chunk? {
                     StreamingChoice::Message(text) => {
                         if stdout {

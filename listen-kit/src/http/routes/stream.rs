@@ -124,59 +124,10 @@ async fn stream(
     // Select the appropriate agent based on the chain parameter and preamble
     let agent = match request.chain.as_deref() {
         #[cfg(feature = "solana")]
-        Some("solana") => {
-            match create_solana_agent(preamble, features.clone()).await {
-                Ok(agent) => Arc::new(agent),
-                Err(e) => {
-                    tracing::error!(
-                        "Error: failed to create Solana agent: {}",
-                        e
-                    );
-                    let error_event = sse::Event::Data(sse::Data::new(
-                        serde_json::to_string(&StreamResponse::Error(
-                            format!("Failed to create Solana agent: {}", e),
-                        ))
-                        .unwrap(),
-                    ));
-                    let _ = tx.send(error_event).await;
-                    return sse::Sse::from_infallible_receiver(rx);
-                }
-            }
-        }
+        Some("solana") => create_solana_agent(preamble, features.clone()),
         #[cfg(feature = "evm")]
-        Some("evm") => match create_evm_agent(preamble).await {
-            Ok(agent) => Arc::new(agent),
-            Err(e) => {
-                tracing::error!("Error: failed to create EVM agent: {}", e);
-                let error_event = sse::Event::Data(sse::Data::new(
-                    serde_json::to_string(&StreamResponse::Error(format!(
-                        "Failed to create EVM agent: {}",
-                        e
-                    )))
-                    .unwrap(),
-                ));
-                let _ = tx.send(error_event).await;
-                return sse::Sse::from_infallible_receiver(rx);
-            }
-        },
-        Some("omni") => match create_cross_chain_agent(preamble).await {
-            Ok(agent) => Arc::new(agent),
-            Err(e) => {
-                tracing::error!(
-                    "Error: failed to create cross-chain agent: {}",
-                    e
-                );
-                let error_event = sse::Event::Data(sse::Data::new(
-                    serde_json::to_string(&StreamResponse::Error(format!(
-                        "Failed to create cross-chain agent: {}",
-                        e
-                    )))
-                    .unwrap(),
-                ));
-                let _ = tx.send(error_event).await;
-                return sse::Sse::from_infallible_receiver(rx);
-            }
-        },
+        Some("evm") => create_evm_agent(preamble),
+        Some("omni") => create_cross_chain_agent(preamble),
         Some(chain) => {
             tracing::error!("Error: unsupported chain: {}", chain);
             let error_event = sse::Event::Data(sse::Data::new(
@@ -277,7 +228,8 @@ async fn stream(
             };
             ReasoningLoop::new(model).with_stdout(false)
         } else {
-            ReasoningLoop::new(Model::Anthropic(agent)).with_stdout(false)
+            ReasoningLoop::new(Model::Anthropic(Arc::new(agent)))
+                .with_stdout(false)
         };
 
         // Create a channel for the reasoning loop to send responses

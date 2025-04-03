@@ -5,6 +5,8 @@ use super::tools::{
 use crate::agents::research::ViewImage;
 use crate::common::{
     claude_agent_builder, deepseek_agent_builder, gemini_agent_builder,
+    openai_agent_builder, ClaudeAgent, DeepSeekAgent, GeminiAgent,
+    OpenAIAgent,
 };
 use crate::data::{
     AnalyzePageContent, FetchPriceActionAnalysis, FetchTokenMetadata,
@@ -17,11 +19,6 @@ use crate::lunarcrush::AnalyzeSentiment;
 use crate::solana::advanced_orders::CreateAdvancedOrder;
 use crate::solana::tools::AnalyzeRisk;
 use crate::think::Think;
-use anyhow::Result;
-use rig::agent::Agent;
-use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
-use rig::providers::deepseek::DeepSeekCompletionModel;
-use rig::providers::gemini::completion::CompletionModel as GeminiCompletionModel;
 
 use serde::{Deserialize, Serialize};
 
@@ -31,10 +28,10 @@ pub struct Features {
     pub deep_research: bool,
 }
 
-pub async fn create_solana_agent(
+pub fn create_solana_agent(
     preamble: Option<String>,
     features: Features,
-) -> Result<Agent<AnthropicCompletionModel>> {
+) -> ClaudeAgent {
     let preamble = preamble.unwrap_or(format!(
         "{}",
         "you are a solana trading agent that can also interact with pump.fun;"
@@ -66,13 +63,13 @@ pub async fn create_solana_agent(
         agent = agent.tool(Swap).tool(CreateAdvancedOrder);
     }
 
-    Ok(agent.build())
+    agent.build()
 }
 
 pub fn create_solana_agent_gemini(
     preamble: Option<String>,
     features: Features,
-) -> Agent<GeminiCompletionModel> {
+) -> GeminiAgent {
     let preamble =
         preamble.unwrap_or("you are a solana trading agent".to_string());
 
@@ -108,11 +105,47 @@ pub fn create_solana_agent_gemini(
 pub fn create_solana_agent_deepseek(
     preamble: Option<String>,
     features: Features,
-) -> Agent<DeepSeekCompletionModel> {
+) -> DeepSeekAgent {
     let preamble =
         preamble.unwrap_or("you are a solana trading agent".to_string());
 
     let mut agent = deepseek_agent_builder()
+        .preamble(&preamble)
+        .tool(GetQuote)
+        .tool(GetSolBalance)
+        .tool(GetSplTokenBalance)
+        .tool(SearchOnDexScreener)
+        .tool(FetchTopTokens)
+        .tool(DeployPumpFunToken)
+        .tool(FetchTokenMetadata)
+        .tool(ResearchXProfile)
+        .tool(FetchXPost)
+        .tool(SearchTweets)
+        .tool(AnalyzeRisk)
+        .tool(FetchPriceActionAnalysis)
+        .tool(Think)
+        .tool(AnalyzeHolderDistribution)
+        .tool(AnalyzeSentiment)
+        .tool(GetCurrentTime)
+        .tool(SearchWeb)
+        .tool(ViewImage)
+        .tool(AnalyzePageContent);
+
+    if features.autonomous {
+        agent = agent.tool(Swap).tool(CreateAdvancedOrder);
+    }
+
+    agent.build()
+}
+
+pub fn create_solana_agent_openai(
+    preamble: Option<String>,
+    features: Features,
+) -> OpenAIAgent {
+    let preamble =
+        preamble.unwrap_or("you are a solana trading agent".to_string());
+
+    let mut agent = openai_agent_builder()
         .preamble(&preamble)
         .tool(GetQuote)
         .tool(GetSolBalance)
