@@ -13,10 +13,10 @@ use std::sync::Arc;
 async fn main() -> Result<()> {
     let leader_reasoning_loop = match env("MODEL").as_str() {
         "gemini" => ReasoningLoop::new(Model::Gemini(Arc::new(
-            create_listen_agent_gemini(),
+            create_listen_agent_gemini("en".to_string()),
         ))),
         "claude" => ReasoningLoop::new(Model::Anthropic(Arc::new(
-            create_listen_agent_claude(),
+            create_listen_agent_claude("en".to_string()),
         ))),
         _ => anyhow::bail!("Invalid model"),
     }

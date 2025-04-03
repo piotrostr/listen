@@ -263,11 +263,12 @@ async fn stream(
 
     let preamble = request.preamble.clone();
     let model_type = request.model_type.clone().unwrap_or_default();
+    let locale = request.locale.clone().unwrap_or("en".to_string());
     // Do the main processing with the signer
     spawn_with_signer(signer, || async move {
         let reasoning_loop = if model_type == "gemini" {
             let model = if features.deep_research {
-                Model::Gemini(Arc::new(create_listen_agent_gemini()))
+                Model::Gemini(Arc::new(create_listen_agent_gemini(locale)))
             } else {
                 Model::Gemini(Arc::new(create_solana_agent_gemini(
                     preamble.clone(),
