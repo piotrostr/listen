@@ -37,7 +37,8 @@ Format your investigation plan like this:
 2. Follow-up areas based on response
 3. Deep-dive questions for each area
 
-Keep investigating until you have explored all relevant angles."#;
+Keep investigating until you have explored all relevant angles.
+Always use English."#;
 
 const PREAMBLE_ZH: &str = r#"
 你是一个规划代理，一个协调任务委托给专门代理的协调者。
@@ -53,7 +54,8 @@ const PREAMBLE_ZH: &str = r#"
 格式化你的调查计划如下：
 1. 初始问题：[委托给适当的代理]
 2. 基于响应的跟进问题
-"#;
+
+请使用中文。"#;
 
 pub fn create_deep_research_agent_claude(locale: String) -> ClaudeAgent {
     claude_agent_builder()

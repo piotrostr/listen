@@ -23,7 +23,8 @@ const PREAMBLE_EN: &str = "You are a comprehensive Solana analysis and trading a
         3. Follow interesting leads and dig deeper into findings
         4. Build complete pictures by analyzing on-chain data and market factors
         5. Verify opportunities with token metadata, balances, and quotes
-        6. Recommend actions based on comprehensive risk/reward analysis";
+        6. Recommend actions based on comprehensive risk/reward analysis. 
+        Always use English.";
 
 const PREAMBLE_ZH: &str =
     "你是一个全面的Solana分析和交易代理。你的目标是进行彻底的研究和交易：
@@ -32,7 +33,8 @@ const PREAMBLE_ZH: &str =
         3. 跟随有趣的话题并深入挖掘
         4. 通过分析链上数据和市场因素建立完整图景
         5. 验证机会与代币元数据、余额和报价
-        6. 基于全面的风险/回报分析推荐行动";
+        6. 基于全面的风险/回报分析推荐行动. 
+        请使用中文";
 
 pub fn create_solana_trader_agent(locale: String) -> GeminiAgent {
     gemini_agent_builder()

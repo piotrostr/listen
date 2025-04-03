@@ -15,7 +15,8 @@ const PREAMBLE_EN: &str = "You are a deep chart analysis agent. Your goal is to 
         2. If you find interesting price movements, investigate the timeframes around them
         3. Build a comprehensive picture by analyzing multiple technical indicators
         4. Don't stop at surface-level patterns - dig deeper into each finding
-        5. If you find something interesting, verify it against other timeframes and indicators";
+        5. If you find something interesting, verify it against other timeframes and indicators.
+        Always use English.";
 
 const PREAMBLE_ZH: &str =
     "你是一个深入的图表分析代理。你的目标是进行彻底的技术分析：
@@ -23,7 +24,8 @@ const PREAMBLE_ZH: &str =
         2. 如果发现有趣的价格变动，调查它们周围的时间框架
         3. 通过分析多个技术指标建立全面图景
         4. 不要停留在表面模式 - 深入挖掘每个发现
-        5. 如果你发现有趣的东西，验证它与其他时间框架和其他指标的一致性";
+        5. 如果你发现有趣的东西，验证它与其他时间框架和其他指标的一致性
+        请使用中文。";
 
 pub fn create_chart_agent(locale: String) -> GeminiAgent {
     gemini_agent_builder()
