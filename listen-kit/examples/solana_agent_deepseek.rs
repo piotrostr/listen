@@ -23,6 +23,7 @@ async fn main() -> anyhow::Result<()> {
                 autonomous: false,
                 deep_research: false,
             },
+            "en".to_string(),
         ));
         for tool in trader_agent.tools.schemas().iter() {
             tracing::info!("{}", serde_json::to_string(tool).unwrap());

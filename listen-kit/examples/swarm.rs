@@ -1,7 +1,6 @@
 use anyhow::Result;
-use listen_kit::agents::listen::{
-    create_listen_agent_claude, create_listen_agent_gemini,
-};
+use listen_kit::agents::listen::create_deep_research_agent_claude;
+use listen_kit::agents::listen::create_deep_research_agent_gemini;
 use listen_kit::common::spawn_with_signer;
 use listen_kit::evm::util::env;
 use listen_kit::reasoning_loop::Model;
@@ -13,10 +12,10 @@ use std::sync::Arc;
 async fn main() -> Result<()> {
     let leader_reasoning_loop = match env("MODEL").as_str() {
         "gemini" => ReasoningLoop::new(Model::Gemini(Arc::new(
-            create_listen_agent_gemini("en".to_string()),
+            create_deep_research_agent_gemini("en".to_string()),
         ))),
-        "claude" => ReasoningLoop::new(Model::Anthropic(Arc::new(
-            create_listen_agent_claude("en".to_string()),
+        "claude" => ReasoningLoop::new(Model::Claude(Arc::new(
+            create_deep_research_agent_claude("en".to_string()),
         ))),
         _ => anyhow::bail!("Invalid model"),
     }

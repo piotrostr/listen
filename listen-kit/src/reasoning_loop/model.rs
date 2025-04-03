@@ -15,7 +15,7 @@ impl Model {
         messages: Vec<Message>,
     ) -> Result<StreamingResult, CompletionError> {
         match self {
-            Model::Anthropic(agent) => {
+            Model::Claude(agent) => {
                 agent
                     .stream_completion(prompt, messages)
                     .await?
@@ -52,7 +52,7 @@ impl Model {
         params: String,
     ) -> Result<String, ToolSetError> {
         match self {
-            Model::Anthropic(agent) => agent.tools.call(&name, params).await,
+            Model::Claude(agent) => agent.tools.call(&name, params).await,
             Model::Gemini(agent) => agent.tools.call(&name, params).await,
             Model::DeepSeek(agent) => agent.tools.call(&name, params).await,
             Model::OpenAI(agent) => agent.tools.call(&name, params).await,

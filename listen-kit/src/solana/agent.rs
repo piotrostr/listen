@@ -2,6 +2,10 @@ use super::tools::{
     DeployPumpFunToken, GetCurrentTime, GetQuote, GetSolBalance,
     GetSplTokenBalance, Swap,
 };
+use crate::agents::listen::{
+    create_deep_research_agent_claude, create_deep_research_agent_deepseek,
+    create_deep_research_agent_gemini, create_deep_research_agent_openai,
+};
 use crate::agents::research::ViewImage;
 use crate::common::{
     claude_agent_builder, deepseek_agent_builder, gemini_agent_builder,
@@ -28,14 +32,19 @@ pub struct Features {
     pub deep_research: bool,
 }
 
-pub fn create_solana_agent(
+pub fn create_solana_agent_claude(
     preamble: Option<String>,
     features: Features,
+    locale: String,
 ) -> ClaudeAgent {
     let preamble = preamble.unwrap_or(format!(
         "{}",
         "you are a solana trading agent that can also interact with pump.fun;"
     ));
+
+    if features.deep_research {
+        return create_deep_research_agent_claude(locale);
+    }
 
     let mut agent = claude_agent_builder()
         .preamble(&preamble)
@@ -69,9 +78,14 @@ pub fn create_solana_agent(
 pub fn create_solana_agent_gemini(
     preamble: Option<String>,
     features: Features,
+    locale: String,
 ) -> GeminiAgent {
     let preamble =
         preamble.unwrap_or("you are a solana trading agent".to_string());
+
+    if features.deep_research {
+        return create_deep_research_agent_gemini(locale);
+    }
 
     let mut agent = gemini_agent_builder()
         .preamble(&preamble)
@@ -105,9 +119,14 @@ pub fn create_solana_agent_gemini(
 pub fn create_solana_agent_deepseek(
     preamble: Option<String>,
     features: Features,
+    locale: String,
 ) -> DeepSeekAgent {
     let preamble =
         preamble.unwrap_or("you are a solana trading agent".to_string());
+
+    if features.deep_research {
+        return create_deep_research_agent_deepseek(locale);
+    }
 
     let mut agent = deepseek_agent_builder()
         .preamble(&preamble)
@@ -141,9 +160,14 @@ pub fn create_solana_agent_deepseek(
 pub fn create_solana_agent_openai(
     preamble: Option<String>,
     features: Features,
+    locale: String,
 ) -> OpenAIAgent {
     let preamble =
         preamble.unwrap_or("you are a solana trading agent".to_string());
+
+    if features.deep_research {
+        return create_deep_research_agent_openai(locale);
+    }
 
     let mut agent = openai_agent_builder()
         .preamble(&preamble)

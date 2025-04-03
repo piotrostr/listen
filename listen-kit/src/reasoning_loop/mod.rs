@@ -71,7 +71,7 @@ impl StreamResponse {
 
 #[derive(Clone)]
 pub enum Model {
-    Anthropic(Arc<ClaudeAgent>),
+    Claude(Arc<ClaudeAgent>),
     Gemini(Arc<GeminiAgent>),
     DeepSeek(Arc<DeepSeekAgent>),
     OpenAI(Arc<OpenAIAgent>),

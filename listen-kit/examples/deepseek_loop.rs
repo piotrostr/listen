@@ -1,5 +1,5 @@
 use anyhow::Result;
-use listen_kit::agents::listen::create_listen_agent_deepseek;
+use listen_kit::agents::listen::create_deep_research_agent_deepseek;
 use listen_kit::common::spawn_with_signer;
 use listen_kit::evm::util::env;
 use listen_kit::reasoning_loop::Model;
@@ -10,7 +10,7 @@ use std::sync::Arc;
 #[tokio::main]
 async fn main() -> Result<()> {
     let reasoning_loop = ReasoningLoop::new(Model::DeepSeek(Arc::new(
-        create_listen_agent_deepseek("en".to_string()),
+        create_deep_research_agent_deepseek("en".to_string()),
     )))
     .with_stdout(true);
 

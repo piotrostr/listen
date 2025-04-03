@@ -13,6 +13,7 @@ pub mod solana;
 #[cfg(feature = "evm")]
 pub mod evm;
 
+pub mod agent;
 pub mod common;
 pub mod cross_chain;
 pub mod data;

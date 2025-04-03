@@ -5,7 +5,8 @@ use crate::{
     },
     common::{
         claude_agent_builder, deepseek_agent_builder, gemini_agent_builder,
-        ClaudeAgent, DeepSeekAgent, GeminiAgent,
+        openai_agent_builder, ClaudeAgent, DeepSeekAgent, GeminiAgent,
+        OpenAIAgent,
     },
     data::{FetchTokenMetadata, FetchTopTokens},
     dexscreener::tools::SearchOnDexScreener,
@@ -54,7 +55,7 @@ const PREAMBLE_ZH: &str = r#"
 2. 基于响应的跟进问题
 "#;
 
-pub fn create_listen_agent_claude(locale: String) -> ClaudeAgent {
+pub fn create_deep_research_agent_claude(locale: String) -> ClaudeAgent {
     claude_agent_builder()
         .tool(FetchTokenMetadata)
         .tool(SearchOnDexScreener)
@@ -72,7 +73,7 @@ pub fn create_listen_agent_claude(locale: String) -> ClaudeAgent {
         .build()
 }
 
-pub fn create_listen_agent_gemini(locale: String) -> GeminiAgent {
+pub fn create_deep_research_agent_gemini(locale: String) -> GeminiAgent {
     gemini_agent_builder()
         .tool(FetchTokenMetadata)
         .tool(SearchOnDexScreener)
@@ -90,8 +91,26 @@ pub fn create_listen_agent_gemini(locale: String) -> GeminiAgent {
         .build()
 }
 
-pub fn create_listen_agent_deepseek(locale: String) -> DeepSeekAgent {
+pub fn create_deep_research_agent_deepseek(locale: String) -> DeepSeekAgent {
     deepseek_agent_builder()
+        .tool(FetchTokenMetadata)
+        .tool(SearchOnDexScreener)
+        .tool(DelegateToResearchAgent)
+        .tool(DelegateToSolanaTraderAgent)
+        .tool(DelegateToChartAgent)
+        .tool(Think)
+        .tool(GetCurrentTime)
+        .tool(FetchTopTokens)
+        .preamble(if locale == "zh" {
+            PREAMBLE_ZH
+        } else {
+            PREAMBLE_EN
+        })
+        .build()
+}
+
+pub fn create_deep_research_agent_openai(locale: String) -> OpenAIAgent {
+    openai_agent_builder()
         .tool(FetchTokenMetadata)
         .tool(SearchOnDexScreener)
         .tool(DelegateToResearchAgent)

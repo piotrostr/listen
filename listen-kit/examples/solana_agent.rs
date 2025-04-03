@@ -23,8 +23,8 @@ async fn main() -> anyhow::Result<()> {
                     autonomous: false,
                     deep_research: false,
                 },
-            ),
-        )))
+                "en".to_string(),
+        ))))
         .with_stdout(true);
 
         let messages =trader_agent
