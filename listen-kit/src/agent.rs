@@ -30,13 +30,13 @@ pub fn create_agent(
             "openai" => Model::OpenAI(Arc::new(create_solana_agent_openai(
                 preamble, features, locale,
             ))),
-            _ => Model::Claude(Arc::new(create_solana_agent_claude(
+            _ => Model::Gemini(Arc::new(create_solana_agent_gemini(
                 preamble, features, locale,
             ))),
         },
         "evm" => Model::Claude(Arc::new(create_evm_agent(preamble))),
         "omni" => Model::Claude(Arc::new(create_cross_chain_agent(preamble))),
-        _ => Model::Claude(Arc::new(create_solana_agent_claude(
+        _ => Model::Gemini(Arc::new(create_solana_agent_gemini(
             preamble, features, locale,
         ))),
     }
