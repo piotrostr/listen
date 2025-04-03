@@ -4039,7 +4039,7 @@ dependencies = [
  "rand 0.8.5",
  "redis",
  "reqwest 0.12.12",
- "rig-core",
+ "rig-core 0.10.0 (git+https://github.com/piotrostr/rig?branch=fix%2Fopenai-id-missing)",
  "rig-tool-macro",
  "serde",
  "serde_json",
@@ -5461,6 +5461,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "rig-core"
+version = "0.10.0"
+source = "git+https://github.com/piotrostr/rig?branch=fix%2Fopenai-id-missing#95911fe714c42f1c283c197ec72485581535c1e9"
+dependencies = [
+ "async-stream",
+ "base64 0.22.1",
+ "bytes",
+ "futures",
+ "glob",
+ "mime_guess",
+ "ordered-float",
+ "reqwest 0.12.12",
+ "schemars",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tracing",
+]
+
+[[package]]
 name = "rig-tool-macro"
 version = "0.5.0"
 source = "git+https://github.com/piotrostr/rig-tool-macro#7fa7744b7cdd15cf0326ab74f011bf2c7cfcff31"
@@ -5468,7 +5488,7 @@ dependencies = [
  "anyhow",
  "proc-macro2",
  "quote",
- "rig-core",
+ "rig-core 0.10.0 (git+https://github.com/piotrostr/rig?branch=fix%2Fno-param-tool-definitions-gemini)",
  "serde",
  "serde_json",
  "syn 1.0.109",

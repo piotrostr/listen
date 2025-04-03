@@ -1,14 +1,14 @@
 #[cfg(feature = "solana")]
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
-    use listen_kit::{reasoning_loop::Model, solana::agent::Features};
+    use listen_kit::{
+        reasoning_loop::Model,
+        solana::agent::{create_solana_agent_deepseek, Features},
+    };
     use {
-        listen_kit::common::{content, role},
         listen_kit::reasoning_loop::ReasoningLoop,
         listen_kit::signer::solana::LocalSolanaSigner,
-        listen_kit::signer::SignerContext,
-        listen_kit::solana::agent::create_solana_agent_gemini,
-        listen_kit::solana::util::env,
+        listen_kit::signer::SignerContext, listen_kit::solana::util::env,
         std::sync::Arc,
     };
 
@@ -17,7 +17,7 @@ async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
 
     SignerContext::with_signer(Arc::new(signer), async {
-        let trader_agent = Arc::new(create_solana_agent_gemini(
+        let trader_agent = Arc::new(create_solana_agent_deepseek(
             None,
             Features {
                 autonomous: false,
@@ -29,7 +29,7 @@ async fn main() -> anyhow::Result<()> {
             tracing::info!("{}", serde_json::to_string(tool).unwrap());
         }
         let trader_agent =
-            ReasoningLoop::new(Model::Gemini(trader_agent)).with_stdout(true);
+            ReasoningLoop::new(Model::DeepSeek(trader_agent)).with_stdout(true);
 
         let messages = trader_agent
             .stream(
@@ -44,11 +44,8 @@ async fn main() -> anyhow::Result<()> {
             .await?;
 
         tracing::info!(
-            "messages: {:#?}",
-            messages
-                .iter()
-                .map(|m| format!("{}: {}", role(m), content(m)))
-                .collect::<Vec<_>>()
+            "messages: {}",
+            serde_json::to_string_pretty(&messages).unwrap()
         );
 
         Ok(())

@@ -1,17 +1,12 @@
-use crate::agents::listen::create_listen_agent_gemini;
+use crate::agent::create_agent;
 use crate::common::spawn_with_signer;
-use crate::cross_chain::agent::create_cross_chain_agent;
-use crate::evm::agent::create_evm_agent;
 use crate::http::middleware::verify_auth;
 use crate::http::serde::deserialize_messages;
 use crate::http::state::AppState;
-use crate::reasoning_loop::Model;
 use crate::reasoning_loop::ReasoningLoop;
 use crate::reasoning_loop::StreamResponse;
 use crate::signer::privy::PrivySigner;
 use crate::signer::TransactionSigner;
-use crate::solana::agent::create_solana_agent;
-use crate::solana::agent::create_solana_agent_gemini;
 use crate::solana::agent::Features;
 use actix_web::{post, web, HttpRequest, Responder};
 use actix_web_lab::sse;
@@ -120,91 +115,15 @@ async fn stream(
 
     let preamble = request.preamble.clone();
     let features = request.features.clone().unwrap_or_default();
-
-    // Select the appropriate agent based on the chain parameter and preamble
-    let agent = match request.chain.as_deref() {
-        #[cfg(feature = "solana")]
-        Some("solana") => {
-            match create_solana_agent(preamble, features.clone()).await {
-                Ok(agent) => Arc::new(agent),
-                Err(e) => {
-                    tracing::error!(
-                        "Error: failed to create Solana agent: {}",
-                        e
-                    );
-                    let error_event = sse::Event::Data(sse::Data::new(
-                        serde_json::to_string(&StreamResponse::Error(
-                            format!("Failed to create Solana agent: {}", e),
-                        ))
-                        .unwrap(),
-                    ));
-                    let _ = tx.send(error_event).await;
-                    return sse::Sse::from_infallible_receiver(rx);
-                }
-            }
-        }
-        #[cfg(feature = "evm")]
-        Some("evm") => match create_evm_agent(preamble).await {
-            Ok(agent) => Arc::new(agent),
-            Err(e) => {
-                tracing::error!("Error: failed to create EVM agent: {}", e);
-                let error_event = sse::Event::Data(sse::Data::new(
-                    serde_json::to_string(&StreamResponse::Error(format!(
-                        "Failed to create EVM agent: {}",
-                        e
-                    )))
-                    .unwrap(),
-                ));
-                let _ = tx.send(error_event).await;
-                return sse::Sse::from_infallible_receiver(rx);
-            }
-        },
-        Some("omni") => match create_cross_chain_agent(preamble).await {
-            Ok(agent) => Arc::new(agent),
-            Err(e) => {
-                tracing::error!(
-                    "Error: failed to create cross-chain agent: {}",
-                    e
-                );
-                let error_event = sse::Event::Data(sse::Data::new(
-                    serde_json::to_string(&StreamResponse::Error(format!(
-                        "Failed to create cross-chain agent: {}",
-                        e
-                    )))
-                    .unwrap(),
-                ));
-                let _ = tx.send(error_event).await;
-                return sse::Sse::from_infallible_receiver(rx);
-            }
-        },
-        Some(chain) => {
-            tracing::error!("Error: unsupported chain: {}", chain);
-            let error_event = sse::Event::Data(sse::Data::new(
-                serde_json::to_string(&StreamResponse::Error(format!(
-                    "Unsupported chain: {}",
-                    chain
-                )))
-                .unwrap(),
-            ));
-            let _ = tx.send(error_event).await;
-            return sse::Sse::from_infallible_receiver(rx);
-        }
-        None => {
-            tracing::error!("Chain parameter is required");
-            let error_event = sse::Event::Data(sse::Data::new(
-                serde_json::to_string(&StreamResponse::Error(
-                    "Chain parameter is required".to_string(),
-                ))
-                .unwrap(),
-            ));
-            let _ = tx.send(error_event).await;
-            return sse::Sse::from_infallible_receiver(rx);
-        }
-    };
-
+    let locale = request.locale.clone().unwrap_or("en".to_string());
+    let chain = request.chain.clone().unwrap_or("solana".to_string());
+    let model_type = request.model_type.clone().unwrap_or_default();
     let prompt = request.prompt.clone();
     let messages = request.chat_history.clone();
-    let locale = request.locale.clone().unwrap_or("en".to_string());
+
+    // Select the appropriate agent based on the chain parameter and preamble
+    let model =
+        create_agent(preamble, features, locale.clone(), chain, model_type);
 
     let signer: Arc<dyn TransactionSigner> = Arc::new(PrivySigner::new(
         state.privy.clone(),
@@ -261,23 +180,8 @@ async fn stream(
     // Process responses in the background - don't wait for it
     tokio::spawn(response_collector);
 
-    let preamble = request.preamble.clone();
-    let model_type = request.model_type.clone().unwrap_or_default();
-    // Do the main processing with the signer
     spawn_with_signer(signer, || async move {
-        let reasoning_loop = if model_type == "gemini" {
-            let model = if features.deep_research {
-                Model::Gemini(Arc::new(create_listen_agent_gemini()))
-            } else {
-                Model::Gemini(Arc::new(create_solana_agent_gemini(
-                    preamble.clone(),
-                    features,
-                )))
-            };
-            ReasoningLoop::new(model).with_stdout(false)
-        } else {
-            ReasoningLoop::new(Model::Anthropic(agent)).with_stdout(false)
-        };
+        let reasoning_loop = ReasoningLoop::new(model).with_stdout(false);
 
         // Create a channel for the reasoning loop to send responses
         let (internal_tx, mut internal_rx) =

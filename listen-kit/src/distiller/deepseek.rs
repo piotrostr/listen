@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use crate::agents::delegate::delegate_to_agent;
+use crate::common::deepseek_agent_builder;
 use crate::reasoning_loop::Model;
 use crate::signer::SignerContext;
 
@@ -10,8 +11,6 @@ use super::analyst::{
 };
 use super::preambles;
 use anyhow::Result;
-use rig::providers::deepseek::DeepSeekCompletionModel;
-pub type DeepSeekAgent = rig::agent::Agent<DeepSeekCompletionModel>;
 
 pub struct DeepSeekAnalystAgent {
     agent: Model,
@@ -158,8 +157,7 @@ pub fn make_deepseek_analyst(
         (AnalystType::Web, _) => preambles::WEB_EN,
     };
 
-    let agent = rig::providers::deepseek::Client::from_env()
-        .agent(rig::providers::deepseek::DEEPSEEK_CHAT)
+    let agent = deepseek_agent_builder()
         .preamble(&preamble.unwrap_or(default_preamble.to_string()))
         .build();
 

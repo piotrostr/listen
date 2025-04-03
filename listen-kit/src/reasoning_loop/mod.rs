@@ -1,10 +1,10 @@
+use crate::common::ClaudeAgent;
+use crate::common::DeepSeekAgent;
+use crate::common::GeminiAgent;
+use crate::common::OpenAIAgent;
 use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
-use rig::agent::Agent;
 use rig::completion::Message;
-use rig::providers::anthropic::completion::CompletionModel as AnthropicModel;
-use rig::providers::deepseek::DeepSeekCompletionModel as DeepSeekModel;
-use rig::providers::gemini::completion::CompletionModel as GeminiModel;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cell::RefCell;
@@ -13,9 +13,10 @@ use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 use tokio::task_local;
 
-pub mod anthropic;
 pub mod debase64;
-pub mod gemini;
+pub mod model;
+pub mod stream_gemini;
+pub mod stream_generic;
 
 #[derive(Serialize, Debug, Deserialize)]
 #[serde(tag = "type", content = "content")]
@@ -69,9 +70,10 @@ impl StreamResponse {
 
 #[derive(Clone)]
 pub enum Model {
-    Anthropic(Arc<Agent<AnthropicModel>>),
-    Gemini(Arc<Agent<GeminiModel>>),
-    DeepSeek(Arc<Agent<DeepSeekModel>>),
+    Claude(Arc<ClaudeAgent>),
+    Gemini(Arc<GeminiAgent>),
+    DeepSeek(Arc<DeepSeekAgent>),
+    OpenAI(Arc<OpenAIAgent>),
 }
 
 pub struct ReasoningLoop {
@@ -106,13 +108,18 @@ impl ReasoningLoop {
 
         Self::with_stream_channel(tx.clone(), || async {
             match &self.model {
-                Model::Anthropic(agent) => {
-                    self.stream_anthropic(agent, prompt, messages, tx).await
-                }
                 Model::Gemini(agent) => {
                     self.stream_gemini(agent, prompt, messages, tx).await
                 }
-                _ => panic!("Unsupported model"), // FIXME support Deepseek (OpenAI compat)
+                _ => {
+                    self.stream_generic(
+                        self.model.clone(),
+                        prompt,
+                        messages,
+                        tx,
+                    )
+                    .await
+                }
             }
         })
         .await

@@ -22,7 +22,7 @@ async fn main() -> Result<()> {
             .tool(GetPortfolio)
             .build();
 
-        let agent = ReasoningLoop::new(Model::Anthropic(Arc::new(agent)));
+        let agent = ReasoningLoop::new(Model::Claude(Arc::new(agent)));
 
         agent.stream(
             "whats the portfolio looking like?".to_string(),

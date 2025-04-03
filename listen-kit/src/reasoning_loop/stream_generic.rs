@@ -1,93 +1,26 @@
 use anyhow::Result;
 use futures::StreamExt;
-use rig::agent::Agent;
 use rig::completion::AssistantContent;
 use rig::completion::Message;
-use rig::message::ToolResult;
 use rig::message::{ToolResultContent, UserContent};
-use rig::providers::gemini::completion::CompletionModel as GeminiModel;
 use rig::streaming::StreamingChoice;
-use rig::streaming::StreamingCompletion;
 use rig::OneOrMany;
-use serde_json::json;
 use std::io::Write;
-use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
+
+use crate::reasoning_loop::Model;
 
 use super::{ReasoningLoop, StreamResponse};
 
 impl ReasoningLoop {
-    fn geminify_chat_history(messages: Vec<Message>) -> Vec<Message> {
-        messages
-            .into_iter()
-            .map(|msg| {
-                match msg {
-                    Message::User { content } => {
-                        if let UserContent::ToolResult(tool_result) =
-                            content.first()
-                        {
-                            // Wrap tool result content in the expected format
-                            let result_content = tool_result
-                                .content
-                                .into_iter()
-                                .next()
-                                .map(|c| match c {
-                                    ToolResultContent::Text(text) => {
-                                        text.text
-                                    }
-                                    _ => panic!(
-                                        "Tool result content is not a text"
-                                    ),
-                                })
-                                .unwrap_or_default();
-
-                            // Check if it contains "error" to determine format
-                            let wrapped_content = if result_content
-                                .to_lowercase()
-                                .contains("error")
-                            {
-                                json!({"error": result_content})
-                            } else {
-                                json!({"result": result_content})
-                            }
-                            .to_string();
-
-                            Message::User {
-                                content: OneOrMany::one(
-                                    UserContent::ToolResult(ToolResult {
-                                        id: tool_result.id,
-                                        content: OneOrMany::one(
-                                            ToolResultContent::text(
-                                                wrapped_content,
-                                            ),
-                                        ),
-                                    }),
-                                ),
-                            }
-                        } else {
-                            // Not a tool result, leave as-is
-                            Message::User { content }
-                        }
-                    }
-                    // Leave assistant messages unchanged
-                    Message::Assistant { content } => {
-                        Message::Assistant { content }
-                    }
-                }
-            })
-            .collect()
-    }
-
-    pub async fn stream_gemini(
+    pub async fn stream_generic(
         &self,
-        agent: &Arc<Agent<GeminiModel>>,
+        model: Model,
         prompt: String,
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
     ) -> Result<Vec<Message>> {
-        let mut current_messages =
-            Self::geminify_chat_history(messages.clone());
-        let agent = agent.clone();
+        let mut current_messages = messages.clone();
         let stdout = self.stdout;
 
         // Start with the user's original prompt
@@ -98,13 +31,11 @@ impl ReasoningLoop {
             let mut current_response = String::new();
 
             // Stream using the next input (original prompt or tool result)
-            let mut stream = match agent
+            let mut stream = match model
                 .stream_completion(
                     next_input.clone(),
                     current_messages.clone(),
                 )
-                .await?
-                .stream()
                 .await
             {
                 Ok(stream) => stream,
@@ -188,29 +119,25 @@ impl ReasoningLoop {
                         }
 
                         // Call the tool and get result
-                        let result =
-                            agent.tools.call(&name, params.to_string()).await;
+                        let result = model
+                            .call_tool(name.to_string(), params.to_string())
+                            .await;
 
                         if stdout {
                             print!("Tool result: {:?}\n", result);
                         }
 
                         // Create the tool result message to use directly as next input
-                        let mut is_err = false;
                         let result_str = match &result {
-                            Ok(content) => serde_json::json!({"result": content.to_string()}).to_string(),
-                            Err(err) => {
-                                is_err = true;
-                                serde_json::json!({"error": err.to_string()})
-                                    .to_string()
-                            }
+                            Ok(content) => content.to_string(),
+                            Err(err) => err.to_string(),
                         };
 
                         // Create the tool result message to be used as the next input
                         next_input = Message::User {
                             content: OneOrMany::one(
                                 UserContent::tool_result(
-                                    name.clone(), // TODO gemini doesn't have tool IDs, not sure if `name` is the param
+                                    tool_id.clone(),
                                     OneOrMany::one(ToolResultContent::text(
                                         result_str.clone(),
                                     )),
@@ -222,35 +149,7 @@ impl ReasoningLoop {
                             tx.send(StreamResponse::ToolResult {
                                 id: tool_id,
                                 name,
-                                result: match is_err {
-                                    true => serde_json::from_str::<
-                                        serde_json::Value,
-                                    >(
-                                        &result_str
-                                    )?["error"]
-                                        .as_str()
-                                        .unwrap_or_default()
-                                        .to_string(),
-                                    false => serde_json::from_str::<
-                                        serde_json::Value,
-                                    >(
-                                        &result_str
-                                    )?["result"]
-                                        .as_str()
-                                        .map(|s| s.to_string())
-                                        .unwrap_or_else(|| {
-                                            // If it's not a string, serialize the value directly
-                                            serde_json::to_string(
-                                                &serde_json::from_str::<
-                                                    serde_json::Value,
-                                                >(
-                                                    &result_str
-                                                )
-                                                .unwrap()["result"],
-                                            )
-                                            .unwrap_or_default()
-                                        }),
-                                },
+                                result: result_str,
                             })
                             .await
                             .map_err(|e| {

@@ -9,7 +9,7 @@ One per line, keep each response short and specific, 3-5 words.
 For research-based conversations, predict subsequent x/website/searches
 For questions with options, predict the most likely option the user would choose.
 Provide only the predictions, no other text.
-"#;
+Always use English."#;
 
 const PROMPT_ZH: &str = r#"
 根据此对话，预测2-3个最可能的具体用户回应。
@@ -17,7 +17,7 @@ const PROMPT_ZH: &str = r#"
 每行一个回应，保持简短具体。
 对于有选项的问题，预测用户最可能选择的选项。
 仅提供预测内容，不要其他文字。
-"#;
+请使用中文。"#;
 
 const MAX_CHARS: usize = 30000;
 
