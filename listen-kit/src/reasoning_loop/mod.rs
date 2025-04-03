@@ -1,6 +1,7 @@
 use crate::common::ClaudeAgent;
 use crate::common::DeepSeekAgent;
 use crate::common::GeminiAgent;
+use crate::common::OpenAIAgent;
 use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
 use rig::completion::Message;
@@ -16,6 +17,7 @@ pub mod anthropic;
 pub mod debase64;
 pub mod deepseek;
 pub mod gemini;
+pub mod openai;
 
 #[derive(Serialize, Debug, Deserialize)]
 #[serde(tag = "type", content = "content")]
@@ -72,6 +74,7 @@ pub enum Model {
     Anthropic(Arc<ClaudeAgent>),
     Gemini(Arc<GeminiAgent>),
     DeepSeek(Arc<DeepSeekAgent>),
+    OpenAI(Arc<OpenAIAgent>),
 }
 
 pub struct ReasoningLoop {
@@ -113,6 +116,9 @@ impl ReasoningLoop {
                     self.stream_gemini(agent, prompt, messages, tx).await
                 }
                 Model::DeepSeek(agent) => {
+                    self.stream_deepseek(agent, prompt, messages, tx).await
+                }
+                Model::OpenAI(agent) => {
                     self.stream_openai(agent, prompt, messages, tx).await
                 }
             }

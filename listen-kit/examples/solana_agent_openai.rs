@@ -3,12 +3,14 @@
 async fn main() -> anyhow::Result<()> {
     use listen_kit::{
         reasoning_loop::Model,
-        solana::agent::{create_solana_agent_deepseek, Features},
+        solana::agent::{create_solana_agent_openai, Features},
     };
     use {
+        listen_kit::common::{content, role},
         listen_kit::reasoning_loop::ReasoningLoop,
         listen_kit::signer::solana::LocalSolanaSigner,
-        listen_kit::signer::SignerContext, listen_kit::solana::util::env,
+        listen_kit::signer::SignerContext,
+        listen_kit::solana::util::env,
         std::sync::Arc,
     };
 
@@ -17,7 +19,7 @@ async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
 
     SignerContext::with_signer(Arc::new(signer), async {
-        let trader_agent = Arc::new(create_solana_agent_deepseek(
+        let trader_agent = Arc::new(create_solana_agent_openai(
             None,
             Features {
                 autonomous: false,
@@ -28,9 +30,9 @@ async fn main() -> anyhow::Result<()> {
             tracing::info!("{}", serde_json::to_string(tool).unwrap());
         }
         let trader_agent =
-            ReasoningLoop::new(Model::DeepSeek(trader_agent)).with_stdout(true);
+            ReasoningLoop::new(Model::OpenAI(trader_agent)).with_stdout(true);
 
-        let _ = trader_agent
+        let messages = trader_agent
             .stream(
                 "
                 we are testing the resoning loop, first grab my solana pubkey then my solana balance,
@@ -41,6 +43,14 @@ async fn main() -> anyhow::Result<()> {
                 None,
             )
             .await?;
+
+        tracing::info!(
+            "messages: {:#?}",
+            messages
+                .iter()
+                .map(|m| format!("{}: {}", role(m), content(m)))
+                .collect::<Vec<_>>()
+        );
 
         Ok(())
     })

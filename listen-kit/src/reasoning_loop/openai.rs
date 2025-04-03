@@ -10,14 +10,14 @@ use std::io::Write;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
-use crate::common::DeepSeekAgent;
+use crate::common::OpenAIAgent;
 
 use super::{ReasoningLoop, StreamResponse};
 
 impl ReasoningLoop {
-    pub async fn stream_deepseek(
+    pub async fn stream_openai(
         &self,
-        agent: &Arc<DeepSeekAgent>,
+        agent: &Arc<OpenAIAgent>,
         prompt: String,
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
@@ -32,9 +32,6 @@ impl ReasoningLoop {
 
         'outer: loop {
             let mut current_response = String::new();
-
-            println!("next_input: {:?}", next_input);
-            println!("current_messages: {:?}", current_messages);
 
             // Stream using the next input (original prompt or tool result)
             let mut stream = match agent
@@ -70,7 +67,6 @@ impl ReasoningLoop {
             }
 
             while let Some(chunk) = stream.next().await {
-                println!("chunk: {:?}", chunk);
                 match chunk? {
                     StreamingChoice::Message(text) => {
                         if stdout {
