@@ -3,7 +3,7 @@ use rig::agent::Agent;
 use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
 
 use crate::{
-    common::{claude_agent_builder, PREAMBLE_COMMON},
+    common::claude_agent_builder,
     cross_chain::tools::{ApproveToken, CheckApproval, GetQuote, Swap},
     data::{FetchPriceActionAnalysis, FetchTopTokens},
     dexscreener::tools::SearchOnDexScreener,
@@ -12,10 +12,8 @@ use crate::{
 pub async fn create_cross_chain_agent(
     preamble: Option<String>,
 ) -> Result<Agent<AnthropicCompletionModel>> {
-    let preamble = preamble.unwrap_or(format!(
-        "{} {}",
-        "you are a cross-chain trading agent", PREAMBLE_COMMON,
-    ));
+    let preamble =
+        preamble.unwrap_or("you are a cross-chain trading agent".to_string());
     let agent_builder = claude_agent_builder()
         .preamble(&preamble)
         .tool(SearchOnDexScreener)

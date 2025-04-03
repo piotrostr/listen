@@ -8,6 +8,7 @@ use super::analyst::{
 };
 use super::preambles;
 use crate::agents::delegate::delegate_to_agent;
+use crate::common::gemini_agent_builder;
 use crate::reasoning_loop::Model;
 use crate::signer::SignerContext;
 
@@ -158,8 +159,7 @@ pub fn make_gemini_analyst(
         (AnalystType::Web, _) => preambles::WEB_EN,
     };
 
-    let agent = rig::providers::gemini::Client::from_env()
-        .agent(rig::providers::gemini::completion::GEMINI_2_0_FLASH)
+    let agent = gemini_agent_builder()
         .preamble(&preamble.unwrap_or(default_preamble.to_string()))
         .build();
 

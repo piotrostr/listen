@@ -6,15 +6,13 @@ use super::tools::{
     ApproveTokenForRouterSpend, GetErc20Balance, GetEthBalance, Trade,
     TransferErc20, TransferEth, VerifySwapRouterHasAllowance, WalletAddress,
 };
-use crate::common::{claude_agent_builder, PREAMBLE_COMMON};
+use crate::common::claude_agent_builder;
 
 pub async fn create_evm_agent(
     preamble: Option<String>,
 ) -> Result<Agent<AnthropicCompletionModel>> {
-    let preamble = preamble.unwrap_or(format!(
-        "{} {}",
-        "you are an ethereum trading agent", PREAMBLE_COMMON
-    ));
+    let preamble =
+        preamble.unwrap_or("you are an ethereum trading agent".to_string());
     Ok(claude_agent_builder()
         .preamble(&preamble)
         .tool(Trade)

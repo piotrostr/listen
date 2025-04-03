@@ -25,6 +25,7 @@ const PREAMBLE_ZH: &str =
         5. 如果你发现有趣的东西，使用其他工具验证并扩展它";
 
 pub fn create_x_agent(locale: String) -> GeminiAgent {
+    println!("Creating X agent with locale: {}", locale);
     gemini_agent_builder()
         .preamble(if locale == "zh" {
             PREAMBLE_ZH

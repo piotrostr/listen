@@ -4,7 +4,7 @@ use super::tools::{
 };
 use crate::agents::research::ViewImage;
 use crate::common::{
-    claude_agent_builder, gemini_agent_builder, PREAMBLE_COMMON,
+    claude_agent_builder, deepseek_agent_builder, gemini_agent_builder,
 };
 use crate::data::{
     AnalyzePageContent, FetchPriceActionAnalysis, FetchTokenMetadata,
@@ -20,6 +20,7 @@ use crate::think::Think;
 use anyhow::Result;
 use rig::agent::Agent;
 use rig::providers::anthropic::completion::CompletionModel as AnthropicCompletionModel;
+use rig::providers::deepseek::DeepSeekCompletionModel;
 use rig::providers::gemini::completion::CompletionModel as GeminiCompletionModel;
 
 use serde::{Deserialize, Serialize};
@@ -35,9 +36,8 @@ pub async fn create_solana_agent(
     features: Features,
 ) -> Result<Agent<AnthropicCompletionModel>> {
     let preamble = preamble.unwrap_or(format!(
-        "{} {}",
-        "you are a solana trading agent that can also interact with pump.fun;",
-        PREAMBLE_COMMON
+        "{}",
+        "you are a solana trading agent that can also interact with pump.fun;"
     ));
 
     let mut agent = claude_agent_builder()
@@ -73,13 +73,46 @@ pub fn create_solana_agent_gemini(
     preamble: Option<String>,
     features: Features,
 ) -> Agent<GeminiCompletionModel> {
-    let preamble = preamble.unwrap_or(format!(
-        "{} {}",
-        "you are a solana trading agent that can also interact with pump.fun;",
-        PREAMBLE_COMMON
-    ));
+    let preamble =
+        preamble.unwrap_or("you are a solana trading agent".to_string());
 
     let mut agent = gemini_agent_builder()
+        .preamble(&preamble)
+        .tool(GetQuote)
+        .tool(GetSolBalance)
+        .tool(GetSplTokenBalance)
+        .tool(SearchOnDexScreener)
+        .tool(FetchTopTokens)
+        .tool(DeployPumpFunToken)
+        .tool(FetchTokenMetadata)
+        .tool(ResearchXProfile)
+        .tool(FetchXPost)
+        .tool(SearchTweets)
+        .tool(AnalyzeRisk)
+        .tool(FetchPriceActionAnalysis)
+        .tool(Think)
+        .tool(AnalyzeHolderDistribution)
+        .tool(AnalyzeSentiment)
+        .tool(GetCurrentTime)
+        .tool(SearchWeb)
+        .tool(ViewImage)
+        .tool(AnalyzePageContent);
+
+    if features.autonomous {
+        agent = agent.tool(Swap).tool(CreateAdvancedOrder);
+    }
+
+    agent.build()
+}
+
+pub fn create_solana_agent_deepseek(
+    preamble: Option<String>,
+    features: Features,
+) -> Agent<DeepSeekCompletionModel> {
+    let preamble =
+        preamble.unwrap_or("you are a solana trading agent".to_string());
+
+    let mut agent = deepseek_agent_builder()
         .preamble(&preamble)
         .tool(GetQuote)
         .tool(GetSolBalance)

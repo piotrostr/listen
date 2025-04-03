@@ -1,10 +1,9 @@
+use crate::common::ClaudeAgent;
+use crate::common::DeepSeekAgent;
+use crate::common::GeminiAgent;
 use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
-use rig::agent::Agent;
 use rig::completion::Message;
-use rig::providers::anthropic::completion::CompletionModel as AnthropicModel;
-use rig::providers::deepseek::DeepSeekCompletionModel as DeepSeekModel;
-use rig::providers::gemini::completion::CompletionModel as GeminiModel;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cell::RefCell;
@@ -15,6 +14,7 @@ use tokio::task_local;
 
 pub mod anthropic;
 pub mod debase64;
+pub mod deepseek;
 pub mod gemini;
 
 #[derive(Serialize, Debug, Deserialize)]
@@ -69,9 +69,9 @@ impl StreamResponse {
 
 #[derive(Clone)]
 pub enum Model {
-    Anthropic(Arc<Agent<AnthropicModel>>),
-    Gemini(Arc<Agent<GeminiModel>>),
-    DeepSeek(Arc<Agent<DeepSeekModel>>),
+    Anthropic(Arc<ClaudeAgent>),
+    Gemini(Arc<GeminiAgent>),
+    DeepSeek(Arc<DeepSeekAgent>),
 }
 
 pub struct ReasoningLoop {
@@ -112,7 +112,9 @@ impl ReasoningLoop {
                 Model::Gemini(agent) => {
                     self.stream_gemini(agent, prompt, messages, tx).await
                 }
-                _ => panic!("Unsupported model"), // FIXME support Deepseek (OpenAI compat)
+                Model::DeepSeek(agent) => {
+                    self.stream_openai(agent, prompt, messages, tx).await
+                }
             }
         })
         .await
