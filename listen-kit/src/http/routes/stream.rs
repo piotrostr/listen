@@ -181,7 +181,7 @@ async fn stream(
     tokio::spawn(response_collector);
 
     spawn_with_signer(signer, || async move {
-        let reasoning_loop = ReasoningLoop::new(model);
+        let reasoning_loop = ReasoningLoop::new(model).with_stdout(false);
 
         // Create a channel for the reasoning loop to send responses
         let (internal_tx, mut internal_rx) =
