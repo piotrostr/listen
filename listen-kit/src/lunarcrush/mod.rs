@@ -6,22 +6,6 @@ pub mod search;
 
 pub use client::{LunarCrushApiClient, LunarCrushApiResponseError};
 
-use serde::{Deserialize, Serialize};
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ApiResponse<T> {
-    pub data: T,
-    pub config: Option<ApiConfig>,
-}
-
-#[derive(Debug, Deserialize, Serialize)]
-pub struct ApiConfig {
-    pub topic: String,
-    pub type_: Option<String>,
-    pub id: String,
-    pub generated: u64,
-}
-
 // LunarCrush API Implementation
 pub struct LunarCrushApi {
     pub client: LunarCrushApiClient,
@@ -63,7 +47,9 @@ pub async fn analyze_sentiment(topic: String) -> Result<serde_json::Value> {
         .await
         .map_err(|e| anyhow::anyhow!("Failed to research topic: {}", e))?;
 
-    Ok(result)
+    let data = result["data"].clone();
+
+    Ok(serde_json::json!({"topic": data}))
 }
 
 impl LunarCrushApi {
@@ -101,12 +87,7 @@ impl LunarCrushApi {
             // );
         }
 
-        let res = serde_json::json!({
-            "topic": topic_info,
-            // "posts": posts.data,
-        });
-
-        Ok(res)
+        Ok(topic_info)
     }
 
     pub async fn fetch_topic_info(
@@ -114,35 +95,29 @@ impl LunarCrushApi {
         topic: &str,
     ) -> Result<serde_json::Value, LunarCrushApiError> {
         let endpoint = format!("/topic/{}/v1", topic);
-        let response = self
-            .client
-            .request::<ApiResponse<serde_json::Value>>(&endpoint, None)
-            .await?;
-        Ok(response.data)
+        self.client
+            .request::<serde_json::Value>(&endpoint, None)
+            .await
     }
 
     pub async fn fetch_topic_posts(
         &self,
         topic: &str,
-    ) -> Result<ApiResponse<Vec<serde_json::Value>>, LunarCrushApiError> {
+    ) -> Result<serde_json::Value, LunarCrushApiError> {
         let endpoint = format!("/topic/{}/posts/v1", topic);
-        let response = self
-            .client
-            .request::<ApiResponse<Vec<serde_json::Value>>>(&endpoint, None)
-            .await?;
-        Ok(response)
+        self.client
+            .request::<serde_json::Value>(&endpoint, None)
+            .await
     }
 
     pub async fn fetch_topic_creators(
         &self,
         topic: &str,
-    ) -> Result<ApiResponse<serde_json::Value>, LunarCrushApiError> {
+    ) -> Result<serde_json::Value, LunarCrushApiError> {
         let endpoint = format!("/topic/{}/creators/v1", topic);
-        let response = self
-            .client
-            .request::<ApiResponse<serde_json::Value>>(&endpoint, None)
-            .await?;
-        Ok(response)
+        self.client
+            .request::<serde_json::Value>(&endpoint, None)
+            .await
     }
 }
 
