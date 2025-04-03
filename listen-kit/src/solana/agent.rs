@@ -14,8 +14,7 @@ use crate::common::{
 };
 use crate::data::{
     AnalyzePageContent, FetchPriceActionAnalysis, FetchTokenMetadata,
-    FetchTokenPrice, FetchTopTokens, FetchXPost, ResearchXProfile,
-    SearchTweets, SearchWeb,
+    FetchTopTokens, FetchXPost, ResearchXProfile, SearchTweets, SearchWeb,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::faster100x::AnalyzeHolderDistribution;
@@ -24,12 +23,45 @@ use crate::solana::advanced_orders::CreateAdvancedOrder;
 use crate::solana::tools::AnalyzeRisk;
 use crate::think::Think;
 
+use rig::agent::AgentBuilder;
+use rig::streaming::StreamingCompletionModel;
 use serde::{Deserialize, Serialize};
 
 #[derive(Default, Serialize, Deserialize, Clone)]
 pub struct Features {
     pub autonomous: bool,
     pub deep_research: bool,
+}
+
+pub fn equip_with_tools<M: StreamingCompletionModel>(
+    agent_builder: AgentBuilder<M>,
+) -> AgentBuilder<M> {
+    agent_builder
+        .tool(GetQuote)
+        .tool(GetSolBalance)
+        .tool(GetSplTokenBalance)
+        .tool(SearchOnDexScreener)
+        .tool(FetchTopTokens)
+        .tool(DeployPumpFunToken)
+        .tool(FetchTokenMetadata)
+        .tool(ResearchXProfile)
+        .tool(FetchXPost)
+        .tool(SearchTweets)
+        .tool(AnalyzeRisk)
+        .tool(FetchPriceActionAnalysis)
+        .tool(Think)
+        .tool(AnalyzeHolderDistribution)
+        .tool(AnalyzeSentiment)
+        .tool(GetCurrentTime)
+        .tool(SearchWeb)
+        .tool(ViewImage)
+        .tool(AnalyzePageContent)
+}
+
+pub fn equip_with_autonomous_tools<M: StreamingCompletionModel>(
+    agent_builder: AgentBuilder<M>,
+) -> AgentBuilder<M> {
+    agent_builder.tool(Swap).tool(CreateAdvancedOrder)
 }
 
 pub fn create_solana_agent_claude(
@@ -46,30 +78,11 @@ pub fn create_solana_agent_claude(
         return create_deep_research_agent_claude(locale);
     }
 
-    let mut agent = claude_agent_builder()
-        .preamble(&preamble)
-        .tool(GetQuote)
-        .tool(GetSolBalance)
-        .tool(GetSplTokenBalance)
-        .tool(SearchOnDexScreener)
-        .tool(FetchTopTokens)
-        .tool(FetchTokenPrice)
-        .tool(DeployPumpFunToken)
-        .tool(FetchTokenMetadata)
-        .tool(ResearchXProfile)
-        .tool(ViewImage)
-        .tool(FetchXPost)
-        .tool(SearchTweets)
-        .tool(AnalyzeRisk)
-        .tool(FetchPriceActionAnalysis)
-        .tool(Think)
-        .tool(GetCurrentTime)
-        .tool(SearchWeb)
-        .tool(AnalyzePageContent)
-        .tool(AnalyzeSentiment);
+    let mut agent =
+        equip_with_tools(claude_agent_builder()).preamble(&preamble);
 
     if features.autonomous {
-        agent = agent.tool(Swap).tool(CreateAdvancedOrder);
+        agent = equip_with_autonomous_tools(agent);
     }
 
     agent.build()
@@ -87,30 +100,11 @@ pub fn create_solana_agent_gemini(
         return create_deep_research_agent_gemini(locale);
     }
 
-    let mut agent = gemini_agent_builder()
-        .preamble(&preamble)
-        .tool(GetQuote)
-        .tool(GetSolBalance)
-        .tool(GetSplTokenBalance)
-        .tool(SearchOnDexScreener)
-        .tool(FetchTopTokens)
-        .tool(DeployPumpFunToken)
-        .tool(FetchTokenMetadata)
-        .tool(ResearchXProfile)
-        .tool(FetchXPost)
-        .tool(SearchTweets)
-        .tool(AnalyzeRisk)
-        .tool(FetchPriceActionAnalysis)
-        .tool(Think)
-        .tool(AnalyzeHolderDistribution)
-        .tool(AnalyzeSentiment)
-        .tool(GetCurrentTime)
-        .tool(SearchWeb)
-        .tool(ViewImage)
-        .tool(AnalyzePageContent);
+    let mut agent =
+        equip_with_tools(gemini_agent_builder()).preamble(&preamble);
 
     if features.autonomous {
-        agent = agent.tool(Swap).tool(CreateAdvancedOrder);
+        agent = equip_with_autonomous_tools(agent);
     }
 
     agent.build()
@@ -128,30 +122,11 @@ pub fn create_solana_agent_deepseek(
         return create_deep_research_agent_deepseek(locale);
     }
 
-    let mut agent = deepseek_agent_builder()
-        .preamble(&preamble)
-        .tool(GetQuote)
-        .tool(GetSolBalance)
-        .tool(GetSplTokenBalance)
-        .tool(SearchOnDexScreener)
-        .tool(FetchTopTokens)
-        .tool(DeployPumpFunToken)
-        .tool(FetchTokenMetadata)
-        .tool(ResearchXProfile)
-        .tool(FetchXPost)
-        .tool(SearchTweets)
-        .tool(AnalyzeRisk)
-        .tool(FetchPriceActionAnalysis)
-        .tool(Think)
-        .tool(AnalyzeHolderDistribution)
-        .tool(AnalyzeSentiment)
-        .tool(GetCurrentTime)
-        .tool(SearchWeb)
-        .tool(ViewImage)
-        .tool(AnalyzePageContent);
+    let mut agent =
+        equip_with_tools(deepseek_agent_builder()).preamble(&preamble);
 
     if features.autonomous {
-        agent = agent.tool(Swap).tool(CreateAdvancedOrder);
+        agent = equip_with_autonomous_tools(agent);
     }
 
     agent.build()
@@ -169,30 +144,10 @@ pub fn create_solana_agent_openai(
         return create_deep_research_agent_openai(locale);
     }
 
-    let mut agent = openai_agent_builder()
-        .preamble(&preamble)
-        .tool(GetQuote)
-        .tool(GetSolBalance)
-        .tool(GetSplTokenBalance)
-        .tool(SearchOnDexScreener)
-        .tool(FetchTopTokens)
-        .tool(DeployPumpFunToken)
-        .tool(FetchTokenMetadata)
-        .tool(ResearchXProfile)
-        .tool(FetchXPost)
-        .tool(SearchTweets)
-        .tool(AnalyzeRisk)
-        .tool(FetchPriceActionAnalysis)
-        .tool(Think)
-        .tool(AnalyzeHolderDistribution)
-        .tool(AnalyzeSentiment)
-        .tool(GetCurrentTime)
-        .tool(SearchWeb)
-        .tool(ViewImage)
-        .tool(AnalyzePageContent);
+    let mut agent = openai_agent_builder().preamble(&preamble);
 
     if features.autonomous {
-        agent = agent.tool(Swap).tool(CreateAdvancedOrder);
+        agent = equip_with_autonomous_tools(agent);
     }
 
     agent.build()
