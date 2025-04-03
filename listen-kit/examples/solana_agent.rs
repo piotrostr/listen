@@ -39,7 +39,7 @@ async fn main() -> anyhow::Result<()> {
             )
             .await?;
 
-        println!("messages: {}", serde_json::to_string_pretty(&messages).unwrap());
+        tracing::info!("messages: {}", serde_json::to_string_pretty(&messages).unwrap());
 
         Ok(())
     })

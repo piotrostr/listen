@@ -14,7 +14,6 @@ use tokio::sync::mpsc::Sender;
 use tokio::task_local;
 
 pub mod debase64;
-pub mod deepseek;
 pub mod model;
 pub mod stream_gemini;
 pub mod stream_generic;
