@@ -27,10 +27,10 @@ pub mod stream_generic;
 pub enum StreamResponse {
     Message(String),
     ParToolCall {
-        tool_calls: HashMap<String, ToolCall>,
+        tool_calls: HashMap<usize, ToolCall>,
     },
     ParToolResult {
-        tool_results: HashMap<String, ToolResult>,
+        tool_results: HashMap<usize, ToolResult>,
     },
     ToolCall {
         id: String,

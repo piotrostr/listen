@@ -8,7 +8,9 @@ use rig::OneOrMany;
 use std::io::Write;
 use tokio::sync::mpsc::Sender;
 
+use crate::common::spawn_with_signer;
 use crate::reasoning_loop::Model;
+use crate::signer::SignerContext;
 
 use super::{ReasoningLoop, StreamResponse};
 
@@ -78,14 +80,20 @@ impl ReasoningLoop {
 
                         current_messages.push(Message::Assistant {
                             content: OneOrMany::many(
-                                tool_calls.values().map(|tool_call| {
-                                    AssistantContent::tool_call(
-                                        tool_call.id.clone(),
-                                        tool_call.function.name.clone(),
-                                        tool_call.function.arguments.clone(),
-                                    )
-                                }),
-                            ),
+                                tool_calls
+                                    .values()
+                                    .map(|tool_call| {
+                                        AssistantContent::tool_call(
+                                            tool_call.id.clone(),
+                                            tool_call.function.name.clone(),
+                                            tool_call
+                                                .function
+                                                .arguments
+                                                .clone(),
+                                        )
+                                    })
+                                    .collect::<Vec<AssistantContent>>(),
+                            )?,
                         });
 
                         if let Some(tx) = &tx {
@@ -102,49 +110,33 @@ impl ReasoningLoop {
                         }
 
                         // Run all tool calls in parallel
-                        let mut tasks = Vec::new();
-
-                        for tool_call in tool_calls.values() {
+                        let tasks = tool_calls.values().map(|tool_call| {
                             let model = model.clone();
-                            let name = tool_call.function.name;
+                            let name = tool_call.function.name.clone();
                             let params =
                                 tool_call.function.arguments.to_string();
-                            let id = tool_call.id;
-                            let tx = tx.clone();
+                            let id = tool_call.id.clone();
 
-                            tasks.push(tokio::spawn(async move {
+                            async move {
                                 let result =
                                     model.call_tool(name, params).await;
-
                                 let result_str = match &result {
                                     Ok(content) => content.to_string(),
                                     Err(err) => err.to_string(),
                                 };
-
                                 (id, result_str)
-                            }));
-                        }
+                            }
+                        });
 
                         // Wait for all tool calls to complete
                         let results = futures::future::join_all(tasks).await;
 
-                        // Create tool result messages using OneOrMany::many
-                        let tool_results: Vec<(String, String)> = results
-                            .into_iter()
-                            .map(|result| {
-                                let (id, result_str) =
-                                    result.map_err(|e| {
-                                        anyhow::anyhow!("task failed: {}", e)
-                                    })?;
-                                (id, result_str)
-                            })
-                            .collect();
-
                         // Create a single message with all tool results
                         next_input = Message::User {
                             content: OneOrMany::many(
-                                tool_results.iter().map(
-                                    |(id, result_str)| {
+                                results
+                                    .iter()
+                                    .map(|(id, result_str)| {
                                         UserContent::tool_result(
                                             id.clone(),
                                             OneOrMany::one(
@@ -153,9 +145,9 @@ impl ReasoningLoop {
                                                 ),
                                             ),
                                         )
-                                    },
-                                ),
-                            ),
+                                    })
+                                    .collect::<Vec<UserContent>>(),
+                            )?,
                         };
 
                         continue 'outer;
