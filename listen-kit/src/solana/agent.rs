@@ -5,12 +5,13 @@ use super::tools::{
 use crate::agents::listen::{
     create_deep_research_agent_claude, create_deep_research_agent_deepseek,
     create_deep_research_agent_gemini, create_deep_research_agent_openai,
+    create_deep_research_agent_openrouter,
 };
 use crate::agents::research::ViewImage;
 use crate::common::{
     claude_agent_builder, deepseek_agent_builder, gemini_agent_builder,
-    openai_agent_builder, ClaudeAgent, DeepSeekAgent, GeminiAgent,
-    OpenAIAgent,
+    openai_agent_builder, openrouter_agent_builder, ClaudeAgent,
+    DeepSeekAgent, GeminiAgent, OpenAIAgent, OpenRouterAgent,
 };
 use crate::data::{
     AnalyzePageContent, FetchPriceActionAnalysis, FetchTokenMetadata,
@@ -144,9 +145,32 @@ pub fn create_solana_agent_openai(
         return create_deep_research_agent_openai(locale);
     }
 
-    let mut agent = openai_agent_builder().preamble(&preamble);
+    let mut agent =
+        equip_with_tools(openai_agent_builder()).preamble(&preamble);
 
     if features.autonomous {
+        agent = equip_with_autonomous_tools(agent);
+    }
+
+    agent.build()
+}
+
+pub fn create_solana_agent_openrouter(
+    preamble: Option<String>,
+    features: Features,
+    locale: String,
+) -> OpenRouterAgent {
+    let preamble =
+        preamble.unwrap_or("you are a solana trading agent".to_string());
+
+    if features.deep_research {
+        return create_deep_research_agent_openrouter(locale);
+    }
+
+    let mut agent =
+        equip_with_tools(openrouter_agent_builder()).preamble(&preamble);
+
+    if features.deep_research {
         agent = equip_with_autonomous_tools(agent);
     }
 

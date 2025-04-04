@@ -43,6 +43,13 @@ impl Model {
                     .stream()
                     .await
             }
+            Model::OpenRouter(agent) => {
+                agent
+                    .stream_completion(prompt, messages)
+                    .await?
+                    .stream()
+                    .await
+            }
         }
     }
 
@@ -56,6 +63,7 @@ impl Model {
             Model::Gemini(agent) => agent.tools.call(&name, params).await,
             Model::DeepSeek(agent) => agent.tools.call(&name, params).await,
             Model::OpenAI(agent) => agent.tools.call(&name, params).await,
+            Model::OpenRouter(agent) => agent.tools.call(&name, params).await,
         }
     }
 }

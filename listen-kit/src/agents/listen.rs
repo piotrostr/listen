@@ -1,3 +1,5 @@
+use rig::{agent::AgentBuilder, streaming::StreamingCompletionModel};
+
 use crate::{
     agents::{
         chart::DelegateToChartAgent, research::DelegateToResearchAgent,
@@ -5,8 +7,8 @@ use crate::{
     },
     common::{
         claude_agent_builder, deepseek_agent_builder, gemini_agent_builder,
-        openai_agent_builder, ClaudeAgent, DeepSeekAgent, GeminiAgent,
-        OpenAIAgent,
+        openai_agent_builder, openrouter_agent_builder, ClaudeAgent,
+        DeepSeekAgent, GeminiAgent, OpenAIAgent, OpenRouterAgent,
     },
     data::{FetchTokenMetadata, FetchTopTokens},
     dexscreener::tools::SearchOnDexScreener,
@@ -57,8 +59,10 @@ const PREAMBLE_ZH: &str = r#"
 
 请使用中文。"#;
 
-pub fn create_deep_research_agent_claude(locale: String) -> ClaudeAgent {
-    claude_agent_builder()
+pub fn equip_with_swarm_leader_tools<M: StreamingCompletionModel>(
+    agent: AgentBuilder<M>,
+) -> AgentBuilder<M> {
+    agent
         .tool(FetchTokenMetadata)
         .tool(SearchOnDexScreener)
         .tool(DelegateToResearchAgent)
@@ -67,6 +71,10 @@ pub fn create_deep_research_agent_claude(locale: String) -> ClaudeAgent {
         .tool(Think)
         .tool(GetCurrentTime)
         .tool(FetchTopTokens)
+}
+
+pub fn create_deep_research_agent_claude(locale: String) -> ClaudeAgent {
+    equip_with_swarm_leader_tools(claude_agent_builder())
         .preamble(if locale == "zh" {
             PREAMBLE_ZH
         } else {
@@ -76,15 +84,7 @@ pub fn create_deep_research_agent_claude(locale: String) -> ClaudeAgent {
 }
 
 pub fn create_deep_research_agent_gemini(locale: String) -> GeminiAgent {
-    gemini_agent_builder()
-        .tool(FetchTokenMetadata)
-        .tool(SearchOnDexScreener)
-        .tool(DelegateToResearchAgent)
-        .tool(DelegateToSolanaTraderAgent)
-        .tool(DelegateToChartAgent)
-        .tool(Think)
-        .tool(GetCurrentTime)
-        .tool(FetchTopTokens)
+    equip_with_swarm_leader_tools(gemini_agent_builder())
         .preamble(if locale == "zh" {
             PREAMBLE_ZH
         } else {
@@ -94,15 +94,7 @@ pub fn create_deep_research_agent_gemini(locale: String) -> GeminiAgent {
 }
 
 pub fn create_deep_research_agent_deepseek(locale: String) -> DeepSeekAgent {
-    deepseek_agent_builder()
-        .tool(FetchTokenMetadata)
-        .tool(SearchOnDexScreener)
-        .tool(DelegateToResearchAgent)
-        .tool(DelegateToSolanaTraderAgent)
-        .tool(DelegateToChartAgent)
-        .tool(Think)
-        .tool(GetCurrentTime)
-        .tool(FetchTopTokens)
+    equip_with_swarm_leader_tools(deepseek_agent_builder())
         .preamble(if locale == "zh" {
             PREAMBLE_ZH
         } else {
@@ -112,15 +104,19 @@ pub fn create_deep_research_agent_deepseek(locale: String) -> DeepSeekAgent {
 }
 
 pub fn create_deep_research_agent_openai(locale: String) -> OpenAIAgent {
-    openai_agent_builder()
-        .tool(FetchTokenMetadata)
-        .tool(SearchOnDexScreener)
-        .tool(DelegateToResearchAgent)
-        .tool(DelegateToSolanaTraderAgent)
-        .tool(DelegateToChartAgent)
-        .tool(Think)
-        .tool(GetCurrentTime)
-        .tool(FetchTopTokens)
+    equip_with_swarm_leader_tools(openai_agent_builder())
+        .preamble(if locale == "zh" {
+            PREAMBLE_ZH
+        } else {
+            PREAMBLE_EN
+        })
+        .build()
+}
+
+pub fn create_deep_research_agent_openrouter(
+    locale: String,
+) -> OpenRouterAgent {
+    equip_with_swarm_leader_tools(openrouter_agent_builder())
         .preamble(if locale == "zh" {
             PREAMBLE_ZH
         } else {

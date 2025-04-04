@@ -2,6 +2,7 @@ use crate::common::ClaudeAgent;
 use crate::common::DeepSeekAgent;
 use crate::common::GeminiAgent;
 use crate::common::OpenAIAgent;
+use crate::common::OpenRouterAgent;
 use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
 use rig::completion::Message;
@@ -74,6 +75,7 @@ pub enum Model {
     Gemini(Arc<GeminiAgent>),
     DeepSeek(Arc<DeepSeekAgent>),
     OpenAI(Arc<OpenAIAgent>),
+    OpenRouter(Arc<OpenRouterAgent>),
 }
 
 pub struct ReasoningLoop {

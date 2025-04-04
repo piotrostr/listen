@@ -4039,7 +4039,7 @@ dependencies = [
  "rand 0.8.5",
  "redis",
  "reqwest 0.12.12",
- "rig-core 0.10.0 (git+https://github.com/piotrostr/rig?branch=fix%2Fopenai-id-missing)",
+ "rig-core 0.10.0",
  "rig-tool-macro",
  "serde",
  "serde_json",
@@ -5443,7 +5443,6 @@ dependencies = [
 [[package]]
 name = "rig-core"
 version = "0.10.0"
-source = "git+https://github.com/piotrostr/rig?branch=fix%2Fno-param-tool-definitions-gemini#88f36b46a0bf32ceda80fa478d73765c07049a8d"
 dependencies = [
  "async-stream",
  "base64 0.22.1",
@@ -5463,7 +5462,7 @@ dependencies = [
 [[package]]
 name = "rig-core"
 version = "0.10.0"
-source = "git+https://github.com/piotrostr/rig?branch=fix%2Fopenai-id-missing#95911fe714c42f1c283c197ec72485581535c1e9"
+source = "git+https://github.com/piotrostr/rig?branch=fix%2Fno-param-tool-definitions-gemini#88f36b46a0bf32ceda80fa478d73765c07049a8d"
 dependencies = [
  "async-stream",
  "base64 0.22.1",
