@@ -63,6 +63,103 @@ impl ReasoningLoop {
 
             while let Some(chunk) = stream.next().await {
                 match chunk? {
+                    StreamingChoice::ParToolCall(tool_calls) => {
+                        // Add the assistant's response up to this point with the tool calls
+                        if !current_response.is_empty() {
+                            current_messages.push(Message::Assistant {
+                                content: OneOrMany::one(
+                                    AssistantContent::text(
+                                        current_response.clone(),
+                                    ),
+                                ),
+                            });
+                            current_response.clear();
+                        }
+
+                        current_messages.push(Message::Assistant {
+                            content: OneOrMany::many(
+                                tool_calls.values().map(|tool_call| {
+                                    AssistantContent::tool_call(
+                                        tool_call.id.clone(),
+                                        tool_call.function.name.clone(),
+                                        tool_call.function.arguments.clone(),
+                                    )
+                                }),
+                            ),
+                        });
+
+                        if let Some(tx) = &tx {
+                            tx.send(StreamResponse::ParToolCall {
+                                tool_calls: tool_calls.clone(),
+                            })
+                            .await
+                            .map_err(|e| {
+                                anyhow::anyhow!(
+                                    "failed to send tool call: {}",
+                                    e
+                                )
+                            })?;
+                        }
+
+                        // Run all tool calls in parallel
+                        let mut tasks = Vec::new();
+
+                        for tool_call in tool_calls.values() {
+                            let model = model.clone();
+                            let name = tool_call.function.name;
+                            let params =
+                                tool_call.function.arguments.to_string();
+                            let id = tool_call.id;
+                            let tx = tx.clone();
+
+                            tasks.push(tokio::spawn(async move {
+                                let result =
+                                    model.call_tool(name, params).await;
+
+                                let result_str = match &result {
+                                    Ok(content) => content.to_string(),
+                                    Err(err) => err.to_string(),
+                                };
+
+                                (id, result_str)
+                            }));
+                        }
+
+                        // Wait for all tool calls to complete
+                        let results = futures::future::join_all(tasks).await;
+
+                        // Create tool result messages using OneOrMany::many
+                        let tool_results: Vec<(String, String)> = results
+                            .into_iter()
+                            .map(|result| {
+                                let (id, result_str) =
+                                    result.map_err(|e| {
+                                        anyhow::anyhow!("task failed: {}", e)
+                                    })?;
+                                (id, result_str)
+                            })
+                            .collect();
+
+                        // Create a single message with all tool results
+                        next_input = Message::User {
+                            content: OneOrMany::many(
+                                tool_results.iter().map(
+                                    |(id, result_str)| {
+                                        UserContent::tool_result(
+                                            id.clone(),
+                                            OneOrMany::one(
+                                                ToolResultContent::text(
+                                                    result_str.clone(),
+                                                ),
+                                            ),
+                                        )
+                                    },
+                                ),
+                            ),
+                        };
+
+                        continue 'outer;
+                    }
                     StreamingChoice::Message(text) => {
                         if stdout {
                             print!("{}", text);

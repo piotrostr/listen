@@ -6,9 +6,12 @@ use crate::common::OpenRouterAgent;
 use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
 use rig::completion::Message;
+use rig::message::ToolCall;
+use rig::message::ToolResult;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cell::RefCell;
+use std::collections::HashMap;
 use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
@@ -23,6 +26,12 @@ pub mod stream_generic;
 #[serde(tag = "type", content = "content")]
 pub enum StreamResponse {
     Message(String),
+    ParToolCall {
+        tool_calls: HashMap<String, ToolCall>,
+    },
+    ParToolResult {
+        tool_results: HashMap<String, ToolResult>,
+    },
     ToolCall {
         id: String,
         name: String,
@@ -65,6 +74,8 @@ impl StreamResponse {
             // dont consume the nested output, this is only required by the frontend
             // to show the reasoning thoughts, it will be returned again in the tool result
             StreamResponse::NestedAgentOutput { .. } => "".to_string(),
+            StreamResponse::ParToolCall { tool_calls } => todo!(),
+            StreamResponse::ParToolResult { tool_results } => todo!(),
         }
     }
 }

@@ -132,6 +132,7 @@ impl ReasoningLoop {
 
             while let Some(chunk) = stream.next().await {
                 match chunk? {
+                    StreamingChoice::ParToolCall(tool_call) => todo!(),
                     StreamingChoice::Message(text) => {
                         if stdout {
                             print!("{}", text);
