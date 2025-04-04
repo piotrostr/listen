@@ -159,16 +159,18 @@ pub fn create_solana_agent_openrouter(
     preamble: Option<String>,
     features: Features,
     locale: String,
+    model: Option<String>,
 ) -> OpenRouterAgent {
+    println!("OPENROUTER BABYY: {:?}", model);
     let preamble =
         preamble.unwrap_or("you are a solana trading agent".to_string());
 
     if features.deep_research {
-        return create_deep_research_agent_openrouter(locale);
+        return create_deep_research_agent_openrouter(locale, model);
     }
 
     let mut agent =
-        equip_with_tools(openrouter_agent_builder()).preamble(&preamble);
+        equip_with_tools(openrouter_agent_builder(model)).preamble(&preamble);
 
     if features.deep_research {
         agent = equip_with_autonomous_tools(agent);

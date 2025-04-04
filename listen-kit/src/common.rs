@@ -101,9 +101,11 @@ pub fn openai_agent_builder() -> AgentBuilder<OpenAICompletionModel> {
         .max_tokens(1024 * 4)
 }
 
-pub fn openrouter_agent_builder() -> AgentBuilder<OpenRouterCompletionModel> {
+pub fn openrouter_agent_builder(
+    model: Option<String>,
+) -> AgentBuilder<OpenRouterCompletionModel> {
     rig::providers::openrouter::Client::from_env()
-        .agent("google/gemini-2.0-flash-001")
+        .agent(&model.unwrap_or("google/gemini-2.0-flash-001".to_string()))
         .max_tokens(1024 * 4)
 }
 

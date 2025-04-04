@@ -36,6 +36,7 @@ async fn main() -> anyhow::Result<()> {
                     None,
                     features,
                     "en".to_string(),
+                    Some("deepseek/deepseek-chat-v3-0324".to_string()),
                 )))
             }
             "deepseek" => {
@@ -62,7 +63,7 @@ async fn main() -> anyhow::Result<()> {
         let _messages = trader_agent
             .stream(
                 // "we are testing the resoning loop, fetch my solana balance, then fetch my the current time, repeat three times, batches of double tool calls please"
-                "we are testing parallel tool calls, please check the current time 5 times"
+                "we are testing parallel tool calls, please check the current time 5 times, then my solana balance, also 5 times"
                 .to_string(),
                 vec![],
                 None,

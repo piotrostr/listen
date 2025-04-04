@@ -115,8 +115,9 @@ pub fn create_deep_research_agent_openai(locale: String) -> OpenAIAgent {
 
 pub fn create_deep_research_agent_openrouter(
     locale: String,
+    model: Option<String>,
 ) -> OpenRouterAgent {
-    equip_with_swarm_leader_tools(openrouter_agent_builder())
+    equip_with_swarm_leader_tools(openrouter_agent_builder(model))
         .preamble(if locale == "zh" {
             PREAMBLE_ZH
         } else {
