@@ -8,9 +8,7 @@ use rig::OneOrMany;
 use std::io::Write;
 use tokio::sync::mpsc::Sender;
 
-use crate::common::spawn_with_signer;
 use crate::reasoning_loop::Model;
-use crate::signer::SignerContext;
 
 use super::{ReasoningLoop, StreamResponse};
 

@@ -59,24 +59,20 @@ async fn main() -> anyhow::Result<()> {
 
         let trader_agent = ReasoningLoop::new(model).with_stdout(true);
 
-        let messages = trader_agent
+        let _messages = trader_agent
             .stream(
-                "
-                we are testing the resoning loop, first grab my solana balance
-                and then get metadata for
-                Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump, the repeat the
-                operation 3 times
-                "
+                // "we are testing the resoning loop, fetch my solana balance, then fetch my the current time, repeat three times, batches of double tool calls please"
+                "we are testing parallel tool calls, please check the current time 5 times"
                 .to_string(),
                 vec![],
                 None,
             )
             .await?;
 
-        tracing::info!(
-            "messages: {}",
-            serde_json::to_string_pretty(&messages).unwrap()
-        );
+        // tracing::info!(
+        //     "messages: {}",
+        //     serde_json::to_string_pretty(&messages).unwrap()
+        // );
 
         Ok(())
     })
