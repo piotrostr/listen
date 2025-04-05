@@ -77,22 +77,25 @@ impl ReasoningLoop {
                             current_response.clear();
                         }
 
+                        let mut assistant_contents =
+                            vec![None; tool_calls.len()];
+
+                        for (index, tool_call) in tool_calls.iter() {
+                            assistant_contents[*index] =
+                                Some(AssistantContent::tool_call(
+                                    tool_call.id.clone(),
+                                    tool_call.function.name.clone(),
+                                    tool_call.function.arguments.clone(),
+                                ));
+                        }
+
+                        let assistant_contents: Vec<_> = assistant_contents
+                            .into_iter()
+                            .flatten()
+                            .collect();
+
                         current_messages.push(Message::Assistant {
-                            content: OneOrMany::many(
-                                tool_calls
-                                    .values()
-                                    .map(|tool_call| {
-                                        AssistantContent::tool_call(
-                                            tool_call.id.clone(),
-                                            tool_call.function.name.clone(),
-                                            tool_call
-                                                .function
-                                                .arguments
-                                                .clone(),
-                                        )
-                                    })
-                                    .collect::<Vec<AssistantContent>>(),
-                            )?,
+                            content: OneOrMany::many(assistant_contents)?,
                         });
 
                         if let Some(tx) = &tx {
