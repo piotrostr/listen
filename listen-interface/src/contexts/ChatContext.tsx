@@ -352,7 +352,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
                   ],
                   lastMessageAt: new Date(),
                 }));
-                // Start a new assistant message after tool call
+                // Start a new assistant message after tool call result
                 currentAssistantMessageId = crypto.randomUUID();
                 setChat((prev) => ({
                   ...prev!,
@@ -382,6 +382,22 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
                       direction: "incoming",
                       timestamp: new Date(),
                       type: "ParToolResult",
+                    },
+                  ],
+                  lastMessageAt: new Date(),
+                }));
+                // Start a new assistant message after tool call result
+                currentAssistantMessageId = crypto.randomUUID();
+                setChat((prev) => ({
+                  ...prev!,
+                  messages: [
+                    ...prev!.messages,
+                    {
+                      id: currentAssistantMessageId,
+                      message: "",
+                      direction: "incoming",
+                      timestamp: new Date(),
+                      type: "Message",
                     },
                   ],
                   lastMessageAt: new Date(),
