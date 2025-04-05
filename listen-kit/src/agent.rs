@@ -15,7 +15,7 @@ use std::sync::Arc;
 fn model_to_versioned_model(model_type: String) -> String {
     match model_type.as_str() {
         "claude" => "anthropic/claude-3.7-sonnet".to_string(),
-        "gemini" => "google/gemini-2.5-pro-exp-03-25".to_string(),
+        "gemini" => "google/gemini-2.0-flash-001".to_string(),
         "deepseek" => "deepseek/deepseek-chat-v3-0324".to_string(),
         "openai" => "openai/gpt-4o-latest".to_string(),
         _ => "google/gemini-2.0-flash-001".to_string(),

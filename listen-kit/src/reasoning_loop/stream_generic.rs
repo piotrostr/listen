@@ -9,6 +9,7 @@ use std::io::Write;
 use tokio::sync::mpsc::Sender;
 
 use crate::reasoning_loop::Model;
+use crate::reasoning_loop::SimpleToolResult;
 
 use super::{ReasoningLoop, StreamResponse};
 
@@ -108,38 +109,50 @@ impl ReasoningLoop {
                         }
 
                         // Run all tool calls in parallel
-                        let tasks = tool_calls.values().map(|tool_call| {
-                            let model = model.clone();
-                            let name = tool_call.function.name.clone();
-                            let params =
-                                tool_call.function.arguments.to_string();
-                            let id = tool_call.id.clone();
+                        let tasks =
+                            tool_calls.iter().map(|(index, tool_call)| {
+                                let model = model.clone();
+                                let name = tool_call.function.name.clone();
+                                let params =
+                                    tool_call.function.arguments.to_string();
+                                let id = tool_call.id.clone();
 
-                            async move {
-                                let result =
-                                    model.call_tool(name, params).await;
-                                let result_str = match &result {
-                                    Ok(content) => content.to_string(),
-                                    Err(err) => err.to_string(),
-                                };
-                                (id, result_str)
-                            }
-                        });
+                                async move {
+                                    let result = model
+                                        .call_tool(name.clone(), params)
+                                        .await;
+                                    let result_str = match &result {
+                                        Ok(content) => content.to_string(),
+                                        Err(err) => err.to_string(),
+                                    };
+
+                                    SimpleToolResult {
+                                        index: *index,
+                                        id,
+                                        name,
+                                        result: result_str,
+                                    }
+                                }
+                            });
 
                         // Wait for all tool calls to complete
-                        let results = futures::future::join_all(tasks).await;
+                        let mut results =
+                            futures::future::join_all(tasks).await;
+                        results.sort_by_key(|tool_result| tool_result.index);
 
                         // Create a single message with all tool results
                         next_input = Message::User {
                             content: OneOrMany::many(
                                 results
                                     .iter()
-                                    .map(|(id, result_str)| {
+                                    .map(|tool_result| {
                                         UserContent::tool_result(
-                                            id.clone(),
+                                            tool_result.id.clone(),
                                             OneOrMany::one(
                                                 ToolResultContent::text(
-                                                    result_str.clone(),
+                                                    tool_result
+                                                        .result
+                                                        .clone(),
                                                 ),
                                             ),
                                         )
@@ -147,6 +160,19 @@ impl ReasoningLoop {
                                     .collect::<Vec<UserContent>>(),
                             )?,
                         };
+
+                        if let Some(tx) = &tx {
+                            tx.send(StreamResponse::ParToolResult {
+                                tool_results: results,
+                            })
+                            .await
+                            .map_err(|e| {
+                                anyhow::anyhow!(
+                                    "failed to send tool result: {}",
+                                    e
+                                )
+                            })?;
+                        }
 
                         continue 'outer;
                     }

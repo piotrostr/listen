@@ -7,7 +7,6 @@ use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
 use rig::completion::Message;
 use rig::message::ToolCall;
-use rig::message::ToolResult;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cell::RefCell;
@@ -23,6 +22,14 @@ pub mod stream_gemini;
 pub mod stream_generic;
 
 #[derive(Serialize, Debug, Deserialize)]
+pub struct SimpleToolResult {
+    index: usize,
+    id: String,
+    name: String,
+    result: String,
+}
+
+#[derive(Serialize, Debug, Deserialize)]
 #[serde(tag = "type", content = "content")]
 pub enum StreamResponse {
     Message(String),
@@ -30,7 +37,7 @@ pub enum StreamResponse {
         tool_calls: HashMap<usize, ToolCall>,
     },
     ParToolResult {
-        tool_results: HashMap<usize, ToolResult>,
+        tool_results: Vec<SimpleToolResult>,
     },
     ToolCall {
         id: String,
