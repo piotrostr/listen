@@ -255,6 +255,14 @@ fn join_responses(
 
     for response in input_responses {
         match response {
+            StreamResponse::ParToolCall { tool_calls } => {
+                output_responses
+                    .push(StreamResponse::ParToolCall { tool_calls });
+            }
+            StreamResponse::ParToolResult { tool_results } => {
+                output_responses
+                    .push(StreamResponse::ParToolResult { tool_results });
+            }
             StreamResponse::Message(message) => {
                 message_acc.push_str(&message);
             }

@@ -43,6 +43,13 @@ impl Model {
                     .stream()
                     .await
             }
+            Model::OpenRouter(agent) => {
+                agent
+                    .stream_completion(prompt, messages)
+                    .await?
+                    .stream()
+                    .await
+            }
         }
     }
 
@@ -51,11 +58,17 @@ impl Model {
         name: String,
         params: String,
     ) -> Result<String, ToolSetError> {
+        let params = if params == "\"\"" {
+            "{}".to_string()
+        } else {
+            params
+        };
         match self {
             Model::Claude(agent) => agent.tools.call(&name, params).await,
             Model::Gemini(agent) => agent.tools.call(&name, params).await,
             Model::DeepSeek(agent) => agent.tools.call(&name, params).await,
             Model::OpenAI(agent) => agent.tools.call(&name, params).await,
+            Model::OpenRouter(agent) => agent.tools.call(&name, params).await,
         }
     }
 }

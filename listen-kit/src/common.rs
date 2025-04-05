@@ -5,6 +5,7 @@ use rig::message::{
 };
 use rig::providers::deepseek::DeepSeekCompletionModel;
 use rig::providers::openai::CompletionModel as OpenAICompletionModel;
+use rig::providers::openrouter::CompletionModel as OpenRouterCompletionModel;
 use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::mpsc;
@@ -67,6 +68,7 @@ pub type GeminiAgent = rig::agent::Agent<GeminiCompletionModel>;
 pub type ClaudeAgent = rig::agent::Agent<AnthropicCompletionModel>;
 pub type DeepSeekAgent = rig::agent::Agent<DeepSeekCompletionModel>;
 pub type OpenAIAgent = rig::agent::Agent<OpenAICompletionModel>;
+pub type OpenRouterAgent = rig::agent::Agent<OpenRouterCompletionModel>;
 
 pub fn claude_agent_builder() -> AgentBuilder<AnthropicCompletionModel> {
     rig::providers::anthropic::Client::from_env()
@@ -96,6 +98,14 @@ pub fn deepseek_agent_builder() -> AgentBuilder<DeepSeekCompletionModel> {
 pub fn openai_agent_builder() -> AgentBuilder<OpenAICompletionModel> {
     rig::providers::openai::Client::from_env()
         .agent(rig::providers::openai::GPT_4O)
+        .max_tokens(1024 * 4)
+}
+
+pub fn openrouter_agent_builder(
+    model: Option<String>,
+) -> AgentBuilder<OpenRouterCompletionModel> {
+    rig::providers::openrouter::Client::from_env()
+        .agent(&model.unwrap_or("google/gemini-2.0-flash-001".to_string()))
         .max_tokens(1024 * 4)
 }
 
