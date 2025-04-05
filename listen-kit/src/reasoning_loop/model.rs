@@ -58,6 +58,11 @@ impl Model {
         name: String,
         params: String,
     ) -> Result<String, ToolSetError> {
+        let params = if params == "\"\"" {
+            "{}".to_string()
+        } else {
+            params
+        };
         match self {
             Model::Claude(agent) => agent.tools.call(&name, params).await,
             Model::Gemini(agent) => agent.tools.call(&name, params).await,
