@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { processMessageWithAllTags, tagHandlers } from "../process-tags";
 import { useSettingsStore } from "../store/settingsStore";
 import {
+  ParToolResultSchema,
   ToolCallSchema,
   ToolResult,
   ToolResultSchema,
@@ -10,6 +11,7 @@ import {
 } from "../types/message";
 import { ChatMessage } from "./ChatMessage";
 import { EditableMessage } from "./EditableMessage";
+import { ParToolResultMessage } from "./ParToolResultMessage";
 import { ThoughtsDisplay } from "./ThoughtsDisplay";
 import { ToolMessage } from "./ToolMessage";
 
@@ -107,6 +109,13 @@ export function MessageRendererBase({
     return null;
   }
 
+  if (msg.type === "ParToolCall") {
+    if (debugMode) {
+      return <ChatMessage message={msg.message} direction={msg.direction} />;
+    }
+    return null;
+  }
+
   if (msg.type === "ToolResult") {
     const toolOutput = ToolResultSchema.parse(JSON.parse(msg.message));
     return (
@@ -116,6 +125,27 @@ export function MessageRendererBase({
         currentMessage={msg}
       />
     );
+  }
+
+  if (msg.type === "ParToolResult") {
+    try {
+      const parToolResult = ParToolResultSchema.parse(JSON.parse(msg.message));
+      return (
+        <ParToolResultMessage
+          parToolResult={parToolResult}
+          messages={messages}
+          currentMessage={msg}
+        />
+      );
+    } catch (e) {
+      console.error("Failed to parse ParToolResult:", e);
+      return (
+        <ChatMessage
+          message={`Error parsing ParToolResult: ${e}`}
+          direction="incoming"
+        />
+      );
+    }
   }
 
   // Check if this is a user message that can be edited

@@ -13,7 +13,14 @@ import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
-import { Message, ToolCallSchema, ToolResult } from "../types/message";
+import {
+  Message,
+  ParToolCallSchema,
+  RigToolCall,
+  ToolCall,
+  ToolCallSchema,
+  ToolResult,
+} from "../types/message";
 import { TokenMetadataSchema } from "../types/metadata";
 import {
   JupiterQuoteResponseSchema,
@@ -110,37 +117,106 @@ export const ToolMessage = ({
   toolOutput,
   messages,
   currentMessage,
+  toolCallData,
 }: {
   toolOutput: ToolResult;
   messages: Message[];
   currentMessage: Message;
+  toolCallData?: RigToolCall | ToolCall | null;
 }) => {
   const { t } = useTranslation();
 
-  // Find the corresponding tool call for this tool result
-  const matchingToolCall = useMemo(() => {
-    if (!toolOutput.id && !toolOutput.name) return null;
+  // Use provided toolCallData if available, otherwise search for the corresponding tool call
+  const toolCallInfo = useMemo(() => {
+    if (toolCallData) {
+      // If toolCallData is provided (likely from ParToolResultMessage),
+      // adapt it slightly to match the ToolCallSchema shape for consistency where needed.
+      // Note: RigToolCall uses `arguments`, ToolCallSchema uses `params` (stringified JSON).
+      if ("function" in toolCallData) {
+        // Check if it's RigToolCall
+        return {
+          id: toolCallData.id,
+          name: toolCallData.function.name,
+          // Attempt to stringify arguments, handle potential errors
+          params: (() => {
+            try {
+              return JSON.stringify(toolCallData.function.arguments);
+            } catch (e) {
+              console.error("Failed to stringify RigToolCall arguments:", e);
+              return "{}"; // Default to empty object string on error
+            }
+          })(),
+          // Store the original arguments object for direct access if needed
+          _arguments: toolCallData.function.arguments,
+        };
+      } else {
+        // Assume it's ToolCallSchema-like
+        return toolCallData;
+      }
+    }
 
-    // Find the index of the current message
+    // Fallback: Search backwards through messages if toolCallData is not provided
+    if (!toolOutput.id && !toolOutput.name) return null;
     const currentIndex = messages.findIndex((m) => m.id === currentMessage.id);
     if (currentIndex === -1) return null;
 
-    // Look backwards through messages to find the matching tool call
     for (let i = currentIndex - 1; i >= 0; i--) {
       const message = messages[i];
       if (message.type === "ToolCall") {
         try {
           const toolCall = ToolCallSchema.parse(JSON.parse(message.message));
           if (toolCall.id === toolOutput.id) {
-            return toolCall;
+            return toolCall; // Return the found ToolCall
           }
         } catch (e) {
-          console.error("Failed to parse tool call:", e);
+          console.error("Failed to parse tool call during search:", e);
+        }
+      } else if (message.type === "ParToolCall") {
+        // If we encounter a ParToolCall, check if our result ID matches one of its calls
+        try {
+          const parToolCall = ParToolCallSchema.parse(
+            JSON.parse(message.message)
+          );
+          // Ensure toolOutput.id exists before using it as an index
+          const resultId = toolOutput.id;
+          if (resultId !== undefined) {
+            const matchingRigCall = parToolCall.tool_calls[resultId];
+            if (matchingRigCall) {
+              // Adapt RigToolCall to ToolCallSchema shape for consistency
+              return {
+                id: matchingRigCall.id,
+                name: matchingRigCall.function.name,
+                params: JSON.stringify(matchingRigCall.function.arguments),
+                _arguments: matchingRigCall.function.arguments,
+              };
+            }
+          }
+        } catch (e) {
+          console.error("Failed to parse ParToolCall during search:", e);
         }
       }
+
+      // Optimization: Stop searching if we hit an outgoing message or another result
+      if (
+        message.direction === "outgoing" ||
+        message.type === "ToolResult" ||
+        message.type === "ParToolResult"
+      ) {
+        break;
+      }
     }
+
+    console.warn(
+      `ToolMessage: Could not find matching tool call for result ID: ${toolOutput.id}`
+    );
     return null;
-  }, [messages, currentMessage.id, toolOutput.id]);
+  }, [
+    toolCallData,
+    messages,
+    currentMessage.id,
+    toolOutput.id,
+    toolOutput.name,
+  ]);
 
   if (toolOutput.name === "think") {
     return null;
@@ -148,17 +224,39 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "fetch_price_action_analysis") {
     try {
-      const [mint, interval] = useMemo(() => {
-        if (!matchingToolCall) return [null, "30s"];
-
+      // Extract parameters using toolCallInfo
+      const params = useMemo(() => {
+        if (!toolCallInfo) return null;
         try {
-          const params = JSON.parse(matchingToolCall.params);
-          return [params.mint, params.interval || "30s"];
+          // Use pre-parsed arguments if available (from RigToolCall)
+          if ("_arguments" in toolCallInfo && toolCallInfo._arguments) {
+            return toolCallInfo._arguments as Record<string, any>;
+          }
+          // Otherwise parse the params string (from ToolCall or adapted RigToolCall)
+          // Check if params exists and is a string before parsing
+          if (
+            "params" in toolCallInfo &&
+            typeof toolCallInfo.params === "string"
+          ) {
+            return JSON.parse(toolCallInfo.params);
+          } else if ("params" in toolCallInfo) {
+            // Log a warning if params exists but is not a string
+            console.warn(
+              "Tool call 'params' exists but is not a string:",
+              toolCallInfo.params
+            );
+            return null; // Return null as we can't parse it
+          }
+          // Redundant else-if removed
+          return null; // Return null if neither _arguments nor valid params string is found
         } catch (e) {
           console.error("Failed to parse tool call params:", e);
-          return [null, "30s"];
+          return null;
         }
-      }, [matchingToolCall]);
+      }, [toolCallInfo]);
+
+      const mint = params?.mint;
+      const interval = params?.interval || "30s";
 
       if (mint) {
         let parsed = toolOutput.result;
@@ -209,9 +307,35 @@ export const ToolMessage = ({
         </div>
       );
     } catch (e) {
-      if (toolOutput.result.includes("data: Empty") && matchingToolCall) {
+      if (toolOutput.result.includes("data: Empty") && toolCallInfo) {
         try {
-          const mint = JSON.parse(matchingToolCall.params).mint;
+          // Type-safe extraction of parameters for error case
+          let params: Record<string, any> | null = null;
+          if (
+            toolCallInfo &&
+            "_arguments" in toolCallInfo &&
+            toolCallInfo._arguments
+          ) {
+            params = toolCallInfo._arguments as Record<string, any>;
+          } else if (
+            toolCallInfo &&
+            "params" in toolCallInfo &&
+            typeof toolCallInfo.params === "string"
+          ) {
+            try {
+              params = JSON.parse(toolCallInfo.params);
+            } catch (parseError) {
+              console.error(
+                "Failed to parse params in error handler:",
+                parseError
+              );
+            }
+          }
+
+          const mint = params?.mint;
+
+          if (!mint) throw new Error("Mint not found in tool call info");
+
           return (
             <div className="p-3">
               <div className="flex items-center gap-1">
