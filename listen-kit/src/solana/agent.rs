@@ -161,7 +161,6 @@ pub fn create_solana_agent_openrouter(
     locale: String,
     model: Option<String>,
 ) -> OpenRouterAgent {
-    println!("OPENROUTER BABYY: {:?}", model);
     let preamble =
         preamble.unwrap_or("you are a solana trading agent".to_string());
 

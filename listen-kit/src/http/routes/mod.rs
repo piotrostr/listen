@@ -9,3 +9,5 @@ pub use auth::*;
 
 pub mod suggest;
 pub use suggest::*;
+
+pub mod join;

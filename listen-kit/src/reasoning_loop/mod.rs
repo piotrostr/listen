@@ -10,7 +10,6 @@ use rig::message::ToolCall;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cell::RefCell;
-use std::collections::HashMap;
 use std::future::Future;
 use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
@@ -34,7 +33,7 @@ pub struct SimpleToolResult {
 pub enum StreamResponse {
     Message(String),
     ParToolCall {
-        tool_calls: HashMap<usize, ToolCall>,
+        tool_calls: Vec<ToolCall>,
     },
     ParToolResult {
         tool_results: Vec<SimpleToolResult>,
@@ -81,8 +80,12 @@ impl StreamResponse {
             // dont consume the nested output, this is only required by the frontend
             // to show the reasoning thoughts, it will be returned again in the tool result
             StreamResponse::NestedAgentOutput { .. } => "".to_string(),
-            StreamResponse::ParToolCall { tool_calls } => todo!(),
-            StreamResponse::ParToolResult { tool_results } => todo!(),
+            StreamResponse::ParToolCall { tool_calls } => {
+                todo!()
+            }
+            StreamResponse::ParToolResult { tool_results } => {
+                todo!()
+            }
         }
     }
 }

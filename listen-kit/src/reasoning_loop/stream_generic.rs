@@ -99,8 +99,17 @@ impl ReasoningLoop {
                         });
 
                         if let Some(tx) = &tx {
+                            // Convert HashMap to Vec<ToolCall>, sorted by index
+                            let mut indexed_calls: Vec<_> =
+                                tool_calls.iter().collect();
+                            indexed_calls.sort_by_key(|(index, _)| **index);
+                            let sorted_tool_calls: Vec<_> = indexed_calls
+                                .into_iter()
+                                .map(|(_, call)| call.clone())
+                                .collect();
+
                             tx.send(StreamResponse::ParToolCall {
-                                tool_calls: tool_calls.clone(),
+                                tool_calls: sorted_tool_calls,
                             })
                             .await
                             .map_err(|e| {
