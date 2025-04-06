@@ -186,7 +186,7 @@ where
         .into_iter()
         .map(|raw| -> Result<Message, D::Error> {
             // Attempt to parse content as JSON first
-            dbg!(&raw);
+            // dbg!(&raw);
             if let Ok(json_value) =
                 serde_json::from_str::<Value>(&raw.content)
             {
@@ -265,7 +265,7 @@ where
         })
         .collect();
 
-    dbg!(&res);
+    // dbg!(&res);
 
     res
 }
