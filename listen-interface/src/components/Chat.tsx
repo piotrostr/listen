@@ -319,7 +319,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
               lastUserMessageRef={lastUserMessageRef}
             />
           ))}
-          <div className="flex flex-row items-start gap-2 pl-3 mt-2 flex-wrap justify-start">
+          <div className="flex flex-row items-center gap-2 pl-3 mt-2 flex-wrap justify-start">
             {isLoading && <ThinkingIndicator />}
             {/* Render thinking indicator if loading and no specific tools are active yet */}
             {isLoading && !activeToolCalls && isLastMessageOutgoing && (
