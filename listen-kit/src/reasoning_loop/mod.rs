@@ -81,10 +81,14 @@ impl StreamResponse {
             // to show the reasoning thoughts, it will be returned again in the tool result
             StreamResponse::NestedAgentOutput { .. } => "".to_string(),
             StreamResponse::ParToolCall { tool_calls } => {
-                todo!()
+                todo!(
+                    "deep research currently doesn't support par tool calls"
+                )
             }
             StreamResponse::ParToolResult { tool_results } => {
-                todo!()
+                todo!(
+                    "deep research currently doesn't support par tool results"
+                )
             }
         }
     }
