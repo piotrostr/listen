@@ -9,6 +9,7 @@ async fn main() -> anyhow::Result<()> {
     };
 
     use listen_kit::{
+        agent::model_to_versioned_model,
         reasoning_loop::Model,
         solana::agent::{
             create_solana_agent_claude, create_solana_agent_deepseek,
@@ -31,12 +32,20 @@ async fn main() -> anyhow::Result<()> {
                 features,
                 "en".to_string(),
             ))),
+            "openrouter-llama" => {
+                Model::OpenRouter(Arc::new(create_solana_agent_openrouter(
+                    None,
+                    features,
+                    "en".to_string(),
+                    Some(model_to_versioned_model("llama".to_string())),
+                )))
+            }
             "openrouter-claude" => {
                 Model::OpenRouter(Arc::new(create_solana_agent_openrouter(
                     None,
                     features,
                     "en".to_string(),
-                    Some("anthropic/claude-3.5-sonnet".to_string()),
+                    Some(model_to_versioned_model("claude".to_string())),
                 )))
             }
             "openrouter-gemini" => {
@@ -44,7 +53,7 @@ async fn main() -> anyhow::Result<()> {
                     None,
                     features,
                     "en".to_string(),
-                    None, // defaults to gemini
+                    Some(model_to_versioned_model("gemini".to_string())),
                 )))
             }
             "openrouter-openai" => {
@@ -52,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
                     None,
                     features,
                     "en".to_string(),
-                    Some("openai/gpt-4o-2024-11-20".to_string()),
+                    Some(model_to_versioned_model("openai".to_string())),
                 )))
             }
             "openrouter-deepseek" => {
@@ -60,7 +69,7 @@ async fn main() -> anyhow::Result<()> {
                     None,
                     features,
                     "en".to_string(),
-                    Some("deepseek/deepseek-chat-v3-0324".to_string()),
+                    Some(model_to_versioned_model("deepseek".to_string())),
                 )))
             }
             "deepseek" => {
