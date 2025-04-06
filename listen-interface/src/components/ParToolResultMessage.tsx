@@ -34,7 +34,7 @@ export const ParToolResultMessage: React.FC<ParToolResultMessageProps> = ({
           // Basic check: does the number of calls match the number of results?
           // A more robust check might involve specific IDs if available and necessary.
           if (
-            Object.keys(parsedParToolCall.tool_calls).length ===
+            parsedParToolCall.tool_calls.length ===
             parToolResult.tool_results.length
           ) {
             return parsedParToolCall.tool_calls;
@@ -78,8 +78,6 @@ export const ParToolResultMessage: React.FC<ParToolResultMessageProps> = ({
 
   // Match results to their calls using the ID
   const matchedResults = useMemo(() => {
-    console.log(JSON.stringify(parToolResult, null, 2));
-    console.log(JSON.stringify(matchingParToolCallData, null, 2));
     return parToolResult.tool_results
       .map((result) => {
         const matchingCall = matchingParToolCallData[result.index];

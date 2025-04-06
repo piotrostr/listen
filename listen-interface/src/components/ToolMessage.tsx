@@ -13,7 +13,13 @@ import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
-import { Message, RigToolCall, ToolCall, ToolResult } from "../types/message";
+import {
+  Message,
+  RigToolCall,
+  ToolCall,
+  ToolCallSchema,
+  ToolResult,
+} from "../types/message";
 import { TokenMetadataSchema } from "../types/metadata";
 import {
   JupiterQuoteResponseSchema,
@@ -147,10 +153,33 @@ export const ToolMessage = ({
         return toolCallData;
       }
     }
+    if (!toolOutput.id && !toolOutput.name) return null;
+    const currentIndex = messages.findIndex((m) => m.id === currentMessage.id);
+    if (currentIndex === -1) return null;
 
-    console.warn(
-      `ToolMessage: Could not find matching tool call for result ID: ${toolOutput.id}`
-    );
+    for (let i = currentIndex - 1; i >= 0; i--) {
+      const message = messages[i];
+      if (message.type === "ToolCall") {
+        try {
+          const toolCall = ToolCallSchema.parse(JSON.parse(message.message));
+          if (toolCall.id === toolOutput.id) {
+            return toolCall; // Return the found ToolCall
+          }
+        } catch (e) {
+          console.error("Failed to parse tool call during search:", e);
+        }
+      }
+
+      // Optimization: Stop searching if we hit an outgoing message or another result
+      if (
+        message.direction === "outgoing" ||
+        message.type === "ToolResult" ||
+        message.type === "ParToolResult"
+      ) {
+        break;
+      }
+    }
+
     return null;
   }, [
     toolCallData,
