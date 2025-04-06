@@ -73,8 +73,6 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const { t, i18n } = useTranslation();
   const { openShareModal } = useModal();
 
-  const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>(null);
-  // New state to handle multiple active tool calls from ParToolCall
   const [activeToolCalls, setActiveToolCalls] = useState<Record<
     string,
     RigToolCall
@@ -221,7 +219,14 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
           const parToolCall = ParToolCallSchema.parse(
             JSON.parse(lastMessage.message)
           );
-          newActiveToolCalls = parToolCall.tool_calls;
+          newActiveToolCalls = parToolCall.tool_calls.reduce(
+            (acc, toolCall) => {
+              acc[toolCall.id] = toolCall;
+              return acc;
+            },
+            {} as Record<string, RigToolCall>
+          );
+
           newToolBeingCalled = null; // Clear single tool call state
         } catch (error) {
           console.error("Failed to parse parallel tool call:", error);
@@ -238,11 +243,9 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       }
 
       setActiveToolCalls(newActiveToolCalls);
-      setToolBeingCalled(newToolBeingCalled); // Update legacy state if necessary
     } else {
       // Clear states if there are no messages
       setActiveToolCalls(null);
-      setToolBeingCalled(null);
     }
   }, [messages]);
 
@@ -316,7 +319,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
               lastUserMessageRef={lastUserMessageRef}
             />
           ))}
-          <div className="flex flex-row items-center gap-2 pl-3 mt-2 flex-wrap">
+          <div className="flex flex-row items-center gap-2 pl-3 mt-2 flex-wrap justify-start">
             {isLoading && <ThinkingIndicator />}
             {/* Render thinking indicator if loading and no specific tools are active yet */}
             {isLoading && !activeToolCalls && isLastMessageOutgoing && (
@@ -329,18 +332,20 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
               />
             )}
             {/* Render active tool calls */}
-            {activeToolCalls &&
-              Object.values(activeToolCalls).map((rigToolCall) => (
-                <ToolCallMessage
-                  key={rigToolCall.id}
-                  // Adapt RigToolCall to the ToolCall shape expected by ToolCallMessage
-                  toolCall={{
-                    id: rigToolCall.id,
-                    name: rigToolCall.function.name,
-                    params: JSON.stringify(rigToolCall.function.arguments), // Stringify arguments for ToolCallMessage
-                  }}
-                />
-              ))}
+            <div className="flex flex-col gap-2">
+              {activeToolCalls &&
+                Object.values(activeToolCalls).map((rigToolCall) => (
+                  <ToolCallMessage
+                    key={rigToolCall.id}
+                    // Adapt RigToolCall to the ToolCall shape expected by ToolCallMessage
+                    toolCall={{
+                      id: rigToolCall.id,
+                      name: rigToolCall.function.name,
+                      params: JSON.stringify(rigToolCall.function.arguments), // Stringify arguments for ToolCallMessage
+                    }}
+                  />
+                ))}
+            </div>
           </div>
           {nestedAgentOutput && isLoading && (
             <NestedAgentOutputDisplay content={nestedAgentOutput.content} />
