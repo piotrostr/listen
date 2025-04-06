@@ -7,7 +7,6 @@ import { useSuggestStore } from "../store/suggestStore";
 import {
   ParToolCallSchema,
   RigToolCall,
-  ToolCall,
   ToolCallSchema,
 } from "../types/message";
 import { ChatContainer } from "./ChatContainer";
@@ -91,7 +90,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     },
     {
       question: t(
-        "recommended_questions.how_to_manage_risk_when_trading_memecoins"
+        "recommended_questions.how_to_manage_risk_when_trading_memecoins",
       ),
       enabled: true,
     },
@@ -129,7 +128,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         useSuggestStore.getState().clearSuggestions(urlParams.chatId);
       }
     },
-    [sendMessage, setMessages, urlParams.chatId]
+    [sendMessage, setMessages, urlParams.chatId],
   );
 
   // Focus the input field when creating a new chat
@@ -187,12 +186,11 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
       let newActiveToolCalls: Record<string, RigToolCall> | null = null;
-      let newToolBeingCalled: ToolCall | null = null; // Keep track of single tool calls for compatibility if needed
 
       if (lastMessage.type === "ToolCall") {
         try {
           const toolCall = ToolCallSchema.parse(
-            JSON.parse(lastMessage.message)
+            JSON.parse(lastMessage.message),
           );
           // For a single tool call, represent it within the RigToolCall structure
           const rigToolCall: RigToolCall = {
@@ -210,24 +208,21 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
             },
           };
           newActiveToolCalls = { [toolCall.id]: rigToolCall };
-          newToolBeingCalled = toolCall; // Keep the old state updated for now if needed elsewhere
         } catch (error) {
           console.error("Failed to parse tool call:", error);
         }
       } else if (lastMessage.type === "ParToolCall") {
         try {
           const parToolCall = ParToolCallSchema.parse(
-            JSON.parse(lastMessage.message)
+            JSON.parse(lastMessage.message),
           );
           newActiveToolCalls = parToolCall.tool_calls.reduce(
             (acc, toolCall) => {
               acc[toolCall.id] = toolCall;
               return acc;
             },
-            {} as Record<string, RigToolCall>
+            {} as Record<string, RigToolCall>,
           );
-
-          newToolBeingCalled = null; // Clear single tool call state
         } catch (error) {
           console.error("Failed to parse parallel tool call:", error);
         }
@@ -239,7 +234,6 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         lastMessage.type !== "ParToolCall"
       ) {
         newActiveToolCalls = null;
-        newToolBeingCalled = null;
       }
 
       setActiveToolCalls(newActiveToolCalls);
@@ -264,7 +258,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         urlParams.chatId,
         messages,
         getAccessToken,
-        i18n.language
+        i18n.language,
       );
     }
   }, [
