@@ -9,6 +9,8 @@ export const MessageTypeSchema = z.enum([
   "ToolResult",
   "Error",
   "NestedAgentOutput",
+  "ParToolCall",
+  "ParToolResult",
 ]);
 export type MessageType = z.infer<typeof MessageTypeSchema>;
 
@@ -44,6 +46,33 @@ export const ToolCallSchema = z.object({
 });
 export type ToolCall = z.infer<typeof ToolCallSchema>;
 
+export const SimpleToolResultSchema = z.object({
+  index: z.number(),
+  id: z.string(),
+  name: z.string(),
+  result: z.string(),
+});
+export type SimpleToolResult = z.infer<typeof SimpleToolResultSchema>;
+
+export const RigToolCallSchema = z.object({
+  id: z.string(),
+  function: z.object({
+    name: z.string(),
+    arguments: z.record(z.string(), z.any()),
+  }),
+});
+export type RigToolCall = z.infer<typeof RigToolCallSchema>;
+
+export const ParToolCallSchema = z.object({
+  tool_calls: z.array(RigToolCallSchema),
+});
+export type ParToolCall = z.infer<typeof ParToolCallSchema>;
+
+export const ParToolResultSchema = z.object({
+  tool_results: z.array(SimpleToolResultSchema),
+});
+export type ParToolResult = z.infer<typeof ParToolResultSchema>;
+
 export const NestedAgentOutputSchema = z.object({
   agent_type: z.string(),
   content: z.string(),
@@ -55,6 +84,8 @@ export const StreamResponseSchema = z.object({
     z.string(),
     ToolResultSchema,
     ToolCallSchema,
+    ParToolCallSchema,
+    ParToolResultSchema,
     NestedAgentOutputSchema,
   ]),
 });

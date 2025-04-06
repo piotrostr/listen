@@ -2,9 +2,11 @@ use crate::common::ClaudeAgent;
 use crate::common::DeepSeekAgent;
 use crate::common::GeminiAgent;
 use crate::common::OpenAIAgent;
+use crate::common::OpenRouterAgent;
 use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
 use rig::completion::Message;
+use rig::message::ToolCall;
 use serde::Deserialize;
 use serde::Serialize;
 use std::cell::RefCell;
@@ -19,9 +21,23 @@ pub mod stream_gemini;
 pub mod stream_generic;
 
 #[derive(Serialize, Debug, Deserialize)]
+pub struct SimpleToolResult {
+    index: usize,
+    id: String,
+    name: String,
+    result: String,
+}
+
+#[derive(Serialize, Debug, Deserialize)]
 #[serde(tag = "type", content = "content")]
 pub enum StreamResponse {
     Message(String),
+    ParToolCall {
+        tool_calls: Vec<ToolCall>,
+    },
+    ParToolResult {
+        tool_results: Vec<SimpleToolResult>,
+    },
     ToolCall {
         id: String,
         name: String,
@@ -64,6 +80,16 @@ impl StreamResponse {
             // dont consume the nested output, this is only required by the frontend
             // to show the reasoning thoughts, it will be returned again in the tool result
             StreamResponse::NestedAgentOutput { .. } => "".to_string(),
+            StreamResponse::ParToolCall { tool_calls } => {
+                todo!(
+                    "deep research currently doesn't support par tool calls"
+                )
+            }
+            StreamResponse::ParToolResult { tool_results } => {
+                todo!(
+                    "deep research currently doesn't support par tool results"
+                )
+            }
         }
     }
 }
@@ -74,6 +100,7 @@ pub enum Model {
     Gemini(Arc<GeminiAgent>),
     DeepSeek(Arc<DeepSeekAgent>),
     OpenAI(Arc<OpenAIAgent>),
+    OpenRouter(Arc<OpenRouterAgent>),
 }
 
 pub struct ReasoningLoop {

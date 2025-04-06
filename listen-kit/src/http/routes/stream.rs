@@ -159,7 +159,9 @@ async fn stream(
                     wallet_address: wallet_address.as_deref(),
                     pubkey: None,
                     chat_request,
-                    responses: join_responses(collected_responses),
+                    responses: super::join::join_responses(
+                        collected_responses,
+                    ),
                 };
 
                 match collection.insert_one(chat, None).await {
@@ -244,77 +246,4 @@ async fn stream(
 
     // Return the SSE stream immediately without waiting for all responses
     sse::Sse::from_infallible_receiver(rx)
-}
-
-/// helper to aggregate streamed message chunks into one and respect breaks on tool call/output
-fn join_responses(
-    input_responses: Vec<StreamResponse>,
-) -> Vec<StreamResponse> {
-    let mut output_responses = Vec::new();
-    let mut message_acc = String::new();
-
-    for response in input_responses {
-        match response {
-            StreamResponse::Message(message) => {
-                message_acc.push_str(&message);
-            }
-            StreamResponse::NestedAgentOutput {
-                agent_type,
-                content,
-            } => {
-                // Pass through nested agent outputs unchanged
-                if !message_acc.is_empty() {
-                    output_responses
-                        .push(StreamResponse::Message(message_acc));
-                    message_acc = String::new();
-                }
-                output_responses.push(StreamResponse::NestedAgentOutput {
-                    agent_type,
-                    content,
-                });
-            }
-            StreamResponse::ToolCall { id, name, params } => {
-                // Only push accumulated message if it's not empty
-                if !message_acc.is_empty() {
-                    output_responses
-                        .push(StreamResponse::Message(message_acc));
-                    message_acc = String::new();
-                }
-                output_responses.push(StreamResponse::ToolCall {
-                    id,
-                    name,
-                    params,
-                });
-            }
-            StreamResponse::ToolResult { id, name, result } => {
-                // Only push accumulated message if it's not empty
-                if !message_acc.is_empty() {
-                    output_responses
-                        .push(StreamResponse::Message(message_acc));
-                    message_acc = String::new();
-                }
-                output_responses.push(StreamResponse::ToolResult {
-                    id,
-                    name,
-                    result,
-                });
-            }
-            StreamResponse::Error(error) => {
-                // Only push accumulated message if it's not empty
-                if !message_acc.is_empty() {
-                    output_responses
-                        .push(StreamResponse::Message(message_acc));
-                    message_acc = String::new();
-                }
-                output_responses.push(StreamResponse::Error(error));
-            }
-        }
-    }
-
-    // Add any remaining accumulated message
-    if !message_acc.is_empty() {
-        output_responses.push(StreamResponse::Message(message_acc));
-    }
-
-    output_responses
 }

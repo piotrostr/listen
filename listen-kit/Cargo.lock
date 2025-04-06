@@ -5463,7 +5463,7 @@ dependencies = [
 [[package]]
 name = "rig-core"
 version = "0.10.0"
-source = "git+https://github.com/piotrostr/rig?branch=fix%2Fopenai-id-missing#95911fe714c42f1c283c197ec72485581535c1e9"
+source = "git+https://github.com/piotrostr/rig?branch=fix%2Fopenai-id-missing#b7ccd2a9dedfecd1a388b51f6aef6b691ba903ad"
 dependencies = [
  "async-stream",
  "base64 0.22.1",

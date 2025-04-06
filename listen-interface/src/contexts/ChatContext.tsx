@@ -24,6 +24,8 @@ import {
   Chat,
   Message,
   NestedAgentOutputSchema,
+  ParToolCallSchema,
+  ParToolResultSchema,
   ToolCallSchema,
   ToolResultSchema,
 } from "../types/message";
@@ -350,7 +352,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
                   ],
                   lastMessageAt: new Date(),
                 }));
-                // Start a new assistant message after tool call
+                // Start a new assistant message after tool call result
                 currentAssistantMessageId = crypto.randomUUID();
                 setChat((prev) => ({
                   ...prev!,
@@ -362,6 +364,58 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
                       direction: "incoming",
                       timestamp: new Date(),
                       type: "Message",
+                    },
+                  ],
+                  lastMessageAt: new Date(),
+                }));
+                break;
+              }
+              case "ParToolResult": {
+                const toolResult = ParToolResultSchema.parse(data.content);
+                setChat((prev) => ({
+                  ...prev!,
+                  messages: [
+                    ...prev!.messages,
+                    {
+                      id: crypto.randomUUID(),
+                      message: JSON.stringify(toolResult),
+                      direction: "incoming",
+                      timestamp: new Date(),
+                      type: "ParToolResult",
+                    },
+                  ],
+                  lastMessageAt: new Date(),
+                }));
+                // Start a new assistant message after tool call result
+                currentAssistantMessageId = crypto.randomUUID();
+                setChat((prev) => ({
+                  ...prev!,
+                  messages: [
+                    ...prev!.messages,
+                    {
+                      id: currentAssistantMessageId,
+                      message: "",
+                      direction: "incoming",
+                      timestamp: new Date(),
+                      type: "Message",
+                    },
+                  ],
+                  lastMessageAt: new Date(),
+                }));
+                break;
+              }
+              case "ParToolCall": {
+                const toolCall = ParToolCallSchema.parse(data.content);
+                setChat((prev) => ({
+                  ...prev!,
+                  messages: [
+                    ...prev!.messages,
+                    {
+                      id: crypto.randomUUID(),
+                      message: JSON.stringify(toolCall),
+                      direction: "incoming",
+                      timestamp: new Date(),
+                      type: "ParToolCall",
                     },
                   ],
                   lastMessageAt: new Date(),

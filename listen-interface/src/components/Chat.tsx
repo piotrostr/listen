@@ -4,7 +4,12 @@ import { useTranslation } from "react-i18next";
 import { useChat } from "../contexts/ChatContext";
 import { useModal } from "../contexts/ModalContext";
 import { useSuggestStore } from "../store/suggestStore";
-import { ToolCall, ToolCallSchema } from "../types/message";
+import {
+  ParToolCallSchema,
+  RigToolCall,
+  ToolCall,
+  ToolCallSchema,
+} from "../types/message";
 import { ChatContainer } from "./ChatContainer";
 import { MessageRenderer } from "./MessageRenderer";
 import { NestedAgentOutputDisplay } from "./NestedAgentOutputDisplay";
@@ -68,7 +73,10 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const { t, i18n } = useTranslation();
   const { openShareModal } = useModal();
 
-  const [toolBeingCalled, setToolBeingCalled] = useState<ToolCall | null>(null);
+  const [activeToolCalls, setActiveToolCalls] = useState<Record<
+    string,
+    RigToolCall
+  > | null>(null);
 
   const [justSentMessage, setJustSentMessage] = useState(false);
 
@@ -178,18 +186,66 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   useEffect(() => {
     if (messages.length > 0) {
       const lastMessage = messages[messages.length - 1];
+      let newActiveToolCalls: Record<string, RigToolCall> | null = null;
+      let newToolBeingCalled: ToolCall | null = null; // Keep track of single tool calls for compatibility if needed
+
       if (lastMessage.type === "ToolCall") {
         try {
           const toolCall = ToolCallSchema.parse(
             JSON.parse(lastMessage.message)
           );
-          setToolBeingCalled(toolCall);
+          // For a single tool call, represent it within the RigToolCall structure
+          const rigToolCall: RigToolCall = {
+            id: toolCall.id,
+            function: {
+              name: toolCall.name,
+              // Attempt to parse params, default to raw string if not JSON
+              arguments: (() => {
+                try {
+                  return JSON.parse(toolCall.params);
+                } catch {
+                  return { rawParams: toolCall.params }; // Keep raw params if parsing fails
+                }
+              })(),
+            },
+          };
+          newActiveToolCalls = { [toolCall.id]: rigToolCall };
+          newToolBeingCalled = toolCall; // Keep the old state updated for now if needed elsewhere
         } catch (error) {
           console.error("Failed to parse tool call:", error);
         }
-      } else {
-        setToolBeingCalled(null);
+      } else if (lastMessage.type === "ParToolCall") {
+        try {
+          const parToolCall = ParToolCallSchema.parse(
+            JSON.parse(lastMessage.message)
+          );
+          newActiveToolCalls = parToolCall.tool_calls.reduce(
+            (acc, toolCall) => {
+              acc[toolCall.id] = toolCall;
+              return acc;
+            },
+            {} as Record<string, RigToolCall>
+          );
+
+          newToolBeingCalled = null; // Clear single tool call state
+        } catch (error) {
+          console.error("Failed to parse parallel tool call:", error);
+        }
       }
+
+      // Reset states if the last message is not a relevant tool call type
+      if (
+        lastMessage.type !== "ToolCall" &&
+        lastMessage.type !== "ParToolCall"
+      ) {
+        newActiveToolCalls = null;
+        newToolBeingCalled = null;
+      }
+
+      setActiveToolCalls(newActiveToolCalls);
+    } else {
+      // Clear states if there are no messages
+      setActiveToolCalls(null);
     }
   }, [messages]);
 
@@ -263,18 +319,33 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
               lastUserMessageRef={lastUserMessageRef}
             />
           ))}
-          <div className="flex flex-row items-center gap-2 pl-3 mt-2">
+          <div className="flex flex-row items-center gap-2 pl-3 mt-2 flex-wrap justify-start">
             {isLoading && <ThinkingIndicator />}
-            {isLoading && !toolBeingCalled && isLastMessageOutgoing && (
+            {/* Render thinking indicator if loading and no specific tools are active yet */}
+            {isLoading && !activeToolCalls && isLastMessageOutgoing && (
               <ToolCallMessage
                 toolCall={{
-                  id: "non-relevant",
-                  params: "non-relevant",
+                  id: "thinking-indicator", // Use a distinct ID
                   name: "thinking",
+                  params: "non-relevant",
                 }}
               />
             )}
-            {toolBeingCalled && <ToolCallMessage toolCall={toolBeingCalled} />}
+            {/* Render active tool calls */}
+            <div className="flex flex-col gap-2">
+              {activeToolCalls &&
+                Object.values(activeToolCalls).map((rigToolCall) => (
+                  <ToolCallMessage
+                    key={rigToolCall.id}
+                    // Adapt RigToolCall to the ToolCall shape expected by ToolCallMessage
+                    toolCall={{
+                      id: rigToolCall.id,
+                      name: rigToolCall.function.name,
+                      params: JSON.stringify(rigToolCall.function.arguments), // Stringify arguments for ToolCallMessage
+                    }}
+                  />
+                ))}
+            </div>
           </div>
           {nestedAgentOutput && isLoading && (
             <NestedAgentOutputDisplay content={nestedAgentOutput.content} />

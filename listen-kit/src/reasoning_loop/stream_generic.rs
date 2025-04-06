@@ -9,6 +9,7 @@ use std::io::Write;
 use tokio::sync::mpsc::Sender;
 
 use crate::reasoning_loop::Model;
+use crate::reasoning_loop::SimpleToolResult;
 
 use super::{ReasoningLoop, StreamResponse};
 
@@ -63,6 +64,130 @@ impl ReasoningLoop {
 
             while let Some(chunk) = stream.next().await {
                 match chunk? {
+                    StreamingChoice::ParToolCall(tool_calls) => {
+                        // Add the assistant's response up to this point with the tool calls
+                        if !current_response.is_empty() {
+                            current_messages.push(Message::Assistant {
+                                content: OneOrMany::one(
+                                    AssistantContent::text(
+                                        current_response.clone(),
+                                    ),
+                                ),
+                            });
+                            current_response.clear();
+                        }
+
+                        let mut assistant_contents =
+                            vec![None; tool_calls.len()];
+
+                        for (index, tool_call) in tool_calls.iter() {
+                            assistant_contents[*index] =
+                                Some(AssistantContent::tool_call(
+                                    tool_call.id.clone(),
+                                    tool_call.function.name.clone(),
+                                    tool_call.function.arguments.clone(),
+                                ));
+                        }
+
+                        let assistant_contents: Vec<_> = assistant_contents
+                            .into_iter()
+                            .flatten()
+                            .collect();
+
+                        current_messages.push(Message::Assistant {
+                            content: OneOrMany::many(assistant_contents)?,
+                        });
+
+                        if let Some(tx) = &tx {
+                            // Convert HashMap to Vec<ToolCall>, sorted by index
+                            let mut indexed_calls: Vec<_> =
+                                tool_calls.iter().collect();
+                            indexed_calls.sort_by_key(|(index, _)| **index);
+                            let sorted_tool_calls: Vec<_> = indexed_calls
+                                .into_iter()
+                                .map(|(_, call)| call.clone())
+                                .collect();
+
+                            tx.send(StreamResponse::ParToolCall {
+                                tool_calls: sorted_tool_calls,
+                            })
+                            .await
+                            .map_err(|e| {
+                                anyhow::anyhow!(
+                                    "failed to send tool call: {}",
+                                    e
+                                )
+                            })?;
+                        }
+
+                        // Run all tool calls in parallel
+                        let tasks =
+                            tool_calls.iter().map(|(index, tool_call)| {
+                                let model = model.clone();
+                                let name = tool_call.function.name.clone();
+                                let params =
+                                    tool_call.function.arguments.to_string();
+                                let id = tool_call.id.clone();
+
+                                async move {
+                                    let result = model
+                                        .call_tool(name.clone(), params)
+                                        .await;
+                                    let result_str = match &result {
+                                        Ok(content) => content.to_string(),
+                                        Err(err) => err.to_string(),
+                                    };
+
+                                    SimpleToolResult {
+                                        index: *index,
+                                        id,
+                                        name,
+                                        result: result_str,
+                                    }
+                                }
+                            });
+
+                        // Wait for all tool calls to complete
+                        let mut results =
+                            futures::future::join_all(tasks).await;
+                        results.sort_by_key(|tool_result| tool_result.index);
+
+                        // Create a single message with all tool results
+                        next_input = Message::User {
+                            content: OneOrMany::many(
+                                results
+                                    .iter()
+                                    .map(|tool_result| {
+                                        UserContent::tool_result(
+                                            tool_result.id.clone(),
+                                            OneOrMany::one(
+                                                ToolResultContent::text(
+                                                    tool_result
+                                                        .result
+                                                        .clone(),
+                                                ),
+                                            ),
+                                        )
+                                    })
+                                    .collect::<Vec<UserContent>>(),
+                            )?,
+                        };
+
+                        if let Some(tx) = &tx {
+                            tx.send(StreamResponse::ParToolResult {
+                                tool_results: results,
+                            })
+                            .await
+                            .map_err(|e| {
+                                anyhow::anyhow!(
+                                    "failed to send tool result: {}",
+                                    e
+                                )
+                            })?;
+                        }
+
+                        continue 'outer;
+                    }
                     StreamingChoice::Message(text) => {
                         if stdout {
                             print!("{}", text);
