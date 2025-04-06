@@ -13,14 +13,7 @@ import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
 import { renderTimestamps } from "../hooks/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
-import {
-  Message,
-  ParToolCallSchema,
-  RigToolCall,
-  ToolCall,
-  ToolCallSchema,
-  ToolResult,
-} from "../types/message";
+import { Message, RigToolCall, ToolCall, ToolResult } from "../types/message";
 import { TokenMetadataSchema } from "../types/metadata";
 import {
   JupiterQuoteResponseSchema,
@@ -152,57 +145,6 @@ export const ToolMessage = ({
       } else {
         // Assume it's ToolCallSchema-like
         return toolCallData;
-      }
-    }
-
-    // Fallback: Search backwards through messages if toolCallData is not provided
-    if (!toolOutput.id && !toolOutput.name) return null;
-    const currentIndex = messages.findIndex((m) => m.id === currentMessage.id);
-    if (currentIndex === -1) return null;
-
-    for (let i = currentIndex - 1; i >= 0; i--) {
-      const message = messages[i];
-      if (message.type === "ToolCall") {
-        try {
-          const toolCall = ToolCallSchema.parse(JSON.parse(message.message));
-          if (toolCall.id === toolOutput.id) {
-            return toolCall; // Return the found ToolCall
-          }
-        } catch (e) {
-          console.error("Failed to parse tool call during search:", e);
-        }
-      } else if (message.type === "ParToolCall") {
-        // If we encounter a ParToolCall, check if our result ID matches one of its calls
-        try {
-          const parToolCall = ParToolCallSchema.parse(
-            JSON.parse(message.message)
-          );
-          // Ensure toolOutput.id exists before using it as an index
-          const resultId = toolOutput.id;
-          if (resultId !== undefined) {
-            const matchingRigCall = parToolCall.tool_calls[resultId];
-            if (matchingRigCall) {
-              // Adapt RigToolCall to ToolCallSchema shape for consistency
-              return {
-                id: matchingRigCall.id,
-                name: matchingRigCall.function.name,
-                params: JSON.stringify(matchingRigCall.function.arguments),
-                _arguments: matchingRigCall.function.arguments,
-              };
-            }
-          }
-        } catch (e) {
-          console.error("Failed to parse ParToolCall during search:", e);
-        }
-      }
-
-      // Optimization: Stop searching if we hit an outgoing message or another result
-      if (
-        message.direction === "outgoing" ||
-        message.type === "ToolResult" ||
-        message.type === "ParToolResult"
-      ) {
-        break;
       }
     }
 

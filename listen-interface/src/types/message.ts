@@ -64,7 +64,7 @@ export const RigToolCallSchema = z.object({
 export type RigToolCall = z.infer<typeof RigToolCallSchema>;
 
 export const ParToolCallSchema = z.object({
-  tool_calls: z.record(z.string(), RigToolCallSchema),
+  tool_calls: z.array(RigToolCallSchema),
 });
 export type ParToolCall = z.infer<typeof ParToolCallSchema>;
 
