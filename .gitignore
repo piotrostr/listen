@@ -1,3 +1,5 @@
+a-mem
+AgenticMemory
 debug
 listen-redis
 test-req.sh
