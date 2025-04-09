@@ -3,6 +3,7 @@ pub mod embed;
 pub mod evolve;
 pub mod memory_note;
 pub mod memory_system;
+pub mod query;
 pub mod retriever;
 pub mod store;
 pub mod summarize;

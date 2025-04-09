@@ -54,7 +54,7 @@ impl MemorySystem {
         Ok(id)
     }
 
-    pub async fn find_related_memories(&self, query: String) -> Result<Vec<MemoryNote>> {
+    pub async fn semantic_search(&self, query: String) -> Result<Vec<MemoryNote>> {
         // Search for related memories using the retriever
         let results = self.retriever.search(&query, K).await?;
 
@@ -77,8 +77,8 @@ impl MemorySystem {
         Ok(related_memories)
     }
 
-    pub async fn find_related_memories_raw(&self, query: String, k: usize) -> Result<String> {
-        if let Ok(memories) = self.find_related_memories(query).await {
+    pub async fn find_related_memories(&self, query: String, k: usize) -> Result<String> {
+        if let Ok(memories) = self.semantic_search(query).await {
             if memories.is_empty() {
                 return Ok(String::new());
             }
@@ -119,7 +119,7 @@ impl MemorySystem {
 
     pub async fn process_memory(&self, memory: MemoryNote) -> Result<MemoryNote> {
         // Find related memories
-        let related_memories = self.find_related_memories(memory.content.clone()).await?;
+        let related_memories = self.semantic_search(memory.content.clone()).await?;
 
         // Format related memories for the evolution prompt
         let mut nearest_neighbors_text = String::new();
