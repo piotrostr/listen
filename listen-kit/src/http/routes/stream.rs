@@ -3,6 +3,7 @@ use crate::common::spawn_with_signer;
 use crate::http::middleware::verify_auth;
 use crate::http::serde::deserialize_messages;
 use crate::http::state::AppState;
+use crate::memory::synthesize_memories;
 use crate::reasoning_loop::ReasoningLoop;
 use crate::reasoning_loop::StreamResponse;
 use crate::signer::privy::PrivySigner;
@@ -220,23 +221,50 @@ async fn stream(
 
         // Run the reasoning loop in the current task (with signer context)
         let loop_result = reasoning_loop
-            .stream(prompt, messages, Some(internal_tx))
+            .stream(
+                prompt,
+                messages,
+                Some(internal_tx),
+                Some(state.memory.clone()),
+            )
             .await;
 
         // Wait for the send task to complete
         let _ = send_task.await;
 
         // Check if the reasoning loop completed successfully
-        if let Err(e) = loop_result {
-            tracing::error!("Error: reasoning loop failed: {}", e);
-            let _ = tx
-                .send(sse::Event::Data(sse::Data::new(
-                    serde_json::to_string(&StreamResponse::Error(
-                        e.to_string(),
-                    ))
-                    .unwrap(),
-                )))
-                .await;
+        match loop_result {
+            Ok(messages) => {
+                let dedup_set = state.dedup_set.clone();
+                tokio::spawn(async move {
+                    match synthesize_memories(
+                        state.memory.clone(),
+                        messages,
+                        dedup_set.clone(),
+                    )
+                    .await
+                    {
+                        Ok(_) => {}
+                        Err(e) => {
+                            tracing::error!(
+                                "Error: synthesizing memories: {}",
+                                e
+                            );
+                        }
+                    }
+                });
+            }
+            Err(e) => {
+                tracing::error!("Error: reasoning loop failed: {}", e);
+                let _ = tx
+                    .send(sse::Event::Data(sse::Data::new(
+                        serde_json::to_string(&StreamResponse::Error(
+                            e.to_string(),
+                        ))
+                        .unwrap(),
+                    )))
+                    .await;
+            }
         }
 
         Ok(())

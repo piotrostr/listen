@@ -1,13 +1,16 @@
 use anyhow::Result;
 use futures::StreamExt;
+use listen_memory::memory_system::MemorySystem;
 use rig::completion::AssistantContent;
 use rig::completion::Message;
 use rig::message::{ToolResultContent, UserContent};
 use rig::streaming::StreamingChoice;
 use rig::OneOrMany;
 use std::io::Write;
+use std::sync::Arc;
 use tokio::sync::mpsc::Sender;
 
+use crate::memory::inject_memories;
 use crate::reasoning_loop::Model;
 use crate::reasoning_loop::SimpleToolResult;
 
@@ -20,6 +23,7 @@ impl ReasoningLoop {
         prompt: String,
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
+        memory_system: Option<Arc<MemorySystem>>,
     ) -> Result<Vec<Message>> {
         let mut current_messages = messages.clone();
         let stdout = self.stdout;
@@ -31,12 +35,26 @@ impl ReasoningLoop {
         'outer: loop {
             let mut current_response = String::new();
 
+            let _prompt = if is_first_iteration {
+                let memory_system = memory_system.clone();
+                if let Some(memory_system) = memory_system {
+                    Message::user(
+                        inject_memories(
+                            memory_system.clone(),
+                            prompt.clone(),
+                        )
+                        .await?,
+                    )
+                } else {
+                    Message::user(prompt.clone())
+                }
+            } else {
+                next_input.clone()
+            };
+
             // Stream using the next input (original prompt or tool result)
             let mut stream = match model
-                .stream_completion(
-                    next_input.clone(),
-                    current_messages.clone(),
-                )
+                .stream_completion(_prompt.clone(), current_messages.clone())
                 .await
             {
                 Ok(stream) => stream,

@@ -4142,10 +4142,13 @@ dependencies = [
  "chrono",
  "listen-mongo",
  "qdrant-client",
+ "regex",
  "rig-core 0.10.0 (git+https://github.com/piotrostr/rig?branch=fix%2Fopenai-id-missing)",
  "serde",
  "serde_json",
  "tokio",
+ "tracing",
+ "tracing-subscriber",
  "uuid 0.8.2",
 ]
 

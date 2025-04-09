@@ -22,6 +22,7 @@ async fn main() -> Result<()> {
                 "what can you tell me about listen?".to_string(),
                 vec![],
                 None,
+                None,
             )
             .await
     })
