@@ -60,6 +60,26 @@ impl MongoClient {
         self.database().collection(collection_name)
     }
 
+    pub async fn insert_one_with_id<T: Serialize + DeserializeOwned + Unpin + Send + Sync>(
+        &self,
+        collection_name: &str,
+        id: &str,
+        document: T,
+    ) -> Result<()> {
+        let collection = self.database().collection::<Document>(collection_name);
+
+        // Convert the document to BSON
+        let mut doc = match bson::to_document(&document)? {
+            doc => doc,
+        };
+
+        // Set the _id field with the provided ID
+        doc.insert("_id", bson::oid::ObjectId::parse_str(id)?);
+
+        collection.insert_one(doc, None).await?;
+        Ok(())
+    }
+
     /// Insert a document into the specified collection
     pub async fn insert_one<T: Serialize + DeserializeOwned + Unpin + Send + Sync>(
         &self,
