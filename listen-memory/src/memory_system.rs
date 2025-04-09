@@ -26,6 +26,21 @@ impl MemorySystem {
         })
     }
 
+    pub async fn upgrade_note(&self, note: MemoryNote) -> Result<()> {
+        // Update in MongoDB
+        self.store
+            .update_memory(&note.id.to_string(), note.clone())
+            .await?;
+
+        // Update in retriever
+        let metadata = note.to_metadata();
+        self.retriever
+            .update_document(&note.content, metadata, &note.id.to_string())
+            .await?;
+
+        Ok(())
+    }
+
     pub async fn add_note(&self, content: String) -> Result<String> {
         // Create a new memory note with LLM analysis
         let note = MemoryNote::with_llm_analysis(content).await?;
@@ -52,17 +67,6 @@ impl MemorySystem {
                 Utc::now().to_rfc3339(),
                 note_to_update.tags
             ));
-
-            // Update in MongoDB
-            self.store
-                .update_memory(&note_id, note_to_update.clone())
-                .await?;
-
-            // Update in retriever
-            let metadata = note_to_update.to_metadata();
-            self.retriever
-                .update_document(&note_to_update.content, metadata, &note_id)
-                .await?;
         }
 
         Ok(note_id)
@@ -103,7 +107,7 @@ impl MemorySystem {
             // Process main memories
             for memory in memories.iter().take(k) {
                 memory_str.push_str(&format!(
-                    "talk start time:{} memory content:{} memory context:{} memory keywords:{:?} memory tags:{:?}\n",
+                    "timestamp:{} content:{} context:{} keywords:{:?} memory tags:{:?}\n",
                     memory.timestamp, memory.content, memory.context, memory.keywords, memory.tags
                 ));
 
@@ -111,7 +115,7 @@ impl MemorySystem {
                 for link in &memory.links {
                     if let Ok(Some(neighbor)) = self.store.get_memory(&link.to_string()).await {
                         memory_str.push_str(&format!(
-                            "talk start time:{} memory content:{} memory context:{} memory keywords:{:?} memory tags:{:?}\n",
+                            "timestamp:{} memory content:{} memory context:{} memory keywords:{:?} memory tags:{:?}\n",
                             neighbor.timestamp, neighbor.content, neighbor.context, neighbor.keywords, neighbor.tags
                         ));
                         j += 1;
@@ -144,6 +148,7 @@ impl MemorySystem {
             ));
         }
 
+        // FIXME memories that are not close semantically, but they are closely coupled
         // Prepare the evolution prompt
         let prompt = EVOLVE_PROMPT
             .replace("{context}", &memory.context)
@@ -219,19 +224,7 @@ impl MemorySystem {
                                                     .collect();
                                             }
 
-                                            // Update the neighbor in storage and retriever
-                                            self.store
-                                                .update_memory(&neighbor_id, neighbor.clone())
-                                                .await?;
-
-                                            let metadata = neighbor.to_metadata();
-                                            self.retriever
-                                                .update_document(
-                                                    &neighbor.content,
-                                                    metadata,
-                                                    &neighbor_id,
-                                                )
-                                                .await?;
+                                            self.upgrade_note(neighbor.clone()).await?;
                                         }
                                     }
                                 }
