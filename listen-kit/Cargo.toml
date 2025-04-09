@@ -59,6 +59,7 @@ ctor = "0.2.0"
 futures-util = { version = "0.3" }
 lifi = { path = "../lifi" }
 listen-tracing = { path = "../listen-tracing" }
+listen-memory = { path = "../listen-memory" }
 # TODO this brings solana sdk dependency, worth trying to go to non-native blockahsh
 # injection, otherwise this is required for privy + lifi
 blockhash-cache = { path = "../blockhash-cache" }
