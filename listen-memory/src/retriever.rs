@@ -21,6 +21,12 @@ pub trait Retriever {
         doc_id: &str,
     ) -> Result<()>;
     async fn delete_document(&self, doc_id: &str) -> Result<()>;
+    async fn update_document(
+        &self,
+        document: &str,
+        metadata: HashMap<String, Value>,
+        doc_id: &str,
+    ) -> Result<()>;
     async fn search(&self, query: &str, k: usize) -> Result<HashMap<String, Value>>;
 }
 
@@ -121,6 +127,21 @@ impl Retriever for QdrantRetriever {
             .delete_points(delete_request)
             .await
             .map_err(|e| anyhow!("Failed to delete point: {}", e))?;
+
+        Ok(())
+    }
+
+    async fn update_document(
+        &self,
+        document: &str,
+        metadata: HashMap<String, Value>,
+        doc_id: &str,
+    ) -> Result<()> {
+        // First delete the existing document
+        self.delete_document(doc_id).await?;
+
+        // Then add the updated document
+        self.add_document(document, metadata, doc_id).await?;
 
         Ok(())
     }

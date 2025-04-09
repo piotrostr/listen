@@ -4,9 +4,9 @@ use crate::memory_note::MemoryNote;
 use crate::retriever::{QdrantRetriever, Retriever};
 use crate::store::MemoryStore;
 use anyhow::{anyhow, Result};
+use chrono::Utc;
 use serde_json::Value;
 use std::sync::Arc;
-use uuid::Uuid;
 
 pub const K: usize = 5;
 
@@ -27,8 +27,8 @@ impl MemorySystem {
     }
 
     pub async fn add_note(&self, content: String) -> Result<String> {
-        // Create a new memory note
-        let note = MemoryNote::new(content);
+        // Create a new memory note with LLM analysis
+        let note = MemoryNote::with_llm_analysis(content).await?;
         let note_id = note.id.to_string();
 
         // Store the document in the retriever with metadata
@@ -37,9 +37,33 @@ impl MemorySystem {
             .add_document(&note.content, metadata.clone(), &note_id)
             .await?;
 
+        // Store in MongoDB
         self.store.add_memory(note.clone()).await?;
 
-        self.process_memory(note).await?;
+        // Process the memory for evolution
+        let (should_evolve, evolved_note) = self.process_memory(note).await?;
+
+        // If evolution occurred, update the memory
+        if should_evolve {
+            // Add evolution event to history
+            let mut note_to_update = evolved_note.clone();
+            note_to_update.add_to_evolution_history(format!(
+                "Memory evolved at {} with updated tags: {:?}",
+                Utc::now().to_rfc3339(),
+                note_to_update.tags
+            ));
+
+            // Update in MongoDB
+            self.store
+                .update_memory(&note_id, note_to_update.clone())
+                .await?;
+
+            // Update in retriever
+            let metadata = note_to_update.to_metadata();
+            self.retriever
+                .update_document(&note_to_update.content, metadata, &note_id)
+                .await?;
+        }
 
         Ok(note_id)
     }
@@ -67,7 +91,47 @@ impl MemorySystem {
         Ok(related_memories)
     }
 
-    pub async fn process_memory(&self, memory: MemoryNote) -> Result<()> {
+    pub async fn find_related_memories_raw(&self, query: String, k: usize) -> Result<String> {
+        if let Ok(memories) = self.find_related_memories(query).await {
+            if memories.is_empty() {
+                return Ok(String::new());
+            }
+
+            let mut memory_str = String::new();
+            let mut j = 0;
+
+            // Process main memories
+            for memory in memories.iter().take(k) {
+                memory_str.push_str(&format!(
+                    "talk start time:{} memory content:{} memory context:{} memory keywords:{:?} memory tags:{:?}\n",
+                    memory.timestamp, memory.content, memory.context, memory.keywords, memory.tags
+                ));
+
+                // Process neighborhood (linked memories)
+                for link in &memory.links {
+                    if let Ok(Some(neighbor)) = self.store.get_memory(&link.to_string()).await {
+                        memory_str.push_str(&format!(
+                            "talk start time:{} memory content:{} memory context:{} memory keywords:{:?} memory tags:{:?}\n",
+                            neighbor.timestamp, neighbor.content, neighbor.context, neighbor.keywords, neighbor.tags
+                        ));
+                        j += 1;
+                        if j >= k {
+                            break;
+                        }
+                    }
+                }
+                if j >= k {
+                    break;
+                }
+            }
+
+            Ok(memory_str)
+        } else {
+            Ok(String::new())
+        }
+    }
+
+    pub async fn process_memory(&self, memory: MemoryNote) -> Result<(bool, MemoryNote)> {
         // Find related memories
         let related_memories = self.find_related_memories(memory.content.clone()).await?;
 
@@ -75,8 +139,8 @@ impl MemorySystem {
         let mut nearest_neighbors_text = String::new();
         for (i, mem) in related_memories.iter().enumerate() {
             nearest_neighbors_text.push_str(&format!(
-                "memory index: {}\tcontent: {}\tcontext: {}\tkeywords: {:?}\ttags: {:?}\n",
-                i, mem.content, mem.context, mem.keywords, mem.tags
+                "memory index:{}\ttalk start time:{}\tmemory content:{}\tmemory context:{}\tmemory keywords:{:?}\tmemory tags:{:?}\n",
+                i, mem.timestamp, mem.content, mem.context, mem.keywords, mem.tags
             ));
         }
 
@@ -94,134 +158,91 @@ impl MemorySystem {
         // Parse the response as JSON
         let evolution_response: Value = serde_json::from_str(&response)?;
 
+        let mut evolved_memory = memory.clone();
+        let mut should_evolve = false;
+
         // Process the evolution response
-        if let Some(should_evolve) = evolution_response["should_evolve"].as_bool() {
-            if should_evolve {
-                // Process actions
-                if let Some(actions) = evolution_response["actions"].as_array() {
-                    // First collect all the updates we need to apply
-                    struct MemoryUpdate {
-                        id: String,
-                        new_context: Option<String>,
-                        new_tags: Option<Vec<String>>,
-                        links_to_add: Vec<Uuid>,
-                    }
+        if let Some(true) = evolution_response["should_evolve"].as_bool() {
+            should_evolve = true;
 
-                    let mut updates = Vec::new();
-
-                    // Add an update for the current memory
-                    let mut current_memory_update = MemoryUpdate {
-                        id: memory.id.to_string(),
-                        new_context: None,
-                        new_tags: None,
-                        links_to_add: Vec::new(),
-                    };
-
-                    for action in actions {
-                        match action.as_str() {
-                            Some("strengthen") => {
-                                // Process strengthen action - update current memory
-                                if let Some(connections) =
-                                    evolution_response["suggested_connections"].as_array()
-                                {
-                                    // Collect links to add
-                                    for conn in connections {
-                                        if let Some(conn_idx) = conn.as_u64() {
-                                            if conn_idx < related_memories.len() as u64 {
-                                                let neighbor = &related_memories[conn_idx as usize];
-                                                current_memory_update
-                                                    .links_to_add
-                                                    .push(neighbor.id);
+            if let Some(actions) = evolution_response["actions"].as_array() {
+                for action in actions {
+                    match action.as_str() {
+                        Some("strengthen") => {
+                            // Process strengthen action
+                            if let Some(connections) =
+                                evolution_response["suggested_connections"].as_array()
+                            {
+                                for conn in connections {
+                                    if let Some(conn_idx) = conn.as_u64() {
+                                        if conn_idx < related_memories.len() as u64 {
+                                            let neighbor = &related_memories[conn_idx as usize];
+                                            if !evolved_memory.links.contains(&neighbor.id) {
+                                                evolved_memory.links.push(neighbor.id);
                                             }
                                         }
                                     }
                                 }
-
-                                if let Some(tags) = evolution_response["tags_to_update"].as_array()
-                                {
-                                    // Update tags
-                                    current_memory_update.new_tags = Some(
-                                        tags.iter()
-                                            .filter_map(|t| t.as_str().map(String::from))
-                                            .collect(),
-                                    );
-                                }
                             }
-                            Some("update_neighbor") => {
-                                // Process update_neighbor action
-                                if let (Some(contexts), Some(tags_array)) = (
-                                    evolution_response["new_context_neighborhood"].as_array(),
-                                    evolution_response["new_tags_neighborhood"].as_array(),
-                                ) {
-                                    // Create updates for each neighbor
-                                    for (i, (context, tags)) in
-                                        contexts.iter().zip(tags_array.iter()).enumerate()
-                                    {
-                                        if i < related_memories.len() {
-                                            let neighbor_id = related_memories[i].id.to_string();
-                                            let new_context = context.as_str().map(String::from);
 
-                                            let new_tags = if let Some(tag_arr) = tags.as_array() {
-                                                Some(
-                                                    tag_arr
-                                                        .iter()
-                                                        .filter_map(|t| {
-                                                            t.as_str().map(String::from)
-                                                        })
-                                                        .collect(),
+                            if let Some(tags) = evolution_response["tags_to_update"].as_array() {
+                                evolved_memory.tags = tags
+                                    .iter()
+                                    .filter_map(|t| t.as_str().map(String::from))
+                                    .collect();
+                            }
+                        }
+                        Some("update_neighbor") => {
+                            // Process update_neighbor action
+                            if let (Some(contexts), Some(tags_array)) = (
+                                evolution_response["new_context_neighborhood"].as_array(),
+                                evolution_response["new_tags_neighborhood"].as_array(),
+                            ) {
+                                for (i, (context, tags)) in
+                                    contexts.iter().zip(tags_array.iter()).enumerate()
+                                {
+                                    if i < related_memories.len() {
+                                        let neighbor_id = related_memories[i].id.to_string();
+                                        if let Some(mut neighbor) =
+                                            self.store.get_memory(&neighbor_id).await?
+                                        {
+                                            // Update neighbor context
+                                            if let Some(ctx) = context.as_str() {
+                                                neighbor.context = ctx.to_string();
+                                            }
+
+                                            // Update neighbor tags
+                                            if let Some(tag_arr) = tags.as_array() {
+                                                neighbor.tags = tag_arr
+                                                    .iter()
+                                                    .filter_map(|t| t.as_str().map(String::from))
+                                                    .collect();
+                                            }
+
+                                            // Update the neighbor in storage and retriever
+                                            self.store
+                                                .update_memory(&neighbor_id, neighbor.clone())
+                                                .await?;
+
+                                            let metadata = neighbor.to_metadata();
+                                            self.retriever
+                                                .update_document(
+                                                    &neighbor.content,
+                                                    metadata,
+                                                    &neighbor_id,
                                                 )
-                                            } else {
-                                                None
-                                            };
-
-                                            updates.push(MemoryUpdate {
-                                                id: neighbor_id,
-                                                new_context,
-                                                new_tags,
-                                                links_to_add: Vec::new(),
-                                            });
+                                                .await?;
                                         }
                                     }
                                 }
                             }
-                            _ => {}
                         }
-                    }
-
-                    // Add the current memory update to the list if it has changes
-                    if !current_memory_update.links_to_add.is_empty()
-                        || current_memory_update.new_tags.is_some()
-                    {
-                        updates.push(current_memory_update);
-                    }
-
-                    // Now apply all updates in a single mutable borrow
-                    for update in updates {
-                        if let Some(mut mem) = self.store.get_memory(&update.id).await? {
-                            // Update context if present
-                            if let Some(context) = update.new_context {
-                                mem.context = context;
-                            }
-
-                            // Update tags if present
-                            if let Some(tags) = update.new_tags {
-                                mem.tags = tags;
-                            }
-
-                            // Add links
-                            for link in update.links_to_add {
-                                if !mem.links.contains(&link) {
-                                    mem.links.push(link);
-                                }
-                            }
-
-                            self.store.update_memory(&mem.id.to_string(), mem).await?;
-                        }
+                        _ => {}
                     }
                 }
             }
         }
 
-        Ok(())
+        Ok((should_evolve, evolved_memory))
     }
 }

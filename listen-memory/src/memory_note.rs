@@ -1,3 +1,5 @@
+use crate::completion::generate_completion;
+use anyhow::Result;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -31,8 +33,8 @@ impl MemoryNote {
 
         Self {
             id: Uuid::new_v4(),
-            content,
-            keywords: Vec::new(), // Will be populated by an LLM in a full implementation
+            content: content.clone(),
+            keywords: Vec::new(),
             links: Vec::new(),
             context: "General".to_string(),        // Default context
             category: "Uncategorized".to_string(), // Default category
@@ -42,6 +44,70 @@ impl MemoryNote {
             retrieval_count: 0,
             evolution_history: Vec::new(),
         }
+    }
+
+    pub async fn with_llm_analysis(content: String) -> Result<Self> {
+        let mut note = Self::new(content.clone());
+
+        // Generate the analysis prompt
+        let prompt = format!(
+            r#"Generate a structured analysis of the following content by:
+            1. Identifying the most salient keywords (focus on nouns, verbs, and key concepts)
+            2. Extracting core themes and contextual elements
+            3. Creating relevant categorical tags
+
+            Format the response as a JSON object:
+            {{
+                "keywords": [
+                    // several specific, distinct keywords that capture key concepts and terminology
+                    // Order from most to least important
+                    // Don't include keywords that are the name of the speaker or time
+                    // At least three keywords, but don't be too redundant.
+                ],
+                "context": 
+                    // one sentence summarizing:
+                    // - Main topic/domain
+                    // - Key arguments/points
+                    // - Intended audience/purpose
+                ,
+                "tags": [
+                    // several broad categories/themes for classification
+                    // Include domain, format, and type tags
+                    // At least three tags, but don't be too redundant.
+                ]
+            }}
+
+            Content for analysis:
+            {}"#,
+            content
+        );
+
+        // Call the completion API
+        let response = generate_completion(&prompt).await?;
+
+        // Parse the response
+        let analysis: Value = serde_json::from_str(&response)?;
+
+        // Update note with the analysis results
+        if let Some(keywords) = analysis["keywords"].as_array() {
+            note.keywords = keywords
+                .iter()
+                .filter_map(|k| k.as_str().map(String::from))
+                .collect();
+        }
+
+        if let Some(context) = analysis["context"].as_str() {
+            note.context = context.to_string();
+        }
+
+        if let Some(tags) = analysis["tags"].as_array() {
+            note.tags = tags
+                .iter()
+                .filter_map(|t| t.as_str().map(String::from))
+                .collect();
+        }
+
+        Ok(note)
     }
 
     pub fn to_metadata(&self) -> HashMap<String, Value> {
@@ -146,5 +212,9 @@ impl MemoryNote {
     pub fn increment_retrieval_count(&mut self) {
         self.retrieval_count += 1;
         self.last_accessed = Utc::now();
+    }
+
+    pub fn add_to_evolution_history(&mut self, event: String) {
+        self.evolution_history.push(event);
     }
 }
