@@ -26,16 +26,15 @@ impl MemorySystem {
         })
     }
 
-    pub async fn upgrade_note(&self, note: MemoryNote) -> Result<()> {
+    pub async fn persist_note_and_embeddings(&self, note: MemoryNote) -> Result<()> {
         // Update in MongoDB
         self.store
             .update_memory(&note.id.to_string(), note.clone())
             .await?;
 
-        // Update in retriever
-        let metadata = note.to_metadata();
+        // Update in Qdrant
         self.retriever
-            .update_document(&note.content, metadata, &note.id.to_string())
+            .update_document(&note.content, note.to_metadata(), &note.id.to_string())
             .await?;
 
         Ok(())
@@ -43,33 +42,16 @@ impl MemorySystem {
 
     pub async fn add_note(&self, content: String) -> Result<String> {
         // Create a new memory note with LLM analysis
-        let note = MemoryNote::with_llm_analysis(content).await?;
-        let note_id = note.id.to_string();
-
-        // Store the document in the retriever with metadata
-        let metadata = note.to_metadata();
-        self.retriever
-            .add_document(&note.content, metadata.clone(), &note_id)
+        let note = self
+            .process_memory(MemoryNote::with_llm_analysis(content).await?)
             .await?;
 
-        // Store in MongoDB
-        self.store.add_memory(note.clone()).await?;
+        let id = note.id.to_string();
 
-        // Process the memory for evolution
-        let (should_evolve, evolved_note) = self.process_memory(note).await?;
+        // Persist the evolved memory
+        self.persist_note_and_embeddings(note).await?;
 
-        // If evolution occurred, update the memory
-        if should_evolve {
-            // Add evolution event to history
-            let mut note_to_update = evolved_note.clone();
-            note_to_update.add_to_evolution_history(format!(
-                "Memory evolved at {} with updated tags: {:?}",
-                Utc::now().to_rfc3339(),
-                note_to_update.tags
-            ));
-        }
-
-        Ok(note_id)
+        Ok(id)
     }
 
     pub async fn find_related_memories(&self, query: String) -> Result<Vec<MemoryNote>> {
@@ -135,7 +117,7 @@ impl MemorySystem {
         }
     }
 
-    pub async fn process_memory(&self, memory: MemoryNote) -> Result<(bool, MemoryNote)> {
+    pub async fn process_memory(&self, memory: MemoryNote) -> Result<MemoryNote> {
         // Find related memories
         let related_memories = self.find_related_memories(memory.content.clone()).await?;
 
@@ -148,7 +130,6 @@ impl MemorySystem {
             ));
         }
 
-        // FIXME memories that are not close semantically, but they are closely coupled
         // Prepare the evolution prompt
         let prompt = EVOLVE_PROMPT
             .replace("{context}", &memory.context)
@@ -164,12 +145,9 @@ impl MemorySystem {
         let evolution_response: Value = serde_json::from_str(&response)?;
 
         let mut evolved_memory = memory.clone();
-        let mut should_evolve = false;
 
         // Process the evolution response
         if let Some(true) = evolution_response["should_evolve"].as_bool() {
-            should_evolve = true;
-
             if let Some(actions) = evolution_response["actions"].as_array() {
                 for action in actions {
                     match action.as_str() {
@@ -196,6 +174,13 @@ impl MemorySystem {
                                     .filter_map(|t| t.as_str().map(String::from))
                                     .collect();
                             }
+
+                            // Add evolution event to history
+                            evolved_memory.add_to_evolution_history(format!(
+                                "Memory evolved at {} with updated tags: {:?}",
+                                Utc::now().to_rfc3339(),
+                                evolved_memory.tags
+                            ));
                         }
                         Some("update_neighbor") => {
                             // Process update_neighbor action
@@ -224,7 +209,8 @@ impl MemorySystem {
                                                     .collect();
                                             }
 
-                                            self.upgrade_note(neighbor.clone()).await?;
+                                            self.persist_note_and_embeddings(neighbor.clone())
+                                                .await?;
                                         }
                                     }
                                 }
@@ -236,6 +222,6 @@ impl MemorySystem {
             }
         }
 
-        Ok((should_evolve, evolved_memory))
+        Ok(evolved_memory)
     }
 }
