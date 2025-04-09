@@ -1,4 +1,4 @@
-pub const PROMPT: &str =
+pub const EVOLVE_PROMPT: &str =
     "You are an AI memory evolution agent responsible for managing and evolving a knowledge base.
     Analyze the the new memory note according to keywords and context, also with their several nearest neighbors memory.
     Make decisions about its evolution.  

@@ -1,5 +1,5 @@
 use crate::completion::generate_completion;
-use crate::evolve::PROMPT;
+use crate::evolve::EVOLVE_PROMPT;
 use crate::memory_note::MemoryNote;
 use crate::retriever::{QdrantRetriever, Retriever};
 use crate::store::MemoryStore;
@@ -81,7 +81,7 @@ impl MemorySystem {
         }
 
         // Prepare the evolution prompt
-        let prompt = PROMPT
+        let prompt = EVOLVE_PROMPT
             .replace("{context}", &memory.context)
             .replace("{content}", &memory.content)
             .replace("{keywords}", &format!("{:?}", memory.keywords))
