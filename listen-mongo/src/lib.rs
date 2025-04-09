@@ -17,10 +17,9 @@ pub struct MongoClient {
 impl MongoClient {
     /// Creates a new MongoDB client
     pub async fn from_env() -> Result<Self> {
-        let mongo_uri = env::var("MONGODB_URI")
-            .map_err(|_| anyhow!("MONGODB_URI not set"))?;
-        let db_name = env::var("MONGODB_DB_NAME")
-            .map_err(|_| anyhow!("MONGODB_DB_NAME not set"))?;
+        let mongo_uri = env::var("MONGODB_URI").map_err(|_| anyhow!("MONGODB_URI not set"))?;
+        let db_name =
+            env::var("MONGODB_DB_NAME").map_err(|_| anyhow!("MONGODB_DB_NAME not set"))?;
 
         let client_options = ClientOptions::parse(mongo_uri).await?;
         let client = Client::with_options(client_options)?;
@@ -36,10 +35,7 @@ impl MongoClient {
     }
 
     /// Creates a new MongoDB client with custom URI and database name
-    pub async fn with_config(
-        mongo_uri: String,
-        db_name: String,
-    ) -> Result<Self> {
+    pub async fn with_config(mongo_uri: String, db_name: String) -> Result<Self> {
         let client_options = ClientOptions::parse(mongo_uri).await?;
         let client = Client::with_options(client_options)?;
 
@@ -65,9 +61,7 @@ impl MongoClient {
     }
 
     /// Insert a document into the specified collection
-    pub async fn insert_one<
-        T: Serialize + DeserializeOwned + Unpin + Send + Sync,
-    >(
+    pub async fn insert_one<T: Serialize + DeserializeOwned + Unpin + Send + Sync>(
         &self,
         collection_name: &str,
         document: T,
@@ -82,16 +76,13 @@ impl MongoClient {
     }
 
     /// Insert a document with a specific key
-    pub async fn insert_with_key<
-        T: Serialize + DeserializeOwned + Unpin + Send + Sync,
-    >(
+    pub async fn insert_with_key<T: Serialize + DeserializeOwned + Unpin + Send + Sync>(
         &self,
         collection_name: &str,
         key: &str,
         value: T,
     ) -> Result<String> {
-        let collection =
-            self.database().collection::<Document>(collection_name);
+        let collection = self.database().collection::<Document>(collection_name);
 
         // Convert value to BSON document
         let serialized_value = bson::to_bson(&value)?;
@@ -134,9 +125,7 @@ impl MongoClient {
                         // Try to find the object inside nested fields
                         for (_, value) in doc.iter() {
                             if let bson::Bson::Document(nested_doc) = value {
-                                if let Ok(item) = bson::from_document::<T>(
-                                    nested_doc.clone(),
-                                ) {
+                                if let Ok(item) = bson::from_document::<T>(nested_doc.clone()) {
                                     documents.push(item);
                                     break;
                                 }
@@ -144,9 +133,7 @@ impl MongoClient {
                         }
                     }
                 }
-                Err(e) => {
-                    return Err(anyhow!("Error fetching document: {}", e))
-                }
+                Err(e) => return Err(anyhow!("Error fetching document: {}", e)),
             }
         }
 
@@ -166,6 +153,23 @@ impl MongoClient {
         let result = collection.find_one(filter, None).await?;
 
         Ok(result)
+    }
+
+    pub async fn update<T: Serialize + DeserializeOwned + Unpin + Send + Sync>(
+        &self,
+        collection_name: &str,
+        id: &str,
+        document: T,
+    ) -> Result<()> {
+        let collection = self.collection::<T>(collection_name);
+        collection
+            .update_one(
+                doc! { "_id": bson::oid::ObjectId::parse_str(id)? },
+                doc! { "$set": bson::to_bson(&document)? },
+                None,
+            )
+            .await?;
+        Ok(())
     }
 }
 
@@ -209,10 +213,7 @@ mod tests {
         let user2_id = repo
             .insert_with_key("sample_objects", "profile", user2)
             .await?;
-        tracing::info!(
-            "Inserted user with key 'profile' and ID: {}",
-            user2_id
-        );
+        tracing::info!("Inserted user with key 'profile' and ID: {}", user2_id);
 
         // Find all users
         let all_users = repo
