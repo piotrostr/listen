@@ -1,28 +1,28 @@
 use crate::completion::generate_completion;
-use crate::embed::generate_embedding;
 use crate::evolve::PROMPT;
 use crate::memory_note::MemoryNote;
 use crate::retriever::{QdrantRetriever, Retriever};
+use crate::store::MemoryStore;
 use anyhow::{anyhow, Result};
-use serde_json::{json, Value};
-use std::collections::HashMap;
-use std::sync::{Arc, Mutex};
+use serde_json::Value;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub const K: usize = 5;
 
 pub struct MemorySystem {
     retriever: Arc<QdrantRetriever>,
-    memories: Arc<Mutex<HashMap<String, MemoryNote>>>,
+    store: Arc<MemoryStore>,
 }
 
 impl MemorySystem {
     pub async fn from_env() -> Result<Self> {
-        let retriever = QdrantRetriever::new("memories").await?;
+        let retriever = QdrantRetriever::from_env().await?;
+        let store = MemoryStore::from_env().await?;
 
         Ok(Self {
             retriever: Arc::new(retriever),
-            memories: Arc::new(Mutex::new(HashMap::new())),
+            store: Arc::new(store),
         })
     }
 
@@ -37,13 +37,8 @@ impl MemorySystem {
             .add_document(&note.content, metadata.clone(), &note_id)
             .await?;
 
-        // Store the note in our local memory
-        {
-            let mut memories = self.memories.lock().unwrap();
-            memories.insert(note_id.clone(), note.clone());
-        }
+        self.store.add_memory(note.clone()).await?;
 
-        // Process the memory for evolution
         self.process_memory(note).await?;
 
         Ok(note_id)
@@ -60,12 +55,12 @@ impl MemorySystem {
 
         // Convert to Vec<MemoryNote>
         let mut related_memories = Vec::new();
-        let memories = self.memories.lock().unwrap();
 
         for id in doc_ids {
             let id_str = id.as_str().unwrap_or_default();
-            if let Some(note) = memories.get(id_str) {
-                related_memories.push(note.clone());
+            let note = self.store.get_memory(id_str).await?;
+            if let Some(note) = note {
+                related_memories.push(note);
             }
         }
 
@@ -201,9 +196,8 @@ impl MemorySystem {
                     }
 
                     // Now apply all updates in a single mutable borrow
-                    let mut memories = self.memories.lock().unwrap();
                     for update in updates {
-                        if let Some(mem) = memories.get_mut(&update.id) {
+                        if let Some(mut mem) = self.store.get_memory(&update.id).await? {
                             // Update context if present
                             if let Some(context) = update.new_context {
                                 mem.context = context;
@@ -220,6 +214,8 @@ impl MemorySystem {
                                     mem.links.push(link);
                                 }
                             }
+
+                            self.store.update_memory(&mem.id.to_string(), mem).await?;
                         }
                     }
                 }

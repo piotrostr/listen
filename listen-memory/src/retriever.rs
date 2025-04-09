@@ -10,6 +10,7 @@ use serde_json::{json, Value};
 use std::collections::HashMap;
 
 use crate::embed::generate_embedding;
+use crate::util::must_get_env;
 
 #[async_trait]
 pub trait Retriever {
@@ -29,8 +30,14 @@ pub struct QdrantRetriever {
 }
 
 impl QdrantRetriever {
-    pub async fn new(collection_name: &str) -> Result<Self> {
-        let client = Qdrant::from_url("http://localhost:6334").build()?;
+    pub async fn from_env() -> Result<Self> {
+        let url = must_get_env("QDRANT_URL");
+        let collection_name = must_get_env("QDRANT_COLLECTION_NAME");
+        Self::new(&url, &collection_name).await
+    }
+
+    pub async fn new(url: &str, collection_name: &str) -> Result<Self> {
+        let client = Qdrant::from_url(url).build()?;
 
         if !client
             .collection_exists(&collection_name.to_string())
@@ -199,7 +206,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_add_and_search_documents() -> Result<()> {
-        let retriever = QdrantRetriever::new("test_collection_2").await?;
+        let retriever = QdrantRetriever::new("http://localhost:6334", "test_collection_2").await?;
 
         let documents = vec![
             (

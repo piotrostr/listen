@@ -4,4 +4,6 @@ pub mod evolve;
 pub mod memory_note;
 pub mod memory_system;
 pub mod retriever;
+pub mod store;
 pub mod summarize;
+pub mod util;
