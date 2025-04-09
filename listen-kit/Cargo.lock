@@ -4018,7 +4018,6 @@ dependencies = [
  "bincode",
  "blockhash-cache",
  "borsh 1.5.5",
- "bson",
  "chrono",
  "ctor",
  "dotenv",
@@ -4030,9 +4029,9 @@ dependencies = [
  "jsonwebtoken",
  "lazy_static",
  "lifi",
+ "listen-mongo",
  "listen-tracing",
  "log",
- "mongodb",
  "once_cell",
  "petgraph",
  "privy",
@@ -4059,6 +4058,19 @@ dependencies = [
  "tracing-subscriber",
  "uniswap-sdk-core",
  "uniswap-v3-sdk",
+]
+
+[[package]]
+name = "listen-mongo"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "bson",
+ "futures",
+ "mongodb",
+ "serde",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

@@ -5,7 +5,7 @@ use privy::Privy;
 
 use super::routes::{auth, healthz, stream, suggest};
 use super::state::AppState;
-use crate::mongo::MongoClient;
+use listen_mongo::MongoClient;
 
 pub async fn run_server(
     privy: Privy,

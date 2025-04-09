@@ -11,7 +11,6 @@ use crate::solana::agent::Features;
 use actix_web::{post, web, HttpRequest, Responder};
 use actix_web_lab::sse;
 use futures::StreamExt;
-use mongodb::bson::doc;
 use rig::completion::Message;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;

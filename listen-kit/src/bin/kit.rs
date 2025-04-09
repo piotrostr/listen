@@ -1,7 +1,7 @@
 #[cfg(feature = "http")]
 use {
     listen_kit::http::server::run_server,
-    listen_kit::mongo::MongoClient,
+    listen_mongo::MongoClient,
     privy::{config::PrivyConfig, Privy},
 };
 

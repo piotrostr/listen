@@ -20,7 +20,6 @@ pub mod data;
 pub mod dexscreener;
 pub mod faster100x;
 pub mod lunarcrush;
-pub mod mongo;
 pub mod reasoning_loop;
 pub mod signer;
 pub mod think;

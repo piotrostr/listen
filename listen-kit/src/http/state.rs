@@ -1,7 +1,7 @@
 use privy::Privy;
 use std::sync::Arc;
 
-use crate::mongo::MongoClient;
+use listen_mongo::MongoClient;
 
 pub struct AppState {
     pub(crate) privy: Arc<Privy>,

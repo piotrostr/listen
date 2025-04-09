@@ -63,9 +63,8 @@ listen-tracing = { path = "../listen-tracing" }
 # injection, otherwise this is required for privy + lifi
 blockhash-cache = { path = "../blockhash-cache" }
 evm-approvals = { path = "../approvals" }
-# MongoDB dependencies
-mongodb = { version = "2.8.1", features = ["tokio-runtime"] }
-bson = { version = "2.9.0", features = ["chrono-0_4"] }
+
+listen-mongo = { path = "../listen-mongo" }
 
 # evm
 alloy = { version = "0.9", features = ["full"], optional = true }
