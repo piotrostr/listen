@@ -56,6 +56,8 @@ impl MemoryNote {
             2. Extracting core themes and contextual elements
             3. Creating relevant categorical tags
 
+            Your response should be COMPLETELY OBJECTIVE, without any judgment or opinion.
+
             Format the response as a JSON object:
             {{
                 "keywords": [
@@ -86,7 +88,7 @@ impl MemoryNote {
         let response = generate_completion(&prompt).await?;
 
         // Parse the response
-        let analysis: Value = serde_json::from_str(&response)?;
+        let analysis: Value = serde_json::from_str(&response).unwrap_or_default();
 
         // Update note with the analysis results
         if let Some(keywords) = analysis["keywords"].as_array() {
