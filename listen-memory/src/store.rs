@@ -9,8 +9,12 @@ pub struct MemoryStore {
 
 impl MemoryStore {
     pub async fn from_env() -> Result<Self> {
-        let client = MongoClient::from_env().await?;
-        let collection_name = must_get_env("MONGODB_COLLECTION_NAME");
+        let client = MongoClient::with_config(
+            must_get_env("MONGODB_URI"),
+            must_get_env("MONGODB_MEMORY_DB_NAME"),
+        )
+        .await?;
+        let collection_name = must_get_env("MONGODB_MEMORY_COLLECTION_NAME");
         Ok(Self {
             client,
             collection_name,
