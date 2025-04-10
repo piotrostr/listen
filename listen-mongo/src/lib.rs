@@ -1,10 +1,6 @@
 use anyhow::{anyhow, Result};
-use bson::{doc, Document};
-use futures::StreamExt;
-use mongodb::{
-    options::{ClientOptions, FindOptions},
-    Client, Collection, Database,
-};
+use bson::doc;
+use mongodb::{options::ClientOptions, Client, Collection, Database};
 use serde::{de::DeserializeOwned, Serialize};
 use std::env;
 
@@ -98,20 +94,11 @@ impl MongoClient {
         document: T,
     ) -> Result<(), MongoError> {
         tracing::debug!(target: "listen-mongo", "Inserting document with UUID: {}", uuid);
-        let collection = self.database().collection::<Document>(collection_name);
+        let collection = self.collection::<T>(collection_name);
 
-        // Convert the document to BSON
-        let mut doc =
-            bson::to_document(&document).map_err(MongoError::ConvertDocumentToBsonError)?;
-
-        // Set the _id field with the provided ID
-        doc.insert(
-            "_id",
-            bson::uuid::Uuid::parse_str(uuid).map_err(MongoError::ParseUuidError)?,
-        );
-
+        // Insert the document directly (don't override _id)
         collection
-            .insert_one(doc, None)
+            .insert_one(document, None)
             .await
             .map_err(MongoError::InsertError)?;
         Ok(())
@@ -140,16 +127,39 @@ impl MongoClient {
         collection_name: &str,
         uuid: &str,
     ) -> Result<Option<T>, MongoError> {
-        let filter =
-            doc! { "_id": bson::uuid::Uuid::parse_str(uuid).map_err(MongoError::ParseUuidError)? };
+        let clean_uuid = uuid.replace("\"", "");
+        let uuid_obj =
+            bson::uuid::Uuid::parse_str(&clean_uuid).map_err(MongoError::ParseUuidError)?;
+
+        // Create filter with binary UUID
+        let filter = doc! { "_id": uuid_obj };
+
         tracing::debug!(target: "listen-mongo", "Finding document with UUID: {}", uuid);
         tracing::debug!(target: "listen-mongo", "Filter: {:#?}", filter);
+
         let collection = self.collection::<T>(collection_name);
-        let result = collection
-            .find_one(filter, None)
-            .await
-            .map_err(MongoError::FindError)?;
-        Ok(result)
+
+        // Try the binary UUID query first
+        match collection.find_one(filter, None).await {
+            Ok(result) => {
+                return Ok(result);
+            }
+            Err(e) => {
+                // If that fails, try with string UUID for fallback
+                // the difference stems from Qdrant using strings and MongoDB using binary UUIDs (b64 encoded)
+                tracing::debug!(target: "listen-mongo", "Binary UUID search failed, trying string: {}", e);
+                let string_filter = doc! { "_id": clean_uuid };
+                match collection.find_one(string_filter, None).await {
+                    Ok(result) => {
+                        return Ok(result);
+                    }
+                    Err(_) => {
+                        // Return the original error
+                        return Err(MongoError::FindError(e));
+                    }
+                }
+            }
+        }
     }
 
     pub async fn update<T: Serialize + DeserializeOwned + Unpin + Send + Sync>(
@@ -159,8 +169,9 @@ impl MongoClient {
         document: T,
     ) -> Result<(), MongoError> {
         let collection = self.collection::<T>(collection_name);
-        let filter =
-            doc! { "_id": bson::uuid::Uuid::parse_str(uuid).map_err(MongoError::ParseUuidError)? };
+        // Remove double quotes if present
+        let clean_uuid = uuid.replace("\"", "");
+        let filter = doc! { "_id": bson::uuid::Uuid::parse_str(&clean_uuid).map_err(MongoError::ParseUuidError)? };
         collection
             .update_one(filter, doc! { "$set": bson::to_bson(&document).map_err(MongoError::ConvertDocumentToBsonError)? }, None)
             .await
