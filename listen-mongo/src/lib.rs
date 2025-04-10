@@ -60,6 +60,22 @@ impl MongoClient {
         self.database().collection(collection_name)
     }
 
+    /// Helper method to parse string ID into raw BSON value
+    fn parse_raw_id(&self, id: &str) -> Result<bson::Bson> {
+        if let Ok(uuid) = bson::uuid::Uuid::parse_str(id) {
+            Ok(bson::Bson::Binary(bson::Binary {
+                subtype: bson::spec::BinarySubtype::Uuid,
+                bytes: uuid.bytes().to_vec(),
+            }))
+        } else if let Ok(object_id) = bson::oid::ObjectId::parse_str(id) {
+            Ok(bson::Bson::ObjectId(object_id))
+        } else {
+            Err(anyhow!(
+                "Invalid ID format - must be either UUID or ObjectId"
+            ))
+        }
+    }
+
     pub async fn insert_one_with_id<T: Serialize + DeserializeOwned + Unpin + Send + Sync>(
         &self,
         collection_name: &str,
@@ -69,12 +85,10 @@ impl MongoClient {
         let collection = self.database().collection::<Document>(collection_name);
 
         // Convert the document to BSON
-        let mut doc = match bson::to_document(&document)? {
-            doc => doc,
-        };
+        let mut doc = bson::to_document(&document)?;
 
         // Set the _id field with the provided ID
-        doc.insert("_id", bson::oid::ObjectId::parse_str(id)?);
+        doc.insert("_id", self.parse_raw_id(id)?);
 
         collection.insert_one(doc, None).await?;
         Ok(())
@@ -160,18 +174,19 @@ impl MongoClient {
         Ok(documents)
     }
 
-    /// Find a document by ID
+    /// Helper method to parse string ID into BSON document
+    fn parse_id_to_filter(&self, id: &str) -> Result<Document> {
+        Ok(doc! { "_id": self.parse_raw_id(id)? })
+    }
+
     pub async fn find_by_id<T: DeserializeOwned + Unpin + Send + Sync>(
         &self,
         collection_name: &str,
         id: &str,
     ) -> Result<Option<T>> {
-        let object_id = bson::oid::ObjectId::parse_str(id)?;
-        let filter = doc! { "_id": object_id };
-
+        let filter = self.parse_id_to_filter(id)?;
         let collection = self.collection::<T>(collection_name);
         let result = collection.find_one(filter, None).await?;
-
         Ok(result)
     }
 
@@ -182,12 +197,9 @@ impl MongoClient {
         document: T,
     ) -> Result<()> {
         let collection = self.collection::<T>(collection_name);
+        let filter = self.parse_id_to_filter(id)?;
         collection
-            .update_one(
-                doc! { "_id": bson::oid::ObjectId::parse_str(id)? },
-                doc! { "$set": bson::to_bson(&document)? },
-                None,
-            )
+            .update_one(filter, doc! { "$set": bson::to_bson(&document)? }, None)
             .await?;
         Ok(())
     }
@@ -199,7 +211,7 @@ mod tests {
     use super::*;
     use serde::{Deserialize, Serialize};
 
-    #[derive(Debug, Serialize, Deserialize)]
+    #[derive(Debug, Serialize, Deserialize, Clone)]
     struct SampleObject {
         name: String,
         email: String,
@@ -210,50 +222,42 @@ mod tests {
     async fn test_mongo_client() -> Result<()> {
         dotenv::dotenv().ok();
         let repo = MongoClient::from_env().await?;
-        let user = SampleObject {
+
+        // Test with UUID
+        let uuid = "123e4567-e89b-12d3-a456-426614174000";
+        let user1 = SampleObject {
             name: "John Doe".to_string(),
             email: "john.doe@example.com".to_string(),
             age: 30,
         };
-
-        let user_id = repo.insert_one("sample_objects", user).await?;
-        tracing::info!("Inserted user with ID: {}", user_id);
-
-        let found_user = repo
-            .find_by_id::<SampleObject>("sample_objects", &user_id)
+        repo.insert_one_with_id("sample_objects", uuid, user1.clone())
             .await?;
-        tracing::info!("Found user: {:?}", found_user);
+        let found_user1 = repo
+            .find_by_id::<SampleObject>("sample_objects", uuid)
+            .await?;
+        assert!(found_user1.is_some());
+        assert_eq!(found_user1.unwrap().name, "John Doe");
 
+        // Test with ObjectId
+        let object_id = "507f1f77bcf86cd799439011";
         let user2 = SampleObject {
             name: "Jane Smith".to_string(),
             email: "jane.smith@example.com".to_string(),
             age: 25,
         };
-
-        let user2_id = repo
-            .insert_with_key("sample_objects", "profile", user2)
+        repo.insert_one_with_id("sample_objects", object_id, user2.clone())
             .await?;
-        tracing::info!("Inserted user with key 'profile' and ID: {}", user2_id);
-
-        // Find all users
-        let all_users = repo
-            .find::<SampleObject>("sample_objects", doc! {}, None)
+        let found_user2 = repo
+            .find_by_id::<SampleObject>("sample_objects", object_id)
             .await?;
-        tracing::info!("Found {} users", all_users.len());
+        assert!(found_user2.is_some());
+        assert_eq!(found_user2.unwrap().name, "Jane Smith");
 
         // cleanup
         repo.database()
             .collection::<SampleObject>("sample_objects")
             .delete_many(doc! {}, None)
             .await?;
-
-        // ensure there are no docs
-        let count = repo
-            .database()
-            .collection::<SampleObject>("sample_objects")
-            .count_documents(doc! {}, None)
-            .await?;
-        assert_eq!(count, 0);
 
         Ok(())
     }
