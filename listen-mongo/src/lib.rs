@@ -66,6 +66,7 @@ impl MongoClient {
         uuid: &str,
         document: T,
     ) -> Result<()> {
+        tracing::debug!(target: "listen-mongo", "Inserting document with UUID: {}", uuid);
         let collection = self.database().collection::<Document>(collection_name);
 
         // Convert the document to BSON
@@ -136,6 +137,8 @@ impl MongoClient {
         uuid: &str,
     ) -> Result<Option<T>> {
         let filter = doc! { "_id": bson::uuid::Uuid::parse_str(uuid)? };
+        tracing::debug!(target: "listen-mongo", "Finding document with UUID: {}", uuid);
+        tracing::debug!(target: "listen-mongo", "Filter: {:#?}", filter);
         let collection = self.collection::<T>(collection_name);
         let result = collection.find_one(filter, None).await?;
         Ok(result)
