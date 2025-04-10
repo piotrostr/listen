@@ -2,8 +2,7 @@ use crate::completion::generate_completion;
 use crate::evolve::EVOLVE_PROMPT;
 use crate::memory_note::MemoryNote;
 use crate::retriever::{QdrantRetriever, Retriever};
-use crate::store::MemoryStore;
-use crate::store::MemoryStoreError;
+use crate::store::{MemoryStore, MemoryStoreError};
 use anyhow::{anyhow, Result};
 use chrono::Utc;
 use serde_json::Value;
@@ -35,9 +34,7 @@ impl MemorySystem {
 
     pub async fn update_note_and_embeddings(&self, note: MemoryNote) -> Result<()> {
         // Update in MongoDB
-        self.store
-            .update_memory(&note.id.to_string(), note.clone())
-            .await?;
+        self.store.update_memory(note.clone()).await?;
 
         // Update in Qdrant
         self.retriever
@@ -49,9 +46,7 @@ impl MemorySystem {
 
     pub async fn persist_note_and_embeddings(&self, note: MemoryNote) -> Result<()> {
         // Persist in MongoDB
-        self.store
-            .add_memory(&note.id.to_string(), note.clone())
-            .await?;
+        self.store.add_memory(note.clone()).await?;
 
         // Persist in Qdrant
         self.retriever

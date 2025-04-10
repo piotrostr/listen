@@ -35,21 +35,17 @@ impl MemoryStore {
         })
     }
 
-    pub async fn update_memory(
-        &self,
-        uuid: &str,
-        memory: MemoryNote,
-    ) -> Result<(), MemoryStoreError> {
+    pub async fn update_memory(&self, memory: MemoryNote) -> Result<(), MemoryStoreError> {
         self.client
-            .update(&self.collection_name, uuid, memory)
+            .update(&self.collection_name, &memory.id.to_string(), memory)
             .await
             .map_err(MemoryStoreError::UpdateMemoryError)?;
         Ok(())
     }
 
-    pub async fn add_memory(&self, uuid: &str, memory: MemoryNote) -> Result<(), MemoryStoreError> {
+    pub async fn add_memory(&self, memory: MemoryNote) -> Result<(), MemoryStoreError> {
         self.client
-            .insert_one_with_uuid(&self.collection_name, uuid, memory)
+            .insert_one_with_uuid(&self.collection_name, &memory.id.to_string(), memory)
             .await
             .map_err(MemoryStoreError::InsertMemoryError)?;
         Ok(())
