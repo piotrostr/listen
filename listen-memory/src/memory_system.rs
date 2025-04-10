@@ -3,6 +3,7 @@ use crate::evolve::EVOLVE_PROMPT;
 use crate::memory_note::MemoryNote;
 use crate::retriever::{QdrantRetriever, Retriever};
 use crate::store::MemoryStore;
+use crate::store::MemoryStoreError;
 use anyhow::{anyhow, Result};
 use chrono::Utc;
 use serde_json::Value;
@@ -13,6 +14,12 @@ pub const K: usize = 5;
 pub struct MemorySystem {
     retriever: Arc<QdrantRetriever>,
     store: Arc<MemoryStore>,
+}
+
+#[derive(Debug, thiserror::Error)]
+pub enum MemorySystemError {
+    #[error("Failed to get memory: {0}")]
+    GetMemoryError(MemoryStoreError),
 }
 
 impl MemorySystem {
@@ -54,15 +61,30 @@ impl MemorySystem {
         Ok(id)
     }
 
+    pub async fn get_note(&self, id: &str) -> Result<Option<MemoryNote>, MemorySystemError> {
+        self.store
+            .get_memory(id)
+            .await
+            .map_err(MemorySystemError::GetMemoryError)
+    }
+
     pub async fn semantic_search(&self, query: String) -> Result<Vec<MemoryNote>> {
         // Search for related memories using the retriever
         let results = self.retriever.search(&query, K).await?;
-        println!("results: {:?}", results);
+        println!(
+            "results: {}",
+            serde_json::to_string_pretty(&results).unwrap()
+        );
 
         // Extract document IDs from the results
         let doc_ids = results["ids"]
             .as_array()
             .ok_or_else(|| anyhow!("Failed to get document IDs"))?;
+
+        println!(
+            "doc_ids: {}",
+            serde_json::to_string_pretty(&doc_ids).unwrap()
+        );
 
         // Convert to Vec<MemoryNote>
         let mut related_memories = Vec::new();
@@ -72,6 +94,8 @@ impl MemorySystem {
             let note = self.store.get_memory(id_str).await?;
             if let Some(note) = note {
                 related_memories.push(note);
+            } else {
+                tracing::warn!("Failed to get memory for id: {}", id_str);
             }
         }
 
@@ -235,12 +259,25 @@ mod tests {
     async fn test_semantic_search() {
         dotenv::dotenv().ok();
         let memory_system = MemorySystem::from_env().await.unwrap();
-        let query = "Fartcoin creator";
+        let query = "Bitcoin price on 10th of April 2025";
         let results = memory_system
             .semantic_search(query.to_string())
             .await
             .unwrap();
         println!("results: {:?}", results);
         assert!(!results.is_empty());
+    }
+
+    #[tokio::test]
+    async fn test_e2e() {
+        dotenv::dotenv().ok();
+        let memory_system = MemorySystem::from_env().await.unwrap();
+        let id = memory_system
+            .add_note("Bitcoin has crossed 83k on 10th of April 2025".to_string())
+            .await
+            .unwrap();
+        println!("id: {}", id);
+        let note = memory_system.get_note(&id).await.unwrap();
+        println!("note: {:#?}", note);
     }
 }

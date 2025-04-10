@@ -3,8 +3,8 @@ use listen_mongo::MongoClient;
 
 use crate::{memory_note::MemoryNote, util::must_get_env};
 pub struct MemoryStore {
-    client: MongoClient,
-    collection_name: String,
+    pub client: MongoClient,
+    pub collection_name: String,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -62,5 +62,27 @@ impl MemoryStore {
             .await
             .map_err(MemoryStoreError::GetMemoryError)?;
         Ok(memory)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_get_doc() {
+        dotenv::dotenv().ok();
+        let id = "8d815c69-d07e-42a1-ba67-f5c358349538";
+        let memory_store = MemoryStore::from_env().await.unwrap();
+        let memory = memory_store.get_memory(id).await.unwrap().unwrap();
+        println!("memory: {}", serde_json::to_string_pretty(&memory).unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_list_docs() {
+        dotenv::dotenv().ok();
+        let mongo = MemoryStore::from_env().await.unwrap().client;
+        let docs: Vec<MemoryNote> = mongo.list_docs("memories").await.unwrap();
+        println!("docs: {}", serde_json::to_string_pretty(&docs).unwrap());
     }
 }

@@ -202,7 +202,6 @@ impl Retriever for QdrantRetriever {
         // Process results into the expected format
         let mut results: HashMap<String, Value> = HashMap::new();
 
-        let mut documents = Vec::new();
         let mut metadatas = Vec::new();
         let mut ids = Vec::new();
         let mut distances = Vec::new();
@@ -231,9 +230,6 @@ impl Retriever for QdrantRetriever {
                         .map_err(RetrieverError::ConvertMetadataError)?,
                 );
                 distances.push(1.0 - point.score);
-                documents.push(Value::String(String::from(
-                    "[Document content not available]",
-                )));
             }
         }
 
@@ -246,7 +242,6 @@ impl Retriever for QdrantRetriever {
                 .collect::<Vec<String>>()),
         );
         results.insert("metadatas".to_string(), json!(metadatas));
-        results.insert("documents".to_string(), json!(documents));
         results.insert("distances".to_string(), json!(distances));
 
         Ok(results)
