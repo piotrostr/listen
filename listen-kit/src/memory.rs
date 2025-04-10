@@ -14,10 +14,12 @@ pub async fn inject_memories(
     let memory = memory_system
         .summarize_relevant_memories(memories, prompt.clone())
         .await?;
-    Ok(format!(
+    let injected_prompt = format!(
         "<user-prompt>{}</user-prompt><relevant-memories>{}</relevant-memories>",
         prompt, memory
-    ))
+    );
+    println!("injected_prompt: {}", injected_prompt);
+    Ok(injected_prompt)
 }
 
 // TODO make this persistant and more elaborate

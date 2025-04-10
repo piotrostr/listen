@@ -57,6 +57,7 @@ impl MemorySystem {
     pub async fn semantic_search(&self, query: String) -> Result<Vec<MemoryNote>> {
         // Search for related memories using the retriever
         let results = self.retriever.search(&query, K).await?;
+        println!("results: {:?}", results);
 
         // Extract document IDs from the results
         let doc_ids = results["ids"]
@@ -223,5 +224,23 @@ impl MemorySystem {
         }
 
         Ok(evolved_memory)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_semantic_search() {
+        dotenv::dotenv().ok();
+        let memory_system = MemorySystem::from_env().await.unwrap();
+        let query = "Fartcoin creator";
+        let results = memory_system
+            .semantic_search(query.to_string())
+            .await
+            .unwrap();
+        println!("results: {:?}", results);
+        assert!(!results.is_empty());
     }
 }
