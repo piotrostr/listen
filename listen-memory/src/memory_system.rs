@@ -1,7 +1,7 @@
 use crate::completion::generate_completion;
 use crate::evolve::EVOLVE_PROMPT;
 use crate::memory_note::MemoryNote;
-use crate::retriever::{QdrantRetriever, Retriever};
+use crate::retriever::{QdrantRetriever, Retriever, RetrieverError};
 use crate::store::{MemoryStore, MemoryStoreError};
 use anyhow::{anyhow, Result};
 use chrono::Utc;
@@ -17,8 +17,16 @@ pub struct MemorySystem {
 
 #[derive(Debug, thiserror::Error)]
 pub enum MemorySystemError {
-    #[error("Failed to get memory: {0}")]
-    GetMemoryError(MemoryStoreError),
+    #[error("Memory store error: {0}")]
+    MemoryStoreError(MemoryStoreError),
+    #[error("Retriever error: {0}")]
+    RetrieverError(RetrieverError),
+    #[error("Failed to get document IDs {0}")]
+    GetDocumentIdsError(anyhow::Error),
+    #[error("Failed to generate completion {0}")]
+    GenerateCompletionError(anyhow::Error),
+    #[error("Failed to parse evolution response {0} {1}")]
+    ParseEvolutionResponseError(serde_json::Error, String),
 }
 
 impl MemorySystem {
@@ -32,14 +40,21 @@ impl MemorySystem {
         })
     }
 
-    pub async fn update_note_and_embeddings(&self, note: MemoryNote) -> Result<()> {
+    pub async fn update_note_and_embeddings(
+        &self,
+        note: MemoryNote,
+    ) -> Result<(), MemorySystemError> {
         // Update in MongoDB
-        self.store.update_memory(note.clone()).await?;
+        self.store
+            .update_memory(note.clone())
+            .await
+            .map_err(MemorySystemError::MemoryStoreError)?;
 
         // Update in Qdrant
         self.retriever
             .update_document(&note.content, note.to_metadata(), &note.id.to_string())
-            .await?;
+            .await
+            .map_err(MemorySystemError::RetrieverError)?;
 
         Ok(())
     }
@@ -74,29 +89,43 @@ impl MemorySystem {
         self.store
             .get_memory(id)
             .await
-            .map_err(MemorySystemError::GetMemoryError)
+            .map_err(MemorySystemError::MemoryStoreError)
     }
 
-    pub async fn semantic_search(&self, query: String) -> Result<Vec<MemoryNote>> {
+    pub async fn semantic_search(
+        &self,
+        query: String,
+    ) -> Result<Vec<MemoryNote>, MemorySystemError> {
+        tracing::debug!(target: "listen-memory", "Searching for related memories for query: {}", query);
         // Search for related memories using the retriever
-        let results = self.retriever.search(&query, K).await?;
+        let results = self
+            .retriever
+            .search(&query, K)
+            .await
+            .map_err(MemorySystemError::RetrieverError)?;
+
         tracing::debug!(
             target: "listen-memory",
             "results: {}",
-            serde_json::to_string_pretty(&results).unwrap()
+            serde_json::to_string_pretty(&results).unwrap_or_default()
         );
 
         // Extract document IDs from the results
         let doc_ids = results["ids"]
             .as_array()
-            .ok_or_else(|| anyhow!("Failed to get document IDs"))?;
+            .ok_or_else(|| anyhow!("Failed to get document IDs"))
+            .map_err(MemorySystemError::GetDocumentIdsError)?;
 
         // Convert to Vec<MemoryNote>
         let mut related_memories = Vec::new();
 
         for id in doc_ids {
             let id_str = id.as_str().unwrap_or_default();
-            let note = self.store.get_memory(id_str).await?;
+            let note = self
+                .store
+                .get_memory(id_str)
+                .await
+                .map_err(MemorySystemError::MemoryStoreError)?;
             if let Some(note) = note {
                 related_memories.push(note);
             } else {
@@ -130,7 +159,7 @@ impl MemorySystem {
 
                     // Process neighborhood (linked memories)
                     for link in &memory.links {
-                        if let Ok(Some(neighbor)) = self.store.get_memory(&link.to_string()).await {
+                        if let Ok(Some(neighbor)) = self.store.get_memory(link).await {
                             memory_str.push_str(&format!(
                             "timestamp:{} memory content:{} memory context:{} memory keywords:{:?} memory tags:{:?}\n",
                             neighbor.timestamp, neighbor.content, neighbor.context, neighbor.keywords, neighbor.tags
@@ -155,7 +184,10 @@ impl MemorySystem {
         }
     }
 
-    pub async fn process_memory(&self, memory: MemoryNote) -> Result<MemoryNote> {
+    pub async fn process_memory(
+        &self,
+        memory: MemoryNote,
+    ) -> Result<MemoryNote, MemorySystemError> {
         // Find related memories
         let related_memories = self.semantic_search(memory.content.clone()).await?;
 
@@ -177,10 +209,13 @@ impl MemorySystem {
             .replace("{neighbor_number}", &related_memories.len().to_string());
 
         // Generate completion with the prompt
-        let response = generate_completion(&prompt).await?;
+        let response = generate_completion(&prompt)
+            .await
+            .map_err(MemorySystemError::GenerateCompletionError)?;
 
         // Parse the response as JSON
-        let evolution_response: Value = serde_json::from_str(&response)?;
+        let evolution_response: Value = serde_json::from_str(&response)
+            .map_err(|e| MemorySystemError::ParseEvolutionResponseError(e, response))?;
 
         let mut evolved_memory = memory.clone();
 
@@ -198,8 +233,11 @@ impl MemorySystem {
                                     if let Some(conn_idx) = conn.as_u64() {
                                         if conn_idx < related_memories.len() as u64 {
                                             let neighbor = &related_memories[conn_idx as usize];
-                                            if !evolved_memory.links.contains(&neighbor.id) {
-                                                evolved_memory.links.push(neighbor.id);
+                                            if !evolved_memory
+                                                .links
+                                                .contains(&neighbor.id.to_string())
+                                            {
+                                                evolved_memory.links.push(neighbor.id.to_string());
                                             }
                                         }
                                     }
@@ -231,8 +269,11 @@ impl MemorySystem {
                                 {
                                     if i < related_memories.len() {
                                         let neighbor_id = related_memories[i].id.to_string();
-                                        if let Some(mut neighbor) =
-                                            self.store.get_memory(&neighbor_id).await?
+                                        if let Some(mut neighbor) = self
+                                            .store
+                                            .get_memory(&neighbor_id)
+                                            .await
+                                            .map_err(MemorySystemError::MemoryStoreError)?
                                         {
                                             // Update neighbor context
                                             if let Some(ctx) = context.as_str() {
@@ -287,7 +328,7 @@ mod tests {
         tracing_subscriber::fmt::init();
         let memory_system = MemorySystem::from_env().await.unwrap();
         let id = memory_system
-            .add_note("Bitcoin has crossed 83k on 10th of April 2025".to_string())
+            .add_note("Fartcoin - hot air rises".to_string())
             .await
             .unwrap();
         println!("id: {}", id);

@@ -16,7 +16,7 @@ pub struct MemoryNote {
 
     // Semantic metadata
     pub keywords: Vec<String>,
-    pub links: Vec<Uuid>, // Representing links as Vec<String> of IDs for simplicity
+    pub links: Vec<String>, // Store as strings for consistency with MongoDB (those are UUIDs)
     pub context: String,
     pub category: String,
     pub tags: Vec<String>,

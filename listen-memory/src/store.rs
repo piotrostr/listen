@@ -52,12 +52,10 @@ impl MemoryStore {
     }
 
     pub async fn get_memory(&self, uuid: &str) -> Result<Option<MemoryNote>, MemoryStoreError> {
-        let memory = self
-            .client
+        self.client
             .find_by_uuid(&self.collection_name, uuid)
             .await
-            .map_err(MemoryStoreError::GetMemoryError)?;
-        Ok(memory)
+            .map_err(MemoryStoreError::GetMemoryError)
     }
 }
 
@@ -68,7 +66,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_doc() {
         dotenv::dotenv().ok();
-        let uuid = "5682e320-98b2-4c58-bb24-c4d377866d0e";
+        let uuid = "c10d61e0-5995-41e8-ac92-1fe079c49f3c";
         let memory_store = MemoryStore::from_env().await.unwrap();
         let memory = memory_store.get_memory(uuid).await.unwrap().unwrap();
         println!("memory: {}", serde_json::to_string_pretty(&memory).unwrap());
