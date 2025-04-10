@@ -171,7 +171,7 @@ pub fn create_solana_agent_openrouter(
     let mut agent =
         equip_with_tools(openrouter_agent_builder(model)).preamble(&preamble);
 
-    if features.deep_research {
+    if features.autonomous {
         agent = equip_with_autonomous_tools(agent);
     }
 
