@@ -276,7 +276,7 @@ mod tests {
 
     #[test]
     fn test_deserialize_messages() {
-        let raw_message = RawMessage {
+        let _raw_message = RawMessage {
             role: "assistant".to_string(),
             content: "{\"tool_results\":[{\"index\":0,\"id\":\"tool_0_get_sol_balance\",\"name\":\"get_sol_balance\",\"result\":\"64558916\"},{\"index\":1,\"id\":\"tool_1_get_spl_token_balance\",\"name\":\"get_spl_token_balance\",\"result\":\"[\\\"0\\\",6,\\\"EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v\\\"]\"},{\"index\":2,\"id\":\"tool_2_get_spl_token_balance\",\"name\":\"get_spl_token_balance\",\"result\":\"[\\\"0\\\",5,\\\"DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263\\\"]\"},{\"index\":3,\"id\":\"tool_3_get_spl_token_balance\",\"name\":\"get_spl_token_balance\",\"result\":\"[\\\"3815728090\\\",6,\\\"Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump\\\"]\"},{\"index\":4,\"id\":\"tool_4_get_spl_token_balance\",\"name\":\"get_spl_token_balance\",\"result\":\"ToolCallError: ToolCallError: Tool execution failed: \\\"Error {\\\\n    request: Some(\\\\n        GetTokenAccountBalance,\\\\n    ),\\\\n    kind: RpcError(\\\\n        RpcResponseError {\\\\n            code: -32602,\\\\n            message: \\\\\\\"Invalid param: could not find account\\\\\\\",\\\\n            data: Empty,\\\\n        },\\\\n    ),\\\\n}\\\"\"}]}".to_string(),
         };

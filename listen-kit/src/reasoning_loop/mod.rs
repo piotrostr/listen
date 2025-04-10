@@ -81,12 +81,12 @@ impl StreamResponse {
             // dont consume the nested output, this is only required by the frontend
             // to show the reasoning thoughts, it will be returned again in the tool result
             StreamResponse::NestedAgentOutput { .. } => "".to_string(),
-            StreamResponse::ParToolCall { tool_calls } => {
+            StreamResponse::ParToolCall { .. } => {
                 todo!(
                     "deep research currently doesn't support par tool calls"
                 )
             }
-            StreamResponse::ParToolResult { tool_results } => {
+            StreamResponse::ParToolResult { .. } => {
                 todo!(
                     "deep research currently doesn't support par tool results"
                 )
