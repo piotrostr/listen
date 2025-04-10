@@ -239,6 +239,7 @@ dependencies = [
  "serde_bytes",
  "serde_json",
  "time",
+ "uuid 0.8.2",
  "uuid 1.16.0",
 ]
 
@@ -1227,6 +1228,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "async-trait",
+ "bson",
  "chrono",
  "dotenv",
  "listen-mongo",

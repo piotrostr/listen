@@ -1,5 +1,6 @@
 use crate::completion::generate_completion;
 use anyhow::Result;
+use bson::serde_helpers::uuid_as_binary;
 use chrono::{DateTime, Utc};
 use serde::{Deserialize, Serialize};
 use serde_json::{json, Value};
@@ -8,6 +9,8 @@ use uuid::Uuid;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct MemoryNote {
+    #[serde(rename = "_id")]
+    #[serde(with = "uuid_as_binary")]
     pub id: Uuid,
     pub content: String,
 

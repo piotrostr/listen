@@ -18,6 +18,7 @@ tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 regex = "1.11.1"
 thiserror = "2.0.12"
+bson = { version = "2.14.0", features = ["uuid-0_8"] }
 
 [dev-dependencies]
 dotenv = "0.15.0"

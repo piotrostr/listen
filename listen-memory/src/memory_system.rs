@@ -33,7 +33,7 @@ impl MemorySystem {
         })
     }
 
-    pub async fn persist_note_and_embeddings(&self, note: MemoryNote) -> Result<()> {
+    pub async fn update_note_and_embeddings(&self, note: MemoryNote) -> Result<()> {
         // Update in MongoDB
         self.store
             .update_memory(&note.id.to_string(), note.clone())
@@ -42,6 +42,20 @@ impl MemorySystem {
         // Update in Qdrant
         self.retriever
             .update_document(&note.content, note.to_metadata(), &note.id.to_string())
+            .await?;
+
+        Ok(())
+    }
+
+    pub async fn persist_note_and_embeddings(&self, note: MemoryNote) -> Result<()> {
+        // Persist in MongoDB
+        self.store
+            .add_memory(&note.id.to_string(), note.clone())
+            .await?;
+
+        // Persist in Qdrant
+        self.retriever
+            .add_document(&note.content, note.to_metadata(), &note.id.to_string())
             .await?;
 
         Ok(())
@@ -234,7 +248,7 @@ impl MemorySystem {
                                                     .collect();
                                             }
 
-                                            self.persist_note_and_embeddings(neighbor.clone())
+                                            self.update_note_and_embeddings(neighbor.clone())
                                                 .await?;
                                         }
                                     }
@@ -271,6 +285,7 @@ mod tests {
     #[tokio::test]
     async fn test_e2e() {
         dotenv::dotenv().ok();
+        tracing_subscriber::fmt::init();
         let memory_system = MemorySystem::from_env().await.unwrap();
         let id = memory_system
             .add_note("Bitcoin has crossed 83k on 10th of April 2025".to_string())

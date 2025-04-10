@@ -3,14 +3,14 @@ use regex::Regex;
 use rig::completion::Prompt;
 
 pub async fn generate_completion(prompt: &str) -> Result<String> {
-    tracing::info!("Generating completion for: {}", prompt);
+    tracing::debug!(target: "listen-memory", "Generating completion for: {}", prompt);
     let model = rig::providers::gemini::Client::from_env()
         .agent(rig::providers::gemini::completion::GEMINI_2_0_FLASH)
         .build();
 
     let res = model.prompt(prompt).await.map_err(anyhow::Error::new)?;
     let parsed = extract_from_code_blocks_if_any(&res);
-    tracing::info!("Parsed: {}", parsed);
+    tracing::debug!(target: "listen-memory", "Parsed: {}", parsed);
     Ok(parsed)
 }
 
