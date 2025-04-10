@@ -1,6 +1,6 @@
 use listen_memory::memory_system::MemorySystem;
 use listen_memory::query::generate_query;
-use rig::message::Message;
+use rig::message::{AssistantContent, Message};
 use std::collections::HashSet;
 use std::sync::Arc;
 use tokio::sync::RwLock;
@@ -22,7 +22,7 @@ pub async fn inject_memories(
     Ok(injected_prompt)
 }
 
-// TODO make this persistant and more elaborate
+// TODO make this persistent and more elaborate
 pub async fn synthesize_memories(
     memory_system: Arc<MemorySystem>,
     messages: Vec<Message>,
@@ -30,14 +30,17 @@ pub async fn synthesize_memories(
 ) -> anyhow::Result<()> {
     for message in messages {
         match message {
-            Message::Assistant { content, .. } => {
-                let message_str = serde_json::to_string(&content)?;
-                println!("message_str: {}", message_str);
-                if !dedup_set.read().await.contains(&message_str) {
-                    dedup_set.write().await.insert(message_str.clone());
-                    memory_system.add_note(message_str).await?;
+            Message::Assistant { content, .. } => match content.first() {
+                AssistantContent::Text(text) => {
+                    let message_str = text.text;
+                    println!("message_str: {}", message_str);
+                    if !dedup_set.read().await.contains(&message_str) {
+                        dedup_set.write().await.insert(message_str.clone());
+                        memory_system.add_note(message_str).await?;
+                    }
                 }
-            }
+                _ => {}
+            },
             _ => {}
         }
     }

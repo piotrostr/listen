@@ -247,7 +247,7 @@ async fn stream(
                         Ok(_) => {}
                         Err(e) => {
                             tracing::error!(
-                                "Error: synthesizing memories: {}",
+                                "Error synthesizing memories: {}",
                                 e
                             );
                         }
