@@ -10,7 +10,7 @@ pub async fn inject_memories(
     prompt: String,
 ) -> anyhow::Result<String> {
     let query = generate_query(prompt.clone()).await?;
-    let memories = memory_system.find_related_memories(query, 10).await?;
+    let memories = memory_system.find_related_memories(query, 5).await?;
     let memory = memory_system
         .summarize_relevant_memories(memories, prompt.clone())
         .await?;

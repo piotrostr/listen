@@ -85,7 +85,8 @@ impl MemorySystem {
     pub async fn semantic_search(&self, query: String) -> Result<Vec<MemoryNote>> {
         // Search for related memories using the retriever
         let results = self.retriever.search(&query, K).await?;
-        println!(
+        tracing::debug!(
+            target: "listen-memory",
             "results: {}",
             serde_json::to_string_pretty(&results).unwrap()
         );
@@ -94,11 +95,6 @@ impl MemorySystem {
         let doc_ids = results["ids"]
             .as_array()
             .ok_or_else(|| anyhow!("Failed to get document IDs"))?;
-
-        println!(
-            "doc_ids: {}",
-            serde_json::to_string_pretty(&doc_ids).unwrap()
-        );
 
         // Convert to Vec<MemoryNote>
         let mut related_memories = Vec::new();
@@ -117,42 +113,50 @@ impl MemorySystem {
     }
 
     pub async fn find_related_memories(&self, query: String, k: usize) -> Result<String> {
-        if let Ok(memories) = self.semantic_search(query).await {
-            if memories.is_empty() {
-                return Ok(String::new());
-            }
+        match self.semantic_search(query).await {
+            Ok(memories) => {
+                if memories.is_empty() {
+                    return Ok(String::new());
+                }
 
-            let mut memory_str = String::new();
-            let mut j = 0;
+                let mut memory_str = String::new();
+                let mut j = 0;
 
-            // Process main memories
-            for memory in memories.iter().take(k) {
-                memory_str.push_str(&format!(
-                    "timestamp:{} content:{} context:{} keywords:{:?} memory tags:{:?}\n",
-                    memory.timestamp, memory.content, memory.context, memory.keywords, memory.tags
-                ));
+                // Process main memories
+                for memory in memories.iter().take(k) {
+                    memory_str.push_str(&format!(
+                        "timestamp:{} content:{} context:{} keywords:{:?} memory tags:{:?}\n",
+                        memory.timestamp,
+                        memory.content,
+                        memory.context,
+                        memory.keywords,
+                        memory.tags
+                    ));
 
-                // Process neighborhood (linked memories)
-                for link in &memory.links {
-                    if let Ok(Some(neighbor)) = self.store.get_memory(&link.to_string()).await {
-                        memory_str.push_str(&format!(
+                    // Process neighborhood (linked memories)
+                    for link in &memory.links {
+                        if let Ok(Some(neighbor)) = self.store.get_memory(&link.to_string()).await {
+                            memory_str.push_str(&format!(
                             "timestamp:{} memory content:{} memory context:{} memory keywords:{:?} memory tags:{:?}\n",
                             neighbor.timestamp, neighbor.content, neighbor.context, neighbor.keywords, neighbor.tags
                         ));
-                        j += 1;
-                        if j >= k {
-                            break;
+                            j += 1;
+                            if j >= k {
+                                break;
+                            }
                         }
                     }
+                    if j >= k {
+                        break;
+                    }
                 }
-                if j >= k {
-                    break;
-                }
-            }
 
-            Ok(memory_str)
-        } else {
-            Ok(String::new())
+                Ok(memory_str)
+            }
+            Err(e) => {
+                tracing::error!(target: "listen-memory", "Error finding related memories: {}", e);
+                Ok(String::new())
+            }
         }
     }
 

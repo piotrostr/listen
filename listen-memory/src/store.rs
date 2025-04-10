@@ -1,5 +1,5 @@
 use anyhow::Result;
-use listen_mongo::MongoClient;
+use listen_mongo::{MongoClient, MongoError};
 
 use crate::{memory_note::MemoryNote, util::must_get_env};
 pub struct MemoryStore {
@@ -10,13 +10,13 @@ pub struct MemoryStore {
 #[derive(Debug, thiserror::Error)]
 pub enum MemoryStoreError {
     #[error("Failed to update memory: {0}")]
-    UpdateMemoryError(anyhow::Error),
+    UpdateMemoryError(MongoError),
     #[error("Failed to insert memory: {0}")]
-    InsertMemoryError(anyhow::Error),
+    InsertMemoryError(MongoError),
     #[error("Failed to get memory: {0}")]
-    GetMemoryError(anyhow::Error),
+    GetMemoryError(MongoError),
     #[error("Failed to create client: {0}")]
-    CreateClientError(anyhow::Error),
+    CreateClientError(MongoError),
 }
 
 impl MemoryStore {
@@ -72,7 +72,7 @@ mod tests {
     #[tokio::test]
     async fn test_get_doc() {
         dotenv::dotenv().ok();
-        let uuid = "bff49ae5-02c7-4494-a05c-185ad9694313";
+        let uuid = "5682e320-98b2-4c58-bb24-c4d377866d0e";
         let memory_store = MemoryStore::from_env().await.unwrap();
         let memory = memory_store.get_memory(uuid).await.unwrap().unwrap();
         println!("memory: {}", serde_json::to_string_pretty(&memory).unwrap());

@@ -10,7 +10,7 @@ pub async fn generate_completion(prompt: &str) -> Result<String> {
 
     let res = model.prompt(prompt).await.map_err(anyhow::Error::new)?;
     let parsed = extract_from_code_blocks_if_any(&res);
-    tracing::debug!(target: "listen-memory", "Parsed: {}", parsed);
+    tracing::debug!(target: "listen-memory", "Parsed completion: {}", parsed);
     Ok(parsed)
 }
 
