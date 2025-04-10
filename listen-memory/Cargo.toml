@@ -17,3 +17,4 @@ listen-mongo = { path = "../listen-mongo" }
 tracing = "0.1.41"
 tracing-subscriber = "0.3.19"
 regex = "1.11.1"
+thiserror = "2.0.12"

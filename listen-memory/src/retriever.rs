@@ -1,16 +1,42 @@
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use async_trait::async_trait;
 use qdrant_client::qdrant::point_id::PointIdOptions;
 use qdrant_client::qdrant::{
     CreateCollectionBuilder, DeletePointsBuilder, Distance, PointId, PointStruct,
     ScalarQuantizationBuilder, SearchPointsBuilder, UpsertPointsBuilder, VectorParamsBuilder,
 };
-use qdrant_client::{Payload, Qdrant};
+use qdrant_client::{Payload, Qdrant, QdrantError};
 use serde_json::{json, Value};
 use std::collections::HashMap;
 
 use crate::embed::generate_embedding;
 use crate::util::must_get_env;
+
+#[derive(Debug, thiserror::Error)]
+pub enum RetrieverError {
+    #[error("Failed to upsert point: {0}")]
+    UpsertPointError(QdrantError),
+    #[error("Failed to delete point: {0}")]
+    DeletePointError(QdrantError),
+    #[error("Failed to update point: {0}")]
+    UpdatePointError(QdrantError),
+    #[error("Failed to search points: {0}")]
+    SearchPointsError(QdrantError),
+    #[error("Failed to convert metadata to payload: {0}")]
+    ConvertMetadataError(serde_json::Error),
+    #[error("Failed to convert value to payload: {0}")]
+    ConvertValueError(QdrantError),
+    #[error("Failed to generate embedding: {0}")]
+    GenerateEmbeddingError(anyhow::Error),
+    #[error("Failed to create collection: {0}")]
+    CreateCollectionError(QdrantError),
+    #[error("Failed to check if collection exists: {0}")]
+    CollectionExistsError(QdrantError),
+    #[error("Failed to delete collection: {0}")]
+    DeleteCollectionError(QdrantError),
+    #[error("Failed to create client: {0}")]
+    CreateClientError(QdrantError),
+}
 
 #[async_trait]
 pub trait Retriever {
@@ -19,15 +45,16 @@ pub trait Retriever {
         document: &str,
         metadata: HashMap<String, Value>,
         doc_id: &str,
-    ) -> Result<()>;
-    async fn delete_document(&self, doc_id: &str) -> Result<()>;
+    ) -> Result<(), RetrieverError>;
+    async fn delete_document(&self, doc_id: &str) -> Result<(), RetrieverError>;
     async fn update_document(
         &self,
         document: &str,
         metadata: HashMap<String, Value>,
         doc_id: &str,
-    ) -> Result<()>;
-    async fn search(&self, query: &str, k: usize) -> Result<HashMap<String, Value>>;
+    ) -> Result<(), RetrieverError>;
+    async fn search(&self, query: &str, k: usize)
+        -> Result<HashMap<String, Value>, RetrieverError>;
 }
 
 pub struct QdrantRetriever {
@@ -36,18 +63,21 @@ pub struct QdrantRetriever {
 }
 
 impl QdrantRetriever {
-    pub async fn from_env() -> Result<Self> {
+    pub async fn from_env() -> Result<Self, RetrieverError> {
         let url = must_get_env("QDRANT_URL");
         let collection_name = must_get_env("QDRANT_COLLECTION_NAME");
         Self::new(&url, &collection_name).await
     }
 
-    pub async fn new(url: &str, collection_name: &str) -> Result<Self> {
-        let client = Qdrant::from_url(url).build()?;
+    pub async fn new(url: &str, collection_name: &str) -> Result<Self, RetrieverError> {
+        let client = Qdrant::from_url(url)
+            .build()
+            .map_err(RetrieverError::CreateClientError)?;
 
         if !client
             .collection_exists(&collection_name.to_string())
-            .await?
+            .await
+            .map_err(RetrieverError::CollectionExistsError)?
         {
             client
                 .create_collection(
@@ -55,7 +85,8 @@ impl QdrantRetriever {
                         .vectors_config(VectorParamsBuilder::new(768, Distance::Cosine))
                         .quantization_config(ScalarQuantizationBuilder::default()),
                 )
-                .await?;
+                .await
+                .map_err(RetrieverError::CreateCollectionError)?;
         }
 
         Ok(Self {
@@ -72,7 +103,7 @@ impl Retriever for QdrantRetriever {
         document: &str,
         metadata: HashMap<String, Value>,
         doc_id: &str,
-    ) -> Result<()> {
+    ) -> Result<(), RetrieverError> {
         // Convert metadata to serializable format
         let mut processed_metadata = HashMap::new();
         for (key, value) in metadata {
@@ -85,12 +116,14 @@ impl Retriever for QdrantRetriever {
 
         // Convert to Qdrant Payload
         let payload: Payload = serde_json::to_value(processed_metadata)
-            .map_err(|e| anyhow!("Failed to convert metadata to payload: {}", e))?
+            .map_err(RetrieverError::ConvertMetadataError)?
             .try_into()
-            .map_err(|e| anyhow!("Failed to convert value to payload: {}", e))?;
+            .map_err(RetrieverError::ConvertValueError)?;
 
         // Generate embedding for the document
-        let embedding = generate_embedding(document).await?;
+        let embedding = generate_embedding(document)
+            .await
+            .map_err(RetrieverError::GenerateEmbeddingError)?;
 
         // Create point with either numeric or string ID
         let point_id: qdrant_client::qdrant::PointId = if let Ok(id) = doc_id.parse::<u64>() {
@@ -106,12 +139,12 @@ impl Retriever for QdrantRetriever {
         self.client
             .upsert_points(UpsertPointsBuilder::new(&self.collection_name, vec![point]))
             .await
-            .map_err(|e| anyhow!("Failed to upsert point: {}", e))?;
+            .map_err(RetrieverError::UpsertPointError)?;
 
         Ok(())
     }
 
-    async fn delete_document(&self, doc_id: &str) -> Result<()> {
+    async fn delete_document(&self, doc_id: &str) -> Result<(), RetrieverError> {
         // Create point selector with either numeric or string ID
         let point_id: qdrant_client::qdrant::PointId = if let Ok(id) = doc_id.parse::<u64>() {
             id.into()
@@ -126,7 +159,7 @@ impl Retriever for QdrantRetriever {
         self.client
             .delete_points(delete_request)
             .await
-            .map_err(|e| anyhow!("Failed to delete point: {}", e))?;
+            .map_err(RetrieverError::DeletePointError)?;
 
         Ok(())
     }
@@ -136,7 +169,7 @@ impl Retriever for QdrantRetriever {
         document: &str,
         metadata: HashMap<String, Value>,
         doc_id: &str,
-    ) -> Result<()> {
+    ) -> Result<(), RetrieverError> {
         // First delete the existing document
         self.delete_document(doc_id).await?;
 
@@ -146,9 +179,15 @@ impl Retriever for QdrantRetriever {
         Ok(())
     }
 
-    async fn search(&self, query: &str, k: usize) -> Result<HashMap<String, Value>> {
+    async fn search(
+        &self,
+        query: &str,
+        k: usize,
+    ) -> Result<HashMap<String, Value>, RetrieverError> {
         // Generate embedding for the query
-        let query_embedding = generate_embedding(query).await?;
+        let query_embedding = generate_embedding(query)
+            .await
+            .map_err(RetrieverError::GenerateEmbeddingError)?;
 
         // Search for similar points
         let search_result = self
@@ -158,7 +197,7 @@ impl Retriever for QdrantRetriever {
                     .with_payload(true),
             )
             .await
-            .map_err(|e| anyhow!("Failed to search points: {}", e))?;
+            .map_err(RetrieverError::SearchPointsError)?;
 
         // Process results into the expected format
         let mut results: HashMap<String, Value> = HashMap::new();
@@ -187,7 +226,10 @@ impl Retriever for QdrantRetriever {
 
                 // Store results
                 ids.push(point_id);
-                metadatas.push(serde_json::to_value(simple_metadata)?);
+                metadatas.push(
+                    serde_json::to_value(simple_metadata)
+                        .map_err(RetrieverError::ConvertMetadataError)?,
+                );
                 distances.push(1.0 - point.score);
                 documents.push(Value::String(String::from(
                     "[Document content not available]",

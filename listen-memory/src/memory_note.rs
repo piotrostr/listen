@@ -53,29 +53,33 @@ impl MemoryNote {
         let prompt = format!(
             r#"Generate a structured analysis of the following content by:
             1. Identifying the most salient keywords (focus on nouns, verbs, and key concepts)
-            2. Extracting core themes and contextual elements
+            2. Extracting core themes and contextual elements - IMPORTANT:
+            - Describe ONLY what is literally stated
+            - Focus on direct connections and comparisons
+            - Avoid any interpretation of value, quality, or intent
+            - If there's wordplay or comparisons, describe them neutrally
             3. Creating relevant categorical tags
 
-            Your response should be COMPLETELY OBJECTIVE, without any judgment or opinion.
+            Your response must be STRICTLY DESCRIPTIVE:
+            - Include only what is explicitly present in the text
+            - Avoid inferring meaning or making judgments
+            - For comparisons/metaphors, state the literal elements being connected
 
             Format the response as a JSON object:
             {{
                 "keywords": [
-                    // several specific, distinct keywords that capture key concepts and terminology
+                    // specific, distinct keywords from the text
                     // Order from most to least important
-                    // Don't include keywords that are the name of the speaker or time
-                    // At least three keywords, but don't be too redundant.
                 ],
-                "context": 
-                    // one sentence summarizing:
-                    // - Main topic/domain
-                    // - Key arguments/points
-                    // - Intended audience/purpose
+                "context":
+                    // One neutral sentence describing:
+                    // - What elements are being compared/connected
+                    // - How they are connected (e.g. through wordplay, metaphor)
+                    // - NO interpretation of meaning or value
                 ,
                 "tags": [
-                    // several broad categories/themes for classification
-                    // Include domain, format, and type tags
-                    // At least three tags, but don't be too redundant.
+                    // broad categories that classify the content type
+                    // Include subject matter, linguistic devices used
                 ]
             }}
 
