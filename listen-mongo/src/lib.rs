@@ -60,26 +60,10 @@ impl MongoClient {
         self.database().collection(collection_name)
     }
 
-    /// Helper method to parse string ID into raw BSON value
-    fn parse_raw_id(&self, id: &str) -> Result<bson::Bson> {
-        if let Ok(uuid) = bson::uuid::Uuid::parse_str(id) {
-            Ok(bson::Bson::Binary(bson::Binary {
-                subtype: bson::spec::BinarySubtype::Uuid,
-                bytes: uuid.bytes().to_vec(),
-            }))
-        } else if let Ok(object_id) = bson::oid::ObjectId::parse_str(id) {
-            Ok(bson::Bson::ObjectId(object_id))
-        } else {
-            Err(anyhow!(
-                "Invalid ID format - must be either UUID or ObjectId"
-            ))
-        }
-    }
-
-    pub async fn insert_one_with_id<T: Serialize + DeserializeOwned + Unpin + Send + Sync>(
+    pub async fn insert_one_with_uuid<T: Serialize + DeserializeOwned + Unpin + Send + Sync>(
         &self,
         collection_name: &str,
-        id: &str,
+        uuid: &str,
         document: T,
     ) -> Result<()> {
         let collection = self.database().collection::<Document>(collection_name);
@@ -88,7 +72,7 @@ impl MongoClient {
         let mut doc = bson::to_document(&document)?;
 
         // Set the _id field with the provided ID
-        doc.insert("_id", self.parse_raw_id(id)?);
+        doc.insert("_id", bson::uuid::Uuid::parse_str(uuid)?);
 
         collection.insert_one(doc, None).await?;
         Ok(())
@@ -101,34 +85,6 @@ impl MongoClient {
         document: T,
     ) -> Result<String> {
         let collection = self.collection::<T>(collection_name);
-        let result = collection.insert_one(document, None).await?;
-        Ok(result
-            .inserted_id
-            .as_object_id()
-            .ok_or_else(|| anyhow!("Failed to get inserted ID"))?
-            .to_hex())
-    }
-
-    /// Insert a document with a specific key
-    pub async fn insert_with_key<T: Serialize + DeserializeOwned + Unpin + Send + Sync>(
-        &self,
-        collection_name: &str,
-        key: &str,
-        value: T,
-    ) -> Result<String> {
-        let collection = self.database().collection::<Document>(collection_name);
-
-        // Convert value to BSON document
-        let serialized_value = bson::to_bson(&value)?;
-        let value_doc = match serialized_value {
-            bson::Bson::Document(doc) => doc,
-            _ => return Err(anyhow!("Failed to convert value to document")),
-        };
-
-        // Create document with the specified key
-        let mut document = Document::new();
-        document.insert(key, value_doc);
-
         let result = collection.insert_one(document, None).await?;
         Ok(result
             .inserted_id
@@ -174,17 +130,12 @@ impl MongoClient {
         Ok(documents)
     }
 
-    /// Helper method to parse string ID into BSON document
-    fn parse_id_to_filter(&self, id: &str) -> Result<Document> {
-        Ok(doc! { "_id": self.parse_raw_id(id)? })
-    }
-
-    pub async fn find_by_id<T: DeserializeOwned + Unpin + Send + Sync>(
+    pub async fn find_by_uuid<T: DeserializeOwned + Unpin + Send + Sync>(
         &self,
         collection_name: &str,
-        id: &str,
+        uuid: &str,
     ) -> Result<Option<T>> {
-        let filter = self.parse_id_to_filter(id)?;
+        let filter = doc! { "_id": bson::uuid::Uuid::parse_str(uuid)? };
         let collection = self.collection::<T>(collection_name);
         let result = collection.find_one(filter, None).await?;
         Ok(result)
@@ -193,11 +144,11 @@ impl MongoClient {
     pub async fn update<T: Serialize + DeserializeOwned + Unpin + Send + Sync>(
         &self,
         collection_name: &str,
-        id: &str,
+        uuid: &str,
         document: T,
     ) -> Result<()> {
         let collection = self.collection::<T>(collection_name);
-        let filter = self.parse_id_to_filter(id)?;
+        let filter = doc! { "_id": bson::uuid::Uuid::parse_str(uuid)? };
         collection
             .update_one(filter, doc! { "$set": bson::to_bson(&document)? }, None)
             .await?;
@@ -230,28 +181,13 @@ mod tests {
             email: "john.doe@example.com".to_string(),
             age: 30,
         };
-        repo.insert_one_with_id("sample_objects", uuid, user1.clone())
+        repo.insert_one_with_uuid("sample_objects", uuid, user1.clone())
             .await?;
         let found_user1 = repo
-            .find_by_id::<SampleObject>("sample_objects", uuid)
+            .find_by_uuid::<SampleObject>("sample_objects", uuid)
             .await?;
         assert!(found_user1.is_some());
         assert_eq!(found_user1.unwrap().name, "John Doe");
-
-        // Test with ObjectId
-        let object_id = "507f1f77bcf86cd799439011";
-        let user2 = SampleObject {
-            name: "Jane Smith".to_string(),
-            email: "jane.smith@example.com".to_string(),
-            age: 25,
-        };
-        repo.insert_one_with_id("sample_objects", object_id, user2.clone())
-            .await?;
-        let found_user2 = repo
-            .find_by_id::<SampleObject>("sample_objects", object_id)
-            .await?;
-        assert!(found_user2.is_some());
-        assert_eq!(found_user2.unwrap().name, "Jane Smith");
 
         // cleanup
         repo.database()

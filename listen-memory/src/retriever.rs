@@ -81,7 +81,7 @@ impl QdrantRetriever {
         {
             client
                 .create_collection(
-                    CreateCollectionBuilder::new(&collection_name.to_string())
+                    CreateCollectionBuilder::new(collection_name)
                         .vectors_config(VectorParamsBuilder::new(768, Distance::Cosine))
                         .quantization_config(ScalarQuantizationBuilder::default()),
                 )
@@ -215,11 +215,10 @@ impl Retriever for QdrantRetriever {
                 // Convert point.payload to JSON string then back to avoid type mismatches
                 let payload_json = serde_json::to_string(&point.payload).unwrap_or_default();
                 if !payload_json.is_empty() {
-                    if let Ok(json_value) = serde_json::from_str::<serde_json::Value>(&payload_json)
+                    if let Ok(serde_json::Value::Object(map)) =
+                        serde_json::from_str::<serde_json::Value>(&payload_json)
                     {
-                        if let serde_json::Value::Object(map) = json_value {
-                            simple_metadata = map.into_iter().map(|(k, v)| (k, v)).collect();
-                        }
+                        simple_metadata = map.into_iter().collect();
                     }
                 }
 
@@ -236,10 +235,7 @@ impl Retriever for QdrantRetriever {
         // Format the results as expected
         results.insert(
             "ids".to_string(),
-            json!(ids
-                .iter()
-                .map(|id| point_id_to_string(id))
-                .collect::<Vec<String>>()),
+            json!(ids.iter().map(point_id_to_string).collect::<Vec<String>>()),
         );
         results.insert("metadatas".to_string(), json!(metadatas));
         results.insert("distances".to_string(), json!(distances));

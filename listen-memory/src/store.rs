@@ -37,28 +37,28 @@ impl MemoryStore {
 
     pub async fn update_memory(
         &self,
-        id: &str,
+        uuid: &str,
         memory: MemoryNote,
     ) -> Result<(), MemoryStoreError> {
         self.client
-            .update(&self.collection_name, id, memory)
+            .update(&self.collection_name, uuid, memory)
             .await
             .map_err(MemoryStoreError::UpdateMemoryError)?;
         Ok(())
     }
 
-    pub async fn add_memory(&self, memory: MemoryNote) -> Result<(), MemoryStoreError> {
+    pub async fn add_memory(&self, uuid: &str, memory: MemoryNote) -> Result<(), MemoryStoreError> {
         self.client
-            .insert_one_with_id(&self.collection_name, &memory.id.to_string(), memory)
+            .insert_one_with_uuid(&self.collection_name, uuid, memory)
             .await
             .map_err(MemoryStoreError::InsertMemoryError)?;
         Ok(())
     }
 
-    pub async fn get_memory(&self, id: &str) -> Result<Option<MemoryNote>, MemoryStoreError> {
+    pub async fn get_memory(&self, uuid: &str) -> Result<Option<MemoryNote>, MemoryStoreError> {
         let memory = self
             .client
-            .find_by_id(&self.collection_name, id)
+            .find_by_uuid(&self.collection_name, uuid)
             .await
             .map_err(MemoryStoreError::GetMemoryError)?;
         Ok(memory)
@@ -72,17 +72,9 @@ mod tests {
     #[tokio::test]
     async fn test_get_doc() {
         dotenv::dotenv().ok();
-        let id = "8d815c69-d07e-42a1-ba67-f5c358349538";
+        let uuid = "bff49ae5-02c7-4494-a05c-185ad9694313";
         let memory_store = MemoryStore::from_env().await.unwrap();
-        let memory = memory_store.get_memory(id).await.unwrap().unwrap();
+        let memory = memory_store.get_memory(uuid).await.unwrap().unwrap();
         println!("memory: {}", serde_json::to_string_pretty(&memory).unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_list_docs() {
-        dotenv::dotenv().ok();
-        let mongo = MemoryStore::from_env().await.unwrap().client;
-        let docs: Vec<MemoryNote> = mongo.list_docs("memories").await.unwrap();
-        println!("docs: {}", serde_json::to_string_pretty(&docs).unwrap());
     }
 }
