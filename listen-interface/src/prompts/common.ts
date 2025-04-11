@@ -71,12 +71,15 @@ ${
 `;
 
 export const researchFlow = `
+If you have memory of previous research, summarize what you already know and suggest potentially expanding the research to arrive at new findings.
+
 IMPORTANT:
 Any research should be done in the following order, form of a loop, where you use tools to:
 - get the token metadata information, get current time
 - check linked x.com post if exists with the fetch_x_post tool
 - check linked x.com account if exists with the research_x_profile tool
 - check linked website if exists with the analyze_page_content tool
+- check the social sentiment with fetch_social_sentiment tool
 - check the chart analysis with fetch_price_action_analysis tool
 
 Sometimes metadata might have the website link in the twitter key and vice

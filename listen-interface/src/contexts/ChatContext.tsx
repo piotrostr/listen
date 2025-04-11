@@ -55,6 +55,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     chatType,
     modelType,
     researchEnabled,
+    memoryEnabled,
   } = useSettingsStore();
   const { getAccessToken, user } = usePrivy();
   const {
@@ -266,6 +267,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           features: {
             autonomous: agentMode,
             deep_research: researchEnabled,
+            memory: memoryEnabled,
           },
           model_type: modelType,
           locale: i18n.language,
