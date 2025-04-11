@@ -59,13 +59,13 @@ ctor = "0.2.0"
 futures-util = { version = "0.3" }
 lifi = { path = "../lifi" }
 listen-tracing = { path = "../listen-tracing" }
+listen-memory = { path = "../listen-memory" }
 # TODO this brings solana sdk dependency, worth trying to go to non-native blockahsh
 # injection, otherwise this is required for privy + lifi
 blockhash-cache = { path = "../blockhash-cache" }
 evm-approvals = { path = "../approvals" }
-# MongoDB dependencies
-mongodb = { version = "2.8.1", features = ["tokio-runtime"] }
-bson = { version = "2.9.0", features = ["chrono-0_4"] }
+
+listen-mongo = { path = "../listen-mongo" }
 
 # evm
 alloy = { version = "0.9", features = ["full"], optional = true }

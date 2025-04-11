@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { FiPlus, FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { LuTelescope } from "react-icons/lu";
+import { MdMemory } from "react-icons/md";
 import { useMobile } from "../contexts/MobileContext";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSettingsStore } from "../store/settingsStore";
@@ -39,6 +40,8 @@ export function ChatInput({
     setAgentMode,
     setResearchEnabled,
     modelType,
+    memoryEnabled,
+    setMemoryEnabled,
   } = useSettingsStore();
 
   const { isMobile } = useMobile();
@@ -94,6 +97,10 @@ export function ChatInput({
   const toggleTrading = () => {
     setResearchEnabled(false);
     setAgentMode(!agentMode);
+  };
+
+  const toggleMemory = () => {
+    setMemoryEnabled(!memoryEnabled);
   };
 
   const sendDisabled = modelType === "claude" && researchEnabled;
@@ -184,6 +191,19 @@ export function ChatInput({
         >
           <LuTelescope size={18} />
           {!isMobile && <span>{t("chat.research")}</span>}
+        </button>
+
+        {/* Memory Feature */}
+        <button
+          onClick={toggleMemory}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full ${
+            memoryEnabled
+              ? "bg-blue-600/20 text-blue-400"
+              : "bg-gray-600/20 text-gray-400"
+          } hover:bg-gray-600/30 transition-colors text-sm`}
+        >
+          <MdMemory size={18} />
+          {!isMobile && <span>{t("chat.memory")}</span>}
         </button>
 
         {/* Arrow up button on the far right */}

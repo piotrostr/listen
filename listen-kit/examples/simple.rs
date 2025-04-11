@@ -28,6 +28,7 @@ async fn main() -> Result<()> {
             "whats the portfolio looking like?".to_string(),
             vec![],
             None,
+            None,
         )
         .await?;
 

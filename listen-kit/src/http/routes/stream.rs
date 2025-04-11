@@ -11,7 +11,6 @@ use crate::solana::agent::Features;
 use actix_web::{post, web, HttpRequest, Responder};
 use actix_web_lab::sse;
 use futures::StreamExt;
-use mongodb::bson::doc;
 use rig::completion::Message;
 use serde::{Deserialize, Serialize};
 use std::sync::Arc;
@@ -115,6 +114,7 @@ async fn stream(
 
     let preamble = request.preamble.clone();
     let features = request.features.clone().unwrap_or_default();
+    let with_memory = features.memory.clone();
     let locale = request.locale.clone().unwrap_or("en".to_string());
     let chain = request.chain.clone().unwrap_or("solana".to_string());
     let model_type = request.model_type.clone().unwrap_or_default();
@@ -182,7 +182,8 @@ async fn stream(
     // Process responses in the background - don't wait for it
     tokio::spawn(response_collector);
 
-    spawn_with_signer(signer, || async move {
+    // TODO this move might be moving too much, double-check
+    spawn_with_signer(signer, move || async move {
         let reasoning_loop = ReasoningLoop::new(model).with_stdout(false);
 
         // Create a channel for the reasoning loop to send responses
@@ -221,14 +222,23 @@ async fn stream(
 
         // Run the reasoning loop in the current task (with signer context)
         let loop_result = reasoning_loop
-            .stream(prompt, messages, Some(internal_tx))
+            .stream(
+                prompt,
+                messages,
+                Some(internal_tx),
+                if with_memory {
+                    Some(state.memory.clone())
+                } else {
+                    None
+                },
+            )
             .await;
 
         // Wait for the send task to complete
         let _ = send_task.await;
 
         // Check if the reasoning loop completed successfully
-        if let Err(e) = loop_result {
+        if let Some(e) = loop_result.err() {
             tracing::error!("Error: reasoning loop failed: {}", e);
             let _ = tx
                 .send(sse::Event::Data(sse::Data::new(

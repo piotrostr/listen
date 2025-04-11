@@ -5,6 +5,7 @@ use crate::common::OpenAIAgent;
 use crate::common::OpenRouterAgent;
 use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
+use listen_memory::memory_system::MemorySystem;
 use rig::completion::Message;
 use rig::message::ToolCall;
 use serde::Deserialize;
@@ -20,11 +21,12 @@ pub mod model;
 pub mod stream_gemini;
 pub mod stream_generic;
 
-#[derive(Serialize, Debug, Deserialize)]
+#[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct SimpleToolResult {
     index: usize,
     id: String,
     name: String,
+    params: String,
     result: String,
 }
 
@@ -80,12 +82,12 @@ impl StreamResponse {
             // dont consume the nested output, this is only required by the frontend
             // to show the reasoning thoughts, it will be returned again in the tool result
             StreamResponse::NestedAgentOutput { .. } => "".to_string(),
-            StreamResponse::ParToolCall { tool_calls } => {
+            StreamResponse::ParToolCall { .. } => {
                 todo!(
                     "deep research currently doesn't support par tool calls"
                 )
             }
-            StreamResponse::ParToolResult { tool_results } => {
+            StreamResponse::ParToolResult { .. } => {
                 todo!(
                     "deep research currently doesn't support par tool results"
                 )
@@ -121,6 +123,7 @@ impl ReasoningLoop {
         prompt: String,
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
+        memory_system: Option<Arc<MemorySystem>>,
     ) -> Result<Vec<Message>> {
         if tx.is_none() && !self.stdout {
             panic!("enable stdout or provide tx channel");
@@ -144,6 +147,7 @@ impl ReasoningLoop {
                         prompt,
                         messages,
                         tx,
+                        memory_system,
                     )
                     .await
                 }

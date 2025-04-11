@@ -41,11 +41,21 @@ export function systemPromptSolanaAgent(
   const hasWallet = pubkey !== null && pubkey !== "";
   return `
   ${personality}
+  <current_time>${currentTimeUnderline()}</current_time>
   <research_flow>${researchFlow}</research_flow>
   <guidelines>${guidelines("solana", defaultAmount)}</guidelines>
   ${!hasWallet || isGuest ? `<onboarding>${onboarding(hasWallet, isGuest, "solana")}</onboarding>` : ""}
   <solana_address>${pubkey}</solana_address>
   <portfolio>${JSON.stringify(solanaPortfolio)}</portfolio>
   <errors>${solanaErrors}</errors>
+  `;
+}
+
+export function currentTimeUnderline() {
+  return `
+  While your training data has a cutoff date that has happened in the past, you
+  should treat any information from tool calls or API responses as current
+  events happening in the present, not as future events. The actual current date
+  is ${new Date().toISOString().split("T")[0]}.
   `;
 }

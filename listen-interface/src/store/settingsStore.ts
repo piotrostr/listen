@@ -13,6 +13,7 @@ interface SettingsState {
   displaySuggestions: boolean;
   researchEnabled: boolean;
   tradingEnabled: boolean;
+  memoryEnabled: boolean;
   setQuickBuyAmount: (amount: number) => void;
   setAgentMode: (enabled: boolean) => void;
   setChatType: (type: ChatType) => void;
@@ -21,6 +22,7 @@ interface SettingsState {
   setDisplaySuggestions: (enabled: boolean) => void;
   setResearchEnabled: (enabled: boolean) => void;
   setTradingEnabled: (enabled: boolean) => void;
+  setMemoryEnabled: (enabled: boolean) => void;
 }
 
 export const useSettingsStore = create<SettingsState>()(
@@ -34,6 +36,7 @@ export const useSettingsStore = create<SettingsState>()(
       displaySuggestions: true,
       researchEnabled: false,
       tradingEnabled: false,
+      memoryEnabled: false,
 
       setQuickBuyAmount: (amount: number) => {
         if (!isNaN(amount) && amount > 0) {
@@ -67,6 +70,10 @@ export const useSettingsStore = create<SettingsState>()(
 
       setTradingEnabled: (enabled: boolean) => {
         set({ tradingEnabled: enabled });
+      },
+
+      setMemoryEnabled: (enabled: boolean) => {
+        set({ memoryEnabled: enabled });
       },
     }),
     {

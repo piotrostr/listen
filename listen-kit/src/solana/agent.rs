@@ -32,6 +32,7 @@ use serde::{Deserialize, Serialize};
 pub struct Features {
     pub autonomous: bool,
     pub deep_research: bool,
+    pub memory: bool,
 }
 
 pub fn equip_with_tools<M: StreamingCompletionModel>(
