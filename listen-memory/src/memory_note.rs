@@ -60,13 +60,16 @@ impl MemoryNote {
             - Describe ONLY what is literally stated
             - Focus on direct connections and comparisons
             - Avoid any interpretation of value, quality, or intent
-            - If there's wordplay or comparisons, describe them neutrally
+            - If there's wordplay or comparisons, describe them neutrally, if there isn't - don't make up anything
             3. Creating relevant categorical tags
 
             Your response must be STRICTLY DESCRIPTIVE:
             - Include only what is explicitly present in the text
             - Avoid inferring meaning or making judgments
             - For comparisons/metaphors, state the literal elements being connected
+            - For chart related content, include the price and date and time + summary
+
+            With keywords and tags, don't force connections, less is more.
 
             Format the response as a JSON object:
             {{

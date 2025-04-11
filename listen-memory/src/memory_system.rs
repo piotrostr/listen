@@ -8,7 +8,7 @@ use chrono::Utc;
 use serde_json::Value;
 use std::sync::Arc;
 
-pub const K: usize = 5;
+pub const K: usize = 3;
 
 pub struct MemorySystem {
     retriever: Arc<QdrantRetriever>,

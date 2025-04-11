@@ -21,11 +21,12 @@ pub mod model;
 pub mod stream_gemini;
 pub mod stream_generic;
 
-#[derive(Serialize, Debug, Deserialize)]
+#[derive(Serialize, Debug, Deserialize, Clone)]
 pub struct SimpleToolResult {
     index: usize,
     id: String,
     name: String,
+    params: String,
     result: String,
 }
 

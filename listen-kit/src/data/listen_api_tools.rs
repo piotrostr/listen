@@ -96,7 +96,7 @@ pub async fn fetch_token_price(mint: String) -> Result<f64> {
 #[tool(description = "
 Fetch top tokens from the Listen API.
 
-No point using limit of more than ~6, less is more, as long as the filters are right
+No point using limit of more than ~6, less is more, as long as the filters are right (unless user asks for more)
 
 Lower timeframes work best, 7200 seconds is the sweet spot, you can request any
 timeframe though, up to 24 hours
