@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { makeMemory } from "./memory";
 
 describe("Memory", () => {
-  test.skip("server", async () => {
+  test("server", async () => {
     let isOk = await fetch("http://localhost:9696/health").then((res) =>
       res.json()
     );

@@ -1,4 +1,5 @@
 import { QdrantClient } from "@qdrant/js-client-rest";
+import MemoryClient from "mem0ai";
 import { Memory } from "mem0ai/oss";
 import neo4j from "neo4j-driver";
 import { logger } from "./logger";
@@ -86,6 +87,10 @@ export const ensureCollections = async () => {
   } else {
     logger.info(`Collection memory_migrations already exists`);
   }
+};
+
+export const makeMemoryManaged = async () => {
+  return new MemoryClient({ apiKey: process.env.MEM0_API_KEY! });
 };
 
 export const makeMemory = async () => {
