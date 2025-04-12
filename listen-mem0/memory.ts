@@ -51,14 +51,12 @@ export const makeMemory = async () => {
   }
 
   const memory = new Memory({
-    // customPrompt: "",
-    // disableHistory: true, // TODO make it true and possibly centralize
+    // customPrompt: "", // TODO
     embedder: {
       provider: "google",
       config: {
         apiKey: process.env.GEMINI_API_KEY,
         model: "text-embedding-004",
-        // url: "TODO",
       },
     },
     vectorStore: {
@@ -78,6 +76,16 @@ export const makeMemory = async () => {
         model: "gemini-2.0-flash",
       },
     },
+    // TODO enable this possibly
+    // enableGraph: true,
+    //graphStore: {
+    //  provider: "neo4j",
+    //  config: {
+    //    url: "bolt://localhost:7687",
+    //    username: "neo4j",
+    //    password: "password",
+    //  },
+    //},
   });
   return memory;
 };
