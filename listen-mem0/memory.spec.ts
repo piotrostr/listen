@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { makeMemory } from "./memory";
 
 describe("Memory", () => {
-  test("server", async () => {
+  test.skip("server", async () => {
     let isOk = await fetch("http://localhost:9696/health").then((res) =>
       res.json()
     );
@@ -29,7 +29,7 @@ describe("Memory", () => {
     console.log(data);
   });
 
-  test.skip("e2e", async () => {
+  test("e2e", async () => {
     const memory = await makeMemory();
     // Add a single memory
     console.log("\nAdding a single memory...");
