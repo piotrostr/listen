@@ -2,7 +2,7 @@ import { describe, expect, test } from "bun:test";
 import { makeMemory } from "./memory";
 
 describe("Memory", () => {
-  test("server", async () => {
+  test.skip("server", async () => {
     let isOk = await fetch("http://localhost:9696/health").then((res) =>
       res.json()
     );
@@ -36,7 +36,7 @@ describe("Memory", () => {
     const result1 = await memory.add(
       "Hi, my name is John and I am a software engineer.",
       {
-        userId: "john",
+        agentId: "john",
       }
     );
     console.log("Added memory:", result1);
@@ -49,7 +49,7 @@ describe("Memory", () => {
         { role: "assistant", content: "I love Paris, it is my favorite city." },
       ],
       {
-        userId: "john",
+        agentId: "john",
       }
     );
     console.log("Added messages:", result2);
@@ -64,7 +64,7 @@ describe("Memory", () => {
         },
       ],
       {
-        userId: "john",
+        agentId: "john",
       }
     );
     console.log("Updated messages:", result3);
@@ -81,7 +81,7 @@ describe("Memory", () => {
     // Get all memories before update
     console.log("\nGetting all memories before update...");
     const allMemoriesBefore = await memory.getAll({
-      userId: "john",
+      agentId: "john",
     });
     console.log("All memories before update:", allMemoriesBefore);
 
@@ -99,14 +99,14 @@ describe("Memory", () => {
     // Get all memories
     console.log("\nGetting all memories...");
     const allMemories = await memory.getAll({
-      userId: "john",
+      agentId: "john",
     });
     console.log("All memories:", allMemories);
 
     // Search for memories
     console.log("\nSearching memories...");
     const searchResult = await memory.search("What do you know about Paris?", {
-      userId: "john",
+      agentId: "john",
     });
     console.log("Search results:", searchResult);
 

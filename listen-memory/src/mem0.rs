@@ -19,10 +19,15 @@ pub struct SearchFilters {
 #[derive(Debug, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
 pub struct AddMemoryConfig {
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub user_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub run_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub metadata: Option<serde_json::Value>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub filters: Option<SearchFilters>,
+    #[serde(skip_serializing_if = "Option::is_none")]
     pub infer: Option<bool>,
 }
 
@@ -42,6 +47,12 @@ pub struct MemoryItem {
 pub struct AddMemoryResult {
     pub results: Vec<MemoryItem>,
     pub graph: Option<serde_json::Value>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SearchResult {
+    pub results: Vec<MemoryItem>,
+    // TODO possibly some other stuff?
 }
 
 pub struct Mem0 {
@@ -95,7 +106,7 @@ impl Mem0 {
         &self,
         query: String,
         filters: Option<SearchFilters>,
-    ) -> Result<Vec<MemoryItem>> {
+    ) -> Result<SearchResult> {
         let response = self
             .client
             .post(format!("{}/memories/search", self.base_url))
@@ -108,7 +119,7 @@ impl Mem0 {
 
         let raw_response = response.text().await?;
 
-        match serde_json::from_str::<Vec<MemoryItem>>(&raw_response) {
+        match serde_json::from_str::<SearchResult>(&raw_response) {
             Ok(result) => Ok(result),
             Err(e) => {
                 tracing::error!("Error: {}", e);
