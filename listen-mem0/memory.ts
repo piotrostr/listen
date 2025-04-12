@@ -1,7 +1,10 @@
 import { QdrantClient } from "@qdrant/js-client-rest";
 import { Memory } from "mem0ai/oss";
+import { logger } from "./logger";
 
-export const assertEnv = () => {
+export const AGENT_ID = "681385B2-FC6A-49C4-9033-189A09EE306A";
+
+export const ensureEnv = () => {
   if (!process.env.GEMINI_API_KEY) {
     throw new Error("GEMINI_API_KEY is not set");
   }
@@ -15,31 +18,40 @@ export const assertEnv = () => {
   }
 };
 
-export const makeMemory = async () => {
-  const collectionName = "memory-mem0";
-  const host = "127.0.0.1";
-  const port = 6333;
+export const ensureCollections = async () => {
+  console.log("URL:", process.env.QDRANT_URL);
+  console.log("COLLECTION NAME:", process.env.QDRANT_COLLECTION_NAME);
 
-  assertEnv();
-
-  // ensure collection is created
   const qdrant = new QdrantClient({
-    host,
-    port,
+    url: process.env.QDRANT_URL,
+    ...(process.env.QDRANT_API_KEY
+      ? { apiKey: process.env.QDRANT_API_KEY }
+      : {}),
   });
-  if (!(await qdrant.collectionExists(collectionName))) {
-    let ok = await qdrant.createCollection(collectionName, {
-      vectors: {
-        size: 768,
-        distance: "Cosine",
-      },
-    });
+
+  if (!(await qdrant.collectionExists(process.env.QDRANT_COLLECTION_NAME!))) {
+    let ok = await qdrant.createCollection(
+      process.env.QDRANT_COLLECTION_NAME!,
+      {
+        vectors: {
+          size: 768,
+          distance: "Cosine",
+        },
+      }
+    );
     if (!ok) {
-      throw new Error(`Failed to create collection ${collectionName}`);
+      throw new Error(
+        `Failed to create collection ${process.env.QDRANT_COLLECTION_NAME}`
+      );
     }
+  } else {
+    logger.info(
+      `Collection ${process.env.QDRANT_COLLECTION_NAME} already exists`
+    );
   }
+
   if (!(await qdrant.collectionExists("memory_migrations"))) {
-    const ok = await qdrant.createCollection("memory_migrations", {
+    let ok = await qdrant.createCollection("memory_migrations", {
       vectors: {
         size: 768,
         distance: "Cosine",
@@ -48,7 +60,14 @@ export const makeMemory = async () => {
     if (!ok) {
       throw new Error(`Failed to create collection memory_migrations`);
     }
+  } else {
+    logger.info(`Collection memory_migrations already exists`);
   }
+};
+
+export const makeMemory = async () => {
+  ensureEnv();
+  ensureCollections();
 
   const memory = new Memory({
     // customPrompt: "", // TODO
@@ -62,10 +81,12 @@ export const makeMemory = async () => {
     vectorStore: {
       provider: "qdrant",
       config: {
-        collectionName,
+        collectionName: process.env.QDRANT_COLLECTION_NAME!,
         dimension: 768,
-        host,
-        port,
+        url: process.env.QDRANT_URL,
+        ...(process.env.QDRANT_API_KEY
+          ? { apiKey: process.env.QDRANT_API_KEY }
+          : {}),
       },
     },
     disableHistory: true,

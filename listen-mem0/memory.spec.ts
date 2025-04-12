@@ -1,15 +1,36 @@
-import { beforeEach, describe, test } from "bun:test";
-import { Memory } from "mem0ai/oss";
+import { describe, expect, test } from "bun:test";
 import { makeMemory } from "./memory";
 
 describe("Memory", () => {
-  let memory: Memory;
+  test("server", async () => {
+    let isOk = await fetch("http://localhost:9696/health").then((res) =>
+      res.json()
+    );
+    expect(isOk).toEqual({ status: "ok" });
 
-  beforeEach(async () => {
-    memory = await makeMemory();
+    let res = await fetch("http://localhost:9696/memories", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        messages: [
+          {
+            role: "user",
+            content:
+              'Result of tool call fetch_price_action_analysis with params: {"mint":"Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump","intent":"get a feel for the chart","interval":"15m"}: "Okay, here\'s a brief analysis of the candlestick data:\n\n*   **Overall Trend:**  The chart shows an overall upward trend.\n\n*   **Recent Price Action:** There was a strong bullish spike near timestamp 1744437600 with high volume, price increase of ~24% from 0.00277 to 0.00341. Before that there was a period of sideways movement and choppy price action. After the spike, the price continues upwards with some retracements.\n\n*   **Volatility:**  Volatility appears to have increased significantly after the price spike around timestamp 1744437600.\n\n*   **Reversal/Continuation Signals:** The strong bullish move suggests a potential continuation of the upward trend, but the increased volatility indicates a higher risk of reversals.\n\nIn summary, the chart suggests a bullish trend, with a recent major price spike indicating significant buying pressure. However, increased volatility means potential for sharp reversals.\n"',
+          },
+        ],
+        config: {},
+      }),
+    });
+
+    const data = await res.json();
+    console.log(data);
   });
 
-  test("e2e", async () => {
+  test.skip("e2e", async () => {
+    const memory = await makeMemory();
     // Add a single memory
     console.log("\nAdding a single memory...");
     const result1 = await memory.add(

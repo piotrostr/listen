@@ -1,25 +1,13 @@
 import { Elysia } from "elysia";
-import pino from "pino";
 import { z } from "zod";
-import { assertEnv, makeMemory } from "./memory";
+import { logger } from "./logger";
+import { AGENT_ID, makeMemory } from "./memory";
 import { AddMemorySchema, SearchFiltersSchema } from "./types";
-
-// Initialize logger
-const logger = pino({
-  level: process.env.LOG_LEVEL || "info",
-  transport: {
-    target: "pino-pretty",
-    options: {
-      colorize: true,
-      translateTime: "SYS:standard",
-    },
-  },
-});
 
 // Define request body types using Zod
 const SearchRequestSchema = z.object({
   query: z.string(),
-  filters: SearchFiltersSchema.optional(),
+  filters: SearchFiltersSchema.optional().nullable(),
 });
 
 type SearchRequest = z.infer<typeof SearchRequestSchema>;
@@ -36,6 +24,7 @@ app.get("/health", () => {
 
 // Add memory
 app.post("/memories", async ({ body }: { body: AddMemoryRequest }) => {
+  logger.debug({ path: "/memories", request: body }, "Raw request received");
   logger.info({ path: "/memories", operation: "add" }, "Adding new memory");
 
   const parsed = AddMemorySchema.safeParse(body);
@@ -49,16 +38,31 @@ app.post("/memories", async ({ body }: { body: AddMemoryRequest }) => {
     });
   }
 
-  const result = await memory.add(parsed.data.messages, parsed.data.config);
-  logger.info(
-    { path: "/memories", operation: "add", success: true },
-    "Memory added successfully"
-  );
-  return result;
+  try {
+    const result = await memory.add(parsed.data.messages, {
+      ...parsed.data.config,
+      agentId: AGENT_ID,
+    });
+    logger.debug({ path: "/memories", response: result }, "Raw response");
+    logger.info(
+      { path: "/memories", operation: "add", success: true },
+      "Memory added successfully"
+    );
+    return result;
+  } catch (error) {
+    logger.error({ path: "/memories", error }, "Error adding memory");
+    return new Response(JSON.stringify({ error: error }), {
+      status: 500,
+    });
+  }
 });
 
 // Search memories
 app.post("/memories/search", async ({ body }: { body: SearchRequest }) => {
+  logger.debug(
+    { path: "/memories/search", request: body },
+    "Raw request received"
+  );
   logger.info(
     { path: "/memories/search", query: body.query },
     "Searching memories"
@@ -76,8 +80,9 @@ app.post("/memories/search", async ({ body }: { body: SearchRequest }) => {
   }
 
   const result = await memory.search(parsed.data.query, {
-    filters: parsed.data.filters,
+    filters: parsed.data.filters ?? { agentId: AGENT_ID },
   });
+  logger.debug({ path: "/memories/search", response: result }, "Raw response");
   logger.info(
     { path: "/memories/search", results: result.results?.length || 0 },
     "Search completed"
@@ -87,6 +92,10 @@ app.post("/memories/search", async ({ body }: { body: SearchRequest }) => {
 
 // Get memory by ID
 app.get("/memories/:id", async ({ params }: { params: { id: string } }) => {
+  logger.debug(
+    { path: "/memories/:id", request: params },
+    "Raw request received"
+  );
   logger.info(
     { path: "/memories/:id", id: params.id },
     "Fetching memory by ID"
@@ -99,6 +108,7 @@ app.get("/memories/:id", async ({ params }: { params: { id: string } }) => {
       status: 404,
     });
   }
+  logger.debug({ path: "/memories/:id", response: result }, "Raw response");
   logger.info(
     { path: "/memories/:id", id: params.id, success: true },
     "Memory retrieved"
@@ -107,7 +117,6 @@ app.get("/memories/:id", async ({ params }: { params: { id: string } }) => {
 });
 
 async function main() {
-  assertEnv;
   app.listen(9696);
   logger.info({ port: 9696 }, "🚀 Server started");
 }
