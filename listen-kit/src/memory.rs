@@ -6,7 +6,6 @@ use listen_memory::{
 use std::sync::Arc;
 
 pub async fn inject_memories(
-    memory: Arc<Mem0>,
     prompt: String,
     user_id: Option<String>,
 ) -> Result<String> {
@@ -84,12 +83,12 @@ pub async fn _remember_tool_output(
 
 // TODO is there an opinionated way of going about Mem0 tool messages?
 pub async fn remember_tool_output(
-    memory: Arc<Mem0>,
     tool_name: String,
     tool_params: String,
     tool_result: String,
 ) -> Result<()> {
-    let res = memory
+    let mem0 = Mem0::default();
+    let res = mem0
         .add_memory(
             vec![Mem0Message {
                 role: "user".to_string(),

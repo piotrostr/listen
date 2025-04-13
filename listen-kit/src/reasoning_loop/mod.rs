@@ -5,7 +5,6 @@ use crate::common::OpenAIAgent;
 use crate::common::OpenRouterAgent;
 use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
-use listen_memory::mem0::Mem0;
 use rig::completion::Message;
 use rig::message::ToolCall;
 use serde::Deserialize;
@@ -123,7 +122,7 @@ impl ReasoningLoop {
         prompt: String,
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
-        memory: Option<Arc<Mem0>>,
+        with_memory: bool,
     ) -> Result<Vec<Message>> {
         if tx.is_none() && !self.stdout {
             panic!("enable stdout or provide tx channel");
@@ -147,7 +146,7 @@ impl ReasoningLoop {
                         prompt,
                         messages,
                         tx,
-                        memory,
+                        with_memory,
                     )
                     .await
                 }
