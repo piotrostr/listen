@@ -71,7 +71,7 @@ impl LunarCrushApi {
         &self,
         topic: &str,
     ) -> Result<serde_json::Value, LunarCrushApiError> {
-        let topic_info = self.fetch_topic_info(&topic).await?;
+        let topic_info = self.fetch_topic_info(topic).await?;
 
         // let posts = self.fetch_topic_posts(&topic).await?;
 

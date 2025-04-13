@@ -45,7 +45,7 @@ impl LunarCrushApiClient {
         let client = reqwest::Client::builder()
             .timeout(Duration::from_secs(30))
             .build()
-            .map_err(|e| LunarCrushApiError::RequestError(e))?;
+            .map_err(LunarCrushApiError::RequestError)?;
 
         let mut request_builder = client.get(&url);
 
@@ -59,14 +59,14 @@ impl LunarCrushApiClient {
         let response = request_builder
             .send()
             .await
-            .map_err(|e| LunarCrushApiError::RequestError(e))?;
+            .map_err(LunarCrushApiError::RequestError)?;
 
         let status = response.status();
         if !status.is_success() {
             let error_text = response
                 .text()
                 .await
-                .map_err(|e| LunarCrushApiError::RequestError(e))?;
+                .map_err(LunarCrushApiError::RequestError)?;
             tracing::error!(
                 "[LunarCrush] API error: Status {} - {}",
                 status,
@@ -89,7 +89,7 @@ impl LunarCrushApiClient {
         let body_text = response
             .text()
             .await
-            .map_err(|e| LunarCrushApiError::RequestError(e))?;
+            .map_err(LunarCrushApiError::RequestError)?;
 
         if body_text.trim().is_empty() {
             tracing::error!(

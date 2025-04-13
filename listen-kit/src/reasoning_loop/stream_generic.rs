@@ -288,7 +288,7 @@ impl ReasoningLoop {
                             .await;
 
                         if stdout {
-                            print!("Tool result: {:?}\n", result);
+                            println!("Tool result: {:?}", result);
                         }
 
                         // Create the tool result message to use directly as next input

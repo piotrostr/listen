@@ -11,7 +11,7 @@ impl Web {
         self.client
             .post("/contents", body)
             .await
-            .map_err(|e| WebError::ExaClientError(e))
+            .map_err(WebError::ExaClientError)
     }
 }
 

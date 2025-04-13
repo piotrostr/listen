@@ -11,15 +11,11 @@ pub async fn inject_memories(
 ) -> Result<String> {
     let mem0 = Mem0::default();
 
-    let filters = if let Some(user_id) = user_id {
-        Some(SearchFilters {
+    let filters = user_id.map(|user_id| SearchFilters {
             user_id: Some(user_id),
             agent_id: None,
             run_id: None,
-        })
-    } else {
-        None
-    };
+        });
 
     let memories = mem0.search_memories(prompt.clone(), filters).await?;
 

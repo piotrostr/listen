@@ -62,7 +62,7 @@ impl StreamResponse {
             StreamResponse::Message(message) => message.clone(),
             StreamResponse::ToolCall { name, params, .. } => {
                 let params =
-                    serde_json::from_str::<serde_json::Value>(&params)
+                    serde_json::from_str::<serde_json::Value>(params)
                         .unwrap_or_default();
                 let params_str = match params {
                     serde_json::Value::Object(obj) => obj
@@ -184,10 +184,7 @@ impl ReasoningLoop {
     // Function to get the current stream channel
     pub async fn get_current_stream_channel() -> Option<Sender<StreamResponse>>
     {
-        match CURRENT_STREAM_CHANNEL.try_with(|c| c.borrow().clone()) {
-            Ok(channel) => channel,
-            Err(_) => None,
-        }
+        CURRENT_STREAM_CHANNEL.try_with(|c| c.borrow().clone()).unwrap_or_default()
     }
 
     // Set the current stream channel
