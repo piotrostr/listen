@@ -3,6 +3,11 @@ pub mod client;
 pub mod prompts;
 pub mod tools;
 
+#[cfg(test)]
+mod test_e2e;
+#[cfg(test)]
+mod tests;
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -130,7 +135,7 @@ impl GraphMemory {
     pub async fn retrieve_nodes(
         &self,
         data: &str,
-        filters: Filters, // TODO filters can be used in a cool way given pubkeys/addresses
+        _filters: Filters, // TODO filters can be used in a cool way given pubkeys/addresses
     ) -> Result<HashMap<String, String>> {
         let calls = extract_tool_calls(
             &get_tool_calls(
@@ -172,7 +177,7 @@ impl GraphMemory {
     pub async fn establish_nodes_relations(
         &self,
         data: &str,
-        filters: Filters,
+        _filters: Filters,
         entity_type_map: HashMap<String, String>,
     ) -> Result<Vec<GraphEntity>> {
         let calls = extract_tool_calls(
@@ -207,7 +212,7 @@ impl GraphMemory {
         &self,
         search_output: Vec<RelationResult>,
         data: &str,
-        filters: Filters,
+        _filters: Filters,
     ) -> Result<Vec<GraphEntity>> {
         let existing_memories = serde_json::to_string_pretty(&search_output)?;
         let calls = extract_tool_calls(
@@ -231,61 +236,5 @@ impl GraphMemory {
         }
 
         Ok(remove_spaces_from_entities(to_be_deleted))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_add() {
-        let data = "Paris is the capital of France, France is west of Germany";
-        let graph_memory = GraphMemory::from_env().await.unwrap();
-        let result = graph_memory.add(data, Filters {}).await.unwrap();
-        println!("{}", serde_json::to_string_pretty(&result).unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_retrieve_nodes() {
-        let data = "Paris is the capital of France, France is west of Germany";
-        let graph_memory = GraphMemory::from_env().await.unwrap();
-        let map = graph_memory.retrieve_nodes(data, Filters {}).await.unwrap();
-        println!("{}", serde_json::to_string_pretty(&map).unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_establish_nodes_relations() {
-        let data = "Paris is the capital of France, France is west of Germany";
-        let graph_memory = GraphMemory::from_env().await.unwrap();
-        let entity_type_map: HashMap<String, String> = serde_json::from_str(
-            r#"
-            {
-                "Paris": "city",
-                "France": "country",
-                "Germany": "country"
-            }
-            "#,
-        )
-        .unwrap();
-        let graph_entities = graph_memory
-            .establish_nodes_relations(data, Filters {}, entity_type_map)
-            .await
-            .unwrap();
-        println!("{}", serde_json::to_string_pretty(&graph_entities).unwrap());
-    }
-
-    #[tokio::test]
-    async fn test_search() {
-        let graph_memory = GraphMemory::from_env().await.unwrap();
-        let result = graph_memory
-            .search(
-                "what is the capital of country that shares west border with Germany?",
-                Filters {},
-                Some(10),
-            )
-            .await
-            .unwrap();
-        println!("{}", serde_json::to_string_pretty(&result).unwrap());
     }
 }
