@@ -126,6 +126,7 @@ impl GraphMemory {
         })
     }
 
+    /// call the agent to extract entities from the user query
     pub async fn retrieve_nodes(
         &self,
         data: &str,
@@ -166,6 +167,8 @@ impl GraphMemory {
         Ok(entity_type_map)
     }
 
+    /// call the agent with extract_relations_tool available to take the list of
+    /// entity => entity_type into list of GraphEntity (with source, relationship, destination)
     pub async fn establish_nodes_relations(
         &self,
         data: &str,
@@ -199,6 +202,7 @@ impl GraphMemory {
         Ok(remove_spaces_from_entities(entities))
     }
 
+    /// call the agent with delete_memory_tool_graph available to find the GraphEntities to trim
     pub async fn get_delete_entities_from_search_output(
         &self,
         search_output: Vec<RelationResult>,
@@ -269,5 +273,19 @@ mod tests {
             .await
             .unwrap();
         println!("{}", serde_json::to_string_pretty(&graph_entities).unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_search() {
+        let graph_memory = GraphMemory::from_env().await.unwrap();
+        let result = graph_memory
+            .search(
+                "what is the capital of country that shares west border with Germany?",
+                Filters {},
+                Some(10),
+            )
+            .await
+            .unwrap();
+        println!("{}", serde_json::to_string_pretty(&result).unwrap());
     }
 }
