@@ -50,6 +50,8 @@ impl Neo4jClient {
     ) -> Result<Option<String>> {
         let threshold = threshold.unwrap_or(0.9);
 
+        // TODO add a date here somewhere
+
         let cypher = r#"
             MATCH (source_candidate)
             WHERE source_candidate.embedding IS NOT NULL 
@@ -397,11 +399,12 @@ impl Neo4jClient {
 }
 
 pub fn remove_spaces_from_entities(entity_list: Vec<GraphEntity>) -> Vec<GraphEntity> {
+    // TODO here it would be good to prevent slashes and other special characters too
     let mut entity_list = entity_list;
     for item in entity_list.iter_mut() {
-        item.source = item.source.to_lowercase().replace(" ", "_");
-        item.relationship = item.relationship.to_lowercase().replace(" ", "_");
-        item.destination = item.destination.to_lowercase().replace(" ", "_");
+        item.source = item.source.replace(" ", "_");
+        item.destination = item.destination.replace(" ", "_");
+        item.relationship = item.relationship.replace(" ", "_");
     }
     entity_list
 }

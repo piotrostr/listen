@@ -52,7 +52,7 @@ impl GraphMemory {
     pub async fn search(
         &self,
         query: &str,
-        filters: Filters,
+        _filters: Filters,
         limit: Option<usize>,
     ) -> Result<Vec<RelationResult>> {
         println!("searching for: {}", query);

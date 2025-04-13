@@ -7,7 +7,7 @@ import {
   FaExclamationTriangle,
   FaSearch,
 } from "react-icons/fa";
-import { FaRobot, FaXTwitter } from "react-icons/fa6";
+import { FaImage, FaRobot, FaXTwitter } from "react-icons/fa6";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
@@ -328,6 +328,19 @@ export const ToolMessage = ({
       }
       console.error("Failed to parse spl token balance:", e);
     }
+  }
+
+  if (toolOutput.name == "view_image") {
+    const message = JSON.parse(toolOutput.result);
+    return (
+      <div className="p-3">
+        <DropdownMessage
+          title={t("tool_messages.view_image")}
+          message={message}
+          icon={<FaImage />}
+        />
+      </div>
+    );
   }
 
   if (toolOutput.name === "fetch_x_post") {
