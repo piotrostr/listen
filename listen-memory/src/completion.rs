@@ -1,5 +1,5 @@
+use crate::util::extract_from_code_blocks_if_any;
 use anyhow::Result;
-use regex::Regex;
 use rig::completion::Prompt;
 
 pub async fn generate_completion(prompt: &str) -> Result<String> {
@@ -12,14 +12,6 @@ pub async fn generate_completion(prompt: &str) -> Result<String> {
     let parsed = extract_from_code_blocks_if_any(&res);
     tracing::debug!(target: "listen-memory", "Parsed completion: {}", parsed);
     Ok(parsed)
-}
-
-pub fn extract_from_code_blocks_if_any(content: &str) -> String {
-    // Match everything between triple backticks, non-greedy
-    let re = Regex::new(r"```(?:\w+)?\s*([\s\S]*?)\s*```").unwrap();
-    let caps = re.captures(content);
-    let result = caps.map_or_else(|| content.trim().to_string(), |c| c[1].trim().to_string());
-    result
 }
 
 #[cfg(test)]

@@ -1,6 +1,7 @@
 pub mod completion;
 pub mod embed;
 pub mod evolve;
+pub mod graph;
 pub mod mem0;
 pub mod memory_note;
 pub mod memory_system;
