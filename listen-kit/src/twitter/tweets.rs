@@ -66,7 +66,7 @@ impl TwitterApi {
     pub async fn fetch_tweets_by_ids(
         &self,
         tweet_ids: Vec<String>,
-    ) -> Result<TweetsResponse, TwitterApiError> {
+    ) -> Result<serde_json::Value, TwitterApiError> {
         if tweet_ids.is_empty() {
             return Err(TwitterApiError::InvalidInput(anyhow::anyhow!(
                 "At least one tweet ID must be provided"
@@ -78,7 +78,7 @@ impl TwitterApi {
 
         let response = self
             .client
-            .request::<TweetsResponse>("/twitter/tweets", Some(params))
+            .request::<serde_json::Value>("/twitter/tweets", Some(params))
             .await?;
 
         Ok(response)

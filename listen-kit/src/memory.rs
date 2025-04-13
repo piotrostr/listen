@@ -1,27 +1,23 @@
 use anyhow::Result;
 use listen_memory::{
-    mem0::{AddMemoryConfig, Mem0, Message as Mem0Message, SearchFilters},
+    graph::{Filters, GraphMemory},
     memory_system::MemorySystem,
 };
 use std::sync::Arc;
 
 pub async fn inject_memories(
     prompt: String,
-    user_id: Option<String>,
+    _user_id: Option<String>,
 ) -> Result<String> {
-    let mem0 = Mem0::default();
+    let memory = GraphMemory::from_env().await?; // TODO this might need to be shared across threads
 
-    let filters = user_id.map(|user_id| SearchFilters {
-            user_id: Some(user_id),
-            agent_id: None,
-            run_id: None,
-        });
-
-    let memories = mem0.search_memories(prompt.clone(), filters).await?;
+    let memories =
+        memory.search(prompt.as_str(), Filters {}, Some(15)).await?;
 
     let injected_prompt = format!(
         "<user-prompt>{}</user-prompt><relevant-memories>{}</relevant-memories>",
-        prompt, serde_json::to_string(&memories)?
+        prompt,
+        serde_json::to_string(&memories.iter().map(|m| m.stringify()).collect::<Vec<_>>())?
     );
     println!("injected_prompt: {}", injected_prompt);
     Ok(injected_prompt)
@@ -34,9 +30,11 @@ pub async fn _inject_memories(
     let memories = memory_system
         .find_related_memories(prompt.clone(), 5)
         .await?;
+
     let memory = memory_system
         .summarize_relevant_memories(memories, prompt.clone())
         .await?;
+
     let injected_prompt = format!(
         "<user-prompt>{}</user-prompt><relevant-memories>{}</relevant-memories>",
         prompt, memory
@@ -50,11 +48,12 @@ const TOOLS_WORTH_REMEMBERING: [&str; 9] = [
     "research_x_profile",
     "fetch_x_post",
     "search_tweets",
-    "fetch_price_action_analysis",
+    // "fetch_price_action_analysis", TODO this requires special treatment
     "analyze_sentiment",
     "search_web",
     "analyze_page_content",
     "view_image",
+    "search_on_dex_screener",
 ];
 
 pub async fn _remember_tool_output(
@@ -83,17 +82,18 @@ pub async fn remember_tool_output(
     tool_params: String,
     tool_result: String,
 ) -> Result<()> {
-    let mem0 = Mem0::default();
-    let res = mem0
-        .add_memory(
-            vec![Mem0Message {
-                role: "user".to_string(),
-                content: format!(
-                    "Result of tool call {} with params: {}: {}",
-                    tool_name, tool_params, tool_result
-                ),
-            }],
-            AddMemoryConfig::default(),
+    if !TOOLS_WORTH_REMEMBERING.contains(&tool_name.as_str()) {
+        return Ok(());
+    }
+
+    let memory = GraphMemory::from_env().await?;
+    let res = memory
+        .add(
+            &format!(
+                "Result of tool call {} with params: {}: {}",
+                tool_name, tool_params, tool_result
+            ),
+            Filters {},
         )
         .await?;
 
