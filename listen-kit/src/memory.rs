@@ -98,7 +98,29 @@ pub async fn remember_tool_output(
         )
         .await?;
 
-    println!("mem0 result: {:?}", res);
+    // also dump to debug
+    if std::env::var("DEBUG").is_ok() {
+        // write to file in ./tool_output_samples
+        let file_path = "./tool_output_samples";
+        std::fs::create_dir_all(file_path)?;
+        let file_name = format!(
+            "{}/{}-{}.json",
+            file_path,
+            chrono::Utc::now().timestamp(),
+            tool_name
+        );
+        std::fs::write(
+            file_name,
+            serde_json::json!({
+                "tool_name": tool_name,
+                "tool_params": tool_params,
+                "tool_result": tool_result
+            })
+            .to_string(),
+        )?;
+    }
+
+    println!("graph memory result: {:?}", res);
 
     Ok(())
 }
