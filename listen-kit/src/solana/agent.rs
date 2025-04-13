@@ -32,6 +32,7 @@ use serde::{Deserialize, Serialize};
 pub struct Features {
     pub autonomous: bool,
     pub deep_research: bool,
+    #[serde(default)]
     pub memory: bool,
 }
 
