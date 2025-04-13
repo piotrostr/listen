@@ -44,10 +44,71 @@ pub struct AddResult {
 }
 
 impl GraphMemory {
+    pub async fn search(
+        &self,
+        query: &str,
+        filters: Filters,
+        limit: Option<usize>,
+    ) -> Result<Vec<RelationResult>> {
+        let limit = limit.unwrap_or(100);
+        let entity_type_map = self.retrieve_nodes(query, filters.clone()).await?;
+        let node_list = entity_type_map.keys().cloned().collect();
+        let search_output = self
+            .client
+            .search_graph_db(node_list, None, Some(limit))
+            .await?;
+
+        if search_output.is_empty() {
+            return Ok(vec![]);
+        }
+
+        // Convert search outputs to sequences for BM25 ranking
+        let search_outputs_sequence: Vec<Vec<String>> = search_output
+            .iter()
+            .map(|item| {
+                vec![
+                    item.source.clone(),
+                    item.relationship.clone(),
+                    item.destination.clone(),
+                ]
+            })
+            .collect();
+
+        // Create BM25 scorer
+        let mut scorer = bm25::Scorer::<usize>::new();
+        let embedder: bm25::Embedder = bm25::EmbedderBuilder::with_avgdl(3.0) // 3 tokens per sequence
+            .b(0.75) // Standard BM25 parameter
+            .k1(1.2) // Standard BM25 parameter
+            .build();
+
+        // Add documents to scorer
+        for (i, sequence) in search_outputs_sequence.iter().enumerate() {
+            let doc = sequence.join(" ");
+            let doc_embedding = embedder.embed(&doc);
+            scorer.upsert(&i, doc_embedding);
+        }
+
+        // Score query
+        let query_embedding = embedder.embed(query);
+        let scored_results = scorer.matches(&query_embedding);
+
+        // Convert back to RelationResult format
+        let mut ranked_results: Vec<RelationResult> = scored_results
+            .into_iter()
+            .take(limit.min(5))
+            .map(|scored| search_output[scored.id].clone())
+            .collect();
+
+        // Sort by BM25 score (highest first)
+        ranked_results.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
+
+        Ok(ranked_results)
+    }
+
     pub async fn add(&self, data: &str, filters: Filters) -> Result<AddResult> {
         let entity_type_map = self.retrieve_nodes(data, filters.clone()).await?;
         let to_be_added = self
-            .establish_nodes_relations_from_data(data, filters.clone(), entity_type_map.clone())
+            .establish_nodes_relations(data, filters.clone(), entity_type_map.clone())
             .await?;
         let node_list = entity_type_map.keys().cloned().collect();
         let search_output = self.client.search_graph_db(node_list, None, None).await?;
@@ -105,7 +166,7 @@ impl GraphMemory {
         Ok(entity_type_map)
     }
 
-    pub async fn establish_nodes_relations_from_data(
+    pub async fn establish_nodes_relations(
         &self,
         data: &str,
         filters: Filters,
@@ -190,7 +251,7 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn test_establish_nodes_relations_from_data() {
+    async fn test_establish_nodes_relations() {
         let data = "Paris is the capital of France, France is west of Germany";
         let graph_memory = GraphMemory::from_env().await.unwrap();
         let entity_type_map: HashMap<String, String> = serde_json::from_str(
@@ -204,7 +265,7 @@ mod tests {
         )
         .unwrap();
         let graph_entities = graph_memory
-            .establish_nodes_relations_from_data(data, Filters {}, entity_type_map)
+            .establish_nodes_relations(data, Filters {}, entity_type_map)
             .await
             .unwrap();
         println!("{}", serde_json::to_string_pretty(&graph_entities).unwrap());

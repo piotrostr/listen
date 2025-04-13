@@ -15,7 +15,7 @@ pub struct GraphEntity {
     pub relationship: String,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RelationResult {
     pub source: String,
     pub source_id: String,
