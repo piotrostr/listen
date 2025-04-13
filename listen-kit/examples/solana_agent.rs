@@ -101,7 +101,7 @@ async fn main() -> anyhow::Result<()> {
                 .to_string(),
                 vec![],
                 None,
-                false,
+                None,
             )
             .await?;
 

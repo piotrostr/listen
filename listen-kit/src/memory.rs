@@ -5,14 +5,15 @@ use listen_memory::{
 };
 use std::sync::Arc;
 
+// TODO add a personalized memory on top of the global memory
 pub async fn inject_memories(
+    global_memory: Arc<GraphMemory>,
     prompt: String,
     _user_id: Option<String>,
 ) -> Result<String> {
-    let memory = GraphMemory::from_env().await?; // TODO this might need to be shared across threads
-
-    let memories =
-        memory.search(prompt.as_str(), Filters {}, Some(15)).await?;
+    let memories = global_memory
+        .search(prompt.as_str(), Filters {}, Some(15))
+        .await?;
 
     let injected_prompt = format!(
         "<user-prompt>{}</user-prompt><relevant-memories>{}</relevant-memories>",
@@ -78,6 +79,7 @@ pub async fn _remember_tool_output(
 
 // TODO is there an opinionated way of going about Mem0 tool messages?
 pub async fn remember_tool_output(
+    global_memory: Arc<GraphMemory>,
     tool_name: String,
     tool_params: String,
     tool_result: String,
@@ -86,8 +88,7 @@ pub async fn remember_tool_output(
         return Ok(());
     }
 
-    let memory = GraphMemory::from_env().await?;
-    let res = memory
+    let res = global_memory
         .add(
             &format!(
                 "Result of tool call {} with params: {}: {}",

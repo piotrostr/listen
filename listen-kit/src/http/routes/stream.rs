@@ -222,7 +222,16 @@ async fn stream(
 
         // Run the reasoning loop in the current task (with signer context)
         let loop_result = reasoning_loop
-            .stream(prompt, messages, Some(internal_tx), with_memory)
+            .stream(
+                prompt,
+                messages,
+                Some(internal_tx),
+                if with_memory {
+                    Some(state.global_memory.clone())
+                } else {
+                    None
+                },
+            )
             .await;
 
         // Wait for the send task to complete

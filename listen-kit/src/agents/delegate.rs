@@ -58,7 +58,7 @@ pub async fn delegate_to_agent(
     });
 
     let loop_handle = spawn_with_signer(signer, || async move {
-        reasoning_loop.stream(prompt, vec![], Some(tx), false).await // TODO possibly add memory here too
+        reasoning_loop.stream(prompt, vec![], Some(tx), None).await // TODO possibly add memory here too
     })
     .await;
 
