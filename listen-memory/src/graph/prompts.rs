@@ -56,3 +56,6 @@ source -- relationship -- destination
 
 Provide a list of deletion instructions, each specifying the relationship to be deleted.
 ";
+
+// TODO possibly add a grounding field
+// e.g. the information might seem contradictory, specific source, or proof might be required

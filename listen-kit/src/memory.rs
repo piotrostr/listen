@@ -99,7 +99,7 @@ pub async fn remember_tool_output(
         .await?;
 
     // also dump to debug
-    if std::env::var("DEBUG").is_ok() {
+    if std::env::var("DUMP").is_ok() {
         // write to file in ./tool_output_samples
         let file_path = "./tool_output_samples";
         std::fs::create_dir_all(file_path)?;
