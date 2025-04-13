@@ -26,6 +26,17 @@ pub struct RelationResult {
     pub similarity: f64,
 }
 
+impl RelationResult {
+    pub fn stringify(&self) -> serde_json::Value {
+        serde_json::json!({
+            "source": self.source,
+            "relationship": self.relationship,
+            "destination": self.destination,
+            "similarity": self.similarity,
+        })
+    }
+}
+
 impl Neo4jClient {
     pub async fn from_env() -> Result<Self> {
         let graph = Graph::new("bolt://localhost:7687", "neo4j", "password").await?;

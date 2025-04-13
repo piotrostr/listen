@@ -20,7 +20,7 @@ use tools::extract_entities_tool;
 use crate::graph::{
     client::{remove_spaces_from_entities, RelationResult},
     prompts::{DELETE_RELATIONS_PROMPT, EXTRACT_RELATIONS_PROMPT},
-    tools::{delete_memory_tool_graph, relations_tool},
+    tools::{delete_memory_tool_graph, noop_tool, relations_tool},
 };
 
 pub struct GraphMemory {
@@ -55,9 +55,15 @@ impl GraphMemory {
         filters: Filters,
         limit: Option<usize>,
     ) -> Result<Vec<RelationResult>> {
-        let limit = limit.unwrap_or(100);
-        let entity_type_map = self.retrieve_nodes(query, filters.clone()).await?;
-        let node_list = entity_type_map.keys().cloned().collect();
+        println!("searching for: {}", query);
+        let limit = limit.unwrap_or(50);
+        // let entity_type_map = self.retrieve_nodes(query, filters.clone()).await?;
+        // println!("entity_type_map: {:?}", entity_type_map);
+        // if entity_type_map.is_empty() {
+        //     return Ok(vec![]);
+        // }
+        // let node_list = entity_type_map.keys().cloned().collect();
+        let node_list = vec![query.to_string()]; // embed the query directly, entities struggle with natural language
         let search_output = self
             .client
             .search_graph_db(node_list, None, Some(limit))
@@ -100,7 +106,7 @@ impl GraphMemory {
         // Convert back to RelationResult format
         let mut ranked_results: Vec<RelationResult> = scored_results
             .into_iter()
-            .take(limit.min(5))
+            .take(limit)
             .map(|scored| search_output[scored.id].clone())
             .collect();
 
@@ -139,7 +145,7 @@ impl GraphMemory {
     ) -> Result<HashMap<String, String>> {
         let calls = extract_tool_calls(
             &get_tool_calls(
-                data.to_string(),
+                format!("Text: {}", data),
                 EXTRACT_ENTITIES_PROMPT.to_string(),
                 vec![extract_entities_tool()],
             )
@@ -166,7 +172,7 @@ impl GraphMemory {
             .collect();
 
         if entity_type_map.is_empty() {
-            return Err(anyhow::anyhow!("No entities found"));
+            return Ok(HashMap::new());
         }
 
         Ok(entity_type_map)
@@ -222,7 +228,7 @@ impl GraphMemory {
                     existing_memories, data
                 ),
                 DELETE_RELATIONS_PROMPT.to_string(),
-                vec![delete_memory_tool_graph()],
+                vec![delete_memory_tool_graph(), noop_tool()],
             )
             .await?,
         )?;

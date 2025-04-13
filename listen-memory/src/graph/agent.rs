@@ -45,14 +45,19 @@ pub async fn get_tool_calls(
                 {
                     "functionDeclarations": tools.iter().map(geminifiy_tool_definition).collect::<Vec<_>>(),
                 }
-            ]
+            ],
+            "toolConfig": {
+                "functionCallingConfig": {
+                    "mode": "ANY",
+                }
+            }
         }))
         .send()
         .await?;
 
     let response_json: serde_json::Value = response.json().await?;
 
-    // println!("{}", serde_json::to_string_pretty(&response_json).unwrap());
+    println!("{}", serde_json::to_string_pretty(&response_json).unwrap());
 
     Ok(response_json)
 }
@@ -73,6 +78,8 @@ pub fn extract_tool_calls(response: &serde_json::Value) -> Result<Vec<serde_json
 
 #[cfg(test)]
 mod tests {
+    use crate::graph::tools::add_memory_tool_graph;
+
     use super::*;
 
     #[tokio::test]

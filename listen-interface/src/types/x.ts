@@ -87,7 +87,7 @@ export const TweetSchema: z.ZodType<any> = z.lazy(() =>
     replyCount: z.number().optional().nullable(),
     likeCount: z.number().optional().nullable(),
     quoteCount: z.number().optional().nullable(),
-    viewCount: z.number().optional().nullable(),
+    viewCount: z.array(z.number()).optional().nullable(),
     createdAt: z.string(),
     lang: z.string().optional().nullable(),
     bookmarkCount: z.number().optional().nullable(),

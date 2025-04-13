@@ -335,7 +335,6 @@ export const ToolMessage = ({
       const parsed = TweetSchema.parse(JSON.parse(toolOutput.result));
       return <FetchXPostDisplay tweet={parsed} />;
     } catch (e) {
-      console.error("Failed to parse tweet:", e);
       if (toolOutput.result.includes("No tweet found")) {
         return (
           <div className="p-3">
