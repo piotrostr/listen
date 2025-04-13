@@ -1,6 +1,6 @@
 use anyhow::Result;
 use futures::StreamExt;
-use listen_memory::memory_system::MemorySystem;
+use listen_memory::mem0::Mem0;
 use rig::completion::AssistantContent;
 use rig::completion::Message;
 use rig::message::{ToolResultContent, UserContent};
@@ -24,7 +24,7 @@ impl ReasoningLoop {
         prompt: String,
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
-        memory_system: Option<Arc<MemorySystem>>,
+        memory: Option<Arc<Mem0>>,
     ) -> Result<Vec<Message>> {
         let mut current_messages = messages.clone();
         let stdout = self.stdout;
@@ -37,14 +37,10 @@ impl ReasoningLoop {
             let mut current_response = String::new();
 
             let _prompt = if is_first_iteration {
-                let memory_system = memory_system.clone();
-                if let Some(memory_system) = memory_system {
+                let memory = memory.clone();
+                if let Some(memory) = memory {
                     Message::user(
-                        inject_memories(
-                            memory_system.clone(),
-                            prompt.clone(),
-                        )
-                        .await?,
+                        inject_memories(memory, prompt.clone(), None).await?,
                     )
                 } else {
                     Message::user(prompt.clone())
@@ -175,13 +171,13 @@ impl ReasoningLoop {
                             futures::future::join_all(tasks).await;
                         results.sort_by_key(|tool_result| tool_result.index);
 
-                        if let Some(memory_system) = memory_system.clone() {
+                        if let Some(memory) = memory.clone() {
                             let results = results.clone();
                             for result in results {
-                                let memory_system = memory_system.clone();
+                                let memory = memory.clone();
                                 tokio::spawn(async move {
                                     match remember_tool_output(
-                                        memory_system,
+                                        memory,
                                         result.name.clone(),
                                         result.params.clone(),
                                         result.result.clone(),
@@ -318,13 +314,13 @@ impl ReasoningLoop {
                             ),
                         };
 
-                        if let Some(memory_system) = memory_system.clone() {
+                        if let Some(memory) = memory.clone() {
                             let name = name.clone();
                             let params = params.to_string();
                             let result_str = result_str.clone();
                             tokio::spawn(async move {
                                 match remember_tool_output(
-                                    memory_system,
+                                    memory.clone(),
                                     name.clone(),
                                     params,
                                     result_str,

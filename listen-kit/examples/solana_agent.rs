@@ -24,6 +24,7 @@ async fn main() -> anyhow::Result<()> {
         let features = Features {
             autonomous: false,
             deep_research: false,
+            memory: false,
         };
         let model = match std::env::var("MODEL").unwrap_or_default().as_str()
         {

@@ -55,41 +55,30 @@ impl MemoryNote {
         // Generate the analysis prompt
         let prompt = format!(
             r#"Generate a structured analysis of the following content by:
-            1. Identifying the most salient keywords (focus on nouns, verbs, and key concepts)
-            2. Extracting core themes and contextual elements - IMPORTANT:
-            - Describe ONLY what is literally stated
-            - Focus on direct connections and comparisons
-            - Avoid any interpretation of value, quality, or intent
-            - If there's wordplay or comparisons, describe them neutrally, if there isn't - don't make up anything
-            3. Creating relevant categorical tags
+1. Identifying the most salient keywords (focus on nouns, verbs, and key
+concepts)
+2. Extracting core themes and contextual elements
+3. Creating relevant categorical tags
+Format the response as a JSON object:
+{{
+    // several specific, distinct keywords that capture key concepts and terminology 
+    // Order from most to least important 
+    // Don’t include keywords that are the name of the speaker or time 
+    // At least three keywords, but don’t be too redundant.
+    "keywords": [],
 
-            Your response must be STRICTLY DESCRIPTIVE:
-            - Include only what is explicitly present in the text
-            - Avoid inferring meaning or making judgments
-            - For comparisons/metaphors, state the literal elements being connected
-            - For chart related content, include the price and date and time + summary
+    // one sentence summarizing: 
+    // - Main topic/domain 
+    // - Key arguments/points 
+    // - Intended audience/purpose ,
+    "context": 
 
-            With keywords and tags, don't force connections, less is more.
-
-            Format the response as a JSON object:
-            {{
-                "keywords": [
-                    // specific, distinct keywords from the text
-                    // Order from most to least important
-                ],
-                "context":
-                    // One neutral sentence describing:
-                    // - What elements are being compared/connected
-                    // - How they are connected (e.g. through wordplay, metaphor)
-                    // - NO interpretation of meaning or value
-                ,
-                "tags": [
-                    // broad categories that classify the content type
-                    // Include subject matter, linguistic devices used
-                ]
-            }}
-
-            Content for analysis:
+    // several broad categories/themes for classification 
+    // Include domain, format, and type tags 
+    // At least three tags, but don’t be too redundant.
+    "tags": []
+}}
+Content for analysis:
             {}"#,
             content
         );
