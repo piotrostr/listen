@@ -111,8 +111,8 @@ impl LunarCrushApiClient {
                     body_text
                 );
 
-                if let Ok(_) =
-                    serde_json::from_str::<serde_json::Value>(&body_text)
+                if serde_json::from_str::<serde_json::Value>(&body_text)
+                    .is_ok()
                 {
                     Err(LunarCrushApiError::DeserializeError(e, body_text))
                 } else {
