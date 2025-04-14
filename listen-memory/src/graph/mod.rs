@@ -56,7 +56,7 @@ impl GraphMemory {
         limit: Option<usize>,
     ) -> Result<Vec<RelationResult>> {
         println!("searching for: {}", query);
-        let limit = limit.unwrap_or(50);
+        let limit = limit.unwrap_or(15);
         // let entity_type_map = self.retrieve_nodes(query, filters.clone()).await?;
         // println!("entity_type_map: {:?}", entity_type_map);
         // if entity_type_map.is_empty() {

@@ -1,61 +1,82 @@
 pub const EXTRACT_ENTITIES_PROMPT: &str = "
-You are a smart assistant who understands
-entities and their types in a given text. Extract all the entities from the
-text. ***DO NOT*** answer the question itself if the given text is a question.";
+You are a smart assistant specialized in extracting ONLY high-confidence, verifiable connections from crypto-related text. Focus on:
+
+1. Social Identity Links:
+   - Twitter handle -> wallet address
+   - Twitter handle -> project/token
+   - Telegram channel -> project/token
+
+2. Token Relationships:
+   - Token address -> DEX pair address
+   - Token address -> official social handles
+   - Token address -> official website
+
+3. Project Connections:
+   - Project name -> official contracts
+   - Project name -> official social media
+   - Project name -> key team members
+
+Key Rules:
+- ONLY extract when there's explicit connection (e.g. @arcdotfun -> 61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump)
+- Skip speculative or unverified connections
+- Each connection must have at least one concrete identifier (address/handle/URL)";
 
 pub const EXTRACT_RELATIONS_PROMPT: &str = "
-You are an advanced algorithm designed to extract structured information from text to construct knowledge graphs. Your goal is to capture comprehensive and accurate information. Follow these key principles:
+You are an algorithm that extracts ONLY high-confidence connections from crypto data. Focus on:
 
-1. Extract only explicitly stated information from the text.
-2. Establish relationships among the entities provided.
+Valid Relationship Types:
+- has_address (social -> contract)
+- has_handle (project -> social)
+- trades_at (token -> dex_pair)
+- has_website (project -> domain)
+- accused_by (handle -> handle with evidence)
 
-Relationships:
-    - Use consistent, general, and timeless relationship types.
-    - Example: Prefer \"professor\" over \"became_professor.\"
-    - Relationships should only be established among the entities explicitly mentioned in the user message.
+Rules:
+1. Each relationship must have at least one verifiable identifier
+2. Skip any speculative or weak connections
+3. For social media, require explicit account ownership
+4. For accusations/claims, require specific evidence/posts
 
-Entity Consistency:
-    - Ensure that relationships are coherent and logically align with the context of the message.
-    - Maintain consistent naming for entities across the extracted data.
+Example Valid:
+@arcdotfun has_address 61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump
+arc trades_at J3b6dvheS2Y1cbMtVz5TCWXNegSjJDbUKxdUVDPoqmS7
 
-Strive to construct a coherent and easily understandable knowledge graph by eshtablishing all the relationships among the entities and adherence to the user’s context.
-
-Adhere strictly to these guidelines to ensure high-quality knowledge graph extraction.";
+Example Invalid:
+arc related_to ai_agents
+ansem knows kanye";
 
 pub const DELETE_RELATIONS_PROMPT: &str = "
-You are a graph memory manager specializing in identifying, managing, and optimizing relationships within graph-based memories. Your primary task is to analyze a list of existing relationships and determine which ones should be deleted based on the new information provided.
-Input:
-1. Existing Graph Memories: A list of current graph memories, each containing source, relationship, and destination information.
-2. New Text: The new information to be integrated into the existing graph structure.
+You are a graph memory manager focused on maintaining accurate, verifiable relationships. Your task is to identify which relationships should be deleted when new information arrives.
 
-Guidelines:
-1. Identification: Use the new information to evaluate existing relationships in the memory graph.
-2. Deletion Criteria: Delete a relationship only if it meets at least one of these conditions:
-   - Outdated or Inaccurate: The new information is more recent or accurate.
-   - Contradictory: The new information conflicts with or negates the existing information.
-3. DO NOT DELETE if their is a possibility of same type of relationship but different destination nodes.
-4. Comprehensive Analysis:
-   - Thoroughly examine each existing relationship against the new information and delete as necessary.
-   - Multiple deletions may be required based on the new information.
-5. Semantic Integrity:
-   - Ensure that deletions maintain or improve the overall semantic structure of the graph.
-   - Avoid deleting relationships that are NOT contradictory/outdated to the new information.
-6. Temporal Awareness: Prioritize recency when timestamps are available.
-7. Necessity Principle: Only DELETE relationships that must be deleted and are contradictory/outdated to the new information to maintain an accurate and coherent memory graph.
+DELETE ONLY when:
+1. Direct Contradiction:
+   - An identifier points to a different official resource
+   - A relationship is explicitly invalidated
+   - A connection is proven obsolete or incorrect
 
-Note: DO NOT DELETE if their is a possibility of same type of relationship but different destination nodes. 
+2. Proven False:
+   - Official announcement contradicts existing relationship
+   - Technical evidence shows connection is invalid
+   - Verifiable proof of incorrect association
 
-For example: 
-Existing Memory: alice -- loves_to_eat -- pizza
-New Information: Alice also loves to eat burger.
+DO NOT DELETE when:
+1. Multiple Valid Relationships:
+   - Multiple active connections exist simultaneously
+   - Parallel valid identifiers are present
+   - Different aspects of same relationship
 
-Do not delete in the above example because there is a possibility that Alice loves to eat both pizza and burger.
+2. Historical Records:
+   - Past connections that remain valid
+   - Time-stamped relationships with context
+   - Sequential evolution of connections
 
-Memory Format:
-source -- relationship -- destination
+Example Valid Deletion:
+Old: identifier_A has_connection resource_X
+New: identifier_A officially changed to resource_Y (with proof)
 
-Provide a list of deletion instructions, each specifying the relationship to be deleted.
-";
+Example Invalid Deletion:
+Old: identifier_A connects_to resource_X
+New: identifier_A also connects_to resource_Y
+(Both connections are valid)
 
-// TODO possibly add a grounding field
-// e.g. the information might seem contradictory, specific source, or proof might be required
+Remember: Only delete when new information CONTRADICTS (not just adds to) existing relationships.";

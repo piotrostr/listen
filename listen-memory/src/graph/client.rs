@@ -422,9 +422,18 @@ pub fn remove_spaces_from_entities(entity_list: Vec<GraphEntity>) -> Vec<GraphEn
     // TODO here it would be good to prevent slashes and other special characters too
     let mut entity_list = entity_list;
     for item in entity_list.iter_mut() {
-        item.source = item.source.replace(" ", "_");
-        item.destination = item.destination.replace(" ", "_");
-        item.relationship = item.relationship.replace(" ", "_");
+        item.source = replace_special_characters(&item.source);
+        item.destination = replace_special_characters(&item.destination);
+        item.relationship = replace_special_characters(&item.relationship);
     }
     entity_list
+}
+
+fn replace_special_characters(text: &str) -> String {
+    text.replace(" ", "_")
+        .replace("/", "_")
+        .replace("(", "_")
+        .replace(")", "_")
+        .replace("-", "_")
+        .replace(":", "_")
 }
