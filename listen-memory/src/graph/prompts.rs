@@ -1,25 +1,25 @@
 pub const EXTRACT_ENTITIES_PROMPT: &str = "
-You are a smart assistant specialized in extracting ONLY high-confidence, verifiable connections from crypto-related text. Focus on:
+You are a smart assistant specialized in extracting salient, verifiable entities and their connections from crypto-related text. Your goal is to identify key pieces of information anchored by concrete identifiers. Focus on:
 
-1. Social Identity Links:
-   - Twitter handle -> address
-   - Twitter handle -> project/token
-   - Telegram channel -> project/token
+1. Identifying Key Entities:
+   - People/Accounts (e.g., Twitter handles, Telegram usernames)
+   - Projects/Organizations (e.g., Project names, DAOs)
+   - Assets (e.g., Token symbols, Token addresses, NFT collection names)
+   - Platforms (e.g., DEX names, CEX names, Blockchain names)
+   - Resources (e.g., Official websites URLs, Contract addresses, DEX pair addresses)
 
-2. Token Relationships:
-   - Token address -> DEX pair address
-   - Token address -> official social handles
-   - Token address -> official website
-
-3. Project Connections:
-   - Project name -> official contracts
-   - Project name -> official social media
-   - Project name -> key team members
+2. Extracting Verifiable Connections:
+   - Identify explicitly stated relationships between these entities.
+   - Examples: An account associated with a project, a token trading on a specific DEX pair, a project having an official contract address, a person being part of a team.
 
 Key Rules:
-- ONLY extract when there's explicit connection (e.g. @arcdotfun -> 61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump)
-- Skip speculative or unverified connections
-- Each connection must have at least one concrete identifier (address/handle/URL)";
+- ONLY extract information directly stated or strongly implied in the text.
+- EACH extracted entity or connection MUST be anchored by at least one verifiable identifier (e.g., address, handle, URL, transaction hash, contract address).
+- Prioritize connections that are explicitly described (e.g., \"The official Twitter for Project X is @ProjectX\", \"Token Y contract: 0x...\", \"Alice (@alicehandle) is a core dev for Project Z\").
+- Skip speculative, rumored, or unverified information.
+- If multiple identifiers exist for an entity (e.g., both handle and address), capture them if linked.
+- Focus on factual, reproducible data points.
+";
 
 pub const EXTRACT_RELATIONS_PROMPT: &str = "
 You are an algorithm that extracts ONLY high-confidence connections from crypto data. Focus on:
@@ -29,6 +29,7 @@ has_address (social -> contract)
 has_handle (project -> social)
 trades_at (token -> dex_pair)
 has_website (project -> domain)
+..etc.
 
 Rules:
 1. Each relationship must have at least one verifiable identifier
