@@ -21,6 +21,14 @@ pub fn update_memory_tool_graph() -> serde_json::Value {
                                     "type": "string",
                                     "description": "The new or updated relationship between the source and destination nodes. This should be a concise, clear description of how the two nodes are connected.",
                             },
+                            "timestamp": {
+                                    "type": "string",
+                                    "description": "The timestamp of when this relationship was established or last updated (format: YYYY-MM-DD HH:mm:ss).",
+                            },
+                            "context": {
+                                    "type": "string",
+                                    "description": "Additional context or information about the relationship.",
+                            },
                     },
                     "required": ["source", "destination", "relationship"],
             },
@@ -56,6 +64,14 @@ pub fn add_memory_tool_graph() -> serde_json::Value {
                             "destination_type": {
                                     "type": "string",
                                     "description": "The type or category of the destination node. This helps in classifying and organizing nodes in the graph.",
+                            },
+                            "timestamp": {
+                                    "type": "string",
+                                    "description": "The timestamp of when this relationship was established (format: YYYY-MM-DD HH:mm:ss).",
+                            },
+                            "context": {
+                                    "type": "string",
+                                    "description": "Additional context or information about the relationship.",
                             },
                     },
                     "required": [
@@ -107,6 +123,14 @@ pub fn relations_tool() -> serde_json::Value {
                                                     "destination": {
                                                             "type": "string",
                                                             "description": "The destination entity of the relationship.",
+                                                    },
+                                                    "timestamp": {
+                                                            "type": "string",
+                                                            "description": "The timestamp of when this relationship was established (format: YYYY-MM-DD HH:mm:ss).",
+                                                    },
+                                                    "context": {
+                                                            "type": "string",
+                                                            "description": "Additional context or information about the relationship.",
                                                     },
                                             },
                                             "required": [
@@ -171,6 +195,14 @@ pub fn delete_memory_tool_graph() -> serde_json::Value {
                     "destination": {
                         "type": "string",
                         "description": "The identifier of the destination node in the relationship.",
+                    },
+                    "timestamp": {
+                        "type": "string",
+                        "description": "The timestamp of the relationship to be deleted (format: YYYY-MM-DD HH:mm:ss). If provided, only relationships with this timestamp will be deleted.",
+                    },
+                    "context": {
+                        "type": "string",
+                        "description": "The context of the relationship to be deleted. If provided, only relationships with this context will be deleted.",
                     },
                 },
                 "required": [

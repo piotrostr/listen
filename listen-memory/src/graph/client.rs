@@ -13,6 +13,8 @@ pub struct GraphEntity {
     pub source: String,
     pub destination: String,
     pub relationship: String,
+    pub timestamp: Option<String>,
+    pub context: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
@@ -24,6 +26,8 @@ pub struct RelationResult {
     pub destination: String,
     pub destination_id: String,
     pub similarity: f64,
+    pub timestamp: Option<String>,
+    pub context: Option<String>,
 }
 
 impl RelationResult {
@@ -33,6 +37,8 @@ impl RelationResult {
             "relationship": self.relationship,
             "destination": self.destination,
             "similarity": self.similarity,
+            "timestamp": self.timestamp,
+            "context": self.context,
         })
     }
 }
@@ -247,13 +253,22 @@ impl Neo4jClient {
                     let cypher = format!(
                         r#"
                         MERGE (n:{} {{name: $source_name}})
-                        ON CREATE SET n.created = timestamp(), n.embedding = $source_embedding
+                        ON CREATE SET 
+                            n.created = timestamp(), 
+                            n.embedding = $source_embedding,
+                            n.context = $context
                         ON MATCH SET n.embedding = $source_embedding
                         MERGE (m:{} {{name: $dest_name}})
-                        ON CREATE SET m.created = timestamp(), m.embedding = $dest_embedding
+                        ON CREATE SET 
+                            m.created = timestamp(), 
+                            m.embedding = $dest_embedding,
+                            m.context = $context
                         ON MATCH SET m.embedding = $dest_embedding
                         MERGE (n)-[rel:{}]->(m)
-                        ON CREATE SET rel.created = timestamp()
+                        ON CREATE SET 
+                            rel.created = timestamp(),
+                            rel.timestamp = $timestamp,
+                            rel.context = $context
                         RETURN n.name AS source, type(rel) AS relationship, m.name AS target
                         "#,
                         source_type, destination_type, relationship
@@ -264,6 +279,11 @@ impl Neo4jClient {
                         .param("dest_name", destination)
                         .param("source_embedding", source_embedding)
                         .param("dest_embedding", dest_embedding)
+                        .param(
+                            "timestamp",
+                            item.timestamp.unwrap_or_else(|| "".to_string()),
+                        )
+                        .param("context", item.context.unwrap_or_else(|| "".to_string()))
                 }
             };
 
@@ -297,11 +317,15 @@ impl Neo4jClient {
                 MATCH (n {{name: $source_name}})
                 -[r:{}]->
                 (m {{name: $dest_name}})
+                WHERE (r.timestamp = $timestamp OR $timestamp IS NULL)
+                AND (r.context = $context OR $context IS NULL)
                 DELETE r
                 RETURN 
                     n.name AS source,
                     m.name AS target,
-                    type(r) AS relationship
+                    type(r) AS relationship,
+                    r.timestamp AS timestamp,
+                    r.context AS context
                 "#,
                 item.relationship
             );
@@ -311,7 +335,9 @@ impl Neo4jClient {
                 .execute(
                     Query::new(cypher)
                         .param("source_name", item.source)
-                        .param("dest_name", item.destination),
+                        .param("dest_name", item.destination)
+                        .param("timestamp", item.timestamp)
+                        .param("context", item.context),
                 )
                 .await?;
 
@@ -323,6 +349,12 @@ impl Neo4jClient {
                     row.get::<String>("relationship").unwrap(),
                 );
                 row_result.insert("target".to_string(), row.get::<String>("target").unwrap());
+                if let Ok(timestamp) = row.get::<String>("timestamp") {
+                    row_result.insert("timestamp".to_string(), timestamp);
+                }
+                if let Ok(context) = row.get::<String>("context") {
+                    row_result.insert("context".to_string(), context);
+                }
             }
             results.push(row_result);
         }
@@ -333,7 +365,12 @@ impl Neo4jClient {
     pub async fn get_all_entities(&self) -> Result<Vec<GraphEntity>> {
         let cypher = r#"
         MATCH (n)-[r]->(m)
-        RETURN n.name AS source, type(r) AS relationship, m.name AS destination
+        RETURN 
+            n.name AS source, 
+            type(r) AS relationship, 
+            m.name AS destination,
+            r.timestamp AS timestamp,
+            r.context AS context
         "#;
 
         let mut result = self.graph.execute(Query::new(cypher.to_string())).await?;
@@ -344,6 +381,8 @@ impl Neo4jClient {
                 source: row.get::<String>("source").unwrap(),
                 destination: row.get::<String>("destination").unwrap(),
                 relationship: row.get::<String>("relationship").unwrap(),
+                timestamp: row.get::<Option<String>>("timestamp").unwrap_or(None),
+                context: row.get::<Option<String>>("context").unwrap_or(None),
             });
         }
 
@@ -376,7 +415,16 @@ impl Neo4jClient {
                 sqrt(reduce(l2 = 0.0, i IN range(0, size($n_embedding)-1) | l2 + $n_embedding[i] * $n_embedding[i]))), 4) AS similarity
             WHERE similarity >= $threshold
             MATCH (n)-[r]->(m)
-            RETURN n.name AS source, elementId(n) AS source_id, type(r) AS relationship, elementId(r) AS relation_id, m.name AS destination, elementId(m) AS destination_id, similarity
+            RETURN 
+                n.name AS source, 
+                elementId(n) AS source_id, 
+                type(r) AS relationship, 
+                elementId(r) AS relation_id, 
+                m.name AS destination, 
+                elementId(m) AS destination_id, 
+                similarity,
+                r.timestamp AS timestamp,
+                r.context AS context
             UNION
             MATCH (n)
             WHERE n.embedding IS NOT NULL
@@ -386,7 +434,16 @@ impl Neo4jClient {
                 sqrt(reduce(l2 = 0.0, i IN range(0, size($n_embedding)-1) | l2 + $n_embedding[i] * $n_embedding[i]))), 4) AS similarity
             WHERE similarity >= $threshold
             MATCH (m)-[r]->(n)
-            RETURN m.name AS source, elementId(m) AS source_id, type(r) AS relationship, elementId(r) AS relation_id, n.name AS destination, elementId(n) AS destination_id, similarity
+            RETURN 
+                m.name AS source, 
+                elementId(m) AS source_id, 
+                type(r) AS relationship, 
+                elementId(r) AS relation_id, 
+                n.name AS destination, 
+                elementId(n) AS destination_id, 
+                similarity,
+                r.timestamp AS timestamp,
+                r.context AS context
             ORDER BY similarity DESC
             LIMIT $limit
             "#;
@@ -410,6 +467,8 @@ impl Neo4jClient {
                     destination: row.get::<&str>("destination").unwrap().to_owned(),
                     destination_id: row.get::<String>("destination_id").unwrap(),
                     similarity: row.get::<f64>("similarity").unwrap(),
+                    timestamp: row.get::<Option<String>>("timestamp").unwrap_or(None),
+                    context: row.get::<Option<String>>("context").unwrap_or(None),
                 });
             }
         }

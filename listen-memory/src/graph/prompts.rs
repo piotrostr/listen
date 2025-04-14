@@ -2,7 +2,7 @@ pub const EXTRACT_ENTITIES_PROMPT: &str = "
 You are a smart assistant specialized in extracting ONLY high-confidence, verifiable connections from crypto-related text. Focus on:
 
 1. Social Identity Links:
-   - Twitter handle -> wallet address
+   - Twitter handle -> address
    - Twitter handle -> project/token
    - Telegram channel -> project/token
 
@@ -34,29 +34,51 @@ Rules:
 1. Each relationship must have at least one verifiable identifier
 2. Skip any speculative or weak connections
 3. For social media, require explicit account ownership
-4. For accusations/claims, require specific evidence/posts
+4. For claims, require specific evidence/posts
 
 Example Valid:
-@arcdotfun has_address 61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump
-arc trades_at_lp J3b6dvheS2Y1cbMtVz5TCWXNegSjJDbUKxdUVDPoqmS7
-@blknoiz06 is_affiliated_with @BullpenFi
+{{
+    \"source\": \"@arcdotfun\",
+    \"relationship\": \"has_address\",
+    \"target\": \"61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump\",
+}}
+
+{{
+    \"source\": \"61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump\",
+    \"relationship\": \"trades_at_lp\",
+    \"target\": \"J3b6dvheS2Y1cbMtVz5TCWXNegSjJDbUKxdUVDPoqmS7\",
+    \"context\": \"ARC/WSOL pair traded on Raydium\"
+}}
+
+{{
+    \"source\": \"@blknoiz06\",
+    \"relationship\": \"is_affiliated_with\",
+    \"target\": \"@BullpenFi\",
+    \"context\": \"blknoiz06 is a member of BullpenFi\"
+}}
+
+{{
+    \"source\": \"BullpenFi/1909336899266687434\",
+    \"relationship\": \"mentions\",
+    \"target\": \"@_Fullport\",
+    \"context\": \"@salxyz walks viewers through Bullpen's Hyperliquid Beta\"
+}}
 
 Example Invalid:
-arc related_to ai_agents
-ansem knows kanye";
+{{
+    \"source\": \"arc\",
+    \"relationship\": \"related_to\",
+    \"target\": \"ai_agents\",
+}}
 
-// TODO!!! timestamp + context (minimal,
-// something like this:
-// {
-//   "source": "BullpenFi/1909336899266687434",
-//   "relationship": "mentions",
-//   "target": "@_Fullport",
-//   "timestamp": "2024-01-01 12:00:00",
-//   "context": "@salxyz walks viewers through Bullpen's Hyperliquid Beta"
-// }
-//
-// but it doesn't need context if its explicit, like the attribute of a project
-// context is useful if multiple entities are linked
+{{
+    \"source\": \"ansem\",
+    \"relationship\": \"knows\",
+    \"target\": \"kanye\",
+}}
+
+If timestamp is available as part of the data, include it for factualness, but it's not required.
+";
 
 pub const DELETE_RELATIONS_PROMPT: &str = "
 You are a graph memory manager focused on maintaining accurate, verifiable relationships. Your task is to identify which relationships should be deleted when new information arrives.
