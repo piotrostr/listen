@@ -225,12 +225,14 @@ impl GraphMemory {
             .map(|item| item.stringify())
             .collect::<Vec<_>>();
         let existing_memories = serde_json::to_string(&existing_memories)?;
+        let prompt = format!(
+            "Existing memories: {}\n\nNew information: {}",
+            existing_memories, data
+        );
+        println!("{}", prompt);
         let calls = extract_tool_calls(
             &get_tool_calls(
-                format!(
-                    "Existing memories: {}\n\nNew information: {}",
-                    existing_memories, data
-                ),
+                prompt,
                 DELETE_RELATIONS_PROMPT.to_string(),
                 vec![delete_memory_tool_graph(), noop_tool()],
             )

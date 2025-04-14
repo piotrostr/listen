@@ -444,8 +444,6 @@ impl Neo4jClient {
                 similarity,
                 r.timestamp AS timestamp,
                 r.context AS context
-            ORDER BY similarity DESC
-            LIMIT $limit
             "#;
 
             let mut result = self
@@ -453,8 +451,7 @@ impl Neo4jClient {
                 .execute(
                     Query::new(cypher_query.to_string())
                         .param("n_embedding", n_embedding)
-                        .param("threshold", threshold)
-                        .param("limit", limit as i64),
+                        .param("threshold", threshold),
                 )
                 .await?;
 
@@ -472,6 +469,16 @@ impl Neo4jClient {
                 });
             }
         }
+
+        // Sort results by similarity descending
+        result_relations.sort_by(|a, b| {
+            b.similarity
+                .partial_cmp(&a.similarity)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        // Truncate results to the specified limit
+        result_relations.truncate(limit);
 
         Ok(result_relations)
     }
