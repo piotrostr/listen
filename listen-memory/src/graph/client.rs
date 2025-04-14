@@ -314,7 +314,7 @@ impl Neo4jClient {
         for item in to_be_deleted {
             let cypher = format!(
                 r#"
-                MATCH (n {{name: $source_name}})
+                OPTIONAL MATCH (n {{name: $source_name}})
                 -[r:{}]->
                 (m {{name: $dest_name}})
                 WHERE (r.timestamp = $timestamp OR $timestamp IS NULL)
