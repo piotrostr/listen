@@ -24,12 +24,11 @@ Key Rules:
 pub const EXTRACT_RELATIONS_PROMPT: &str = "
 You are an algorithm that extracts ONLY high-confidence connections from crypto data. Focus on:
 
-Valid Relationship Types:
-- has_address (social -> contract)
-- has_handle (project -> social)
-- trades_at (token -> dex_pair)
-- has_website (project -> domain)
-- accused_by (handle -> handle with evidence)
+Valid Relationship Examples:
+has_address (social -> contract)
+has_handle (project -> social)
+trades_at (token -> dex_pair)
+has_website (project -> domain)
 
 Rules:
 1. Each relationship must have at least one verifiable identifier
@@ -39,11 +38,25 @@ Rules:
 
 Example Valid:
 @arcdotfun has_address 61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump
-arc trades_at J3b6dvheS2Y1cbMtVz5TCWXNegSjJDbUKxdUVDPoqmS7
+arc trades_at_lp J3b6dvheS2Y1cbMtVz5TCWXNegSjJDbUKxdUVDPoqmS7
+@blknoiz06 is_affiliated_with @BullpenFi
 
 Example Invalid:
 arc related_to ai_agents
 ansem knows kanye";
+
+// TODO!!! timestamp + context (minimal,
+// something like this:
+// {
+//   "source": "BullpenFi/1909336899266687434",
+//   "relationship": "mentions",
+//   "target": "@_Fullport",
+//   "timestamp": "2024-01-01 12:00:00",
+//   "context": "@salxyz walks viewers through Bullpen's Hyperliquid Beta"
+// }
+//
+// but it doesn't need context if its explicit, like the attribute of a project
+// context is useful if multiple entities are linked
 
 pub const DELETE_RELATIONS_PROMPT: &str = "
 You are a graph memory manager focused on maintaining accurate, verifiable relationships. Your task is to identify which relationships should be deleted when new information arrives.

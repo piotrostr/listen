@@ -357,7 +357,7 @@ impl Neo4jClient {
         limit: Option<usize>,
     ) -> Result<Vec<RelationResult>> {
         let threshold = threshold.unwrap_or(0.5);
-        let limit = limit.unwrap_or(100);
+        let limit = limit.unwrap_or(15);
         let mut result_relations = Vec::new();
 
         for node in node_list {
@@ -431,9 +431,7 @@ pub fn remove_spaces_from_entities(entity_list: Vec<GraphEntity>) -> Vec<GraphEn
 
 fn replace_special_characters(text: &str) -> String {
     text.replace(" ", "_")
-        .replace("/", "_")
         .replace("(", "_")
         .replace(")", "_")
         .replace("-", "_")
-        .replace(":", "_")
 }

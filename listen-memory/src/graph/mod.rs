@@ -220,7 +220,11 @@ impl GraphMemory {
         data: &str,
         _filters: Filters,
     ) -> Result<Vec<GraphEntity>> {
-        let existing_memories = serde_json::to_string_pretty(&search_output)?;
+        let existing_memories = search_output
+            .iter()
+            .map(|item| item.stringify())
+            .collect::<Vec<_>>();
+        let existing_memories = serde_json::to_string(&existing_memories)?;
         let calls = extract_tool_calls(
             &get_tool_calls(
                 format!(
