@@ -57,6 +57,13 @@ const TOOLS_WORTH_REMEMBERING: [&str; 8] = [
     "search_on_dex_screener",
 ];
 
+/// those are tools with sparse output, difficult to ingest in one go
+const TOOLS_REQUIRING_DISTILLATION: [&str; 3] = [
+    "fetch_token_metadata",
+    "fetch_x_post",
+    "search_on_dex_screener",
+];
+
 pub async fn _remember_tool_output(
     memory_system: Arc<MemorySystem>,
     tool_name: String,
@@ -87,6 +94,13 @@ pub async fn remember_tool_output(
     if !TOOLS_WORTH_REMEMBERING.contains(&tool_name.as_str()) {
         return Ok(());
     }
+    let tool_result = if TOOLS_REQUIRING_DISTILLATION
+        .contains(&tool_name.as_str())
+    {
+        listen_memory::graph::distiller::distill(tool_result.as_str()).await?
+    } else {
+        tool_result
+    };
 
     let res = global_memory
         .add(

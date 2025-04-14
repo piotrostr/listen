@@ -8,6 +8,18 @@ pub struct Neo4jClient {
     graph: Graph,
 }
 
+// TODO implement entity types, there are only a few entity IDs really:
+// X username
+// X Post ID
+// website URL
+// address - any chain token, program, wallet
+//
+// it also makes sense to track the link count, this increases relevance
+// and stands for sentiment analysis
+//
+// gotta trim the shitty relations, important to keep the timestamp "signal" metrics
+// volume, engagement etc.
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct GraphEntity {
     pub source: String,

@@ -1,5 +1,6 @@
 pub mod agent;
 pub mod client;
+pub mod distiller;
 pub mod prompts;
 pub mod tools;
 
