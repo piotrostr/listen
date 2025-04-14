@@ -330,13 +330,33 @@ impl Neo4jClient {
         Ok(results)
     }
 
+    pub async fn get_all_entities(&self) -> Result<Vec<GraphEntity>> {
+        let cypher = r#"
+        MATCH (n)-[r]->(m)
+        RETURN n.name AS source, type(r) AS relationship, m.name AS destination
+        "#;
+
+        let mut result = self.graph.execute(Query::new(cypher.to_string())).await?;
+
+        let mut entities = Vec::new();
+        while let Some(row) = result.next().await? {
+            entities.push(GraphEntity {
+                source: row.get::<String>("source").unwrap(),
+                destination: row.get::<String>("destination").unwrap(),
+                relationship: row.get::<String>("relationship").unwrap(),
+            });
+        }
+
+        Ok(entities)
+    }
+
     pub async fn search_graph_db(
         &self,
         node_list: Vec<String>,
         threshold: Option<f64>,
         limit: Option<usize>,
     ) -> Result<Vec<RelationResult>> {
-        let threshold = threshold.unwrap_or(0.6);
+        let threshold = threshold.unwrap_or(0.5);
         let limit = limit.unwrap_or(100);
         let mut result_relations = Vec::new();
 
