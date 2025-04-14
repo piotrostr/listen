@@ -57,16 +57,9 @@ impl GraphMemory {
     ) -> Result<Vec<RelationResult>> {
         println!("searching for: {}", query);
         let limit = limit.unwrap_or(15);
-        // let entity_type_map = self.retrieve_nodes(query, filters.clone()).await?;
-        // println!("entity_type_map: {:?}", entity_type_map);
-        // if entity_type_map.is_empty() {
-        //     return Ok(vec![]);
-        // }
-        // let node_list = entity_type_map.keys().cloned().collect();
-        let node_list = vec![query.to_string()]; // embed the query directly, entities struggle with natural language
         let search_output = self
             .client
-            .search_graph_db(node_list, None, Some(limit))
+            .search_graph_db(query.to_string(), None, Some(limit))
             .await?;
 
         if search_output.is_empty() {
@@ -81,6 +74,7 @@ impl GraphMemory {
                     item.source.clone(),
                     item.relationship.clone(),
                     item.destination.clone(),
+                    item.context.clone().unwrap_or_default(),
                 ]
             })
             .collect();

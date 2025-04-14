@@ -32,14 +32,19 @@ pub struct RelationResult {
 
 impl RelationResult {
     pub fn stringify(&self) -> serde_json::Value {
-        serde_json::json!({
+        let mut obj = serde_json::json!({
             "source": self.source,
             "relationship": self.relationship,
             "destination": self.destination,
             "similarity": self.similarity,
-            "timestamp": self.timestamp,
-            "context": self.context,
-        })
+        });
+        if let Some(timestamp) = self.timestamp.clone() {
+            obj["timestamp"] = serde_json::Value::String(timestamp);
+        }
+        if let Some(context) = self.context.clone() {
+            obj["context"] = serde_json::Value::String(context);
+        }
+        obj
     }
 }
 
@@ -55,8 +60,6 @@ impl Neo4jClient {
         threshold: Option<f64>,
     ) -> Result<Option<String>> {
         let threshold = threshold.unwrap_or(0.9);
-
-        // TODO add a date here somewhere
 
         let cypher = r#"
             MATCH (source_candidate)
@@ -164,19 +167,29 @@ impl Neo4jClient {
                 .unwrap_or(&"unknown".to_string())
                 .to_string();
 
-            // Generate embeddings
-            let source_embedding: Vec<f64> = generate_embedding(&source)
+            // Combine name and context for embedding generation
+            let source_text_for_embedding = match &item.context {
+                Some(ctx) if !ctx.is_empty() => format!("{} {}", source, ctx),
+                _ => source.clone(),
+            };
+            let dest_text_for_embedding = match &item.context {
+                Some(ctx) if !ctx.is_empty() => format!("{} {}", destination, ctx),
+                _ => destination.clone(),
+            };
+
+            // Generate embeddings using combined text
+            let source_embedding: Vec<f64> = generate_embedding(&source_text_for_embedding)
                 .await?
                 .into_iter()
                 .map(|x| x as f64)
                 .collect();
-            let dest_embedding: Vec<f64> = generate_embedding(&destination)
+            let dest_embedding: Vec<f64> = generate_embedding(&dest_text_for_embedding)
                 .await?
                 .into_iter()
                 .map(|x| x as f64)
                 .collect();
 
-            // Search for existing nodes
+            // Search for existing nodes using the new context-aware embeddings
             let source_node = self
                 .search_source_node(source_embedding.clone(), Some(0.9))
                 .await?;
@@ -318,14 +331,12 @@ impl Neo4jClient {
                 -[r:{}]->
                 (m {{name: $dest_name}})
                 WHERE (r.timestamp = $timestamp OR $timestamp IS NULL)
-                AND (r.context = $context OR $context IS NULL)
-                DELETE r
-                RETURN 
-                    n.name AS source,
-                    m.name AS target,
-                    type(r) AS relationship,
-                    r.timestamp AS timestamp,
-                    r.context AS context
+                  AND (r.context = $context OR $context IS NULL)
+                WITH n, r, m // Carry forward matched entities
+                WHERE r IS NOT NULL // Ensure relationship was actually found
+                WITH n.name AS source, m.name AS target, type(r) AS relationship, r.timestamp AS timestamp, r.context AS context, r AS rel_to_delete
+                DELETE rel_to_delete // Delete the relationship
+                RETURN source, target, relationship, timestamp, context // Return the details
                 "#,
                 item.relationship
             );
@@ -391,7 +402,7 @@ impl Neo4jClient {
 
     pub async fn search_graph_db(
         &self,
-        node_list: Vec<String>,
+        query: String,
         threshold: Option<f64>,
         limit: Option<usize>,
     ) -> Result<Vec<RelationResult>> {
@@ -399,14 +410,13 @@ impl Neo4jClient {
         let limit = limit.unwrap_or(15);
         let mut result_relations = Vec::new();
 
-        for node in node_list {
-            let n_embedding: Vec<f64> = generate_embedding(&node)
-                .await?
-                .into_iter()
-                .map(|x| x as f64)
-                .collect();
+        let n_embedding: Vec<f64> = generate_embedding(&query)
+            .await?
+            .into_iter()
+            .map(|x| x as f64)
+            .collect();
 
-            let cypher_query = r#"
+        let cypher_query = r#"
             MATCH (n)
             WHERE n.embedding IS NOT NULL
             WITH n,
@@ -446,28 +456,27 @@ impl Neo4jClient {
                 r.context AS context
             "#;
 
-            let mut result = self
-                .graph
-                .execute(
-                    Query::new(cypher_query.to_string())
-                        .param("n_embedding", n_embedding)
-                        .param("threshold", threshold),
-                )
-                .await?;
+        let mut result = self
+            .graph
+            .execute(
+                Query::new(cypher_query.to_string())
+                    .param("n_embedding", n_embedding)
+                    .param("threshold", threshold),
+            )
+            .await?;
 
-            while let Some(row) = result.next().await? {
-                result_relations.push(RelationResult {
-                    source: row.get::<&str>("source").unwrap().to_owned(),
-                    source_id: row.get::<String>("source_id").unwrap(),
-                    relationship: row.get::<&str>("relationship").unwrap().to_owned(),
-                    relation_id: row.get::<String>("relation_id").unwrap(),
-                    destination: row.get::<&str>("destination").unwrap().to_owned(),
-                    destination_id: row.get::<String>("destination_id").unwrap(),
-                    similarity: row.get::<f64>("similarity").unwrap(),
-                    timestamp: row.get::<Option<String>>("timestamp").unwrap_or(None),
-                    context: row.get::<Option<String>>("context").unwrap_or(None),
-                });
-            }
+        while let Some(row) = result.next().await? {
+            result_relations.push(RelationResult {
+                source: row.get::<&str>("source").unwrap().to_owned(),
+                source_id: row.get::<String>("source_id").unwrap(),
+                relationship: row.get::<&str>("relationship").unwrap().to_owned(),
+                relation_id: row.get::<String>("relation_id").unwrap(),
+                destination: row.get::<&str>("destination").unwrap().to_owned(),
+                destination_id: row.get::<String>("destination_id").unwrap(),
+                similarity: row.get::<f64>("similarity").unwrap(),
+                timestamp: row.get::<Option<String>>("timestamp").unwrap_or(None),
+                context: row.get::<Option<String>>("context").unwrap_or(None),
+            });
         }
 
         // Sort results by similarity descending

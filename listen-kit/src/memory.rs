@@ -44,13 +44,13 @@ pub async fn _inject_memories(
     Ok(injected_prompt)
 }
 
-const TOOLS_WORTH_REMEMBERING: [&str; 9] = [
+const TOOLS_WORTH_REMEMBERING: [&str; 8] = [
     "fetch_token_metadata",
     "research_x_profile",
     "fetch_x_post",
     "search_tweets",
     // "fetch_price_action_analysis", TODO this requires special treatment
-    "analyze_sentiment",
+    // "analyze_sentiment", -- this yields a lot of raw keywords, highly sparse
     "search_web",
     "analyze_page_content",
     "view_image",
