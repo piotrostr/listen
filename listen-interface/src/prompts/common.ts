@@ -82,6 +82,9 @@ Any research should be done in the following order, form of a loop, where you us
 - check the social sentiment with fetch_social_sentiment tool
 - check the chart analysis with fetch_price_action_analysis tool
 
+When unsure about the token address (multiple identical symbols in a dex screener search result), prioritize the one with highest volume.
+Sometimes, there will be a bug, where a token will have high liquidity and minimal volume - those are likely spoofed
+
 Sometimes metadata might have the website link in the twitter key and vice
 versa, be sure to pick the right function to call from your toolset
 
