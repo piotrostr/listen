@@ -1,13 +1,13 @@
 import { Elysia } from "elysia";
 import { z } from "zod";
 import { logger } from "./logger";
-import { AGENT_ID, makeMemory } from "./memory";
+import { makeMemory } from "./memory";
 import { AddMemorySchema, SearchFiltersSchema } from "./types";
 
 // Define request body types using Zod
 const SearchRequestSchema = z.object({
   query: z.string(),
-  filters: SearchFiltersSchema.optional().nullable(),
+  filters: SearchFiltersSchema,
 });
 
 type SearchRequest = z.infer<typeof SearchRequestSchema>;
@@ -40,8 +40,7 @@ app.post("/memories", async ({ body }: { body: AddMemoryRequest }) => {
 
   try {
     const result = await memory.add(parsed.data.messages, {
-      ...parsed.data.config,
-      agentId: AGENT_ID,
+      userId: parsed.data.config.user_id,
     });
     logger.debug({ path: "/memories", response: result }, "Raw response");
     logger.info(
@@ -80,7 +79,9 @@ app.post("/memories/search", async ({ body }: { body: SearchRequest }) => {
   }
 
   const result = await memory.search(parsed.data.query, {
-    filters: parsed.data.filters ?? { agentId: AGENT_ID },
+    filters: {
+      userId: parsed.data.filters.user_id,
+    },
   });
   logger.debug({ path: "/memories/search", response: result }, "Raw response");
   logger.info(

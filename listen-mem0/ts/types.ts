@@ -8,25 +8,23 @@ export const MessageSchema = z.object({
 export type Message = z.infer<typeof MessageSchema>;
 
 export const SearchFiltersSchema = z.object({
-  userId: z.string().optional(),
-  agentId: z.string().optional(),
-  runId: z.string().optional(),
+  user_id: z.string(),
+  agent_id: z.string().optional(),
+  run_id: z.string().optional(),
 });
 
 export type SearchFilters = z.infer<typeof SearchFiltersSchema>;
 
 const EntitySchema = z.object({
-  userId: z.string().optional(),
-  agentId: z.string().optional(),
-  runId: z.string().optional(),
+  user_id: z.string(),
+  agent_id: z.string().optional(),
+  run_id: z.string().optional(),
 });
 
 export type Entity = z.infer<typeof EntitySchema>;
 
 export const AddMemoryOptionsSchema = EntitySchema.extend({
-  metadata: z.record(z.any()).optional(),
-  filters: SearchFiltersSchema.optional(),
-  infer: z.boolean().optional(),
+  user_id: z.string(),
 });
 
 export type AddMemoryOptions = z.infer<typeof AddMemoryOptionsSchema>;
