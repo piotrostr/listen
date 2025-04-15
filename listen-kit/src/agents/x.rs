@@ -40,12 +40,14 @@ pub fn create_x_agent(locale: String) -> GeminiAgent {
 #[tool(description = "Delegate a task to x agent")]
 pub async fn delegate_to_x_agent(prompt: String) -> Result<String> {
     let signer = SignerContext::current().await;
+    let user_id = signer.user_id().unwrap_or_default();
     delegate_to_agent(
         prompt,
         Model::Gemini(Arc::new(create_x_agent(signer.locale()))),
         "x_agent".to_string(),
         signer,
         false,
+        user_id,
     )
     .await
 }

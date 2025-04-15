@@ -30,7 +30,7 @@ pub struct SimpleToolResult {
     result: String,
 }
 
-#[derive(Serialize, Debug, Deserialize)]
+#[derive(Serialize, Debug, Deserialize, Clone)]
 #[serde(tag = "type", content = "content")]
 pub enum StreamResponse {
     Message(String),
@@ -124,6 +124,7 @@ impl ReasoningLoop {
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
         global_memory: Option<Arc<GraphMemory>>,
+        user_id: String,
     ) -> Result<Vec<Message>> {
         if tx.is_none() && !self.stdout {
             panic!("enable stdout or provide tx channel");
@@ -148,6 +149,7 @@ impl ReasoningLoop {
                         messages,
                         tx,
                         global_memory,
+                        user_id,
                     )
                     .await
                 }

@@ -18,6 +18,7 @@ pub async fn delegate_to_agent(
     agent_type: String,
     signer: Arc<dyn TransactionSigner>,
     with_stdout: bool,
+    user_id: String,
 ) -> Result<String> {
     let reasoning_loop = ReasoningLoop::new(agent).with_stdout(with_stdout);
 
@@ -58,7 +59,9 @@ pub async fn delegate_to_agent(
     });
 
     let loop_handle = spawn_with_signer(signer, || async move {
-        reasoning_loop.stream(prompt, vec![], Some(tx), None).await // TODO possibly add memory here too
+        reasoning_loop
+            .stream(prompt, vec![], Some(tx), None, user_id.clone())
+            .await // TODO possibly add memory here too
     })
     .await;
 

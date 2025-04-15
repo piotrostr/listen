@@ -43,12 +43,14 @@ pub fn create_chart_agent(locale: String) -> GeminiAgent {
 )]
 pub async fn delegate_to_chart_agent(prompt: String) -> Result<String> {
     let ctx = SignerContext::current().await;
+    let user_id = ctx.user_id().unwrap_or_default();
     delegate_to_agent(
         prompt,
         Model::Gemini(Arc::new(create_chart_agent(ctx.locale()))),
         "chart_agent".to_string(),
         ctx,
         false,
+        user_id,
     )
     .await
 }

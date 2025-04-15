@@ -56,12 +56,14 @@ pub fn create_research_agent(locale: String) -> GeminiAgent {
 )]
 pub async fn delegate_to_research_agent(prompt: String) -> Result<String> {
     let ctx = SignerContext::current().await;
+    let user_id = ctx.user_id().unwrap_or_default();
     delegate_to_agent(
         prompt,
         Model::Gemini(Arc::new(create_research_agent(ctx.locale()))),
         "research_agent".to_string(),
         ctx,
         false,
+        user_id,
     )
     .await
 }

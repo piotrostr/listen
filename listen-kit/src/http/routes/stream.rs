@@ -3,6 +3,8 @@ use crate::common::spawn_with_signer;
 use crate::http::middleware::verify_auth;
 use crate::http::serde::deserialize_messages;
 use crate::http::state::AppState;
+use crate::memory::add_user_specific_memories;
+use crate::memory::stream_response_to_mem0_message;
 use crate::reasoning_loop::ReasoningLoop;
 use crate::reasoning_loop::StreamResponse;
 use crate::signer::privy::PrivySigner;
@@ -153,15 +155,42 @@ async fn stream(
 
             // Only save if we have responses
             if !collected_responses.is_empty() {
+                // add to user-centric memory
+                let responses =
+                    super::join::join_responses(collected_responses);
+
+                let _user_id = user_id.clone();
+                let _responses = responses.clone();
+                let handle = tokio::spawn(async move {
+                    match add_user_specific_memories(
+                        _user_id,
+                        _responses
+                            .iter()
+                            .filter_map(|r| {
+                                stream_response_to_mem0_message(r.clone())
+                            })
+                            .collect(),
+                    )
+                    .await
+                    {
+                        Ok(_) => tracing::info!(
+                            "Successfully added user-centric memories to Mem0"
+                        ),
+                        Err(e) => tracing::error!(
+                            "Failed to add user-centric memories to Mem0: {}",
+                            e
+                        ),
+                    }
+                });
+
+                // dump to mongo
                 let collection = mongo.collection::<Chat>("chats");
                 let chat = Chat {
                     user_id: user_id.as_str(),
                     wallet_address: wallet_address.as_deref(),
                     pubkey: None,
                     chat_request,
-                    responses: super::join::join_responses(
-                        collected_responses,
-                    ),
+                    responses,
                 };
 
                 match collection.insert_one(chat, None).await {
@@ -175,6 +204,7 @@ async fn stream(
                         )
                     }
                 }
+                handle.await;
             }
         }
     };
@@ -231,6 +261,7 @@ async fn stream(
                 } else {
                     None
                 },
+                user_session.user_id.clone(),
             )
             .await;
 

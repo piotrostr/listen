@@ -14,6 +14,7 @@ views:
 If the profile has a blockchain address in the bio (solana public key, ethereum address), be sure to include it in the summary
 Good summary is to the point, enscapsulates the most important information and is not overly excessive
 Through providing the most significant tweet IDs and profile names format @username/tweet_id, it is possible to continue the analysis further and ground the response
+Your response has to be completely objective, without any assumptions, judgment or personal opinion and focus on conveying the information accurately.
 ";
 
 pub const TWITTER_ZH: &str = "你的任务是从一个推特API响应中提取最相关的内容
@@ -56,6 +57,7 @@ Provide a concise summary that highlights the most important patterns and what t
 If there is a major price spike/drop, you can include the % change of the move.
 
 Your answer should be brief, to-the-point and formatted in markdown.
+Your response has to be completely objective, without any assumptions, judgment or personal opinion and focus on conveying the information accurately.
 ";
 
 pub const CHART_ZH: &str = "
@@ -88,6 +90,7 @@ Focus on:
 
 Your summary should be clear, concise, and highlight the most valuable information from the content.
 Format your response in markdown for readability.
+Your response has to be completely objective, without any assumptions, judgment or personal opinion and focus on conveying the information accurately.
 ";
 
 pub const WEB_ZH: &str = "

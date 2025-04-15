@@ -63,12 +63,14 @@ pub async fn delegate_to_solana_trader_agent(
     prompt: String,
 ) -> Result<String> {
     let ctx = SignerContext::current().await;
+    let user_id = ctx.user_id().unwrap_or_default();
     delegate_to_agent(
         prompt,
         Model::Gemini(Arc::new(create_solana_trader_agent(ctx.locale()))),
         "solana_trader_agent".to_string(),
         ctx,
         false,
+        user_id,
     )
     .await
 }
