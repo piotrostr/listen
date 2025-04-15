@@ -49,7 +49,7 @@ mod tests {
     #[test]
     fn test_ensure_base64_rendered() {
         let resultstr = include_str!("sample.txt");
-        let result = ensure_base64_rendered(&resultstr).unwrap();
+        let result = ensure_base64_rendered(resultstr).unwrap();
         tracing::info!("{}", result);
     }
 }

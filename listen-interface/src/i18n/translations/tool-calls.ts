@@ -25,6 +25,7 @@ export const toolCalls = {
     delegate_to_solana_trader_agent: "Trading...",
     analyze_holder_distribution: "Analyzing holder distribution...",
     analyze_sentiment: "Analyzing sentiment...",
+    view_image: "Analyzing image...",
   },
   zh: {
     get_quote: "获取报价中...",
@@ -52,5 +53,6 @@ export const toolCalls = {
     delegate_to_solana_trader_agent: "交易中...",
     analyze_holder_distribution: "分析持有人分布中...",
     analyze_sentiment: "分析情绪中...",
+    view_image: "分析图片中...",
   },
 };

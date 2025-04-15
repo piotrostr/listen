@@ -7,7 +7,7 @@ import {
   FaExclamationTriangle,
   FaSearch,
 } from "react-icons/fa";
-import { FaRobot, FaXTwitter } from "react-icons/fa6";
+import { FaImage, FaRobot, FaXTwitter } from "react-icons/fa6";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { z } from "zod";
 import { CandlestickDataSchema } from "../hooks/types";
@@ -330,12 +330,24 @@ export const ToolMessage = ({
     }
   }
 
+  if (toolOutput.name == "view_image") {
+    const message = JSON.parse(toolOutput.result);
+    return (
+      <div className="p-3">
+        <DropdownMessage
+          title={t("tool_messages.view_image")}
+          message={message}
+          icon={<FaImage />}
+        />
+      </div>
+    );
+  }
+
   if (toolOutput.name === "fetch_x_post") {
     try {
       const parsed = TweetSchema.parse(JSON.parse(toolOutput.result));
       return <FetchXPostDisplay tweet={parsed} />;
     } catch (e) {
-      console.error("Failed to parse tweet:", e);
       if (toolOutput.result.includes("No tweet found")) {
         return (
           <div className="p-3">

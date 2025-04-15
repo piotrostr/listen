@@ -114,7 +114,7 @@ async fn stream(
 
     let preamble = request.preamble.clone();
     let features = request.features.clone().unwrap_or_default();
-    let with_memory = features.memory.clone();
+    let with_memory = features.memory;
     let locale = request.locale.clone().unwrap_or("en".to_string());
     let chain = request.chain.clone().unwrap_or("solana".to_string());
     let model_type = request.model_type.clone().unwrap_or_default();
@@ -227,7 +227,7 @@ async fn stream(
                 messages,
                 Some(internal_tx),
                 if with_memory {
-                    Some(state.memory.clone())
+                    Some(state.global_memory.clone())
                 } else {
                     None
                 },

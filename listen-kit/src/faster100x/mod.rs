@@ -91,7 +91,7 @@ mod tests {
         let values = vec![1.0, 2.0, 3.0, 4.0, 5.0];
         let gini = calculate_gini_index(&values);
         assert!(
-            gini >= 0.0 && gini <= 1.0,
+            (0.0..=1.0).contains(&gini),
             "Gini index should be between 0 and 1"
         );
     }

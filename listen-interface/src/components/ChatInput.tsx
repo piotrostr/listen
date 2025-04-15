@@ -194,17 +194,33 @@ export function ChatInput({
         </button>
 
         {/* Memory Feature */}
-        <button
-          onClick={toggleMemory}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-            memoryEnabled
-              ? "bg-blue-600/20 text-blue-400"
-              : "bg-gray-600/20 text-gray-400"
-          } hover:bg-gray-600/30 transition-colors text-sm`}
-        >
-          <MdMemory size={18} />
-          {!isMobile && <span>{t("chat.memory")}</span>}
-        </button>
+        <Tooltip.Provider>
+          <Tooltip.Root delayDuration={100}>
+            <Tooltip.Trigger asChild>
+              <button
+                onClick={toggleMemory}
+                disabled={process.env.NODE_ENV === "production"} // not yet
+                className={`flex items-center gap-2 px-4 py-2 rounded-full ${
+                  memoryEnabled
+                    ? "bg-blue-600/20 text-blue-400"
+                    : "bg-gray-600/20 text-gray-400"
+                } hover:bg-gray-600/30 transition-colors text-sm`}
+              >
+                <MdMemory size={18} />
+                {!isMobile && <span>{t("chat.memory")}</span>}
+              </button>
+            </Tooltip.Trigger>
+            <Tooltip.Portal>
+              <Tooltip.Content
+                className="rounded-md bg-[#2d2d2d] px-4 py-2 text-sm text-white"
+                sideOffset={5}
+              >
+                {t("chat.coming_in_v3")}
+                <Tooltip.Arrow className="fill-[#2d2d2d]" />
+              </Tooltip.Content>
+            </Tooltip.Portal>
+          </Tooltip.Root>
+        </Tooltip.Provider>
 
         {/* Arrow up button on the far right */}
         {isGenerating ? (

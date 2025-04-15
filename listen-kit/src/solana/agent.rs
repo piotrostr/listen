@@ -32,6 +32,7 @@ use serde::{Deserialize, Serialize};
 pub struct Features {
     pub autonomous: bool,
     pub deep_research: bool,
+    #[serde(default)]
     pub memory: bool,
 }
 
@@ -71,10 +72,7 @@ pub fn create_solana_agent_claude(
     features: Features,
     locale: String,
 ) -> ClaudeAgent {
-    let preamble = preamble.unwrap_or(format!(
-        "{}",
-        "you are a solana trading agent that can also interact with pump.fun;"
-    ));
+    let preamble = preamble.unwrap_or("you are a solana trading agent that can also interact with pump.fun;".to_string());
 
     if features.deep_research {
         return create_deep_research_agent_claude(locale);

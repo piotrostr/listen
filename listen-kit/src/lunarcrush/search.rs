@@ -24,7 +24,7 @@ impl LunarCrushApiClient {
 
         let endpoint = "/search/topics/v1";
 
-        self.request::<serde_json::Value>(&endpoint, Some(params))
+        self.request::<serde_json::Value>(endpoint, Some(params))
             .await
     }
 }

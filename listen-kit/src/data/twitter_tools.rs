@@ -80,10 +80,12 @@ pub async fn fetch_x_post(id: String) -> Result<serde_json::Value> {
         .fetch_tweets_by_ids(vec![id])
         .await
         .map_err(|e| anyhow!("Failed to fetch X post: {}", e))?;
-    let tweet = response.tweets.first().ok_or(anyhow!("No tweet found"))?;
-    let tweet_json = serde_json::to_value(tweet)
-        .map_err(|e| anyhow!("Failed to parse tweet: {}", e))?;
-    Ok(tweet_json)
+    let tweet = response
+        .get("tweets")
+        .and_then(|tweets| tweets.as_array().and_then(|arr| arr.first()))
+        .ok_or(anyhow!("No tweet found"))?;
+
+    Ok(tweet.clone())
 }
 
 #[tool(description = "

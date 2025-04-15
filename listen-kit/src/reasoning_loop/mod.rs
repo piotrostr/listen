@@ -5,7 +5,7 @@ use crate::common::OpenAIAgent;
 use crate::common::OpenRouterAgent;
 use crate::tokenizer::exceeds_token_limit;
 use anyhow::Result;
-use listen_memory::mem0::Mem0;
+use listen_memory::graph::GraphMemory;
 use rig::completion::Message;
 use rig::message::ToolCall;
 use serde::Deserialize;
@@ -63,7 +63,7 @@ impl StreamResponse {
             StreamResponse::Message(message) => message.clone(),
             StreamResponse::ToolCall { name, params, .. } => {
                 let params =
-                    serde_json::from_str::<serde_json::Value>(&params)
+                    serde_json::from_str::<serde_json::Value>(params)
                         .unwrap_or_default();
                 let params_str = match params {
                     serde_json::Value::Object(obj) => obj
@@ -123,7 +123,7 @@ impl ReasoningLoop {
         prompt: String,
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
-        memory: Option<Arc<Mem0>>,
+        global_memory: Option<Arc<GraphMemory>>,
     ) -> Result<Vec<Message>> {
         if tx.is_none() && !self.stdout {
             panic!("enable stdout or provide tx channel");
@@ -147,7 +147,7 @@ impl ReasoningLoop {
                         prompt,
                         messages,
                         tx,
-                        memory,
+                        global_memory,
                     )
                     .await
                 }
@@ -185,10 +185,9 @@ impl ReasoningLoop {
     // Function to get the current stream channel
     pub async fn get_current_stream_channel() -> Option<Sender<StreamResponse>>
     {
-        match CURRENT_STREAM_CHANNEL.try_with(|c| c.borrow().clone()) {
-            Ok(channel) => channel,
-            Err(_) => None,
-        }
+        CURRENT_STREAM_CHANNEL
+            .try_with(|c| c.borrow().clone())
+            .unwrap_or_default()
     }
 
     // Set the current stream channel

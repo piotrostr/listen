@@ -1,32 +1,24 @@
 use anyhow::Result;
 use listen_memory::{
-    mem0::{AddMemoryConfig, Mem0, Message as Mem0Message, SearchFilters},
+    graph::{Filters, GraphMemory},
     memory_system::MemorySystem,
 };
 use std::sync::Arc;
 
+// TODO add a personalized memory on top of the global memory
 pub async fn inject_memories(
-    memory: Arc<Mem0>,
+    global_memory: Arc<GraphMemory>,
     prompt: String,
-    user_id: Option<String>,
+    _user_id: Option<String>,
 ) -> Result<String> {
-    let mem0 = Mem0::default();
-
-    let filters = if let Some(user_id) = user_id {
-        Some(SearchFilters {
-            user_id: Some(user_id),
-            agent_id: None,
-            run_id: None,
-        })
-    } else {
-        None
-    };
-
-    let memories = mem0.search_memories(prompt.clone(), filters).await?;
+    let memories = global_memory
+        .search(prompt.as_str(), Filters {}, Some(15))
+        .await?;
 
     let injected_prompt = format!(
         "<user-prompt>{}</user-prompt><relevant-memories>{}</relevant-memories>",
-        prompt, serde_json::to_string(&memories)?
+        prompt,
+        serde_json::to_string(&memories.iter().map(|m| m.stringify()).collect::<Vec<_>>())?
     );
     println!("injected_prompt: {}", injected_prompt);
     Ok(injected_prompt)
@@ -39,9 +31,11 @@ pub async fn _inject_memories(
     let memories = memory_system
         .find_related_memories(prompt.clone(), 5)
         .await?;
+
     let memory = memory_system
         .summarize_relevant_memories(memories, prompt.clone())
         .await?;
+
     let injected_prompt = format!(
         "<user-prompt>{}</user-prompt><relevant-memories>{}</relevant-memories>",
         prompt, memory
@@ -50,16 +44,24 @@ pub async fn _inject_memories(
     Ok(injected_prompt)
 }
 
-const TOOLS_WORTH_REMEMBERING: [&str; 9] = [
+const TOOLS_WORTH_REMEMBERING: [&str; 8] = [
     "fetch_token_metadata",
     "research_x_profile",
     "fetch_x_post",
     "search_tweets",
-    "fetch_price_action_analysis",
-    "analyze_sentiment",
+    // "fetch_price_action_analysis", TODO this requires special treatment
+    // "analyze_sentiment", -- this yields a lot of raw keywords, highly sparse
     "search_web",
     "analyze_page_content",
     "view_image",
+    "search_on_dex_screener",
+];
+
+/// those are tools with sparse output, difficult to ingest in one go
+const TOOLS_REQUIRING_DISTILLATION: [&str; 3] = [
+    "fetch_token_metadata",
+    "fetch_x_post",
+    "search_on_dex_screener",
 ];
 
 pub async fn _remember_tool_output(
@@ -84,25 +86,55 @@ pub async fn _remember_tool_output(
 
 // TODO is there an opinionated way of going about Mem0 tool messages?
 pub async fn remember_tool_output(
-    memory: Arc<Mem0>,
+    global_memory: Arc<GraphMemory>,
     tool_name: String,
     tool_params: String,
     tool_result: String,
 ) -> Result<()> {
-    let res = memory
-        .add_memory(
-            vec![Mem0Message {
-                role: "user".to_string(),
-                content: format!(
-                    "Result of tool call {} with params: {}: {}",
-                    tool_name, tool_params, tool_result
-                ),
-            }],
-            AddMemoryConfig::default(),
+    if !TOOLS_WORTH_REMEMBERING.contains(&tool_name.as_str()) {
+        return Ok(());
+    }
+    let tool_result = if TOOLS_REQUIRING_DISTILLATION
+        .contains(&tool_name.as_str())
+    {
+        listen_memory::graph::distiller::distill(tool_result.as_str()).await?
+    } else {
+        tool_result
+    };
+
+    let res = global_memory
+        .add(
+            &format!(
+                "Result of tool call {} with params: {}: {}",
+                tool_name, tool_params, tool_result
+            ),
+            Filters {},
         )
         .await?;
 
-    println!("mem0 result: {:?}", res);
+    // also dump to debug
+    if std::env::var("DUMP").is_ok() {
+        // write to file in ./tool_output_samples
+        let file_path = "./tool_output_samples";
+        std::fs::create_dir_all(file_path)?;
+        let file_name = format!(
+            "{}/{}-{}.json",
+            file_path,
+            chrono::Utc::now().timestamp(),
+            tool_name
+        );
+        std::fs::write(
+            file_name,
+            serde_json::json!({
+                "tool_name": tool_name,
+                "tool_params": tool_params,
+                "tool_result": tool_result
+            })
+            .to_string(),
+        )?;
+    }
+
+    println!("graph memory result: {:?}", res);
 
     Ok(())
 }

@@ -49,7 +49,7 @@ impl ExaClient {
             .json(&body)
             .send()
             .await
-            .map_err(|e| ExaClientError::RequestError(e))?;
+            .map_err(ExaClientError::RequestError)?;
         Ok(response.json().await?)
     }
 }
