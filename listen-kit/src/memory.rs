@@ -44,7 +44,8 @@ pub async fn _inject_memories(
     Ok(injected_prompt)
 }
 
-const TOOLS_WORTH_REMEMBERING: [&str; 8] = [
+const TOOLS_WORTH_REMEMBERING: [&str; 9] = [
+    "fetch_top_tokens",
     "fetch_token_metadata",
     "research_x_profile",
     "fetch_x_post",
@@ -58,10 +59,11 @@ const TOOLS_WORTH_REMEMBERING: [&str; 8] = [
 ];
 
 /// those are tools with sparse output, difficult to ingest in one go
-const TOOLS_REQUIRING_DISTILLATION: [&str; 3] = [
+const TOOLS_REQUIRING_DISTILLATION: [&str; 4] = [
     "fetch_token_metadata",
     "fetch_x_post",
     "search_on_dex_screener",
+    "fetch_top_tokens",
 ];
 
 pub async fn _remember_tool_output(

@@ -106,111 +106,85 @@ pub fn relations_tool() -> serde_json::Value {
         "type": "function",
         "function": {
             "name": "establish_relationships",
-            "description": "Establish relationships among the entities based on the provided text.",
+            "description": "Establish relationships among the entities based on the provided text, using their canonical identifiers.",
             "parameters": {
-                    "type": "object",
-                    "properties": {
-                            "entities": {
-                                    "type": "array",
-                                    "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                    "source": {"type": "string", "description": "The source entity of the relationship."},
-                                                    "relationship": {
-                                                            "type": "string",
-                                                            "description": "The relationship between the source and destination entities.",
-                                                    },
-                                                    "destination": {
-                                                            "type": "string",
-                                                            "description": "The destination entity of the relationship.",
-                                                    },
-                                                    "timestamp": {
-                                                            "type": "string",
-                                                            "description": "The timestamp of when this relationship was established (format: YYYY-MM-DD HH:mm:ss).",
-                                                    },
-                                                    "context": {
-                                                            "type": "string",
-                                                            "description": "Additional context or information about the relationship.",
-                                                    },
-                                            },
-                                            "required": [
-                                                    "source",
-                                                    "relationship",
-                                                    "destination",
-                                            ],
-                                    },
-                            }
-                    },
-                    "required": ["entities"],
-            },
-    },
+                "type": "object",
+                "properties": {
+                    "entities": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "source": {
+                                    "type": "string",
+                                    "description": "The canonical identifier of the source entity (e.g., 'user:twitter:handle', 'token:solana:address')."
+                                },
+                                "relationship": {
+                                    "type": "string",
+                                    "description": "The relationship between the source and destination entities."
+                                },
+                                "destination": {
+                                    "type": "string",
+                                    "description": "The canonical identifier of the destination entity."
+                                },
+                                "timestamp": {
+                                    "type": "string",
+                                    "description": "Optional timestamp of when this relationship was observed (format: YYYY-MM-DD HH:mm:ss)."
+                                },
+                                "context": {
+                                    "type": "string",
+                                    "description": "Optional additional context or information about the relationship."
+                                }
+                            },
+                            "required": [
+                                "source",
+                                "relationship",
+                                "destination"
+                            ]
+                        },
+                        "description": "An array of relationships defined by source/destination canonical IDs."
+                    }
+                },
+                "required": ["entities"]
+            }
+        }
     })
 }
 
 pub fn extract_entities_tool() -> serde_json::Value {
     json!({
         "type": "function",
-    "function": {
-            "name": "extract_entities",
-            "description": "Extract entities and their types from the text.",
-            "parameters": {
-                    "type": "object",
-                    "properties": {
-                            "entities": {
-                                    "type": "array",
-                                    "items": {
-                                            "type": "object",
-                                            "properties": {
-                                                    "entity": {"type": "string", "description": "The name or identifier of the entity."},
-                                                    "entity_type": {"type": "string", "description": "The type or category of the entity."},
-                                            },
-                                            "required": ["entity", "entity_type"],
-                                    },
-                                    "description": "An array of entities with their types.",
-                            }
-                    },
-                    "required": ["entities"],
-            },
-    },
-    })
-}
-
-pub fn delete_memory_tool_graph() -> serde_json::Value {
-    json!({
-        "type": "function",
         "function": {
-            "name": "delete_graph_memory",
-            "description": "Delete the relationship between two nodes. This function deletes the existing relationship.",
+            "name": "extract_entities",
+            "description": "Extract entities, their canonical identifiers, names, and types from the text.",
             "parameters": {
                 "type": "object",
                 "properties": {
-                    "source": {
-                        "type": "string",
-                        "description": "The identifier of the source node in the relationship.",
-                    },
-                    "relationship": {
-                        "type": "string",
-                        "description": "The existing relationship between the source and destination nodes that needs to be deleted.",
-                    },
-                    "destination": {
-                        "type": "string",
-                        "description": "The identifier of the destination node in the relationship.",
-                    },
-                    "timestamp": {
-                        "type": "string",
-                        "description": "The timestamp of the relationship to be deleted (format: YYYY-MM-DD HH:mm:ss). If provided, only relationships with this timestamp will be deleted.",
-                    },
-                    "context": {
-                        "type": "string",
-                        "description": "The context of the relationship to be deleted. If provided, only relationships with this context will be deleted.",
-                    },
+                    "entities": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "properties": {
+                                "canonical_id": {
+                                    "type": "string",
+                                    "description": "The unique canonical identifier for the entity (e.g., 'user:twitter:handle', 'token:solana:address')."
+                                },
+                                "name": {
+                                    "type": "string",
+                                    "description": "The human-readable name or label of the entity (e.g., 'Alice', 'ARC Token')."
+                                },
+                                "entity_type": {
+                                    "type": "string",
+                                    "description": "The general type or category of the entity (e.g., 'User', 'Token', 'Project')."
+                                }
+                            },
+                            "required": ["canonical_id", "name", "entity_type"]
+                        },
+                        "description": "An array of extracted entities with their canonical ID, name, and type."
+                    }
                 },
-                "required": [
-                    "source",
-                    "relationship",
-                    "destination",
-                ],
-            },
-        },
+                "required": ["entities"]
+            }
+        }
     })
 }

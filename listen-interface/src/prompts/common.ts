@@ -79,7 +79,7 @@ Any research should be done in the following order, form of a loop, where you us
 - check linked x.com post if exists with the fetch_x_post tool
 - check linked x.com account if exists with the research_x_profile tool
 - check linked website if exists with the analyze_page_content tool
-- check the social sentiment with fetch_social_sentiment tool
+- check the social sentiment with analyze_sentiment tool
 - check the chart analysis with fetch_price_action_analysis tool
 
 When unsure about the token address (multiple identical symbols in a dex screener search result), prioritize the one with highest volume.
