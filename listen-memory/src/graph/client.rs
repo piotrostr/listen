@@ -13,6 +13,11 @@ pub struct Neo4jClient {
 // X Post ID
 // website URL
 // address - any chain token, program, wallet
+// -> use canonical identifiers
+// username:{platform}:{username}
+// post:{platform}:{post_id} -> X post ID, telegram post, farcaster etc
+// url:{url}
+// address:{chain}:{address} -> token, program, wallet, account, LP, NFT etc.
 //
 // it also makes sense to track the link count, this increases relevance
 // and stands for sentiment analysis
