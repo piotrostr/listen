@@ -299,7 +299,7 @@ impl Neo4jClient {
         threshold: Option<f64>,
         limit: Option<usize>,
     ) -> Result<Vec<RelationResult>> {
-        let threshold = threshold.unwrap_or(0.7);
+        let threshold = threshold.unwrap_or(0.8);
         let limit = limit.unwrap_or(15);
         let candidate_limit = limit + 5;
         let mut result_relations = Vec::new();
