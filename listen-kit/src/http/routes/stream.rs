@@ -204,7 +204,12 @@ async fn stream(
                         )
                     }
                 }
-                handle.await;
+                match handle.await {
+                    Ok(_) => {}
+                    Err(e) => {
+                        tracing::error!("Memory handle failed to join: {}", e)
+                    }
+                }
             }
         }
     };
