@@ -33,17 +33,13 @@ pub enum LunarCrushApiError {
 Research a cryptocurrency or blockchain topic using LunarCrush, which aggregates and analyzes social media sentiment and activity.
 
 Parameters:
-- topic (string): The cryptocurrency/blockchain topic to research. For Solana tokens, provide the mint address directly for best results. It could be any tag.
-
-Returns information about:
-- Topic overview and metrics
-- Social engagement and sentiment analysis
+- mint (string): The mint address of the token to research. For Solana tokens, provide the mint address directly for best results. It could be any tag.
 ")]
-pub async fn analyze_sentiment(topic: String) -> Result<serde_json::Value> {
+pub async fn analyze_sentiment(mint: String) -> Result<serde_json::Value> {
     let lunarcrush = LunarCrushApi::from_env()?;
 
     let result = lunarcrush
-        .research_topic(&topic)
+        .research_topic(&mint)
         .await
         .map_err(|e| anyhow::anyhow!("Failed to research topic: {}", e))?;
 
