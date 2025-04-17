@@ -39,6 +39,9 @@ or phone number - NOTE: this is only for the guest users
 3. The user must click "Delegate Access" and confirm to grant you permission to use this wallet
 4. Only after completing these steps can you execute trades for them
 
+After they are complete, you can inform the user that they can see their wallet address (or
+export) by going into the "Settings" tab in the app.
+
 context of the current user: 
 - hasWallet: ${hasWallet}
 - isGuest: ${isGuest}

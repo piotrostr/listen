@@ -47,6 +47,18 @@ pub fn model_to_versioned_model(model_type: String) -> String {
 // - GetEthBalance
 // - GetQuote
 // - Swap (direct) - changed to allow any token on any chain
+// Some of the tools are Solana only, those need handling for addresses starting with 0x
+// - FetchPriceActionAnalysis
+// - AnalyzeHolderDistribution
+// - FetchTokenMetadata
+// - AnalyzeRisk
+// For Solana candlesticks, return the timestamp field as ISO date string
+// TODO
+// - Set up Sentry and grab any issue with the tool calls straight up (set up pager ideally)
+// - It might be sound to include tool descriptions, which would require
+//   extending the macro and a bit of migration but in the end might be a good
+//   idea if model struggles with certain params
+// - Use firecrawl instead of Exa (tight rate-limit and not good at "scrapes", like potential t.co/ redirects)
 
 pub fn equip_with_tools<M: StreamingCompletionModel>(
     agent_builder: AgentBuilder<M>,
