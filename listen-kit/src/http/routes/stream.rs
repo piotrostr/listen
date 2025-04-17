@@ -4,7 +4,7 @@ use crate::http::middleware::verify_auth;
 use crate::http::serde::deserialize_messages;
 use crate::http::state::AppState;
 use crate::memory::add_user_specific_memories;
-use crate::memory::stream_response_to_mem0_message;
+use crate::memory::make_mem0_messages;
 use crate::reasoning_loop::ReasoningLoop;
 use crate::reasoning_loop::StreamResponse;
 use crate::signer::privy::PrivySigner;
@@ -146,6 +146,7 @@ async fn stream(
         let wallet_address = user_session.wallet_address.clone();
         let chat_request = request.clone();
 
+        let _prompt = prompt.clone();
         async move {
             let mut collected_responses = Vec::new();
 
@@ -164,12 +165,7 @@ async fn stream(
                 let handle = tokio::spawn(async move {
                     match add_user_specific_memories(
                         _user_id,
-                        _responses
-                            .iter()
-                            .filter_map(|r| {
-                                stream_response_to_mem0_message(r.clone())
-                            })
-                            .collect(),
+                        make_mem0_messages(_responses, _prompt),
                     )
                     .await
                     {

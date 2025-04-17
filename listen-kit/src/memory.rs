@@ -7,17 +7,35 @@ use std::sync::Arc;
 
 use crate::reasoning_loop::StreamResponse;
 
-pub fn stream_response_to_mem0_message(
-    response: StreamResponse,
-) -> Option<Message> {
-    println!("stream_response_to_mem0_message: {:?}", response);
-    match response {
-        StreamResponse::Message(message) => Some(Message {
-            role: "user".to_string(),
-            content: message,
-        }),
-        _ => None,
-    }
+pub fn make_mem0_messages(
+    responses: Vec<StreamResponse>,
+    prompt: String,
+) -> Vec<Message> {
+    let mut messages = responses
+        .iter()
+        .filter_map(|response| {
+            let assistant_response =
+                if let StreamResponse::Message(message) = response {
+                    Some(Message {
+                        role: "assistant".to_string(),
+                        content: message.clone(),
+                    })
+                } else {
+                    None
+                };
+
+            assistant_response
+        })
+        .collect::<Vec<_>>();
+
+    messages.push(Message {
+        role: "user".to_string(),
+        content: prompt,
+    });
+
+    messages.reverse();
+
+    messages
 }
 
 pub async fn inject_memories(

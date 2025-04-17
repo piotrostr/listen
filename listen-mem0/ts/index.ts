@@ -89,7 +89,7 @@ app.post("/memories/search", async ({ body }: { body: SearchRequest }) => {
     "Search completed"
   );
 
-  return { result: result.results?.slice(0, 5) };
+  return { results: result.results?.slice(0, 5) };
 });
 
 // Get memory by ID

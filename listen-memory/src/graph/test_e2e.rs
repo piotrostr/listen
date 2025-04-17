@@ -72,3 +72,22 @@ async fn test_drop_index() {
         .await;
     println!("MANUAL CLEANUP: Done dropping index.");
 }
+
+#[tokio::test]
+async fn test_insert_samples() {
+    tracing_subscriber::fmt::init();
+    let graph_memory = GraphMemory::from_env().await.unwrap();
+    for fname in std::fs::read_dir(
+        std::env::var("HOME").unwrap() + "/solana/listen/listen-kit/tool_output_samples",
+    )
+    .unwrap()
+    {
+        let path = fname.unwrap().path();
+        let content = std::fs::read_to_string(path.clone()).unwrap();
+        if content.is_empty() {
+            continue;
+        }
+        tracing::info!("inserting {}", path.display());
+        graph_memory.add(&content, Filters {}).await.unwrap();
+    }
+}
