@@ -68,6 +68,10 @@ export function MessageRendererBase({
   const { t } = useTranslation();
   const { debugMode } = useSettingsStore();
 
+  if (debugMode) {
+    return <ChatMessage message={msg.message} direction={msg.direction} />;
+  }
+
   // Move the isLastUserMessage calculation into a useMemo
   const isLastUserMessage = useMemo(() => {
     if (msg.direction !== "outgoing") return false;
