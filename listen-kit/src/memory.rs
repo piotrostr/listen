@@ -75,6 +75,8 @@ const TOOLS_WORTH_REMEMBERING: [&str; 9] = [
     "search_tweets",
     // "fetch_price_action_analysis", TODO this requires special treatment
     // "analyze_sentiment", -- this yields a lot of raw keywords, highly sparse
+    // "fetch_price_action_analysis", TODO this requires special treatment
+    // "analyze_sentiment", -- this yields a lot of raw keywords, highly sparse
     "search_web",
     "analyze_page_content",
     "view_image",
@@ -125,6 +127,29 @@ pub async fn remember_tool_output(
         )
         .await?;
 
+    // also dump to debug
+    if std::env::var("DUMP").is_ok() {
+        // write to file in ./tool_output_samples
+        let file_path = "./tool_output_samples";
+        std::fs::create_dir_all(file_path)?;
+        let file_name = format!(
+            "{}/{}-{}.json",
+            file_path,
+            chrono::Utc::now().timestamp(),
+            tool_name
+        );
+        std::fs::write(
+            file_name,
+            serde_json::json!({
+                "tool_name": tool_name,
+                "tool_params": tool_params,
+                "tool_result": tool_result
+            })
+            .to_string(),
+        )?;
+    }
+
+    println!("graph memory result: {:?}", res);
     // also dump to debug
     if std::env::var("DUMP").is_ok() {
         // write to file in ./tool_output_samples
