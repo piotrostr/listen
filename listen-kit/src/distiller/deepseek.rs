@@ -37,6 +37,8 @@ impl TwitterAnalystAgent for DeepSeekAnalystAgent {
         response: &serde_json::Value,
         intent: Option<String>,
     ) -> Result<String, AnalystError> {
+        let ctx = SignerContext::current().await;
+        let user_id = ctx.user_id().unwrap_or_default();
         let prompt_text = if let Some(intent) = intent {
             format!(
                 "query: {}\nresponse: {}\nintent: {}",
@@ -50,8 +52,9 @@ impl TwitterAnalystAgent for DeepSeekAnalystAgent {
             prompt_text,
             self.agent.clone(),
             "twitter_analyst".to_string(),
-            SignerContext::current().await,
+            ctx,
             false, // with stdout
+            user_id,
         )
         .await
         .map_err(|e| AnalystError::DelegateError(e.to_string()))
@@ -66,6 +69,8 @@ impl ChartAnalystAgent for DeepSeekAnalystAgent {
         interval: &str,
         intent: Option<String>,
     ) -> Result<String, AnalystError> {
+        let ctx = SignerContext::current().await;
+        let user_id = ctx.user_id().unwrap_or_default();
         let candlesticks_json = serde_json::to_string(candlesticks)
             .map_err(|_| AnalystError::SerializationError)?;
 
@@ -95,8 +100,9 @@ impl ChartAnalystAgent for DeepSeekAnalystAgent {
             prompt_text,
             self.agent.clone(),
             "chart_analyst".to_string(),
-            SignerContext::current().await,
+            ctx,
             false, // with stdout
+            user_id,
         )
         .await
         .map_err(|e| AnalystError::DelegateError(e.to_string()))
@@ -112,6 +118,8 @@ impl WebAnalystAgent for DeepSeekAnalystAgent {
         content: &str,
         intent: Option<String>,
     ) -> Result<String, AnalystError> {
+        let ctx = SignerContext::current().await;
+        let user_id = ctx.user_id().unwrap_or_default();
         let prompt_text = if self.locale == "zh" {
             let base = format!("分析以下网页内容，为{}:\n{}", query, content);
             if let Some(intent) = intent {
@@ -135,8 +143,9 @@ impl WebAnalystAgent for DeepSeekAnalystAgent {
             prompt_text,
             self.agent.clone(),
             "web_analyst".to_string(),
-            SignerContext::current().await,
+            ctx,
             false, // with stdout
+            user_id,
         )
         .await
         .map_err(|e| AnalystError::DelegateError(e.to_string()))

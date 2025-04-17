@@ -1,11 +1,11 @@
-use crate::embed::generate_embedding;
+use crate::{embed::generate_embedding, graph::EntityInfo};
 use anyhow::Result;
 use neo4rs::{Graph, Query};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
 pub struct Neo4jClient {
-    graph: Graph,
+    pub graph: Graph,
 }
 
 // TODO implement entity types, there are only a few entity IDs really:
@@ -19,41 +19,60 @@ pub struct Neo4jClient {
 // url:{url}
 // address:{chain}:{address} -> token, program, wallet, account, LP, NFT etc.
 //
-// it also makes sense to track the link count, this increases relevance
-// and stands for sentiment analysis
-//
 // gotta trim the shitty relations, important to keep the timestamp "signal" metrics
 // volume, engagement etc.
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct GraphEntity {
+    /// The canonical identifier of the source node (e.g., "user:twitter:alice")
     pub source: String,
+    /// The canonical identifier of the destination node (e.g., "token:solana:xyz...")
     pub destination: String,
+    /// The type of relationship between the source and destination.
     pub relationship: String,
+    /// Optional timestamp associated with the relationship.
     pub timestamp: Option<String>,
+    /// Optional context providing more details about the relationship.
     pub context: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct RelationResult {
-    pub source: String,
-    pub source_id: String,
+    /// Canonical ID of the source node.
+    pub source_canonical_id: String,
+    /// Human-readable name of the source node.
+    pub source_name: String,
+    /// Type of relationship.
     pub relationship: String,
+    /// Neo4j internal element ID of the relationship.
     pub relation_id: String,
-    pub destination: String,
-    pub destination_id: String,
-    pub similarity: f64,
+    /// Canonical ID of the destination node.
+    pub destination_canonical_id: String,
+    /// Human-readable name of the destination node.
+    pub destination_name: String,
+    /// Relevance score (e.g., from vector index) indicating how relevant this relationship is to the query. Higher is better.
+    pub relevance_score: f64,
+    /// Optional timestamp of the relationship.
     pub timestamp: Option<String>,
+    /// Optional context of the relationship.
     pub context: Option<String>,
+    /// Number of relationships connected to the source node.
+    pub source_degree: i64,
+    /// Number of relationships connected to the destination node.
+    pub destination_degree: i64,
 }
 
 impl RelationResult {
     pub fn stringify(&self) -> serde_json::Value {
         let mut obj = serde_json::json!({
-            "source": self.source,
+            "source_id": self.source_canonical_id,
+            "source_name": self.source_name,
             "relationship": self.relationship,
-            "destination": self.destination,
-            "similarity": self.similarity,
+            "destination_id": self.destination_canonical_id,
+            "destination_name": self.destination_name,
+            "relevance": self.relevance_score,
+            "source_link_count": self.source_degree,
+            "destination_link_count": self.destination_degree,
         });
         if let Some(timestamp) = self.timestamp.clone() {
             obj["timestamp"] = serde_json::Value::String(timestamp);
@@ -68,133 +87,85 @@ impl RelationResult {
 impl Neo4jClient {
     pub async fn from_env() -> Result<Self> {
         let graph = Graph::new("bolt://localhost:7687", "neo4j", "password").await?;
-        Ok(Self { graph })
+
+        let client = Self { graph };
+
+        client.setup_constraints().await?;
+        client.setup_vector_index().await?;
+
+        Ok(client)
     }
 
-    pub async fn search_source_node(
-        &self,
-        source_embedding: Vec<f64>,
-        threshold: Option<f64>,
-    ) -> Result<Option<String>> {
-        let threshold = threshold.unwrap_or(0.9);
-
-        let cypher = r#"
-            MATCH (source_candidate)
-            WHERE source_candidate.embedding IS NOT NULL 
-
-            WITH source_candidate,
-                round(
-                    reduce(dot = 0.0, i IN range(0, size(source_candidate.embedding)-1) |
-                        dot + source_candidate.embedding[i] * $source_embedding[i]) /
-                    (sqrt(reduce(l2 = 0.0, i IN range(0, size(source_candidate.embedding)-1) |
-                        l2 + source_candidate.embedding[i] * source_candidate.embedding[i])) *
-                    sqrt(reduce(l2 = 0.0, i IN range(0, size($source_embedding)-1) |
-                        l2 + $source_embedding[i] * $source_embedding[i])))
-                , 4) AS source_similarity
-            WHERE source_similarity >= $threshold
-
-            WITH source_candidate, source_similarity
-            ORDER BY source_similarity DESC
-            LIMIT 1
-
-            RETURN elementId(source_candidate)
-        "#;
-
-        let mut result = self
-            .graph
-            .execute(
-                Query::new(cypher.to_string())
-                    .param("source_embedding", source_embedding)
-                    .param("threshold", threshold),
-            )
+    pub async fn setup_constraints(&self) -> Result<()> {
+        let constraint_query = "
+        CREATE CONSTRAINT entity_canonical_id_unique IF NOT EXISTS
+        FOR (e:Entity) REQUIRE e.canonical_id IS UNIQUE";
+        self.graph
+            .run(Query::new(constraint_query.to_string()))
             .await?;
-
-        if let Some(row) = result.next().await? {
-            let id: String = row.get("elementId(source_candidate)").unwrap();
-            Ok(Some(id))
-        } else {
-            Ok(None)
-        }
+        println!("Constraint 'entity_canonical_id_unique' ensured.");
+        Ok(())
     }
 
-    pub async fn search_destination_node(
-        &self,
-        destination_embedding: Vec<f64>,
-        threshold: Option<f64>,
-    ) -> Result<Option<String>> {
-        let threshold = threshold.unwrap_or(0.9);
+    pub async fn setup_vector_index(&self) -> Result<()> {
+        let dimension = 768;
+        let index_query = format!(
+            r#"
+            CREATE VECTOR INDEX entityEmbeddingIndex IF NOT EXISTS
+            FOR (e:Entity) ON (e.embedding)
+            OPTIONS {{ indexConfig: {{
+                `vector.dimensions`: {},
+                `vector.similarity_function`: 'cosine'
+            }} }}
+            "#,
+            dimension
+        );
 
-        let cypher = r#"
-            MATCH (destination_candidate)
-            WHERE destination_candidate.embedding IS NOT NULL 
-
-            WITH destination_candidate,
-                round(
-                    reduce(dot = 0.0, i IN range(0, size(destination_candidate.embedding)-1) |
-                        dot + destination_candidate.embedding[i] * $destination_embedding[i]) /
-                    (sqrt(reduce(l2 = 0.0, i IN range(0, size(destination_candidate.embedding)-1) |
-                        l2 + destination_candidate.embedding[i] * destination_candidate.embedding[i])) *
-                    sqrt(reduce(l2 = 0.0, i IN range(0, size($destination_embedding)-1) |
-                        l2 + $destination_embedding[i] * $destination_embedding[i])))
-                , 4) AS destination_similarity
-            WHERE destination_similarity >= $threshold
-
-            WITH destination_candidate, destination_similarity
-            ORDER BY destination_similarity DESC
-            LIMIT 1
-
-            RETURN elementId(destination_candidate)
-        "#;
-
-        let mut result = self
-            .graph
-            .execute(
-                Query::new(cypher.to_string())
-                    .param("destination_embedding", destination_embedding)
-                    .param("threshold", threshold),
-            )
-            .await?;
-
-        if let Some(row) = result.next().await? {
-            let id: String = row.get("elementId(destination_candidate)").unwrap();
-            Ok(Some(id))
-        } else {
-            Ok(None)
-        }
+        self.graph.run(Query::new(index_query)).await?;
+        println!(
+            "Vector index 'entityEmbeddingIndex' ensured for dimension {}.",
+            dimension
+        );
+        Ok(())
     }
 
     pub async fn add_entities(
         &self,
         to_be_added: Vec<GraphEntity>,
-        entity_type_map: &HashMap<String, String>,
+        entity_info_map: &HashMap<String, EntityInfo>,
     ) -> Result<Vec<HashMap<String, String>>> {
         let mut results = Vec::new();
 
         for item in to_be_added {
-            let source = item.source;
-            let destination = item.destination;
-            let relationship = item.relationship;
+            let source_info = entity_info_map.get(&item.source);
+            let dest_info = entity_info_map.get(&item.destination);
 
-            let source_type = entity_type_map
-                .get(&source)
-                .unwrap_or(&"unknown".to_string())
-                .to_string();
-            let destination_type = entity_type_map
-                .get(&destination)
-                .unwrap_or(&"unknown".to_string())
-                .to_string();
+            if source_info.is_none() || dest_info.is_none() {
+                println!(
+                    "Warning: Missing entity info for source '{}' or destination '{}'. Skipping relation.",
+                    item.source, item.destination
+                );
+                continue;
+            }
 
-            // Combine name and context for embedding generation
-            let source_text_for_embedding = match &item.context {
-                Some(ctx) if !ctx.is_empty() => format!("{} {}", source, ctx),
-                _ => source.clone(),
-            };
-            let dest_text_for_embedding = match &item.context {
-                Some(ctx) if !ctx.is_empty() => format!("{} {}", destination, ctx),
-                _ => destination.clone(),
-            };
+            let source_info = source_info.unwrap();
+            let dest_info = dest_info.unwrap();
 
-            // Generate embeddings using combined text
+            let source_text_for_embedding = format!(
+                "Entity ID: {} Name: {} Type: {} Context: {}",
+                item.source,
+                source_info.name,
+                source_info.entity_type,
+                item.context.as_deref().unwrap_or("")
+            );
+            let dest_text_for_embedding = format!(
+                "Entity ID: {} Name: {} Type: {} Context: {}",
+                item.destination,
+                dest_info.name,
+                dest_info.entity_type,
+                item.context.as_deref().unwrap_or("")
+            );
+
             let source_embedding: Vec<f64> = generate_embedding(&source_text_for_embedding)
                 .await?
                 .into_iter()
@@ -206,183 +177,88 @@ impl Neo4jClient {
                 .map(|x| x as f64)
                 .collect();
 
-            // Search for existing nodes using the new context-aware embeddings
-            let source_node = self
-                .search_source_node(source_embedding.clone(), Some(0.9))
-                .await?;
-            let destination_node = self
-                .search_destination_node(dest_embedding.clone(), Some(0.9))
-                .await?;
+            let cypher = format!(
+                r#"
+                MERGE (source:Entity:{source_type} {{canonical_id: $source_id}})
+                ON CREATE SET
+                    source.name = $source_name,
+                    source.entity_type = $source_type,
+                    source.created_at = timestamp(),
+                    source.updated_at = timestamp(),
+                    source.embedding = $source_embedding
+                ON MATCH SET
+                    source.name = $source_name,
+                    source.entity_type = $source_type,
+                    source.updated_at = timestamp(),
+                    source.embedding = $source_embedding
 
-            let query = match (source_node, destination_node) {
-                (None, Some(dest_id)) => {
-                    let cypher = format!(
-                        r#"
-                        MATCH (destination)
-                        WHERE elementId(destination) = $destination_id
-                        MERGE (source:{} {{name: $source_name}})
-                        ON CREATE SET
-                            source.created = timestamp(),
-                            source.embedding = $source_embedding
-                        MERGE (source)-[r:{}]->(destination)
-                        ON CREATE SET 
-                            r.created = timestamp()
-                        RETURN source.name AS source, type(r) AS relationship, destination.name AS target
-                        "#,
-                        source_type, relationship
-                    );
+                MERGE (destination:Entity:{destination_type} {{canonical_id: $dest_id}})
+                ON CREATE SET
+                    destination.name = $dest_name,
+                    destination.entity_type = $destination_type,
+                    destination.created_at = timestamp(),
+                    destination.updated_at = timestamp(),
+                    destination.embedding = $dest_embedding
+                ON MATCH SET
+                    destination.name = $dest_name,
+                    destination.entity_type = $destination_type,
+                    destination.updated_at = timestamp(),
+                    destination.embedding = $dest_embedding
 
-                    Query::new(cypher)
-                        .param("destination_id", dest_id)
-                        .param("source_name", source)
-                        .param("source_embedding", source_embedding)
-                }
-                (Some(source_id), None) => {
-                    let cypher = format!(
-                        r#"
-                        MATCH (source)
-                        WHERE elementId(source) = $source_id
-                        MERGE (destination:{} {{name: $destination_name}})
-                        ON CREATE SET
-                            destination.created = timestamp(),
-                            destination.embedding = $destination_embedding
-                        MERGE (source)-[r:{}]->(destination)
-                        ON CREATE SET 
-                            r.created = timestamp()
-                        RETURN source.name AS source, type(r) AS relationship, destination.name AS target
-                        "#,
-                        destination_type, relationship
-                    );
+                MERGE (source)-[rel:{relationship}]->(destination)
+                ON CREATE SET
+                    rel.created_at = timestamp(),
+                    rel.updated_at = timestamp(),
+                    rel.timestamp = $timestamp,
+                    rel.context = $context
+                ON MATCH SET
+                    rel.updated_at = timestamp(),
+                    rel.timestamp = $timestamp,
+                    rel.context = $context
 
-                    Query::new(cypher)
-                        .param("source_id", source_id)
-                        .param("destination_name", destination)
-                        .param("destination_embedding", dest_embedding)
-                }
-                (Some(source_id), Some(dest_id)) => {
-                    let cypher = format!(
-                        r#"
-                        MATCH (source)
-                        WHERE elementId(source) = $source_id
-                        MATCH (destination)
-                        WHERE elementId(destination) = $destination_id
-                        MERGE (source)-[r:{}]->(destination)
-                        ON CREATE SET 
-                            r.created_at = timestamp(),
-                            r.updated_at = timestamp()
-                        RETURN source.name AS source, type(r) AS relationship, destination.name AS target
-                        "#,
-                        relationship
-                    );
+                RETURN
+                    source.canonical_id AS source_id,
+                    type(rel) AS relationship,
+                    destination.canonical_id AS destination_id
+                "#,
+                source_type = source_info.entity_type,
+                destination_type = dest_info.entity_type,
+                relationship = item.relationship
+            );
 
-                    Query::new(cypher)
-                        .param("source_id", source_id)
-                        .param("destination_id", dest_id)
-                }
-                (None, None) => {
-                    let cypher = format!(
-                        r#"
-                        MERGE (n:{} {{name: $source_name}})
-                        ON CREATE SET 
-                            n.created = timestamp(), 
-                            n.embedding = $source_embedding,
-                            n.context = $context
-                        ON MATCH SET n.embedding = $source_embedding
-                        MERGE (m:{} {{name: $dest_name}})
-                        ON CREATE SET 
-                            m.created = timestamp(), 
-                            m.embedding = $dest_embedding,
-                            m.context = $context
-                        ON MATCH SET m.embedding = $dest_embedding
-                        MERGE (n)-[rel:{}]->(m)
-                        ON CREATE SET 
-                            rel.created = timestamp(),
-                            rel.timestamp = $timestamp,
-                            rel.context = $context
-                        RETURN n.name AS source, type(rel) AS relationship, m.name AS target
-                        "#,
-                        source_type, destination_type, relationship
-                    );
-
-                    Query::new(cypher)
-                        .param("source_name", source)
-                        .param("dest_name", destination)
-                        .param("source_embedding", source_embedding)
-                        .param("dest_embedding", dest_embedding)
-                        .param(
-                            "timestamp",
-                            item.timestamp.unwrap_or_else(|| "".to_string()),
-                        )
-                        .param("context", item.context.unwrap_or_else(|| "".to_string()))
-                }
-            };
+            let query = Query::new(cypher)
+                .param("source_id", item.source.clone())
+                .param("source_name", source_info.name.clone())
+                .param("source_type", source_info.entity_type.clone())
+                .param("source_embedding", source_embedding)
+                .param("dest_id", item.destination.clone())
+                .param("dest_name", dest_info.name.clone())
+                .param("destination_type", dest_info.entity_type.clone())
+                .param("dest_embedding", dest_embedding)
+                .param("timestamp", item.timestamp.clone().unwrap_or_default())
+                .param("context", item.context.clone().unwrap_or_default());
 
             let mut result = self.graph.execute(query).await?;
 
             let mut row_result = HashMap::new();
             if let Some(row) = result.next().await? {
-                row_result.insert("source".to_string(), row.get::<String>("source").unwrap());
+                row_result.insert(
+                    "source".to_string(),
+                    row.get::<String>("source_id").unwrap(),
+                );
                 row_result.insert(
                     "relationship".to_string(),
                     row.get::<String>("relationship").unwrap(),
                 );
-                row_result.insert("target".to_string(), row.get::<String>("target").unwrap());
-            }
-            results.push(row_result);
-        }
-
-        Ok(results)
-    }
-
-    pub async fn delete_entities(
-        &self,
-        to_be_deleted: Vec<GraphEntity>,
-    ) -> Result<Vec<HashMap<String, String>>> {
-        let mut results = Vec::new();
-        let to_be_deleted = remove_spaces_from_entities(to_be_deleted);
-
-        for item in to_be_deleted {
-            let cypher = format!(
-                r#"
-                OPTIONAL MATCH (n {{name: $source_name}})
-                -[r:{}]->
-                (m {{name: $dest_name}})
-                WHERE (r.timestamp = $timestamp OR $timestamp IS NULL)
-                  AND (r.context = $context OR $context IS NULL)
-                WITH n, r, m // Carry forward matched entities
-                WHERE r IS NOT NULL // Ensure relationship was actually found
-                WITH n.name AS source, m.name AS target, type(r) AS relationship, r.timestamp AS timestamp, r.context AS context, r AS rel_to_delete
-                DELETE rel_to_delete // Delete the relationship
-                RETURN source, target, relationship, timestamp, context // Return the details
-                "#,
-                item.relationship
-            );
-
-            let mut result = self
-                .graph
-                .execute(
-                    Query::new(cypher)
-                        .param("source_name", item.source)
-                        .param("dest_name", item.destination)
-                        .param("timestamp", item.timestamp)
-                        .param("context", item.context),
-                )
-                .await?;
-
-            let mut row_result = HashMap::new();
-            if let Some(row) = result.next().await? {
-                row_result.insert("source".to_string(), row.get::<String>("source").unwrap());
                 row_result.insert(
-                    "relationship".to_string(),
-                    row.get::<String>("relationship").unwrap(),
+                    "target".to_string(),
+                    row.get::<String>("destination_id").unwrap(),
                 );
-                row_result.insert("target".to_string(), row.get::<String>("target").unwrap());
-                if let Ok(timestamp) = row.get::<String>("timestamp") {
-                    row_result.insert("timestamp".to_string(), timestamp);
-                }
-                if let Ok(context) = row.get::<String>("context") {
-                    row_result.insert("context".to_string(), context);
-                }
+            } else {
+                println!(
+                    "Warning: No result returned for adding relation: {} -[{}]-> {}",
+                    item.source, item.relationship, item.destination
+                );
             }
             results.push(row_result);
         }
@@ -392,11 +268,11 @@ impl Neo4jClient {
 
     pub async fn get_all_entities(&self) -> Result<Vec<GraphEntity>> {
         let cypher = r#"
-        MATCH (n)-[r]->(m)
-        RETURN 
-            n.name AS source, 
-            type(r) AS relationship, 
-            m.name AS destination,
+        MATCH (n:Entity)-[r]->(m:Entity)
+        RETURN
+            n.canonical_id AS source,
+            type(r) AS relationship,
+            m.canonical_id AS destination,
             r.timestamp AS timestamp,
             r.context AS context
         "#;
@@ -419,111 +295,84 @@ impl Neo4jClient {
 
     pub async fn search_graph_db(
         &self,
-        query: String,
+        query_text: String,
         threshold: Option<f64>,
         limit: Option<usize>,
     ) -> Result<Vec<RelationResult>> {
-        let threshold = threshold.unwrap_or(0.5);
+        let threshold = threshold.unwrap_or(0.8);
         let limit = limit.unwrap_or(15);
+        let candidate_limit = limit + 5;
         let mut result_relations = Vec::new();
 
-        let n_embedding: Vec<f64> = generate_embedding(&query)
+        let query_embedding: Vec<f64> = generate_embedding(&query_text)
             .await?
             .into_iter()
             .map(|x| x as f64)
             .collect();
 
         let cypher_query = r#"
-            MATCH (n)
-            WHERE n.embedding IS NOT NULL
-            WITH n,
-                round(reduce(dot = 0.0, i IN range(0, size(n.embedding)-1) | dot + n.embedding[i] * $n_embedding[i]) /
-                (sqrt(reduce(l2 = 0.0, i IN range(0, size(n.embedding)-1) | l2 + n.embedding[i] * n.embedding[i])) *
-                sqrt(reduce(l2 = 0.0, i IN range(0, size($n_embedding)-1) | l2 + $n_embedding[i] * $n_embedding[i]))), 4) AS similarity
-            WHERE similarity >= $threshold
-            MATCH (n)-[r]->(m)
-            RETURN 
-                n.name AS source, 
-                elementId(n) AS source_id, 
-                type(r) AS relationship, 
-                elementId(r) AS relation_id, 
-                m.name AS destination, 
-                elementId(m) AS destination_id, 
-                similarity,
+            CALL db.index.vector.queryNodes('entityEmbeddingIndex', $candidate_limit, $query_embedding)
+            YIELD node AS n, score AS score
+            WHERE score >= $threshold
+            WITH n, score ORDER BY score DESC LIMIT $candidate_limit
+            WITH collect({node: n, score: score}) AS top_candidates
+
+            UNWIND top_candidates AS candidate_data
+            WITH candidate_data.node AS n, candidate_data.score AS score
+
+            MATCH (n)-[r]-(m:Entity)
+
+            WITH n, r, m, score, startNode(r) AS srcNode, endNode(r) AS destNode
+
+            OPTIONAL MATCH (srcNode)-[srcRel]-()
+            WITH n, r, m, score, srcNode, destNode, count(DISTINCT srcRel) AS srcDegree
+            OPTIONAL MATCH (destNode)-[destRel]-()
+            WITH n, r, m, score, srcNode, destNode, srcDegree, count(DISTINCT destRel) AS destDegree
+
+            ORDER BY score DESC
+
+            RETURN DISTINCT
+                srcNode.canonical_id AS source_canonical_id,
+                srcNode.name AS source_name,
+                type(r) AS relationship,
+                elementId(r) AS relation_id,
+                destNode.canonical_id AS destination_canonical_id,
+                destNode.name AS destination_name,
+                score AS relevance_score,
                 r.timestamp AS timestamp,
-                r.context AS context
-            UNION
-            MATCH (n)
-            WHERE n.embedding IS NOT NULL
-            WITH n,
-                round(reduce(dot = 0.0, i IN range(0, size(n.embedding)-1) | dot + n.embedding[i] * $n_embedding[i]) /
-                (sqrt(reduce(l2 = 0.0, i IN range(0, size(n.embedding)-1) | l2 + n.embedding[i] * n.embedding[i])) *
-                sqrt(reduce(l2 = 0.0, i IN range(0, size($n_embedding)-1) | l2 + $n_embedding[i] * $n_embedding[i]))), 4) AS similarity
-            WHERE similarity >= $threshold
-            MATCH (m)-[r]->(n)
-            RETURN 
-                m.name AS source, 
-                elementId(m) AS source_id, 
-                type(r) AS relationship, 
-                elementId(r) AS relation_id, 
-                n.name AS destination, 
-                elementId(n) AS destination_id, 
-                similarity,
-                r.timestamp AS timestamp,
-                r.context AS context
+                r.context AS context,
+                srcDegree AS source_degree,
+                destDegree AS destination_degree
+            LIMIT $limit
             "#;
 
         let mut result = self
             .graph
             .execute(
                 Query::new(cypher_query.to_string())
-                    .param("n_embedding", n_embedding)
-                    .param("threshold", threshold),
+                    .param("query_embedding", query_embedding)
+                    .param("threshold", threshold)
+                    .param("candidate_limit", candidate_limit as i64)
+                    .param("limit", limit as i64),
             )
             .await?;
 
         while let Some(row) = result.next().await? {
             result_relations.push(RelationResult {
-                source: row.get::<&str>("source").unwrap().to_owned(),
-                source_id: row.get::<String>("source_id").unwrap(),
-                relationship: row.get::<&str>("relationship").unwrap().to_owned(),
-                relation_id: row.get::<String>("relation_id").unwrap(),
-                destination: row.get::<&str>("destination").unwrap().to_owned(),
-                destination_id: row.get::<String>("destination_id").unwrap(),
-                similarity: row.get::<f64>("similarity").unwrap(),
-                timestamp: row.get::<Option<String>>("timestamp").unwrap_or(None),
-                context: row.get::<Option<String>>("context").unwrap_or(None),
+                source_canonical_id: row.get("source_canonical_id").unwrap_or_default(),
+                source_name: row.get("source_name").unwrap_or_default(),
+                relationship: row.get("relationship").unwrap_or_default(),
+                relation_id: row.get("relation_id").unwrap_or_default(),
+                destination_canonical_id: row.get("destination_canonical_id").unwrap_or_default(),
+                destination_name: row.get("destination_name").unwrap_or_default(),
+                relevance_score: row.get("relevance_score").unwrap_or(0.0),
+                timestamp: row.get("timestamp").ok(),
+                context: row.get("context").ok(),
+                source_degree: row.get("source_degree").unwrap_or(0),
+                destination_degree: row.get("destination_degree").unwrap_or(0),
             });
         }
 
-        // Sort results by similarity descending
-        result_relations.sort_by(|a, b| {
-            b.similarity
-                .partial_cmp(&a.similarity)
-                .unwrap_or(std::cmp::Ordering::Equal)
-        });
-
-        // Truncate results to the specified limit
-        result_relations.truncate(limit);
-
         Ok(result_relations)
     }
-}
-
-pub fn remove_spaces_from_entities(entity_list: Vec<GraphEntity>) -> Vec<GraphEntity> {
-    // TODO here it would be good to prevent slashes and other special characters too
-    let mut entity_list = entity_list;
-    for item in entity_list.iter_mut() {
-        item.source = replace_special_characters(&item.source);
-        item.destination = replace_special_characters(&item.destination);
-        item.relationship = replace_special_characters(&item.relationship);
-    }
-    entity_list
-}
-
-fn replace_special_characters(text: &str) -> String {
-    text.replace(" ", "_")
-        .replace("(", "_")
-        .replace(")", "_")
-        .replace("-", "_")
 }

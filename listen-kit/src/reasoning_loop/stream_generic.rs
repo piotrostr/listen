@@ -25,6 +25,7 @@ impl ReasoningLoop {
         messages: Vec<Message>,
         tx: Option<Sender<StreamResponse>>,
         global_memory: Option<Arc<GraphMemory>>,
+        user_id: String,
     ) -> Result<Vec<Message>> {
         let mut current_messages = messages.clone();
         let stdout = self.stdout;
@@ -42,7 +43,7 @@ impl ReasoningLoop {
                         inject_memories(
                             global_memory.clone(),
                             prompt.clone(),
-                            None,
+                            user_id.clone(),
                         )
                         .await?,
                     )

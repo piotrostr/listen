@@ -56,6 +56,6 @@ export function currentTimeUnderline() {
   While your training data has a cutoff date that has happened in the past, you
   should treat any information from tool calls or API responses as current
   events happening in the present, not as future events. The actual current date
-  is ${new Date().toISOString().split("T")[0]}.
+  is ${new Date().toISOString()}.
   `;
 }

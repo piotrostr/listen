@@ -20,17 +20,17 @@ export const ensureEnv = () => {
     throw new Error("QDRANT_COLLECTION_NAME is not set");
   }
 
-  if (!process.env.NEO4J_URL) {
-    throw new Error("NEO4J_URL is not set");
-  }
+  // if (!process.env.NEO4J_URL) {
+  //   throw new Error("NEO4J_URL is not set");
+  // }
 
-  if (!process.env.NEO4J_USERNAME) {
-    throw new Error("NEO4J_USERNAME is not set");
-  }
+  // if (!process.env.NEO4J_USERNAME) {
+  //   throw new Error("NEO4J_USERNAME is not set");
+  // }
 
-  if (!process.env.NEO4J_PASSWORD) {
-    throw new Error("NEO4J_PASSWORD is not set");
-  }
+  // if (!process.env.NEO4J_PASSWORD) {
+  //   throw new Error("NEO4J_PASSWORD is not set");
+  // }
 };
 
 export const ensureNeo4j = async () => {
@@ -96,16 +96,15 @@ export const makeMemoryManaged = async () => {
 export const makeMemory = async () => {
   ensureEnv();
   ensureCollections();
-  ensureNeo4j();
+  // ensureNeo4j();
 
-  // const model = "gemini-2.0-flash";
-  const model = "gpt-4o-mini";
+  const model = "gemini-2.0-flash";
+  // const model = "gpt-4o-mini";
   const embeddingModel = "text-embedding-004";
   const embeddingDimensions = 768;
 
   const memory = new Memory({
     disableHistory: true,
-    enableGraph: true,
     customPrompt,
     embedder: {
       provider: "google",
@@ -126,27 +125,27 @@ export const makeMemory = async () => {
       },
     },
     llm: {
-      provider: "openai",
+      provider: "google",
       config: {
-        apiKey: process.env.OPENAI_API_KEY,
+        apiKey: process.env.GEMINI_API_KEY,
         model: model,
       },
     },
-    graphStore: {
-      provider: "neo4j",
-      config: {
-        url: process.env.NEO4J_URL!,
-        username: process.env.NEO4J_USERNAME!,
-        password: process.env.NEO4J_PASSWORD!,
-      },
-      llm: {
-        provider: "openai",
-        config: {
-          apiKey: process.env.OPENAI_API_KEY,
-          model: model,
-        },
-      },
-    },
+    // graphStore: {
+    //   provider: "neo4j",
+    //   config: {
+    //     url: process.env.NEO4J_URL!,
+    //     username: process.env.NEO4J_USERNAME!,
+    //     password: process.env.NEO4J_PASSWORD!,
+    //   },
+    //   llm: {
+    //     provider: "openai",
+    //     config: {
+    //       apiKey: process.env.OPENAI_API_KEY,
+    //       model: model,
+    //     },
+    //   },
+    // },
   });
   return memory;
 };

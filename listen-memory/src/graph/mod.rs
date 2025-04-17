@@ -19,13 +19,11 @@ use prompts::EXTRACT_ENTITIES_PROMPT;
 use tools::extract_entities_tool;
 
 use crate::graph::{
-    client::{remove_spaces_from_entities, RelationResult},
-    prompts::{DELETE_RELATIONS_PROMPT, EXTRACT_RELATIONS_PROMPT},
-    tools::{delete_memory_tool_graph, noop_tool, relations_tool},
+    client::RelationResult, prompts::EXTRACT_RELATIONS_PROMPT, tools::relations_tool,
 };
 
 pub struct GraphMemory {
-    client: Neo4jClient,
+    pub client: Neo4jClient,
 }
 
 impl GraphMemory {
@@ -38,14 +36,14 @@ impl GraphMemory {
 #[derive(Debug, Clone)]
 pub struct Filters {}
 
-pub struct Entity {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct EntityInfo {
     pub name: String,
     pub entity_type: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AddResult {
-    pub deleted_entities: Vec<HashMap<String, String>>,
     pub added_entities: Vec<HashMap<String, String>>,
 }
 
@@ -56,88 +54,51 @@ impl GraphMemory {
         _filters: Filters,
         limit: Option<usize>,
     ) -> Result<Vec<RelationResult>> {
-        println!("searching for: {}", query);
+        println!("Searching graph for: {}", query);
         let limit = limit.unwrap_or(15);
+
         let search_output = self
             .client
             .search_graph_db(query.to_string(), None, Some(limit))
             .await?;
 
-        if search_output.is_empty() {
-            return Ok(vec![]);
-        }
-
-        // Convert search outputs to sequences for BM25 ranking
-        let search_outputs_sequence: Vec<Vec<String>> = search_output
-            .iter()
-            .map(|item| {
-                vec![
-                    item.source.clone(),
-                    item.relationship.clone(),
-                    item.destination.clone(),
-                    item.context.clone().unwrap_or_default(),
-                ]
-            })
-            .collect();
-
-        // Create BM25 scorer
-        let mut scorer = bm25::Scorer::<usize>::new();
-        let embedder: bm25::Embedder = bm25::EmbedderBuilder::with_avgdl(3.0) // 3 tokens per sequence
-            .b(0.75) // Standard BM25 parameter
-            .k1(1.2) // Standard BM25 parameter
-            .build();
-
-        // Add documents to scorer
-        for (i, sequence) in search_outputs_sequence.iter().enumerate() {
-            let doc = sequence.join(" ");
-            let doc_embedding = embedder.embed(&doc);
-            scorer.upsert(&i, doc_embedding);
-        }
-
-        // Score query
-        let query_embedding = embedder.embed(query);
-        let scored_results = scorer.matches(&query_embedding);
-
-        // Convert back to RelationResult format
-        let mut ranked_results: Vec<RelationResult> = scored_results
-            .into_iter()
-            .take(limit)
-            .map(|scored| search_output[scored.id].clone())
-            .collect();
-
-        // Sort by BM25 score (highest first)
-        ranked_results.sort_by(|a, b| b.similarity.partial_cmp(&a.similarity).unwrap());
-
-        Ok(ranked_results)
+        Ok(search_output)
     }
 
     pub async fn add(&self, data: &str, filters: Filters) -> Result<AddResult> {
-        let entity_type_map = self.retrieve_nodes(data, filters.clone()).await?;
+        let entity_info_map = self.retrieve_nodes(data, filters.clone()).await?;
+
+        if entity_info_map.is_empty() {
+            println!("No verifiable entities extracted from data. Nothing to add.");
+            return Ok(AddResult {
+                added_entities: vec![],
+            });
+        }
+
         let to_be_added = self
-            .establish_nodes_relations(data, filters.clone(), entity_type_map.clone())
+            .establish_nodes_relations(data, filters.clone(), entity_info_map.clone())
             .await?;
-        let node_list = entity_type_map.keys().cloned().collect();
-        let search_output = self.client.search_graph_db(node_list, None, None).await?;
-        let to_be_deleted = self
-            .get_delete_entities_from_search_output(search_output, data, filters.clone())
-            .await?;
-        let deleted_entities = self.client.delete_entities(to_be_deleted).await?;
+
+        if to_be_added.is_empty() {
+            println!("No verifiable relationships established between entities. Nothing to add.");
+            return Ok(AddResult {
+                added_entities: vec![],
+            });
+        }
+
         let added_entities = self
             .client
-            .add_entities(to_be_added, &entity_type_map)
+            .add_entities(to_be_added, &entity_info_map)
             .await?;
-        Ok(AddResult {
-            deleted_entities,
-            added_entities,
-        })
+
+        Ok(AddResult { added_entities })
     }
 
-    /// call the agent to extract entities from the user query
     pub async fn retrieve_nodes(
         &self,
         data: &str,
-        _filters: Filters, // TODO filters can be used in a cool way given pubkeys/addresses
-    ) -> Result<HashMap<String, String>> {
+        _filters: Filters,
+    ) -> Result<HashMap<String, EntityInfo>> {
         let calls = extract_tool_calls(
             &get_tool_calls(
                 format!("Text: {}", data),
@@ -147,45 +108,63 @@ impl GraphMemory {
             .await?,
         )?;
 
-        let mut entity_type_map = HashMap::new();
+        let mut entity_info_map = HashMap::new();
 
         for call in calls {
             if call["name"] == "extract_entities" {
-                let entities = call["args"]["entities"].as_array().unwrap();
-                for item in entities {
-                    entity_type_map.insert(
-                        item["entity"].as_str().unwrap().to_string(),
-                        item["entity_type"].as_str().unwrap().to_string(),
-                    );
+                if let Some(entities) = call["args"]["entities"].as_array() {
+                    for item in entities {
+                        if let (Some(canonical_id), Some(name), Some(entity_type)) = (
+                            item["canonical_id"].as_str(),
+                            item["name"].as_str(),
+                            item["entity_type"].as_str(),
+                        ) {
+                            let canonical_id = canonical_id.trim().to_string();
+                            let name = name.trim().to_string();
+                            let entity_type = entity_type.trim().to_string();
+
+                            if !canonical_id.is_empty() && canonical_id.contains(':') {
+                                entity_info_map
+                                    .insert(canonical_id, EntityInfo { name, entity_type });
+                            } else {
+                                println!("Warning: Skipping entity with invalid canonical_id format: {:?}", item);
+                            }
+                        }
+                    }
                 }
             }
         }
 
-        entity_type_map = entity_type_map
-            .iter()
-            .map(|(key, value)| (key.replace(" ", "_"), value.replace(" ", "_")))
-            .collect();
-
-        if entity_type_map.is_empty() {
-            return Ok(HashMap::new());
+        if entity_info_map.is_empty() {
+            println!("Warning: No entities extracted from data.");
         }
 
-        Ok(entity_type_map)
+        Ok(entity_info_map)
     }
 
-    /// call the agent with extract_relations_tool available to take the list of
-    /// entity => entity_type into list of GraphEntity (with source, relationship, destination)
     pub async fn establish_nodes_relations(
         &self,
         data: &str,
         _filters: Filters,
-        entity_type_map: HashMap<String, String>,
+        entity_info_map: HashMap<String, EntityInfo>,
     ) -> Result<Vec<GraphEntity>> {
+        let entity_list_for_prompt: Vec<_> = entity_info_map
+            .iter()
+            .map(|(id, info)| {
+                serde_json::json!({
+                    "canonical_id": id,
+                    "name": info.name,
+                    "type": info.entity_type
+                })
+            })
+            .collect();
+
         let calls = extract_tool_calls(
             &get_tool_calls(
                 format!(
                     "List of entities: {}. \n\nText: {}",
-                    serde_json::to_string_pretty(&entity_type_map).unwrap(),
+                    serde_json::to_string_pretty(&entity_list_for_prompt)
+                        .unwrap_or_else(|_| "[]".to_string()),
                     data
                 ),
                 EXTRACT_RELATIONS_PROMPT.to_string(),
@@ -197,51 +176,26 @@ impl GraphMemory {
         let mut entities = vec![];
         for call in calls {
             if call["name"] == "establish_relationships" {
-                let relations = call["args"]["entities"].as_array().unwrap();
-                for item in relations {
-                    let entity = serde_json::from_value::<GraphEntity>(item.clone())?;
-                    entities.push(entity);
+                if let Some(relations) = call["args"]["entities"].as_array() {
+                    for item in relations {
+                        match serde_json::from_value::<GraphEntity>(item.clone()) {
+                            Ok(mut entity) => {
+                                entity.source = entity.source.trim().to_string();
+                                entity.destination = entity.destination.trim().to_string();
+                                if entity.source.contains(':') && entity.destination.contains(':') {
+                                    entities.push(entity);
+                                } else {
+                                    println!("Warning: Skipping relation with invalid canonical_id format: {:?}", item);
+                                }
+                            }
+                            Err(e) => {
+                                println!("Error deserializing relation: {:?}, Error: {}", item, e);
+                            }
+                        }
+                    }
                 }
             }
         }
-
-        Ok(remove_spaces_from_entities(entities))
-    }
-
-    /// call the agent with delete_memory_tool_graph available to find the GraphEntities to trim
-    pub async fn get_delete_entities_from_search_output(
-        &self,
-        search_output: Vec<RelationResult>,
-        data: &str,
-        _filters: Filters,
-    ) -> Result<Vec<GraphEntity>> {
-        let existing_memories = search_output
-            .iter()
-            .map(|item| item.stringify())
-            .collect::<Vec<_>>();
-        let existing_memories = serde_json::to_string(&existing_memories)?;
-        let prompt = format!(
-            "Existing memories: {}\n\nNew information: {}",
-            existing_memories, data
-        );
-        println!("{}", prompt);
-        let calls = extract_tool_calls(
-            &get_tool_calls(
-                prompt,
-                DELETE_RELATIONS_PROMPT.to_string(),
-                vec![delete_memory_tool_graph(), noop_tool()],
-            )
-            .await?,
-        )?;
-
-        let mut to_be_deleted = vec![];
-        for call in calls {
-            if call["name"] == "delete_graph_memory" {
-                let entity = serde_json::from_value::<GraphEntity>(call["args"].clone())?;
-                to_be_deleted.push(entity);
-            }
-        }
-
-        Ok(remove_spaces_from_entities(to_be_deleted))
+        Ok(entities)
     }
 }

@@ -86,14 +86,16 @@ impl Mem0 {
     pub async fn add_memory(
         &self,
         messages: Vec<Message>,
-        config: AddMemoryConfig,
+        user_id: String,
     ) -> Result<AddMemoryResult> {
         let response = self
             .client
             .post(format!("{}/memories", self.base_url))
             .json(&json!({
                 "messages": messages,
-                "config": config
+                "config": {
+                    "user_id": user_id
+                }
             }))
             .send()
             .await?;
@@ -102,17 +104,15 @@ impl Mem0 {
         Ok(result)
     }
 
-    pub async fn search_memories(
-        &self,
-        query: String,
-        filters: Option<SearchFilters>,
-    ) -> Result<SearchResult> {
+    pub async fn search_memories(&self, query: String, user_id: String) -> Result<SearchResult> {
         let response = self
             .client
             .post(format!("{}/memories/search", self.base_url))
             .json(&json!({
                 "query": query,
-                "filters": filters
+                "filters": {
+                    "user_id": user_id
+                }
             }))
             .send()
             .await?;
