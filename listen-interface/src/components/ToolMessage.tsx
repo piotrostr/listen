@@ -398,7 +398,10 @@ export const ToolMessage = ({
     }
   }
 
-  if (toolOutput.result.includes("ToolCallError")) {
+  if (
+    toolOutput.result.includes("ToolCallError") &&
+    !toolOutput.name.includes("delegate")
+  ) {
     return (
       <div className="text-red-400 flex items-center gap-1 p-3 text-sm">
         <FaExclamationTriangle /> {t("tool_messages.tool_call_error")}
