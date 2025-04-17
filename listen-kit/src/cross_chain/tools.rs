@@ -9,7 +9,7 @@ use crate::signer::SignerContext;
 
 use lifi::LiFi;
 
-// TODO support sponsored transactions here
+// TODO!! support sponsored transactions here
 // it would save a lot of gas if we could drip on any chain,
 // fees are substantially higher if the user has an empty wallet on the dest chain
 
@@ -20,11 +20,7 @@ This might be required in case the user wonders how much it would cost to
 perform a swap or bridge. It is also good in case you would like to validate the
 token addresses and other params with the user before executing
 
-The from_token_address and to_token_address can either be a solana public key, evm
-address or a symbol, try to prioritize the address over the symbol
-
-It is incredibly important to pass on the correct address or public key of the
-symbol, otherwise the operation will fail
+The from_token_address and to_token_address can either be a solana public key or EVM address.
 
 The amount has to be a string to avoid precision loss. The amount is accounting
 for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
@@ -42,9 +38,17 @@ Supported to_chain values:
 - arbitrum: \"42161\"
 - base: \"8453\"
 
-special case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
+Special Case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
+Solana Address: \"So11111111111111111111111111111111111111112\"
 
-solana address: \"So11111111111111111111111111111111111111112\"
+Example:
+{{
+  \"from_token_address\": \"So11111111111111111111111111111111111111112\", // solana
+  \"to_token_address\": \"ETH\", // ethereum
+  \"amount\": \"1000000000\", // 1 SOL, 1e9
+  \"from_chain\": \"1151111081099710\", // solana
+  \"to_chain\": \"1\" // ethereum
+}}
 
 if a user hits you with a chain you cannot support, let them know
 ")]
@@ -117,10 +121,7 @@ This tool can be used to swap tokens on any chain, solana to solana, evm to evm,
 solana to evm, evm to solana, etc.
 
 It will automatically pick the best routing for the swap, as long as the chain
-parameters and the token addresses are correct.
-
-Use this in case of the user trying to swap any tokens that exist on two remote
-chains, or would like to bridge the tokens
+parameters and the token addresses are correct and handle approval if needed.
 
 Don't use this in case you are not certain about all of the params, use the
 get_multichain_quote tool instead to validate the params in that case.
@@ -138,12 +139,20 @@ Supported from_chain values:
 
 Supported to_chain values:
 - solana: \"1151111081099710\"
-- arbitrum: \"42161\"
+- mainnet: \"1\"
 - base: \"8453\"
 
-special case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
+Example:
+{{
+  \"from_token_address\": \"So11111111111111111111111111111111111111112\", // solana
+  \"to_token_address\": \"ETH\", // ethereum
+  \"amount\": \"1000000000\", // 1 SOL, 1e9
+  \"from_chain\": \"1151111081099710\", // solana
+  \"to_chain\": \"1\" // ethereum
+}}
 
-solana address: \"So11111111111111111111111111111111111111112\"
+Special Case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
+Solana Address: \"So11111111111111111111111111111111111111112\"
 
 if a user hits you with a chain you cannot support, let them know
 ")]
