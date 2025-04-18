@@ -148,7 +148,22 @@ export const usePortfolioStore = create<PortfolioState>()(
         const solAddr = solanaAddress || "";
         const evmAddr = evmAddress || "";
 
-        if (!solAddr && !evmAddr) return;
+        console.debug(
+          "PortfolioStore: fetchAllPortfolios called with addresses:",
+          {
+            solanaAddress,
+            evmAddress,
+            solAddr,
+            evmAddr,
+          }
+        );
+
+        if (!solAddr && !evmAddr) {
+          console.debug(
+            "PortfolioStore: No addresses available, skipping fetch"
+          );
+          return;
+        }
 
         // Set loading state at the beginning
         set({ isLoading: true, error: null });
@@ -158,11 +173,19 @@ export const usePortfolioStore = create<PortfolioState>()(
 
           // Always fetch Solana portfolio if solanaAddress is provided
           if (solAddr) {
+            console.debug(
+              "PortfolioStore: Fetching Solana portfolio for:",
+              solAddr
+            );
             fetchPromises.push(get().fetchSolanaPortfolio(solAddr));
           }
 
           // Fetch EVM portfolio if evmAddress is provided (removed chatType check)
           if (evmAddr) {
+            console.debug(
+              "PortfolioStore: Fetching EVM portfolio for:",
+              evmAddr
+            );
             // We still check chatType inside fetchEvmPortfolio to potentially skip the actual fetch
             // but we attempt to add it to the promise list here regardless
             fetchPromises.push(get().fetchEvmPortfolio(evmAddr));
@@ -175,6 +198,8 @@ export const usePortfolioStore = create<PortfolioState>()(
             lastUpdated: Date.now(),
             isLoading: false,
           }));
+
+          console.debug("PortfolioStore: Portfolio fetch completed");
         } catch (error) {
           set({
             error: error as Error,
