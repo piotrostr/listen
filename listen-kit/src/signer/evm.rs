@@ -33,6 +33,6 @@ impl TransactionSigner for LocalEvmSigner {
         &self,
         tx: alloy::rpc::types::TransactionRequest,
     ) -> Result<String> {
-        send_transaction(tx, &make_provider()?, &self.wallet).await
+        send_transaction(tx, &make_provider(42161)?, &self.wallet).await
     }
 }

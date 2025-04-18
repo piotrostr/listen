@@ -42,6 +42,8 @@ pub fn model_to_versioned_model(model_type: String) -> String {
 }
 
 // TODO
+// - top up balances
+// - gas sponsoring
 // newly added tools that require testing:
 // - GetErc20Balance
 // - GetEthBalance

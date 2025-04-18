@@ -215,7 +215,6 @@ async fn stream(
     // Process responses in the background - don't wait for it
     tokio::spawn(response_collector);
 
-    // TODO this move might be moving too much, double-check
     spawn_with_signer(signer, move || async move {
         let reasoning_loop = ReasoningLoop::new(model).with_stdout(false);
 

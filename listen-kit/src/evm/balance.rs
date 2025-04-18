@@ -37,7 +37,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_balance() {
-        let provider = make_provider().unwrap();
+        let provider = make_provider(42161).unwrap();
         let signer = make_signer().unwrap();
 
         let balance = balance(&provider, signer.address().to_string())

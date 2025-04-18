@@ -1,5 +1,6 @@
 pub mod db;
 pub mod error;
+pub mod evm_fallback;
 pub mod redis_client;
 pub mod redis_subscriber;
 pub mod routes;

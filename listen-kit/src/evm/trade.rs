@@ -147,7 +147,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_approval() {
-        let provider = make_provider().unwrap();
+        let provider = make_provider(42161).unwrap();
 
         let router_address = *SWAP_ROUTER_02_ADDRESSES
             .get(&provider.get_chain_id().await.unwrap())
@@ -173,7 +173,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_trade_evm() {
-        let provider = make_provider().unwrap();
+        let provider = make_provider(42161).unwrap();
 
         //  WETH on arbitrum
         let output_token =
