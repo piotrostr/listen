@@ -65,6 +65,8 @@ export function MessageRendererBase({
   messages: Message[];
   lastUserMessageRef: React.RefObject<HTMLDivElement>;
 }) {
+  console.log("MessageRenderer received message:", msg);
+
   const { t } = useTranslation();
   const { debugMode } = useSettingsStore();
 
@@ -162,22 +164,18 @@ export function MessageRendererBase({
   }
 
   // Check if the message contains any of our special tags
-  const hasSpecialTags = Object.keys(tagHandlers).some((tagName) => {
-    const tagRegex = new RegExp(`<${tagName}>.*?<\\/${tagName}>`, "s");
-    const markdownTagRegex = new RegExp(`\`\`\`${tagName}.*?\`\`\``, "s");
-    const hasTag = tagRegex.test(msg.message);
-    if (hasTag) {
-      return true;
-    }
-    const hasMarkdownTag = markdownTagRegex.test(msg.message);
-    if (hasMarkdownTag) {
-      return true;
-    }
-    return false;
-  });
+  const hasSpecialTags =
+    Object.keys(tagHandlers).some((tagName) => {
+      const tagRegex = new RegExp(`<${tagName}>.*?<\\/${tagName}>`, "s");
+      // Match markdown blocks with or without newlines
+      const markdownTagRegex = new RegExp(
+        "```" + tagName + "\\s*[\\s\\S]*?\\s*```",
+        "s"
+      );
+      return tagRegex.test(msg.message) || markdownTagRegex.test(msg.message);
+    }) || msg.message.includes("```json"); // Check for JSON blocks separately
 
   if (hasSpecialTags) {
-    // Process the message with all supported tags
     return processMessageWithAllTags(msg.message, msg);
   }
 
