@@ -1,11 +1,15 @@
-use crate::{kv_store::RedisKVStore, util::make_rpc_client};
+use crate::{
+    constants::{TOKEN_2022_PROGRAM_ID, TOKEN_PROGRAM_ID},
+    kv_store::RedisKVStore,
+    util::make_rpc_client,
+};
 use anyhow::{Context, Result};
 use mpl_token_metadata::accounts::Metadata;
 use serde::{Deserialize, Serialize};
 use solana_sdk::commitment_config::CommitmentConfig;
 use solana_sdk::program_pack::Pack;
 use solana_sdk::pubkey::Pubkey;
-use spl_token::state::Mint;
+use spl_token_2022::{extension::StateWithExtensions, state::Mint};
 use std::{str::FromStr, sync::Arc};
 use tracing::{debug, warn};
 
@@ -102,31 +106,22 @@ impl TokenMetadata {
         let account = token_account.value.context("Token account not found")?;
         let data = &account.data;
 
-        // Check the owner to determine if it's a Token-2022 mint
-        let token_2022_program_id =
-            Pubkey::from_str("TokenzQdBNbLqP5VEhdkAS6EPFLC1PHnBqCXEpPxuEb")
-                .unwrap();
-        let standard_token_program_id =
-            Pubkey::from_str("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
-                .unwrap();
-
-        let token_data = if account.owner == token_2022_program_id {
-            warn!(
-                mint,
-                "detected Token-2022 mint, FIXME: currently missing support"
-            );
-            // For Token-2022, we still use the same Mint structure for basic fields
-            // The structure is the same for the base fields we care about
-            Mint::unpack(data)
-                .context("failed to unpack Token-2022 mint data")?
-        } else if account.owner == standard_token_program_id {
-            debug!(mint, "detected standard SPL Token mint");
-            Mint::unpack(data).context("failed to unpack mint data")?
-        } else {
-            return Err(anyhow::anyhow!(
-                "Unknown token program owner: {}",
-                account.owner
-            ));
+        let token_data = match account.owner {
+            TOKEN_PROGRAM_ID => {
+                Mint::unpack(&data).expect("Failed to unpack mint")
+            }
+            TOKEN_2022_PROGRAM_ID => {
+                let state_with_extensions =
+                    StateWithExtensions::<Mint>::unpack(&data)
+                        .expect("failed to unpack Token-2022 mint data");
+                state_with_extensions.base
+            }
+            _ => {
+                return Err(anyhow::anyhow!(
+                    "Unknown token program owner: {}",
+                    account.owner
+                ));
+            }
         };
 
         debug!(mint, "spl metadata fetch ok");
@@ -319,7 +314,6 @@ mod tests {
     }
 
     #[tokio::test]
-    #[ignore = "FIXME: currently missing support"]
     async fn test_spl_2022_mint() {
         let metadata = TokenMetadata::fetch_spl_by_mint(
             "6J7mUbPXcAASzmG4k3umUnT1zaSw97WwduJM2aKJCeiF",
@@ -329,5 +323,6 @@ mod tests {
 
         println!("{:?}", metadata);
         assert!(metadata.is_initialized);
+        assert!(metadata.supply > 0);
     }
 }
