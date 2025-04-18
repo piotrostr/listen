@@ -41,7 +41,8 @@ reqwest = { version = "0.11.0", features = ["json"] }
 redis = { version = "0.28.2", features = ["tokio-comp"] }
 serde_json = "1.0.138"
 mpl-token-metadata = "5.1.0"
-spl-token = "5.0.2"
+spl-token = "6.0.0"
+spl-token-2022 = "6.0.0"
 clap = { version = "4.5.28", features = ["derive"] }
 tracing = "0.1.41"
 listen-tracing = { path = "../listen-tracing" }
