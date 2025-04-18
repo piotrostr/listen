@@ -81,7 +81,7 @@ export const caip2Map = {
   bsc: "eip155:56",
   arbitrum: "eip155:42161",
   base: "eip155:8453",
-  berachain: "eip155:80094",
+  // berachain: "eip155:80094",
 };
 
 // add more here, the stuff that is not easily searchable and needs to be spot on

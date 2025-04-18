@@ -15,14 +15,23 @@ export function WalletInitializer() {
     solanaAddress: currentSolanaAddress,
     evmAddress: currentEvmAddress,
   } = useWalletStore();
+  const { initializePortfolioManager } = usePortfolioStore();
 
-  // Use refs to track previous values
+  // Use refs to track previous values and initialization status
   const prevSolanaAddressRef = useRef(currentSolanaAddress);
   const prevEvmAddressRef = useRef(currentEvmAddress);
+  const initializedRef = useRef(false);
 
   // Effect to synchronize Privy wallets with our store
   useEffect(() => {
     if (!solanaReady || !evmReady || !user) return;
+
+    // Ensure portfolio manager is initialized once when ready
+    if (!initializedRef.current) {
+      console.debug("WalletInitializer: Initializing portfolio manager");
+      initializePortfolioManager();
+      initializedRef.current = true;
+    }
 
     // Find the Privy wallets
     const solanaWallet = solanaWallets.find(
@@ -38,28 +47,29 @@ export function WalletInitializer() {
     const newSolanaAddress = solanaWallet?.address ?? null;
     const newEvmAddress = evmWallet?.address ?? null;
 
-    // Only update if addresses have actually changed
+    // Update wallet addresses in the store if they have changed
     if (
       newSolanaAddress !== prevSolanaAddressRef.current ||
       newEvmAddress !== prevEvmAddressRef.current
     ) {
+      console.debug(
+        "WalletInitializer: Wallet addresses changed, updating store"
+      );
       // Update refs to new values
       prevSolanaAddressRef.current = newSolanaAddress;
       prevEvmAddressRef.current = newEvmAddress;
 
       // Update the store
       setWalletAddresses(newSolanaAddress, newEvmAddress);
-
-      // ensure portfolio is refreshed
-      usePortfolioStore.getState().refreshPortfolio();
     }
   }, [
     solanaReady,
     evmReady,
-    solanaWallets,
-    evmWallets,
-    setWalletAddresses,
     user,
+    solanaWallets, // re-run if wallets change
+    evmWallets, // re-run if wallets change
+    setWalletAddresses,
+    initializePortfolioManager,
   ]);
 
   // This component doesn't render anything
