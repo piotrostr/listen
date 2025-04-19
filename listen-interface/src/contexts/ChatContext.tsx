@@ -16,7 +16,7 @@ import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { compactPortfolio } from "../hooks/util";
 import i18n from "../i18n";
 import { renderAgentOutput } from "../parse-agent-output";
-import { pickSystemPrompt } from "../prompts";
+import { systemPrompt } from "../prompts";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { useSuggestStore } from "../store/suggestStore";
@@ -244,13 +244,11 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             }
             return msg;
           });
-        const preamble = pickSystemPrompt(
-          chatType,
-          agentMode,
+        const preamble = systemPrompt(
           portfolio,
-          defaultAmount.toString(),
           wallets?.solanaWallet?.toString() || null,
           wallets?.evmWallet?.toString() || null,
+          defaultAmount.toString(),
           user?.isGuest || false
         );
 

@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Candlestick {
-    pub timestamp: u64,
+    pub timestamp: u64, // TODO standardize to regular iso string
     pub open: f64,
     pub high: f64,
     pub low: f64,

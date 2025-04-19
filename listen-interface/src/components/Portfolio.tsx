@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useFundWallet } from "@privy-io/react-auth/solana";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaSync } from "react-icons/fa";
 import { usePortfolioStore } from "../store/portfolioStore";
@@ -12,12 +12,8 @@ import { PortfolioSkeleton } from "./PortfolioSkeleton";
 export function Portfolio() {
   const { solanaAddress } = useWalletStore();
   const { user } = usePrivy();
-  const {
-    getCombinedPortfolio,
-    isLoading,
-    refreshPortfolio,
-    initializePortfolioManager,
-  } = usePortfolioStore();
+  const { getCombinedPortfolio, isLoading, refreshPortfolio } =
+    usePortfolioStore();
 
   const { t } = useTranslation();
   const { fundWallet } = useFundWallet();
@@ -25,13 +21,6 @@ export function Portfolio() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
-
-  // Only run once on mount
-  useEffect(() => {
-    if (!isLoading) {
-      initializePortfolioManager();
-    }
-  }, []);
 
   const handleTopup = async () => {
     if (solanaAddress) {
@@ -70,7 +59,7 @@ export function Portfolio() {
               onTopup={handleTopup}
             />
           ))}
-        {(!assets || assets.length === 0) && (
+        {(!assets || assets.length === 0) && !isLoading && (
           <div className="text-center text-gray-400 flex flex-col items-center gap-2">
             {t("portfolio.no_assets_found")}
             <button onClick={refreshPortfolio}>

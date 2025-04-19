@@ -9,12 +9,12 @@ async fn main() -> anyhow::Result<()> {
     };
 
     use listen_kit::{
-        agent::model_to_versioned_model,
+        agent::{model_to_versioned_model, Features},
         reasoning_loop::Model,
         solana::agent::{
             create_solana_agent_claude, create_solana_agent_deepseek,
-            create_solana_agent_gemini, create_solana_agent_openrouter,
-            Features,
+            create_solana_agent_gemini, create_solana_agent_openai,
+            create_solana_agent_openrouter,
         },
     };
 
@@ -71,6 +71,13 @@ async fn main() -> anyhow::Result<()> {
                     features,
                     "en".to_string(),
                     Some(model_to_versioned_model("deepseek".to_string())),
+                )))
+            }
+            "openai" => {
+                Model::OpenAI(Arc::new(create_solana_agent_openai(
+                    None,
+                    features,
+                    "en".to_string(),
                 )))
             }
             "deepseek" => {

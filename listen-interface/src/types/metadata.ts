@@ -35,6 +35,22 @@ export const TokenMetadataSchema = z.object({
 
 export type TokenMetadataRaw = z.infer<typeof TokenMetadataSchema>;
 
+export const GtTokenMetadataSchema = z.object({
+  address: z.string(),
+  name: z.string(),
+  symbol: z.string(),
+  decimals: z.number().nullable().optional(),
+  image_url: z.string().nullable().optional(),
+  description: z.string().nullable().optional(),
+  websites: z.array(z.string()).nullable().optional(),
+  chain_id: z.number(),
+  discord_url: z.string().nullable().optional(),
+  telegram_handle: z.string().nullable().optional(),
+  twitter_handle: z.string().nullable().optional(),
+});
+
+export type GtTokenMetadataRaw = z.infer<typeof GtTokenMetadataSchema>;
+
 export interface TokenMarketData {
   name: string;
   buyVolume: number;

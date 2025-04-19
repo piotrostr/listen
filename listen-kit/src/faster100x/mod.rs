@@ -12,7 +12,7 @@ pub mod risk;
 pub mod types;
 
 #[tool(description = "
-Analyze the distribution and concentration of wallets for a Solana token
+Analyze the distribution and concentration of wallets for any Solana token
 
 Parameters:
 - token_address (string): The address of the token to analyze.

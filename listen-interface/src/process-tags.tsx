@@ -6,10 +6,39 @@ import { Message } from "./types/message";
 
 // Function to convert markdown code blocks to XML tags
 export function convertMarkdownToXmlTags(message: string): string {
-  // Match markdown code blocks with language specifier
-  const markdownRegex = /```(\w+)\n([\s\S]*?)```/g;
+  // First handle any markdown blocks that are already inside pipeline tags
+  const pipelineRegex =
+    /<pipeline>\s*```json\s*([\s\S]*?)\s*```\s*<\/pipeline>/g;
+  message = message.replace(pipelineRegex, (match, content) => {
+    try {
+      const cleanContent = content.trim();
+      const parsed = JSON.parse(cleanContent);
+      if (parsed && parsed.steps && Array.isArray(parsed.steps)) {
+        return `<pipeline>${cleanContent}</pipeline>`;
+      }
+    } catch (e) {
+      // Silently fail for non-pipeline JSON
+    }
+    return match;
+  });
+
+  // Then handle standalone markdown blocks
+  const markdownRegex = /```(\w+)\s*([\s\S]*?)\s*```/g;
   return message.replace(markdownRegex, (match, lang, content) => {
-    // Only convert if the language matches one of our supported tags
+    // Special case for json - check if it contains pipeline structure
+    if (lang.toLowerCase() === "json") {
+      try {
+        const cleanContent = content.trim();
+        const parsed = JSON.parse(cleanContent);
+        // Only convert to pipeline tag if it has the expected structure
+        if (parsed && parsed.steps && Array.isArray(parsed.steps)) {
+          return `<pipeline>${cleanContent}</pipeline>`;
+        }
+      } catch (e) {
+        // Silently fail for non-pipeline JSON
+      }
+    }
+    // Handle other supported tags
     if (Object.keys(tagHandlers).includes(lang)) {
       return `<${lang}>${content}</${lang}>`;
     }

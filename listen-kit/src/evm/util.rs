@@ -17,8 +17,31 @@ use crate::signer::SignerContext;
 
 pub type EvmProvider = RootProvider<Http<Client>>;
 
-pub fn make_provider() -> Result<EvmProvider> {
-    let rpc_url = env("ETHEREUM_RPC_URL");
+pub fn chain_id_to_rpc_url(chain_id: u64) -> String {
+    let alchemy_api_key = env("ALCHEMY_API_KEY");
+    match chain_id {
+        1 => format!(
+            "https://eth-mainnet.g.alchemy.com/v2/{}",
+            alchemy_api_key
+        ),
+        56 => format!(
+            "https://bnb-mainnet.g.alchemy.com/v2/{}",
+            alchemy_api_key
+        ),
+        8453 => format!(
+            "https://base-mainnet.g.alchemy.com/v2/{}",
+            alchemy_api_key
+        ),
+        42161 => format!(
+            "https://arb-mainnet.g.alchemy.com/v2/{}",
+            alchemy_api_key
+        ),
+        _ => panic!("Unsupported chain ID: {}", chain_id),
+    }
+}
+
+pub fn make_provider(chain_id: u64) -> Result<EvmProvider> {
+    let rpc_url = chain_id_to_rpc_url(chain_id);
     Ok(ProviderBuilder::new().on_http(rpc_url.parse()?))
 }
 

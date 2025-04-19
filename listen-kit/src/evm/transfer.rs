@@ -72,7 +72,7 @@ mod tests {
                 create_transfer_eth_tx(
                     owner.to_string(),
                     "10000000000000".to_string(),
-                    &make_provider()?,
+                    &make_provider(42161)?,
                     owner,
                 )
                 .await
@@ -93,7 +93,7 @@ mod tests {
                     token_address,
                     owner.to_string(),
                     "1000000".to_string(), // 1 USDC
-                    &make_provider()?,
+                    &make_provider(42161)?,
                     owner,
                 )
                 .await

@@ -5,6 +5,7 @@ import { PortfolioItem, TokenMetadata } from "./types";
 import { getAnyToken } from "./useToken";
 
 const SUPPORTED_NETWORKS = [
+  { network: Network.ETH_MAINNET, chainId: "1", chain: "ethereum" },
   { network: Network.ARB_MAINNET, chainId: "42161", chain: "arbitrum" },
   { network: Network.BNB_MAINNET, chainId: "56", chain: "bsc" },
   { network: Network.BASE_MAINNET, chainId: "8453", chain: "base" },

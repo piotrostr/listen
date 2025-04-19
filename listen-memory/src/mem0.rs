@@ -43,6 +43,23 @@ pub struct MemoryItem {
     pub metadata: Option<serde_json::Value>,
 }
 
+impl MemoryItem {
+    pub fn stringify(&self) -> serde_json::Value {
+        let mut res = serde_json::json!({
+            "memory": self.memory,
+            "created_at": self.created_at,
+            "updated_at": self.updated_at,
+            "score": self.score,
+        });
+
+        if let Some(metadata) = &self.metadata {
+            res["metadata"] = metadata.clone();
+        }
+
+        res
+    }
+}
+
 #[derive(Debug, Serialize, Deserialize)]
 pub struct AddMemoryResult {
     pub results: Vec<MemoryItem>,

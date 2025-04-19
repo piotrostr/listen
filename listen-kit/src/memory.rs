@@ -58,10 +58,21 @@ pub async fn inject_memories(
     );
 
     let injected_prompt = format!(
-        "<user-prompt>{}</user-prompt><global-memories>{}</global-memories><user-specific-memories>{}</user-specific-memories>",
+        "<USER PROMPT>{}</USER PROMPT>
+        <GLOBAL MEMORIES>{}</GLOBAL MEMORIES>
+        <USER SPECIFIC MEMORIES>{}</USER SPECIFIC MEMORIES>
+        ",
         prompt,
-        serde_json::to_string(&memories.iter().map(|m| m.stringify()).collect::<Vec<_>>())?,
-        serde_json::to_string(&user_specific_memories.results)?,
+        serde_json::to_string(
+            &memories.iter().map(|m| m.stringify()).collect::<Vec<_>>()
+        )?,
+        serde_json::to_string(
+            &user_specific_memories
+                .results
+                .iter()
+                .map(|m| m.stringify())
+                .collect::<Vec<_>>()
+        )?,
     );
 
     Ok(injected_prompt)

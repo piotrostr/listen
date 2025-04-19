@@ -57,7 +57,7 @@ pub fn create_solana_trader_agent(locale: String) -> GeminiAgent {
 }
 
 #[tool(
-    description = "Delegate a task to Solana trader agent. It can analyze on-chain data, perform swaps, fetch token info, check balances, and schedule advanced orders"
+    description = "Delegate a task to the trader agent. It can analyze on-chain data, perform swaps, fetch token info, check balances, and schedule advanced orders"
 )]
 pub async fn delegate_to_solana_trader_agent(
     prompt: String,

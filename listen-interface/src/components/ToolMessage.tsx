@@ -20,7 +20,7 @@ import {
   ToolCallSchema,
   ToolResult,
 } from "../types/message";
-import { TokenMetadataSchema } from "../types/metadata";
+import { GtTokenMetadataSchema, TokenMetadataSchema } from "../types/metadata";
 import {
   JupiterQuoteResponseSchema,
   QuoteResponseSchema,
@@ -35,7 +35,9 @@ import { Chart, InnerChart } from "./Chart";
 import { ChatMessage } from "./ChatMessage";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import DropdownMessage from "./DropdownMessage";
+import { EvmRawTokenMetadataDisplay } from "./EvmRawTokenMetadataDisplay";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
+import { GeckoTerminalChart } from "./GeckoTerminalChart";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
@@ -191,6 +193,74 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "think") {
     return null;
+  }
+
+  if (toolOutput.name === "fetch_price_action_analysis_evm") {
+    const params = useMemo(() => {
+      if (!toolCallInfo) return null;
+      try {
+        // Use pre-parsed arguments if available (from RigToolCall)
+        if ("_arguments" in toolCallInfo && toolCallInfo._arguments) {
+          return toolCallInfo._arguments as Record<string, any>;
+        }
+        // Otherwise parse the params string (from ToolCall or adapted RigToolCall)
+        // Check if params exists and is a string before parsing
+        if (
+          "params" in toolCallInfo &&
+          typeof toolCallInfo.params === "string"
+        ) {
+          return JSON.parse(toolCallInfo.params);
+        } else if ("params" in toolCallInfo) {
+          // Log a warning if params exists but is not a string
+          console.warn(
+            "Tool call 'params' exists but is not a string:",
+            toolCallInfo.params
+          );
+          return null; // Return null as we can't parse it
+        }
+        // Redundant else-if removed
+        return null; // Return null if neither _arguments nor valid params string is found
+      } catch (e) {
+        console.error("Failed to parse tool call params:", e);
+        return null;
+      }
+    }, [toolCallInfo]);
+
+    console.log(params);
+    const pairAddress = params?.pair_address;
+    const interval = params?.interval || "30s";
+    const chainId = params?.chain_id;
+
+    if (pairAddress) {
+      let parsed = toolOutput.result;
+      try {
+        parsed = JSON.parse(toolOutput.result);
+      } catch (e) {
+        console.error("Failed to parse price action analysis:", e);
+      }
+      return (
+        <div className="mb-1">
+          <div className="h-[350px] mb-3">
+            <GeckoTerminalChart
+              pairAddress={pairAddress}
+              chainId={chainId}
+              timeframe={interval}
+            />
+          </div>
+          <DropdownMessage
+            title={t("tool_messages.price_action_analysis")}
+            message={renderTimestamps(parsed)}
+            icon={<FaChartLine />}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-gray-400">
+        <ChatMessage message={toolOutput.result} direction="agent" />
+      </div>
+    );
   }
 
   if (toolOutput.name === "fetch_price_action_analysis") {
@@ -398,7 +468,10 @@ export const ToolMessage = ({
     }
   }
 
-  if (toolOutput.result.includes("ToolCallError")) {
+  if (
+    toolOutput.result.includes("ToolCallError") &&
+    !toolOutput.name.includes("delegate")
+  ) {
     return (
       <div className="text-red-400 flex items-center gap-1 p-3 text-sm">
         <FaExclamationTriangle /> {t("tool_messages.tool_call_error")}
@@ -544,6 +617,15 @@ export const ToolMessage = ({
     }
   }
 
+  if (toolOutput.name === "fetch_token_metadata_evm") {
+    try {
+      const parsed = GtTokenMetadataSchema.parse(JSON.parse(toolOutput.result));
+      return <EvmRawTokenMetadataDisplay metadata={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse EVM token metadata:", e);
+    }
+  }
+
   if (toolOutput.name === "get_sol_balance") {
     try {
       const parsedLamports = parseInt(toolOutput.result);
@@ -651,21 +733,19 @@ export const ToolMessage = ({
           typeof resultData === "string" ? JSON.parse(resultData) : resultData;
 
         // First try Jupiter quote schema
-        try {
-          const jupiterQuote = JupiterQuoteResponseSchema.parse(parsedData);
-          return <JupiterQuoteDisplay quote={jupiterQuote} />;
-        } catch (jupiterError) {
-          console.error("Jupiter quote validation failed:", jupiterError);
-
-          // Then try regular quote schema
-          try {
-            const quote = QuoteResponseSchema.parse(parsedData);
-            return <QuoteDisplay quote={quote} />;
-          } catch (quoteError) {
-            console.error("Regular quote validation failed:", quoteError);
-            throw new Error("Failed to validate quote with either schema");
-          }
+        const jupiterQuote = JupiterQuoteResponseSchema.safeParse(parsedData);
+        if (jupiterQuote.success) {
+          return <JupiterQuoteDisplay quote={jupiterQuote.data} />;
         }
+
+        // Then try regular quote schema
+        const quote = QuoteResponseSchema.safeParse(parsedData);
+        if (quote.success) {
+          return <QuoteDisplay quote={quote.data} />;
+        }
+
+        // If neither schema matches, throw an error
+        throw new Error("Failed to validate quote with either schema");
       } catch (parseError) {
         console.error("JSON parse error:", parseError);
         throw parseError;
