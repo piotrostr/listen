@@ -36,6 +36,7 @@ import { ChatMessage } from "./ChatMessage";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import DropdownMessage from "./DropdownMessage";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
+import { GeckoTerminalChart } from "./GeckoTerminalChart";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
@@ -191,6 +192,74 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "think") {
     return null;
+  }
+
+  if (toolOutput.name === "fetch_price_action_analysis_evm") {
+    const params = useMemo(() => {
+      if (!toolCallInfo) return null;
+      try {
+        // Use pre-parsed arguments if available (from RigToolCall)
+        if ("_arguments" in toolCallInfo && toolCallInfo._arguments) {
+          return toolCallInfo._arguments as Record<string, any>;
+        }
+        // Otherwise parse the params string (from ToolCall or adapted RigToolCall)
+        // Check if params exists and is a string before parsing
+        if (
+          "params" in toolCallInfo &&
+          typeof toolCallInfo.params === "string"
+        ) {
+          return JSON.parse(toolCallInfo.params);
+        } else if ("params" in toolCallInfo) {
+          // Log a warning if params exists but is not a string
+          console.warn(
+            "Tool call 'params' exists but is not a string:",
+            toolCallInfo.params
+          );
+          return null; // Return null as we can't parse it
+        }
+        // Redundant else-if removed
+        return null; // Return null if neither _arguments nor valid params string is found
+      } catch (e) {
+        console.error("Failed to parse tool call params:", e);
+        return null;
+      }
+    }, [toolCallInfo]);
+
+    console.log(params);
+    const pairAddress = params?.pair_address;
+    const interval = params?.interval || "30s";
+    const chainId = params?.chain_id;
+
+    if (pairAddress) {
+      let parsed = toolOutput.result;
+      try {
+        parsed = JSON.parse(toolOutput.result);
+      } catch (e) {
+        console.error("Failed to parse price action analysis:", e);
+      }
+      return (
+        <div className="mb-1">
+          <div className="h-[350px] mb-3">
+            <GeckoTerminalChart
+              pairAddress={pairAddress}
+              chainId={chainId}
+              timeframe={interval}
+            />
+          </div>
+          <DropdownMessage
+            title={t("tool_messages.price_action_analysis")}
+            message={renderTimestamps(parsed)}
+            icon={<FaChartLine />}
+          />
+        </div>
+      );
+    }
+
+    return (
+      <div className="text-gray-400">
+        <ChatMessage message={toolOutput.result} direction="agent" />
+      </div>
+    );
   }
 
   if (toolOutput.name === "fetch_price_action_analysis") {
