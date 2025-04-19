@@ -20,7 +20,7 @@ import {
   ToolCallSchema,
   ToolResult,
 } from "../types/message";
-import { TokenMetadataSchema } from "../types/metadata";
+import { GtTokenMetadataSchema, TokenMetadataSchema } from "../types/metadata";
 import {
   JupiterQuoteResponseSchema,
   QuoteResponseSchema,
@@ -35,6 +35,7 @@ import { Chart, InnerChart } from "./Chart";
 import { ChatMessage } from "./ChatMessage";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import DropdownMessage from "./DropdownMessage";
+import { EvmRawTokenMetadataDisplay } from "./EvmRawTokenMetadataDisplay";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
 import { GeckoTerminalChart } from "./GeckoTerminalChart";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
@@ -613,6 +614,15 @@ export const ToolMessage = ({
       return <RawTokenMetadataDisplay metadata={parsed} />;
     } catch (e) {
       console.error("Failed to parse token metadata:", e);
+    }
+  }
+
+  if (toolOutput.name === "fetch_token_metadata_evm") {
+    try {
+      const parsed = GtTokenMetadataSchema.parse(JSON.parse(toolOutput.result));
+      return <EvmRawTokenMetadataDisplay metadata={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse EVM token metadata:", e);
     }
   }
 
