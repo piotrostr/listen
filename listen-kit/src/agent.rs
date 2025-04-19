@@ -1,3 +1,6 @@
+use crate::data::evm_fallback_tools::{
+    FetchPriceActionAnalysisEvm, FetchTokenMetadataEvm,
+};
 use crate::evm::tools::{GetErc20Balance, GetEthBalance};
 use crate::solana::tools::{
     DeployPumpFunToken, GetCurrentTime, GetSolBalance, GetSplTokenBalance,
@@ -43,16 +46,11 @@ pub fn model_to_versioned_model(model_type: String) -> String {
 
 // TODO
 // - gas sponsoring
-// newly added tools that require testing:
+// --- newly added tools that require testing (and UI components): ---
 // - GetErc20Balance
 // - GetEthBalance
 // - GetQuote
 // - Swap (direct) - changed to allow any token on any chain
-// Some of the tools are Solana only, those need handling for addresses starting with 0x
-// - FetchPriceActionAnalysis
-// - AnalyzeHolderDistribution
-// - FetchTokenMetadata
-// - AnalyzeRisk
 // For Solana candlesticks, return the timestamp field as ISO date string
 // TODO
 // - Set up Sentry and grab any issue with the tool calls straight up (set up pager ideally)
@@ -68,8 +66,6 @@ pub fn equip_with_tools<M: StreamingCompletionModel>(
         .tool(GetQuote)
         .tool(GetSolBalance)
         .tool(GetSplTokenBalance)
-        .tool(GetEthBalance)
-        .tool(GetErc20Balance)
         .tool(SearchOnDexScreener)
         .tool(FetchTopTokens)
         .tool(DeployPumpFunToken)
@@ -88,6 +84,16 @@ pub fn equip_with_tools<M: StreamingCompletionModel>(
         .tool(AnalyzePageContent)
 }
 
+pub fn equip_with_evm_tools<M: StreamingCompletionModel>(
+    agent_builder: AgentBuilder<M>,
+) -> AgentBuilder<M> {
+    agent_builder
+        .tool(GetEthBalance)
+        .tool(GetErc20Balance)
+        .tool(FetchTokenMetadataEvm)
+        .tool(FetchPriceActionAnalysisEvm)
+}
+
 pub fn equip_with_autonomous_tools<M: StreamingCompletionModel>(
     agent_builder: AgentBuilder<M>,
 ) -> AgentBuilder<M> {
@@ -101,12 +107,15 @@ pub fn create_listen_agent(
     locale: String,
 ) -> OpenRouterAgent {
     let preamble = preamble.unwrap_or("".to_string());
-    let mut agent =
-        equip_with_tools(openrouter_agent_builder(None)).preamble(&preamble);
 
     if features.deep_research {
         return create_deep_research_agent_openrouter(locale, None);
     }
+
+    let mut agent = equip_with_evm_tools(equip_with_tools(
+        openrouter_agent_builder(None),
+    ))
+    .preamble(&preamble);
 
     if features.autonomous {
         agent = equip_with_autonomous_tools(agent);
