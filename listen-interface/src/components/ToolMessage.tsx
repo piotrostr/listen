@@ -654,21 +654,19 @@ export const ToolMessage = ({
           typeof resultData === "string" ? JSON.parse(resultData) : resultData;
 
         // First try Jupiter quote schema
-        try {
-          const jupiterQuote = JupiterQuoteResponseSchema.parse(parsedData);
-          return <JupiterQuoteDisplay quote={jupiterQuote} />;
-        } catch (jupiterError) {
-          console.error("Jupiter quote validation failed:", jupiterError);
-
-          // Then try regular quote schema
-          try {
-            const quote = QuoteResponseSchema.parse(parsedData);
-            return <QuoteDisplay quote={quote} />;
-          } catch (quoteError) {
-            console.error("Regular quote validation failed:", quoteError);
-            throw new Error("Failed to validate quote with either schema");
-          }
+        const jupiterQuote = JupiterQuoteResponseSchema.safeParse(parsedData);
+        if (jupiterQuote.success) {
+          return <JupiterQuoteDisplay quote={jupiterQuote.data} />;
         }
+
+        // Then try regular quote schema
+        const quote = QuoteResponseSchema.safeParse(parsedData);
+        if (quote.success) {
+          return <QuoteDisplay quote={quote.data} />;
+        }
+
+        // If neither schema matches, throw an error
+        throw new Error("Failed to validate quote with either schema");
       } catch (parseError) {
         console.error("JSON parse error:", parseError);
         throw parseError;

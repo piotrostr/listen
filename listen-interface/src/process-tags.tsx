@@ -6,7 +6,23 @@ import { Message } from "./types/message";
 
 // Function to convert markdown code blocks to XML tags
 export function convertMarkdownToXmlTags(message: string): string {
-  // Match markdown code blocks with language specifier, allowing optional newlines
+  // First handle any markdown blocks that are already inside pipeline tags
+  const pipelineRegex =
+    /<pipeline>\s*```json\s*([\s\S]*?)\s*```\s*<\/pipeline>/g;
+  message = message.replace(pipelineRegex, (match, content) => {
+    try {
+      const cleanContent = content.trim();
+      const parsed = JSON.parse(cleanContent);
+      if (parsed && parsed.steps && Array.isArray(parsed.steps)) {
+        return `<pipeline>${cleanContent}</pipeline>`;
+      }
+    } catch (e) {
+      // Silently fail for non-pipeline JSON
+    }
+    return match;
+  });
+
+  // Then handle standalone markdown blocks
   const markdownRegex = /```(\w+)\s*([\s\S]*?)\s*```/g;
   return message.replace(markdownRegex, (match, lang, content) => {
     // Special case for json - check if it contains pipeline structure
