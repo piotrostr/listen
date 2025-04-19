@@ -1,7 +1,8 @@
 const chainIdToGeckoTerminalId = {
   "1": "eth",
   "8453": "base",
-  // TODO add remaining
+  "56": "bsc",
+  "42161": "arbitrum",
 };
 
 export function GeckoTerminalChart({
@@ -16,6 +17,7 @@ export function GeckoTerminalChart({
   if (
     !chainIdToGeckoTerminalId[chainId as keyof typeof chainIdToGeckoTerminalId]
   ) {
+    console.error(`Unknown chainId: ${chainId}`);
     return null;
   }
   const geckoTerminalId =
