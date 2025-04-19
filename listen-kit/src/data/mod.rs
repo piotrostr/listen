@@ -1,3 +1,4 @@
+pub mod evm_fallback_tools;
 pub mod listen_api_tools;
 pub mod twitter_tools;
 pub mod web_tools;

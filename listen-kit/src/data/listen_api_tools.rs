@@ -43,7 +43,7 @@ pub struct TopToken {
 const API_BASE: &str = "https://api.listen-rs.com/v1/adapter";
 
 #[tool(description = "
-Fetch token metadata from the Listen API. This is the metadata that was
+Fetch token metadata for any Solana token from the Listen API. This is the metadata that was
 initially set during token creation by the token creator that lives on-chain and
 IPFS.
 

@@ -1,12 +1,13 @@
-use crate::db::candlesticks::Candlestick;
 use anyhow::{anyhow, Context, Result};
 use reqwest::Client;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
-use std::collections::HashMap; // Added for timestamp conversion
+use std::collections::HashMap;
+
+use crate::data::Candlestick; // Added for timestamp conversion
 
 // Define the structure for the token information we want to return
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct GtTokenMetadata {
     pub address: String,
     pub name: String,
@@ -90,7 +91,9 @@ fn map_chain_id_to_network(chain_id: u64) -> Result<&'static str> {
 
 // Helper function to map interval string to GeckoTerminal timeframe and aggregate
 // Example interval formats: "1m", "5m", "15m", "1h", "4h", "1d"
-fn map_interval_to_params(interval: &str) -> Result<(&'static str, &'static str)> {
+fn map_interval_to_params(
+    interval: &str,
+) -> Result<(&'static str, &'static str)> {
     match interval {
         "1m" => Ok(("minute", "1")),
         "5m" => Ok(("minute", "5")),
@@ -117,7 +120,11 @@ impl EvmFallback {
         }
     }
 
-    pub async fn fetch_token_info(&self, address: &str, chain_id: u64) -> Result<GtTokenMetadata> {
+    pub async fn fetch_token_info(
+        &self,
+        address: &str,
+        chain_id: u64,
+    ) -> Result<GtTokenMetadata> {
         let network = map_chain_id_to_network(chain_id)?;
         let url = format!(
             "{}/networks/{}/tokens/{}/info",
@@ -149,10 +156,10 @@ impl EvmFallback {
             ));
         }
 
-        let gt_token_info_resp = response
-            .json::<GTTokenInfoResponse>()
-            .await
-            .context("Failed to deserialize GeckoTerminal token info response")?;
+        let gt_token_info_resp =
+            response.json::<GTTokenInfoResponse>().await.context(
+                "Failed to deserialize GeckoTerminal token info response",
+            )?;
 
         let attributes = gt_token_info_resp.data.attributes;
 
@@ -194,7 +201,8 @@ impl EvmFallback {
 
         if let Some(limit) = limit {
             // API max limit is 1000
-            query_params.insert("limit".to_string(), limit.min(1000).to_string());
+            query_params
+                .insert("limit".to_string(), limit.min(1000).to_string());
         } else {
             // Default limit from API docs is 100
             query_params.insert("limit".to_string(), "100".to_string());
@@ -250,7 +258,10 @@ impl EvmFallback {
             .filter_map(|item| {
                 // Expecting [timestamp, open, high, low, close, volume]
                 if item.len() != 6 {
-                    eprintln!("Warning: Received malformed OHLCV item: {:?}", item);
+                    eprintln!(
+                        "Warning: Received malformed OHLCV item: {:?}",
+                        item
+                    );
                     return None;
                 }
                 let timestamp_val = item[0].as_u64()?;
