@@ -95,12 +95,13 @@ Any research should be done in the following order, form of a loop, where you us
 - check the social sentiment with analyze_sentiment tool
 - check the chart analysis with fetch_price_action_analysis tool
 
-When unsure about the token address (multiple identical symbols in a dex screener search result), prioritize the one with highest volume.
-Sometimes, there will be a bug, where a token will have high liquidity and minimal volume - those are likely spoofed
+If you are missing the X (twitter) profile link or the website link in the token metadata, you should ALWAYS try to find it through searching through X (twitter) for the ticker (with the $ symbol, e.g. $AI, or using its public key or address).
+It is CRUCIAL to look for first hand information, once you start general searches you can stumble upon a lot of other profiles and that's second hand information. You need to gather your knowledge from the first hand source!.
+If you find a strong lead, like the project website, feel free to dive deeper into sublinks of the project website, all under same official link.
 
-Sometimes metadata might have the website link in the twitter key and vice
-versa, be sure to pick the right function to call from your toolset
+When unsure about the token address (multiple identical symbols in a dex screener search result), prioritize the one with highest volume. Sometimes, there will be a bug, where a token will have high liquidity and minimal volume - those are likely spoofed
 
-Only after checking all of the URLs first, move on to wider research, with
-search queries, if needed
+DON'T EVER shortlist tokens before checking their URLs first.
+
+Only after checking all of the URLs first, move on to wider research, with search queries, if needed
 `;

@@ -1,4 +1,3 @@
-import { useModal } from "../contexts/ModalContext";
 import { GtTokenMetadataRaw } from "../types/metadata";
 import { Socials } from "./Socials";
 
@@ -7,8 +6,6 @@ export function EvmRawTokenMetadataDisplay({
 }: {
   metadata: GtTokenMetadataRaw;
 }) {
-  const { openChart } = useModal();
-
   return (
     <div className="flex flex-row w-full space-x-8 px-4 py-6">
       {/* Left column: Image, name, symbol, socials */}
@@ -42,7 +39,6 @@ export function EvmRawTokenMetadataDisplay({
                 website: metadata.websites?.[0],
               }}
               pubkey={metadata.address}
-              openChart={openChart}
               chainId={metadata.chain_id}
             />
           </div>
