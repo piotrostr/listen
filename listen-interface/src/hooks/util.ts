@@ -317,7 +317,7 @@ export const renderAddressOrTx = (text: string): string => {
   const backtickPattern = /`([^`]+)`/g;
   let backtickMatch;
 
-  while ((backtickMatch = backtickPattern.exec(text)) !== null) {
+  while ((backtickMatch = backtickPattern.exec(processedText)) !== null) {
     const fullMatch = backtickMatch[0]; // The entire match including backticks
     const content = backtickMatch[1]; // Just the content part (without backticks)
 
@@ -339,24 +339,28 @@ export const renderAddressOrTx = (text: string): string => {
         displayText = `${content.slice(0, 4)}..${content.slice(-4)}`;
       } else if (isEvmTx) {
         url = `https://blockscan.com/tx/${content}`;
+        // Keep full EVM Tx hash for clarity
         displayText = content;
       } else {
         // isEvmAddress
         url = `https://blockscan.com/address/${content}`;
-        displayText = content;
+        // Truncate EVM address display like Solana addresses
+        displayText = `${content.slice(0, 6)}..${content.slice(-4)}`; // e.g., 0x1234..abcd
       }
 
       // Create the replacement with the link (without backticks)
       const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${displayText}</a>`;
 
       // Replace this specific occurrence
+      const currentIndex = backtickMatch.index; // Store index before modifying processedText
       processedText =
-        processedText.substring(0, backtickMatch.index) +
+        processedText.substring(0, currentIndex) +
         replacement +
-        processedText.substring(backtickMatch.index + fullMatch.length);
+        processedText.substring(currentIndex + fullMatch.length);
 
-      // Adjust the regex lastIndex to account for the replacement
-      backtickPattern.lastIndex += replacement.length - fullMatch.length;
+      // Adjust the regex lastIndex based on the change in length
+      // The next search needs to start right after the inserted replacement
+      backtickPattern.lastIndex = currentIndex + replacement.length;
     }
   }
 
