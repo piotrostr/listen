@@ -168,13 +168,17 @@ pub async fn wallet_address() -> Result<String> {
     Ok(signer.address().unwrap())
 }
 
-#[tool]
+#[tool(description = "
+For the address, return the balance of the native token and chain ID
+Most chains it will return Ethereum, in case of BSC it will return BNB balance (also 18 decimals)
+")]
 pub async fn get_eth_balance(
     address: String,
     chain_id: u64,
-) -> Result<String> {
+) -> Result<(String, u64)> {
     wrap_unsafe(move || async move {
-        balance(&make_provider(chain_id)?, address).await
+        let balance = balance(&make_provider(chain_id)?, address).await?;
+        Ok((balance, chain_id))
     })
     .await
 }
@@ -184,9 +188,20 @@ pub async fn get_erc20_balance(
     token_address: String,
     address: String,
     chain_id: u64,
-) -> Result<String> {
+) -> Result<serde_json::Value> {
     wrap_unsafe(move || async move {
-        token_balance(address, token_address, &make_provider(chain_id)?).await
+        let (balance, decimals) = token_balance(
+            address.clone(),
+            token_address.clone(),
+            &make_provider(chain_id)?,
+        )
+        .await?;
+        Ok(serde_json::json!({
+            "balance": balance,
+            "decimals": decimals,
+            "token_address": token_address,
+            "chain_id": chain_id,
+        }))
     })
     .await
 }

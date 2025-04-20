@@ -1,7 +1,9 @@
 import { UseBalanceReturnType } from "wagmi";
+import bscIcon from "../assets/icons/bsc.svg";
 import ethereumIcon from "../assets/icons/ethereum.svg";
 import { useToken } from "../hooks/useToken";
 import { imageMap } from "../hooks/util";
+
 export const Balance = ({
   solanaBalance,
   ethereumBalance,
@@ -12,7 +14,7 @@ export const Balance = ({
   return (
     <div className="flex flex-row gap-1">
       <SolanaBalance solanaBalance={solanaBalance} />
-      <EthereumBalance ethereumBalance={ethereumBalance} />
+      <EthereumBalance ethereumBalance={ethereumBalance?.toString() || "0"} />
     </div>
   );
 };
@@ -77,17 +79,43 @@ export const SplTokenBalance = ({
 
 export const EthereumBalance = ({
   ethereumBalance,
+  chainId,
 }: {
-  ethereumBalance: number | undefined;
+  ethereumBalance: string;
+  chainId?: number;
 }) => {
   return (
     <div className="flex items-center gap-2 mr-4">
-      <img src={ethereumIcon} alt="ETH" className="w-6 h-6 rounded-full" />
+      {chainId === 56 ? (
+        <img src={bscIcon} alt="BSC" className="w-6 h-6 rounded-full" />
+      ) : (
+        <img src={ethereumIcon} alt="ETH" className="w-6 h-6 rounded-full" />
+      )}
       <span className="text-sm text-gray-300">
-        {ethereumBalance?.toFixed(4) || "0.0000"}
+        {(parseInt(ethereumBalance) / 10 ** 18).toFixed(5) || "0.00000"}
       </span>
+      {chainId && (
+        <span className="text-sm text-gray-300">
+          ({chainIdToName(chainId)})
+        </span>
+      )}
     </div>
   );
+};
+
+const chainIdToName = (chainId: number) => {
+  switch (chainId) {
+    case 1:
+      return "Mainnet";
+    case 8453:
+      return "Base";
+    case 42161:
+      return "Arbitrum";
+    case 56:
+      return "BSC";
+    default:
+      return "Unknown";
+  }
 };
 
 export function balanceToUI(balance: UseBalanceReturnType["data"]) {

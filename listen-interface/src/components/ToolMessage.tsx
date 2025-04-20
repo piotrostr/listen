@@ -26,7 +26,7 @@ import {
   QuoteResponseSchema,
 } from "../types/quote";
 import { TweetSchema } from "../types/x";
-import { SolanaBalance, SplTokenBalance } from "./Balances";
+import { EthereumBalance, SolanaBalance, SplTokenBalance } from "./Balances";
 import {
   BubbleMapDisplay,
   TokenHolderAnalysisSchema,
@@ -35,6 +35,7 @@ import { Chart, InnerChart } from "./Chart";
 import { ChatMessage } from "./ChatMessage";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import DropdownMessage from "./DropdownMessage";
+import { Erc20Balance, Erc20BalanceSchema } from "./Erc20Balance";
 import { EvmRawTokenMetadataDisplay } from "./EvmRawTokenMetadataDisplay";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
 import { GeckoTerminalChart } from "./GeckoTerminalChart";
@@ -48,6 +49,7 @@ import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 import { TopicDisplay, TopicSchema } from "./TopicDisplay";
 
 const SplTokenBalanceSchema = z.tuple([z.string(), z.number(), z.string()]);
+const EthBalanceSchema = z.tuple([z.string(), z.number()]);
 
 const formatError = (error: string) => {
   if (error.includes("Invalid param: could not find account")) {
@@ -332,6 +334,32 @@ export const ToolMessage = ({
           <ChatMessage message={toolOutput.result} direction="agent" />
         </div>
       );
+    }
+  }
+
+  if (toolOutput.name === "get_eth_balance") {
+    try {
+      const parsed = EthBalanceSchema.parse(JSON.parse(toolOutput.result));
+      return (
+        <div className="p-3">
+          <EthereumBalance ethereumBalance={parsed[0]} chainId={parsed[1]} />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse eth balance:", e);
+    }
+  }
+
+  if (toolOutput.name === "get_erc20_balance") {
+    try {
+      const parsed = Erc20BalanceSchema.parse(JSON.parse(toolOutput.result));
+      return (
+        <div className="p-3">
+          <Erc20Balance erc20Balance={parsed} />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse erc20 balance:", e);
     }
   }
 
