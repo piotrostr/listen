@@ -49,7 +49,7 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
     imageMap[quote.to.token as keyof typeof imageMap];
 
   return (
-    <div className="border border-[#2D2D2D] rounded-lg p-4 bg-black/40 backdrop-blur-sm my-2">
+    <div className="p-4 my-2">
       <div className="flex items-center gap-4">
         {/* Input Token */}
         <div className="flex-1">
@@ -77,7 +77,7 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
               <div className="text-sm">
                 {formatAmount(inputAmount, inputTokenDecimals)}
               </div>
-              <div className="text-xs">
+              <div className="text-xs text-gray-400">
                 {quote.from.address.slice(0, 6)}...
                 {quote.from.address.slice(-4)}
               </div>
@@ -129,7 +129,7 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
               <div className="text-sm">
                 {formatAmount(outputAmount, outputTokenDecimals)}
               </div>
-              <div className="text-xs">
+              <div className="text-xs text-gray-400">
                 {quote.to.address.slice(0, 6)}...
                 {quote.to.address.slice(-4)}
               </div>

@@ -1,6 +1,6 @@
 import { UseBalanceReturnType } from "wagmi";
 import bscIcon from "../assets/icons/bsc.svg";
-import ethereumIcon from "../assets/icons/ethereum.svg";
+import ethereumIcon from "../assets/icons/ethereum.png";
 import { useToken } from "../hooks/useToken";
 import { imageMap } from "../hooks/util";
 

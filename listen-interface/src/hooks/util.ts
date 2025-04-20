@@ -2,7 +2,7 @@ import { User, WalletWithMetadata } from "@privy-io/react-auth";
 import { PublicKey } from "@solana/web3.js";
 import bs58 from "bs58";
 import { getAddress } from "viem";
-import ethLogo from "../assets/icons/ethereum.svg";
+import ethLogo from "../assets/icons/ethereum.png";
 import {
   Pipeline,
   PipelineActionType,

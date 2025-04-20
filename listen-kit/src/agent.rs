@@ -46,11 +46,8 @@ pub fn model_to_versioned_model(model_type: String) -> String {
 
 // TODO
 // - gas sponsoring
-// --- newly added tools that require testing (and UI components): ---
-// - GetErc20Balance
-// - GetEthBalance
-// - GetQuote
 // - Swap (direct) - changed to allow any token on any chain
+// - BSC support and potentially SUI support?
 // For Solana candlesticks, return the timestamp field as ISO date string
 // TODO
 // - Set up Sentry and grab any issue with the tool calls straight up (set up pager ideally)
