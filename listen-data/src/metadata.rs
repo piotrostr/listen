@@ -109,17 +109,25 @@ impl TokenMetadata {
         let standard_token_program_id =
             Pubkey::from_str("TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA")
                 .unwrap();
-
-        let token_data = if account.owner == token_2022_program_id {
+        if account.owner == token_2022_program_id {
             warn!(
                 mint,
                 "detected Token-2022 mint, FIXME: currently missing support"
             );
             // For Token-2022, we still use the same Mint structure for basic fields
             // The structure is the same for the base fields we care about
-            Mint::unpack(data)
-                .context("failed to unpack Token-2022 mint data")?
-        } else if account.owner == standard_token_program_id {
+            // Mint::unpack(data)
+            //     .context("failed to unpack Token-2022 mint data")?
+            return Ok(SplTokenMetadata {
+                mint_authority: None,
+                supply: 0,
+                decimals: 0,
+                is_initialized: false,
+                freeze_authority: None,
+            });
+        }
+
+        let token_data = if account.owner == standard_token_program_id {
             debug!(mint, "detected standard SPL Token mint");
             Mint::unpack(data).context("failed to unpack mint data")?
         } else {
