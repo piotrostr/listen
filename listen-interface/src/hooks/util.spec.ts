@@ -10,7 +10,7 @@ describe("process model fuckups with codeblock instead of tags", () => {
 
   test("convertMarkdownToXmlTags", () => {
     const result = convertMarkdownToXmlTags(message);
-    console.log(result);
+    console.debug(result);
   });
 });
 

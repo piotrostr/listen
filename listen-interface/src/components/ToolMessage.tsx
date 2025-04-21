@@ -228,7 +228,7 @@ export const ToolMessage = ({
       }
     }, [toolCallInfo]);
 
-    console.log(params);
+    console.debug(params);
     const pairAddress = params?.pair_address;
     const interval = params?.interval || "30s";
     const chainId = params?.chain_id;
