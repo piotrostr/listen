@@ -84,6 +84,7 @@ pub trait TransactionSigner: Send + Sync {
     async fn sign_and_send_json_evm_transaction(
         &self,
         _tx: serde_json::Value,
+        _caip2: Option<String>,
     ) -> Result<String> {
         Err(anyhow::anyhow!(
             "EVM transactions not supported by this signer"

@@ -1,3 +1,9 @@
+use std::str::FromStr;
+use std::sync::Arc;
+
+use alloy::primitives::FixedBytes;
+use alloy::providers::PendingTransactionConfig;
+use alloy::providers::Provider;
 use anyhow::{anyhow, Result};
 use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
 use rig_tool_macro::tool;
@@ -5,7 +11,9 @@ use rig_tool_macro::tool;
 use crate::common::wrap_unsafe;
 use crate::ensure_evm_wallet_created;
 use crate::ensure_solana_wallet_created;
+use crate::evm::util::make_provider;
 use crate::signer::SignerContext;
+use crate::signer::TransactionSigner;
 
 use lifi::LiFi;
 
@@ -230,9 +238,17 @@ pub async fn swap(
                         .sign_and_send_encoded_solana_transaction(encoded_tx)
                         .await
                 } else {
+                    ensure_lifi_router_approvals(
+                        signer.clone(),
+                        from_token_address,
+                        amount,
+                        from_chain.parse::<u64>().map_err(|e| anyhow!(e))?,
+                    )
+                    .await?;
                     signer
                         .sign_and_send_json_evm_transaction(
                             transaction_request.to_json_rpc()?,
+                            None,
                         )
                         .await
                 }
@@ -303,11 +319,63 @@ pub async fn approve_token(
 
     wrap_unsafe(move || async move {
         signer
-            .sign_and_send_json_evm_transaction(transaction)
+            .sign_and_send_json_evm_transaction(transaction, None)
             .await
             .map_err(|e| anyhow!(e.to_string()))
     })
     .await?;
 
     Ok("Approved".to_string())
+}
+
+pub const LIFI_DIAMOND_ADDRESS: &str =
+    "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
+
+pub async fn ensure_lifi_router_approvals(
+    signer: Arc<dyn TransactionSigner>,
+    token_address: String,
+    amount: String,
+    chain_id: u64,
+) -> Result<()> {
+    if signer.address().is_none() {
+        return Err(anyhow!(
+            "No address found, it is required for EVM actions!"
+        ));
+    }
+    let allowance = evm_approvals::get_allowance(
+        &token_address,
+        &signer.address().unwrap(),
+        LIFI_DIAMOND_ADDRESS,
+        &chain_id.to_string(),
+    )
+    .await?;
+    if allowance < amount.parse::<u128>().map_err(|e| anyhow!(e))? {
+        tracing::info!(
+            "Approving Lifi Router for {} of {}",
+            amount,
+            token_address
+        );
+        let transaction = evm_approvals::create_approval_transaction(
+            &token_address,
+            LIFI_DIAMOND_ADDRESS,
+            &signer.address().unwrap(),
+            &chain_id.to_string(),
+        )
+        .await?;
+        let tx_hash = signer
+            .sign_and_send_json_evm_transaction(
+                transaction,
+                Some(format!("eip155:{}", chain_id)),
+            )
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
+        let provider = make_provider(chain_id)?;
+        provider
+            .watch_pending_transaction(PendingTransactionConfig::new(
+                FixedBytes::from_str(&tx_hash)?,
+            ))
+            .await?
+            .await?;
+    }
+    Ok(())
 }

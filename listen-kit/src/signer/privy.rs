@@ -141,26 +141,27 @@ impl TransactionSigner for PrivySigner {
     async fn sign_and_send_json_evm_transaction(
         &self,
         tx: serde_json::Value,
+        caip2: Option<String>,
     ) -> Result<String> {
         if self.address().is_none() {
             return Err(anyhow::anyhow!(
                 "Address is not set, wallet unavailable"
             ));
         }
-        let caip2 = match tx["chain_id"].as_u64() {
-            Some(chain_id) => Caip2::from_chain_id(chain_id),
-            None => {
-                return Err(anyhow::anyhow!(
-                    "Chain ID is required for EVM transactions"
-                ))
+        let caip2 = if let Some(caip2) = caip2 {
+            caip2
+        } else {
+            match tx["chain_id"].as_u64() {
+                Some(chain_id) => Caip2::from_chain_id(chain_id).to_string(),
+                None => {
+                    return Err(anyhow::anyhow!(
+                        "Chain ID is required for EVM transactions"
+                    ))
+                }
             }
         };
         self.privy
-            .execute_evm_transaction(
-                self.address().unwrap(),
-                tx,
-                caip2.to_string(),
-            )
+            .execute_evm_transaction(self.address().unwrap(), tx, caip2)
             .await
             .map_err(|e| {
                 anyhow::anyhow!(
