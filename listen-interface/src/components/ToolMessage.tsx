@@ -1,3 +1,4 @@
+import * as Tooltip from "@radix-ui/react-tooltip";
 import { ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { BsClock } from "react-icons/bs";
@@ -501,9 +502,21 @@ export const ToolMessage = ({
     !toolOutput.name.includes("delegate")
   ) {
     return (
-      <div className="text-red-400 flex items-center gap-1 p-3 text-sm">
-        <FaExclamationTriangle /> {t("tool_messages.tool_call_error")}
-      </div>
+      <Tooltip.Provider>
+        <Tooltip.Root delayDuration={100}>
+          <Tooltip.Trigger asChild>
+            <div className="text-red-400 flex items-center gap-1 p-3 text-sm cursor-help">
+              <FaExclamationTriangle /> {t("tool_messages.tool_call_error")}
+            </div>
+          </Tooltip.Trigger>
+          <Tooltip.Portal>
+            <Tooltip.Content className="rounded-md bg-[#2d2d2d] px-4 py-2 text-sm text-white max-w-md break-words shadow-lg z-50">
+              {toolOutput.result}
+              <Tooltip.Arrow className="fill-[#2d2d2d]" />
+            </Tooltip.Content>
+          </Tooltip.Portal>
+        </Tooltip.Root>
+      </Tooltip.Provider>
     );
   }
 
