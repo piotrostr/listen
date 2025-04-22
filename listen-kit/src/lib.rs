@@ -18,6 +18,7 @@ pub mod common;
 pub mod cross_chain;
 pub mod data;
 pub mod dexscreener;
+pub mod evm_fallback;
 pub mod faster100x;
 pub mod lunarcrush;
 pub mod memory;

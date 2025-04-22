@@ -1,3 +1,9 @@
+use std::str::FromStr;
+use std::sync::Arc;
+
+use alloy::primitives::FixedBytes;
+use alloy::providers::PendingTransactionConfig;
+use alloy::providers::Provider;
 use anyhow::{anyhow, Result};
 use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
 use rig_tool_macro::tool;
@@ -5,11 +11,13 @@ use rig_tool_macro::tool;
 use crate::common::wrap_unsafe;
 use crate::ensure_evm_wallet_created;
 use crate::ensure_solana_wallet_created;
+use crate::evm::util::make_provider;
 use crate::signer::SignerContext;
+use crate::signer::TransactionSigner;
 
 use lifi::LiFi;
 
-// TODO support sponsored transactions here
+// TODO!! support sponsored transactions here
 // it would save a lot of gas if we could drip on any chain,
 // fees are substantially higher if the user has an empty wallet on the dest chain
 
@@ -20,11 +28,7 @@ This might be required in case the user wonders how much it would cost to
 perform a swap or bridge. It is also good in case you would like to validate the
 token addresses and other params with the user before executing
 
-The from_token_address and to_token_address can either be a solana public key, evm
-address or a symbol, try to prioritize the address over the symbol
-
-It is incredibly important to pass on the correct address or public key of the
-symbol, otherwise the operation will fail
+The from_token_address and to_token_address can either be a solana public key or EVM address.
 
 The amount has to be a string to avoid precision loss. The amount is accounting
 for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
@@ -42,9 +46,17 @@ Supported to_chain values:
 - arbitrum: \"42161\"
 - base: \"8453\"
 
-special case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
+Special Case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
+Solana Address: \"So11111111111111111111111111111111111111112\"
 
-solana address: \"So11111111111111111111111111111111111111112\"
+Example:
+{{
+  \"from_token_address\": \"So11111111111111111111111111111111111111112\", // solana
+  \"to_token_address\": \"ETH\", // ethereum
+  \"amount\": \"1000000000\", // 1 SOL, 1e9
+  \"from_chain\": \"1151111081099710\", // solana
+  \"to_chain\": \"1\" // ethereum
+}}
 
 if a user hits you with a chain you cannot support, let them know
 ")]
@@ -117,10 +129,7 @@ This tool can be used to swap tokens on any chain, solana to solana, evm to evm,
 solana to evm, evm to solana, etc.
 
 It will automatically pick the best routing for the swap, as long as the chain
-parameters and the token addresses are correct.
-
-Use this in case of the user trying to swap any tokens that exist on two remote
-chains, or would like to bridge the tokens
+parameters and the token addresses are correct and handle approval if needed.
 
 Don't use this in case you are not certain about all of the params, use the
 get_multichain_quote tool instead to validate the params in that case.
@@ -138,12 +147,20 @@ Supported from_chain values:
 
 Supported to_chain values:
 - solana: \"1151111081099710\"
-- arbitrum: \"42161\"
+- mainnet: \"1\"
 - base: \"8453\"
 
-special case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
+Example:
+{{
+  \"from_token_address\": \"So11111111111111111111111111111111111111112\", // solana
+  \"to_token_address\": \"ETH\", // ethereum
+  \"amount\": \"1000000000\", // 1 SOL, 1e9
+  \"from_chain\": \"1151111081099710\", // solana
+  \"to_chain\": \"1\" // ethereum
+}}
 
-solana address: \"So11111111111111111111111111111111111111112\"
+Special Case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
+Solana Address: \"So11111111111111111111111111111111111111112\"
 
 if a user hits you with a chain you cannot support, let them know
 ")]
@@ -221,9 +238,17 @@ pub async fn swap(
                         .sign_and_send_encoded_solana_transaction(encoded_tx)
                         .await
                 } else {
+                    ensure_lifi_router_approvals(
+                        signer.clone(),
+                        from_token_address,
+                        amount,
+                        from_chain.parse::<u64>().map_err(|e| anyhow!(e))?,
+                    )
+                    .await?;
                     signer
                         .sign_and_send_json_evm_transaction(
                             transaction_request.to_json_rpc()?,
+                            None,
                         )
                         .await
                 }
@@ -294,11 +319,63 @@ pub async fn approve_token(
 
     wrap_unsafe(move || async move {
         signer
-            .sign_and_send_json_evm_transaction(transaction)
+            .sign_and_send_json_evm_transaction(transaction, None)
             .await
             .map_err(|e| anyhow!(e.to_string()))
     })
     .await?;
 
     Ok("Approved".to_string())
+}
+
+pub const LIFI_DIAMOND_ADDRESS: &str =
+    "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
+
+pub async fn ensure_lifi_router_approvals(
+    signer: Arc<dyn TransactionSigner>,
+    token_address: String,
+    amount: String,
+    chain_id: u64,
+) -> Result<()> {
+    if signer.address().is_none() {
+        return Err(anyhow!(
+            "No address found, it is required for EVM actions!"
+        ));
+    }
+    let allowance = evm_approvals::get_allowance(
+        &token_address,
+        &signer.address().unwrap(),
+        LIFI_DIAMOND_ADDRESS,
+        &chain_id.to_string(),
+    )
+    .await?;
+    if allowance < amount.parse::<u128>().map_err(|e| anyhow!(e))? {
+        tracing::info!(
+            "Approving Lifi Router for {} of {}",
+            amount,
+            token_address
+        );
+        let transaction = evm_approvals::create_approval_transaction(
+            &token_address,
+            LIFI_DIAMOND_ADDRESS,
+            &signer.address().unwrap(),
+            &chain_id.to_string(),
+        )
+        .await?;
+        let tx_hash = signer
+            .sign_and_send_json_evm_transaction(
+                transaction,
+                Some(format!("eip155:{}", chain_id)),
+            )
+            .await
+            .map_err(|e| anyhow!(e.to_string()))?;
+        let provider = make_provider(chain_id)?;
+        provider
+            .watch_pending_transaction(PendingTransactionConfig::new(
+                FixedBytes::from_str(&tx_hash)?,
+            ))
+            .await?
+            .await?;
+    }
+    Ok(())
 }

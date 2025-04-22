@@ -19,14 +19,20 @@ pub async fn token_balance(
     owner: String,
     token_address: String,
     provider: &EvmProvider,
-) -> Result<String> {
+) -> Result<(String, u8)> {
     let balance = IERC20::new(Address::from_str(&token_address)?, provider)
         .balanceOf(Address::from_str(&owner)?)
         .call()
         .await?
         ._0;
 
-    Ok(balance.to_string())
+    let decimals = IERC20::new(Address::from_str(&token_address)?, provider)
+        .decimals()
+        .call()
+        .await?
+        ._0;
+
+    Ok((balance.to_string(), decimals))
 }
 
 #[cfg(test)]
@@ -37,12 +43,27 @@ mod tests {
 
     #[tokio::test]
     async fn test_balance() {
-        let provider = make_provider().unwrap();
+        let provider = make_provider(42161).unwrap();
         let signer = make_signer().unwrap();
 
         let balance = balance(&provider, signer.address().to_string())
             .await
             .unwrap();
         assert_ne!(balance, "0");
+    }
+
+    #[tokio::test]
+    async fn test_token_balance() {
+        let provider = make_provider(56).unwrap();
+        let signer = make_signer().unwrap();
+
+        let balance = token_balance(
+            signer.address().to_string(),
+            "0x0E09FaBB73Bd3Ade0a17ECC321fD13a19e81cE82".to_string(),
+            &provider,
+        )
+        .await
+        .unwrap();
+        assert_eq!(balance, ("2635746907360432808".to_string(), 18u8)); // brittle, will fail if the balance changes
     }
 }

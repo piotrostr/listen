@@ -3,7 +3,6 @@ import { persist } from "zustand/middleware";
 import { PortfolioItem } from "../hooks/types";
 import { getTokenHoldings as fetchEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { fetchPortfolio as fetchSolanaPortfolio } from "../hooks/useSolanaPortfolio";
-import { useSettingsStore } from "./settingsStore";
 import { useTokenStore } from "./tokenStore";
 import { useWalletStore } from "./walletStore";
 
@@ -48,16 +47,12 @@ export const usePortfolioStore = create<PortfolioState>()(
       solanaAssetsMap: new Map<string, PortfolioItem>(),
       evmAssetsMap: new Map<string, PortfolioItem>(),
 
-      // Selectors to get arrays from maps when needed
       getSolanaAssets: () => Array.from(get().solanaAssetsMap.values()),
       getEvmAssets: () => Array.from(get().evmAssetsMap.values()),
       getCombinedPortfolio: () => {
-        const chatType = useSettingsStore.getState().chatType;
         const solanaAssets = Array.from(get().solanaAssetsMap.values());
-
-        return chatType === "solana"
-          ? solanaAssets
-          : [...solanaAssets, ...Array.from(get().evmAssetsMap.values())];
+        const evmAssets = Array.from(get().evmAssetsMap.values());
+        return [...solanaAssets, ...evmAssets];
       },
       getPortfolioValue: () =>
         getPortfolioTotalValue(get().getCombinedPortfolio()),
@@ -103,8 +98,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             lastUpdated: Date.now(),
           }));
 
-          // Update combined portfolio
-          get().getCombinedPortfolio();
+          // Removed redundant get().getCombinedPortfolio() call
         } catch (error) {
           set({
             error: error as Error,
@@ -116,14 +110,6 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       fetchEvmPortfolio: async (address: string) => {
         if (!address) return;
-
-        // Access chatType directly from settings store
-        const chatType = useSettingsStore.getState().chatType;
-
-        // Skip fetching EVM assets if we're in Solana-only mode
-        if (chatType === "solana") {
-          return;
-        }
 
         // Don't set isLoading if we already have data
         set((state) => ({
@@ -146,8 +132,6 @@ export const usePortfolioStore = create<PortfolioState>()(
             isLoading: false,
             lastUpdated: Date.now(),
           }));
-
-          get().getCombinedPortfolio();
         } catch (error) {
           set({
             error: error as Error,
@@ -164,10 +148,22 @@ export const usePortfolioStore = create<PortfolioState>()(
         const solAddr = solanaAddress || "";
         const evmAddr = evmAddress || "";
 
-        if (!solAddr && !evmAddr) return;
+        console.debug(
+          "PortfolioStore: fetchAllPortfolios called with addresses:",
+          {
+            solanaAddress,
+            evmAddress,
+            solAddr,
+            evmAddr,
+          }
+        );
 
-        // Access chatType directly from settings store
-        const chatType = useSettingsStore.getState().chatType;
+        if (!solAddr && !evmAddr) {
+          console.debug(
+            "PortfolioStore: No addresses available, skipping fetch"
+          );
+          return;
+        }
 
         // Set loading state at the beginning
         set({ isLoading: true, error: null });
@@ -177,11 +173,21 @@ export const usePortfolioStore = create<PortfolioState>()(
 
           // Always fetch Solana portfolio if solanaAddress is provided
           if (solAddr) {
+            console.debug(
+              "PortfolioStore: Fetching Solana portfolio for:",
+              solAddr
+            );
             fetchPromises.push(get().fetchSolanaPortfolio(solAddr));
           }
 
-          // Only fetch EVM portfolio if chatType is "omni" and evmAddress is provided
-          if (evmAddr && chatType === "omni") {
+          // Fetch EVM portfolio if evmAddress is provided (removed chatType check)
+          if (evmAddr) {
+            console.debug(
+              "PortfolioStore: Fetching EVM portfolio for:",
+              evmAddr
+            );
+            // We still check chatType inside fetchEvmPortfolio to potentially skip the actual fetch
+            // but we attempt to add it to the promise list here regardless
             fetchPromises.push(get().fetchEvmPortfolio(evmAddr));
           }
 
@@ -192,6 +198,8 @@ export const usePortfolioStore = create<PortfolioState>()(
             lastUpdated: Date.now(),
             isLoading: false,
           }));
+
+          console.debug("PortfolioStore: Portfolio fetch completed");
         } catch (error) {
           set({
             error: error as Error,
@@ -204,10 +212,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       // Refresh portfolio data - always forces a refresh
       refreshPortfolio: async () => {
         // Reset data first to ensure UI shows loading state and indicate force refresh
-        set({
-          isLoading: true,
-          error: null,
-        });
+        set({ isLoading: true, error: null });
 
         // Fetch portfolios with current wallet addresses
         await get().fetchAllPortfolios();
@@ -239,12 +244,6 @@ export const usePortfolioStore = create<PortfolioState>()(
 
           // Mark that we've added the listener
           (window as any).__portfolioVisibilityListenerAdded = true;
-        }
-
-        // Initial fetch if needed - run this only if we have no data
-        if (get().solanaAssetsMap.size === 0 && !get().isLoading) {
-          console.debug("Initial portfolio load");
-          get().refreshPortfolio();
         }
 
         // Prevent multiple subscriptions
@@ -290,7 +289,7 @@ export const usePortfolioStore = create<PortfolioState>()(
                 return { solanaAssetsMap: updatedMap };
               });
             } finally {
-              // Clear the guard immediately
+              // TODO possibly refetch for evm assets here too
               (window as any).__updatingSolanaTokenPrices = false;
             }
           }
@@ -304,6 +303,9 @@ export const usePortfolioStore = create<PortfolioState>()(
         set({
           solanaAssetsMap: new Map(),
           evmAssetsMap: new Map(),
+          isLoading: false, // Also reset loading state
+          error: null,
+          lastUpdated: null,
         });
       },
     }),

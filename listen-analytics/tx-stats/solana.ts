@@ -20,7 +20,7 @@ export interface WalletTransactionResult {
  */
 export const countTransactionsForWallet = async (
   wallet: Wallet,
-  connection: Connection
+  connection: Connection,
 ): Promise<WalletTransactionResult> => {
   try {
     const pubkey = new PublicKey(wallet.address);
@@ -42,13 +42,13 @@ export const countTransactionsForWallet = async (
         pubkey,
         {
           programId: TOKEN_PROGRAM_ID,
-        }
+        },
       );
 
       // Find USDC account if it exists
       const usdcAccount = tokenAccounts.value.find(
         (account) =>
-          account.account.data.parsed.info.mint === USDC_MINT.toString()
+          account.account.data.parsed.info.mint === USDC_MINT.toString(),
       );
 
       if (usdcAccount) {
@@ -60,7 +60,7 @@ export const countTransactionsForWallet = async (
     } catch (tokenError) {
       console.warn(
         `Could not fetch USDC balance for ${wallet.address}:`,
-        tokenError
+        tokenError,
       );
     }
 
@@ -89,7 +89,7 @@ export const countTransactionsForWallet = async (
 export const processWalletsInChunks = async (
   wallets: Wallet[],
   chunkSize: number,
-  connection: Connection
+  connection: Connection,
 ): Promise<WalletTransactionResult[]> => {
   const results: WalletTransactionResult[] = [];
 
@@ -97,13 +97,13 @@ export const processWalletsInChunks = async (
   for (let i = 0; i < wallets.length; i += chunkSize) {
     console.log(
       `Processing chunk ${i / chunkSize + 1} of ${Math.ceil(
-        wallets.length / chunkSize
-      )}`
+        wallets.length / chunkSize,
+      )}`,
     );
 
     const chunk = wallets.slice(i, i + chunkSize);
     const chunkResults = await Promise.all(
-      chunk.map((wallet) => countTransactionsForWallet(wallet, connection))
+      chunk.map((wallet) => countTransactionsForWallet(wallet, connection)),
     );
 
     results.push(...chunkResults);
@@ -122,26 +122,29 @@ export const processWalletsInChunks = async (
 export const processSolanaWallets = async (
   solanaWallets: Wallet[],
   connection: Connection,
-  concurrencyLimit = 50
+  concurrencyLimit = 1,
 ): Promise<WalletTransactionResult[]> => {
   console.log(
-    `Starting to process ${solanaWallets.length} Solana wallets with concurrency limit of ${concurrencyLimit}`
+    `Starting to process ${solanaWallets.length} Solana wallets with concurrency limit of ${concurrencyLimit}`,
   );
 
   const results = await processWalletsInChunks(
     solanaWallets,
     concurrencyLimit,
-    connection
+    connection,
   );
 
   // write to file
   await write(
     "output/solana_transactions.json",
-    JSON.stringify(results, null, 2)
+    JSON.stringify(results, null, 2),
   );
 
   // Generate and display report
   generateSolanaReport(results);
+
+  // 200ms timeout
+  await new Promise((resolve) => setTimeout(resolve, 200));
 
   return results;
 };
@@ -150,24 +153,24 @@ export const processSolanaWallets = async (
  * Generate and display a report of Solana wallet transaction data
  */
 export const generateSolanaReport = (
-  results: WalletTransactionResult[]
+  results: WalletTransactionResult[],
 ): void => {
   const successfulRequests = results.filter((r) => r.success);
   const totalTransactions = successfulRequests.reduce(
     (sum, result) => sum + result.count,
-    0
+    0,
   );
   const walletsWithTransactions = successfulRequests.filter((r) => r.count > 0);
 
   // Calculate balance totals
   const totalSolBalance = successfulRequests.reduce(
     (sum, result) => sum + result.solBalance,
-    0
+    0,
   );
 
   const totalUsdcBalance = successfulRequests.reduce(
     (sum, result) => sum + result.usdcBalance,
-    0
+    0,
   );
 
   // Find wallet with highest balances

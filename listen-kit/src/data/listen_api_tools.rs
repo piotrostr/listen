@@ -38,12 +38,13 @@ pub struct TopToken {
     pub market_cap: f64,
     pub volume_24h: f64,
     pub price_change_24h: f64,
+    pub chain_id: Option<u64>,
 }
 
 const API_BASE: &str = "https://api.listen-rs.com/v1/adapter";
 
 #[tool(description = "
-Fetch token metadata from the Listen API. This is the metadata that was
+Fetch token metadata for any Solana token from the Listen API. This is the metadata that was
 initially set during token creation by the token creator that lives on-chain and
 IPFS.
 
@@ -68,7 +69,7 @@ pub async fn fetch_token_metadata(mint: String) -> Result<serde_json::Value> {
 }
 
 #[tool(description = "
-Fetch token price from the Listen API.
+Fetch token price for any Solana token from the Listen API.
 
 Parameters:
 - mint (string): The token's mint/pubkey address
@@ -94,7 +95,7 @@ pub async fn fetch_token_price(mint: String) -> Result<f64> {
 }
 
 #[tool(description = "
-Fetch top tokens from the Listen API.
+Fetch top Solana tokens based on volume from the Listen API.
 
 No point using limit of more than ~6, less is more, as long as the filters are right (unless user asks for more)
 
@@ -146,7 +147,7 @@ pub async fn fetch_top_tokens(
 }
 
 #[tool(description = "
-Fetch price series for a token from the Listen API.
+Fetch price series for any Solana token from the Listen API.
 
 Parameters:
 - mint (string): The token's mint/pubkey address
@@ -187,7 +188,7 @@ pub async fn fetch_price_chart(
 }
 
 #[tool(description = "
-Fetch price action analysis based on candlestick data for a token from the Listen API.
+Fetch price action analysis based on candlestick data for any Solana token from the Listen API.
 
 Parameters:
 - mint (string): The token's mint/pubkey address
@@ -212,6 +213,13 @@ pub async fn fetch_price_action_analysis(
     match interval.as_str() {
         "15s" | "30s" | "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d" => {}
         _ => return Err(anyhow!("Invalid interval: {}", interval)),
+    }
+
+    if mint.starts_with("0x") {
+        return Err(anyhow!(
+            "Invalid mint: {}, use fetch_price_action_analysis_evm instead for EVM tokens",
+            mint
+        ));
     }
 
     let url = format!(

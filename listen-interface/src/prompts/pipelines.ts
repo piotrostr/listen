@@ -1,105 +1,84 @@
-const pipelineSchemaEvm = `
-  enum PipelineActionType {
-    SwapOrder = "SwapOrder",
-    Notification = "Notification",
-  }
+import { addressBook, caip2Map } from "../hooks/util";
 
-  enum PipelineConditionType {
-    PriceAbove = "PriceAbove",
-    PriceBelow = "PriceBelow",
-    Now = "Now",
-  }
-
-  const SwapOrderActionSchema = z.object({
-    type: z.literal(PipelineActionType.SwapOrder),
-    input_token: z.string(), // address or mint
-    output_token: z.string(), // address or mint
-    // accounting for decimals, e.g. 1 sol = 10^9, 1 usdc = 10^6
-    amount: z.string().nullable(), 
-    from_chain_caip2: z.string(), 
-    to_chain_caip2: z.string(),
-  });
-
-  const NotificationActionSchema = z.object({
-    type: z.literal(PipelineActionType.Notification),
-    input_token: z.string(), // address or mint
-    message: z.string(),
-  });
-
-  const PipelineActionSchema = z.discriminatedUnion("type", [
-    SwapOrderActionSchema,
-    NotificationActionSchema,
-  ]);
-
-  const PipelineConditionSchema = z.object({
-    type: z.nativeEnum(PipelineConditionType),
-    asset: z.string(), // address or mint
-    value: z.number(), // price denoted in usd, if \"Now\" type, price is not used
-  });
-
-  const PipelineStepSchema = z.object({
-    action: PipelineActionSchema,
-    conditions: z.array(PipelineConditionSchema).optional(), // optional, if not provided, executes immediately
-  });
-
-  const PipelineSchema = z.object({
-    steps: z.array(PipelineStepSchema),
-  });
+const pipelineExample = `
+Example Pipeline:
+{
+  "steps": [
+    {
+      // Example 1: Solana Swap of SOL into USDC (executed if SOL price is above $160)
+      "action": {
+        "type": "SwapOrder",
+        "input_token": "So11111111111111111111111111111111111111112", // SOL mint address
+        "output_token": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC mint address (Solana)
+        "amount": "1000000000" // 1 SOL (10^9)
+        // from_chain_caip2/to_chain_caip2 omitted, defaults to Solana
+      },
+      "conditions": [
+        {
+          "type": "PriceAbove",
+          "asset": "So11111111111111111111111111111111111111112", // SOL mint address
+          "value": 160 // SOL price in USD
+        }
+      ]
+    },
+    {
+      // Example 2: EVM Swap (conditional)
+      "action": {
+        "type": "SwapOrder",
+        "input_token": "0x0000000000000000000000000000000000000000", // Native ETH placeholder
+        "output_token": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC address (Ethereum Mainnet)
+        "amount": "500000000000000000", // 0.5 ETH (10^18)
+        "from_chain_caip2": "eip155:1", // Required for EVM/cross-chain
+        "to_chain_caip2": "eip155:1"   // Required for EVM/cross-chain
+      },
+      // No "conditions", executes immediately
+      // NOTE: "conditions" is only available for Solana tokens, there is currently no
+      // live price feed for EVM tokens in the Listen order engine
+    },
+    {
+      // Example 3: Notification (conditional)
+      "action": {
+        "type": "Notification",
+        "input_token": "So11111111111111111111111111111111111111112", // SOL mint address
+        "message": "Notify me when SOL price goes above $160"
+      },
+      "conditions": [
+        {
+          "type": "PriceAbove",
+          "asset": "So11111111111111111111111111111111111111112", // SOL mint address
+          "value": 160
+        }
+      ]
+    }
+  ]
+}
 `;
 
-const pipelineSchemaSolana = `
-  enum PipelineActionType {
-    SwapOrder = "SwapOrder",
-    Notification = "Notification",
-  }
+export const pipelineKnowledge = () => `
+  You can create series of steps that user approves with a click to execute
+  interactions which involve multiple steps, as well as simple swaps.
+  Here is an example format for the pipeline:
 
-  enum PipelineConditionType {
-    PriceAbove = "PriceAbove",
-    PriceBelow = "PriceBelow",
-    Now = "Now",
-  }
+  ${pipelineExample}
 
-  const SwapOrderActionSchema = z.object({
-    type: z.literal(PipelineActionType.SwapOrder),
-    input_token: z.string(), // address or mint
-    output_token: z.string(), // address or mint
-    // accounting for decimals, e.g. 1 sol = 10^9, 1 usdc = 10^6
-    amount: z.string().nullable(), 
-  });
+  CAIP2 map (for Solana, leave blank):
+  ${JSON.stringify(caip2Map)}
 
-  const NotificationActionSchema = z.object({
-    type: z.literal(PipelineActionType.Notification),
-    input_token: z.string(), // address or mint
-    message: z.string(),
-  });
+  Common addresses:
+  ${JSON.stringify(addressBook)}
 
-  const PipelineActionSchema = z.discriminatedUnion("type", [
-    SwapOrderActionSchema,
-    NotificationActionSchema,
-  ]);
+  Key Points:
+  - The pipeline is a JSON object with a "steps" array.
+  - Each step has an "action" object and optional "conditions" array.
+  - Action types: "SwapOrder", "Notification".
+  - Condition types: "PriceAbove", "PriceBelow", "Now".
+  - For "SwapOrder", specify input/output tokens (address/mint) and amount (considering decimals). Amount can be null if you want to specify "all".
+    - For EVM or cross-chain swaps, you MUST include "from_chain_caip2" and "to_chain_caip2".
+    - For Solana-only swaps, omit "from_chain_caip2" and "to_chain_caip2"; it will default to Solana.
+  - For "Notification", specify the token (input_token) and a message.
+  - For conditions, specify type, asset (token address/mint), and value (price in USD). "Now" type doesn't use "value".
+  - If a step should execute immediately (or immediately after the previous step completes), omit the "conditions" key entirely.
 
-  const PipelineConditionSchema = z.object({
-    type: z.nativeEnum(PipelineConditionType),
-    asset: z.string(), // address or mint
-    value: z.number(), // price denoted in usd, if \"Now\" type, price is not used
-  });
-
-  const PipelineStepSchema = z.object({
-    action: PipelineActionSchema,
-    conditions: z.array(PipelineConditionSchema).optional(), // optional, if not provided, executes immediately
-  });
-
-  const PipelineSchema = z.object({
-    steps: z.array(PipelineStepSchema),
-  });
-`;
-
-export const pipelineKnowledge = (chain: "evm" | "solana") => `
-  You can create pipelines that user approves with a click to execute
-  interactions which involve multiple steps, as well as simple swaps
-  Here is the format for the pipeline defined as zod validators:
-  ${chain === "evm" ? pipelineSchemaEvm : pipelineSchemaSolana}
-  When generating a pipeline, put it into <pipeline></pipeline> tags
-  If any step is to be executed immediately, don't include the "conditions" key, it will be filled automatically
-  Always include the <pipeline></pipeline> tags! Otherwise the pipeline will neither be rendered
+  When generating a pipeline, put the JSON object into <pipeline></pipeline> tags.
+  Always include the <pipeline></pipeline> tags! Otherwise the pipeline will not be rendered.
 `;

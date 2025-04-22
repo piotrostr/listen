@@ -50,14 +50,7 @@ impl Engine {
         .map_err(EngineError::SwapOrderError)?
         {
             SwapOrderTransaction::Evm(transaction) => {
-                let spender_address = transaction["to"].as_str().unwrap();
-                ensure_approvals(
-                    spender_address,
-                    order,
-                    &privy_transaction,
-                    self.privy.clone(),
-                )
-                .await?;
+                ensure_approvals(order, &privy_transaction, self.privy.clone()).await?;
                 privy_transaction.evm_transaction = Some(transaction);
                 match self
                     .privy
@@ -89,8 +82,9 @@ impl Engine {
     }
 }
 
+pub const LIFI_DIAMOND_ADDRESS: &str = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
+
 pub async fn ensure_approvals(
-    spender_address: &str,
     order: &SwapOrder,
     privy_transaction: &PrivyTransaction,
     privy: Arc<Privy>,
@@ -98,7 +92,7 @@ pub async fn ensure_approvals(
     let allowance = get_allowance(
         &order.input_token,
         &privy_transaction.address,
-        spender_address,
+        LIFI_DIAMOND_ADDRESS,
         caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
     )
     .await
@@ -106,7 +100,7 @@ pub async fn ensure_approvals(
     if allowance < order.amount.parse::<u128>().unwrap() {
         let approval_transaction = create_approval_transaction(
             &order.input_token,
-            spender_address,
+            LIFI_DIAMOND_ADDRESS,
             &privy_transaction.address,
             caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
         )

@@ -26,6 +26,11 @@ export const toolCalls = {
     analyze_holder_distribution: "Analyzing holder distribution...",
     analyze_sentiment: "Analyzing sentiment...",
     view_image: "Analyzing image...",
+    fetch_price_action_analysis_evm: "Analyzing price action...",
+    fetch_token_metadata_evm: "Fetching token metadata...",
+    get_erc20_balance: "Grabbing token balance...",
+    get_etm_balance: "Fetching balance...",
+    fetch_top_tokens_by_chain_id: "Fetching trending tokens...",
   },
   zh: {
     get_quote: "获取报价中...",
@@ -54,5 +59,10 @@ export const toolCalls = {
     analyze_holder_distribution: "分析持有人分布中...",
     analyze_sentiment: "分析情绪中...",
     view_image: "分析图片中...",
+    fetch_price_action_analysis_evm: "分析价格走势中...",
+    fetch_token_metadata_evm: "获取代币元数据中...",
+    get_erc20_balance: "获取代币余额中...",
+    get_etm_balance: "获取余额中...",
+    fetch_top_tokens_by_chain_id: "获取热门代币中...",
   },
 };

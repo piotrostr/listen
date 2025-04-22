@@ -3,9 +3,6 @@ import { useEffect, useRef } from "react";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 
-/**
- * This component handles synchronization between Privy wallet state and wallet store
- */
 export function WalletInitializer() {
   const { user } = usePrivy();
   const { ready: solanaReady, wallets: solanaWallets } = useSolanaWallets();
@@ -15,16 +12,39 @@ export function WalletInitializer() {
     solanaAddress: currentSolanaAddress,
     evmAddress: currentEvmAddress,
   } = useWalletStore();
+  const { initializePortfolioManager, fetchAllPortfolios } =
+    usePortfolioStore();
 
-  // Use refs to track previous values
   const prevSolanaAddressRef = useRef(currentSolanaAddress);
   const prevEvmAddressRef = useRef(currentEvmAddress);
+  const initializedRef = useRef(false);
+  const initialFetchDoneRef = useRef(false);
 
-  // Effect to synchronize Privy wallets with our store
+  // Effect for initial portfolio fetch - runs only once when wallets are ready
   useEffect(() => {
+    if (!solanaReady || !evmReady || !user || initialFetchDoneRef.current)
+      return;
+
+    // Mark as done first to prevent subsequent runs
+    initialFetchDoneRef.current = true;
+
+    console.debug("WalletInitializer: Performing initial portfolio fetch");
+    fetchAllPortfolios();
+  }, [solanaReady, evmReady, user, fetchAllPortfolios]);
+
+  // Effect for wallet address changes and initialization
+  useEffect(() => {
+    // Exit early if dependencies not ready
     if (!solanaReady || !evmReady || !user) return;
 
-    // Find the Privy wallets
+    // Initialize portfolio manager (only once)
+    if (!initializedRef.current) {
+      console.debug("WalletInitializer: Initializing portfolio manager");
+      initializePortfolioManager();
+      initializedRef.current = true;
+    }
+
+    // Find current wallet addresses
     const solanaWallet = solanaWallets.find(
       (wallet) =>
         wallet.type === "solana" && wallet.walletClientType === "privy"
@@ -38,30 +58,33 @@ export function WalletInitializer() {
     const newSolanaAddress = solanaWallet?.address ?? null;
     const newEvmAddress = evmWallet?.address ?? null;
 
-    // Only update if addresses have actually changed
-    if (
+    // Only check for changes when needed
+    const addressesChanged =
       newSolanaAddress !== prevSolanaAddressRef.current ||
-      newEvmAddress !== prevEvmAddressRef.current
-    ) {
-      // Update refs to new values
+      newEvmAddress !== prevEvmAddressRef.current;
+
+    if (addressesChanged) {
+      console.debug(
+        "WalletInitializer: Wallet addresses changed, updating store"
+      );
       prevSolanaAddressRef.current = newSolanaAddress;
       prevEvmAddressRef.current = newEvmAddress;
 
-      // Update the store
       setWalletAddresses(newSolanaAddress, newEvmAddress);
-
-      // ensure portfolio is refreshed
-      usePortfolioStore.getState().refreshPortfolio();
+      fetchAllPortfolios();
     }
   }, [
+    // Only depend on the specific wallet properties we need
     solanaReady,
     evmReady,
+    user,
+    // Use object reference equality for collections instead of deep equality
     solanaWallets,
     evmWallets,
     setWalletAddresses,
-    user,
+    initializePortfolioManager,
+    fetchAllPortfolios,
   ]);
 
-  // This component doesn't render anything
   return null;
 }
