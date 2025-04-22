@@ -47,8 +47,15 @@ export function EvmRawTokenMetadataDisplay({
 
       {/* Right column: Description */}
       {metadata?.description && (
-        <div className="flex-1 text-white whitespace-pre-line flex items-center">
-          <p className="text-sm text-center mx-auto">{metadata.description}</p>
+        <div className="flex-1 text-white whitespace-pre-line flex items-center relative">
+          <div
+            className="max-h-[200px] overflow-y-auto w-full scrollbar-container 
+                        [mask-image:linear-gradient(to_bottom,transparent,black_20px,black_calc(100%-20px),transparent)]"
+          >
+            <p className="text-sm text-center mx-auto py-4">
+              {metadata.description}
+            </p>
+          </div>
         </div>
       )}
     </div>
