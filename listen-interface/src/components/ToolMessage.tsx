@@ -707,7 +707,10 @@ export const ToolMessage = ({
     }
   }
 
-  if (toolOutput.name === "fetch_top_tokens") {
+  if (
+    toolOutput.name === "fetch_top_tokens" ||
+    toolOutput.name === "fetch_top_tokens_by_chain_id"
+  ) {
     try {
       const parsed = TopTokensResponseSchema.parse(
         JSON.parse(toolOutput.result)
