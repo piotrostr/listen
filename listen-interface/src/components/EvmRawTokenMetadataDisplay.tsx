@@ -7,9 +7,9 @@ export function EvmRawTokenMetadataDisplay({
   metadata: GtTokenMetadataRaw;
 }) {
   return (
-    <div className="flex flex-row w-full space-x-8 px-4 py-6">
+    <div className="flex flex-row w-full space-x-8 px-4 py-6 items-center">
       {/* Left column: Image, name, symbol, socials */}
-      <div className="flex items-start space-x-4 lg:min-w-[300px]">
+      <div className="flex items-center space-x-4 lg:min-w-[300px]">
         {metadata?.image_url && metadata.image_url.startsWith("https://") && (
           <div className="w-16 h-16 sm:w-24 sm:h-24 relative rounded-full overflow-hidden">
             <img
@@ -47,7 +47,7 @@ export function EvmRawTokenMetadataDisplay({
 
       {/* Right column: Description */}
       {metadata?.description && (
-        <div className="flex-1 text-white whitespace-pre-line flex items-center relative">
+        <div className="flex-1 text-white whitespace-pre-line flex items-center justify-center relative">
           <div
             className="max-h-[200px] overflow-y-auto w-full scrollbar-container 
                         [mask-image:linear-gradient(to_bottom,transparent,black_20px,black_calc(100%-20px),transparent)]"
