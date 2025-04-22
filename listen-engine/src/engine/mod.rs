@@ -151,10 +151,68 @@ impl Engine {
                     match msg {
                         EngineMessage::AddPipeline { pipeline, response_tx } => {
                             let asset_ids = engine.extract_assets(&pipeline);
+                            let has_now_condition = asset_ids.contains(&"NOW".to_string());
+
+                            // Save the pipeline to Redis first
+                            engine.redis.save_pipeline(&pipeline).await?;
+
+                            // If it's a NOW pipeline, evaluate it immediately instead of waiting for price updates
+                            if has_now_condition {
+                                // Clone the pipeline for evaluation
+                                let mut pipeline_to_evaluate = pipeline.clone();
+                                let engine_clone = engine.clone();
+                                let pipeline_id = format!("{}:{}", pipeline.user_id, pipeline.id);
+                                // Clone asset_ids for use in the task
+                                let task_asset_ids = asset_ids.clone();
+
+                                // Spawn a task to evaluate the pipeline immediately
+                                tokio::spawn(async move {
+                                    // Increment pending tasks counter
+                                    engine_clone.pending_tasks.fetch_add(1, Ordering::SeqCst);
+
+                                    // Mark as processing to prevent concurrent evaluation
+                                    {
+                                        let mut processing = engine_clone.processing_pipelines.lock().await;
+                                        processing.insert(pipeline_id.clone());
+                                    }
+
+                                    tracing::info!("Immediately evaluating NOW pipeline: {}", pipeline_id);
+
+                                    let result = engine_clone.evaluate_pipeline(&mut pipeline_to_evaluate).await;
+
+                                    match result {
+                                        Ok(is_complete) => {
+                                            if is_complete {
+                                                // Remove from all active_pipelines entries if complete
+                                                for asset in &task_asset_ids {
+                                                    if let Some(mut pipelines) = engine_clone.active_pipelines.get_mut(asset) {
+                                                        pipelines.remove(&pipeline_id);
+                                                    }
+                                                }
+                                                tracing::info!("NOW pipeline completed immediately: {}", pipeline_id);
+                                            }
+                                        }
+                                        Err(e) => {
+                                            tracing::error!("NOW pipeline evaluation error: {}", e);
+                                        }
+                                    }
+
+                                    // Always release the processing lock
+                                    {
+                                        let mut processing = engine_clone.processing_pipelines.lock().await;
+                                        processing.remove(&pipeline_id);
+                                    }
+
+                                    // Decrement pending tasks counter
+                                    engine_clone.pending_tasks.fetch_sub(1, Ordering::SeqCst);
+                                });
+                            }
+
+                            // Add to active_pipelines to be triggered by price updates (if needed later)
                             for asset_id in asset_ids {
                                 engine.active_pipelines.entry(asset_id.clone()).or_default().insert(format!("{}:{}", pipeline.user_id, pipeline.id));
-                                engine.redis.save_pipeline(&pipeline).await?;
                             }
+
                             let _ = response_tx.send(Ok(pipeline.id.to_string()));
                         },
                         EngineMessage::DeletePipeline { .. } => {

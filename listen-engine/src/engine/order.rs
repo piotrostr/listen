@@ -328,16 +328,9 @@ mod tests {
         tracing::info!("Executing transaction: {:#?}", privy_tx);
         if is_evm(&swap_order.from_chain_caip2) {
             tracing::info!("Ensuring approvals");
-            ensure_approvals(
-                privy_tx.evm_transaction.as_ref().unwrap()["to"]
-                    .as_str()
-                    .unwrap(),
-                &swap_order,
-                &privy_tx,
-                privy.clone(),
-            )
-            .await
-            .unwrap();
+            ensure_approvals(&swap_order, &privy_tx, privy.clone())
+                .await
+                .unwrap();
         }
         let res = privy.execute_transaction(privy_tx).await.unwrap();
         tracing::info!("Transaction result: {:#?}", res);
