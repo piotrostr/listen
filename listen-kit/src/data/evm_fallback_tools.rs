@@ -1,7 +1,8 @@
 use crate::{
     common::spawn_with_signer_and_channel,
+    data::TopToken,
     distiller::analyst::Analyst,
-    evm_fallback::{EvmFallback, GtTokenMetadata},
+    evm_fallback::{token_info::GtTokenMetadata, EvmFallback},
     reasoning_loop::ReasoningLoop,
     signer::SignerContext,
 };
@@ -67,6 +68,33 @@ pub async fn fetch_price_action_analysis_evm(
     })
     .await
     .await?
+}
+#[tool(description = "
+Fetch top tokens by chain ID from the GeckoTerminal API. 
+
+Use this tool to find trending tokens on EVM chains: Eth Mainnet, Base, Arbitrum or Binance Smart Chain.
+
+Parameters:
+- chain_id (uint): The chain ID of the tokens to fetch
+- limit (uint): number of tokens to return
+- duration (string): duration of the timeframe to fetch, one of:
+  * 5m (5 minutes)
+  * 1h (1 hour)
+  * 6h (6 hours)
+  * 24h (24 hours)
+
+Returns a list of top tokens with their market data.
+")]
+pub async fn fetch_top_tokens_by_chain_id(
+    chain_id: u64,
+    limit: usize,
+    duration: String,
+) -> Result<Vec<TopToken>> {
+    let evm_fallback = EvmFallback::new();
+    let tokens = evm_fallback
+        .fetch_top_tokens(chain_id, duration, limit)
+        .await?;
+    Ok(tokens)
 }
 
 #[cfg(test)]

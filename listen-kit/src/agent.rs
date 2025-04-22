@@ -1,5 +1,6 @@
 use crate::data::evm_fallback_tools::{
     FetchPriceActionAnalysisEvm, FetchTokenMetadataEvm,
+    FetchTopTokensByChainId,
 };
 use crate::evm::tools::{GetErc20Balance, GetEthBalance};
 use crate::solana::tools::{
@@ -46,8 +47,6 @@ pub fn model_to_versioned_model(model_type: String) -> String {
 
 // TODO
 // - gas sponsoring
-// - Swap (direct) - changed to allow any token on any chain
-// - BSC support and potentially SUI support?
 // For Solana candlesticks, return the timestamp field as ISO date string
 // TODO
 // - Set up Sentry and grab any issue with the tool calls straight up (set up pager ideally)
@@ -89,6 +88,7 @@ pub fn equip_with_evm_tools<M: StreamingCompletionModel>(
         .tool(GetErc20Balance)
         .tool(FetchTokenMetadataEvm)
         .tool(FetchPriceActionAnalysisEvm)
+        .tool(FetchTopTokensByChainId)
 }
 
 pub fn equip_with_autonomous_tools<M: StreamingCompletionModel>(

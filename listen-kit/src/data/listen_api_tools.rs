@@ -38,6 +38,7 @@ pub struct TopToken {
     pub market_cap: f64,
     pub volume_24h: f64,
     pub price_change_24h: f64,
+    pub chain_id: Option<u64>,
 }
 
 const API_BASE: &str = "https://api.listen-rs.com/v1/adapter";
