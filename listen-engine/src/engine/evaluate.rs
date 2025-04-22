@@ -6,17 +6,21 @@
 use std::{
     collections::{HashMap, HashSet},
     str::FromStr,
+    sync::Arc,
     time::Instant,
 };
 
+use dashmap::DashMap;
 use metrics::{counter, histogram};
 use solana_sdk::pubkey::Pubkey;
+use tokio::sync::Mutex;
 use uuid::Uuid;
 
 use crate::{
     engine::{
         error::EngineError,
         evaluator::Evaluator,
+        order::SwapOrder,
         pipeline::{Action, ConditionType, Pipeline, PipelineStep, Status},
     },
     Engine,
@@ -192,15 +196,49 @@ impl Engine {
                             Ok(true) => match &step.action {
                                 Action::Order(order) => {
                                     let order = order.clone();
-                                    match self
+
+                                    // For EVM transactions, we need to serialize execution for the same wallet on the same chain
+                                    if order.is_evm() && pipeline.wallet_address.is_some() {
+                                        // Extract chain ID from the order's from_chain_caip2
+                                        let chain_id = order.from_chain_caip2.clone();
+                                        let wallet_address =
+                                            pipeline.wallet_address.as_ref().unwrap().clone();
+                                        let user_wallet_key =
+                                            format!("{}:{}", pipeline.user_id, wallet_address);
+
+                                        tracing::debug!(
+                                            "Acquiring EVM lock for chain {} and wallet {}",
+                                            chain_id,
+                                            user_wallet_key
+                                        );
+
+                                        // Get or create the chain's wallet locks map
+                                        let chain_locks = self
+                                            .evm_chain_locks
+                                            .entry(chain_id)
+                                            .or_insert_with(|| DashMap::new());
+
+                                        // Get or create a mutex for this wallet on this chain
+                                        let wallet_lock = chain_locks
+                                            .entry(user_wallet_key)
+                                            .or_insert_with(|| Arc::new(Mutex::new(())))
+                                            .clone();
+
+                                        // Acquire the lock before executing the transaction
+                                        let _lock_guard = wallet_lock.lock().await;
+                                    }
+
+                                    // Execute order regardless of EVM status (lock is held if needed)
+                                    let result = self
                                         .execute_order(
                                             &order,
                                             &pipeline.user_id,
                                             pipeline.wallet_address.clone(),
                                             pipeline.pubkey.clone(),
                                         )
-                                        .await
-                                    {
+                                        .await;
+
+                                    match result {
                                         Ok(transaction_hash) => {
                                             step.status = Status::Completed;
                                             step.transaction_hash = Some(transaction_hash);

@@ -43,6 +43,10 @@ pub struct Engine {
     active_pipelines: Arc<DashMap<String, HashSet<String>>>, // asset -> pipeline ids
     shutdown_signal: Arc<Notify>,                            // Used to signal shutdown
     pending_tasks: Arc<AtomicUsize>, // Track number of running pipeline evaluations
+
+    // Locks for EVM transactions to prevent nonce conflicts
+    // Map of chain_id -> user_wallet -> Mutex
+    evm_chain_locks: Arc<DashMap<String, DashMap<String, Arc<Mutex<()>>>>>,
 }
 
 impl Clone for Engine {
@@ -56,6 +60,7 @@ impl Clone for Engine {
             active_pipelines: self.active_pipelines.clone(),
             shutdown_signal: self.shutdown_signal.clone(),
             pending_tasks: self.pending_tasks.clone(),
+            evm_chain_locks: self.evm_chain_locks.clone(),
         }
     }
 }
@@ -78,6 +83,7 @@ impl Engine {
                 active_pipelines: Arc::new(DashMap::new()),
                 shutdown_signal: Arc::new(Notify::new()),
                 pending_tasks: Arc::new(AtomicUsize::new(0)),
+                evm_chain_locks: Arc::new(DashMap::new()),
             },
             rx,
         ))
