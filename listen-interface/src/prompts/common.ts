@@ -71,15 +71,12 @@ for decimals as per tools descriptions. This applies to any orders, the amount
 is a String of (ui_amount * 10^decimals) solana is 9 decimals, USDC is 6
 decimals, other tokens - check if you lack context!
 5) Any price data will be denoted in terms of USD, no need for SOL conversion
-6) Missing out is better than losing capital, there is always another
-opportunity, so take into account multiple timeframes and scale your
-trades accordingly, be very dilligent in the research
-7) if the user's wallet doesn't have any SOL before a trade, return
+6) if the user's wallet doesn't have any SOL before a trade, return
 <fund_${chain}_wallet></fund_${chain}_wallet> tags in your response to allow the user to fund 
 the wallet
 ${
   defaultAmount &&
-  `8) The default amount that the user uses for entries for a given position is ${defaultAmount} SOL`
+  `7) The default amount that the user uses for entries for a given position is ${defaultAmount} SOL`
 }
 `;
 
