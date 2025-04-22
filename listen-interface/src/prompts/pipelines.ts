@@ -5,15 +5,21 @@ Example Pipeline:
 {
   "steps": [
     {
-      // Example 1: Solana Swap of SOL into USDC (executed immediately)
+      // Example 1: Solana Swap of SOL into USDC (executed if SOL price is above $160)
       "action": {
         "type": "SwapOrder",
         "input_token": "So11111111111111111111111111111111111111112", // SOL mint address
         "output_token": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC mint address (Solana)
         "amount": "1000000000" // 1 SOL (10^9)
         // from_chain_caip2/to_chain_caip2 omitted, defaults to Solana
-      }
-      // No "conditions", executes immediately
+      },
+      "conditions": [
+        {
+          "type": "PriceAbove",
+          "asset": "So11111111111111111111111111111111111111112", // SOL mint address
+          "value": 160 // SOL price in USD
+        }
+      ]
     },
     {
       // Example 2: EVM Swap (conditional)
@@ -25,13 +31,9 @@ Example Pipeline:
         "from_chain_caip2": "eip155:1", // Required for EVM/cross-chain
         "to_chain_caip2": "eip155:1"   // Required for EVM/cross-chain
       },
-      "conditions": [
-        {
-          "type": "PriceBelow",
-          "asset": "0x0000000000000000000000000000000000000000", // Native ETH placeholder
-          "value": 1950 // ETH price in USD
-        }
-      ]
+      // No "conditions", executes immediately
+      // NOTE: "conditions" is only available for Solana tokens, there is currently no
+      // live price feed for EVM tokens in the Listen order engine
     },
     {
       // Example 3: Notification (conditional)
