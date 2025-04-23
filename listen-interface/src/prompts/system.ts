@@ -9,7 +9,7 @@ import {
 import { pipelineKnowledge } from "./pipelines";
 
 export function systemPrompt(
-  joinedPortfolio: CompactPortfolio, // TODO ensure that the chain param is correct (caip2)
+  joinedPortfolio: CompactPortfolio,
   pubkey: string | null,
   address: string | null,
   defaultAmount: string,

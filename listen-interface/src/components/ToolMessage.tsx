@@ -727,7 +727,6 @@ export const ToolMessage = ({
       </div>
     );
     try {
-      // TODO standardize this output, not just string but { status: string, transactionHash: string }
       return (
         <TxContainer>
           <div className="mb-2 overflow-hidden">
