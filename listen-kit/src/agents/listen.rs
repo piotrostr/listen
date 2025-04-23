@@ -66,7 +66,7 @@ pub fn equip_with_swarm_leader_tools<M: StreamingCompletionModel>(
         .tool(FetchTokenMetadata)
         .tool(SearchOnDexScreener)
         .tool(DelegateToResearchAgent)
-        .tool(DelegateToSolanaTraderAgent)
+        .tool(DelegateToTraderAgent)
         .tool(DelegateToChartAgent)
         .tool(Think)
         .tool(GetCurrentTime)
