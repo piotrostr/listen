@@ -89,7 +89,6 @@ mod tests {
         tracing::info!("{:?}", suggestions);
     }
 
-    // TODO fix empty assistant message in the reasoning loop
     #[tokio::test]
     async fn test_suggest_real_case() {
         let messages = vec![
