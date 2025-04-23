@@ -48,6 +48,8 @@ export function ChatInput({
 
   const { user } = usePrivy();
 
+  // const { data: listenBalance } = useListenBalance();
+
   // Function to auto-resize the textarea
   const autoResizeTextarea = () => {
     const textarea = textareaRef.current;
