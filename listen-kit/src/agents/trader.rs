@@ -42,7 +42,7 @@ const PREAMBLE_ZH: &str =
         6. 基于全面的风险/回报分析推荐行动. 
         请使用中文";
 
-pub fn create_solana_trader_agent(locale: String) -> GeminiAgent {
+pub fn create_trader_agent(locale: String) -> GeminiAgent {
     gemini_agent_builder()
         .preamble(if locale == "zh" {
             PREAMBLE_ZH
@@ -69,15 +69,13 @@ pub fn create_solana_trader_agent(locale: String) -> GeminiAgent {
 #[tool(
     description = "Delegate a task to the trader agent. It can analyze on-chain data, perform swaps, fetch token info, check balances, and schedule advanced orders on both Solana and EVM chains"
 )]
-pub async fn delegate_to_solana_trader_agent(
-    prompt: String,
-) -> Result<String> {
+pub async fn delegate_to_trader_agent(prompt: String) -> Result<String> {
     let ctx = SignerContext::current().await;
     let user_id = ctx.user_id().unwrap_or_default();
     delegate_to_agent(
         prompt,
-        Model::Gemini(Arc::new(create_solana_trader_agent(ctx.locale()))),
-        "solana_trader_agent".to_string(),
+        Model::Gemini(Arc::new(create_trader_agent(ctx.locale()))),
+        "trader_agent".to_string(),
         ctx,
         false,
         user_id,

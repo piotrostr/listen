@@ -3,7 +3,7 @@ use rig::{agent::AgentBuilder, streaming::StreamingCompletionModel};
 use crate::{
     agents::{
         chart::DelegateToChartAgent, research::DelegateToResearchAgent,
-        solana_trader::DelegateToSolanaTraderAgent,
+        trader::DelegateToTraderAgent,
     },
     common::{
         claude_agent_builder, deepseek_agent_builder, gemini_agent_builder,
