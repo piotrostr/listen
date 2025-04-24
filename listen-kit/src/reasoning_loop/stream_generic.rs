@@ -38,18 +38,14 @@ impl ReasoningLoop {
             let mut current_response = String::new();
 
             let _prompt = if is_first_iteration {
-                if let Some(global_memory) = &global_memory {
-                    Message::user(
-                        inject_memories(
-                            global_memory.clone(),
-                            prompt.clone(),
-                            user_id.clone(),
-                        )
-                        .await?,
+                Message::user(
+                    inject_memories(
+                        global_memory.clone(),
+                        prompt.clone(),
+                        user_id.clone(),
                     )
-                } else {
-                    Message::user(prompt.clone())
-                }
+                    .await?,
+                )
             } else {
                 next_input.clone()
             };

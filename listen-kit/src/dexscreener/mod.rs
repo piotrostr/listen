@@ -29,7 +29,6 @@ pub async fn search_ticker(ticker: String) -> Result<DexScreenerResponse> {
         .pairs
         .into_iter()
         .filter(|pair| {
-            println!("pair: {:?}", pair);
             pair.volume.is_some()
                 && pair.volume.as_ref().unwrap().h24.unwrap_or(0.0) > 1000.0
         })
