@@ -48,6 +48,7 @@ pub struct AddResult {
 }
 
 impl GraphMemory {
+    #[timed::timed]
     pub async fn search(
         &self,
         query: &str,

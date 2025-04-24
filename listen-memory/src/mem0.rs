@@ -44,6 +44,26 @@ pub struct MemoryItem {
 }
 
 impl MemoryItem {
+    pub fn distill(&self) -> serde_json::Value {
+        let last_updated = self
+            .updated_at
+            .clone()
+            .unwrap_or(self.created_at.clone().unwrap());
+        let mut res = serde_json::json!({
+            "memory": self.memory,
+            "updated_at": last_updated,
+            "score": self.score,
+        });
+
+        if let Some(metadata) = &self.metadata {
+            res["metadata"] = metadata.clone();
+        }
+
+        res
+    }
+}
+
+impl MemoryItem {
     pub fn stringify(&self) -> serde_json::Value {
         let mut res = serde_json::json!({
             "memory": self.memory,
@@ -121,6 +141,7 @@ impl Mem0 {
         Ok(result)
     }
 
+    #[timed::timed]
     pub async fn search_memories(&self, query: String, user_id: String) -> Result<SearchResult> {
         let response = self
             .client
