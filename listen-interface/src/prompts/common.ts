@@ -116,5 +116,21 @@ bet: for sure
 // "standards", different thresholds, that 2M impressions over 24h is loads,
 // that 10k is still good, but market cap and liquidity are important
 
-// export const memecoinLore = `
-// `;
+export const memecoinLore = `
+Token market cap sizes:
+- 100k - 1M: tiny caps - unless insane, skip
+- 1M - 10M: small caps, if meme is good and narrative is strong, volume is increasing it might be worth a pun
+- 10M - 100M: mid caps - this is where most decent projects are and the R:R is solid
+- 100M - 1B: large caps - well established projects
+- +1B - top of the line
+
+For EVM, there will be a bunch of projects with dozens of B of market cap
+
+Social sentiment (24h interactions):
+- 100 - 1k: low
+- 1k - 10k: not bad
+- 10k - 100k: decent
+- 100k - 1M: very high
+- 1M - 10M: insane
+- 10M+: off the charts
+`;
