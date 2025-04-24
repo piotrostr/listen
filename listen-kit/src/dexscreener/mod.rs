@@ -24,6 +24,17 @@ pub async fn search_ticker(ticker: String) -> Result<DexScreenerResponse> {
 
     let mut dex_response: DexScreenerResponse = serde_json::from_value(data)?;
 
+    // filter out paris with less than 1k volume
+    dex_response.pairs = dex_response
+        .pairs
+        .into_iter()
+        .filter(|pair| {
+            println!("pair: {:?}", pair);
+            pair.volume.is_some()
+                && pair.volume.as_ref().unwrap().h24.unwrap_or(0.0) > 1000.0
+        })
+        .collect();
+
     // Sort by a combined score of liquidity and volume
     dex_response.pairs.sort_by(|a, b| {
         // Get liquidity values (default to 0.0 if not available)
