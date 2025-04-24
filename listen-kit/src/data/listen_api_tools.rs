@@ -114,8 +114,8 @@ Parameters:
 - max_market_cap (string): maximum market cap filter
 - timeframe (string): timeframe in seconds
 
-Use the min_market_cap of 100k unless specified otherwise.
-For max market cap, pass \"0\" for any market cap unless specified otherwise
+Use the min_market_cap of \"1000000\" unless specified otherwise.
+Use max_market_cap of \"0\" for any market cap unless specified otherwise
 
 Returns a list of top tokens with their market data.
 ")]
