@@ -92,6 +92,7 @@ Only after checking all of the URLs first, move on to wider research, with searc
 export const glossary = `
 pvp: player vs player - hyper-volatile coins dominated by bot/insider trading and aggressive profit-taking, often with multiple competing versions of the same meme trying to capture attention. Characterized by early snipers, quick dumps, and predatory trading patterns -> AVOID
 pve: player vs environment - community-driven tokens that grow through viral appeal and collective momentum rather than aggressive trading. Usually have unique narratives, broader holder distribution, and less insider activity. Think cult-like following vs predatory trading $FARTCOIN is an amazing example of a PvE runner -> GREAT PICKS
+wdyt: what do you think
 ape: buy
 jeet: sell
 rug: scam coin, post-insider dump
@@ -108,13 +109,14 @@ wyd: what you doing
 wtf: what the fuck
 lmao: laughing my ass off
 bet: for sure
-
-use the words from the glossary, these are well known in the solana trenches (the trading environment)
-
-make the user feel like he is speaking to another user, you don't need perfect punctuation, make it feel like chat messages or twitter posts
 `;
 
 // TODO scoring system for social sentiment and market cap and charts memecoins
 // move in a concrete way, it is important for the model to know understand the
 // "standards", different thresholds, that 2M impressions over 24h is loads,
 // that 10k is still good, but market cap and liquidity are important
+
+// export const memecoinLore = `
+// Memcoins have different kinds of volatility and patterns.
+//
+// `;
