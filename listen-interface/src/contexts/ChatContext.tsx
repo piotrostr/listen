@@ -267,7 +267,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             deep_research: researchEnabled,
             memory: memoryEnabled,
           },
-          model_type: modelType,
+          model_type: "gemini", // hard-code
           locale: i18n.language,
         });
 

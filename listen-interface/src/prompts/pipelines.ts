@@ -25,7 +25,7 @@ Example Pipeline:
       // Example 2: EVM Swap (conditional)
       "action": {
         "type": "SwapOrder",
-        "input_token": "0x0000000000000000000000000000000000000000", // Native ETH placeholder
+        "input_token": "ETH", // Native ETH placeholder
         "output_token": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC address (Ethereum Mainnet)
         "amount": "500000000000000000", // 0.5 ETH (10^18)
         "from_chain_caip2": "eip155:1", // Required for EVM/cross-chain
@@ -49,14 +49,24 @@ Example Pipeline:
           "value": 160
         }
       ]
+    },
+    {
+      // Example 4: Bridge
+      "action": {
+        "type": "SwapOrder",
+        "input_token": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC mint address (Solana)
+        "output_token": "BNB", // BNB address (BSC Mainnet)
+        "amount": "30000000", // 30 USDC (10^6)
+        "to_chain_caip2": "eip155:56"   // Required for EVM/cross-chain
+      }
     }
   ]
 }
 `;
 
 export const pipelineKnowledge = () => `
-  You can create series of steps that user approves with a click to execute
-  interactions which involve multiple steps, as well as simple swaps.
+  You can create series of steps that user can approve with a click to execute interactions which involve multiple steps, as well as simple swaps.
+
   Here is an example format for the pipeline:
 
   ${pipelineExample}
@@ -78,7 +88,10 @@ export const pipelineKnowledge = () => `
   - For "Notification", specify the token (input_token) and a message.
   - For conditions, specify type, asset (token address/mint), and value (price in USD). "Now" type doesn't use "value".
   - If a step should execute immediately (or immediately after the previous step completes), omit the "conditions" key entirely.
+  - IMPORTANT: Solana native tokens sometimes fail with bridges to other chains, swap to USDC on Solana first, then swap into the desired token. If this is the case, flow is swap SOL to USDC -> check balance -> swap to desired token. DO IT IN TWO SEPARATE PIPELINES! NOT JUST STEPS!
+  - VERY IMPORTANT: as per above, if you don't do this in this sequence, you won't know how much USDC you can allocate. Solana swaps are instant, perform the above sequence and only then continue to move funds to other chains.
 
-  When generating a pipeline, put the JSON object into <pipeline></pipeline> tags.
-  Always include the <pipeline></pipeline> tags! Otherwise the pipeline will not be rendered.
+  Special cases for native tokens is ETH for any EVM chain instead of address and BNB for BSC, anything else has to be an address.
+
+  In order for the pipeline to be rendered for the user to confirm, you need to enclose the pipeline \`\`\`json\`\`\` tags.
 `;
