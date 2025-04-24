@@ -15,14 +15,6 @@ sudo mkdir -p /etc/listen-0mem
 # Copy application files
 sudo cp -r ./* /opt/listen-0mem/
 
-# Install bun globally if not already installed
-if ! command -v bun &> /dev/null; then
-    curl -fsSL https://bun.sh/install | bash
-fi
-
-# Install dependencies
-cd /opt/listen-0mem && sudo bun install
-
 # Copy environment file
 sudo cp .env /etc/listen-0mem/environment
 
