@@ -1,0 +1,18 @@
+[Unit]
+Description=Listen 0mem Service
+After=network.target
+StartLimitIntervalSec=0
+
+[Service]
+Type=simple
+User=listen-0mem
+Group=listen-0mem
+Restart=always
+RestartSec=1
+Environment=IS_SYSTEMD_SERVICE=1
+EnvironmentFile=/etc/listen-0mem/environment
+WorkingDirectory=/opt/listen-0mem
+ExecStart=/usr/local/bin/bun run /opt/listen-0mem/index.ts
+
+[Install]
+WantedBy=multi-user.target 
