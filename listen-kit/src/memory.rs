@@ -47,7 +47,7 @@ pub async fn inject_memories(
         Some(mem) => {
             // Run both searches in parallel when we have global memory
             let mem0 = Mem0::default();
-            let op = mem0.search_memories(prompt.clone(), user_id.clone());
+            let op = mem0.search_memories(prompt.clone(), user_id);
             let (global_mems, user_mems) = tokio::join!(
                 mem.search(prompt.as_str(), Filters {}, Some(15)),
                 op
@@ -88,7 +88,7 @@ pub async fn inject_memories(
         }
     };
 
-    // Create base prompt without memories if serialization fails
+    // Create base prompt with user memories
     let mut injected_prompt =
         format!("<USER PROMPT>{}</USER PROMPT>", prompt);
 
@@ -106,7 +106,7 @@ pub async fn inject_memories(
                 injected_prompt, user_mems_str
             );
 
-            // Debug logging only if serialization succeeds
+            // Debug logging
             if let Ok(pretty_str) = serde_json::to_string_pretty(
                 &user_specific_memories
                     .results
@@ -134,7 +134,7 @@ pub async fn inject_memories(
                         injected_prompt, global_mems_str
                     );
 
-                    // Debug logging only if serialization succeeds
+                    // Debug logging
                     if let Ok(pretty_str) =
                         serde_json::to_string_pretty(&memories)
                     {
