@@ -101,12 +101,26 @@ impl EvmFallback {
             ));
         }
 
-        let trending_pools_resp =
+        let mut trending_pools_resp =
             response.json::<GTTrendingPoolsResponse>().await.context(
                 "Failed to deserialize GeckoTerminal trending pools response",
             )?;
 
         let mut top_tokens = Vec::new();
+
+        // filter out the ones with 0 mc
+        trending_pools_resp.data = trending_pools_resp
+            .data
+            .into_iter()
+            .filter(|pool| {
+                let market_cap = pool
+                    .attributes
+                    .market_cap_usd
+                    .clone()
+                    .unwrap_or("0".to_string());
+                market_cap != "0"
+            })
+            .collect();
 
         for pool in trending_pools_resp.data.iter().take(limit) {
             // Extract token name from pool name (assuming format is "TOKEN / OTHER")
