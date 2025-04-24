@@ -1,5 +1,6 @@
 import { CompactPortfolio } from "../hooks/util";
 import {
+  glossary,
   guidelines,
   onboarding,
   onboardingEvm,
@@ -23,6 +24,7 @@ export function systemPrompt(
   <research_flow>${researchFlow}</research_flow>
   <guidelines>${guidelines("solana", defaultAmount)}</guidelines>
   <knowledge>${pipelineKnowledge()}</knowledge>
+  <glossary>${glossary}</glossary>
   ${!hasWallet || isGuest ? `<onboarding>${onboarding(hasWallet, isGuest)}</onboarding>` : ""}
   ${hasWallet && pubkey ? `<solana_address>${pubkey}</solana_address>` : ""}
   ${hasEvmWallet ? `<evm_address>${address}</evm_address>` : onboardingEvm(hasWallet, isGuest)}
