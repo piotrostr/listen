@@ -111,6 +111,12 @@ impl Mem0 {
         }
     }
 
+    pub fn empty_search_result(&self) -> SearchResult {
+        SearchResult {
+            results: Vec::new(),
+        }
+    }
+
     pub async fn health(&self) -> Result<bool> {
         let response = self
             .client
