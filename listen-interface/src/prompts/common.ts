@@ -117,6 +117,4 @@ bet: for sure
 // that 10k is still good, but market cap and liquidity are important
 
 // export const memecoinLore = `
-// Memcoins have different kinds of volatility and patterns.
-//
 // `;

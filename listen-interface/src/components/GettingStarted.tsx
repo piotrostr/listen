@@ -3,7 +3,6 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMobile } from "../contexts/MobileContext";
-import { BetaWarning } from "./BetaWarning";
 import { FullPageLoading } from "./FullPageLoading";
 import { GradientOutlineButton } from "./GradientOutlineButton";
 import { OutlineButton } from "./OutlineButton";
@@ -100,7 +99,6 @@ export function GettingStarted() {
       <div
         className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full text-center text-xs justify-center items-center mb-1`}
       >
-        <BetaWarning />
         <VersionDisplay />
       </div>
     </div>
