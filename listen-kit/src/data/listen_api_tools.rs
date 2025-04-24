@@ -1,7 +1,9 @@
-use crate::common::spawn_with_signer_and_channel;
 use crate::distiller::analyst::Analyst;
 use crate::reasoning_loop::ReasoningLoop;
 use crate::signer::SignerContext;
+use crate::{
+    common::spawn_with_signer_and_channel, solana::util::validate_mint,
+};
 use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
 use serde::{Deserialize, Serialize};
@@ -57,6 +59,8 @@ It returns metadata that includes:
 - IPFS metadata (name, description, image, social links)
 ")]
 pub async fn fetch_token_metadata(mint: String) -> Result<serde_json::Value> {
+    validate_mint(&mint)?;
+
     let response =
         reqwest::get(format!("{}/metadata?mint={}", API_BASE, mint))
             .await
@@ -77,6 +81,8 @@ Parameters:
 Returns the price of the token in USD.
 ")]
 pub async fn fetch_token_price(mint: String) -> Result<f64> {
+    validate_mint(&mint)?;
+
     let response = reqwest::get(format!("{}/price?mint={}", API_BASE, mint))
         .await
         .map_err(|e| anyhow!("Failed to fetch token price: {}", e))?;
@@ -163,6 +169,8 @@ pub async fn fetch_price_chart(
     mint: String,
     interval: String,
 ) -> Result<Vec<PriceTick>> {
+    validate_mint(&mint)?;
+
     let response = reqwest::get(format!(
         "{}/candlesticks?mint={}&interval={}",
         API_BASE, mint, interval
@@ -209,6 +217,8 @@ pub async fn fetch_price_action_analysis(
     interval: String,
     intent: String,
 ) -> Result<String> {
+    validate_mint(&mint)?;
+
     // Validate interval
     match interval.as_str() {
         "15s" | "30s" | "1m" | "5m" | "15m" | "30m" | "1h" | "4h" | "1d" => {}

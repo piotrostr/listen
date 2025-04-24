@@ -182,3 +182,14 @@ where
     .await
     .map_err(|e| anyhow!("{:#?}", e))
 }
+
+pub fn validate_mint(mint: &str) -> Result<()> {
+    if Pubkey::from_str(mint).is_err() {
+        return Err(anyhow!(
+            "Invalid mint: {}, this has to be a Base58 string",
+            mint
+        ));
+    }
+
+    Ok(())
+}
