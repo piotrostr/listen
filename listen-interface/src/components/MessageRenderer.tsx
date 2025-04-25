@@ -70,8 +70,13 @@ export function MessageRendererBase({
   const { t } = useTranslation();
   const { debugMode } = useSettingsStore();
 
-  if (debugMode) {
-    return <ChatMessage message={msg.message} direction={msg.direction} />;
+  if (debugMode && msg.direction === "incoming") {
+    return (
+      <div>
+        <div>{msg.message}</div>
+        <div>{msg.direction}</div>
+      </div>
+    );
   }
 
   // Move the isLastUserMessage calculation into a useMemo
