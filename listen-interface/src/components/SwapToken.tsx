@@ -1,3 +1,5 @@
+import { ChainIcon } from "./ChainIcon";
+
 interface SwapTokenProps {
   image?: string | null;
   name?: string;
@@ -18,7 +20,14 @@ export const SwapToken = ({
   showAmount = false,
 }: SwapTokenProps) => {
   if (compact) {
-    return <SwapTokenCompact image={image} name={name} amount={amount} />;
+    return (
+      <SwapTokenCompact
+        image={image}
+        name={name}
+        amount={amount}
+        chainId={chainId}
+      />
+    );
   }
   return (
     <div className="flex items-center gap-3">
@@ -59,14 +68,21 @@ export const SwapTokenCompact = ({
   image,
   name,
   amount,
+  chainId,
 }: {
   image: string | null | undefined;
   name: string | null | undefined;
   amount: string | null | undefined;
+  chainId: string | null | undefined;
 }) => {
   return (
     <div className="flex flex-col items-center gap-1">
-      <div className="text-sm font-medium">{name ?? ""}</div>
+      <div className="text-sm font-medium flex items-center gap-1">
+        {name ?? ""}
+        {chainId && chainId !== "solana" && (
+          <ChainIcon chainId={chainId} className={"w-3 h-3"} />
+        )}
+      </div>
       {image && (
         <img
           src={image.replace("cf-ipfs.com", "ipfs.io")}

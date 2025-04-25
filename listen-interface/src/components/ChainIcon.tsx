@@ -15,10 +15,8 @@ export const ChainIcon = ({
 
   if (chainIdentifier === "base") {
     return (
-      <div className="w-4 h-4 rounded-full bg-white">
+      <div className={`rounded-full bg-white ${className}`}>
         <svg
-          width="16"
-          height="16"
           viewBox="0 0 256 256"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
