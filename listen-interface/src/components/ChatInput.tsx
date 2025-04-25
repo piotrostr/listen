@@ -201,7 +201,7 @@ export function ChatInput({
             <Tooltip.Trigger asChild>
               <button
                 onClick={toggleMemory}
-                disabled={process.env.NODE_ENV === "production"} // not yet
+                // disabled={process.env.NODE_ENV === "production"} // not yet
                 className={`flex items-center gap-2 px-4 py-2 rounded-full ${
                   memoryEnabled
                     ? "bg-blue-600/20 text-blue-400"
