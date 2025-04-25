@@ -151,23 +151,27 @@ export const fetchPortfolio = async (
   };
 
   // Combine SOL with other tokens
-  const tokenPortfolioItems = holdings.map((holding, index) => {
-    const metadata = tokenMetadata[index + 1]; // offset by 1 since SOL metadata is first
-    const price = Number(pricesResponse.data[holding.mint]?.price || 0);
-    const amount = Number(holding.amount) / Math.pow(10, metadata.decimals);
+  const tokenPortfolioItems = holdings
+    .map((holding, index) => {
+      const metadata = tokenMetadata[index + 1]; // offset by 1 since SOL metadata is first
+      const price = Number(pricesResponse.data[holding.mint]?.price || 0);
+      const amount = Number(holding.amount) / Math.pow(10, metadata.decimals);
 
-    return {
-      address: metadata.address,
-      name: metadata.name,
-      symbol: metadata.symbol,
-      decimals: metadata.decimals,
-      logoURI: metadata.logoURI,
-      price,
-      amount,
-      daily_volume: metadata.volume24h || 0,
-      chain: "solana",
-    };
-  });
+      if ((price * amount).toFixed(2) === "0.00") return null;
+
+      const portfolioItem: PortfolioItem = {
+        address: metadata.address,
+        name: metadata.name,
+        symbol: metadata.symbol,
+        decimals: metadata.decimals,
+        logoURI: metadata.logoURI,
+        price,
+        amount,
+        chain: "solana",
+      };
+      return portfolioItem;
+    })
+    .filter((item): item is PortfolioItem => item !== null);
 
   return [solPortfolioItem, ...tokenPortfolioItems];
 };

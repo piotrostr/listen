@@ -1,27 +1,94 @@
-import { Alchemy, Network } from "alchemy-sdk";
 import { getAddress } from "viem";
+import { z } from "zod";
 import { tokenMetadataCache } from "./localStorage";
 import { PortfolioItem, TokenMetadata } from "./types";
 import { getAnyToken } from "./useToken";
 
 const SUPPORTED_NETWORKS = [
-  { network: Network.ETH_MAINNET, chainId: "1", chain: "ethereum" },
-  { network: Network.ARB_MAINNET, chainId: "42161", chain: "arbitrum" },
-  { network: Network.BNB_MAINNET, chainId: "56", chain: "bsc" },
-  { network: Network.BASE_MAINNET, chainId: "8453", chain: "base" },
+  { chainId: "1", networkId: "eth-mainnet", chain: "ethereum" },
+  { chainId: "42161", networkId: "arb-mainnet", chain: "arbitrum" },
+  { chainId: "56", networkId: "bnb-mainnet", chain: "bsc" },
+  { chainId: "8453", networkId: "base-mainnet", chain: "base" },
 ] as const;
 
-const alchemyClients = SUPPORTED_NETWORKS.map(
-  ({ network, chainId, chain }) => ({
-    client: new Alchemy({
-      apiKey: import.meta.env.VITE_ALCHEMY_API_KEY,
-      network,
-    }),
-    chainId,
-    chain,
-    network,
-  })
-);
+const TokenPriceSchema = z.object({
+  currency: z.string(),
+  value: z.string(),
+  lastUpdatedAt: z.string(),
+});
+
+const TokenMetadataSchema = z.object({
+  symbol: z.string().nullable(),
+  decimals: z.number().nullable(),
+  name: z.string().nullable(),
+  logo: z.string().nullable(),
+});
+
+const TokenSchema = z.object({
+  network: z.string(),
+  tokenAddress: z.string().nullable(),
+  tokenBalance: z.string(),
+  tokenMetadata: TokenMetadataSchema.optional(),
+  tokenPrices: z.array(TokenPriceSchema).optional(),
+});
+
+const AlchemyResponseSchema = z.object({
+  data: z.object({
+    tokens: z.array(TokenSchema),
+  }),
+});
+
+async function enrichTokenMetadata(
+  token: z.infer<typeof TokenSchema>,
+  network: (typeof SUPPORTED_NETWORKS)[number]
+): Promise<TokenMetadata | null> {
+  try {
+    // If we have complete metadata from Alchemy, use it
+    if (
+      token.tokenMetadata &&
+      token.tokenMetadata.name &&
+      token.tokenMetadata.symbol &&
+      token.tokenMetadata.decimals &&
+      token.tokenMetadata.logo
+    ) {
+      return {
+        address: token.tokenAddress || "",
+        name: token.tokenMetadata.name,
+        symbol: token.tokenMetadata.symbol,
+        decimals: token.tokenMetadata.decimals,
+        logoURI: token.tokenMetadata.logo || "",
+        chainId: parseInt(network.chainId),
+      };
+    }
+
+    // If token address is null (native token) or metadata is incomplete, fetch from traditional source
+    const address =
+      token.tokenAddress || "0x0000000000000000000000000000000000000000";
+    const metadata = await getAnyToken(getAddress(address), network.chainId);
+
+    if (!metadata || !metadata.decimals) {
+      console.error(
+        `No metadata found for ${address} on chain ${network.chainId}`
+      );
+      return null;
+    }
+
+    return {
+      address,
+      name: metadata.name || "",
+      symbol: metadata.symbol || "",
+      decimals: metadata.decimals,
+      logoURI: metadata.logoURI || "",
+      chainId: parseInt(network.chainId),
+    };
+  } catch (error) {
+    console.error(
+      `Error enriching metadata for token ${token.tokenAddress}:`,
+      error
+    );
+    return null;
+  }
+}
 
 export async function getTokensMetadata(
   addresses: string[],
@@ -90,78 +157,67 @@ export async function getTokenHoldings(
   address: string
 ): Promise<PortfolioItem[]> {
   try {
-    const allTokens: PortfolioItem[] = [];
-
-    await Promise.all(
-      alchemyClients.map(async ({ chainId, chain, client, network }) => {
-        const { tokenBalances } = await client.core.getTokenBalances(address);
-
-        // Get native token balance
-        const nativeBalance = await client.core.getBalance(address);
-
-        // Filter non-zero token balances
-        const nonZeroBalances = tokenBalances.filter((token) => {
-          const balance = BigInt(token.tokenBalance || "0");
-          return balance > BigInt(0);
-        });
-
-        // Add native token if balance > 0
-        if (nativeBalance.toBigInt() > BigInt(0)) {
-          nonZeroBalances.push({
-            contractAddress: "0x0000000000000000000000000000000000000000",
-            tokenBalance: nativeBalance.toString(),
-            error: null,
-          });
-        }
-
-        // Get all token addresses including native token
-        const tokenAddresses = nonZeroBalances.map(
-          (token) => token.contractAddress
-        );
-
-        // Get metadata for all tokens
-        const metadataMap = await getTokensMetadata(tokenAddresses, chainId);
-
-        // Get prices for all tokens
-        const priceData = await client.prices.getTokenPriceByAddress(
-          tokenAddresses.map((address) => ({
-            address,
-            network,
-          }))
-        );
-
-        // Process all tokens including native
-        const tokens = nonZeroBalances
-          .map((token) => {
-            // Create the same compound key format used in caching
-            const metadataKey = `${token.contractAddress}-${chainId}`;
-            const metadata = metadataMap.get(metadataKey);
-            if (!metadata) return null;
-
-            const price =
-              priceData.data.find((p) => p.address === token.contractAddress)
-                ?.prices[0]?.value || 0;
-
-            const rawBalance = BigInt(token.tokenBalance!);
-            const amount = Number(rawBalance) / Math.pow(10, metadata.decimals);
-
-            const portfolioItem: PortfolioItem = {
-              ...metadata,
-              price: Number(price),
-              amount,
-              chain,
-              logoURI: metadata.logoURI || "",
-            };
-
-            return portfolioItem;
-          })
-          .filter((token): token is PortfolioItem => token !== null);
-
-        allTokens.push(...tokens);
-      })
+    const response = await fetch(
+      `https://api.g.alchemy.com/data/v1/${import.meta.env.VITE_ALCHEMY_API_KEY}/assets/tokens/by-address`,
+      {
+        method: "POST",
+        headers: {
+          accept: "application/json",
+          "content-type": "application/json",
+        },
+        body: JSON.stringify({
+          addresses: [
+            {
+              address,
+              networks: SUPPORTED_NETWORKS.map((n) => n.networkId),
+            },
+          ],
+          withMetadata: true,
+          withPrices: true,
+          includeNativeTokens: true,
+        }),
+      }
     );
 
-    return allTokens;
+    const rawData = await response.json();
+    const validatedData = AlchemyResponseSchema.parse(rawData);
+
+    const portfolioPromises = validatedData.data.tokens
+      .filter((token) => {
+        const balance = BigInt(token.tokenBalance);
+        return balance > BigInt(0);
+      })
+      .map(async (token) => {
+        const network = SUPPORTED_NETWORKS.find(
+          (n) => n.networkId === token.network
+        );
+        if (!network) return null;
+
+        const metadata = await enrichTokenMetadata(token, network);
+        if (!metadata) return null;
+
+        const rawBalance = BigInt(token.tokenBalance);
+        const amount = Number(rawBalance) / Math.pow(10, metadata.decimals);
+        const price = token.tokenPrices?.[0]?.value
+          ? parseFloat(token.tokenPrices[0].value)
+          : 0;
+
+        if ((price * amount).toFixed(2) === "0.00") return null;
+
+        const portfolioItem: PortfolioItem = {
+          ...metadata,
+          chain: network.chain,
+          price,
+          amount,
+        };
+
+        return portfolioItem;
+      });
+
+    const portfolioItems = await Promise.all(portfolioPromises);
+    return portfolioItems.filter(
+      (item): item is PortfolioItem => item !== null
+    );
   } catch (error) {
     console.error("Error fetching token holdings:", error);
     throw error;
