@@ -467,6 +467,19 @@ mod tests {
 
     #[tokio::test]
     #[ignore]
+    async fn test_base_to_sol() {
+        test_swap_generic(
+            "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC base
+            "So11111111111111111111111111111111111111112", // SOL
+            "1000000",                                    // 1 USDC
+            Caip2::BASE,
+            Caip2::SOLANA,
+        )
+        .await;
+    }
+
+    #[tokio::test]
+    #[ignore]
     async fn test_base_to_bsc() {
         test_swap_generic(
             "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC base
