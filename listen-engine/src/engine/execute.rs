@@ -97,6 +97,17 @@ pub async fn ensure_approvals(
     )
     .await
     .map_err(EngineError::ApprovalsError)?;
+    if [
+        "ETH",
+        "BNB",
+        "SOL",
+        "0x0000000000000000000000000000000000000000",
+    ]
+    .contains(&order.input_token.as_str())
+    {
+        // skip native tokens, no need to approve those
+        return Ok(());
+    }
     if allowance < order.amount.parse::<u128>().unwrap() {
         let approval_transaction = create_approval_transaction(
             &order.input_token,
