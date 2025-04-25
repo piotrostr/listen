@@ -103,6 +103,13 @@ export const makeMemory = async () => {
   const embeddingModel = "text-embedding-004";
   const embeddingDimensions = 768;
 
+  console.log(
+    "GEMINI_API_KEY:",
+    process.env.GEMINI_API_KEY?.slice(0, 4) +
+      "..." +
+      process.env.GEMINI_API_KEY?.slice(-4)
+  );
+
   const memory = new Memory({
     disableHistory: true,
     customPrompt,
