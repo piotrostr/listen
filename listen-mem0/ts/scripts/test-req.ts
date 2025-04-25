@@ -1,4 +1,4 @@
-const res = await fetch("http://localhost:6969/memories/search", {
+const res = await fetch("http://localhost:9696/memories/search", {
   method: "POST",
   body: JSON.stringify({
     query: "what's my name",
