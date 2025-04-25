@@ -2,6 +2,7 @@ import { FaApplePay, FaShoppingCart } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
 import { PortfolioItem } from "../hooks/types";
+import { ChainIcon } from "./ChainIcon";
 
 interface PortfolioItemTileProps {
   asset: PortfolioItem;
@@ -55,17 +56,24 @@ export function PortfolioItemTile({
     <div className="p-3 sm:p-4 hover:bg-black/50 transition-colors">
       <div className="flex justify-between items-start mb-2">
         <div className="flex items-center gap-3">
-          {asset.logoURI ? (
-            <img
-              src={asset.logoURI.replace("cf-ipfs.com", "ipfs.io")}
-              alt={asset.symbol}
-              className="w-12 h-12 rounded-full"
-            />
-          ) : (
-            <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-              <span className="text-gray-500 dark:text-gray-400">?</span>
-            </div>
-          )}
+          <div className="relative">
+            {asset.logoURI ? (
+              <img
+                src={asset.logoURI.replace("cf-ipfs.com", "ipfs.io")}
+                alt={asset.symbol}
+                className="w-12 h-12 rounded-full"
+              />
+            ) : (
+              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
+                <span className="text-gray-500 dark:text-gray-400">?</span>
+              </div>
+            )}
+            {asset.chain !== "solana" && (
+              <div className="absolute top-1 -left-1 z-10">
+                <ChainIcon chainId={asset.chain} className="w-4 h-4" />
+              </div>
+            )}
+          </div>
           <div>
             <h3 className="font-bold flex items-center gap-2">
               <div
@@ -74,15 +82,6 @@ export function PortfolioItemTile({
               >
                 {asset.name}
               </div>
-              <img
-                src={
-                  "https://dd.dexscreener.com/ds-data/chains/" +
-                  asset.chain.toLowerCase() +
-                  ".png"
-                }
-                className="w-4 h-4 hidden"
-                alt={asset.chain}
-              />
             </h3>
             <p className="text-sm text-gray-400">
               {formatAmount(asset.amount)} {asset.symbol}

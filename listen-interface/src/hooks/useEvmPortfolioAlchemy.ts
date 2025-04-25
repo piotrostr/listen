@@ -185,7 +185,22 @@ export async function getTokenHoldings(
     const portfolioPromises = validatedData.data.tokens
       .filter((token) => {
         const balance = BigInt(token.tokenBalance);
-        return balance > BigInt(0);
+        if (balance <= BigInt(0)) return false;
+
+        // Don't filter out native tokens by price
+        const isNativeToken =
+          !token.tokenAddress ||
+          token.tokenAddress === "0x0000000000000000000000000000000000000000";
+        if (isNativeToken) return true;
+
+        // For non-native tokens, check if they have meaningful USD value
+        const decimals = token.tokenMetadata?.decimals ?? 18;
+        const amount = Number(balance) / Math.pow(10, decimals);
+        const price = token.tokenPrices?.[0]?.value
+          ? parseFloat(token.tokenPrices[0].value)
+          : 0;
+
+        return (price * amount).toFixed(2) !== "0.00";
       })
       .map(async (token) => {
         const network = SUPPORTED_NETWORKS.find(
@@ -201,8 +216,6 @@ export async function getTokenHoldings(
         const price = token.tokenPrices?.[0]?.value
           ? parseFloat(token.tokenPrices[0].value)
           : 0;
-
-        if ((price * amount).toFixed(2) === "0.00") return null;
 
         const portfolioItem: PortfolioItem = {
           ...metadata,
