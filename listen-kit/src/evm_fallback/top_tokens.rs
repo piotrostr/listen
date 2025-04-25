@@ -79,10 +79,8 @@ impl EvmFallback {
         let response = self
             .client
             .get(&url)
-            .header(
-                "Accept",
-                format!("application/json;version={}", self.api_version),
-            )
+            .header("Accept", "application/json")
+            .header("x-cg-pro-api-key", self.api_key.clone())
             .send()
             .await
             .context(format!("Failed to send request to {}", url))?;
@@ -179,7 +177,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_top_tokens() {
-        let evm_fallback = EvmFallback::new();
+        let evm_fallback = EvmFallback::from_env()
+            .expect("Failed to create EvmFallback from environment");
         let top_tokens = evm_fallback
             .fetch_top_tokens(1, "24h".to_string(), 10)
             .await

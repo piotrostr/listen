@@ -21,7 +21,7 @@ pub async fn fetch_token_metadata_evm(
     address: String,
     chain_id: u64,
 ) -> Result<GtTokenMetadata> {
-    let evm_fallback = EvmFallback::new();
+    let evm_fallback = EvmFallback::from_env()?;
     let token_info =
         evm_fallback.fetch_token_info(&address, chain_id).await?;
     Ok(token_info)
@@ -49,7 +49,7 @@ pub async fn fetch_price_action_analysis_evm(
     interval: String,
     intent: String,
 ) -> Result<String> {
-    let evm_fallback = EvmFallback::new();
+    let evm_fallback = EvmFallback::from_env()?;
     let candlesticks = evm_fallback
         .fetch_candlesticks(&pair_address, chain_id, &interval, Some(200))
         .await?;
@@ -91,7 +91,7 @@ pub async fn fetch_top_tokens_by_chain_id(
     limit: String,
     duration: String,
 ) -> Result<Vec<TopToken>> {
-    let evm_fallback = EvmFallback::new();
+    let evm_fallback = EvmFallback::from_env()?;
     let tokens = evm_fallback
         .fetch_top_tokens(chain_id, duration, limit.parse::<usize>()?)
         .await?;

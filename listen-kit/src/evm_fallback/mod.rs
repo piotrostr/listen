@@ -1,4 +1,5 @@
-use anyhow::{anyhow, Result};
+use anyhow::{anyhow, Context, Result};
+use std::env;
 
 pub mod candlesticks;
 pub mod token_info;
@@ -7,10 +8,10 @@ pub mod top_tokens;
 pub struct EvmFallback {
     client: reqwest::Client,
     base_url: String,
-    api_version: String,
+    api_key: String,
 }
 
-// Helper function to map chain ID (u64) to GeckoTerminal network string
+// Helper function to map chain ID (u64) to CoinGecko network string
 fn map_chain_id_to_network(chain_id: u64) -> Result<&'static str> {
     match chain_id {
         1 => Ok("eth"),
@@ -22,11 +23,24 @@ fn map_chain_id_to_network(chain_id: u64) -> Result<&'static str> {
 }
 
 impl EvmFallback {
-    pub fn new() -> Self {
+    pub fn from_env() -> Result<Self> {
+        let api_key = env::var("GECKO_API_KEY")
+            .context("GECKO_API_KEY environment variable not set")?;
+
+        Ok(Self {
+            client: reqwest::Client::new(),
+            base_url: "https://pro-api.coingecko.com/api/v3/onchain"
+                .to_string(),
+            api_key,
+        })
+    }
+
+    pub fn new(api_key: String) -> Self {
         Self {
             client: reqwest::Client::new(),
-            base_url: "https://api.geckoterminal.com/api/v2".to_string(),
-            api_version: "20230302".to_string(), // As specified in the API docs
+            base_url: "https://pro-api.coingecko.com/api/v3/onchain"
+                .to_string(),
+            api_key,
         }
     }
 }
@@ -38,7 +52,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_fetch_token_info_evm() {
-        let fallback = EvmFallback::new();
+        let fallback = EvmFallback::from_env()
+            .expect("Failed to create EvmFallback from environment");
         // Use a known token on Ethereum (chain_id 1) e.g., PEPE
         let address = "0x6982508145454Ce325dDbE47a25d4ec3d2311933";
         let chain_id = 1; // Ethereum
@@ -56,7 +71,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_candlesticks_evm() {
-        let fallback = EvmFallback::new();
+        let fallback = EvmFallback::from_env()
+            .expect("Failed to create EvmFallback from environment");
         // Use a known pool on Ethereum (chain_id 1) e.g., PEPE/WETH
         let pool_address = "0xA43fe16908251ee70EF74718545e4FE6C5cCEc9f"; // PEPE/WETH 0.3% on Uniswap V3
         let chain_id = 1; // Ethereum
@@ -88,7 +104,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_unsupported_chain_id() {
-        let fallback = EvmFallback::new();
+        let fallback = EvmFallback::from_env()
+            .expect("Failed to create EvmFallback from environment");
         let address = "0x0000000000000000000000000000000000000000";
         let chain_id = 99999; // Unsupported chain ID
 
@@ -111,7 +128,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_unsupported_interval() {
-        let fallback = EvmFallback::new();
+        let fallback = EvmFallback::from_env()
+            .expect("Failed to create EvmFallback from environment");
         let pool_address = "0xA43fe16908251ee70EF74718545e4FE6C5cCEc9f";
         let chain_id = 1;
         let interval = "1y"; // Unsupported interval
@@ -128,7 +146,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_nonexistent_token() {
-        let fallback = EvmFallback::new();
+        let fallback = EvmFallback::from_env()
+            .expect("Failed to create EvmFallback from environment");
         // Use a clearly invalid address
         let address = "0x000000000000000000000000000000000000dead";
         let chain_id = 1; // Ethereum
@@ -141,7 +160,8 @@ mod tests {
 
     #[tokio::test]
     async fn test_nonexistent_pool() {
-        let fallback = EvmFallback::new();
+        let fallback = EvmFallback::from_env()
+            .expect("Failed to create EvmFallback from environment");
         let pool_address = "0x000000000000000000000000000000000000dead";
         let chain_id = 1;
         let interval = "15m";

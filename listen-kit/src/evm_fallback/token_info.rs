@@ -56,10 +56,8 @@ impl EvmFallback {
         let response = self
             .client
             .get(&url)
-            .header(
-                "Accept",
-                format!("application/json;version={}", self.api_version),
-            )
+            .header("Accept", "application/json")
+            .header("x-cg-pro-api-key", self.api_key.clone())
             .send()
             .await
             .context(format!("Failed to send request to {}", url))?;
