@@ -1,6 +1,7 @@
 import { useToken } from "../hooks/useToken";
-import { chainIdNumericToChainId, formatAmount, imageMap } from "../hooks/util";
+import { formatAmount, imageMap } from "../hooks/util";
 import { QuoteResponse } from "../types/quote";
+import { ChainIcon } from "./ChainIcon";
 
 interface QuoteDisplayProps {
   quote: QuoteResponse;
@@ -31,10 +32,6 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
   const outputAmount = quote.to.amount;
   const inputTokenDecimals = quote.from.decimals;
   const outputTokenDecimals = quote.to.decimals;
-
-  // Get chain IDs
-  const fromChain = chainIdNumericToChainId(quote.from.chain_id);
-  const toChain = chainIdNumericToChainId(quote.to.chain_id);
 
   // Fetch token metadata for images
   const inputToken = useToken(
@@ -68,11 +65,7 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
             <div>
               <div className="font-bold flex items-center gap-2">
                 {quote.from.token}
-                <img
-                  src={`https://dd.dexscreener.com/ds-data/chains/${fromChain}.png`}
-                  alt={fromChain}
-                  className="w-4 h-4 rounded-full"
-                />
+                <ChainIcon chainId={quote.from.chain_id} />
               </div>
               <div className="text-sm">
                 {formatAmount(inputAmount, inputTokenDecimals)}
@@ -120,11 +113,7 @@ export const QuoteDisplay = ({ quote }: QuoteDisplayProps) => {
             <div>
               <div className="font-bold flex items-center gap-2">
                 {quote.to.token}
-                <img
-                  src={`https://dd.dexscreener.com/ds-data/chains/${toChain}.png`}
-                  alt={toChain}
-                  className="w-4 h-4 rounded-full"
-                />
+                <ChainIcon chainId={quote.to.chain_id} />
               </div>
               <div className="text-sm">
                 {formatAmount(outputAmount, outputTokenDecimals)}

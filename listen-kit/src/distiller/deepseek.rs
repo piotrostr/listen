@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use crate::agents::delegate::delegate_to_agent;
 use crate::common::deepseek_agent_builder;
+use crate::distiller::analyst::preprocess_candlesticks;
 use crate::reasoning_loop::Model;
 use crate::signer::SignerContext;
 
@@ -71,8 +72,9 @@ impl ChartAnalystAgent for DeepSeekAnalystAgent {
     ) -> Result<String, AnalystError> {
         let ctx = SignerContext::current().await;
         let user_id = ctx.user_id().unwrap_or_default();
-        let candlesticks_json = serde_json::to_string(candlesticks)
-            .map_err(|_| AnalystError::SerializationError)?;
+        let candlesticks_json =
+            serde_json::to_string(&preprocess_candlesticks(candlesticks)?)
+                .map_err(|_| AnalystError::SerializationError)?;
 
         let prompt_text = if self.locale == "zh" {
             let base = format!(

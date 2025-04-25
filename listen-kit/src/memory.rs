@@ -39,41 +39,117 @@ pub fn make_mem0_messages(
 }
 
 pub async fn inject_memories(
-    global_memory: Arc<GraphMemory>,
+    global_memory: Option<Arc<GraphMemory>>,
     prompt: String,
     user_id: String,
 ) -> Result<String> {
-    let memories = global_memory
-        .search(prompt.as_str(), Filters {}, Some(15))
-        .await?;
+    let (global_memories, user_specific_memories) = match global_memory {
+        Some(mem) => {
+            // Run both searches in parallel when we have global memory
+            let mem0 = Mem0::default();
+            let op = mem0.search_memories(prompt.clone(), user_id.clone());
+            let (global_mems, user_mems) = tokio::join!(
+                mem.search(prompt.as_str(), Filters {}, Some(15)),
+                op
+            );
 
-    let user_specific_memories = Mem0::default()
-        .search_memories(prompt.clone(), user_id)
-        .await?;
+            let global_mems = match global_mems {
+                Ok(mems) => Some(mems),
+                Err(e) => {
+                    tracing::error!("Failed to fetch global memories: {}", e);
+                    None
+                }
+            };
 
-    println!("memories: {}", serde_json::to_string_pretty(&memories)?);
-    println!(
-        "user_specific_memories: {}",
-        serde_json::to_string_pretty(&user_specific_memories)?
-    );
+            let user_mems = match user_mems {
+                Ok(mems) => mems,
+                Err(e) => {
+                    tracing::error!("Failed to fetch user memories: {}", e);
+                    mem0.empty_search_result()
+                }
+            };
 
-    let injected_prompt = format!(
-        "<USER PROMPT>{}</USER PROMPT>
-        <GLOBAL MEMORIES>{}</GLOBAL MEMORIES>
-        <USER SPECIFIC MEMORIES>{}</USER SPECIFIC MEMORIES>
-        ",
-        prompt,
-        serde_json::to_string(
-            &memories.iter().map(|m| m.stringify()).collect::<Vec<_>>()
-        )?,
-        serde_json::to_string(
-            &user_specific_memories
-                .results
-                .iter()
-                .map(|m| m.stringify())
-                .collect::<Vec<_>>()
-        )?,
-    );
+            (global_mems, user_mems)
+        }
+        None => {
+            // Just fetch user memories when no global memory
+            let mem0 = Mem0::default();
+            let user_mems = match mem0
+                .search_memories(prompt.clone(), user_id)
+                .await
+            {
+                Ok(mems) => mems,
+                Err(e) => {
+                    tracing::error!("Failed to fetch user memories: {}", e);
+                    mem0.empty_search_result()
+                }
+            };
+            (None, user_mems)
+        }
+    };
+
+    // Create base prompt without memories if serialization fails
+    let mut injected_prompt =
+        format!("<USER PROMPT>{}</USER PROMPT>", prompt);
+
+    // Try to add user specific memories
+    match serde_json::to_string(
+        &user_specific_memories
+            .results
+            .iter()
+            .map(|m| m.distill())
+            .collect::<Vec<_>>(),
+    ) {
+        Ok(user_mems_str) => {
+            injected_prompt = format!(
+                "{}\n<USER SPECIFIC MEMORIES>{}</USER SPECIFIC MEMORIES>",
+                injected_prompt, user_mems_str
+            );
+
+            // Debug logging only if serialization succeeds
+            if let Ok(pretty_str) = serde_json::to_string_pretty(
+                &user_specific_memories
+                    .results
+                    .iter()
+                    .map(|m| m.distill())
+                    .collect::<Vec<_>>(),
+            ) {
+                println!("user_specific_memories: {}", pretty_str);
+            }
+        }
+        Err(e) => {
+            tracing::error!("Failed to serialize user memories: {}", e);
+        }
+    }
+
+    // Add global memories if they exist and aren't empty
+    if let Some(memories) = global_memories {
+        if !memories.is_empty() {
+            match serde_json::to_string(
+                &memories.iter().map(|m| m.stringify()).collect::<Vec<_>>(),
+            ) {
+                Ok(global_mems_str) => {
+                    injected_prompt = format!(
+                        "{}\n<GLOBAL MEMORIES>{}</GLOBAL MEMORIES>",
+                        injected_prompt, global_mems_str
+                    );
+
+                    // Debug logging only if serialization succeeds
+                    if let Ok(pretty_str) =
+                        serde_json::to_string_pretty(&memories)
+                    {
+                        println!("memories: {}", pretty_str);
+                    }
+                }
+                Err(e) => {
+                    tracing::error!(
+                        "Failed to serialize global memories: {}",
+                        e
+                    );
+                }
+            }
+        }
+    }
 
     Ok(injected_prompt)
 }

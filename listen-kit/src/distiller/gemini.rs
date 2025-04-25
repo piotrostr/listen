@@ -9,6 +9,7 @@ use super::analyst::{
 use super::preambles;
 use crate::agents::delegate::delegate_to_agent;
 use crate::common::gemini_agent_builder;
+use crate::distiller::analyst::preprocess_candlesticks;
 use crate::reasoning_loop::Model;
 use crate::signer::SignerContext;
 
@@ -72,8 +73,9 @@ impl ChartAnalystAgent for GeminiAnalystAgent {
         interval: &str,
         intent: Option<String>,
     ) -> Result<String, AnalystError> {
-        let candlesticks_json = serde_json::to_string(candlesticks)
-            .map_err(|_| AnalystError::SerializationError)?;
+        let candlesticks_json =
+            serde_json::to_string(&preprocess_candlesticks(candlesticks)?)
+                .map_err(|_| AnalystError::SerializationError)?;
 
         let prompt_text = if self.locale == "zh" {
             let base = format!(

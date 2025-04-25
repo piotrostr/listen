@@ -23,6 +23,7 @@ bson = { version = "2.14.0", features = ["uuid-0_8"] }
 reqwest = { version = "0.12.15", features = ["json"] }
 neo4rs = "0.8.0"
 bm25 = "2.2.1"
+timed = "0.2.1"
 
 [dev-dependencies]
 dotenv = "0.15.0"

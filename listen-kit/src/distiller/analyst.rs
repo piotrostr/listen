@@ -1,3 +1,5 @@
+use chrono::DateTime;
+
 use crate::distiller::{
     deepseek::make_deepseek_analyst, gemini::make_gemini_analyst,
 };
@@ -29,6 +31,9 @@ pub enum AnalystError {
 
     #[error("Delegate error")]
     DelegateError(String),
+
+    #[error("Preprocess error: {0}")]
+    PreprocessError(String),
 }
 
 // Common trait for all analyst types
@@ -148,4 +153,35 @@ impl Analyst {
 
         Ok(analyst)
     }
+}
+
+pub fn preprocess_candlesticks(
+    candlesticks: &[crate::data::Candlestick],
+) -> Result<Vec<serde_json::Value>, AnalystError> {
+    let mut humanized_candlesticks = vec![];
+    for candlestick in candlesticks {
+        humanized_candlesticks.push(serde_json::json!({
+            "timestamp": humanize_timestamp(candlestick.timestamp)?,
+            "open": candlestick.open,
+            "high": candlestick.high,
+            "low": candlestick.low,
+            "close": candlestick.close,
+            "volume": candlestick.volume,
+        }));
+    }
+
+    Ok(humanized_candlesticks)
+}
+
+pub fn humanize_timestamp(timestamp: u64) -> Result<String, AnalystError> {
+    let datetime = if let Some(datetime) =
+        DateTime::from_timestamp(timestamp as i64, 0)
+    {
+        datetime
+    } else {
+        return Err(AnalystError::PreprocessError(
+            "Failed to convert timestamp to datetime".to_string(),
+        ));
+    };
+    Ok(datetime.format("%Y-%m-%d %H:%M:%S").to_string())
 }

@@ -62,7 +62,10 @@ export const SwapPipelineStep = ({
             name={inputName}
             amount={
               inputToken
-                ? formatAmount(step.action.amount, inputToken.decimals)
+                ? formatAmount(
+                    step.action.amount,
+                    inputToken.symbol === "USDC" ? 6 : inputToken.decimals
+                  )
                 : step.action.amount
             }
             chainId={fromChain}

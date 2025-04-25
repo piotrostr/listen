@@ -1,6 +1,8 @@
 import { CompactPortfolio } from "../hooks/util";
 import {
+  glossary,
   guidelines,
+  memecoinLore,
   onboarding,
   onboardingEvm,
   personality,
@@ -22,7 +24,9 @@ export function systemPrompt(
   <current_time>${currentTimeUnderline()}</current_time>
   <research_flow>${researchFlow}</research_flow>
   <guidelines>${guidelines("solana", defaultAmount)}</guidelines>
+  <memecoin_lore>${memecoinLore}</memecoin_lore>
   <knowledge>${pipelineKnowledge()}</knowledge>
+  <glossary>${glossary}</glossary>
   ${!hasWallet || isGuest ? `<onboarding>${onboarding(hasWallet, isGuest)}</onboarding>` : ""}
   ${hasWallet && pubkey ? `<solana_address>${pubkey}</solana_address>` : ""}
   ${hasEvmWallet ? `<evm_address>${address}</evm_address>` : onboardingEvm(hasWallet, isGuest)}

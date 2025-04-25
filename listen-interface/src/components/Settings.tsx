@@ -1,9 +1,7 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useTranslation } from "react-i18next";
 import { useSettingsStore } from "../store/settingsStore";
-import { ChatSelector } from "./ChatSelector";
 import { ConnectedAccounts } from "./ConnectedAccounts";
-import { ModelSelector } from "./ModelSelector";
 import { WalletAddresses } from "./WalletAddresses";
 
 const Toggle = ({
@@ -34,7 +32,6 @@ const Toggle = ({
 
 export function Settings() {
   const { user } = usePrivy();
-  const { chatType, setChatType, modelType, setModelType } = useSettingsStore();
   const {
     quickBuyAmount,
     setQuickBuyAmount,
@@ -104,11 +101,13 @@ export function Settings() {
         {t("settings.agent_mode_disabled")}
       </p>
 
+      {/*
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.mode")}</h2>
       <ChatSelector selectedChat={chatType} onSelectChat={setChatType} />
 
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.model")}</h2>
       <ModelSelector selectedModel={modelType} onSelectModel={setModelType} />
+      */}
 
       <Toggle
         label={t("settings.suggestions")}

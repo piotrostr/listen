@@ -135,17 +135,22 @@ impl From<&WireAction> for Action {
                 to_chain_caip2,
             } => {
                 const DEFAULT_SOLANA_CHAIN: &str = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+                const SOLANA_NUMERIC_ID: &str = "1151111081099710";
+
+                let convert_chain_id = |chain_id: &Option<String>| -> String {
+                    match chain_id {
+                        Some(id) if id == SOLANA_NUMERIC_ID => DEFAULT_SOLANA_CHAIN.to_string(),
+                        Some(id) => id.clone(),
+                        None => DEFAULT_SOLANA_CHAIN.to_string(),
+                    }
+                };
 
                 Action::Order(SwapOrder {
                     input_token: input_token.clone(),
                     output_token: output_token.clone(),
                     amount: amount.clone(),
-                    from_chain_caip2: from_chain_caip2
-                        .clone()
-                        .unwrap_or_else(|| DEFAULT_SOLANA_CHAIN.to_string()),
-                    to_chain_caip2: to_chain_caip2
-                        .clone()
-                        .unwrap_or_else(|| DEFAULT_SOLANA_CHAIN.to_string()),
+                    from_chain_caip2: convert_chain_id(from_chain_caip2),
+                    to_chain_caip2: convert_chain_id(to_chain_caip2),
                 })
             }
             WireAction::Notification { message, .. } => Action::Notification(Notification {
@@ -272,6 +277,34 @@ mod tests {
                 assert_eq!(asset, "");
             }
             _ => panic!("Expected Now condition type"),
+        }
+    }
+
+    #[test]
+    fn test_swap_order_deserialize_with_numeric_chain_id() {
+        let json = json!({
+            "type": "SwapOrder",
+            "input_token": "SOL",
+            "output_token": "USDC",
+            "amount": "1.0",
+            "from_chain_caip2": "1151111081099710",
+            "to_chain_caip2": "1151111081099710"
+        });
+
+        let wire_action: WireAction = serde_json::from_value(json).unwrap();
+        let action: Action = (&wire_action).into();
+
+        if let Action::Order(order) = action {
+            assert_eq!(
+                order.from_chain_caip2,
+                "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+            );
+            assert_eq!(
+                order.to_chain_caip2,
+                "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp"
+            );
+        } else {
+            panic!("Expected SwapOrder action");
         }
     }
 }

@@ -38,13 +38,17 @@ In that case, you can use the approve_token tool to approve the token.
 
 Supported from_chain values:
 - solana: \"1151111081099710\"
+- mainnet: \"1\"
 - arbitrum: \"42161\"
 - base: \"8453\"
+- bsc: \"56\"
 
 Supported to_chain values:
 - solana: \"1151111081099710\"
+- mainnet: \"1\"
 - arbitrum: \"42161\"
 - base: \"8453\"
+- bsc: \"56\"
 
 Special Case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
 Solana Address: \"So11111111111111111111111111111111111111112\"
@@ -143,12 +147,16 @@ for decimals, e.g. 1e6 for 1 USDC but 1e18 for 1 SOL.
 Supported from_chain values:
 - solana: \"1151111081099710\"
 - arbitrum: \"42161\"
+- mainnet: \"1\"
 - base: \"8453\"
+- bsc: \"56\"
 
 Supported to_chain values:
 - solana: \"1151111081099710\"
+- arbitrum: \"42161\"
 - mainnet: \"1\"
 - base: \"8453\"
+- bsc: \"56\"
 
 Example:
 {{

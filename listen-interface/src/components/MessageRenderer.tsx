@@ -65,13 +65,16 @@ export function MessageRendererBase({
   messages: Message[];
   lastUserMessageRef: React.RefObject<HTMLDivElement>;
 }) {
-  // console.log("MessageRenderer received message:", msg);
-
   const { t } = useTranslation();
   const { debugMode } = useSettingsStore();
 
-  if (debugMode) {
-    return <ChatMessage message={msg.message} direction={msg.direction} />;
+  if (debugMode && msg.direction === "incoming") {
+    return (
+      <div>
+        <div>{msg.message}</div>
+        <div>{msg.direction}</div>
+      </div>
+    );
   }
 
   // Move the isLastUserMessage calculation into a useMemo
