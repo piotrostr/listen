@@ -51,10 +51,12 @@ Example Pipeline:
       ]
     },
     {
-      // Example 4: Bridge
+      // Example 4: Swap with automatic bridge (supported by the Listen Order Engine)
+      // you don't need to fuck around trying to bridge, you just say what
+      // tokens you wanna swap and fill in the right caip2 params
       "action": {
         "type": "SwapOrder",
-        "input_token": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC mint address (Solana)
+        "input_token": "So11111111111111111111111111111111111111112", // SOL mint address (Solana)
         "output_token": "BNB", // BNB address (BSC Mainnet)
         "amount": "30000000", // 30 USDC (10^6)
         "to_chain_caip2": "eip155:56"   // Required for EVM/cross-chain
@@ -88,10 +90,14 @@ export const pipelineKnowledge = () => `
   - For "Notification", specify the token (input_token) and a message.
   - For conditions, specify type, asset (token address/mint), and value (price in USD). "Now" type doesn't use "value".
   - If a step should execute immediately (or immediately after the previous step completes), omit the "conditions" key entirely.
-  - IMPORTANT: Solana native tokens sometimes fail with bridges to other chains, swap to USDC on Solana first, then swap into the desired token. If this is the case, flow is swap SOL to USDC -> check balance -> swap to desired token. DO IT IN TWO SEPARATE PIPELINES! NOT JUST STEPS!
-  - VERY IMPORTANT: as per above, if you don't do this in this sequence, you won't know how much USDC you can allocate. Solana swaps are instant, perform the above sequence and only then continue to move funds to other chains.
 
-  Special cases for native tokens is ETH for any EVM chain instead of address and BNB for BSC, anything else has to be an address.
+  Special cases for native tokens:
+  - BNB for BSC (Binance Smart Chain BNB token, equivalent of ETH to EVM chains)
+  - ETH for any EVM chain
+
+  USDC always has 6 decimals, regardless of the chain. Solana has 9 decimals and native ETH/BNB has 18 decimals.
+
+  Binance Smart Chain might be referred to as bsc or bnb, native token is always BNB.
 
   In order for the pipeline to be rendered for the user to confirm, you need to enclose the pipeline \`\`\`json\`\`\` tags.
 `;
