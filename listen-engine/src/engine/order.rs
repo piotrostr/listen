@@ -180,18 +180,32 @@ async fn try_lifi_swap_order_to_transaction(
         pubkey
     };
 
+    let from_token = if is_solana(&order.from_chain_caip2) {
+        ensure_native_solana(&order.input_token)
+    } else {
+        order.input_token.clone()
+    };
+
+    let to_token = if is_solana(&order.to_chain_caip2) {
+        ensure_native_solana(&order.output_token)
+    } else {
+        order.output_token.clone()
+    };
+
     let quote = lifi
         .get_quote(
             &from_chain_id.to_string(),
             &to_chain_id.to_string(),
-            &order.input_token,
-            &order.output_token,
+            &from_token,
+            &to_token,
             from_address,
             to_address,
             &order.amount,
         )
         .await
         .map_err(SwapOrderError::LiFiError)?;
+
+    tracing::info!("Quote: {:#?}", quote);
 
     match quote.transaction_request {
         Some(transaction_request) => {
@@ -241,6 +255,17 @@ pub fn transaction_to_base64<T: Serialize>(transaction: &T) -> Result<String, Sw
     Ok(base64encode(&serialized))
 }
 
+// lifi takes those other as non-native-sol for some reason
+pub fn ensure_native_solana(pubkey: &str) -> String {
+    if pubkey == "So11111111111111111111111111111111111111112"
+        || pubkey == "11111111111111111111111111111111"
+    {
+        "sol".to_string()
+    } else {
+        pubkey.to_string()
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use crate::engine::{
@@ -260,6 +285,7 @@ mod tests {
         from_chain_caip2: &str,
         to_chain_caip2: &str,
     ) {
+        std::env::set_var("RUST_LOG", "info");
         tracing_subscriber::fmt::init();
         dotenv::dotenv().ok();
 
@@ -292,13 +318,11 @@ mod tests {
         let privy_tx = match transaction {
             SwapOrderTransaction::Solana(encoded_tx) => {
                 tracing::info!("Solana transaction: {:#?}", encoded_tx);
-                let tx = if from_chain_caip2 == Caip2::SOLANA && to_chain_caip2 == Caip2::SOLANA {
+                let tx = if from_chain_caip2 == Caip2::SOLANA {
                     // For Solana-to-Solana, inject blockhash
-                    inject_blockhash_into_encoded_tx(
-                        &encoded_tx,
-                        &BLOCKHASH_CACHE.get_blockhash().await.unwrap().to_string(),
-                    )
-                    .unwrap()
+                    let blockhash = BLOCKHASH_CACHE.get_blockhash().await.unwrap();
+                    tracing::info!("Injecting blockhash {} into transaction", blockhash);
+                    inject_blockhash_into_encoded_tx(&encoded_tx, &blockhash.to_string()).unwrap()
                 } else {
                     encoded_tx
                 };
@@ -368,10 +392,10 @@ mod tests {
     async fn test_sol_to_base() {
         test_swap_generic(
             "11111111111111111111111111111111",           // SOL
-            "0xaf88d065e77c8cC2239327C5EDb3A432268e5831", // USDC arbitrum
+            "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC base
             &(1. * 10e6).to_string(),                     // 0.01 SOL
             Caip2::SOLANA,
-            Caip2::ARBITRUM,
+            Caip2::BASE,
         )
         .await;
     }

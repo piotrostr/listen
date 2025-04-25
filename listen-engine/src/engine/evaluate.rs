@@ -20,7 +20,6 @@ use crate::{
     engine::{
         error::EngineError,
         evaluator::Evaluator,
-        order::SwapOrder,
         pipeline::{Action, ConditionType, Pipeline, PipelineStep, Status},
     },
     Engine,
