@@ -43,7 +43,17 @@ async function enrichTokenMetadata(
   network: (typeof SUPPORTED_NETWORKS)[number]
 ): Promise<TokenMetadata | null> {
   try {
-    // If we have complete metadata from Alchemy, use it
+    const address =
+      token.tokenAddress || "0x0000000000000000000000000000000000000000";
+    const cacheKey = `${address}-${network.chainId}`;
+
+    // Check cache first
+    const cachedMetadata = await tokenMetadataCache.get(cacheKey);
+    if (cachedMetadata) {
+      return cachedMetadata;
+    }
+
+    // If we have complete metadata from Alchemy, use and cache it
     if (
       token.tokenMetadata &&
       token.tokenMetadata.name &&
@@ -51,19 +61,20 @@ async function enrichTokenMetadata(
       token.tokenMetadata.decimals &&
       token.tokenMetadata.logo
     ) {
-      return {
-        address: token.tokenAddress || "",
+      const metadata: TokenMetadata = {
+        address: address,
         name: token.tokenMetadata.name,
         symbol: token.tokenMetadata.symbol,
         decimals: token.tokenMetadata.decimals,
         logoURI: token.tokenMetadata.logo || "",
         chainId: parseInt(network.chainId),
       };
+
+      await tokenMetadataCache.set(cacheKey, metadata);
+      return metadata;
     }
 
-    // If token address is null (native token) or metadata is incomplete, fetch from traditional source
-    const address =
-      token.tokenAddress || "0x0000000000000000000000000000000000000000";
+    // If metadata is incomplete, fetch from traditional source
     const metadata = await getAnyToken(getAddress(address), network.chainId);
 
     if (!metadata || !metadata.decimals) {
@@ -73,7 +84,7 @@ async function enrichTokenMetadata(
       return null;
     }
 
-    return {
+    const tokenMetadata: TokenMetadata = {
       address,
       name: metadata.name || "",
       symbol: metadata.symbol || "",
@@ -81,6 +92,10 @@ async function enrichTokenMetadata(
       logoURI: metadata.logoURI || "",
       chainId: parseInt(network.chainId),
     };
+
+    // Cache the fetched metadata
+    await tokenMetadataCache.set(cacheKey, tokenMetadata);
+    return tokenMetadata;
   } catch (error) {
     console.error(
       `Error enriching metadata for token ${token.tokenAddress}:`,
