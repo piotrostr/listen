@@ -65,8 +65,6 @@ export function MessageRendererBase({
   messages: Message[];
   lastUserMessageRef: React.RefObject<HTMLDivElement>;
 }) {
-  // console.log("MessageRenderer received message:", msg);
-
   const { t } = useTranslation();
   const { debugMode } = useSettingsStore();
 

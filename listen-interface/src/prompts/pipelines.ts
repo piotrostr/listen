@@ -99,5 +99,7 @@ export const pipelineKnowledge = () => `
 
   Binance Smart Chain might be referred to as bsc or bnb, native token is always BNB.
 
+  DON'T ever put comments inside of the pipeline JSON, it will break the pipeline.
+
   In order for the pipeline to be rendered for the user to confirm, you need to enclose the pipeline \`\`\`json\`\`\` tags.
 `;
