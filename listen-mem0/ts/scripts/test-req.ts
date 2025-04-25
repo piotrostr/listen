@@ -6,6 +6,9 @@ const res = await fetch("http://localhost:9696/memories/search", {
       user_id: "some-user",
     },
   }),
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
 console.log(res.status);
