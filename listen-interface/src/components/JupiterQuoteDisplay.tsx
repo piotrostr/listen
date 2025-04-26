@@ -42,7 +42,7 @@ export const JupiterQuoteDisplay = ({ quote }: JupiterQuoteDisplayProps) => {
   ).toFixed(2);
 
   return (
-    <div className="border border-[#2D2D2D] rounded-lg p-4 bg-black/40 backdrop-blur-sm my-2">
+    <div className="rounded-lg p-4 bg-black/40 backdrop-blur-sm my-2">
       <div className="flex items-center gap-4">
         {/* Input Token */}
         <div className="flex-1">

@@ -76,7 +76,7 @@ export const imageMap = {
 };
 
 export const caip2Map = {
-  // solana: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+  solana: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
   ethereum: "eip155:1",
   bsc: "eip155:56",
   arbitrum: "eip155:42161",
