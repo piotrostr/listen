@@ -89,13 +89,9 @@ export const addressBook = {
   solana: {
     SOL: "So11111111111111111111111111111111111111112",
     USDC: "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
-    BONK: "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263",
-    LISTEN: "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump",
-    JLP: "27G8MtK7VtTcCHkpASjSDdkWWYfoqT6ggEuKidVJidD4",
   },
   ethereum: {
     usdc: getAddress("0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48"),
-    pepe: getAddress("0x25d887Ce7a35172C62FeBFD67a1856F20FaEbB00"),
   },
   arbitrum: {
     usdc: getAddress("0xaf88d065e77c8cC2239327C5EDb3A432268e5831"),
