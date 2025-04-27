@@ -170,11 +170,7 @@ function PortfolioHeader({ onRefresh }: { onRefresh: () => Promise<void> }) {
 
   return (
     <div className="flex items-center justify-between w-full">
-      <div className="flex items-center gap-2">
-        <span className="font-mono text-sm">
-          {isLoading ? "..." : `$${portfolioValue.toFixed(2)}`}
-        </span>
-      </div>
+      <div className="flex items-center gap-2"></div>
       <div className="flex items-center gap-2">
         <button
           onClick={onRefresh}

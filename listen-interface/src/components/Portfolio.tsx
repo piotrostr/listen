@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useMobile } from "../contexts/MobileContext";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { BuySellModal } from "./BuySellModal";
@@ -13,6 +14,7 @@ export function Portfolio() {
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
+  const { isMobile } = useMobile();
 
   const hasWallet = Boolean(solanaAddress || evmAddress);
 
@@ -35,7 +37,11 @@ export function Portfolio() {
   }
 
   return (
-    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container pb-16 md:pb-0 p-4">
+    <div
+      className={`h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container pb-16 md:pb-0 ${
+        isMobile ? "p-0" : "p-4"
+      }`}
+    >
       <PortfolioSummary totalBalance={totalBalance} />
       <div className="flex-1 space-y-2">
         {assets
