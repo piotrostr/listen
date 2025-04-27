@@ -3,11 +3,38 @@ import { useFundWallet } from "@privy-io/react-auth/solana";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaSync } from "react-icons/fa";
+import { MdOutlineArrowOutward } from "react-icons/md";
+import { TbDots, TbPlus } from "react-icons/tb";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { BuySellModal } from "./BuySellModal";
 import { PortfolioItemTile } from "./PortfolioItemTile";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
+import TileButton from "./TileButton";
+
+export function PortfolioSummary() {
+  return (
+    <div>
+      <div className="flex flex-row items-center gap-3">
+        <TileButton
+          icon={<TbPlus className="w-4 h-4" />}
+          onClick={() => {}}
+          ariaLabel="Add Asset"
+        />
+        <TileButton
+          icon={<MdOutlineArrowOutward />}
+          onClick={() => {}}
+          ariaLabel="Settings"
+        />
+        <TileButton
+          icon={<TbDots className="w-5 h-5" />}
+          onClick={() => {}}
+          ariaLabel="Refresh"
+        />
+      </div>
+    </div>
+  );
+}
 
 export function Portfolio() {
   const { solanaAddress } = useWalletStore();
@@ -47,6 +74,7 @@ export function Portfolio() {
 
   return (
     <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container pb-16 md:pb-0">
+      <PortfolioSummary />
       <div className="flex-1">
         {assets
           ?.sort((a, b) => b.price * b.amount - a.price * a.amount)
