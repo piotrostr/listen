@@ -1,5 +1,3 @@
-import { FaShoppingCart } from "react-icons/fa";
-import { IoArrowDown } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
 import { PortfolioItem } from "../hooks/types";
 import { ChainIcon } from "./ChainIcon";
@@ -77,7 +75,18 @@ export function PortfolioItemTile({
               <div
                 className="hover:text-blue-500 truncate max-w-[90px] sm:max-w-none cursor-pointer"
                 onClick={() =>
-                  openChart({ mint: asset.address, chainId: asset.chain })
+                  openChart({
+                    mint: asset.address,
+                    chainId: asset.chain,
+                    onBuy: () => onBuy(asset),
+                    onSell: () => onSell(asset),
+                    name: asset.name,
+                    symbol: asset.symbol,
+                    amount: asset.amount,
+                    logoURI: asset.logoURI,
+                    price: asset.price,
+                    decimals: asset.decimals,
+                  })
                 }
               >
                 {asset.name}
@@ -102,24 +111,6 @@ export function PortfolioItemTile({
                   : asset.price?.toFixed(2)}
               </p>
             </div>
-
-            {/* Buy/Sell buttons - moved to right side */}
-            {asset.chain === "solana" && (
-              <div className="flex flex-col gap-2 ml-2">
-                <button
-                  onClick={() => onBuy(asset)}
-                  className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center justify-center"
-                >
-                  <FaShoppingCart size={12} />
-                </button>
-                <button
-                  onClick={() => onSell(asset)}
-                  className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg text-xs transition-colors flex items-center justify-center"
-                >
-                  <IoArrowDown size={12} />
-                </button>
-              </div>
-            )}
           </div>
         </div>
       </div>
