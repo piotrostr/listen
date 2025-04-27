@@ -48,9 +48,28 @@ export function PortfolioItemTile({
   onSell,
 }: PortfolioItemTileProps) {
   const { openChart } = useModal();
+
+  const handleOpenChart = () => {
+    openChart({
+      mint: asset.address,
+      chainId: asset.chain,
+      onBuy: () => onBuy(asset),
+      onSell: () => onSell(asset),
+      name: asset.name,
+      symbol: asset.symbol,
+      amount: asset.amount,
+      logoURI: asset.logoURI,
+      price: asset.price,
+      decimals: asset.decimals,
+    });
+  };
+
   return (
-    <div className="p-3 sm:p-4 hover:bg-black/50 transition-colors">
-      <div className="flex justify-between items-start mb-2">
+    <div
+      className="p-3 sm:p-4 hover:bg-[#2d2d2d]/50 bg-[#2d2d2d]/20 transition-colors cursor-pointer rounded-2xl"
+      onClick={handleOpenChart}
+    >
+      <div className="flex justify-between items-start">
         <div className="flex items-center gap-3">
           <div className="relative">
             {asset.logoURI ? (
@@ -72,23 +91,7 @@ export function PortfolioItemTile({
           </div>
           <div>
             <h3 className="font-bold flex items-center gap-2">
-              <div
-                className="hover:text-blue-500 truncate max-w-[90px] sm:max-w-none cursor-pointer"
-                onClick={() =>
-                  openChart({
-                    mint: asset.address,
-                    chainId: asset.chain,
-                    onBuy: () => onBuy(asset),
-                    onSell: () => onSell(asset),
-                    name: asset.name,
-                    symbol: asset.symbol,
-                    amount: asset.amount,
-                    logoURI: asset.logoURI,
-                    price: asset.price,
-                    decimals: asset.decimals,
-                  })
-                }
-              >
+              <div className="truncate max-w-[90px] sm:max-w-none">
                 {asset.name}
               </div>
             </h3>

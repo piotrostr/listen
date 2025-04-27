@@ -13,8 +13,10 @@ export const layout = {
     recent_chats: "Recent Chats",
     version: "Version",
     new_chat: "New Chat",
+    blank: "",
   },
   zh: {
+    blank: "",
     screener: "市场筛选",
     portfolio: "投资组合",
     pipelines: "自动化任务",
