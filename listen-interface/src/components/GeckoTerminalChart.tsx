@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
+import { Spinner } from "./Spinner";
 
 const chainIdToGeckoTerminalId = {
   "1": "eth",
@@ -132,6 +133,7 @@ export function GeckoTerminalChart({
   const [resolvedPairAddress, setResolvedPairAddress] = useState<
     string | undefined
   >(pairAddress);
+  const [isResolving, setIsResolving] = useState(false);
 
   useEffect(() => {
     let mounted = true;
@@ -141,6 +143,7 @@ export function GeckoTerminalChart({
       if (!tokenAddress) return;
 
       try {
+        setIsResolving(true);
         const poolAddress = await findPairAddress(
           tokenAddress,
           chainId,
@@ -153,6 +156,10 @@ export function GeckoTerminalChart({
         if (mounted) {
           console.error("Failed to resolve pair address:", error);
           setResolvedPairAddress(undefined);
+        }
+      } finally {
+        if (mounted) {
+          setIsResolving(false);
         }
       }
     }
@@ -174,6 +181,13 @@ export function GeckoTerminalChart({
     return null;
   }
 
+  if (isResolving) {
+    return (
+      <div className="flex items-center justify-center h-full">
+        <Spinner />
+      </div>
+    );
+  }
   if (!resolvedPairAddress) {
     return null;
   }
