@@ -51,7 +51,10 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
     <div
       className="rounded-lg p-3 border border-[#2D2D2D] transition-colors bg-black/40 backdrop-blur-sm flex flex-col cursor-pointer"
       onClick={() => {
-        openChart(token.pubkey);
+        openChart({
+          mint: token.pubkey,
+          chainId: "solana",
+        });
       }}
     >
       <div className="flex items-center gap-2 mb-2">
@@ -72,7 +75,10 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
             <div
               onClick={(e) => {
                 e.preventDefault();
-                openChart(token.pubkey);
+                openChart({
+                  mint: token.pubkey,
+                  chainId: "solana",
+                });
               }}
               className="font-medium hover:text-blue-400 truncate cursor-pointer"
             >

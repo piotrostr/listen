@@ -177,7 +177,11 @@ export function ModalProvider({ children }: { children: ReactNode }) {
                 ✕
               </button>
               <div className="flex flex-col h-full">
-                {chartAsset.chainId ? (
+                {chartAsset.chainId &&
+                (chartAsset.chainId !== "solana" ||
+                  // solana token is not at Listen API
+                  chartAsset.mint ===
+                    "So11111111111111111111111111111111111111112") ? (
                   <GeckoTerminalChart
                     tokenAddress={chartAsset.mint}
                     chainId={chartAsset.chainId}
