@@ -20,11 +20,11 @@ const formatNumber = (num: number) => {
 export const DexscreenerDisplay = ({ pairs }: DexscreenerDisplayProps) => {
   const { t } = useTranslation();
   return (
-    <div className="rounded-lg px-2 py-1 lg:px-4 lg:py-3 my-2 backdrop-blur-sm border border-[#2D2D2D]">
+    <div className="rounded-lg px-2 py-1 lg:px-4 lg:py-3 my-2 backdrop-blur-sm">
       <div className="overflow-x-auto">
         <table className="w-full">
           <thead>
-            <tr className="text-xs text-white">
+            <tr className="text-xs text-white border-b border-[#2D2D2D]">
               <th className="text-left p-2 font-normal">
                 {t("dexscreener_display.token")}
               </th>

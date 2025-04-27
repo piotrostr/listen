@@ -2,104 +2,110 @@ import { addressBook, caip2Map } from "../hooks/util";
 
 const pipelineExample = `
 Example Pipeline:
+\`\`\`json
 {
   "steps": [
     {
-      // Example 1: Solana Swap of SOL into USDC (executed if SOL price is above $160)
+      // Example 1: Solana Swap (Conditional) - SOL to USDC
       "action": {
         "type": "SwapOrder",
-        "input_token": "So11111111111111111111111111111111111111112", // SOL mint address
-        "output_token": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC mint address (Solana)
-        "amount": "1000000000" // 1 SOL (10^9)
-        // from_chain_caip2/to_chain_caip2 omitted, defaults to Solana
+        "input_token": "So11111111111111111111111111111111111111112", // SOL
+        "output_token": "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v", // USDC (Solana)
+        "amount": "1000000000", // 1 SOL (10^9)
+        "from_chain_caip2": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp", // Solana
+        "to_chain_caip2": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp" // Solana
       },
-      "conditions": [
-        {
-          "type": "PriceAbove",
-          "asset": "So11111111111111111111111111111111111111112", // SOL mint address
-          "value": 160 // SOL price in USD
-        }
-      ]
+      "conditions": [ { "type": "PriceAbove", "asset": "So11111111111111111111111111111111111111112", "value": 160 } ]
     },
     {
-      // Example 2: EVM Swap (conditional)
+      // Example 2: Simple EVM Swap - ETH to USDC (Ethereum)
       "action": {
         "type": "SwapOrder",
-        "input_token": "ETH", // Native ETH placeholder
-        "output_token": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC address (Ethereum Mainnet)
+        "input_token": "ETH", // Native ETH
+        "output_token": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48", // USDC (Ethereum)
         "amount": "500000000000000000", // 0.5 ETH (10^18)
-        "from_chain_caip2": "eip155:1", // Required for EVM/cross-chain
-        "to_chain_caip2": "eip155:1"   // Required for EVM/cross-chain
-      },
-      // No "conditions", executes immediately
-      // NOTE: "conditions" is only available for Solana tokens, there is currently no
-      // live price feed for EVM tokens in the Listen order engine
+        "from_chain_caip2": "eip155:1", // Ethereum
+        "to_chain_caip2": "eip155:1"   // Ethereum
+      }
+      // No conditions = immediate execution
     },
     {
-      // Example 3: Notification (conditional)
-      "action": {
-        "type": "Notification",
-        "input_token": "So11111111111111111111111111111111111111112", // SOL mint address
-        "message": "Notify me when SOL price goes above $160"
-      },
-      "conditions": [
-        {
-          "type": "PriceAbove",
-          "asset": "So11111111111111111111111111111111111111112", // SOL mint address
-          "value": 160
-        }
-      ]
-    },
-    {
-      // Example 4: Swap with automatic bridge (supported by the Listen Order Engine)
-      // you don't need to fuck around trying to bridge, you just say what
-      // tokens you wanna swap and fill in the right caip2 params
+      // Example 3: Cross-Chain Swap - SOL (Solana) to BNB (BSC)
+      // LiFi handles the bridging/swapping automatically based on caip2 params.
       "action": {
         "type": "SwapOrder",
-        "input_token": "So11111111111111111111111111111111111111112", // SOL mint address (Solana)
-        "output_token": "BNB", // BNB address (BSC Mainnet)
-        "amount": "30000000", // 30 USDC (10^6)
-        "to_chain_caip2": "eip155:56"   // Required for EVM/cross-chain
+        "input_token": "So11111111111111111111111111111111111111112", // SOL (Solana)
+        "output_token": "BNB", // Native BNB (BSC)
+        "amount": "1000000000", // 1 SOL (10^9)
+        "from_chain_caip2": "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp" // Solana
+        "to_chain_caip2": "eip155:56"   // BSC
+      }
+    },
+    {
+       // Example 4: Cross-Chain Swap - USDC (Base) to WETH (Arbitrum)
+      "action": {
+        "type": "SwapOrder",
+        "input_token": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913", // USDC (Base)
+        "output_token": "0x82aF49447D8a07e3bd95BD0d56f35241523fBab1", // WETH (Arbitrum)
+        "amount": "100000000", // 100 USDC (10^6)
+        "from_chain_caip2": "eip155:8453", // Base
+        "to_chain_caip2": "eip155:42161" // Arbitrum
       }
     }
   ]
 }
+\`\`\`
 `;
 
 export const pipelineKnowledge = () => `
-  You can create series of steps that user can approve with a click to execute interactions which involve multiple steps, as well as simple swaps.
+You can create series of steps that user can approve with a click to execute interactions which involve multiple steps, as well as simple swaps.
 
-  Here is an example format for the pipeline:
+**MANDATORY VERIFICATION PROTOCOL:**
+Before creating ANY swap pipeline, you MUST follow these exact steps IN THIS ORDER:
+- Search for the token address using the \`search_on_dex_screener\` tool
+- Verify the existence of the token and the token decimals using the \`fetch_token_metadata\` (Solana) or \`fetch_evm_token_metadata_evm\` (any other chain) tool
 
-  ${pipelineExample}
+**KEEP IT SIMPLE:** Your goal is to define the user's desired swap in the *simplest possible pipeline*, usually a single \`SwapOrder\` step.
 
-  CAIP2 map (for Solana, leave blank):
-  ${JSON.stringify(caip2Map)}
+**Cross-Chain Swaps:**
+*   LiFi (the underlying engine) handles bridging and routing automatically.
+*   **DO NOT** create multi-step pipelines to manually bridge (e.g., Step 1: SOL -> ETH, Step 2: ETH -> PEPE).
+*   **INSTEAD:** Define a *single* \`SwapOrder\` step directly from the starting asset (e.g., SOL on Solana) to the final desired asset (e.g., PEPE on Ethereum).
+*   Specify the correct \`input_token\`, \`output_token\`, \`amount\`, \`from_chain_caip2\` (if not Solana), and \`to_chain_caip2\`. LiFi will figure out the best route.
+*   See Example 3 & 4 in the \`pipelineExample\` above.
 
-  Common addresses:
-  ${JSON.stringify(addressBook)}
+In order for the pipeline to be rendered for the user to confirm, you need to enclose the pipeline JSON in \`\`\`json ... \`\`\` tags.
 
-  Key Points:
-  - The pipeline is a JSON object with a "steps" array.
-  - Each step has an "action" object and optional "conditions" array.
-  - Action types: "SwapOrder", "Notification".
-  - Condition types: "PriceAbove", "PriceBelow", "Now".
-  - For "SwapOrder", specify input/output tokens (address/mint) and amount (considering decimals). Amount can be null if you want to specify "all".
-    - For EVM or cross-chain swaps, you MUST include "from_chain_caip2" and "to_chain_caip2".
-    - For Solana-only swaps, omit "from_chain_caip2" and "to_chain_caip2"; it will default to Solana.
-  - For "Notification", specify the token (input_token) and a message.
-  - For conditions, specify type, asset (token address/mint), and value (price in USD). "Now" type doesn't use "value".
-  - If a step should execute immediately (or immediately after the previous step completes), omit the "conditions" key entirely.
+${pipelineExample}
 
-  Special cases for native tokens:
-  - BNB for BSC (Binance Smart Chain BNB token, equivalent of ETH to EVM chains)
-  - ETH for any EVM chain
+**CAIP2 Chain IDs:**
+\`\`\`json
+${JSON.stringify(caip2Map, null, 2)}
+\`\`\`
 
-  USDC always has 6 decimals, regardless of the chain. Solana has 9 decimals and native ETH/BNB has 18 decimals.
+**Common Addresses:**
+\`\`\`json
+${JSON.stringify(addressBook, null, 2)}
+\`\`\`
 
-  Binance Smart Chain might be referred to as bsc or bnb, native token is always BNB.
+**Key Points:**
+*   Pipeline = JSON object with a "steps" array.
+*   Each step = "action" object + optional "conditions" array.
+*   Action types: "SwapOrder", "Notification".
+*   Condition types: "PriceAbove", "PriceBelow", "Now".
+*   For "SwapOrder": specify verified \`input_token\`, \`output_token\`, \`amount\` (string, considering decimals). Amount can be null for "all".
+    *   Use \`from_chain_caip2\` and \`to_chain_caip2\` for EVM or cross-chain swaps (refer to CAIP2 map).
+    *   Omit chain params for Solana-only swaps.
+*   For "Notification": specify \`input_token\` and \`message\`.
+*   For conditions: specify \`type\`, \`asset\`, and \`value\` (USD price). "Now" type doesn't use "value".
+*   Omit "conditions" for immediate execution.
 
-  DON'T ever put comments inside of the pipeline JSON, it will break the pipeline.
+**Special cases for native tokens:**
+*   SOL for Solana (\`solana:\`)
+*   BNB for BSC (\`eip155:56\`)
+*   ETH for any EVM chain (use the chain's specific \`caip2\`)
 
-  In order for the pipeline to be rendered for the user to confirm, you need to enclose the pipeline \`\`\`json\`\`\` tags.
+USDC always has 6 decimals. Solana (SOL) has 9 decimals. Native ETH/BNB has 18 decimals. **Verify other token decimals using tools.**
+
+DON'T ever put comments inside of the pipeline JSON, it will break the pipeline.
 `;
