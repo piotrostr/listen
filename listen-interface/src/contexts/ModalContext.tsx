@@ -41,12 +41,16 @@ interface ModalContextType {
   openBuySellModal: (action: "buy" | "sell", asset: ChartAsset) => void;
   closeBuySellModal: () => void;
   buySellModalState: BuySellModalState;
+  returnToChart: () => void;
+  hasChartToReturnTo: boolean;
 }
 
 const ModalContext = createContext<ModalContextType | null>(null);
 
 export function ModalProvider({ children }: { children: ReactNode }) {
   const [chartAsset, setChartAsset] = useState<ChartAsset | null>(null);
+  const [previousChartAsset, setPreviousChartAsset] =
+    useState<ChartAsset | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
   const [buySellModalState, setBuySellModalState] = useState<BuySellModalState>(
@@ -57,7 +61,11 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     }
   );
 
-  const openChart = (asset: ChartAsset) => setChartAsset(asset);
+  const openChart = (asset: ChartAsset) => {
+    setPreviousChartAsset(null);
+    setChartAsset(asset);
+  };
+
   const closeChart = () => setChartAsset(null);
 
   const openShareModal = (url: string) => {
@@ -81,6 +89,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       return;
     }
 
+    setPreviousChartAsset(chartAsset); // Store the current chart
     setChartAsset(null); // Close chart modal
     setBuySellModalState({
       isOpen: true,
@@ -101,6 +110,14 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     setBuySellModalState((prev) => ({ ...prev, isOpen: false }));
   };
 
+  const returnToChart = () => {
+    if (previousChartAsset) {
+      setBuySellModalState((prev) => ({ ...prev, isOpen: false }));
+      setChartAsset(previousChartAsset);
+      setPreviousChartAsset(null);
+    }
+  };
+
   return (
     <ModalContext.Provider
       value={{
@@ -111,6 +128,8 @@ export function ModalProvider({ children }: { children: ReactNode }) {
         openBuySellModal,
         closeBuySellModal,
         buySellModalState,
+        returnToChart,
+        hasChartToReturnTo: !!previousChartAsset,
       }}
     >
       {children}
