@@ -1,4 +1,4 @@
-import { useFundWallet, usePrivy, useWallets } from "@privy-io/react-auth";
+import { useFundWallet, usePrivy } from "@privy-io/react-auth";
 import { MdOutlineArrowOutward } from "react-icons/md";
 import { TbDots, TbPlus } from "react-icons/tb";
 import { useWalletStore } from "../store/walletStore";
@@ -20,9 +20,6 @@ export function PortfolioSummary({ totalBalance }: PortfolioSummaryProps) {
       login();
     }
   };
-  const { wallets } = useWallets();
-
-  console.log(wallets);
 
   return (
     <div className="flex flex-col justify-center p-10 gap-7 w-full rounded-[20px] pt-12 mb-2">

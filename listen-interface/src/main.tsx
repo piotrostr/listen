@@ -12,9 +12,7 @@ import { createRoot } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
 import { arbitrum } from "viem/chains";
 import { WagmiProvider, createConfig, http } from "wagmi";
-import { BuySellModal } from "./components/BuySellModal";
 import { MobileProvider } from "./contexts/MobileContext";
-import { ModalProvider, useModal } from "./contexts/ModalContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import i18n from "./i18n";
@@ -38,19 +36,6 @@ declare module "@tanstack/react-router" {
   interface Register {
     router: typeof router;
   }
-}
-
-function ModalContainer() {
-  const { buySellModalState, closeBuySellModal } = useModal();
-
-  return buySellModalState.isOpen && buySellModalState.asset ? (
-    <BuySellModal
-      isOpen={buySellModalState.isOpen}
-      onClose={closeBuySellModal}
-      action={buySellModalState.action}
-      asset={buySellModalState.asset}
-    />
-  ) : null;
 }
 
 createRoot(document.getElementById("root")!).render(
@@ -87,10 +72,7 @@ createRoot(document.getElementById("root")!).render(
             <WagmiProvider config={config}>
               <QueryClientProvider client={new QueryClient()}>
                 <SidebarProvider>
-                  <ModalProvider>
-                    <RouterProvider router={router} />
-                    <ModalContainer />
-                  </ModalProvider>
+                  <RouterProvider router={router} />
                 </SidebarProvider>
               </QueryClientProvider>
             </WagmiProvider>

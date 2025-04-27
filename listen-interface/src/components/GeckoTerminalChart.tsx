@@ -124,17 +124,11 @@ export function GeckoTerminalChart({
   chainId,
   timeframe,
   tokenAddress,
-  onBuy,
-  onSell,
-  showActions = true,
 }: {
   pairAddress?: string;
   tokenAddress?: string;
   chainId: string;
   timeframe: string;
-  onBuy?: () => void;
-  onSell?: () => void;
-  showActions?: boolean;
 }) {
   const [resolvedPairAddress, setResolvedPairAddress] = useState<
     string | undefined

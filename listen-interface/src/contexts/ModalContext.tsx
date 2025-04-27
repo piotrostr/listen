@@ -1,12 +1,16 @@
+import { useNavigate } from "@tanstack/react-router";
 import { createContext, ReactNode, useContext, useState } from "react";
 import { createPortal } from "react-dom";
+import { HiOutlineSparkles } from "react-icons/hi2";
 import { MdOutlineArrowOutward } from "react-icons/md";
 import { TbPlus } from "react-icons/tb";
 import { Chart } from "../components/Chart";
 import { GeckoTerminalChart } from "../components/GeckoTerminalChart";
 import { ShareModal } from "../components/ShareModal";
+import { useChat } from "../contexts/ChatContext";
+import i18n from "../i18n";
 
-interface ChartAsset {
+export interface ChartAsset {
   mint: string;
   chainId?: string;
   onBuy?: () => void;
@@ -48,6 +52,9 @@ interface ModalContextType {
 const ModalContext = createContext<ModalContextType | null>(null);
 
 export function ModalProvider({ children }: { children: ReactNode }) {
+  const navigate = useNavigate();
+  const { isLoading } = useChat();
+  const [researchCooldown, setResearchCooldown] = useState(false);
   const [chartAsset, setChartAsset] = useState<ChartAsset | null>(null);
   const [previousChartAsset, setPreviousChartAsset] =
     useState<ChartAsset | null>(null);
@@ -118,6 +125,31 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const handleResearch = (asset: ChartAsset) => {
+    if (researchCooldown || isLoading) {
+      return;
+    }
+
+    const researchMessage =
+      i18n.language === "en"
+        ? `Listen, please research $${asset.symbol} (${asset.mint}) with focus on the sentiment and latest news and developments that could impact the price.`
+        : `听着，请研究 $${asset.symbol} (${asset.mint})。重点关注市场情绪、最新消息和可能影响价格的发展动态。`;
+
+    setResearchCooldown(true);
+    setTimeout(() => {
+      setResearchCooldown(false);
+    }, 10000); // 10 second cooldown, same as TokenTile
+
+    closeChart();
+    navigate({
+      to: "/",
+      search: {
+        new: true,
+        message: researchMessage,
+      },
+    });
+  };
+
   return (
     <ModalContext.Provider
       value={{
@@ -170,6 +202,25 @@ export function ModalProvider({ children }: { children: ReactNode }) {
                       <MdOutlineArrowOutward size={12} />
                       <span>Sell</span>
                     </button>
+                    {researchCooldown ? (
+                      <button
+                        disabled
+                        className="px-2 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs transition-colors flex items-center gap-2 opacity-50 cursor-not-allowed"
+                        title="Please wait before researching again"
+                      >
+                        <HiOutlineSparkles size={12} />
+                        <span>Research</span>
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => handleResearch(chartAsset)}
+                        disabled={isLoading}
+                        className="px-2 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs transition-colors flex items-center gap-2"
+                      >
+                        <HiOutlineSparkles size={12} />
+                        <span>Research</span>
+                      </button>
+                    )}
                   </div>
                 )}
               </div>

@@ -18,6 +18,7 @@ interface BuySellModalProps {
     logoURI?: string;
     price: number;
     decimals: number;
+    chainId?: string;
   };
 }
 
@@ -33,6 +34,8 @@ export function BuySellModal({
   const { isExecuting, quickBuyToken, sellTokenForSol } =
     usePipelineExecution();
   const { returnToChart, hasChartToReturnTo } = useModal();
+
+  console.log(asset);
 
   // Always refetch SOL balance when modal is open
   useEffect(() => {
@@ -88,10 +91,12 @@ export function BuySellModal({
     if (action === "buy") {
       await quickBuyToken(asset.address, amount, {
         onSuccess: onClose,
+        chainId: asset.chainId,
       });
     } else {
       await sellTokenForSol(asset.address, amount, asset.decimals, asset.name, {
         onSuccess: onClose,
+        chainId: asset.chainId,
       });
     }
   };
