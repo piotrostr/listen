@@ -15,7 +15,7 @@ const TileButton: React.FC<TileButtonProps> = ({
 }) => {
   return (
     <button
-      className={`relative w-10 h-10 flex items-center justify-center ${className}`}
+      className={`relative w-10 h-10 flex items-center justify-center ${className} transition-all duration-200`}
       onClick={onClick}
       aria-label={ariaLabel}
     >
@@ -27,8 +27,17 @@ const TileButton: React.FC<TileButtonProps> = ({
         viewBox="0 0 40 40"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
+        style={{ transition: "all 0.2s" }}
       >
-        <rect width="40" height="40" rx="20" fill="white" fillOpacity="0.08" />
+        <rect
+          width="40"
+          height="40"
+          rx="20"
+          fill="white"
+          fillOpacity="0.08"
+          style={{ transition: "all 0.2s" }}
+          className="group-hover:[fill-opacity:0.12]"
+        />
         <rect
           x="0.5"
           y="0.5"
@@ -37,6 +46,8 @@ const TileButton: React.FC<TileButtonProps> = ({
           rx="19.5"
           stroke="url(#paint0_linear_2039_15543)"
           strokeOpacity="0.16"
+          style={{ transition: "all 0.2s" }}
+          className="group-hover:[stroke-opacity:0.24]"
         />
         <defs>
           <linearGradient

@@ -1,4 +1,4 @@
-import { FaApplePay, FaShoppingCart } from "react-icons/fa";
+import { FaShoppingCart } from "react-icons/fa";
 import { IoArrowDown } from "react-icons/io5";
 import { useModal } from "../contexts/ModalContext";
 import { PortfolioItem } from "../hooks/types";
@@ -8,7 +8,6 @@ interface PortfolioItemTileProps {
   asset: PortfolioItem;
   onBuy: (asset: PortfolioItem) => void;
   onSell: (asset: PortfolioItem) => void;
-  onTopup: () => void;
 }
 
 // Helper function to format amounts
@@ -49,7 +48,6 @@ export function PortfolioItemTile({
   asset,
   onBuy,
   onSell,
-  onTopup,
 }: PortfolioItemTileProps) {
   const { openChart } = useModal();
   return (
@@ -78,7 +76,9 @@ export function PortfolioItemTile({
             <h3 className="font-bold flex items-center gap-2">
               <div
                 className="hover:text-blue-500 truncate max-w-[90px] sm:max-w-none cursor-pointer"
-                onClick={() => openChart(asset.address)}
+                onClick={() =>
+                  openChart({ mint: asset.address, chainId: asset.chain })
+                }
               >
                 {asset.name}
               </div>
@@ -90,16 +90,6 @@ export function PortfolioItemTile({
         </div>
         <div className="text-right">
           <div className="flex items-center gap-2">
-            {asset.chain === "solana" &&
-              asset.address ===
-                "So11111111111111111111111111111111111111112" && (
-                <button
-                  className="cursor-pointer border border-[#2D2D2D] rounded-full p-2 bg-transparent hover:bg-[#2D2D2D] transition-colors"
-                  onClick={onTopup}
-                >
-                  <FaApplePay size={32} />
-                </button>
-              )}
             <div>
               <p className="font-bold">
                 ${(asset.price * asset.amount).toFixed(2)}

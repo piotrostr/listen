@@ -1,10 +1,11 @@
 import { createContext, ReactNode, useContext, useState } from "react";
 import { createPortal } from "react-dom";
 import { Chart } from "../components/Chart";
+import { GeckoTerminalChart } from "../components/GeckoTerminalChart";
 import { ShareModal } from "../components/ShareModal";
 
 interface ModalContextType {
-  openChart: (mint: string) => void;
+  openChart: (asset: ChartAsset) => void;
   closeChart: () => void;
   openShareModal: (url: string) => void;
   closeShareModal: () => void;
@@ -12,13 +13,18 @@ interface ModalContextType {
 
 const ModalContext = createContext<ModalContextType | null>(null);
 
+interface ChartAsset {
+  mint: string;
+  chainId?: string;
+}
+
 export function ModalProvider({ children }: { children: ReactNode }) {
-  const [chartMint, setChartMint] = useState<string | null>(null);
+  const [chartAsset, setChartAsset] = useState<ChartAsset | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
 
-  const openChart = (mint: string) => setChartMint(mint);
-  const closeChart = () => setChartMint(null);
+  const openChart = (asset: ChartAsset) => setChartAsset(asset);
+  const closeChart = () => setChartAsset(null);
 
   const openShareModal = (url: string) => {
     setShareUrl(url);
@@ -39,7 +45,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
       }}
     >
       {children}
-      {chartMint &&
+      {chartAsset &&
         createPortal(
           <div className="fixed inset-0 z-50 flex items-center justify-center">
             <div className="fixed inset-0 bg-[#151518]/60 backdrop-blur-sm pointer-events-none" />
@@ -50,9 +56,19 @@ export function ModalProvider({ children }: { children: ReactNode }) {
               >
                 ✕
               </button>
-              <div className="w-full h-full">
-                <Chart mint={chartMint} />
-              </div>
+              {chartAsset.chainId ? (
+                <div className="w-full h-full">
+                  <GeckoTerminalChart
+                    tokenAddress={chartAsset.mint}
+                    chainId={chartAsset.chainId}
+                    timeframe="24h"
+                  />
+                </div>
+              ) : (
+                <div className="w-full h-full">
+                  <Chart mint={chartAsset.mint} />
+                </div>
+              )}
             </div>
             <div className="fixed inset-0 z-[-1]" onClick={closeChart} />
           </div>,
