@@ -13,7 +13,6 @@ import { I18nextProvider } from "react-i18next";
 import { arbitrum } from "viem/chains";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { MobileProvider } from "./contexts/MobileContext";
-import { ModalProvider } from "./contexts/ModalContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import i18n from "./i18n";
@@ -73,9 +72,7 @@ createRoot(document.getElementById("root")!).render(
             <WagmiProvider config={config}>
               <QueryClientProvider client={new QueryClient()}>
                 <SidebarProvider>
-                  <ModalProvider>
-                    <RouterProvider router={router} />
-                  </ModalProvider>
+                  <RouterProvider router={router} />
                 </SidebarProvider>
               </QueryClientProvider>
             </WagmiProvider>

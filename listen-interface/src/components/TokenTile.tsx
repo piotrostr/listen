@@ -96,7 +96,7 @@ export function TokenTile({ token }: TokenTileProps) {
                 <span className="inline-flex items-center text-sm sm:text-base">
                   <div
                     className="hover:text-blue-500 truncate max-w-[90px] sm:max-w-none cursor-pointer"
-                    onClick={() => openChart(token.pubkey)}
+                    onClick={() => openChart({ mint: token.pubkey })}
                   >
                     {metadata?.mpl.symbol ?? token.name}
                   </div>
@@ -120,11 +120,7 @@ export function TokenTile({ token }: TokenTileProps) {
                   </button>
                 </span>
               </div>
-              <Socials
-                tokenMetadata={metadata ?? null}
-                pubkey={token.pubkey}
-                openChart={openChart}
-              />
+              <Socials tokenMetadata={metadata ?? null} pubkey={token.pubkey} />
               <div className="text-xs sm:text-sm text-gray-500">
                 {t("token_tile.market_cap")}: $
                 {(token.marketCap / 1e6).toFixed(1)}M

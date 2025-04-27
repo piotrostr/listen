@@ -1,32 +1,20 @@
-import { usePrivy } from "@privy-io/react-auth";
-import { useFundWallet } from "@privy-io/react-auth/solana";
 import { useState } from "react";
-import { useTranslation } from "react-i18next";
-import { FaSync } from "react-icons/fa";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { BuySellModal } from "./BuySellModal";
 import { PortfolioItemTile } from "./PortfolioItemTile";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
+import { PortfolioSummary } from "./PortfolioSummary";
 
 export function Portfolio() {
-  const { solanaAddress } = useWalletStore();
-  const { user } = usePrivy();
-  const { getCombinedPortfolio, isLoading, refreshPortfolio } =
-    usePortfolioStore();
-
-  const { t } = useTranslation();
-  const { fundWallet } = useFundWallet();
+  const { getCombinedPortfolio, isLoading } = usePortfolioStore();
+  const { solanaAddress, evmAddress } = useWalletStore();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
 
-  const handleTopup = async () => {
-    if (solanaAddress) {
-      await fundWallet(solanaAddress);
-    }
-  };
+  const hasWallet = Boolean(solanaAddress || evmAddress);
 
   const handleOpenModal = (asset: any, action: "buy" | "sell") => {
     setSelectedAsset(asset);
@@ -37,17 +25,19 @@ export function Portfolio() {
   // Get assets using the selector
   const assets = getCombinedPortfolio();
 
-  if (!user || !solanaAddress) {
-    return <></>;
-  }
+  // Calculate total balance from assets
+  const totalBalance =
+    assets?.reduce((sum, asset) => sum + asset.price * asset.amount, 0) || 0;
 
-  if (isLoading && (!assets || assets.length === 0)) {
+  // Only show loading state if we have a wallet and are actually loading
+  if (hasWallet && isLoading) {
     return <PortfolioSkeleton />;
   }
 
   return (
-    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container pb-16 md:pb-0">
-      <div className="flex-1">
+    <div className="h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container pb-16 md:pb-0 p-4">
+      <PortfolioSummary totalBalance={totalBalance} />
+      <div className="flex-1 space-y-2">
         {assets
           ?.sort((a, b) => b.price * b.amount - a.price * a.amount)
           .map((asset) => (
@@ -56,20 +46,10 @@ export function Portfolio() {
               asset={asset}
               onBuy={(asset) => handleOpenModal(asset, "buy")}
               onSell={(asset) => handleOpenModal(asset, "sell")}
-              onTopup={handleTopup}
             />
           ))}
-        {(!assets || assets.length === 0) && !isLoading && (
-          <div className="text-center text-gray-400 flex flex-col items-center gap-2">
-            {t("portfolio.no_assets_found")}
-            <button onClick={refreshPortfolio}>
-              <FaSync size={12} />
-            </button>
-          </div>
-        )}
       </div>
 
-      {/* Buy/Sell Modal */}
       {modalOpen && selectedAsset && (
         <BuySellModal
           isOpen={modalOpen}

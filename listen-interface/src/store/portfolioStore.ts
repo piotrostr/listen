@@ -143,7 +143,6 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       // Fetch portfolios using current wallet addresses
       fetchAllPortfolios: async () => {
-        // Get addresses directly from wallet store
         const { solanaAddress, evmAddress } = useWalletStore.getState();
         const solAddr = solanaAddress || "";
         const evmAddr = evmAddress || "";
@@ -158,14 +157,16 @@ export const usePortfolioStore = create<PortfolioState>()(
           }
         );
 
+        // Don't set loading or attempt fetch if no addresses
         if (!solAddr && !evmAddr) {
           console.debug(
             "PortfolioStore: No addresses available, skipping fetch"
           );
+          set({ isLoading: false, error: null });
           return;
         }
 
-        // Set loading state at the beginning
+        // Set loading state only if we have addresses to fetch
         set({ isLoading: true, error: null });
 
         try {

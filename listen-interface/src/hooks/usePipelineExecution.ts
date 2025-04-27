@@ -15,6 +15,7 @@ import { usePrivyWallets } from "./usePrivyWallet";
 interface ExecuteOptions {
   onSuccess?: () => void;
   onError?: (error: Error) => void;
+  chainId?: string;
 }
 
 export function usePipelineExecution() {
@@ -90,7 +91,8 @@ export function usePipelineExecution() {
             output_token: tokenAddress,
             amount: lamports,
             from_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
-            to_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+            to_chain_caip2:
+              options?.chainId ?? "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
           },
           conditions: [
             {
@@ -133,7 +135,8 @@ export function usePipelineExecution() {
             input_token: tokenAddress,
             output_token: "So11111111111111111111111111111111111111112", // wSOL
             amount: rawAmount,
-            from_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+            from_chain_caip2:
+              options?.chainId ?? "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
             to_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
           },
           conditions: [

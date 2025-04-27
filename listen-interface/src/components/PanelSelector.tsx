@@ -143,9 +143,11 @@ export function PanelSelector({
 
       {activePanel === "portfolio" && (
         <FloatingPanel
-          title="portfolio"
+          title="blank"
           onClose={handleClose}
-          headerContent={<PortfolioHeader onRefresh={refreshPortfolio} />}
+          headerContent={<></>}
+          disableHeader={true}
+          // headerContent={<PortfolioHeader onRefresh={refreshPortfolio} />}
         >
           <Portfolio />
         </FloatingPanel>

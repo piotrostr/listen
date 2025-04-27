@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { MdCancel } from "react-icons/md";
 import { useCancelPipeline } from "../hooks/useCancelPipeline";
@@ -7,6 +8,7 @@ import {
   PipelineCondition,
   PipelineConditionType,
 } from "../types/pipeline";
+import { CopyIcon } from "./CopyIcon";
 import { NotificationPipelineStep } from "./NotificationPipelineStep";
 import { SwapPipelineStep } from "./SwapPipelineStep";
 
@@ -70,21 +72,60 @@ export function ExtendedPipelineDisplay({ pipeline }: ExtendedPipelineProps) {
     cancelStep(pipeline.id, stepId);
   };
 
+  // Format creation date to be more human-readable
+  const formatCreationDate = (dateString: string): string => {
+    const date = new Date(dateString);
+    const now = new Date();
+    const diffInMs = now.getTime() - date.getTime();
+    const diffInMinutes = Math.floor(diffInMs / (1000 * 60));
+    const diffInHours = Math.floor(diffInMs / (1000 * 60 * 60));
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+
+    if (diffInMinutes < 1) return "Just now";
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
+    if (diffInHours < 24) return `${diffInHours}h ago`;
+    if (diffInDays < 7) return `${diffInDays}d ago`;
+
+    return date.toLocaleDateString();
+  };
+
+  // Format ID to be shorter and more readable
+  const formatId = (id: string): string => {
+    if (id.length <= 12) return id;
+    return `${id.substring(0, 6)}...${id.substring(id.length - 4)}`;
+  };
+
+  const [isCopied, setIsCopied] = useState(false);
+
+  const handleCopy = () => {
+    navigator.clipboard.writeText(pipeline.id);
+    setIsCopied(true);
+    setTimeout(() => setIsCopied(false), 2000);
+  };
+
   return (
     <>
-      {/* Header */}
-      <div className="flex justify-between">
-        <div className="flex gap-2 flex-col">
-          <div className="text-white text-xs sm:text-sm">
-            <span className="font-bold">{t("pipelines.id")}:</span>{" "}
-            <span className="text-gray-400">{pipeline.id}</span>
-          </div>
+      <div className="flex flex-row items-center gap-3">
+        <div className="text-white text-xs sm:text-sm flex items-center gap-1">
+          <span className="font-bold">{t("pipelines.id")}:</span>{" "}
+          <span className="text-gray-400" title={pipeline.id}>
+            {formatId(pipeline.id)}
+          </span>
+          <button
+            className="text-gray-400 hover:text-blue-400 transition-colors"
+            onClick={handleCopy}
+            title="Copy full ID"
+          >
+            {isCopied ? "✅" : <CopyIcon />}
+          </button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex justify-between items-center">
           <div className="text-white text-xs sm:text-sm">
-            <span className="font-bold">{t("pipelines.created")}:</span>{" "}
-            <span className="text-gray-400">
-              {new Date(pipeline.created_at).toLocaleString()}
+            <span
+              className="text-gray-400"
+              title={new Date(pipeline.created_at).toLocaleString()}
+            >
+              ({formatCreationDate(pipeline.created_at)})
             </span>
           </div>
           {isPipelinePending && (

@@ -71,6 +71,8 @@ NEVER put anything like "Disclaimer: This is not financial advice. Trade at your
 export const researchFlow = `
 If you have memory of previous research, summarize what you already know and suggest potentially expanding the research to arrive at new findings.
 
+If you have the exact token address, ALWAYS start with the fetch_token_metadata tool.
+
 IMPORTANT:
 Any research should be done in the following order, form of a loop, where you use tools to:
 *   get the token metadata information, get current time **(Provides address, decimals, chain)**

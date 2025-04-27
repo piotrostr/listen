@@ -7,6 +7,7 @@ import {
   FaXTwitter,
 } from "react-icons/fa6";
 import { IoBarChart } from "react-icons/io5";
+import { ChartAsset } from "../contexts/ModalContext";
 import { TokenMetadataRaw } from "../types/metadata";
 import { CopyIcon } from "./CopyIcon";
 
@@ -29,7 +30,7 @@ export function Socials({
 }: {
   tokenMetadata: TokenMetadataRaw | SocialLinks | null;
   pubkey: string;
-  openChart?: (pubkey: string, chainId?: number) => void;
+  openChart?: (asset: ChartAsset) => void;
   chainId?: number;
 }) {
   const [copied, setCopied] = useState(false);
@@ -114,7 +115,12 @@ export function Socials({
         </button>
         {openChart && (
           <button
-            onClick={() => openChart(pubkey, chainId)}
+            onClick={() =>
+              openChart({
+                mint: pubkey,
+                chainId: chainId?.toString(),
+              })
+            }
             className="hover:text-blue-500"
           >
             <IoBarChart size={14} className="sm:text-base" />

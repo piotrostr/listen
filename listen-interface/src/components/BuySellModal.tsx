@@ -1,6 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FaTimes } from "react-icons/fa";
+import { MdArrowBack } from "react-icons/md";
+import { useModal } from "../contexts/ModalContext";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { useSolBalance } from "../hooks/useSolBalance";
 
@@ -16,6 +18,7 @@ interface BuySellModalProps {
     logoURI?: string;
     price: number;
     decimals: number;
+    chainId?: string;
   };
 }
 
@@ -30,6 +33,9 @@ export function BuySellModal({
   const { t } = useTranslation();
   const { isExecuting, quickBuyToken, sellTokenForSol } =
     usePipelineExecution();
+  const { returnToChart, hasChartToReturnTo } = useModal();
+
+  console.log(asset);
 
   // Always refetch SOL balance when modal is open
   useEffect(() => {
@@ -85,10 +91,12 @@ export function BuySellModal({
     if (action === "buy") {
       await quickBuyToken(asset.address, amount, {
         onSuccess: onClose,
+        chainId: asset.chainId,
       });
     } else {
       await sellTokenForSol(asset.address, amount, asset.decimals, asset.name, {
         onSuccess: onClose,
+        chainId: asset.chainId,
       });
     }
   };
@@ -96,12 +104,22 @@ export function BuySellModal({
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4">
       <div className="relative w-full lg:max-w-md max-w-sm p-6 bg-black/80 border border-[#2D2D2D] rounded-lg shadow-xl max-h-[90vh] overflow-y-auto my-4">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-white hover:text-white"
-        >
-          <FaTimes />
-        </button>
+        <div className="absolute top-4 right-4 flex items-center gap-2">
+          {hasChartToReturnTo && (
+            <button
+              onClick={returnToChart}
+              className="text-white hover:text-white transition-colors"
+            >
+              <MdArrowBack size={18} />
+            </button>
+          )}
+          <button
+            onClick={onClose}
+            className="text-white hover:text-white transition-colors"
+          >
+            <FaTimes />
+          </button>
+        </div>
 
         <h2 className="text-xl font-bold mb-4 text-white">
           {action === "buy"
