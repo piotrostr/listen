@@ -132,8 +132,8 @@ export function ModalProvider({ children }: { children: ReactNode }) {
 
     const researchMessage =
       i18n.language === "en"
-        ? `Listen, please research $${asset.symbol} (${asset.mint}) with focus on the sentiment and latest news and developments that could impact the price.`
-        : `听着，请研究 $${asset.symbol} (${asset.mint})。重点关注市场情绪、最新消息和可能影响价格的发展动态。`;
+        ? `Listen, please research $${asset.symbol} (${asset.mint}). Focus on the sentiment and latest news and developments that could impact the price. Go beyond what KOLs are saying, look for new projects, partnerships, and other events that could impact the price.`
+        : `听着，请研究 $${asset.symbol} (${asset.mint})。重点关注市场情绪、最新消息和可能影响价格的发展动态。关注不仅仅是人们在说什么，还要寻找可能影响价格的新项目、合作关系和其他事件。`;
 
     setResearchCooldown(true);
     setTimeout(() => {
