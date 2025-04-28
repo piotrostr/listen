@@ -1,4 +1,5 @@
-import { useFundWallet, usePrivy } from "@privy-io/react-auth";
+import { usePrivy } from "@privy-io/react-auth";
+import { useFundWallet } from "@privy-io/react-auth/solana";
 import { MdOutlineArrowOutward } from "react-icons/md";
 import { TbDots, TbPlus } from "react-icons/tb";
 import { useWalletStore } from "../store/walletStore";
@@ -39,7 +40,7 @@ export function PortfolioSummary({ totalBalance }: PortfolioSummaryProps) {
           />
           <TileButton
             icon={<MdOutlineArrowOutward />}
-            onClick={handleTopup}
+            onClick={() => {}}
             ariaLabel="Withdraw"
           />
           <TileButton

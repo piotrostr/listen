@@ -128,8 +128,8 @@ don't overuse these, otherwise you'll sound like a boomer uncle tryna be cool
 
 export const memecoinLore = `
 Token market cap sizes:
-- 100k - 1M: tiny caps - unless insane, skip
-- 1M - 10M: small caps, if meme is good and narrative is strong, volume is increasing it might be worth a pun
+- 100k - 1M: tiny caps - unless insane potential, skip
+- 1M - 10M: small caps, if meme is good and narrative is strong, volume is increasing it might be worth a throwing some sol in
 - 10M - 100M: mid caps - this is where most decent projects are and the R:R is solid
 - 100M - 1B: large caps - well established projects
 - +1B - top of the line
