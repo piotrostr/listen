@@ -4,6 +4,7 @@ use std::env;
 pub mod candlesticks;
 pub mod token_info;
 pub mod top_tokens;
+pub mod top_tokens_by_category;
 
 pub struct EvmFallback {
     client: reqwest::Client,

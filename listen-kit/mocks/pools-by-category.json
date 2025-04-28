@@ -1,0 +1,1004 @@
+{
+  "data": [
+    {
+      "id": "base_0x0f6e2fc939e4b3ba2baecc9396d5bc923a1a511e1e92636e65450ce84f335cb6",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "39.5051450125019",
+        "quote_token_price_usd": "94441.7694706044",
+        "address": "0x0f6e2fc939e4b3ba2baecc9396d5bc923a1a511e1e92636e65450ce84f335cb6",
+        "name": "CLANKER / cbBTC 0.05%",
+        "pool_created_at": "2025-04-28T18:49:53Z",
+        "fdv_usd": "39504734.1253185",
+        "market_cap_usd": "39318852.9053",
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0.05",
+          "m30": "-0.4",
+          "h1": "-1.12",
+          "h6": "-2.79",
+          "h24": "-2.79"
+        },
+        "reserve_in_usd": "324.5507",
+        "h24_volume_usd": "11260.3032759623",
+        "h24_tx_count": 69
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "base_0x1bc0c42215582d5a085795f4badbac3ff36d1bcb",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "base_0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "base",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "uniswap-v4-base",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "base_0xcfb2b4be2777f4469194d43ddeefa67d55791c5e",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.0000100742466978199",
+        "quote_token_price_usd": "1.41017134530015",
+        "address": "0xcfb2b4be2777f4469194d43ddeefa67d55791c5e",
+        "name": "AGENTL / VIRTUAL",
+        "pool_created_at": "2025-04-28T17:09:45Z",
+        "fdv_usd": "10074.2466978199",
+        "market_cap_usd": null,
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "0",
+          "h1": "0",
+          "h6": "-2.53",
+          "h24": "-2.53"
+        },
+        "reserve_in_usd": "9958.9477",
+        "h24_volume_usd": "85757.612167266",
+        "h24_tx_count": 400
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "base_0x1ee40f783b99ad9a05efa6480931f45a6c69c527",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "base_0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "base",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "virtuals-base",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "base_0xa83c99a221d8e730b26a6ad4bab30e03388ac1c2",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.0000176665344437946",
+        "quote_token_price_usd": "1.40664374783345",
+        "address": "0xa83c99a221d8e730b26a6ad4bab30e03388ac1c2",
+        "name": "BUDS / VIRTUAL",
+        "pool_created_at": "2025-04-28T16:37:17Z",
+        "fdv_usd": "17666.5344437946",
+        "market_cap_usd": null,
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "1.17",
+          "h1": "0.11",
+          "h6": "120.55",
+          "h24": "120.55"
+        },
+        "reserve_in_usd": "15975.5082",
+        "h24_volume_usd": "241042.443990804",
+        "h24_tx_count": 1157
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "base_0x480475c7dbab1f3d3f112284a2648b56ced9d74a",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "base_0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "base",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "virtuals-base",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "base_0xff5af25b8fc9521edcd90da9c96ea9f4e87535e4b1d6601f4be02c0d3bc9dfdf",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.00668937792799187",
+        "quote_token_price_usd": "0.000548927609537498",
+        "address": "0xff5af25b8fc9521edcd90da9c96ea9f4e87535e4b1d6601f4be02c0d3bc9dfdf",
+        "name": "DeepSeek / Bsop 5.55%",
+        "pool_created_at": "2025-04-28T16:02:21Z",
+        "fdv_usd": "140476.936487829",
+        "market_cap_usd": null,
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "-0.16",
+          "h1": "-0.16",
+          "h6": "-12.23",
+          "h24": "-12.23"
+        },
+        "reserve_in_usd": "0.893",
+        "h24_volume_usd": "0.7163069907",
+        "h24_tx_count": 4
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "base_0x7870bf33b34aac95f361ff7dec3b250746f63049",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "base_0x9704d2adbc02c085ff526a37ac64872027ac8a50",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "base",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "uniswap-v4-base",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "solana_9xGg9ULrDwjq28XHQxnZaBKgiCy3zCsYhnS7SRbRiJTY",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.00000455573746763135",
+        "quote_token_price_usd": "147.43",
+        "address": "9xGg9ULrDwjq28XHQxnZaBKgiCy3zCsYhnS7SRbRiJTY",
+        "name": "MGA / SOL",
+        "pool_created_at": "2025-04-28T15:16:46Z",
+        "fdv_usd": "4555.7374676314",
+        "market_cap_usd": null,
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "-0.04",
+          "h1": "-8.59",
+          "h6": "-91.87",
+          "h24": "-91.87"
+        },
+        "reserve_in_usd": "7137.2188",
+        "h24_volume_usd": "646725.567588872",
+        "h24_tx_count": 6647
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "solana_UyBDXM26gs2cuB9k6ptCLRhBaaBL6uo8VgmCN43pump",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "solana_So11111111111111111111111111111111111111112",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "solana",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "pumpswap",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "solana_29CkvfjkTY3SxpXXFz6MFMeM4vpPuoDd3QtEBvRsyjvW",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.0000715960725254146",
+        "quote_token_price_usd": "1.09420483304701",
+        "address": "29CkvfjkTY3SxpXXFz6MFMeM4vpPuoDd3QtEBvRsyjvW",
+        "name": "CUR / Fartcoin",
+        "pool_created_at": "2025-04-28T14:53:51Z",
+        "fdv_usd": "70035.818683797",
+        "market_cap_usd": "70045.3454222642",
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0.23",
+          "m30": "-0.75",
+          "h1": "-1",
+          "h6": "-1.48",
+          "h24": "-1.48"
+        },
+        "reserve_in_usd": "1027.0156",
+        "h24_volume_usd": "211.8662549533",
+        "h24_tx_count": 34
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "solana_8TbsZ3yH1mBHytVpmMn4qED2UeF3FgWUVt1pd5RBpump",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "solana_9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "solana",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "meteora",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "solana_GdGvn8uiFR6uN545UtKp6AZiXX6PiLe7icRip8n3bLic",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.0120291640630269",
+        "quote_token_price_usd": "0.999638921999881",
+        "address": "GdGvn8uiFR6uN545UtKp6AZiXX6PiLe7icRip8n3bLic",
+        "name": "GRIFT / USDC",
+        "pool_created_at": "2025-04-28T11:18:14Z",
+        "fdv_usd": "12029066.4589446",
+        "market_cap_usd": "10557828.0337829",
+        "price_change_percentage": {
+          "m5": "-0.21",
+          "m15": "-1.21",
+          "m30": "-1.63",
+          "h1": "-1.99",
+          "h6": "-0.6",
+          "h24": "-3.92"
+        },
+        "reserve_in_usd": "6783.8496",
+        "h24_volume_usd": "76212.6967380668",
+        "h24_tx_count": 1169
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "solana_GekTNfm84QfyP2GdAHZ5AgACBRd69aNmgA5FDhZupump",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "solana_EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "solana",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "meteora",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "base_0xed26d250085a71c86e045aa8a84ab3b387b74372",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.00473641897208583",
+        "quote_token_price_usd": "1796.82",
+        "address": "0xed26d250085a71c86e045aa8a84ab3b387b74372",
+        "name": "BIOS / WETH 1%",
+        "pool_created_at": "2025-04-28T10:28:33Z",
+        "fdv_usd": "4736418.97208583",
+        "market_cap_usd": null,
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "0",
+          "h1": "-1.99",
+          "h6": "-0.59",
+          "h24": "-8.93"
+        },
+        "reserve_in_usd": "27241.8541",
+        "h24_volume_usd": "20097.4862901895",
+        "h24_tx_count": 179
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "base_0x73cb479f2ccf77bad90bcda91e3987358437240a",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "base_0x4200000000000000000000000000000000000006",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "base",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "pancakeswap-v3-base",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "solana_CEzjGEd8bATfMfLEzaMRb6DqdXiTx7WDHy4w2XxFuvcu",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "1.08287343717706",
+        "quote_token_price_usd": "0.0846835881828252",
+        "address": "CEzjGEd8bATfMfLEzaMRb6DqdXiTx7WDHy4w2XxFuvcu",
+        "name": "Fartcoin / GOAT",
+        "pool_created_at": "2025-04-28T10:28:00Z",
+        "fdv_usd": "1082865075.65421",
+        "market_cap_usd": "1089682231.23557",
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "-3.25",
+          "m30": "-3.24",
+          "h1": "-3.24",
+          "h6": "-5.07",
+          "h24": "-6.53"
+        },
+        "reserve_in_usd": "131.9594",
+        "h24_volume_usd": "10.8379229237",
+        "h24_tx_count": 28
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "solana_9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "solana_CzLSujWBLFsSjncfkh59rUFqvafWcY5tzedWJSuypump",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "solana",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "raydium-clmm",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "solana_HXVnef3xQWBag1yHq9jfFJpi5Wj2xnyEuWsh8RBpGrHz",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.0124133811053105",
+        "quote_token_price_usd": "0.273054902078564",
+        "address": "HXVnef3xQWBag1yHq9jfFJpi5Wj2xnyEuWsh8RBpGrHz",
+        "name": "PENGU / ai16z",
+        "pool_created_at": "2025-04-28T09:37:08Z",
+        "fdv_usd": "1103405703.92338",
+        "market_cap_usd": "773149225.251389",
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0.84",
+          "m30": "0.84",
+          "h1": "0.84",
+          "h6": "2.95",
+          "h24": "-1.85"
+        },
+        "reserve_in_usd": "100.941",
+        "h24_volume_usd": "70.359758597",
+        "h24_tx_count": 50
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "solana_2zMMhcVQEXDtdE6vsFS7S7D5oUodfJHE8vd1gnBouauv",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "solana_HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "solana",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "orca",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "base_0xcab99a866793f294c7869db556978f57438affc7",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.00649957311308531",
+        "quote_token_price_usd": "5.28104116336531",
+        "address": "0xcab99a866793f294c7869db556978f57438affc7",
+        "name": "SEKOIA / Anon",
+        "pool_created_at": "2025-04-28T03:27:36Z",
+        "fdv_usd": "5833102.04403209",
+        "market_cap_usd": "6499003.409",
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "0",
+          "h1": "0",
+          "h6": "-0.54",
+          "h24": "23.71"
+        },
+        "reserve_in_usd": "29.8274",
+        "h24_volume_usd": "3.9124239604",
+        "h24_tx_count": 10
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "base_0x1185cb5122edad199bdbc0cbd7a0457e448f23c7",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "base_0x79bbf4508b1391af3a0f4b30bb5fc4aa9ab0e07c",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "base",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "aerodrome-base",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "base_0xca8388184b0930643a1e52946272dcd770e476f0",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "67.4236237057332",
+        "quote_token_price_usd": "94456.1290807335",
+        "address": "0xca8388184b0930643a1e52946272dcd770e476f0",
+        "name": "CLANKER / cbBTC",
+        "pool_created_at": "2025-04-27T22:50:36Z",
+        "fdv_usd": "67422922.4425728",
+        "market_cap_usd": "39318852.9053",
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "0",
+          "h1": "811.6",
+          "h6": "-75.73",
+          "h24": "75.27"
+        },
+        "reserve_in_usd": "0.0",
+        "h24_volume_usd": "13.2767434867",
+        "h24_tx_count": 25
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "base_0x1bc0c42215582d5a085795f4badbac3ff36d1bcb",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "base_0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "base",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "aerodrome-base",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "base_0x0ebf74d89f2d5dedea9bfb706f997f2eebee4e17fbc4450b8f2f7bf9c809b5ec",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "39.0917782433917",
+        "quote_token_price_usd": "94117.6128935096",
+        "address": "0x0ebf74d89f2d5dedea9bfb706f997f2eebee4e17fbc4450b8f2f7bf9c809b5ec",
+        "name": "CLANKER / cbBTC 0.3%",
+        "pool_created_at": "2025-04-27T22:45:33Z",
+        "fdv_usd": "39091371.655575",
+        "market_cap_usd": "39318852.9053",
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "0",
+          "h1": "0",
+          "h6": "-0.92",
+          "h24": "3.98"
+        },
+        "reserve_in_usd": "192.4017",
+        "h24_volume_usd": "63634.8070614435",
+        "h24_tx_count": 459
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "base_0x1bc0c42215582d5a085795f4badbac3ff36d1bcb",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "base_0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "base",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "uniswap-v4-base",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "solana_AVNpw97NUEortVM2gUcHJ2oq1thTnCbQj6yk8FogCELN",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.0000856774037787001",
+        "quote_token_price_usd": "0.00352839362080758",
+        "address": "AVNpw97NUEortVM2gUcHJ2oq1thTnCbQj6yk8FogCELN",
+        "name": "SEAL / TANK",
+        "pool_created_at": "2025-04-27T16:52:31Z",
+        "fdv_usd": "85662.1803056528",
+        "market_cap_usd": null,
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "0",
+          "h1": "0.21",
+          "h6": "1.05",
+          "h24": "-7.71"
+        },
+        "reserve_in_usd": "65.7153",
+        "h24_volume_usd": "294.4487794227",
+        "h24_tx_count": 43
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "solana_Ho6wN4ff7RdTdXE1UsCZjrjuFVMHyRFTv1oBdbSECnJS",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "solana_GAMwtMB6onAvBNBQJCJFuxoaqfPH8uCQ2dewNMVVpump",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "solana",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "meteora",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "solana_43sRCoR1yEFmHcVGbgGBBNUBqwSy63zF6VNRxukscir8",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.000225442390502281",
+        "quote_token_price_usd": "0.00712096695519498",
+        "address": "43sRCoR1yEFmHcVGbgGBBNUBqwSy63zF6VNRxukscir8",
+        "name": "Hobbes / $1",
+        "pool_created_at": "2025-04-27T06:55:31Z",
+        "fdv_usd": "224471.321289829",
+        "market_cap_usd": "225305.726065413",
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "3.71",
+          "h1": "3.71",
+          "h6": "-9",
+          "h24": "-4.24"
+        },
+        "reserve_in_usd": "207.6358",
+        "h24_volume_usd": "21.6388577855",
+        "h24_tx_count": 12
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "solana_6n7Janary9fqzxKaJVrhL9TG2F61VbAtwUMu1YZscaQS",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "solana_GHichsGq8aPnqJyz6Jp1ASTK4PNLpB5KrD6XrfDjpump",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "solana",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "orca",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "base_0xef2fc94fc8f08a8a075988413a2cf894ff2c2d1b",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.0000693229499491445",
+        "quote_token_price_usd": "1.4067112067075",
+        "address": "0xef2fc94fc8f08a8a075988413a2cf894ff2c2d1b",
+        "name": "JD / VIRTUAL",
+        "pool_created_at": "2025-04-27T04:57:21Z",
+        "fdv_usd": "69322.9499491445",
+        "market_cap_usd": null,
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "0",
+          "h1": "-4.46",
+          "h6": "-5.41",
+          "h24": "-18.81"
+        },
+        "reserve_in_usd": "39811.6789",
+        "h24_volume_usd": "42569.6812662418",
+        "h24_tx_count": 165
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "base_0xdc6ad9b5f4257c620fb103226a19808f7dd25bcc",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "base_0x0b3e328455c4059eeb9e3f84b5543f74e24e7e1b",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "base",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "virtuals-base",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "solana_5o69ubmNg8xL8CZj1kJJBhRyzsd9p8aAsMv6zcebuZZ9",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.0000297418031939437",
+        "quote_token_price_usd": "0.272065262789263",
+        "address": "5o69ubmNg8xL8CZj1kJJBhRyzsd9p8aAsMv6zcebuZZ9",
+        "name": "QUILL / ai16z",
+        "pool_created_at": "2025-04-27T00:48:52Z",
+        "fdv_usd": "29741.8031939437",
+        "market_cap_usd": null,
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "-1.55",
+          "m30": "-1.55",
+          "h1": "27.04",
+          "h6": "-16.63",
+          "h24": "-34.42"
+        },
+        "reserve_in_usd": "4533.7583",
+        "h24_volume_usd": "7017.6424031819",
+        "h24_tx_count": 457
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "solana_5YGWQRUupxKShA4cWHXCi3gLcnHZm5vpePHbe3SLfFUN",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "solana_HeLp6NuQkmYB4pYWo2zYs22mESHXPQYzXbB8n4V98jwC",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "solana",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "raydium",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "solana_H59B4iDmPxxpb2warN1FmCvYLVA9YUGvceX56MvpQSiq",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.0665905058599071",
+        "quote_token_price_usd": "1.41895101811707",
+        "address": "H59B4iDmPxxpb2warN1FmCvYLVA9YUGvceX56MvpQSiq",
+        "name": "arc / VIRTUAL",
+        "pool_created_at": "2025-04-26T22:44:00Z",
+        "fdv_usd": "66590112.5045234",
+        "market_cap_usd": "65179340.4882074",
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "1.13",
+          "h1": "1.13",
+          "h6": "1.35",
+          "h24": "11.23"
+        },
+        "reserve_in_usd": "15796.4621",
+        "h24_volume_usd": "49222.393562588",
+        "h24_tx_count": 369
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "solana_61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "solana_3iQL8BFS2vE7mww4ehAqQHAsbmRNCrPxizWAT2Zfyr9y",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "solana",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "meteora",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "base_0x4e151906bb9380db6ab3a560076af94cad39521d",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.00319381786509063",
+        "quote_token_price_usd": "1789.48",
+        "address": "0x4e151906bb9380db6ab3a560076af94cad39521d",
+        "name": "HOLLY / WETH 1%",
+        "pool_created_at": "2025-04-26T18:10:09Z",
+        "fdv_usd": "3193817.86509063",
+        "market_cap_usd": null,
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "0",
+          "h1": "4.1",
+          "h6": "22.16",
+          "h24": "57.49"
+        },
+        "reserve_in_usd": "56.4398",
+        "h24_volume_usd": "145.7602803326",
+        "h24_tx_count": 65
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "base_0x567cb27139bcc6c3617636cb4f882564a91d6e10",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "base_0x4200000000000000000000000000000000000006",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "base",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "uniswap-v3-base",
+            "type": "dex"
+          }
+        }
+      }
+    },
+    {
+      "id": "base_0x25efc0c8cd6a5970f8293a4fa1e406df063090bf",
+      "type": "pool",
+      "attributes": {
+        "base_token_price_usd": "0.00654735218677088",
+        "quote_token_price_usd": "1.00039484680333",
+        "address": "0x25efc0c8cd6a5970f8293a4fa1e406df063090bf",
+        "name": "SEKOIA / USDC 0.3%",
+        "pool_created_at": "2025-04-26T09:10:51Z",
+        "fdv_usd": "5875981.8159076",
+        "market_cap_usd": "6499003.409",
+        "price_change_percentage": {
+          "m5": "0",
+          "m15": "0",
+          "m30": "3.91",
+          "h1": "4.38",
+          "h6": "-1.23",
+          "h24": "21.52"
+        },
+        "reserve_in_usd": "724.0728",
+        "h24_volume_usd": "4643.1589074666",
+        "h24_tx_count": 255
+      },
+      "relationships": {
+        "base_token": {
+          "data": {
+            "id": "base_0x1185cb5122edad199bdbc0cbd7a0457e448f23c7",
+            "type": "token"
+          }
+        },
+        "quote_token": {
+          "data": {
+            "id": "base_0x833589fcd6edb6e08f4c7c32d4f71b54bda02913",
+            "type": "token"
+          }
+        },
+        "network": {
+          "data": {
+            "id": "base",
+            "type": "network"
+          }
+        },
+        "dex": {
+          "data": {
+            "id": "sushiswap-v3-base",
+            "type": "dex"
+          }
+        }
+      }
+    }
+  ]
+}
