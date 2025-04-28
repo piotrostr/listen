@@ -1,4 +1,4 @@
-use crate::data::TopToken;
+use crate::data::{PoolInfo, TopToken};
 
 use super::EvmFallback;
 use anyhow::{anyhow, Context, Result};
@@ -150,7 +150,7 @@ impl EvmFallback {
     ) -> Result<Vec<TopToken>> {
         let limit = limit.unwrap_or(10);
 
-        // Create a map to aggregate data by token ID
+        // Create a map to aggregate data by token address (not ID)
         let mut token_data: std::collections::HashMap<
             String,
             (TopToken, f64),
@@ -158,6 +158,13 @@ impl EvmFallback {
 
         for pool in response.data {
             let base_token = &pool.relationships.base_token.data;
+            // Extract actual token address from the ID
+            let token_address = base_token
+                .id
+                .split('_')
+                .nth(1)
+                .unwrap_or(base_token.id.as_str());
+
             let base_price: f64 =
                 pool.attributes.base_token_price_usd.parse()?;
             let volume_24h: f64 = pool.attributes.h24_volume_usd.parse()?;
@@ -171,7 +178,6 @@ impl EvmFallback {
                 None => continue,
             };
 
-            // Parse 24h price change, default to 0.0 if not available
             let price_change_24h = pool
                 .attributes
                 .price_change_percentage
@@ -180,7 +186,6 @@ impl EvmFallback {
                 .and_then(|s| s.parse::<f64>().ok())
                 .unwrap_or(0.0);
 
-            // Get chain ID based on network
             let chain_id = match pool.relationships.network.data.id.as_str() {
                 "base" => Some(8453),
                 "ethereum" => Some(1),
@@ -188,8 +193,14 @@ impl EvmFallback {
                 _ => None,
             };
 
+            // Create pool info
+            let pool_info = PoolInfo {
+                dex: pool.relationships.dex.data.id.clone(),
+                address: pool.attributes.address.clone(),
+            };
+
             let entry = token_data
-                .entry(base_token.id.clone())
+                .entry(token_address.to_string())
                 .or_insert_with(|| {
                     (
                         TopToken {
@@ -200,20 +211,22 @@ impl EvmFallback {
                                 .next()
                                 .unwrap_or("")
                                 .to_string(),
-                            pubkey: base_token.id.clone(),
+                            pubkey: token_address.to_string(),
                             price: base_price,
                             market_cap,
-                            volume_24h: 0.0, // Will accumulate
+                            volume_24h: 0.0,
                             price_change_24h,
                             chain_id,
+                            pools: Vec::new(),
                         },
                         0.0,
-                    ) // Track total volume for weighted average
+                    )
                 });
 
-            // Accumulate volume and update data
+            // Accumulate volume and add pool info
             entry.0.volume_24h += volume_24h;
             entry.1 += volume_24h;
+            entry.0.pools.push(pool_info);
         }
 
         // Convert to vector, sort by volume, and limit results

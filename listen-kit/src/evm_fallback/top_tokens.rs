@@ -164,6 +164,7 @@ impl EvmFallback {
                 volume_24h,
                 price_change_24h,
                 chain_id: Some(chain_id),
+                pools: Vec::new(), // TODO add this here too
             });
         }
 
