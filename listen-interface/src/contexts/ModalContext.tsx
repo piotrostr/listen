@@ -8,7 +8,9 @@ import { Chart } from "../components/Chart";
 import { GeckoTerminalChart } from "../components/GeckoTerminalChart";
 import { ShareModal } from "../components/ShareModal";
 import { useChat } from "../contexts/ChatContext";
+import { usePanel } from "../contexts/PanelContext";
 import i18n from "../i18n";
+import { useMobile } from "./MobileContext";
 
 export interface ChartAsset {
   mint: string;
@@ -60,6 +62,8 @@ export function ModalProvider({ children }: { children: ReactNode }) {
     useState<ChartAsset | null>(null);
   const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [shareUrl, setShareUrl] = useState("");
+  const { setActivePanel } = usePanel();
+  const { isMobile } = useMobile();
   const [buySellModalState, setBuySellModalState] = useState<BuySellModalState>(
     {
       isOpen: false,
@@ -148,6 +152,9 @@ export function ModalProvider({ children }: { children: ReactNode }) {
         message: researchMessage,
       },
     });
+    if (isMobile) {
+      setActivePanel(null);
+    }
   };
 
   return (

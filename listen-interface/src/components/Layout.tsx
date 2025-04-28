@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { memo, useEffect, useState } from "react";
+import { memo, useEffect } from "react";
 import { Background } from "./Background";
 
 import { useTranslation } from "react-i18next";
@@ -13,6 +13,7 @@ import {
 } from "react-icons/io5";
 import { RxDashboard } from "react-icons/rx";
 import { useMobile } from "../contexts/MobileContext";
+import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
@@ -87,7 +88,7 @@ function getBottomItems(t: (key: string) => string) {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { isMobile, isIOS } = useMobile();
-  const [activePanel, setActivePanel] = useState<string | null>(null);
+  const { activePanel, setActivePanel } = usePanel();
   const { user, logout } = usePrivy();
   const { clearPortfolio } = usePortfolioStore();
   const { clearWalletAddresses } = useWalletStore();
@@ -188,14 +189,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
             <SimpleHeader
               activePanel={activePanel}
               toggleMobileSidebar={toggleMobileSidebar}
-              setActivePanel={(panel) => {
-                setActivePanel(panel);
-                if (panel) {
-                  localStorage.setItem("activePanel", panel);
-                } else {
-                  localStorage.removeItem("activePanel");
-                }
-              }}
+              setActivePanel={setActivePanel}
             />
           </div>
         </div>
@@ -374,10 +368,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           {isMobile && activePanel && (
             <div className="fixed inset-0 z-40 bg-black/95 overflow-auto">
               <div className="p-4">
-                <PanelSelector
-                  activePanel={activePanel}
-                  setActivePanel={setActivePanel}
-                />
+                <PanelSelector />
               </div>
             </div>
           )}
@@ -389,10 +380,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                 activePanel ? "translate-x-0" : "translate-x-full"
               }`}
             >
-              <PanelSelector
-                activePanel={activePanel}
-                setActivePanel={setActivePanel}
-              />
+              <PanelSelector />
             </div>
           )}
         </div>
