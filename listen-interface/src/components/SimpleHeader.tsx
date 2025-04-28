@@ -1,9 +1,9 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { BsLink } from "react-icons/bs";
+import { BiCoin } from "react-icons/bi";
 import { IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
-import { RxDashboard } from "react-icons/rx";
+import { MdHistory } from "react-icons/md";
 import { useMobile } from "../contexts/MobileContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { usePortfolioStore } from "../store/portfolioStore";
@@ -103,14 +103,14 @@ export function SimpleHeader({
                 className={panelButtonStyle(activePanel === "screener")}
                 title={t("layout.screener")}
               >
-                <RxDashboard className="w-5 h-5" />
+                <BiCoin className="w-5 h-5" />
               </button>
               <button
                 onClick={() => togglePanel("pipelines")}
                 className={panelButtonStyle(activePanel === "pipelines")}
                 title={t("layout.pipelines")}
               >
-                <BsLink className="w-5 h-5" />
+                <MdHistory className="w-5 h-5" />
               </button>
               <button
                 onClick={() => togglePanel("settings")}

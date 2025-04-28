@@ -4,14 +4,14 @@ import { memo, useEffect } from "react";
 import { Background } from "./Background";
 
 import { useTranslation } from "react-i18next";
-import { BsLink } from "react-icons/bs";
+import { BiCoin } from "react-icons/bi";
 import { FaXTwitter } from "react-icons/fa6";
 import {
   IoChatboxOutline,
   IoSettingsOutline,
   IoWalletOutline,
 } from "react-icons/io5";
-import { RxDashboard } from "react-icons/rx";
+import { MdHistory } from "react-icons/md";
 import { useMobile } from "../contexts/MobileContext";
 import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
@@ -270,7 +270,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         onClick={() => handleNavClick("screener")}
                         className={`flex items-center h-10 w-full rounded-lg ${activePanel === "screener" ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
                       >
-                        <RxDashboard className="w-5 h-5" />
+                        <BiCoin className="w-5 h-5" />
                         <span className="ml-3">{t("layout.screener")}</span>
                       </button>
 
@@ -278,7 +278,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
                         onClick={() => handleNavClick("pipelines")}
                         className={`flex items-center h-10 w-full rounded-lg ${activePanel === "pipelines" ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
                       >
-                        <BsLink className="w-5 h-5" />
+                        <MdHistory className="w-5 h-5" />
                         <span className="ml-3">{t("layout.pipelines")}</span>
                       </button>
 
