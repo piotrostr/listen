@@ -1,4 +1,4 @@
-use crate::data::TopToken;
+use crate::data::{PoolInfo, TopToken};
 
 use super::{map_chain_id_to_network, EvmFallback};
 use anyhow::{anyhow, Context, Result};
@@ -29,6 +29,7 @@ pub struct GTVolumeUsd {
 #[derive(Deserialize, Debug)]
 pub struct GTPoolAttributes {
     name: String,
+    address: String,
     base_token_price_usd: String,
     market_cap_usd: Option<String>,
     price_change_percentage: GTPriceChangePercentage,
@@ -99,76 +100,99 @@ impl EvmFallback {
             ));
         }
 
-        let mut trending_pools_resp =
+        let trending_pools_resp =
             response.json::<GTTrendingPoolsResponse>().await.context(
                 "Failed to deserialize GeckoTerminal trending pools response",
             )?;
 
-        let mut top_tokens = Vec::new();
+        // Create a map to aggregate data by token address
+        let mut token_data: std::collections::HashMap<
+            String,
+            (TopToken, f64),
+        > = std::collections::HashMap::new();
 
-        // filter out the ones with 0 mc
-        trending_pools_resp.data = trending_pools_resp
-            .data
-            .into_iter()
-            .filter(|pool| {
-                let market_cap = pool
-                    .attributes
-                    .market_cap_usd
-                    .clone()
-                    .unwrap_or("0".to_string());
-                market_cap != "0"
-            })
-            .collect();
-
-        for pool in trending_pools_resp.data.iter().take(limit) {
-            // Extract token name from pool name (assuming format is "TOKEN / OTHER")
-            let token_name = pool
-                .attributes
-                .name
-                .split(" / ")
-                .next()
-                .unwrap_or("")
-                .to_string();
+        // Filter and process pools
+        for pool in trending_pools_resp.data.iter() {
+            // Skip if market cap is zero or missing
+            let market_cap = match &pool.attributes.market_cap_usd {
+                Some(cap) => match cap.parse::<f64>() {
+                    Ok(val) if val > 0.0 => val,
+                    _ => continue,
+                },
+                None => continue,
+            };
 
             // Extract token address from base_token id
-            // Format is usually "network_address"
             let token_id = &pool.relationships.base_token.data.id;
             let token_address =
                 token_id.split('_').nth(1).unwrap_or(token_id).to_string();
 
-            // Parse numeric values with fallbacks to 0.0 for missing data
             let price: f64 =
                 pool.attributes.base_token_price_usd.parse().unwrap_or(0.0);
+            let volume_24h: f64 = pool
+                .attributes
+                .volume_usd
+                .h24
+                .as_ref()
+                .and_then(|vol| vol.parse().ok())
+                .unwrap_or(0.0);
+            let price_change_24h: f64 = pool
+                .attributes
+                .price_change_percentage
+                .h24
+                .as_ref()
+                .and_then(|change| change.parse().ok())
+                .unwrap_or(0.0);
 
-            let market_cap: f64 = match &pool.attributes.market_cap_usd {
-                Some(cap) => cap.parse().unwrap_or(0.0),
-                None => 0.0,
+            // Create pool info
+            let pool_info = PoolInfo {
+                dex: "".to_string(), // No dex info available in this endpoint
+                address: pool.attributes.address.clone(),
             };
 
-            let volume_24h: f64 = match &pool.attributes.volume_usd.h24 {
-                Some(vol) => vol.parse().unwrap_or(0.0),
-                None => 0.0,
-            };
+            let entry = token_data
+                .entry(token_address.clone())
+                .or_insert_with(|| {
+                    (
+                        TopToken {
+                            name: pool
+                                .attributes
+                                .name
+                                .split(" / ")
+                                .next()
+                                .unwrap_or("")
+                                .to_string(),
+                            pubkey: token_address.clone(),
+                            price,
+                            market_cap,
+                            volume_24h: 0.0,
+                            price_change_24h,
+                            chain_id: Some(chain_id.to_string()),
+                            pools: Vec::new(),
+                        },
+                        0.0,
+                    )
+                });
 
-            let price_change_24h: f64 =
-                match &pool.attributes.price_change_percentage.h24 {
-                    Some(change) => change.parse().unwrap_or(0.0),
-                    None => 0.0,
-                };
-
-            top_tokens.push(TopToken {
-                name: token_name,
-                pubkey: token_address,
-                price,
-                market_cap,
-                volume_24h,
-                price_change_24h,
-                chain_id: Some(chain_id.to_string()),
-                pools: Vec::new(), // TODO add this here too
-            });
+            // Accumulate volume and add pool info
+            entry.0.volume_24h += volume_24h;
+            entry.1 += volume_24h;
+            entry.0.pools.push(pool_info);
         }
 
-        Ok(top_tokens)
+        // Convert to vector, sort by volume, and limit results
+        let mut top_tokens: Vec<TopToken> = token_data
+            .into_iter()
+            .map(|(_, (token, _))| token)
+            .collect();
+
+        top_tokens.sort_by(|a, b| {
+            b.volume_24h
+                .partial_cmp(&a.volume_24h)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
+
+        Ok(top_tokens.into_iter().take(limit).collect())
     }
 }
 

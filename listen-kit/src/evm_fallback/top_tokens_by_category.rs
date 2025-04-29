@@ -83,7 +83,7 @@ pub struct Pool {
 }
 
 #[derive(Debug, Serialize, Deserialize, Clone)]
-pub struct CategoryPoolsResponse {
+pub struct PoolsResponse {
     pub data: Vec<Pool>,
 }
 
@@ -92,7 +92,7 @@ impl EvmFallback {
         &self,
         category_id: &str,
         page: Option<u32>,
-    ) -> Result<CategoryPoolsResponse> {
+    ) -> Result<PoolsResponse> {
         if !CATEGORIES.contains(&category_id) {
             return Err(anyhow!(
                 "Invalid category ID: {}, supported categories: {}",
@@ -142,18 +142,17 @@ impl EvmFallback {
             ));
         }
 
-        let pools_response =
-            response
-                .json::<CategoryPoolsResponse>()
-                .await
-                .context("Failed to deserialize category pools response")?;
+        let pools_response = response
+            .json::<PoolsResponse>()
+            .await
+            .context("Failed to deserialize category pools response")?;
 
         Ok(pools_response)
     }
 
     pub fn top_tokens_from_category_pools_response(
         &self,
-        response: CategoryPoolsResponse,
+        response: PoolsResponse,
         limit: Option<usize>,
     ) -> Result<Vec<TopToken>> {
         let limit = limit.unwrap_or(10);
@@ -314,8 +313,7 @@ mod tests {
             EvmFallback::from_env().expect("Failed to create client");
         let response =
             std::fs::read_to_string("mocks/pools-by-category.json").unwrap();
-        let pools: CategoryPoolsResponse =
-            serde_json::from_str(&response).unwrap();
+        let pools: PoolsResponse = serde_json::from_str(&response).unwrap();
 
         // Test with default limit
         let top_tokens = client
