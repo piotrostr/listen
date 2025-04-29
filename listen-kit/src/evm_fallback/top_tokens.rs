@@ -163,7 +163,7 @@ impl EvmFallback {
                 market_cap,
                 volume_24h,
                 price_change_24h,
-                chain_id: Some(chain_id),
+                chain_id: Some(chain_id.to_string()),
                 pools: Vec::new(), // TODO add this here too
             });
         }

@@ -93,6 +93,14 @@ impl EvmFallback {
         category_id: &str,
         page: Option<u32>,
     ) -> Result<CategoryPoolsResponse> {
+        if !CATEGORIES.contains(&category_id) {
+            return Err(anyhow!(
+                "Invalid category ID: {}, supported categories: {}",
+                category_id,
+                CATEGORIES.join(", ")
+            ));
+        }
+
         let mut url =
             format!("{}/categories/{}/pools", self.base_url, category_id);
 
@@ -262,7 +270,16 @@ impl EvmFallback {
 }
 
 // TODO there is no RWA here to put as an option, something that would be useful though
-const _CATEGORIES: [&str; 5] = ["ai-agents", "animal", "cat", "dog", "ai"];
+const CATEGORIES: [&str; 8] = [
+    "ai-agents",
+    "animal",
+    "cat",
+    "dog",
+    "ai",
+    "tiktok-memes",
+    "meme",
+    "virtuals-protocol",
+];
 
 // sort these by volume
 

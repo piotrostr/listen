@@ -98,6 +98,41 @@ pub async fn fetch_top_tokens_by_chain_id(
     Ok(tokens)
 }
 
+#[tool(description = "
+Fetch top tokens by category from the GeckoTerminal API. This is a good tool to support queries like 
+* \"top DeFi tokens\" -> ai, ai-agents or tiktok-memes.
+* \"top tiktok-related tokens\" -> tiktok-memes.
+* \"how is animal meme scene, cats vs dogs?\" -> fetch both \"cat\" and \"dog\" categories and compare them.
+
+Parameters:
+- category_id (string): The category ID of the tokens to fetch, one of:
+  * 'ai-agents'
+  * 'animal'
+  * 'cat'
+  * 'dog'
+  * 'ai'
+  * 'tiktok-memes'
+  * 'meme'
+  * 'virtuals-protocol'
+- limit (string): number of tokens to return; \"8\" is a good limit, unless specified otherwise
+
+Returns a list of top tokens with their market data.
+")]
+pub async fn fetch_top_tokens_by_category(
+    category_id: String,
+    limit: String,
+) -> Result<Vec<TopToken>> {
+    let evm_fallback = EvmFallback::from_env()?;
+    let tokens = evm_fallback
+        .fetch_top_tokens_by_category(
+            &category_id,
+            None, // page
+            Some(limit.parse::<usize>()?),
+        )
+        .await?;
+    Ok(tokens)
+}
+
 #[cfg(test)]
 mod tests {
     use crate::solana::util::make_test_signer;
