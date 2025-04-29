@@ -33,12 +33,20 @@ export type Topic = z.infer<typeof TopicSchema>;
 
 export const TopicDisplay = ({ topic }: { topic: Topic }) => {
   const { t } = useTranslation();
+
+  const truncateText = (text: string, maxLength: number = 13) => {
+    if (text.length <= maxLength) return text;
+    return `${text.slice(0, maxLength)}...`;
+  };
+
   return (
     <div className="border border-[#2D2D2D] rounded-lg p-4 bg-black/40 backdrop-blur-sm">
       {/* Header Section */}
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-xl font-bold">{topic.topic.title}</h2>
+          <h2 className="text-xl font-bold" title={topic.topic.title}>
+            {truncateText(topic.topic.title)}
+          </h2>
           <div className="text-sm text-gray-400">
             {t("topic_display.rank")} #{topic.topic.topic_rank} •{" "}
             {topic.topic.categories?.join(", ") || ""}
