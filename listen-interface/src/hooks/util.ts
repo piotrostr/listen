@@ -78,11 +78,23 @@ export const imageMap = {
 export const caip2Map = {
   solana: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
   ethereum: "eip155:1",
+  eth: "eip155:1",
   bsc: "eip155:56",
+  bnb: "eip155:56",
   arbitrum: "eip155:42161",
   base: "eip155:8453",
   // berachain: "eip155:80094",
 };
+
+export function chainIdToCaip2(chainId?: string) {
+  if (!chainId) return "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+
+  let values = Object.values(caip2Map);
+  if (values.includes(chainId)) {
+    return chainId;
+  }
+  return caip2Map[chainId as keyof typeof caip2Map];
+}
 
 // add more here, the stuff that is not easily searchable and needs to be spot on
 export const addressBook = {

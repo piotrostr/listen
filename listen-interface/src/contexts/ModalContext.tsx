@@ -36,6 +36,7 @@ export interface BuySellModalState {
     logoURI?: string;
     price: number;
     decimals: number;
+    chainId?: string;
   } | null;
 }
 
@@ -113,6 +114,7 @@ export function ModalProvider({ children }: { children: ReactNode }) {
         logoURI: asset.logoURI || undefined,
         price: asset.price,
         decimals: asset.decimals,
+        chainId: asset.chainId,
       },
     });
   };
