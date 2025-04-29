@@ -194,12 +194,7 @@ impl EvmFallback {
                 .and_then(|s| s.parse::<f64>().ok())
                 .unwrap_or(0.0);
 
-            let chain_id = match pool.relationships.network.data.id.as_str() {
-                "base" => Some(8453),
-                "ethereum" => Some(1),
-                "solana" => None,
-                _ => None,
-            };
+            let chain_id = pool.relationships.network.data.id.as_str();
 
             // Create pool info
             let pool_info = PoolInfo {
@@ -224,7 +219,7 @@ impl EvmFallback {
                             market_cap,
                             volume_24h: 0.0,
                             price_change_24h,
-                            chain_id,
+                            chain_id: Some(chain_id.to_string()),
                             pools: Vec::new(),
                         },
                         0.0,

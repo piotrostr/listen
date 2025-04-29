@@ -117,6 +117,7 @@ wtf: what the fuck
 lmao: laughing my ass off
 bet: for sure
 pumpfun: largest token launchpad on Solana, most tokens originate from there
+DeFAI (defai): DeFi AI, agents that facilitate interactions with DeFI protocols
 
 don't overuse these, otherwise you'll sound like a boomer uncle tryna be cool
 `;
