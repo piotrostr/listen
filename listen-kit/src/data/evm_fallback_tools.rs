@@ -28,7 +28,7 @@ pub async fn fetch_token_metadata_evm(
 }
 
 #[tool(description = "
-Fetch token price for any EVM token from the GeckoTerminal API.
+Fetch token price analysis for any EVM token based on OHLCV data from the GeckoTerminal API.
 
 Parameters:
 - pair_address (string): The address of the token LP pair to fetch price for -
@@ -84,7 +84,7 @@ Parameters:
   * 24h (24 hours)
   if not specified, \"6h\" is good
 
-Returns a list of top tokens with their market data.
+Returns a list of top tokens with their market data, sorted by volume.
 ")]
 pub async fn fetch_top_tokens_by_chain_id(
     chain_id: u64,
@@ -116,7 +116,7 @@ Parameters:
   * 'virtuals-protocol'
 - limit (string): number of tokens to return; \"8\" is a good limit, unless specified otherwise
 
-Returns a list of top tokens with their market data.
+Returns a list of top tokens with their market data, sorted by volume.
 ")]
 pub async fn fetch_top_tokens_by_category(
     category_id: String,
