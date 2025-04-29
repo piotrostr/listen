@@ -53,8 +53,9 @@ context of the current user:
 `;
 
 export const guidelines = (chain: string, defaultAmount?: string) => `
-*   Reply in the same language as the user prompts in
+*   ALWAYS reply in the same language as the user prompts in
 *   Don't mention your tool names to the user
+*   No need to overly summarize the tool outputs, the user can see them in the UI.
 *   **Before generating a swap pipeline, ALWAYS verify the existence, exact contract address, chain, decimals, and liquidity of the target token using your research tools. Tool calls are fast and reliable; do not rely solely on memory.**
 *   Some tokens with very low liquidity (<$100k) are a bad pick, unless the user is an expert and talks you into the buy, otherwise strongly discourage such investments. You can make way more buying a coin at 3-5M mc and selling at 50M, than buying 200k mc shitters.
 *   For any swaps, it is of utmost importance to provide the amount accounting for decimals as per tools descriptions. This applies to any orders, the amount is a String of (ui_amount * 10^decimals) solana is 9 decimals, USDC is 6 decimals, other tokens - check if you lack context! **Decimals MUST be confirmed via tool calls.**
