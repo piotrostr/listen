@@ -38,6 +38,9 @@ interface PortfolioState {
   initializePortfolioManager: () => void;
 
   clearPortfolio: () => void;
+
+  // Add new action
+  updateTokenBalance: (mint: string, amount: number) => void;
 }
 
 export const usePortfolioStore = create<PortfolioState>()(
@@ -307,6 +310,25 @@ export const usePortfolioStore = create<PortfolioState>()(
           isLoading: false, // Also reset loading state
           error: null,
           lastUpdated: null,
+        });
+      },
+
+      updateTokenBalance: (mint: string, amount: number) => {
+        set((state) => {
+          const existingAsset = state.solanaAssetsMap.get(mint);
+          if (!existingAsset) return state; // No changes if token not in portfolio
+
+          // Create new map for immutable update
+          const updatedMap = new Map(state.solanaAssetsMap);
+          updatedMap.set(mint, {
+            ...existingAsset,
+            amount: amount / Math.pow(10, existingAsset.decimals),
+          });
+
+          return {
+            solanaAssetsMap: updatedMap,
+            lastUpdated: Date.now(),
+          };
         });
       },
     }),

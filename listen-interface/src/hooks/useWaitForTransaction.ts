@@ -1,5 +1,6 @@
 import { Connection, TransactionSignature } from "@solana/web3.js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { usePortfolioStore } from "../store/portfolioStore";
 
 interface TransactionResult {
   success: boolean;
@@ -8,10 +9,11 @@ interface TransactionResult {
 }
 
 export const useWaitForTransaction = (
-  signature: TransactionSignature | null | undefined,
+  signature: TransactionSignature | null | undefined
 ) => {
   const connection = new Connection(import.meta.env.VITE_RPC_URL);
   const queryClient = useQueryClient();
+  const { refreshPortfolio } = usePortfolioStore();
 
   return useQuery<TransactionResult>({
     queryKey: ["transaction", signature],
@@ -40,6 +42,7 @@ export const useWaitForTransaction = (
               status.value.confirmationStatus === "confirmed" ||
               status.value.confirmationStatus === "finalized"
             ) {
+              await refreshPortfolio();
               queryClient.resetQueries({ queryKey: ["portfolio"] });
               queryClient.resetQueries({ queryKey: ["sol-balance"] });
               return {

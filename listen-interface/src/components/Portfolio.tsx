@@ -31,6 +31,9 @@ export function Portfolio() {
   const totalBalance =
     assets?.reduce((sum, asset) => sum + asset.price * asset.amount, 0) || 0;
 
+  // TODO Add the subscription hook
+  // useTokenAccountsSubscription();
+
   // Only show loading state if we have a wallet and are actually loading
   if (hasWallet && isLoading) {
     return <PortfolioSkeleton />;
