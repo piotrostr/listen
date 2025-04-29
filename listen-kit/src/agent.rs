@@ -1,6 +1,6 @@
 use crate::data::evm_fallback_tools::{
     FetchPriceActionAnalysisEvm, FetchTokenMetadataEvm,
-    FetchTopTokensByChainId,
+    FetchTopTokensByCategory, FetchTopTokensByChainId,
 };
 use crate::evm::tools::{GetErc20Balance, GetEthBalance};
 use crate::solana::tools::{
@@ -89,6 +89,7 @@ pub fn equip_with_evm_tools<M: StreamingCompletionModel>(
         .tool(FetchTokenMetadataEvm)
         .tool(FetchPriceActionAnalysisEvm)
         .tool(FetchTopTokensByChainId)
+        .tool(FetchTopTokensByCategory)
 }
 
 pub fn equip_with_autonomous_tools<M: StreamingCompletionModel>(

@@ -33,6 +33,12 @@ pub struct PriceChart {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct PoolInfo {
+    pub dex: String,
+    pub address: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct TopToken {
     pub name: String,
     pub pubkey: String,
@@ -40,7 +46,9 @@ pub struct TopToken {
     pub market_cap: f64,
     pub volume_24h: f64,
     pub price_change_24h: f64,
-    pub chain_id: Option<u64>,
+    pub chain_id: Option<String>,
+    #[serde(default)]
+    pub pools: Vec<PoolInfo>,
 }
 
 const API_BASE: &str = "https://api.listen-rs.com/v1/adapter";

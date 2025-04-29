@@ -32,6 +32,7 @@ export const toolCalls = {
     get_eth_balance: "Grabbing native balance...",
     get_etm_balance: "Fetching balance...",
     fetch_top_tokens_by_chain_id: "Fetching trending tokens...",
+    fetch_top_tokens_by_category: "Browsing trending by category...",
   },
   zh: {
     get_quote: "获取报价中...",
@@ -66,5 +67,6 @@ export const toolCalls = {
     get_eth_balance: "获取原生余额中...",
     get_etm_balance: "获取余额中...",
     fetch_top_tokens_by_chain_id: "获取热门代币中...",
+    fetch_top_tokens_by_category: "浏览热门代币中...",
   },
 };

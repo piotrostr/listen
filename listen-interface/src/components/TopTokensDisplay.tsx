@@ -11,7 +11,11 @@ export const TopTokenSchema = z.object({
   market_cap: z.number(),
   volume_24h: z.number(),
   price_change_24h: z.number(),
-  chain_id: z.number().optional().nullable(),
+  chain_id: z
+    .union([z.string(), z.number()])
+    .transform((val) => val?.toString())
+    .optional()
+    .nullable(),
 });
 
 export const TopTokensResponseSchema = z.array(TopTokenSchema);
@@ -53,7 +57,7 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
       onClick={() => {
         openChart({
           mint: token.pubkey,
-          chainId: "solana",
+          chainId: token.chain_id?.toString() || "solana",
         });
       }}
     >
@@ -110,8 +114,9 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
 const TokenTileEvm = ({ token }: { token: TopToken }) => {
   const { data: tokenData, isLoading } = useToken(
     token.pubkey,
-    token.chain_id?.toString() || undefined
+    token.chain_id || undefined
   );
+  const { openChart } = useModal();
 
   return (
     <div className="rounded-lg p-3 border border-[#2D2D2D] transition-colors bg-black/40 backdrop-blur-sm flex flex-col">
@@ -127,7 +132,16 @@ const TokenTileEvm = ({ token }: { token: TopToken }) => {
         )}
         <div>
           <div className="flex items-center gap-2">
-            <div className="font-medium truncate">
+            <div
+              onClick={(e) => {
+                e.preventDefault();
+                openChart({
+                  mint: token.pubkey,
+                  chainId: token.chain_id || undefined,
+                });
+              }}
+              className="font-medium hover:text-blue-400 truncate cursor-pointer"
+            >
               {tokenData?.symbol || token.name}
             </div>
           </div>

@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { LifiToken, LifiTokenSchema, TokenMetadata } from "./types";
 import { fetchTokenMetadata } from "./useSolanaPortfolio";
-import { caip2ToLifiChainId } from "./util";
+import { caip2Map, caip2ToLifiChainId } from "./util";
 
 export async function getAnyToken(
   token: string,
@@ -12,7 +12,12 @@ export async function getAnyToken(
   if (chainIdOrCaip2.includes(":")) {
     chainId = caip2ToLifiChainId(chainIdOrCaip2);
   } else {
-    chainId = parseInt(chainIdOrCaip2);
+    if (Object.keys(caip2Map).includes(chainIdOrCaip2)) {
+      const caip2 = caip2Map[chainIdOrCaip2 as keyof typeof caip2Map];
+      chainId = caip2ToLifiChainId(caip2);
+    } else {
+      chainId = parseInt(chainIdOrCaip2);
+    }
   }
   try {
     const res = await fetch(

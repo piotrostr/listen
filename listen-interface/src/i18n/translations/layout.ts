@@ -2,7 +2,7 @@ export const layout = {
   en: {
     screener: "Screener",
     portfolio: "Portfolio",
-    pipelines: "Pipelines",
+    pipelines: "Orders",
     settings: "Settings",
     documentation: "Documentation",
     github: "Github",
@@ -19,7 +19,7 @@ export const layout = {
     blank: "",
     screener: "市场筛选",
     portfolio: "投资组合",
-    pipelines: "自动化任务",
+    pipelines: "订单",
     settings: "设置",
     documentation: "文档",
     github: "Github",

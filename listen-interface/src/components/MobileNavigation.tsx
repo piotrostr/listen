@@ -1,12 +1,12 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useTranslation } from "react-i18next";
-import { BsLink } from "react-icons/bs";
+import { BiCoin } from "react-icons/bi";
 import {
   IoChatboxOutline,
   IoSettingsOutline,
   IoWalletOutline,
 } from "react-icons/io5";
-import { RxDashboard } from "react-icons/rx";
+import { MdHistory } from "react-icons/md";
 import { useMobile } from "../contexts/MobileContext";
 
 type NavType = "chat" | "portfolio" | "screener" | "pipelines" | "settings";
@@ -65,7 +65,7 @@ export function MobileNavigation({
           onClick={() => handleNavClick("screener")}
           className={`flex flex-col items-center justify-center p-2 ${activePanel === "screener" ? "text-white-400" : "text-gray-400"}`}
         >
-          <RxDashboard className="w-6 h-6" />
+          <BiCoin className="w-6 h-6" />
           <span className="text-xs mt-1">{t("layout.screener")}</span>
         </button>
 
@@ -73,7 +73,7 @@ export function MobileNavigation({
           onClick={() => handleNavClick("pipelines")}
           className={`flex flex-col items-center justify-center p-2 ${activePanel === "pipelines" ? "text-white-400" : "text-gray-400"}`}
         >
-          <BsLink className="w-6 h-6" />
+          <MdHistory className="w-6 h-6" />
           <span className="text-xs mt-1">{t("layout.pipelines")}</span>
         </button>
 

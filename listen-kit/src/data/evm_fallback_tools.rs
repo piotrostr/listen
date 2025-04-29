@@ -28,7 +28,7 @@ pub async fn fetch_token_metadata_evm(
 }
 
 #[tool(description = "
-Fetch token price for any EVM token from the GeckoTerminal API.
+Fetch token price analysis for any EVM token based on OHLCV data from the GeckoTerminal API.
 
 Parameters:
 - pair_address (string): The address of the token LP pair to fetch price for -
@@ -84,7 +84,7 @@ Parameters:
   * 24h (24 hours)
   if not specified, \"6h\" is good
 
-Returns a list of top tokens with their market data.
+Returns a list of top tokens with their market data, sorted by volume.
 ")]
 pub async fn fetch_top_tokens_by_chain_id(
     chain_id: u64,
@@ -94,6 +94,41 @@ pub async fn fetch_top_tokens_by_chain_id(
     let evm_fallback = EvmFallback::from_env()?;
     let tokens = evm_fallback
         .fetch_top_tokens(chain_id, duration, limit.parse::<usize>()?)
+        .await?;
+    Ok(tokens)
+}
+
+#[tool(description = "
+Fetch top tokens by category from the GeckoTerminal API. This is a good tool to support queries like 
+* \"top DeFi tokens\" -> ai, ai-agents or tiktok-memes.
+* \"top tiktok-related tokens\" -> tiktok-memes.
+* \"how is animal meme scene, cats vs dogs?\" -> fetch both \"cat\" and \"dog\" categories and compare them.
+
+Parameters:
+- category_id (string): The category ID of the tokens to fetch, one of:
+  * 'ai-agents'
+  * 'animal'
+  * 'cat'
+  * 'dog'
+  * 'ai'
+  * 'tiktok-memes'
+  * 'meme'
+  * 'virtuals-protocol'
+- limit (string): number of tokens to return; \"8\" is a good limit, unless specified otherwise
+
+Returns a list of top tokens with their market data, sorted by volume.
+")]
+pub async fn fetch_top_tokens_by_category(
+    category_id: String,
+    limit: String,
+) -> Result<Vec<TopToken>> {
+    let evm_fallback = EvmFallback::from_env()?;
+    let tokens = evm_fallback
+        .fetch_top_tokens_by_category(
+            &category_id,
+            None, // page
+            Some(limit.parse::<usize>()?),
+        )
         .await?;
     Ok(tokens)
 }

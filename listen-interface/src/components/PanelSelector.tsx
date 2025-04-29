@@ -2,6 +2,7 @@ import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IoCloseOutline, IoRefreshOutline } from "react-icons/io5";
 import { useMobile } from "../contexts/MobileContext";
+import { usePanel } from "../contexts/PanelContext";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { Chat } from "./Chat";
 import { FloatingPanel } from "./FloatingPanel";
@@ -11,16 +12,11 @@ import { PriceUpdates } from "./PriceUpdates";
 import { PriceUpdatesHeader } from "./PriceUpdatesHeader";
 import { Settings } from "./Settings";
 
-export function PanelSelector({
-  activePanel,
-  setActivePanel,
-}: {
-  activePanel: string | null;
-  setActivePanel: (panel: string | null) => void;
-}) {
+export function PanelSelector() {
   const [statusFilter, setStatusFilter] = useState<string>("All");
   const { isMobile } = useMobile();
   const { t } = useTranslation();
+  const { activePanel, setActivePanel } = usePanel();
 
   const { refreshPortfolio } = usePortfolioStore();
 

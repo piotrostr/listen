@@ -137,6 +137,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       userMessage: string,
       options?: { skipAddingUserMessage?: boolean; existingMessageId?: string }
     ) => {
+      // Clear nested agent output when starting a new message
+      setNestedAgentOutput(null);
+
       // Clear suggestions when starting a new message
       useSuggestStore.getState().clearSuggestions(chatId);
 

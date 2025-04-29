@@ -208,7 +208,8 @@ pub async fn get_sol_balance() -> Result<u64> {
 
 #[tool(description = "
 get_token_balance returns (amount as String, decimals as u8, mint as String) - your current balance of the any SPL token
-SPL token is any solana token that is not SOL
+SPL token is any solana token that is not SOL (So11111111111111111111111111111111111111112 is the
+native token, use get_sol_balance for that)
 in order to convert to UI amount: amount / 10^decimals
 ")]
 pub async fn get_spl_token_balance(

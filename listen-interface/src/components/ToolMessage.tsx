@@ -625,6 +625,17 @@ export const ToolMessage = ({
     }
   }
 
+  if (toolOutput.name === "fetch_top_tokens_by_category") {
+    try {
+      const parsed = TopTokensResponseSchema.parse(
+        JSON.parse(toolOutput.result)
+      );
+      return <TopTokensDisplay tokens={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse top tokens response:", e);
+    }
+  }
+
   if (
     toolOutput.name === "delegate_to_research_agent" ||
     toolOutput.name === "delegate_to_chart_agent" ||
