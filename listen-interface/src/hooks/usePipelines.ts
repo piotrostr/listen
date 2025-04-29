@@ -4,6 +4,7 @@ import { useEffect, useRef } from "react";
 import { config } from "../config";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { ExtendedPipelineResponse, ExtendedPipelineSchema } from "../types/api";
+import { waitForTransaction } from "../utils/transactionMonitor";
 import { useIsAuthenticated } from "./useIsAuthenticated";
 
 const MAX_POLLING_ATTEMPTS = 20;
@@ -100,19 +101,11 @@ export const usePipelines = () => {
   });
 
   useEffect(() => {
+    if (!queryResult.data) return;
+
     const currentData = queryResult.data;
-    console.debug("usePipelines useEffect triggered.");
+    let transactionsToMonitor = false;
 
-    if (!currentData || !currentData.pipelines) {
-      console.debug(
-        "usePipelines useEffect: No current data or pipelines array, exiting."
-      );
-      return;
-    }
-
-    let portfolioRefreshNeeded = false;
-
-    console.debug("usePipelines useEffect: Processing current data...");
     currentData.pipelines.forEach((pipeline) => {
       Object.values(pipeline.steps).forEach((step) => {
         if (
@@ -123,34 +116,60 @@ export const usePipelines = () => {
           console.debug(
             `  useEffect: Detected completed step ${step.id} with unprocessed txHash ${step.transaction_hash}.`
           );
+          // Mark this hash as processed immediately to prevent duplicate processing
           processedCompletionTxHashesRef.current.add(step.transaction_hash);
           console.debug(
             `    useEffect: Added ${step.transaction_hash} to processed ref. Current ref size:`,
             processedCompletionTxHashesRef.current.size
           );
 
+          // Only monitor for Order actions
           if ("Order" in step.action) {
             console.debug(
-              `    useEffect: Step ${step.id} is an Order. Marking portfolio for refresh.`
+              `    useEffect: Step ${step.id} is an Order. Starting transaction monitor.`
             );
-            portfolioRefreshNeeded = true;
+
+            // Don't immediately refresh - instead wait for tx confirmation
+            transactionsToMonitor = true;
+
+            // Launch independent monitor for this transaction
+            if (step.action.Order.from_chain_caip2.startsWith("solana")) {
+              waitForTransaction(
+                step.transaction_hash,
+                undefined, // Use default RPC URL
+                () => {
+                  console.log(
+                    `Transaction monitor: Transaction ${step.transaction_hash} confirmed, refreshing portfolio`
+                  );
+                  refreshPortfolio();
+                },
+                (error) => {
+                  console.error(
+                    `Transaction monitor: Failed to confirm transaction ${step.transaction_hash}: ${error}`
+                  );
+                }
+              );
+            } else if (step.action.Order.from_chain_caip2.startsWith("eip")) {
+              // for now timeout 2 seconds and refetch the evm portfolio
+              setTimeout(() => {
+                console.log(
+                  `Transaction monitor: ${step.transaction_hash}, refreshing portfolio but didn't wait for receipt`
+                );
+                refreshPortfolio();
+              }, 2000);
+            }
           } else {
             console.debug(
-              `    useEffect: Step ${step.id} is not an Order. Skipping portfolio refresh trigger.`
+              `    useEffect: Step ${step.id} is not an Order. Skipping transaction monitoring.`
             );
           }
         }
       });
     });
 
-    if (portfolioRefreshNeeded) {
-      console.log(
-        "usePipelines useEffect: Calling refreshPortfolio due to newly completed Order step(s)."
-      );
-      refreshPortfolio();
-    } else {
+    if (!transactionsToMonitor) {
       console.debug(
-        "usePipelines useEffect: No portfolio refresh needed this run."
+        "usePipelines useEffect: No transactions to monitor in this data update."
       );
     }
   }, [queryResult.data, refreshPortfolio]);
