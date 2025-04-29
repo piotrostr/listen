@@ -10,11 +10,33 @@ import { useIsAuthenticated } from "./useIsAuthenticated";
 const MAX_POLLING_ATTEMPTS = 20;
 const POLLING_INTERVAL = 1000; // 1 second
 
+// Track steps that we've seen in pending state
+const PENDING_STEP_IDS = new Set<string>();
+// Track transactions we're already monitoring
+const MONITORING_TX_HASHES = new Set<string>();
+
 export const usePipelines = () => {
   const { isAuthenticated } = useIsAuthenticated();
   const { getAccessToken, ready } = usePrivy();
   const refreshPortfolio = usePortfolioStore((state) => state.refreshPortfolio);
-  const processedCompletionTxHashesRef = useRef<Set<string>>(new Set());
+
+  // Use a local ref for debounce timing
+  const pendingRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(
+    null
+  );
+
+  // Debounced portfolio refresh to prevent multiple rapid refreshes
+  const debouncedRefreshPortfolio = () => {
+    if (pendingRefreshTimeoutRef.current) {
+      clearTimeout(pendingRefreshTimeoutRef.current);
+    }
+
+    pendingRefreshTimeoutRef.current = setTimeout(() => {
+      console.log("usePipelines: Debounced portfolio refresh triggered");
+      refreshPortfolio();
+      pendingRefreshTimeoutRef.current = null;
+    }, 100);
+  };
 
   const queryResult = useQuery<ExtendedPipelineResponse, Error>({
     queryKey: ["pipelines"],
@@ -103,76 +125,79 @@ export const usePipelines = () => {
   useEffect(() => {
     if (!queryResult.data) return;
 
-    const currentData = queryResult.data;
-    let transactionsToMonitor = false;
-
-    currentData.pipelines.forEach((pipeline) => {
+    // First, track all steps in pending state so we can monitor when they complete
+    queryResult.data.pipelines.forEach((pipeline) => {
       Object.values(pipeline.steps).forEach((step) => {
+        // Track new pending steps
+        if (step.status === "Pending") {
+          PENDING_STEP_IDS.add(step.id);
+        }
+
+        // Check for steps that were previously pending and are now completed
         if (
           step.status === "Completed" &&
           step.transaction_hash &&
-          !processedCompletionTxHashesRef.current.has(step.transaction_hash)
+          PENDING_STEP_IDS.has(step.id) && // We previously saw this step as pending
+          !MONITORING_TX_HASHES.has(step.transaction_hash) // Not already monitoring
         ) {
-          console.debug(
-            `  useEffect: Detected completed step ${step.id} with unprocessed txHash ${step.transaction_hash}.`
+          console.log(
+            `usePipelines: Step ${step.id} transitioned from Pending to Completed`
           );
-          // Mark this hash as processed immediately to prevent duplicate processing
-          processedCompletionTxHashesRef.current.add(step.transaction_hash);
-          console.debug(
-            `    useEffect: Added ${step.transaction_hash} to processed ref. Current ref size:`,
-            processedCompletionTxHashesRef.current.size
-          );
+
+          // Remove from pending set, it's now completed
+          PENDING_STEP_IDS.delete(step.id);
 
           // Only monitor for Order actions
           if ("Order" in step.action) {
-            console.debug(
-              `    useEffect: Step ${step.id} is an Order. Starting transaction monitor.`
+            console.log(
+              `usePipelines: Monitoring newly completed Order transaction ${step.transaction_hash}`
             );
 
-            // Don't immediately refresh - instead wait for tx confirmation
-            transactionsToMonitor = true;
+            // Mark as monitoring
+            MONITORING_TX_HASHES.add(step.transaction_hash);
 
-            // Launch independent monitor for this transaction
             if (step.action.Order.from_chain_caip2.startsWith("solana")) {
               waitForTransaction(
-                step.transaction_hash,
-                undefined, // Use default RPC URL
+                step.transaction_hash!,
+                undefined,
                 () => {
                   console.log(
-                    `Transaction monitor: Transaction ${step.transaction_hash} confirmed, refreshing portfolio`
+                    `usePipelines: Transaction ${step.transaction_hash} confirmed, refreshing portfolio`
                   );
-                  refreshPortfolio();
+                  MONITORING_TX_HASHES.delete(step.transaction_hash!);
+                  debouncedRefreshPortfolio();
                 },
                 (error) => {
-                  console.error(
-                    `Transaction monitor: Failed to confirm transaction ${step.transaction_hash}: ${error}`
-                  );
+                  console.error(`usePipelines: Transaction failed: ${error}`);
+                  MONITORING_TX_HASHES.delete(step.transaction_hash!);
                 }
               );
             } else if (step.action.Order.from_chain_caip2.startsWith("eip")) {
-              // for now timeout 2 seconds and refetch the evm portfolio
+              // For EVM transactions, use timeout
               setTimeout(() => {
-                console.log(
-                  `Transaction monitor: ${step.transaction_hash}, refreshing portfolio but didn't wait for receipt`
-                );
-                refreshPortfolio();
+                console.log(`usePipelines: EVM transaction timeout complete`);
+                MONITORING_TX_HASHES.delete(step.transaction_hash!);
+                debouncedRefreshPortfolio();
               }, 2000);
             }
           } else {
-            console.debug(
-              `    useEffect: Step ${step.id} is not an Order. Skipping transaction monitoring.`
+            console.log(
+              `usePipelines: Completed step is not an Order, ignoring`
             );
           }
         }
       });
     });
-
-    if (!transactionsToMonitor) {
-      console.debug(
-        "usePipelines useEffect: No transactions to monitor in this data update."
-      );
-    }
   }, [queryResult.data, refreshPortfolio]);
+
+  // Cleanup
+  useEffect(() => {
+    return () => {
+      if (pendingRefreshTimeoutRef.current) {
+        clearTimeout(pendingRefreshTimeoutRef.current);
+      }
+    };
+  }, []);
 
   return queryResult;
 };
