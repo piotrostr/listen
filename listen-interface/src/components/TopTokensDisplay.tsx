@@ -51,8 +51,6 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
       .catch(console.error);
   }, [token.pubkey]);
 
-  console.log(token);
-
   return (
     <div
       className="rounded-lg p-3 border border-[#2D2D2D] transition-colors bg-black/40 backdrop-blur-sm flex flex-col cursor-pointer"
