@@ -21,9 +21,13 @@ export async function getHoldings(
   connection: Connection,
   owner: PublicKey
 ): Promise<Holding[]> {
-  const atas = await connection.getTokenAccountsByOwner(owner, {
-    programId: TOKEN_PROGRAM_ID,
-  });
+  const atas = await connection.getTokenAccountsByOwner(
+    owner,
+    {
+      programId: TOKEN_PROGRAM_ID,
+    },
+    "processed"
+  );
 
   const holdings = atas.value
     .map((ata) => parseHolding(ata))

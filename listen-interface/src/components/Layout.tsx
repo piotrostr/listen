@@ -18,6 +18,7 @@ import { useSidebar } from "../contexts/SidebarContext";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { PanelSelector } from "./PanelSelector";
+import { PipelinesInitializer } from "./PipelinesInitializer";
 import { RecentChats } from "./RecentChats";
 import { SimpleHeader } from "./SimpleHeader";
 import { SwipeHandler } from "./SwipeHandler";
@@ -89,7 +90,7 @@ function getBottomItems(t: (key: string) => string) {
 export function Layout({ children }: { children: React.ReactNode }) {
   const { isMobile, isIOS } = useMobile();
   const { activePanel, setActivePanel } = usePanel();
-  const { user, logout } = usePrivy();
+  const { user, logout, ready, authenticated } = usePrivy();
   const { clearPortfolio } = usePortfolioStore();
   const { clearWalletAddresses } = useWalletStore();
   const handleLogout = () => {
@@ -172,9 +173,19 @@ export function Layout({ children }: { children: React.ReactNode }) {
     }
   };
 
+  // Avoid rendering initializers until providers are ready and user is potentially authenticated
+  // but DON'T render them conditionally *between* renders once authenticated.
+  const shouldRenderInitializers = ready && authenticated;
+
   return (
     <>
-      <WalletInitializer />
+      {/* Render initializers together and unconditionally once auth state is stable */}
+      {shouldRenderInitializers && (
+        <>
+          <WalletInitializer />
+          <PipelinesInitializer />
+        </>
+      )}
       <WebsocketInitializer />
       <VersionInitializer />
       <div

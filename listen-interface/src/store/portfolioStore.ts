@@ -86,6 +86,14 @@ export const usePortfolioStore = create<PortfolioState>()(
         try {
           const solanaAssets = await fetchSolanaPortfolio(address);
 
+          console.log(
+            "debug new fartcoin balance:",
+            solanaAssets.find(
+              (asset) =>
+                asset.address === "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump"
+            )
+          );
+
           // Convert array to map
           const solanaAssetsMap = new Map();
           solanaAssets.forEach((asset) => {
@@ -217,6 +225,8 @@ export const usePortfolioStore = create<PortfolioState>()(
       refreshPortfolio: async () => {
         // Reset data first to ensure UI shows loading state and indicate force refresh
         set({ isLoading: true, error: null });
+
+        console.log("refreshing portfolio");
 
         // Fetch portfolios with current wallet addresses
         await get().fetchAllPortfolios();
