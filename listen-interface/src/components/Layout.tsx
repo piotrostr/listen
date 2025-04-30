@@ -92,11 +92,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { activePanel, setActivePanel } = usePanel();
   const { user, logout, ready, authenticated } = usePrivy();
   const { clearPortfolio } = usePortfolioStore();
-  const { clearWalletAddresses } = useWalletStore();
+  const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
   const handleLogout = () => {
     logout();
     clearPortfolio();
     clearWalletAddresses();
+    clearEoaAddresses();
   };
   const { t } = useTranslation();
 

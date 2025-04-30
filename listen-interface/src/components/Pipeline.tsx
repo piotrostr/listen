@@ -74,6 +74,10 @@ function PipelineMenu({
   sendPipelineForExecution: () => void;
 }) {
   const { t } = useTranslation();
+  //const { activeWallet, eoaSolanaAddress, eoaEvmAddress } = useWalletStore();
+
+  // function handleTransaction() {
+  // }
 
   const Container = ({ children }: { children: React.ReactNode }) => {
     return <div className="flex gap-2">{children}</div>;

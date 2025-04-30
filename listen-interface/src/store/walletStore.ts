@@ -36,6 +36,7 @@ interface WalletState {
   setActiveWallet: (active: ActiveWallet) => void;
 
   clearWalletAddresses: () => void;
+  clearEoaAddresses: () => void;
 }
 
 export const useWalletStore = create<WalletState>()(
@@ -89,6 +90,10 @@ export const useWalletStore = create<WalletState>()(
 
       setActiveWallet: (active: ActiveWallet) => {
         set({ activeWallet: active });
+      },
+
+      clearEoaAddresses: () => {
+        set({ eoaSolanaAddress: null, eoaEvmAddress: null });
       },
     }),
     {
