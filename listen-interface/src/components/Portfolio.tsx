@@ -6,6 +6,7 @@ import { BuySellModal } from "./BuySellModal";
 import { PortfolioItemTile } from "./PortfolioItemTile";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
 import { PortfolioSummary } from "./PortfolioSummary";
+import { WalletSwitcher } from "./WalletSwitcher";
 
 export function Portfolio() {
   const { getCombinedPortfolio, isLoading } = usePortfolioStore();
@@ -45,6 +46,7 @@ export function Portfolio() {
         isMobile ? "p-0" : "p-4"
       }`}
     >
+      <WalletSwitcher />
       <PortfolioSummary totalBalance={totalBalance} />
       <div className="flex-1 space-y-2">
         {assets

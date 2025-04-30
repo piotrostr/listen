@@ -11,12 +11,24 @@ export function WalletInitializer() {
     setWalletAddresses,
     solanaAddress: currentSolanaAddress,
     evmAddress: currentEvmAddress,
+    eoaSolanaAddress: currentEoaSolanaAddress,
+    eoaEvmAddress: currentEoaEvmAddress,
+    eoaEvmIcon: currentEoaEvmIcon,
+    eoaSolanaIcon: currentEoaSolanaIcon,
+    setEoaSolanaAddress,
+    setEoaEvmAddress,
+    setEoaEvmIcon,
+    setEoaSolanaIcon,
   } = useWalletStore();
   const { initializePortfolioManager, fetchAllPortfolios } =
     usePortfolioStore();
 
   const prevSolanaAddressRef = useRef(currentSolanaAddress);
   const prevEvmAddressRef = useRef(currentEvmAddress);
+  const prevEoaSolanaAddressRef = useRef(currentEoaSolanaAddress);
+  const prevEoaEvmAddressRef = useRef(currentEoaEvmAddress);
+  const prevEoaEvmIconRef = useRef(currentEoaEvmIcon);
+  const prevEoaSolanaIconRef = useRef(currentEoaSolanaIcon);
   const initializedRef = useRef(false);
   const initialFetchDoneRef = useRef(false);
 
@@ -50,18 +62,35 @@ export function WalletInitializer() {
         wallet.type === "solana" && wallet.walletClientType === "privy"
     );
 
+    const eoaSolanaWallet = solanaWallets.find(
+      (wallet) =>
+        wallet.type === "solana" && wallet.walletClientType !== "privy"
+    );
+
     const evmWallet = evmWallets.find(
       (wallet) =>
         wallet.type === "ethereum" && wallet.walletClientType === "privy"
     );
 
+    const eoaEvmWallet = evmWallets.find(
+      (wallet) =>
+        wallet.type === "ethereum" && wallet.walletClientType !== "privy"
+    );
+
     const newSolanaAddress = solanaWallet?.address ?? null;
     const newEvmAddress = evmWallet?.address ?? null;
+    const newEoaSolanaAddress = eoaSolanaWallet?.address ?? null;
+    const newEoaEvmAddress = eoaEvmWallet?.address ?? null;
+
+    const newEoaEvmIcon = eoaEvmWallet?.meta?.icon ?? null;
+    const newEoaSolanaIcon = eoaSolanaWallet?.meta?.icon ?? null;
 
     // Only check for changes when needed
     const addressesChanged =
       newSolanaAddress !== prevSolanaAddressRef.current ||
-      newEvmAddress !== prevEvmAddressRef.current;
+      newEvmAddress !== prevEvmAddressRef.current ||
+      newEoaSolanaAddress !== prevEoaSolanaAddressRef.current ||
+      newEoaEvmAddress !== prevEoaEvmAddressRef.current;
 
     if (addressesChanged) {
       console.debug(
@@ -69,8 +98,16 @@ export function WalletInitializer() {
       );
       prevSolanaAddressRef.current = newSolanaAddress;
       prevEvmAddressRef.current = newEvmAddress;
+      prevEoaSolanaAddressRef.current = newEoaSolanaAddress;
+      prevEoaEvmAddressRef.current = newEoaEvmAddress;
+      prevEoaEvmIconRef.current = newEoaEvmIcon;
+      prevEoaSolanaIconRef.current = newEoaSolanaIcon;
 
       setWalletAddresses(newSolanaAddress, newEvmAddress);
+      setEoaSolanaAddress(newEoaSolanaAddress);
+      setEoaEvmAddress(newEoaEvmAddress);
+      setEoaEvmIcon(newEoaEvmIcon);
+      setEoaSolanaIcon(newEoaSolanaIcon);
       fetchAllPortfolios();
     }
   }, [
@@ -84,6 +121,8 @@ export function WalletInitializer() {
     setWalletAddresses,
     initializePortfolioManager,
     fetchAllPortfolios,
+    setEoaSolanaAddress,
+    setEoaEvmAddress,
   ]);
 
   return null;
