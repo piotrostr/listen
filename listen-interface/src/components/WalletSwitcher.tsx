@@ -15,17 +15,7 @@ export const WalletSwitcher = () => {
     eoaSolanaIcon,
     activeWallet,
     setActiveWallet,
-    solanaAddress,
-    evmAddress,
   } = useWalletStore();
-
-  console.log({
-    eoaSolanaAddress,
-    eoaEvmAddress,
-    activeWallet,
-    solanaAddress,
-    evmAddress,
-  });
 
   return (
     <div className="flex items-center justify-center gap-2 mb-4">

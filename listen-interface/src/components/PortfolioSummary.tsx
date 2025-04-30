@@ -10,13 +10,13 @@ interface PortfolioSummaryProps {
 }
 
 export function PortfolioSummary({ totalBalance }: PortfolioSummaryProps) {
-  const { solanaAddress } = useWalletStore();
+  const { solanaAddress, activeWallet } = useWalletStore();
   const { fundWallet } = useFundWallet();
   const { login } = usePrivy();
 
-  const handleTopup = async () => {
+  const handleTopupListen = async () => {
     if (solanaAddress) {
-      await fundWallet(solanaAddress);
+      await fundWallet(solanaAddress, { defaultFundingMethod: "card" });
     } else {
       login();
     }
@@ -33,21 +33,25 @@ export function PortfolioSummary({ totalBalance }: PortfolioSummaryProps) {
       </span>
       <div className="flex flex-row items-center gap-3 justify-center mt-2">
         <>
-          <TileButton
-            icon={<TbPlus className="w-4 h-4" />}
-            onClick={handleTopup}
-            ariaLabel="Deposit"
-          />
-          <TileButton
-            icon={<MdOutlineArrowOutward />}
-            onClick={() => {}}
-            ariaLabel="Withdraw"
-          />
-          <TileButton
-            icon={<TbDots className="w-5 h-5" />}
-            onClick={() => {}}
-            ariaLabel="More"
-          />
+          {activeWallet === "listen" && (
+            <>
+              <TileButton
+                icon={<TbPlus className="w-4 h-4" />}
+                onClick={handleTopupListen}
+                ariaLabel="Deposit"
+              />
+              <TileButton
+                icon={<MdOutlineArrowOutward />}
+                onClick={() => {}}
+                ariaLabel="Export"
+              />
+              <TileButton
+                icon={<TbDots className="w-5 h-5" />}
+                onClick={() => {}}
+                ariaLabel="More"
+              />
+            </>
+          )}
         </>
       </div>
     </div>
