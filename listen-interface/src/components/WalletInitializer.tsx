@@ -32,19 +32,6 @@ export function WalletInitializer() {
   const initializedRef = useRef(false);
   const initialFetchDoneRef = useRef(false);
 
-  // Effect for initial portfolio fetch - runs only once when wallets are ready
-  useEffect(() => {
-    if (!solanaReady || !evmReady || !user || initialFetchDoneRef.current)
-      return;
-
-    // Mark as done first to prevent subsequent runs
-    initialFetchDoneRef.current = true;
-
-    console.debug("WalletInitializer: Performing initial portfolio fetch");
-    fetchAllPortfolios();
-  }, [solanaReady, evmReady, user, fetchAllPortfolios]);
-
-  // Effect for wallet address changes and initialization
   useEffect(() => {
     // Exit early if dependencies not ready
     if (!solanaReady || !evmReady || !user) return;
@@ -57,73 +44,93 @@ export function WalletInitializer() {
     }
 
     // Find current wallet addresses
-    const solanaWallet = solanaWallets.find(
-      (wallet) =>
-        wallet.type === "solana" && wallet.walletClientType === "privy"
-    );
+    const newAddresses = {
+      solana:
+        solanaWallets.find(
+          (w) => w.type === "solana" && w.walletClientType === "privy"
+        )?.address ?? null,
+      evm:
+        evmWallets.find(
+          (w) => w.type === "ethereum" && w.walletClientType === "privy"
+        )?.address ?? null,
+      eoaSolana:
+        solanaWallets.find(
+          (w) => w.type === "solana" && w.walletClientType !== "privy"
+        )?.address ?? null,
+      eoaEvm:
+        evmWallets.find(
+          (w) => w.type === "ethereum" && w.walletClientType !== "privy"
+        )?.address ?? null,
+    };
 
-    const eoaSolanaWallet = solanaWallets.find(
-      (wallet) =>
-        wallet.type === "solana" && wallet.walletClientType !== "privy"
-    );
+    const newIcons = {
+      eoaEvm:
+        evmWallets.find(
+          (w) => w.type === "ethereum" && w.walletClientType !== "privy"
+        )?.meta?.icon ?? null,
+      eoaSolana:
+        solanaWallets.find(
+          (w) => w.type === "solana" && w.walletClientType !== "privy"
+        )?.meta?.icon ?? null,
+    };
 
-    const evmWallet = evmWallets.find(
-      (wallet) =>
-        wallet.type === "ethereum" && wallet.walletClientType === "privy"
-    );
+    // Check what specifically changed
+    const changes = {
+      listen:
+        newAddresses.solana !== prevSolanaAddressRef.current ||
+        newAddresses.evm !== prevEvmAddressRef.current,
+      eoaSolana: newAddresses.eoaSolana !== prevEoaSolanaAddressRef.current,
+      eoaEvm: newAddresses.eoaEvm !== prevEoaEvmAddressRef.current,
+      icons:
+        newIcons.eoaEvm !== prevEoaEvmIconRef.current ||
+        newIcons.eoaSolana !== prevEoaSolanaIconRef.current,
+    };
 
-    const eoaEvmWallet = evmWallets.find(
-      (wallet) =>
-        wallet.type === "ethereum" && wallet.walletClientType !== "privy"
-    );
+    const anyChanges = Object.values(changes).some(Boolean);
 
-    const newSolanaAddress = solanaWallet?.address ?? null;
-    const newEvmAddress = evmWallet?.address ?? null;
-    const newEoaSolanaAddress = eoaSolanaWallet?.address ?? null;
-    const newEoaEvmAddress = eoaEvmWallet?.address ?? null;
+    if (anyChanges || !initialFetchDoneRef.current) {
+      // Update refs first
+      prevSolanaAddressRef.current = newAddresses.solana;
+      prevEvmAddressRef.current = newAddresses.evm;
+      prevEoaSolanaAddressRef.current = newAddresses.eoaSolana;
+      prevEoaEvmAddressRef.current = newAddresses.eoaEvm;
+      prevEoaEvmIconRef.current = newIcons.eoaEvm;
+      prevEoaSolanaIconRef.current = newIcons.eoaSolana;
 
-    const newEoaEvmIcon = eoaEvmWallet?.meta?.icon ?? null;
-    const newEoaSolanaIcon = eoaSolanaWallet?.meta?.icon ?? null;
-
-    // Only check for changes when needed
-    const addressesChanged =
-      newSolanaAddress !== prevSolanaAddressRef.current ||
-      newEvmAddress !== prevEvmAddressRef.current ||
-      newEoaSolanaAddress !== prevEoaSolanaAddressRef.current ||
-      newEoaEvmAddress !== prevEoaEvmAddressRef.current;
-
-    if (addressesChanged) {
-      console.debug(
-        "WalletInitializer: Wallet addresses changed, updating store"
-      );
-      prevSolanaAddressRef.current = newSolanaAddress;
-      prevEvmAddressRef.current = newEvmAddress;
-      prevEoaSolanaAddressRef.current = newEoaSolanaAddress;
-      prevEoaEvmAddressRef.current = newEoaEvmAddress;
-      prevEoaEvmIconRef.current = newEoaEvmIcon;
-      prevEoaSolanaIconRef.current = newEoaSolanaIcon;
-
-      setWalletAddresses(newSolanaAddress, newEvmAddress);
-      setEoaSolanaAddress(newEoaSolanaAddress);
-      setEoaEvmAddress(newEoaEvmAddress);
-      setEoaEvmIcon(newEoaEvmIcon);
-      setEoaSolanaIcon(newEoaSolanaIcon);
-      fetchAllPortfolios();
+      // Batch updates by type
+      Promise.resolve()
+        .then(() => {
+          // Only update what changed
+          if (changes.listen) {
+            setWalletAddresses(newAddresses.solana, newAddresses.evm);
+          }
+          if (changes.eoaSolana) {
+            setEoaSolanaAddress(newAddresses.eoaSolana);
+          }
+          if (changes.eoaEvm) {
+            setEoaEvmAddress(newAddresses.eoaEvm);
+          }
+          if (changes.icons) {
+            setEoaEvmIcon(newIcons.eoaEvm);
+            setEoaSolanaIcon(newIcons.eoaSolana);
+          }
+        })
+        .then(() => {
+          if (!initialFetchDoneRef.current) {
+            console.debug(
+              "WalletInitializer: Performing initial portfolio fetch"
+            );
+            fetchAllPortfolios(true);
+            initialFetchDoneRef.current = true;
+          } else if (anyChanges) {
+            console.debug(
+              "WalletInitializer: Wallet addresses changed, updating portfolios"
+            );
+            fetchAllPortfolios(false);
+          }
+        });
     }
-  }, [
-    // Only depend on the specific wallet properties we need
-    solanaReady,
-    evmReady,
-    user,
-    // Use object reference equality for collections instead of deep equality
-    solanaWallets,
-    evmWallets,
-    setWalletAddresses,
-    initializePortfolioManager,
-    fetchAllPortfolios,
-    setEoaSolanaAddress,
-    setEoaEvmAddress,
-  ]);
+  }, [solanaReady, evmReady, user, solanaWallets, evmWallets]);
 
   return null;
 }

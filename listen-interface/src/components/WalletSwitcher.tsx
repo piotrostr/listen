@@ -15,15 +15,16 @@ export const WalletSwitcher = () => {
     eoaSolanaIcon,
     activeWallet,
     setActiveWallet,
+    solanaAddress,
+    evmAddress,
   } = useWalletStore();
 
   console.log({
     eoaSolanaAddress,
     eoaEvmAddress,
-    eoaEvmIcon,
-    eoaSolanaIcon,
     activeWallet,
-    setActiveWallet,
+    solanaAddress,
+    evmAddress,
   });
 
   return (

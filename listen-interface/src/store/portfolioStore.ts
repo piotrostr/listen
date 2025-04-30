@@ -4,7 +4,7 @@ import { PortfolioItem } from "../hooks/types";
 import { getTokenHoldings as fetchEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
 import { fetchPortfolio as fetchSolanaPortfolio } from "../hooks/useSolanaPortfolio";
 import { useTokenStore } from "./tokenStore";
-import { useWalletStore } from "./walletStore";
+import { ActiveWallet, useWalletStore } from "./walletStore";
 
 export function getPortfolioTotalValue(assets: PortfolioItem[]): number {
   return assets.reduce((total, asset) => total + asset.price * asset.amount, 0);
@@ -36,9 +36,15 @@ interface PortfolioState {
   lastUpdated: number | null; // timestamp in ms
 
   // Actions
-  fetchSolanaPortfolio: (address: string) => Promise<void>;
-  fetchEvmPortfolio: (address: string) => Promise<void>;
-  fetchAllPortfolios: () => Promise<void>;
+  fetchSolanaPortfolio: (
+    address: string,
+    walletType: ActiveWallet
+  ) => Promise<void>;
+  fetchEvmPortfolio: (
+    address: string,
+    walletType: ActiveWallet
+  ) => Promise<void>;
+  fetchAllPortfolios: (fetchAll?: boolean) => Promise<void>;
   refreshPortfolio: () => Promise<void>;
   isFresh: () => boolean;
   initializePortfolioManager: () => void;
@@ -112,10 +118,11 @@ export const usePortfolioStore = create<PortfolioState>()(
       },
 
       // Actions
-      fetchSolanaPortfolio: async (address: string) => {
+      fetchSolanaPortfolio: async (
+        address: string,
+        walletType: ActiveWallet = "listen"
+      ) => {
         if (!address) return;
-
-        const { activeWallet } = useWalletStore.getState();
 
         set((state) => ({
           isLoading: state.listenSolanaAssetsMap.size === 0,
@@ -132,9 +139,9 @@ export const usePortfolioStore = create<PortfolioState>()(
             });
           });
 
-          // Store in appropriate map based on active wallet
+          // Store in appropriate map based on wallet type parameter
           set(() => ({
-            [activeWallet === "listen"
+            [walletType === "listen"
               ? "listenSolanaAssetsMap"
               : "eoaSolanaAssetsMap"]: solanaAssetsMap,
             isLoading: false,
@@ -149,10 +156,11 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
-      fetchEvmPortfolio: async (address: string) => {
+      fetchEvmPortfolio: async (
+        address: string,
+        walletType: ActiveWallet = "listen"
+      ) => {
         if (!address) return;
-
-        const { activeWallet } = useWalletStore.getState();
 
         set((state) => ({
           isLoading: state.listenEvmAssetsMap.size === 0,
@@ -166,9 +174,9 @@ export const usePortfolioStore = create<PortfolioState>()(
             evmAssetsMap.set(asset.address, asset);
           });
 
-          // Store in appropriate map based on active wallet
+          // Store in appropriate map based on wallet type parameter
           set(() => ({
-            [activeWallet === "listen"
+            [walletType === "listen"
               ? "listenEvmAssetsMap"
               : "eoaEvmAssetsMap"]: evmAssetsMap,
             isLoading: false,
@@ -183,8 +191,8 @@ export const usePortfolioStore = create<PortfolioState>()(
         }
       },
 
-      // Update fetchAllPortfolios to be wallet-aware
-      fetchAllPortfolios: async () => {
+      // Update fetchAllPortfolios to accept optional parameter
+      fetchAllPortfolios: async (fetchAll: boolean = false) => {
         const {
           solanaAddress,
           evmAddress,
@@ -193,24 +201,87 @@ export const usePortfolioStore = create<PortfolioState>()(
           activeWallet,
         } = useWalletStore.getState();
 
-        // Determine which addresses to use based on active wallet
-        let solAddr = null;
-        let evmAddr = null;
+        console.log(
+          "fetch all portfolios:",
+          {
+            solanaAddress,
+            evmAddress,
+            eoaSolanaAddress,
+            eoaEvmAddress,
+            activeWallet,
+          },
+          "all:",
+          fetchAll
+        );
 
-        switch (activeWallet) {
-          case "listen":
-            solAddr = solanaAddress;
-            evmAddr = evmAddress;
-            break;
-          case "eoaSolana":
-            solAddr = eoaSolanaAddress;
-            break;
-          case "eoaEvm":
-            evmAddr = eoaEvmAddress;
-            break;
+        // If fetchAll is true, fetch everything regardless of active wallet
+        if (fetchAll) {
+          const fetchPromises: Promise<void>[] = [];
+
+          // Listen wallet
+          if (solanaAddress) {
+            fetchPromises.push(
+              get().fetchSolanaPortfolio(solanaAddress, "listen")
+            );
+          }
+          if (evmAddress) {
+            fetchPromises.push(get().fetchEvmPortfolio(evmAddress, "listen"));
+          }
+
+          // EOA Solana wallet
+          if (eoaSolanaAddress) {
+            fetchPromises.push(
+              get().fetchSolanaPortfolio(eoaSolanaAddress, "eoaSolana")
+            );
+          }
+
+          // EOA EVM wallet
+          if (eoaEvmAddress) {
+            fetchPromises.push(
+              get().fetchEvmPortfolio(eoaEvmAddress, "eoaEvm")
+            );
+          }
+
+          if (fetchPromises.length === 0) {
+            set({ isLoading: false, error: null });
+            return;
+          }
+
+          set({ isLoading: true, error: null });
+
+          try {
+            await Promise.all(fetchPromises);
+            set(() => ({
+              lastUpdated: Date.now(),
+              isLoading: false,
+            }));
+          } catch (error) {
+            set({
+              error: error as Error,
+              isLoading: false,
+            });
+            console.error("Error fetching portfolios:", error);
+          }
+          return;
         }
 
-        if (!solAddr && !evmAddr) {
+        // Regular case - fetch only active wallet
+        const addresses = {
+          solana:
+            activeWallet === "listen"
+              ? solanaAddress
+              : activeWallet === "eoaSolana"
+                ? eoaSolanaAddress
+                : null,
+          evm:
+            activeWallet === "listen"
+              ? evmAddress
+              : activeWallet === "eoaEvm"
+                ? eoaEvmAddress
+                : null,
+        };
+
+        if (!addresses.solana && !addresses.evm) {
           set({ isLoading: false, error: null });
           return;
         }
@@ -218,18 +289,19 @@ export const usePortfolioStore = create<PortfolioState>()(
         set({ isLoading: true, error: null });
 
         try {
-          const fetchPromises = [];
-
-          if (solAddr) {
-            fetchPromises.push(get().fetchSolanaPortfolio(solAddr));
+          const fetchPromises: Promise<void>[] = [];
+          if (addresses.solana) {
+            fetchPromises.push(
+              get().fetchSolanaPortfolio(addresses.solana, activeWallet)
+            );
           }
-
-          if (evmAddr) {
-            fetchPromises.push(get().fetchEvmPortfolio(evmAddr));
+          if (addresses.evm) {
+            fetchPromises.push(
+              get().fetchEvmPortfolio(addresses.evm, activeWallet)
+            );
           }
 
           await Promise.all(fetchPromises);
-
           set(() => ({
             lastUpdated: Date.now(),
             isLoading: false,
@@ -239,6 +311,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             error: error as Error,
             isLoading: false,
           });
+          console.error("Error fetching portfolios:", error);
         }
       },
 
