@@ -13,6 +13,7 @@
   },
   "dependencies": {
     "@fontsource/space-grotesk": "^5.2.5",
+    "@lifi/sdk": "^3.6.11",
     "@privy-io/react-auth": "^2.0.8",
     "@radix-ui/react-tooltip": "^1.1.8",
     "@solana/web3.js": "^1.98.0",

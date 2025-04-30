@@ -1,10 +1,32 @@
+import { useSolanaWallets, useWallets } from "@privy-io/react-auth";
+import { Connection, VersionedTransaction } from "@solana/web3.js";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { createWalletClient, http } from "viem";
+import { arbitrum, base, bsc, mainnet } from "viem/chains";
+import { swapStepToTransaction } from "../eoa-tx";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
+import { usePortfolioStore } from "../store/portfolioStore";
+import { useWalletStore } from "../store/walletStore";
 import { Pipeline, PipelineActionType } from "../types/pipeline";
 import { NotificationPipelineStep } from "./NotificationPipelineStep";
 import { Spinner } from "./Spinner";
 import { SwapPipelineStep } from "./SwapPipelineStep";
+
+const chainIdToChain = (chainId: number) => {
+  switch (chainId) {
+    case 1:
+      return mainnet;
+    case 8453:
+      return base;
+    case 56:
+      return bsc;
+    case 42161:
+      return arbitrum;
+    default:
+      throw new Error(`Unsupported chainId: ${chainId}`);
+  }
+};
 
 interface PipelineProps {
   pipeline: Pipeline;
@@ -25,6 +47,97 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
     if (!success) {
       setStatus("pending");
     }
+  };
+
+  const { activeWallet, eoaEvmAddress, eoaSolanaAddress } = useWalletStore();
+  const { wallets: evmWallets } = useWallets();
+  const { wallets: solanaWallets } = useSolanaWallets();
+  const { refreshPortfolio } = usePortfolioStore();
+
+  const executeFromEoa = async () => {
+    setStatus("loading");
+    if (!eoaEvmAddress) {
+      setStatus("pending");
+      return;
+    }
+    console.log("executeFromEoa");
+    for (const step of pipeline.steps) {
+      switch (step.action.type) {
+        case PipelineActionType.SwapOrder:
+          if (
+            step.action.from_chain_caip2?.startsWith("solana:") &&
+            step.action.to_chain_caip2?.startsWith("solana:") &&
+            eoaSolanaAddress
+          ) {
+            try {
+              const tx = await swapStepToTransaction(
+                step.action,
+                eoaSolanaAddress,
+                null
+              );
+              const wallet = solanaWallets.find(
+                (w) => w.address === eoaSolanaAddress
+              );
+              if (wallet) {
+                const transaction = VersionedTransaction.deserialize(
+                  Uint8Array.from(Buffer.from(tx?.data ?? "", "base64"))
+                );
+                await wallet.signTransaction(transaction);
+                const connection = new Connection(
+                  import.meta.env.VITE_SOLANA_RPC_URL ||
+                    "https://api.mainnet-beta.solana.com"
+                );
+                await wallet.sendTransaction(transaction, connection);
+                setStatus("approved");
+                refreshPortfolio();
+              }
+            } catch (error) {
+              console.error(error);
+              setStatus("pending");
+            }
+          }
+
+          if (
+            step.action.from_chain_caip2?.startsWith("eip155:") &&
+            step.action.to_chain_caip2?.startsWith("eip155:") &&
+            eoaEvmAddress
+          ) {
+            try {
+              const wallet = evmWallets.find(
+                (w) => w.address === eoaEvmAddress
+              );
+              const chainId = parseInt(
+                step.action.from_chain_caip2.split(":")[1]
+              );
+              const walletClient = createWalletClient({
+                account: wallet?.address as `0x${string}`,
+                chain: chainIdToChain(chainId),
+                transport: http(),
+              });
+              console.log("walletClient", walletClient);
+              const tx = await swapStepToTransaction(
+                step.action,
+                eoaEvmAddress,
+                walletClient
+              );
+              if (wallet) {
+                const provider = await wallet.getEthereumProvider();
+                await provider.request({
+                  method: "eth_sendTransaction",
+                  params: [tx],
+                });
+                setStatus("approved");
+              }
+            } catch (error) {
+              console.error(error);
+              setStatus("pending");
+            }
+          }
+      }
+    }
+    // TODO handle state transitions better
+
+    setStatus("pending");
   };
 
   return (
@@ -57,7 +170,12 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
         <PipelineMenu
           status={status}
           setStatus={setStatus}
-          sendPipelineForExecution={sendPipelineForExecution}
+          sendPipelineForExecution={
+            activeWallet === "listen" ? sendPipelineForExecution : undefined
+          }
+          executeFromEoa={
+            activeWallet !== "listen" ? () => executeFromEoa() : undefined
+          }
         />
       )}
     </div>
@@ -68,16 +186,14 @@ function PipelineMenu({
   status,
   setStatus,
   sendPipelineForExecution,
+  executeFromEoa,
 }: {
   status: "pending" | "approved" | "rejected";
   setStatus: (status: "pending" | "approved" | "rejected") => void;
-  sendPipelineForExecution: () => void;
+  sendPipelineForExecution?: () => void;
+  executeFromEoa?: () => void;
 }) {
   const { t } = useTranslation();
-  //const { activeWallet, eoaSolanaAddress, eoaEvmAddress } = useWalletStore();
-
-  // function handleTransaction() {
-  // }
 
   const Container = ({ children }: { children: React.ReactNode }) => {
     return <div className="flex gap-2">{children}</div>;
@@ -89,7 +205,7 @@ function PipelineMenu({
         <Container>
           <>
             <button
-              onClick={sendPipelineForExecution}
+              onClick={sendPipelineForExecution || executeFromEoa}
               className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded-lg transition-colors"
             >
               {t("pipelines.approve")}
