@@ -2,9 +2,9 @@ import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-const ActiveWalletSchema = z.enum(["listen", "eoaSolana", "eoaEvm"]);
+export const ActiveWalletSchema = z.enum(["listen", "eoaSolana", "eoaEvm"]);
 
-type ActiveWallet = z.infer<typeof ActiveWalletSchema>;
+export type ActiveWallet = z.infer<typeof ActiveWalletSchema>;
 
 interface WalletState {
   // Wallet addresses
