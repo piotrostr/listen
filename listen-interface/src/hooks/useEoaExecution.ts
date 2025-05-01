@@ -20,6 +20,9 @@ export function useEoaExecution() {
       const wallet = solanaWallets.find((w) => w.address === eoaSolanaAddress);
       if (wallet) {
         const tx = await swapStepToTransaction(action, eoaSolanaAddress);
+        if (!tx) {
+          throw new Error("Failed to create Solana transaction request");
+        }
         const transaction = VersionedTransaction.deserialize(
           Uint8Array.from(Buffer.from(tx?.data ?? "", "base64"))
         );
@@ -61,6 +64,9 @@ export function useEoaExecution() {
           refreshPortfolio(true);
         }
         const tx = await swapStepToTransaction(action, eoaEvmAddress);
+        if (!tx) {
+          throw new Error("Failed to create EVM transaction request");
+        }
         const res = await provider.request({
           method: "eth_sendTransaction",
           params: [tx],
