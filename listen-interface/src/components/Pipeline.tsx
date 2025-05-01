@@ -59,7 +59,7 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
             "https://api.mainnet-beta.solana.com"
         );
         await wallet.sendTransaction(transaction, connection);
-        refreshPortfolio();
+        refreshPortfolio(true);
         return true;
       }
     } catch (error) {
@@ -87,6 +87,7 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
             method: "eth_sendTransaction",
             params: [approvalsTx],
           });
+          refreshPortfolio(true);
         }
         const tx = await swapStepToTransaction(action, eoaEvmAddress);
         await provider.request({

@@ -45,7 +45,7 @@ interface PortfolioState {
     walletType: ActiveWallet
   ) => Promise<void>;
   fetchAllPortfolios: (fetchAll?: boolean) => Promise<void>;
-  refreshPortfolio: () => Promise<void>;
+  refreshPortfolio: (fetchAll?: boolean) => Promise<void>;
   isFresh: () => boolean;
   initializePortfolioManager: () => void;
 
@@ -316,14 +316,12 @@ export const usePortfolioStore = create<PortfolioState>()(
       },
 
       // Refresh portfolio data - always forces a refresh
-      refreshPortfolio: async () => {
+      refreshPortfolio: async (fetchAll: boolean = false) => {
         // Reset data first to ensure UI shows loading state and indicate force refresh
         set({ isLoading: true, error: null });
 
-        console.log("refreshing portfolio");
-
         // Fetch portfolios with current wallet addresses
-        await get().fetchAllPortfolios();
+        await get().fetchAllPortfolios(fetchAll);
       },
 
       // Initialize visibility listener and other portfolio management
