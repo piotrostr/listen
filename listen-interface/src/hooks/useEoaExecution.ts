@@ -27,8 +27,7 @@ export function useEoaExecution() {
           Uint8Array.from(Buffer.from(tx?.data ?? "", "base64"))
         );
         const rpcUrl =
-          import.meta.env.VITE_SOLANA_RPC_URL ||
-          "https://api.mainnet-beta.solana.com";
+          import.meta.env.VITE_RPC_URL || "https://api.mainnet-beta.solana.com";
         const connection = new Connection(rpcUrl);
         const res = await wallet.sendTransaction(transaction, connection);
         await waitForTransaction(res, rpcUrl, () => {
