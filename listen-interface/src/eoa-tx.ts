@@ -47,13 +47,24 @@ export async function swapStepToTransaction(
       fromAmount: swapAction.amount,
     });
 
-    const response = await fetch(`https://li.quest/v1/quote?${params}`);
+    const url = `https://li.quest/v1/quote?${params}`;
+    const response = await fetch(url, {
+      method: "GET",
+      headers: {
+        accept: "application/json",
+      },
+    });
+
     if (!response.ok) {
-      throw new Error(`LI.FI API error: ${response.statusText}`);
+      throw new Error(
+        `LI.FI API error: ${response.status} ${response.statusText}`
+      );
     }
 
     const data = await response.json();
-    return data.transactionRequest ?? null;
+    return data.transactionRequest
+      ? TransactionRequestSchema.parse(data.transactionRequest)
+      : null;
   } catch (error) {
     console.error(error);
     return null;

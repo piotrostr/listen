@@ -1,7 +1,9 @@
 import { describe, expect, it, test } from "bun:test";
 import { embedResearchAnchors } from "../components/ResearchOutput";
+import { swapStepToTransaction } from "../eoa-tx";
 import { parseAgentOutput } from "../parse-agent-output";
 import { convertMarkdownToXmlTags } from "../process-tags";
+import { PipelineActionType, SwapOrderAction } from "../types/pipeline";
 import { renderAddressOrTx } from "./util";
 
 describe("process model fuckups with codeblock instead of tags", () => {
@@ -231,5 +233,43 @@ describe("parseAgentOutput", () => {
     expect(result[0].content).toBe(
       "947,14 with 6 decimals. There's no mention of specific utility beyond being a meme token."
     );
+  });
+});
+
+describe("swapStepToTransaction", () => {
+  it("should convert a swap step to a transaction request", async () => {
+    const swapAction: SwapOrderAction = {
+      type: PipelineActionType.SwapOrder,
+      input_token: "sol",
+      output_token: "eth",
+      amount: "1000000000",
+      from_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+      to_chain_caip2: "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp",
+    };
+
+    const transactionRequest = await swapStepToTransaction(
+      swapAction,
+      "aiamaErRMjbeNmf2b8BMZWFR3ofxrnZEf2mLKp935fM"
+    );
+    expect(transactionRequest).toBeDefined();
+    console.debug(transactionRequest);
+  });
+
+  it("should convert a swap step to a transaction request for evm", async () => {
+    const swapAction: SwapOrderAction = {
+      type: PipelineActionType.SwapOrder,
+      input_token: "eth",
+      output_token: "usdc",
+      amount: "1000000000000000000",
+      from_chain_caip2: "eip155:1",
+      to_chain_caip2: "eip155:1",
+    };
+
+    const transactionRequest = await swapStepToTransaction(
+      swapAction,
+      "0xE2E25B7AD090fc9550e35e355d16572830ce83f3"
+    );
+    expect(transactionRequest).toBeDefined();
+    console.debug(transactionRequest);
   });
 });
