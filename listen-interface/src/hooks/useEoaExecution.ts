@@ -5,6 +5,7 @@ import { ensureApprovals } from "../approvals";
 import { swapStepToTransaction } from "../eoa-tx";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { SwapOrderAction } from "../types/pipeline";
+import { waitForTransaction } from "../utils/transactionMonitor";
 
 export function useEoaExecution() {
   const { wallets: evmWallets } = useWallets();
@@ -14,7 +15,7 @@ export function useEoaExecution() {
   const handleEoaSolana = async (
     action: SwapOrderAction,
     eoaSolanaAddress: string
-  ): Promise<boolean> => {
+  ): Promise<string | null> => {
     try {
       const wallet = solanaWallets.find((w) => w.address === eoaSolanaAddress);
       if (wallet) {
@@ -22,25 +23,27 @@ export function useEoaExecution() {
         const transaction = VersionedTransaction.deserialize(
           Uint8Array.from(Buffer.from(tx?.data ?? "", "base64"))
         );
-        const connection = new Connection(
+        const rpcUrl =
           import.meta.env.VITE_SOLANA_RPC_URL ||
-            "https://api.mainnet-beta.solana.com"
-        );
-        await wallet.sendTransaction(transaction, connection);
-        refreshPortfolio(true);
-        return true;
+          "https://api.mainnet-beta.solana.com";
+        const connection = new Connection(rpcUrl);
+        const res = await wallet.sendTransaction(transaction, connection);
+        await waitForTransaction(res, rpcUrl, () => {
+          refreshPortfolio(true);
+        });
+        return res;
       }
     } catch (error) {
       console.error(error);
-      return false;
     }
-    return false;
+
+    return null;
   };
 
   const handleEoaEvm = async (
     action: SwapOrderAction,
     eoaEvmAddress: string
-  ): Promise<boolean> => {
+  ): Promise<string | null> => {
     try {
       const wallet = evmWallets.find((w) => w.address === eoaEvmAddress);
       if (wallet) {
@@ -58,16 +61,20 @@ export function useEoaExecution() {
           refreshPortfolio(true);
         }
         const tx = await swapStepToTransaction(action, eoaEvmAddress);
-        await provider.request({
+        const res = await provider.request({
           method: "eth_sendTransaction",
           params: [tx],
         });
-        return true;
+        // TODO add evm tx monitor, can use the builtin provider from privy and polling
+        await new Promise((resolve) => setTimeout(resolve, 2000));
+        refreshPortfolio(true);
+        return res;
       }
     } catch (error) {
       console.error(error);
     }
-    return false;
+
+    return null;
   };
 
   return {
