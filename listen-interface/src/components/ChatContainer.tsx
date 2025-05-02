@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useMobile } from "../contexts/MobileContext";
 import { useSuggestStore } from "../store/suggestStore";
 import { ChatInput } from "./ChatInput";
 import { NewChatTiles } from "./NewChatTiles";
@@ -37,6 +38,7 @@ export function ChatContainer({
   const { t } = useTranslation();
   const { getSuggestions } = useSuggestStore();
   const suggestions = chatId ? getSuggestions(chatId) : [];
+  const { isMobile } = useMobile();
 
   const RECOMMENDED_QUESTIONS_TILES = [
     {
@@ -83,7 +85,7 @@ export function ChatContainer({
           onSelect={handleQuestionClick || (() => {})}
         />
       )}
-      <div className="mt-auto sticky bottom-0 left-0 right-0 bg-[#151518]/80 backdrop-blur-sm pb-2 px-4 lg:px-0 pt-3">
+      <div className="mt-auto sticky bottom-0 left-0 right-0 bg-[#151518]/80 backdrop-blur-sm pb-2 pt-3">
         {!isGenerating &&
           handleQuestionClick &&
           suggestions.length > 0 &&
