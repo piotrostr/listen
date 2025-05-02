@@ -113,7 +113,11 @@ export function ChatInput({
   const sendDisabled = modelType === "claude" && researchEnabled;
 
   return (
-    <div className="flex flex-col rounded-3xl overflow-hidden border border-[#2D2D2D] bg-[#151518]/40 backdrop-blur-sm mb-2">
+    <div
+      className={`flex flex-col rounded-3xl overflow-hidden border-[#2D2D2D] bg-[#151518]/40 backdrop-blur-sm ${
+        isMobile ? "mb-0 border-t" : "mb-2 border"
+      }`}
+    >
       {/* Textarea row */}
       <div className="flex items-center px-4 py-3">
         <textarea

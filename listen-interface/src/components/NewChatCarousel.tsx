@@ -10,6 +10,7 @@ declare global {
 interface Question {
   question: string;
   enabled: boolean;
+  display?: string;
 }
 
 interface NewChatCarouselProps {
@@ -132,7 +133,9 @@ export const NewChatCarousel: React.FC<NewChatCarouselProps> = ({
                 }}
                 onClick={() => handleClick(index % questions.length)}
               >
-                <span className="text-lg text-center">{item.question}</span>
+                <span className="text-lg text-center">
+                  {item.display ?? item.question}
+                </span>
               </motion.div>
             ))}
           </div>

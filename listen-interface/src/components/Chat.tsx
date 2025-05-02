@@ -95,6 +95,11 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       enabled: true,
     },
     {
+      question: t("recommended_questions.im_feeling_lucky_question"),
+      enabled: true,
+      display: t("recommended_questions.im_feeling_lucky_display"),
+    },
+    {
       question: t("recommended_questions.buy_the_solana_dip"),
       enabled: true,
     },

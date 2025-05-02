@@ -7,7 +7,7 @@ import { type Wallet, WalletResponseSchema } from "./types";
 const allWallets: Wallet[] = [];
 
 // 10 pages total we got
-for (let page = 1; page <= 10; page++) {
+for (let page = 1; page <= 15; page++) {
   const data = await file(`output/wallets_page_${page}.json`).json();
 
   const wallets = WalletResponseSchema.parse(data);
@@ -36,4 +36,4 @@ const connection = new Connection(process.env.SOLANA_RPC_URL!);
 await processSolanaWallets(solanaWallets, connection);
 
 // Process Ethereum and other EVM wallets
-await processEVMWallets(ethereumWallets, process.env.ALCHEMY_API_KEY!);
+// await processEVMWallets(ethereumWallets, process.env.ALCHEMY_API_KEY!);

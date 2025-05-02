@@ -41,13 +41,13 @@ searching on DexScreener.
   * '1h'  (1 hour)
   * '4h'  (4 hours)
   * '1d'  (1 day)
-- intent (string): The intent of the analysis, passed on to the Chart Analyst agent, possible to pass \"\" for no intent
+- intent (string, optional): The intent of the analysis, passed on to the Chart Analyst agent
 ")]
 pub async fn fetch_price_action_analysis_evm(
     pair_address: String,
     chain_id: u64,
     interval: String,
-    intent: String,
+    intent: Option<String>,
 ) -> Result<String> {
     let evm_fallback = EvmFallback::from_env()?;
     let candlesticks = evm_fallback
@@ -62,7 +62,7 @@ pub async fn fetch_price_action_analysis_evm(
 
     spawn_with_signer_and_channel(ctx, channel, move || async move {
         analyst
-            .analyze_chart(&candlesticks, &interval, Some(intent))
+            .analyze_chart(&candlesticks, &interval, intent)
             .await
             .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
     })
@@ -76,21 +76,23 @@ Use this tool to find trending tokens on EVM chains: Eth Mainnet, Base, Arbitrum
 
 Parameters:
 - chain_id (u64): The chain ID of the tokens to fetch
-- limit (string): number of tokens to return; \"6\" is a good limit, unless specified otherwise
-- duration (string): duration of the timeframe to fetch, one of:
+- limit (string, optional): number of tokens to return; defaults to \"6\"
+- duration (string, optional): duration over which to aggregate the data, one of:
   * 5m (5 minutes)
   * 1h (1 hour)
   * 6h (6 hours)
   * 24h (24 hours)
-  if not specified, \"6h\" is good
+  defaults to \"6h\"
 
 Returns a list of top tokens with their market data, sorted by volume.
 ")]
 pub async fn fetch_top_tokens_by_chain_id(
     chain_id: u64,
-    limit: String,
-    duration: String,
+    limit: Option<String>,
+    duration: Option<String>,
 ) -> Result<Vec<TopToken>> {
+    let limit = limit.unwrap_or("6".to_string());
+    let duration = duration.unwrap_or("6h".to_string());
     let evm_fallback = EvmFallback::from_env()?;
     let tokens = evm_fallback
         .fetch_top_tokens(chain_id, duration, limit.parse::<usize>()?)
@@ -114,14 +116,15 @@ Parameters:
   * 'tiktok-memes'
   * 'meme'
   * 'virtuals-protocol'
-- limit (string): number of tokens to return; \"8\" is a good limit, unless specified otherwise
+- limit (string, optional): number of tokens to return; defaults to \"6\"
 
 Returns a list of top tokens with their market data, sorted by volume.
 ")]
 pub async fn fetch_top_tokens_by_category(
     category_id: String,
-    limit: String,
+    limit: Option<String>,
 ) -> Result<Vec<TopToken>> {
+    let limit = limit.unwrap_or("6".to_string());
     let evm_fallback = EvmFallback::from_env()?;
     let tokens = evm_fallback
         .fetch_top_tokens_by_category(
@@ -146,7 +149,7 @@ mod tests {
                 "0x4e829F8A5213c42535AB84AA40BD4aDCCE9cBa02".to_string(),
                 8453, // base
                 "5m".to_string(),
-                "".to_string(),
+                None,
             )
             .await
             .unwrap();
