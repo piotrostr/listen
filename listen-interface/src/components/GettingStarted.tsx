@@ -73,9 +73,9 @@ export function GettingStarted() {
         className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full justify-center items-center`}
       >
         <GradientOutlineButton
-          text={t("getting_started.lets_make_a_trade")}
           arrow={true}
-          onClick={() => handleContinue(t("getting_started.lets_make_a_trade"))}
+          text={t("getting_started.run_some_research")}
+          onClick={() => handleContinue(t("getting_started.run_some_research"))}
           disabled={!ready || isCreatingGuestAccount}
         />
         <OutlineButton
@@ -86,8 +86,8 @@ export function GettingStarted() {
           disabled={!ready || isCreatingGuestAccount}
         />
         <OutlineButton
-          text={t("getting_started.run_some_research")}
-          onClick={() => handleContinue(t("getting_started.run_some_research"))}
+          text={t("getting_started.lets_make_a_trade")}
+          onClick={() => handleContinue(t("getting_started.lets_make_a_trade"))}
           disabled={!ready || isCreatingGuestAccount}
         />
         <OutlineButton

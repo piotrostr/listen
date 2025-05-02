@@ -108,4 +108,15 @@ ${JSON.stringify(addressBook, null, 2)}
 USDC always has 6 decimals. Solana (SOL) has 9 decimals. Native ETH/BNB has 18 decimals. **Verify other token decimals using tools.**
 
 DON'T ever put comments inside of the pipeline JSON, it will break the pipeline.
+
+**IMPORTANT:** If there are multiple independent steps, it is better to generate multiple pipelines, to separate them, rather generating both steps in the same pipeline.
+
+Example:
+\`\`\`json
+<first order goes here>
+\`\`\`
+
+\`\`\`json
+<second order goes here>
+\`\`\`
 `;

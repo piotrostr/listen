@@ -4,8 +4,8 @@ import { ChainIcon } from "./ChainIcon";
 
 interface PortfolioItemTileProps {
   asset: PortfolioItem;
-  onBuy: (asset: PortfolioItem) => void;
-  onSell: (asset: PortfolioItem) => void;
+  onBuy?: (asset: PortfolioItem) => void;
+  onSell?: (asset: PortfolioItem) => void;
 }
 
 // Helper function to format amounts
@@ -53,8 +53,8 @@ export function PortfolioItemTile({
     openChart({
       mint: asset.address,
       chainId: asset.chain,
-      onBuy: () => onBuy(asset),
-      onSell: () => onSell(asset),
+      onBuy: onBuy ? () => onBuy(asset) : undefined,
+      onSell: onSell ? () => onSell(asset) : undefined,
       name: asset.name,
       symbol: asset.symbol,
       amount: asset.amount,

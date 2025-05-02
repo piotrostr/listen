@@ -199,43 +199,45 @@ export function ModalProvider({ children }: { children: ReactNode }) {
                 ) : (
                   <Chart mint={chartAsset.mint} />
                 )}
-                {chartAsset.onBuy && chartAsset.onSell && (
-                  <div className="flex gap-2 justify-center mt-4">
-                    <button
-                      onClick={() => openBuySellModal("buy", chartAsset)}
-                      className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center gap-2"
-                    >
-                      <TbPlus size={12} />
-                      <span>Buy</span>
-                    </button>
-                    <button
-                      onClick={() => openBuySellModal("sell", chartAsset)}
-                      className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg text-xs transition-colors flex items-center gap-2"
-                    >
-                      <MdOutlineArrowOutward size={12} />
-                      <span>Sell</span>
-                    </button>
-                    {researchCooldown ? (
+                <div className="flex gap-2 justify-center mt-4">
+                  {chartAsset.onBuy && chartAsset.onSell && (
+                    <>
                       <button
-                        disabled
-                        className="px-2 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs transition-colors flex items-center gap-2 opacity-50 cursor-not-allowed"
-                        title="Please wait before researching again"
+                        onClick={() => openBuySellModal("buy", chartAsset)}
+                        className="px-2 py-1 bg-green-500/20 hover:bg-green-500/30 text-green-300 border border-green-500/30 rounded-lg text-xs transition-colors flex items-center gap-2"
                       >
-                        <HiOutlineSparkles size={12} />
-                        <span>Research</span>
+                        <TbPlus size={12} />
+                        <span>Buy</span>
                       </button>
-                    ) : (
                       <button
-                        onClick={() => handleResearch(chartAsset)}
-                        disabled={isLoading}
-                        className="px-2 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs transition-colors flex items-center gap-2"
+                        onClick={() => openBuySellModal("sell", chartAsset)}
+                        className="px-2 py-1 bg-red-500/20 hover:bg-red-500/30 text-red-300 border border-red-500/30 rounded-lg text-xs transition-colors flex items-center gap-2"
                       >
-                        <HiOutlineSparkles size={12} />
-                        <span>Research</span>
+                        <MdOutlineArrowOutward size={12} />
+                        <span>Sell</span>
                       </button>
-                    )}
-                  </div>
-                )}
+                    </>
+                  )}
+                  {researchCooldown ? (
+                    <button
+                      disabled
+                      className="px-2 py-1 bg-indigo-500/20 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs transition-colors flex items-center gap-2 opacity-50 cursor-not-allowed"
+                      title="Please wait before researching again"
+                    >
+                      <HiOutlineSparkles size={12} />
+                      <span>Research</span>
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => handleResearch(chartAsset)}
+                      disabled={isLoading}
+                      className="px-2 py-1 bg-indigo-500/20 hover:bg-indigo-500/30 text-indigo-300 border border-indigo-500/30 rounded-lg text-xs transition-colors flex items-center gap-2"
+                    >
+                      <HiOutlineSparkles size={12} />
+                      <span>Research</span>
+                    </button>
+                  )}
+                </div>
               </div>
             </div>
             <div className="fixed inset-0 z-[-1]" onClick={closeChart} />

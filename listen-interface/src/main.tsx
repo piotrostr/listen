@@ -59,6 +59,11 @@ createRoot(document.getElementById("root")!).render(
                 "rabby_wallet",
               ],
             },
+            fundingMethodConfig: {
+              moonpay: {
+                paymentMethod: "credit_debit_card",
+              },
+            },
             externalWallets: {
               solana: {
                 connectors: toSolanaWalletConnectors({

@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useEoaExecution } from "../hooks/useEoaExecution";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
+import { useWalletStore } from "../store/walletStore";
 import { Pipeline, PipelineActionType } from "../types/pipeline";
 import { NotificationPipelineStep } from "./NotificationPipelineStep";
 import { Spinner } from "./Spinner";
@@ -15,6 +17,7 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
     "loading" | "pending" | "approved" | "rejected"
   >("pending");
   const { isExecuting, executePipeline } = usePipelineExecution();
+  const { handleEoaSolana, handleEoaEvm } = useEoaExecution();
 
   const sendPipelineForExecution = async () => {
     setStatus("loading");
@@ -25,6 +28,49 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
     if (!success) {
       setStatus("pending");
     }
+  };
+
+  const { activeWallet, eoaEvmAddress, eoaSolanaAddress } = useWalletStore();
+
+  const executeFromEoa = async () => {
+    setStatus("loading");
+    if (!eoaEvmAddress) {
+      setStatus("pending");
+      return;
+    }
+    for (const step of pipeline.steps) {
+      switch (step.action.type) {
+        case PipelineActionType.SwapOrder:
+          const action = step.action;
+          if (
+            action.from_chain_caip2?.startsWith("solana:") &&
+            action.to_chain_caip2?.startsWith("solana:") &&
+            eoaSolanaAddress
+          ) {
+            const result = await handleEoaSolana(action, eoaSolanaAddress);
+            if (!result) {
+              setStatus("pending");
+              return;
+            }
+            setStatus("approved");
+          }
+
+          if (
+            step.action.from_chain_caip2?.startsWith("eip155:") &&
+            step.action.to_chain_caip2?.startsWith("eip155:") &&
+            eoaEvmAddress
+          ) {
+            const result = await handleEoaEvm(action, eoaEvmAddress);
+            if (!result) {
+              setStatus("pending");
+              return;
+            }
+            setStatus("approved");
+          }
+      }
+    }
+
+    setStatus("pending");
   };
 
   return (
@@ -57,7 +103,12 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
         <PipelineMenu
           status={status}
           setStatus={setStatus}
-          sendPipelineForExecution={sendPipelineForExecution}
+          sendPipelineForExecution={
+            activeWallet === "listen" ? sendPipelineForExecution : undefined
+          }
+          executeFromEoa={
+            activeWallet !== "listen" ? () => executeFromEoa() : undefined
+          }
         />
       )}
     </div>
@@ -68,10 +119,12 @@ function PipelineMenu({
   status,
   setStatus,
   sendPipelineForExecution,
+  executeFromEoa,
 }: {
   status: "pending" | "approved" | "rejected";
   setStatus: (status: "pending" | "approved" | "rejected") => void;
-  sendPipelineForExecution: () => void;
+  sendPipelineForExecution?: () => void;
+  executeFromEoa?: () => void;
 }) {
   const { t } = useTranslation();
 
@@ -85,7 +138,7 @@ function PipelineMenu({
         <Container>
           <>
             <button
-              onClick={sendPipelineForExecution}
+              onClick={sendPipelineForExecution || executeFromEoa}
               className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded-lg transition-colors"
             >
               {t("pipelines.approve")}

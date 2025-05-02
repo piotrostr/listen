@@ -10,6 +10,7 @@ import { MdMemory } from "react-icons/md";
 import { useMobile } from "../contexts/MobileContext";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSettingsStore } from "../store/settingsStore";
+import { useWalletStore } from "../store/walletStore";
 
 interface ChatInputProps {
   inputMessage: string;
@@ -43,6 +44,8 @@ export function ChatInput({
     memoryEnabled,
     setMemoryEnabled,
   } = useSettingsStore();
+
+  const { activeWallet } = useWalletStore();
 
   const { isMobile } = useMobile();
 
@@ -97,8 +100,10 @@ export function ChatInput({
 
   // Toggle the trading mode
   const toggleTrading = () => {
-    setResearchEnabled(false);
-    setAgentMode(!agentMode);
+    if (activeWallet === "listen") {
+      setResearchEnabled(false);
+      setAgentMode(!agentMode);
+    }
   };
 
   const toggleMemory = () => {

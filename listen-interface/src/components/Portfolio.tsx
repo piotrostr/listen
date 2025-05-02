@@ -6,10 +6,12 @@ import { BuySellModal } from "./BuySellModal";
 import { PortfolioItemTile } from "./PortfolioItemTile";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
 import { PortfolioSummary } from "./PortfolioSummary";
+import { WalletSwitcher } from "./WalletSwitcher";
 
 export function Portfolio() {
   const { getCombinedPortfolio, isLoading } = usePortfolioStore();
-  const { solanaAddress, evmAddress } = useWalletStore();
+  const { solanaAddress, evmAddress, activeWallet } = useWalletStore();
+  const quickBuyAvailable = activeWallet === "listen";
 
   const [modalOpen, setModalOpen] = useState(false);
   const [modalAction, setModalAction] = useState<"buy" | "sell">("buy");
@@ -31,9 +33,6 @@ export function Portfolio() {
   const totalBalance =
     assets?.reduce((sum, asset) => sum + asset.price * asset.amount, 0) || 0;
 
-  // TODO Add the subscription hook
-  // useTokenAccountsSubscription();
-
   // Only show loading state if we have a wallet and are actually loading
   if (hasWallet && isLoading) {
     return <PortfolioSkeleton />;
@@ -45,6 +44,7 @@ export function Portfolio() {
         isMobile ? "p-0" : "p-4"
       }`}
     >
+      <WalletSwitcher />
       <PortfolioSummary totalBalance={totalBalance} />
       <div className="flex-1 space-y-2">
         {assets
@@ -53,8 +53,16 @@ export function Portfolio() {
             <PortfolioItemTile
               key={`${asset.address}-${asset.chain}`}
               asset={asset}
-              onBuy={(asset) => handleOpenModal(asset, "buy")}
-              onSell={(asset) => handleOpenModal(asset, "sell")}
+              onBuy={
+                quickBuyAvailable
+                  ? (asset) => handleOpenModal(asset, "buy")
+                  : undefined
+              }
+              onSell={
+                quickBuyAvailable
+                  ? (asset) => handleOpenModal(asset, "sell")
+                  : undefined
+              }
             />
           ))}
       </div>

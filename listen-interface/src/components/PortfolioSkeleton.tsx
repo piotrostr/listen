@@ -37,9 +37,9 @@ export function PortfolioSkeleton() {
                   <h3 className="font-bold flex items-center gap-2">
                     <div className="h-5 w-24 bg-[#2D2D2D] rounded animate-pulse" />
                   </h3>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <div className="text-sm text-gray-400 mt-1">
                     <div className="h-4 w-20 bg-[#2D2D2D] rounded animate-pulse" />
-                  </p>
+                  </div>
                 </div>
               </div>
               <div className="text-right">
