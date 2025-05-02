@@ -325,10 +325,6 @@ export function RecentChats({ onItemClick }: { onItemClick?: () => void }) {
         </div>
       ))}
 
-      {recentChats.length === 0 && (
-        <div className="py-2 text-xs text-gray-400">{t("no_recent_chats")}</div>
-      )}
-
       {openDropdownId && (
         <DropdownMenu
           onShare={(e) => handleShare(openDropdownId, e)}
