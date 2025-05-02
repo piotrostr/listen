@@ -111,28 +111,27 @@ pub async fn fetch_token_price(mint: String) -> Result<f64> {
 #[tool(description = "
 Fetch top Solana tokens based on volume from the Listen API.
 
-No point using limit of more than ~6, less is more, as long as the filters are right (unless user asks for more)
-
-Lower timeframes work best, 7200 seconds is the sweet spot, you can request any
-timeframe though, up to 24 hours
-
 Parameters:
-- limit (string): number of tokens to return
-- min_market_cap (string): minimum market cap filter
-- max_market_cap (string): maximum market cap filter
-- timeframe (string): timeframe in seconds
+- limit (optional, string): number of tokens to return (default: 4)
+- min_market_cap (optional, string): minimum market cap filter (default: 1000000)
+- max_market_cap (optional, string): maximum market cap filter (default: no limit)
+- timeframe (optional, string): timeframe in seconds (default: 7200)
 
-Use the min_market_cap of \"1000000\" unless specified otherwise.
-Use max_market_cap of \"0\" for any market cap unless specified otherwise
+Keep the default set of params unless the user asks for something different
 
 Returns a list of top tokens with their market data.
 ")]
 pub async fn fetch_top_tokens(
-    limit: String,
-    min_market_cap: String,
-    max_market_cap: String,
-    timeframe: String,
+    limit: Option<String>,
+    min_market_cap: Option<String>,
+    max_market_cap: Option<String>,
+    timeframe: Option<String>,
 ) -> Result<Vec<TopToken>> {
+    let limit = limit.unwrap_or("4".to_string());
+    let min_market_cap = min_market_cap.unwrap_or("1000000".to_string());
+    let max_market_cap = max_market_cap.unwrap_or("0".to_string());
+    let timeframe = timeframe.unwrap_or("7200".to_string());
+
     let mut url = format!("{}/top-tokens", API_BASE);
     let mut query_params = vec![];
 
@@ -214,7 +213,7 @@ Parameters:
   * '1h'  (1 hour)
   * '4h'  (4 hours)
   * '1d'  (1 day)
-- intent (string): The intent of the analysis, passed on to the Chart Analyst agent, possible to pass \"\" for no intent
+- intent (string, optional): The intent of the analysis, passed on to the Chart Analyst agent
 
 start with 1m interval, 200 limit and work up the timeframes if required
 
@@ -223,7 +222,7 @@ Returns an analysis of the chart from the Chart Analyst agent
 pub async fn fetch_price_action_analysis(
     mint: String,
     interval: String,
-    intent: String,
+    intent: Option<String>,
 ) -> Result<String> {
     validate_mint(&mint)?;
 
@@ -263,7 +262,7 @@ pub async fn fetch_price_action_analysis(
 
     spawn_with_signer_and_channel(ctx, channel, move || async move {
         analyst
-            .analyze_chart(&candlesticks, &interval, Some(intent))
+            .analyze_chart(&candlesticks, &interval, intent)
             .await
             .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
     })
@@ -278,10 +277,10 @@ mod tests {
     #[tokio::test]
     async fn test_fetch_top_tokens() {
         fetch_top_tokens(
-            "10".to_string(),
-            "1000000000000000000".to_string(),
-            "1000000000000000000".to_string(),
-            "1d".to_string(),
+            Some("10".to_string()),
+            Some("1000000000000000000".to_string()),
+            Some("1000000000000000000".to_string()),
+            Some("1d".to_string()),
         )
         .await
         .unwrap();
@@ -293,7 +292,7 @@ mod tests {
         let analysis = fetch_price_action_analysis(
             "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump".to_string(),
             "5m".to_string(),
-            "".to_string(),
+            None,
         )
         .await;
         tracing::info!("{:?}", analysis);

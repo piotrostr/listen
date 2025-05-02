@@ -215,6 +215,11 @@ in order to convert to UI amount: amount / 10^decimals
 pub async fn get_spl_token_balance(
     mint: String,
 ) -> Result<(String, u8, String)> {
+    if mint == "So11111111111111111111111111111111111111112" {
+        return Err(anyhow::anyhow!(
+            "SOL is not an SPL token, use get_sol_balance for that"
+        ));
+    }
     let signer = SignerContext::current().await;
     if signer.pubkey().is_none() {
         return Err(anyhow::anyhow!("Wallet unavailable"));

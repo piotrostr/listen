@@ -104,7 +104,7 @@ async fn main() -> anyhow::Result<()> {
         let messages = trader_agent
             .stream(
                 // "we are testing the resoning loop, fetch my solana balance, then fetch my the current time, repeat three times, batches of double tool calls please"
-                "we are testing parallel tool calls, check my solana balance and USDC balance (EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v), do this in one response please"
+                "we are testing parallel tool calls, fetch the top solana tokens, check my solana balance and USDC balance (EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v), do this in one response please"
                 .to_string(),
                 vec![],
                 None,
