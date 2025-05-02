@@ -1,6 +1,5 @@
 import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { useMobile } from "../contexts/MobileContext";
 import { useSuggestStore } from "../store/suggestStore";
 import { ChatInput } from "./ChatInput";
 import { NewChatTiles } from "./NewChatTiles";
@@ -38,7 +37,6 @@ export function ChatContainer({
   const { t } = useTranslation();
   const { getSuggestions } = useSuggestStore();
   const suggestions = chatId ? getSuggestions(chatId) : [];
-  const { isMobile } = useMobile();
 
   const RECOMMENDED_QUESTIONS_TILES = [
     {
