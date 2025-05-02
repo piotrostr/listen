@@ -18,10 +18,10 @@ const TokenPriceSchema = z.object({
 });
 
 const TokenMetadataSchema = z.object({
-  symbol: z.string().nullable(),
-  decimals: z.number().nullable(),
-  name: z.string().nullable(),
-  logo: z.string().nullable(),
+  symbol: z.string().nullable().optional(),
+  decimals: z.number().nullable().optional(),
+  name: z.string().nullable().optional(),
+  logo: z.string().nullable().optional(),
 });
 
 const TokenSchema = z.object({
@@ -195,7 +195,17 @@ export async function getTokenHoldings(
     );
 
     const rawData = await response.json();
-    const validatedData = AlchemyResponseSchema.parse(rawData);
+    const parsedData = AlchemyResponseSchema.safeParse(rawData);
+    if (!parsedData.success) {
+      console.error(
+        "Error parsing Alchemy response:",
+        parsedData.error,
+        rawData
+      );
+      throw new Error("Error parsing Alchemy response");
+    }
+
+    const validatedData = parsedData.data;
 
     const portfolioPromises = validatedData.data.tokens
       .filter((token) => {
