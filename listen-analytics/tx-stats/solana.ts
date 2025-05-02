@@ -122,7 +122,7 @@ export const processWalletsInChunks = async (
 export const processSolanaWallets = async (
   solanaWallets: Wallet[],
   connection: Connection,
-  concurrencyLimit = 1,
+  concurrencyLimit = 30,
 ): Promise<WalletTransactionResult[]> => {
   console.log(
     `Starting to process ${solanaWallets.length} Solana wallets with concurrency limit of ${concurrencyLimit}`,
