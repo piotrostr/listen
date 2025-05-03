@@ -15,6 +15,8 @@ import { WagmiProvider, createConfig, http } from "wagmi";
 import { MobileProvider } from "./contexts/MobileContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { ToastProvider } from "./contexts/ToastContext";
+import { WorldProvider } from "./contexts/WorldContext";
+
 import i18n from "./i18n";
 import "./index.css";
 
@@ -40,50 +42,52 @@ declare module "@tanstack/react-router" {
 
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
-    <MobileProvider>
-      <I18nextProvider i18n={i18n}>
-        <PrivyProvider
-          appId={"cm6c7ifqd00ar52m1qxfgbkkn"}
-          config={{
-            appearance: {
-              theme: "dark",
-              walletChainType: "ethereum-and-solana",
-              walletList: [
-                "phantom",
-                "okx_wallet",
-                "metamask",
-                "bybit_wallet",
-                "coinbase_wallet",
-                "rainbow",
-                "wallet_connect",
-                "rabby_wallet",
-              ],
-            },
-            fundingMethodConfig: {
-              moonpay: {
-                paymentMethod: "credit_debit_card",
+    <WorldProvider>
+      <MobileProvider>
+        <I18nextProvider i18n={i18n}>
+          <PrivyProvider
+            appId={"cm6c7ifqd00ar52m1qxfgbkkn"}
+            config={{
+              appearance: {
+                theme: "dark",
+                walletChainType: "ethereum-and-solana",
+                walletList: [
+                  "phantom",
+                  "okx_wallet",
+                  "metamask",
+                  "bybit_wallet",
+                  "coinbase_wallet",
+                  "rainbow",
+                  "wallet_connect",
+                  "rabby_wallet",
+                ],
               },
-            },
-            externalWallets: {
-              solana: {
-                connectors: toSolanaWalletConnectors({
-                  shouldAutoConnect: true,
-                }),
+              fundingMethodConfig: {
+                moonpay: {
+                  paymentMethod: "credit_debit_card",
+                },
               },
-            },
-          }}
-        >
-          <ToastProvider>
-            <WagmiProvider config={config}>
-              <QueryClientProvider client={new QueryClient()}>
-                <SidebarProvider>
-                  <RouterProvider router={router} />
-                </SidebarProvider>
-              </QueryClientProvider>
-            </WagmiProvider>
-          </ToastProvider>
-        </PrivyProvider>
-      </I18nextProvider>
-    </MobileProvider>
+              externalWallets: {
+                solana: {
+                  connectors: toSolanaWalletConnectors({
+                    shouldAutoConnect: true,
+                  }),
+                },
+              },
+            }}
+          >
+            <ToastProvider>
+              <WagmiProvider config={config}>
+                <QueryClientProvider client={new QueryClient()}>
+                  <SidebarProvider>
+                    <RouterProvider router={router} />
+                  </SidebarProvider>
+                </QueryClientProvider>
+              </WagmiProvider>
+            </ToastProvider>
+          </PrivyProvider>
+        </I18nextProvider>
+      </MobileProvider>
+    </WorldProvider>
   </StrictMode>
 );
