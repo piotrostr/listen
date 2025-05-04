@@ -95,7 +95,7 @@ pub async fn get_quote(
         Ok(val) => Some(val),
         Err(_) => None,
     };
-    let lifi = LiFi::new(lifi_api_key);
+    let lifi = LiFi::new(lifi_api_key, Some("listen".to_string()));
 
     let from_address = if from_chain == "1151111081099710"
         || from_chain.to_lowercase() == "sol"
@@ -208,7 +208,7 @@ pub async fn swap(
         Ok(val) => Some(val),
         Err(_) => None,
     };
-    let lifi = LiFi::new(lifi_api_key);
+    let lifi = LiFi::new(lifi_api_key, Some("listen".to_string()));
 
     let from_address = if from_chain == "1151111081099710"
         || from_chain.to_lowercase() == "sol"
