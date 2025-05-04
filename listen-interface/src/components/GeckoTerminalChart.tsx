@@ -9,6 +9,8 @@ const chainIdToGeckoTerminalId = {
   "42161": "arbitrum",
   ethereum: "eth",
   "": "solana",
+  "480": "world-chain",
+  worldchain: "world-chain",
 } as const;
 
 type NetworkId =

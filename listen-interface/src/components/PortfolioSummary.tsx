@@ -1,4 +1,4 @@
-import { usePrivy } from "@privy-io/react-auth";
+import { useMfaEnrollment, usePrivy } from "@privy-io/react-auth";
 import { useFundWallet } from "@privy-io/react-auth/solana";
 import { MdOutlineArrowOutward } from "react-icons/md";
 import { TbDots, TbPlus } from "react-icons/tb";
@@ -13,6 +13,7 @@ export function PortfolioSummary({ totalBalance }: PortfolioSummaryProps) {
   const { solanaAddress, activeWallet } = useWalletStore();
   const { fundWallet } = useFundWallet();
   const { login } = usePrivy();
+  const { showMfaEnrollmentModal } = useMfaEnrollment();
 
   const handleTopupListen = async () => {
     if (solanaAddress) {
@@ -47,7 +48,7 @@ export function PortfolioSummary({ totalBalance }: PortfolioSummaryProps) {
               />
               <TileButton
                 icon={<TbDots className="w-5 h-5" />}
-                onClick={() => {}}
+                onClick={showMfaEnrollmentModal}
                 ariaLabel="More"
               />
             </>

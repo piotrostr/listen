@@ -9,7 +9,7 @@ const SUPPORTED_NETWORKS = [
   { chainId: "42161", networkId: "arb-mainnet", chain: "arbitrum" },
   { chainId: "56", networkId: "bnb-mainnet", chain: "bsc" },
   { chainId: "8453", networkId: "base-mainnet", chain: "base" },
-  { chainId: "480", networkId: "world-mainnet", chain: "world" },
+  { chainId: "480", networkId: "worldchain-mainnet", chain: "worldchain" },
 ] as const;
 
 const TokenPriceSchema = z.object({
