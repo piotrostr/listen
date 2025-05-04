@@ -8,7 +8,7 @@ use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Candlestick {
     pub timestamp: u64,
     pub open: f64,
@@ -49,6 +49,17 @@ pub struct TopToken {
     pub chain_id: Option<String>,
     #[serde(default)]
     pub pools: Vec<PoolInfo>,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PriceActionAnalysisResponse {
+    pub analysis: String,
+    pub current_price: f64,
+    pub current_time: String,
+    pub total_volume: f64,
+    pub price_change: f64,
+    pub high: f64,
+    pub low: f64,
 }
 
 const API_BASE: &str = "https://api.listen-rs.com/v1/adapter";
@@ -223,7 +234,7 @@ pub async fn fetch_price_action_analysis(
     mint: String,
     interval: String,
     intent: Option<String>,
-) -> Result<String> {
+) -> Result<PriceActionAnalysisResponse> {
     validate_mint(&mint)?;
 
     // Validate interval
@@ -253,6 +264,30 @@ pub async fn fetch_price_action_analysis(
         .await
         .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
 
+    let mut sorted_candlesticks = candlesticks.clone();
+    sorted_candlesticks.sort_by_key(|c| c.timestamp);
+
+    let latest_candle = sorted_candlesticks
+        .last()
+        .ok_or_else(|| anyhow!("No candlesticks available"))?;
+    let first_candle = sorted_candlesticks
+        .first()
+        .ok_or_else(|| anyhow!("No candlesticks available"))?;
+
+    let total_volume: f64 =
+        sorted_candlesticks.iter().map(|c| c.volume).sum();
+    let high = sorted_candlesticks
+        .iter()
+        .map(|c| c.high)
+        .fold(f64::NEG_INFINITY, f64::max);
+    let low = sorted_candlesticks
+        .iter()
+        .map(|c| c.low)
+        .fold(f64::INFINITY, f64::min);
+    let price_change = ((latest_candle.close - first_candle.open)
+        / first_candle.open)
+        * 100.0;
+
     let ctx = SignerContext::current().await;
     let locale = ctx.locale();
     let analyst = Analyst::from_env_with_locale(locale)
@@ -260,14 +295,25 @@ pub async fn fetch_price_action_analysis(
 
     let channel = ReasoningLoop::get_current_stream_channel().await;
 
-    spawn_with_signer_and_channel(ctx, channel, move || async move {
-        analyst
-            .analyze_chart(&candlesticks, &interval, intent)
-            .await
-            .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
+    let analysis =
+        spawn_with_signer_and_channel(ctx, channel, move || async move {
+            analyst
+                .analyze_chart(&candlesticks, &interval, intent)
+                .await
+                .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
+        })
+        .await
+        .await??;
+
+    Ok(PriceActionAnalysisResponse {
+        analysis,
+        current_price: latest_candle.close,
+        current_time: chrono::Utc::now().to_rfc3339(),
+        total_volume,
+        price_change,
+        high,
+        low,
     })
-    .await
-    .await?
 }
 
 #[cfg(test)]
