@@ -11,7 +11,10 @@ import {
 import { FaImage, FaRobot, FaXTwitter } from "react-icons/fa6";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { z } from "zod";
-import { CandlestickDataSchema } from "../lib/types";
+import {
+  CandlestickDataSchema,
+  PriceActionAnalysisResponseSchema,
+} from "../lib/types";
 import { renderTimestamps } from "../lib/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import {
@@ -241,6 +244,11 @@ export const ToolMessage = ({
       } catch (e) {
         console.error("Failed to parse price action analysis:", e);
       }
+      const withAggregates =
+        PriceActionAnalysisResponseSchema.safeParse(parsed);
+      const analysis = withAggregates.success
+        ? withAggregates.data.analysis
+        : parsed;
       return (
         <div className="mb-1">
           <div className="h-[350px] mb-3">
@@ -252,7 +260,7 @@ export const ToolMessage = ({
           </div>
           <DropdownMessage
             title={t("tool_messages.price_action_analysis")}
-            message={renderTimestamps(parsed)}
+            message={renderTimestamps(analysis)}
             icon={<FaChartLine />}
           />
         </div>
@@ -309,6 +317,11 @@ export const ToolMessage = ({
         } catch (e) {
           console.error("Failed to parse price action analysis:", e);
         }
+        const withAggregates =
+          PriceActionAnalysisResponseSchema.safeParse(parsed);
+        const analysis = withAggregates.success
+          ? withAggregates.data.analysis
+          : parsed;
         return (
           <div className="mb-1">
             <div className="h-[300px] mb-3">
@@ -316,7 +329,7 @@ export const ToolMessage = ({
             </div>
             <DropdownMessage
               title={t("tool_messages.price_action_analysis")}
-              message={renderTimestamps(parsed)}
+              message={renderTimestamps(analysis)}
               icon={<FaChartLine />}
             />
           </div>

@@ -71,3 +71,17 @@ export type Candlestick = z.infer<typeof CandlestickSchema>;
 export const CandlestickDataSchema = z.array(CandlestickSchema);
 
 export type CandlestickData = z.infer<typeof CandlestickDataSchema>;
+
+export const PriceActionAnalysisResponseSchema = z.object({
+  analysis: z.string(),
+  current_price: z.number(),
+  current_time: z.string(),
+  total_volume: z.number(),
+  price_change: z.number(),
+  high: z.number(),
+  low: z.number(),
+});
+
+export type PriceActionAnalysisResponse = z.infer<
+  typeof PriceActionAnalysisResponseSchema
+>;
