@@ -1,4 +1,4 @@
-import { CompactPortfolio } from "../hooks/util";
+import { CompactPortfolio } from "../lib/util";
 import {
   glossary,
   guidelines,

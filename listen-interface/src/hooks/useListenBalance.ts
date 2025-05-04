@@ -1,7 +1,7 @@
 import { useSolanaWallets } from "@privy-io/react-auth";
 import { Connection, PublicKey } from "@solana/web3.js";
 import { useQuery } from "@tanstack/react-query";
-import { decodeTokenAccount } from "./util";
+import { decodeTokenAccount } from "../lib/util";
 
 const LISTEN_ADDRESS = "Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump";
 const connection = new Connection(import.meta.env.VITE_RPC_URL);

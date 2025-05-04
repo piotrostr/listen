@@ -1,14 +1,15 @@
 import { getAddress } from "viem";
 import { z } from "zod";
+import { getAnyToken } from "../hooks/useToken";
 import { tokenMetadataCache } from "./localStorage";
 import { PortfolioItem, TokenMetadata } from "./types";
-import { getAnyToken } from "./useToken";
 
 const SUPPORTED_NETWORKS = [
   { chainId: "1", networkId: "eth-mainnet", chain: "ethereum" },
   { chainId: "42161", networkId: "arb-mainnet", chain: "arbitrum" },
   { chainId: "56", networkId: "bnb-mainnet", chain: "bsc" },
   { chainId: "8453", networkId: "base-mainnet", chain: "base" },
+  { chainId: "480", networkId: "world-mainnet", chain: "world" },
 ] as const;
 
 const TokenPriceSchema = z.object({

@@ -1,5 +1,5 @@
 import ethIcon from "../assets/icons/ethereum.png";
-import { chainIdNumericToChainId } from "../hooks/util";
+import { chainIdNumericToChainId } from "../lib/util";
 
 interface ChainIconProps {
   chainId: string | number;

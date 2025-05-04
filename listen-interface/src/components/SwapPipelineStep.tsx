@@ -1,5 +1,5 @@
 import { useToken } from "../hooks/useToken";
-import { caip2ToChainId, formatAmount } from "../hooks/util";
+import { caip2ToChainId, formatAmount } from "../lib/util";
 import { PipelineActionType, PipelineStep } from "../types/pipeline";
 import { PipelineStepContainer } from "./PipelineStepContainer";
 import { Spinner } from "./Spinner";

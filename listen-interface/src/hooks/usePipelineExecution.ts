@@ -5,12 +5,12 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { config } from "../config";
 import { useToast } from "../contexts/ToastContext";
+import { chainIdToCaip2 } from "../lib/util";
 import {
   Pipeline,
   PipelineActionType,
   PipelineConditionType,
 } from "../types/pipeline";
-import { chainIdToCaip2 } from "./util";
 
 interface ExecuteOptions {
   onSuccess?: () => void;

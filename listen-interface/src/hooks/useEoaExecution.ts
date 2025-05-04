@@ -1,8 +1,8 @@
 import { useSolanaWallets, useWallets } from "@privy-io/react-auth";
 import { Connection, VersionedTransaction } from "@solana/web3.js";
 import { type EIP1193Provider } from "viem";
-import { ensureApprovals } from "../approvals";
-import { swapStepToTransaction } from "../eoa-tx";
+import { ensureApprovals } from "../lib/approvals";
+import { swapStepToTransaction } from "../lib/eoa-tx";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { SwapOrderAction } from "../types/pipeline";
 import { waitForTransaction } from "../utils/transactionMonitor";

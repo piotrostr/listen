@@ -11,8 +11,8 @@ import {
 import { FaImage, FaRobot, FaXTwitter } from "react-icons/fa6";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { z } from "zod";
-import { CandlestickDataSchema } from "../hooks/types";
-import { renderTimestamps } from "../hooks/util";
+import { CandlestickDataSchema } from "../lib/types";
+import { renderTimestamps } from "../lib/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import {
   Message,

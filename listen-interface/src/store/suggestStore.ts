@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { compactPortfolio } from "../hooks/util";
+import { compactPortfolio } from "../lib/util";
 import { Message } from "../types/message";
 import { usePortfolioStore } from "./portfolioStore";
 import { useSettingsStore } from "./settingsStore";

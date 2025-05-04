@@ -1,5 +1,5 @@
 import { useToken } from "../hooks/useToken";
-import { formatAmount, imageMap } from "../hooks/util";
+import { formatAmount, imageMap } from "../lib/util";
 import { QuoteResponse } from "../types/quote";
 import { ChainIcon } from "./ChainIcon";
 

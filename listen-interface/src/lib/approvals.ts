@@ -1,6 +1,6 @@
 import { Address, type EIP1193Provider, Hash } from "viem";
+import { SwapOrderAction } from "../types/pipeline";
 import { TransactionRequest } from "./eoa-tx";
-import { SwapOrderAction } from "./types/pipeline";
 
 export const LIFI_DIAMOND = "0x1231DEB6f5749EF6cE6943a275A1D3E7486F4EaE";
 

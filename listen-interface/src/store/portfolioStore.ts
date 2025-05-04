@@ -1,8 +1,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
-import { PortfolioItem } from "../hooks/types";
-import { getTokenHoldings as fetchEvmPortfolio } from "../hooks/useEvmPortfolioAlchemy";
-import { fetchPortfolio as fetchSolanaPortfolio } from "../hooks/useSolanaPortfolio";
+import { getTokenHoldings as fetchEvmPortfolio } from "../lib/evmPortfolio";
+import { fetchPortfolio as fetchSolanaPortfolio } from "../lib/solanaPortfolio";
+import { PortfolioItem } from "../lib/types";
 import { useTokenStore } from "./tokenStore";
 import { ActiveWallet, useWalletStore } from "./walletStore";
 

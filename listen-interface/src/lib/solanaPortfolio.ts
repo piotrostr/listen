@@ -4,9 +4,9 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
 } from "@solana/web3.js";
+import { fetchListenMetadata } from "./listen";
 import { tokenMetadataCache } from "./localStorage";
 import { Holding, PortfolioItem, PriceResponse, TokenMetadata } from "./types";
-import { fetchListenMetadata } from "./useListenMetadata";
 import { decodeTokenAccount, imageMap } from "./util";
 
 const TOKEN_PROGRAM_ID = new PublicKey(
