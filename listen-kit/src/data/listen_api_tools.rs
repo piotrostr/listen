@@ -1,3 +1,4 @@
+use crate::data::candlesticks_and_analysis_to_price_action_analysis_response;
 use crate::distiller::analyst::Analyst;
 use crate::reasoning_loop::ReasoningLoop;
 use crate::signer::SignerContext;
@@ -264,29 +265,7 @@ pub async fn fetch_price_action_analysis(
         .await
         .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
 
-    let mut sorted_candlesticks = candlesticks.clone();
-    sorted_candlesticks.sort_by_key(|c| c.timestamp);
-
-    let latest_candle = sorted_candlesticks
-        .last()
-        .ok_or_else(|| anyhow!("No candlesticks available"))?;
-    let first_candle = sorted_candlesticks
-        .first()
-        .ok_or_else(|| anyhow!("No candlesticks available"))?;
-
-    let total_volume: f64 =
-        sorted_candlesticks.iter().map(|c| c.volume).sum();
-    let high = sorted_candlesticks
-        .iter()
-        .map(|c| c.high)
-        .fold(f64::NEG_INFINITY, f64::max);
-    let low = sorted_candlesticks
-        .iter()
-        .map(|c| c.low)
-        .fold(f64::INFINITY, f64::min);
-    let price_change = ((latest_candle.close - first_candle.open)
-        / first_candle.open)
-        * 100.0;
+    let candlesticks_clone = candlesticks.clone();
 
     let ctx = SignerContext::current().await;
     let locale = ctx.locale();
@@ -305,15 +284,10 @@ pub async fn fetch_price_action_analysis(
         .await
         .await??;
 
-    Ok(PriceActionAnalysisResponse {
+    candlesticks_and_analysis_to_price_action_analysis_response(
+        candlesticks_clone,
         analysis,
-        current_price: latest_candle.close,
-        current_time: chrono::Utc::now().to_rfc3339(),
-        total_volume,
-        price_change,
-        high,
-        low,
-    })
+    )
 }
 
 #[cfg(test)]
