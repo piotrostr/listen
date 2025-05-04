@@ -28,9 +28,9 @@ pub enum LiFiError {
 }
 
 impl LiFi {
-    pub fn new(api_key: Option<String>) -> Self {
+    pub fn new(api_key: Option<String>, integrator: Option<String>) -> Self {
         Self {
-            client: LiFiClient::new(api_key),
+            client: LiFiClient::new(api_key, integrator),
         }
     }
 
@@ -140,9 +140,11 @@ impl LiFi {
 mod tests {
     use super::*;
 
+    const INTEGRATOR: &str = "listen";
+
     #[tokio::test]
     async fn test_get_chains() {
-        let lifi = LiFi::new(None);
+        let lifi = LiFi::new(None, Some(INTEGRATOR.to_string()));
         let chains = lifi.get_chains().await;
         assert!(chains.is_ok(), "{:?}", chains);
         println!(
@@ -158,28 +160,28 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_tools() {
-        let lifi = LiFi::new(None);
+        let lifi = LiFi::new(None, Some(INTEGRATOR.to_string()));
         let tools = lifi.get_tools(&["sol".to_string()]).await;
         assert!(tools.is_ok(), "{:?}", tools);
     }
 
     #[tokio::test]
     async fn test_get_tokens() {
-        let lifi = LiFi::new(None);
+        let lifi = LiFi::new(None, Some(INTEGRATOR.to_string()));
         let tokens = lifi.get_tokens("sol", None, Some(0.1)).await;
         assert!(tokens.is_ok(), "{:?}", tokens);
     }
 
     #[tokio::test]
     async fn test_get_token() {
-        let lifi = LiFi::new(None);
+        let lifi = LiFi::new(None, Some(INTEGRATOR.to_string()));
         let token = lifi.get_token("sol", "listen").await;
         assert!(token.is_ok(), "{:?}", token);
     }
 
     #[tokio::test]
     async fn test_get_connections() {
-        let lifi = LiFi::new(None);
+        let lifi = LiFi::new(None, Some(INTEGRATOR.to_string()));
         let connections = lifi
             .get_connections(Some("sol"), Some("eth"), Some("USDC"), Some("ETH"))
             .await;
@@ -188,7 +190,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_quote_base() {
-        let lifi = LiFi::new(None);
+        let lifi = LiFi::new(None, Some(INTEGRATOR.to_string()));
         let quote = lifi
             .get_quote(
                 "arb",
@@ -206,7 +208,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_quote_sol() {
-        let lifi = LiFi::new(None);
+        let lifi = LiFi::new(None, Some(INTEGRATOR.to_string()));
         let quote = lifi
             .get_quote(
                 "1151111081099710", // sol
@@ -223,7 +225,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_quote_evm() {
-        let lifi = LiFi::new(None);
+        let lifi = LiFi::new(None, Some(INTEGRATOR.to_string()));
         let quote = lifi
             .get_quote(
                 "arb",
@@ -242,7 +244,7 @@ mod tests {
     #[tokio::test]
     async fn test_arb_to_base() {
         tracing_subscriber::fmt::init();
-        let lifi = LiFi::new(None);
+        let lifi = LiFi::new(None, Some(INTEGRATOR.to_string()));
         let quote = lifi
             .get_quote(
                 "42161",                                      // arb
@@ -260,7 +262,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_display_quote() {
-        let lifi = LiFi::new(None);
+        let lifi = LiFi::new(None, Some(INTEGRATOR.to_string()));
         let quote = lifi
             .get_quote(
                 "arb",

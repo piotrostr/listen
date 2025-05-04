@@ -26,13 +26,15 @@ pub enum LiFiClientError {
 pub struct LiFiClient {
     client: Client,
     api_key: Option<String>,
+    integrator: Option<String>,
 }
 
 impl LiFiClient {
-    pub fn new(api_key: Option<String>) -> Self {
+    pub fn new(api_key: Option<String>, integrator: Option<String>) -> Self {
         Self {
             client: Client::new(),
             api_key,
+            integrator,
         }
     }
 
@@ -123,6 +125,10 @@ impl LiFiClient {
 
         if let Some(api_key) = &self.api_key {
             request = request.header("x-lifi-api-key", api_key);
+        }
+
+        if let Some(integrator) = &self.integrator {
+            request = request.header("x-lifi-integrator", integrator);
         }
 
         let response = request
