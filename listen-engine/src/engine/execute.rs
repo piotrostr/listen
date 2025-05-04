@@ -42,7 +42,7 @@ impl Engine {
 
         match swap_order_to_transaction(
             order,
-            &lifi::LiFi::new(lifi_api_key),
+            &lifi::LiFi::new(lifi_api_key, Some("listen".to_string())),
             wallet_address.clone(),
             pubkey.clone(),
         )
