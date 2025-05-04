@@ -52,6 +52,7 @@ export async function swapStepToTransaction(
       method: "GET",
       headers: {
         accept: "application/json",
+        "x-lifi-integrator": "listen",
       },
     });
 
