@@ -89,7 +89,7 @@ const AppContent = () => {
     </MobileProvider>
   );
 
-  return process.env.WORLD_MINIAPP_ENABLED ? (
+  return import.meta.env.VITE_WORLD_MINIAPP_ENABLED ? (
     <WorldProvider>{content}</WorldProvider>
   ) : (
     content
