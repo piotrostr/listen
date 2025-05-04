@@ -75,6 +75,12 @@ pub async fn get_quote(
     ensure_solana_wallet_created(signer.clone()).await?;
     ensure_evm_wallet_created(signer.clone()).await?;
 
+    let from_chain = clean_quotes(&from_chain);
+    let to_chain = clean_quotes(&to_chain);
+    let from_token_address = clean_quotes(&from_token_address);
+    let to_token_address = clean_quotes(&to_token_address);
+    let amount = clean_quotes(&amount);
+
     #[cfg(feature = "solana")]
     if from_chain == "1151111081099710" && to_chain == "1151111081099710" {
         let quote = crate::solana::jup::Jupiter::fetch_quote(
@@ -182,6 +188,12 @@ pub async fn swap(
     let signer = SignerContext::current().await;
     ensure_solana_wallet_created(signer.clone()).await?;
     ensure_evm_wallet_created(signer.clone()).await?;
+
+    let from_chain = clean_quotes(&from_chain);
+    let to_chain = clean_quotes(&to_chain);
+    let from_token_address = clean_quotes(&from_token_address);
+    let to_token_address = clean_quotes(&to_token_address);
+    let amount = clean_quotes(&amount);
 
     #[cfg(feature = "solana")]
     if from_chain == "1151111081099710" && to_chain == "1151111081099710" {
@@ -386,4 +398,57 @@ pub async fn ensure_lifi_router_approvals(
             .await?;
     }
     Ok(())
+}
+
+/// Removes both escaped and unescaped quotes from a string
+fn clean_quotes(s: &str) -> String {
+    s.replace("\\\"", "") // first remove escaped quotes
+        .trim_matches('"') // then remove surrounding quotes
+        .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::solana::util::make_test_signer;
+
+    pub use super::*;
+
+    #[tokio::test]
+    async fn test_quote_tool() {
+        let params: serde_json::Value = serde_json::from_str(
+            "{\"from_token_address\":\"So11111111111111111111111111111111111111112\",\"amount\":\"100000000\",\"from_chain\":\"1151111081099710\",\"to_token_address\":\"0x14feE680690900BA0ccCfC76AD70Fd1b95D10e16\",\"to_chain\":\"1\"}",
+        )
+        .unwrap();
+        let signer = make_test_signer();
+        SignerContext::with_signer(signer, async {
+            let quote = get_quote(
+                params["from_token_address"].to_string(),
+                params["to_token_address"].to_string(),
+                params["amount"].to_string(),
+                params["from_chain"].to_string(),
+                params["to_chain"].to_string(),
+            )
+            .await
+            .unwrap();
+            println!("quote: {:?}", quote);
+            Ok(())
+        })
+        .await
+        .unwrap();
+    }
+    #[test]
+    fn test_clean_quotes() {
+        let s = "\"some_param\"";
+        let cleaned = clean_quotes(s);
+        assert_eq!(cleaned, "some_param");
+    }
+
+    #[test]
+    fn test_parse_u64() {
+        let s = "\"10000\"";
+        let cleaned = clean_quotes(s);
+        let parsed = cleaned.parse::<u64>();
+        assert!(parsed.is_ok(), "{:?}", parsed);
+        assert_eq!(parsed.unwrap(), 10000);
+    }
 }
