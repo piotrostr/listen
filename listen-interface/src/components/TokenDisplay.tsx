@@ -2,18 +2,30 @@ import { Token } from "../lib/types";
 
 const PercentageChange = ({ pct_change }: { pct_change: number }) => {
   const isPositive = pct_change >= 0;
-  const formattedChange = `${isPositive ? "+" : ""}${pct_change.toFixed(2)}%`;
+  const absChange = Math.abs(pct_change);
+
+  // Format the number based on its size
+  let formattedChange: string;
+  if (absChange >= 1000) {
+    formattedChange = `${(absChange / 1000).toFixed(1)}k`;
+  } else if (absChange >= 100) {
+    formattedChange = absChange.toFixed(0);
+  } else {
+    formattedChange = absChange.toFixed(2);
+  }
+
+  formattedChange = `${isPositive ? "+" : "-"}${formattedChange}%`;
 
   return (
     <div
       className={`
-        flex justify-center items-center p-2 rounded-full w-14 h-7 font-dm-sans
+        flex justify-center items-center p-2 rounded-full min-w-[3.5rem] h-7 font-dm-sans
         ${isPositive ? "bg-pump-green-bg" : "bg-pump-red-bg"}
       `}
     >
       <span
         className={`
-          text-xs font-normal leading-3
+          text-xs font-normal leading-3 whitespace-nowrap
           ${isPositive ? "text-pump-green" : "text-pump-red"}
         `}
       >
@@ -124,24 +136,48 @@ const ChartLine = ({
   );
 };
 
+const extractTokenMetadata = (metadata: Token["metadata"]) => {
+  if (!metadata) return null;
+
+  // Check if it's GT metadata
+  if ("symbol" in metadata && "name" in metadata && "address" in metadata) {
+    return {
+      name: metadata.name,
+      symbol: metadata.symbol,
+      image: metadata.image_url || null,
+    };
+  }
+
+  // Check if it's MPL metadata
+  if ("mpl" in metadata) {
+    return {
+      name: metadata.mpl.name,
+      symbol: metadata.mpl.symbol,
+      image: metadata.mpl.ipfs_metadata?.image || null,
+    };
+  }
+
+  return null;
+};
+
 export function TokenDisplay({ token }: { token: Token }) {
   const { metadata, price_info } = token;
-  const name =
-    metadata?.mpl?.name.length > 15 ? metadata.mpl.symbol : metadata.mpl.name;
+  const tokenMetadata = extractTokenMetadata(metadata);
+
   return (
     <Container>
       <div className="flex flex-row p-4 items-center">
         <TokenImage
-          src={metadata?.mpl?.ipfs_metadata?.image}
-          alt={metadata?.mpl?.name}
+          src={tokenMetadata?.image || ""}
+          alt={tokenMetadata?.name || ""}
         />
         <div className="flex flex-col p-2">
           <div className="flex flex-row items-center space-x-2">
             <div className="font-space-grotesk font-normal text-2xl leading-8 tracking-[-0.03em] text-center align-middle">
-              {metadata?.mpl?.name}
+              {tokenMetadata?.name}
             </div>
             {price_info?.pct_change && (
-              <PercentageChange pct_change={price_info?.pct_change} />
+              <PercentageChange pct_change={price_info.pct_change} />
             )}
           </div>
           <div className="font-dm-sans font-light text-[14px] leading-[16px] tracking-[0%] align-middle text-[#868686]">
