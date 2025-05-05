@@ -292,7 +292,6 @@ Returns 'true' if approved, 'false' if not approved
 pub async fn check_approval(
     token_address: String,
     spender_address: String,
-    amount: String,
     from_chain_caip2: String,
 ) -> Result<bool> {
     let signer = SignerContext::current().await;

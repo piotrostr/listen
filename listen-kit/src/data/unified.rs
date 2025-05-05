@@ -49,9 +49,22 @@ pub async fn get_token(
 
 async fn get_token_evm(address: String, chain_id: u64) -> Result<Token> {
     let evm_fallback = EvmFallback::from_env()?;
+    let pool_address =
+        evm_fallback.find_pair_address(&address, chain_id).await?;
+    if pool_address.is_none() {
+        return Err(anyhow!("No pool address found for token"));
+    }
+
+    let pool_address = pool_address.unwrap();
+
     let (metadata_result, candlesticks_result) = tokio::join!(
         evm_fallback.fetch_token_info(&address, chain_id),
-        evm_fallback.fetch_candlesticks(&address, chain_id, "15m", Some(200))
+        evm_fallback.fetch_candlesticks(
+            &pool_address,
+            chain_id,
+            "15m",
+            Some(200)
+        )
     );
 
     let metadata = metadata_result.ok();

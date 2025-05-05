@@ -2,6 +2,7 @@ use anyhow::{anyhow, Context, Result};
 use std::env;
 
 pub mod candlesticks;
+pub mod find_pair;
 pub mod token_info;
 pub mod top_tokens;
 pub mod top_tokens_by_category;
@@ -13,7 +14,7 @@ pub struct EvmFallback {
 }
 
 // Helper function to map chain ID (u64) to CoinGecko network string
-fn map_chain_id_to_network(chain_id: u64) -> Result<&'static str> {
+pub fn map_chain_id_to_network(chain_id: u64) -> Result<&'static str> {
     match chain_id {
         1 => Ok("eth"),
         56 => Ok("bsc"),
