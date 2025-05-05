@@ -102,37 +102,45 @@ pub fn candlesticks_and_timeframe_to_price_info(
         return Err(anyhow!("No candlesticks data available"));
     }
 
-    // Sort by timestamp ascending (oldest first)
     candlesticks.sort_by_key(|c| c.timestamp);
 
-    let period = 10.0;
+    // Increase EMA period for smoother line
+    let period = 30.0;
     let multiplier = 2.0 / (period + 1.0);
 
     let first = candlesticks.first().expect("Already checked for empty");
     let last = candlesticks.last().expect("Already checked for empty");
 
-    let mut ema_ticks = Vec::with_capacity(candlesticks.len());
+    let mut ema_price_ticks = Vec::new();
     let mut current_ema = first.close;
     let total_volume: f64 = candlesticks.iter().map(|c| c.volume).sum();
 
-    for stick in candlesticks.iter() {
+    // Take fewer points for smoother visualization
+    let sample_rate = 4; // adjust this to control smoothness
+    for (i, stick) in candlesticks.iter().enumerate() {
         current_ema =
             stick.close * multiplier + current_ema * (1.0 - multiplier);
 
-        ema_ticks.push(SimplePriceTick { price: current_ema });
+        if i % sample_rate == 0 {
+            ema_price_ticks.push(SimplePriceTick { price: current_ema });
+        }
     }
 
-    // Calculate percentage change from first to last candlestick
-    let pct_change = ((last.close - first.close) / first.close) * 100.0;
+    // Ensure we always include the last point
+    if !ema_price_ticks.is_empty()
+        && ema_price_ticks.last().unwrap().price != current_ema
+    {
+        ema_price_ticks.push(SimplePriceTick { price: current_ema });
+    }
 
-    // Calculate period string
+    let pct_change = ((last.close - first.close) / first.close) * 100.0;
     let duration_secs = last.timestamp - first.timestamp;
     let duration_hours = duration_secs as f64 / 3600.0;
     let period = format!("last {:.1} hours", duration_hours);
 
     Ok(PriceInfo {
         latest_price: current_ema,
-        ema_price_ticks: ema_ticks,
+        ema_price_ticks,
         price_ticks_timeframe: timeframe,
         total_volume,
         pct_change,
