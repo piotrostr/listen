@@ -93,7 +93,7 @@ pub async fn ensure_approvals(
         &order.input_token,
         &privy_transaction.address,
         LIFI_DIAMOND_ADDRESS,
-        caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
+        caip2_to_chain_id(&order.from_chain_caip2).map_err(EngineError::ApprovalsError)?,
     )
     .await
     .map_err(EngineError::ApprovalsError)?;
@@ -108,12 +108,18 @@ pub async fn ensure_approvals(
         // skip native tokens, no need to approve those
         return Ok(());
     }
-    if allowance < order.amount.parse::<u128>().unwrap() {
+    if allowance != "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff" {
+        tracing::debug!(
+            "{} < {} - approving {}",
+            allowance,
+            order.amount,
+            order.input_token
+        );
         let approval_transaction = create_approval_transaction(
             &order.input_token,
             LIFI_DIAMOND_ADDRESS,
             &privy_transaction.address,
-            caip2_to_chain_id(&order.from_chain_caip2).unwrap(),
+            caip2_to_chain_id(&order.from_chain_caip2).map_err(EngineError::ApprovalsError)?,
         )
         .await
         .map_err(EngineError::ApprovalsError)?;

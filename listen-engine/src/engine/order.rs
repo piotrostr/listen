@@ -285,7 +285,7 @@ mod tests {
         from_chain_caip2: &str,
         to_chain_caip2: &str,
     ) {
-        std::env::set_var("RUST_LOG", "info");
+        std::env::set_var("RUST_LOG", "debug");
         tracing_subscriber::fmt::init();
         dotenv::dotenv().ok();
 
@@ -302,7 +302,7 @@ mod tests {
             Err(_) => None,
         };
 
-        let lifi = lifi::LiFi::new(lifi_api_key);
+        let lifi = lifi::LiFi::new(lifi_api_key, Some("listen".to_string()));
         let transaction = swap_order_to_transaction(
             &swap_order,
             &lifi,
