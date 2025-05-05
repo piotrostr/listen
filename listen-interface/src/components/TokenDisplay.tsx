@@ -63,9 +63,9 @@ const ChartLine = ({
   if (!ema_price_ticks?.length) return null;
 
   const isPositive = pct_change >= 0;
-  const lineColor = isPositive ? "#8DFC63" : "#8A5EFB";
-  const gradientStartColor = isPositive ? "#8DFC63" : "#8057FB";
-  const gradientEndColor = isPositive ? "#8DFC63" : "#F72777";
+  // Colors for positive/negative changes
+  const strokeColor = isPositive ? "#8DFC63" : "#8A5EFB";
+  const gradientColor = isPositive ? "#8DFC63" : "#8057FB";
 
   // Scale points to view
   const prices = ema_price_ticks.map((tick) => tick.price);
@@ -75,7 +75,7 @@ const ChartLine = ({
 
   // Increase padding to 10% at bottom
   const paddedMinPrice = minPrice - priceRange * 0.1;
-  const paddedPriceRange = priceRange * 1.2; // Increase range by 20% for padding
+  const paddedPriceRange = priceRange * 1.2;
 
   const points = ema_price_ticks.map((tick, i) => {
     const x = (i / (ema_price_ticks.length - 1)) * 358;
@@ -95,7 +95,8 @@ const ChartLine = ({
     return `${path} Q ${point[0]},${point[1]} ${controlX},${controlY}`;
   }, "");
 
-  const fillPath = `${linePath} L358,105 L0,105 Z`;
+  // Create gradient path that extends to the bottom
+  const gradientPath = `${linePath} L358,105 L0,105 Z`;
 
   return (
     <div className="w-full h-[100px]">
@@ -109,23 +110,24 @@ const ChartLine = ({
       >
         <defs>
           <linearGradient
-            id="chartGradient"
+            id={`gradient-${isPositive ? "green" : "purple"}`}
             x1="179"
-            y1="5"
+            y1="0"
             x2="179"
             y2="105"
             gradientUnits="userSpaceOnUse"
           >
-            <stop stopColor={gradientStartColor} />
-            <stop offset="1" stopColor={gradientEndColor} stopOpacity="0" />
+            <stop offset="0%" stopColor={gradientColor} stopOpacity="0.3" />
+            <stop offset="100%" stopColor={gradientColor} stopOpacity="0" />
           </linearGradient>
         </defs>
-
-        <path d={fillPath} fill="url(#chartGradient)" fillOpacity="0.16" />
-
+        <path
+          d={gradientPath}
+          fill={`url(#gradient-${isPositive ? "green" : "purple"})`}
+        />
         <path
           d={linePath}
-          stroke={lineColor}
+          stroke={strokeColor}
           strokeWidth="4"
           strokeLinecap="round"
           strokeLinejoin="round"
