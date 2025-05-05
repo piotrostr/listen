@@ -207,9 +207,13 @@ export const ToolMessage = ({
   }
 
   if (toolOutput.name === "get_token") {
-    const parsed = TokenSchema.safeParse(JSON.parse(toolOutput.result));
-    if (parsed.success) {
-      return <TokenDisplay token={parsed.data} />;
+    try {
+      const parsed = TokenSchema.safeParse(JSON.parse(toolOutput.result));
+      if (parsed.success) {
+        return <TokenDisplay token={parsed.data} />;
+      }
+    } catch (e) {
+      console.error("Failed to parse token:", e);
     }
     return (
       <div className="text-gray-400">
