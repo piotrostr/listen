@@ -41,9 +41,70 @@ const TokenImage = ({ src, alt }: { src: string; alt: string }) => {
   );
 };
 
-const ChartLine = () => {
+const ChartLine = ({
+  ema_price_ticks,
+  pct_change,
+}: {
+  ema_price_ticks: { price: number }[];
+  pct_change: number;
+}) => {
+  // Skip if no data
+  if (!ema_price_ticks?.length) return null;
+
+  const isPositive = pct_change >= 0;
+  const lineColor = isPositive ? "#8DFC63" : "#8A5EFB";
+  const gradientStartColor = isPositive ? "#8DFC63" : "#8057FB";
+  const gradientEndColor = isPositive ? "#8DFC63" : "#F72777";
+
+  // Get min and max for scaling
+  const prices = ema_price_ticks.map((tick) => tick.price);
+  const minPrice = Math.min(...prices);
+  const maxPrice = Math.max(...prices);
+  const priceRange = maxPrice - minPrice;
+
+  // Create points for the path
+  const points = ema_price_ticks.map((tick, i) => {
+    const x = (i / (ema_price_ticks.length - 1)) * 358;
+    const y = 105 - ((tick.price - minPrice) / priceRange) * 98;
+    return `${x},${y}`;
+  });
+
+  const linePath = `M${points.join(" L")}`;
+  const fillPath = `${linePath} L358,105 L0,105 Z`;
+
   return (
-    <div className="w-[100px] h-[100px] bg-pump-red-bg rounded-full"></div>
+    <svg
+      width="100%"
+      height="105"
+      viewBox="0 0 358 105"
+      fill="none"
+      xmlns="http://www.w3.org/2000/svg"
+      className="w-full"
+    >
+      <defs>
+        <linearGradient
+          id="chartGradient"
+          x1="179"
+          y1="5"
+          x2="179"
+          y2="105"
+          gradientUnits="userSpaceOnUse"
+        >
+          <stop stopColor={gradientStartColor} />
+          <stop offset="1" stopColor={gradientEndColor} stopOpacity="0" />
+        </linearGradient>
+      </defs>
+
+      <path d={fillPath} fill="url(#chartGradient)" fillOpacity="0.16" />
+
+      <path
+        d={linePath}
+        stroke={lineColor}
+        strokeWidth="4"
+        strokeLinecap="round"
+        fill="none"
+      />
+    </svg>
   );
 };
 
@@ -72,6 +133,12 @@ export function TokenDisplay({}: { token: Token }) {
           </div>
         </div>
       </div>
+      {price_info?.ema_price_ticks && (
+        <ChartLine
+          ema_price_ticks={price_info.ema_price_ticks}
+          pct_change={price_info.pct_change || 0}
+        />
+      )}
     </Container>
   );
 }
