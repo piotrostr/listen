@@ -6,6 +6,7 @@ use alloy::providers::PendingTransactionConfig;
 use alloy::providers::Provider;
 use anyhow::{anyhow, Result};
 use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
+use evm_approvals::MAX_APPROVAL_AMOUNT_0X;
 use rig_tool_macro::tool;
 
 use crate::common::wrap_unsafe;
@@ -293,7 +294,7 @@ pub async fn check_approval(
     spender_address: String,
     amount: String,
     from_chain_caip2: String,
-) -> Result<String> {
+) -> Result<bool> {
     let signer = SignerContext::current().await;
     ensure_evm_wallet_created(signer.clone()).await?;
 
@@ -306,11 +307,8 @@ pub async fn check_approval(
         evm_approvals::caip2_to_chain_id(&from_chain_caip2)?,
     )
     .await?;
-    let amount = amount
-        .parse::<u128>()
-        .map_err(|_| anyhow!("Invalid amount"))?;
 
-    Ok((allowance >= amount).to_string())
+    Ok(allowance != MAX_APPROVAL_AMOUNT_0X)
 }
 
 #[tool(description = "
@@ -369,7 +367,7 @@ pub async fn ensure_lifi_router_approvals(
         &chain_id.to_string(),
     )
     .await?;
-    if allowance < amount.parse::<u128>().map_err(|e| anyhow!(e))? {
+    if allowance != MAX_APPROVAL_AMOUNT_0X {
         tracing::info!(
             "Approving Lifi Router for {} of {}",
             amount,
