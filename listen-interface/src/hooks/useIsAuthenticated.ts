@@ -2,7 +2,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import {
   userHasDelegatedEvmWallet,
   userHasDelegatedSolanaWallet,
-} from "./util";
+} from "../lib/util";
 
 export const useIsAuthenticated = () => {
   const { authenticated, ready, user } = usePrivy();

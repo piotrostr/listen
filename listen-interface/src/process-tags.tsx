@@ -1,4 +1,5 @@
 import { ChatMessage } from "./components/ChatMessage";
+import { EvmWalletCreation } from "./components/EvmWalletCreation";
 import { FundWallet } from "./components/FundWallet";
 import { PipelineDisplay } from "./components/Pipeline";
 import { SolanaWalletCreation } from "./components/SolanaWalletCreation";
@@ -178,6 +179,15 @@ export const tagHandlers: Record<string, TagHandler> = {
       return (
         <div key={`setup-solana-wallet-${index}`}>
           <SolanaWalletCreation error={null} />
+        </div>
+      );
+    },
+  },
+  setup_evm_wallet: {
+    processTag: (_content: string, index: number) => {
+      return (
+        <div key={`setup-evm-wallet-${index}`}>
+          <EvmWalletCreation error={null} />
         </div>
       );
     },

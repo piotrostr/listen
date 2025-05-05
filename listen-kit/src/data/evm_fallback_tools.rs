@@ -1,6 +1,9 @@
 use crate::{
     common::spawn_with_signer_and_channel,
-    data::TopToken,
+    data::{
+        candlesticks_and_analysis_to_price_action_analysis_response,
+        PriceActionAnalysisResponse, TopToken,
+    },
     distiller::analyst::Analyst,
     evm_fallback::{token_info::GtTokenMetadata, EvmFallback},
     reasoning_loop::ReasoningLoop,
@@ -15,7 +18,6 @@ Fetch token metadata for any EVM token from the GeckoTerminal API.
 Parameters:
 - address (string): The address of the token to fetch metadata for
 - chain_id (u64): The chain ID of the token
-
 ")]
 pub async fn fetch_token_metadata_evm(
     address: String,
@@ -48,11 +50,13 @@ pub async fn fetch_price_action_analysis_evm(
     chain_id: u64,
     interval: String,
     intent: Option<String>,
-) -> Result<String> {
+) -> Result<PriceActionAnalysisResponse> {
     let evm_fallback = EvmFallback::from_env()?;
     let candlesticks = evm_fallback
         .fetch_candlesticks(&pair_address, chain_id, &interval, Some(200))
         .await?;
+    let candlesticks_clone = candlesticks.clone();
+
     let ctx = SignerContext::current().await;
     let locale = ctx.locale();
     let analyst = Analyst::from_env_with_locale(locale)
@@ -60,15 +64,22 @@ pub async fn fetch_price_action_analysis_evm(
 
     let channel = ReasoningLoop::get_current_stream_channel().await;
 
-    spawn_with_signer_and_channel(ctx, channel, move || async move {
-        analyst
-            .analyze_chart(&candlesticks, &interval, intent)
-            .await
-            .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
-    })
-    .await
-    .await?
+    let analysis =
+        spawn_with_signer_and_channel(ctx, channel, move || async move {
+            analyst
+                .analyze_chart(&candlesticks, &interval, intent)
+                .await
+                .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
+        })
+        .await
+        .await??;
+
+    candlesticks_and_analysis_to_price_action_analysis_response(
+        candlesticks_clone,
+        analysis,
+    )
 }
+
 #[tool(description = "
 Fetch top tokens by chain ID from the GeckoTerminal API. 
 

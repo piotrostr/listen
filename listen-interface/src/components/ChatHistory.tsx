@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { chatCache } from "../hooks/localStorage";
+import { chatCache } from "../lib/localStorage";
 import { Chat } from "../types/message";
 
 export function ChatHistory() {

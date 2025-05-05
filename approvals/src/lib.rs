@@ -11,12 +11,15 @@ pub use error::*;
 pub const MAX_APPROVAL_AMOUNT: &str =
     "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 
+pub const MAX_APPROVAL_AMOUNT_0X: &str =
+    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+
 pub async fn get_allowance(
     token_address: &str,
     owner_address: &str,
     spender_address: &str,
     chain_id: &str,
-) -> Result<u128, ApprovalsError> {
+) -> Result<String, ApprovalsError> {
     let rpc_url = chain_id_to_ethereum_rpc_url(chain_id)?;
 
     // Construct the allowance function call data
@@ -28,12 +31,12 @@ pub async fn get_allowance(
 
     let rpc_request = serde_json::json!({
         "jsonrpc": "2.0",
+        "id": 1,
         "method": "eth_call",
         "params": [{
             "to": token_address,
             "data": allowance_data
         }, "latest"],
-        "id": 1
     });
 
     let client = reqwest::Client::new();
@@ -51,10 +54,9 @@ pub async fn get_allowance(
 
     // Parse the response
     let allowance = if let Some(result) = response.get("result") {
-        let allowance_hex = result.as_str().unwrap_or("0x0");
-        u128::from_str_radix(allowance_hex.trim_start_matches("0x"), 16).unwrap_or(0)
+        result.as_str().unwrap_or("0x0").to_string()
     } else {
-        0
+        "0x0".to_string()
     };
 
     Ok(allowance)
@@ -175,4 +177,25 @@ pub async fn create_approval_transaction(
     tracing::info!("Approval transaction: {:?}", res);
 
     Ok(res)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_get_allowance() {
+        let allowance = get_allowance(
+            "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            "0xCCC48877a33a2C14e40c82da843Cf4c607ABF770",
+            "0x1231deb6f5749ef6ce6943a275a1d3e7486f4eae",
+            "8453",
+        )
+        .await;
+        println!("Allowance: {:?}", allowance);
+        assert!(allowance.is_ok());
+        if let Ok(value) = allowance {
+            assert_ne!(value, "0x0");
+        }
+    }
 }

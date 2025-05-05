@@ -13,7 +13,8 @@ use crate::common::{openrouter_agent_builder, OpenRouterAgent};
 use crate::cross_chain::tools::{GetQuote, Swap};
 use crate::data::{
     AnalyzePageContent, FetchPriceActionAnalysis, FetchTokenMetadata,
-    FetchTopTokens, FetchXPost, ResearchXProfile, SearchTweets, SearchWeb,
+    FetchTopTokens, FetchXPost, GetToken, ResearchXProfile, SearchTweets,
+    SearchWeb,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::faster100x::AnalyzeHolderDistribution;
@@ -59,13 +60,13 @@ pub fn equip_with_tools<M: StreamingCompletionModel>(
     agent_builder: AgentBuilder<M>,
 ) -> AgentBuilder<M> {
     agent_builder
+        .tool(GetToken)
         .tool(GetQuote)
         .tool(GetSolBalance)
         .tool(GetSplTokenBalance)
         .tool(SearchOnDexScreener)
         .tool(FetchTopTokens)
         .tool(DeployPumpFunToken)
-        .tool(FetchTokenMetadata)
         .tool(ResearchXProfile)
         .tool(FetchXPost)
         .tool(SearchTweets)
@@ -86,7 +87,6 @@ pub fn equip_with_evm_tools<M: StreamingCompletionModel>(
     agent_builder
         .tool(GetEthBalance)
         .tool(GetErc20Balance)
-        .tool(FetchTokenMetadataEvm)
         .tool(FetchPriceActionAnalysisEvm)
         .tool(FetchTopTokensByChainId)
         .tool(FetchTopTokensByCategory)

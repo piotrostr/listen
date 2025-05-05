@@ -6,6 +6,7 @@ use alloy::providers::PendingTransactionConfig;
 use alloy::providers::Provider;
 use anyhow::{anyhow, Result};
 use blockhash_cache::{inject_blockhash_into_encoded_tx, BLOCKHASH_CACHE};
+use evm_approvals::MAX_APPROVAL_AMOUNT_0X;
 use rig_tool_macro::tool;
 
 use crate::common::wrap_unsafe;
@@ -75,6 +76,12 @@ pub async fn get_quote(
     ensure_solana_wallet_created(signer.clone()).await?;
     ensure_evm_wallet_created(signer.clone()).await?;
 
+    let from_chain = clean_quotes(&from_chain);
+    let to_chain = clean_quotes(&to_chain);
+    let from_token_address = clean_quotes(&from_token_address);
+    let to_token_address = clean_quotes(&to_token_address);
+    let amount = clean_quotes(&amount);
+
     #[cfg(feature = "solana")]
     if from_chain == "1151111081099710" && to_chain == "1151111081099710" {
         let quote = crate::solana::jup::Jupiter::fetch_quote(
@@ -89,7 +96,7 @@ pub async fn get_quote(
         Ok(val) => Some(val),
         Err(_) => None,
     };
-    let lifi = LiFi::new(lifi_api_key);
+    let lifi = LiFi::new(lifi_api_key, Some("listen".to_string()));
 
     let from_address = if from_chain == "1151111081099710"
         || from_chain.to_lowercase() == "sol"
@@ -183,6 +190,12 @@ pub async fn swap(
     ensure_solana_wallet_created(signer.clone()).await?;
     ensure_evm_wallet_created(signer.clone()).await?;
 
+    let from_chain = clean_quotes(&from_chain);
+    let to_chain = clean_quotes(&to_chain);
+    let from_token_address = clean_quotes(&from_token_address);
+    let to_token_address = clean_quotes(&to_token_address);
+    let amount = clean_quotes(&amount);
+
     #[cfg(feature = "solana")]
     if from_chain == "1151111081099710" && to_chain == "1151111081099710" {
         return crate::solana::tools::swap(
@@ -196,7 +209,7 @@ pub async fn swap(
         Ok(val) => Some(val),
         Err(_) => None,
     };
-    let lifi = LiFi::new(lifi_api_key);
+    let lifi = LiFi::new(lifi_api_key, Some("listen".to_string()));
 
     let from_address = if from_chain == "1151111081099710"
         || from_chain.to_lowercase() == "sol"
@@ -279,9 +292,8 @@ Returns 'true' if approved, 'false' if not approved
 pub async fn check_approval(
     token_address: String,
     spender_address: String,
-    amount: String,
     from_chain_caip2: String,
-) -> Result<String> {
+) -> Result<bool> {
     let signer = SignerContext::current().await;
     ensure_evm_wallet_created(signer.clone()).await?;
 
@@ -294,11 +306,8 @@ pub async fn check_approval(
         evm_approvals::caip2_to_chain_id(&from_chain_caip2)?,
     )
     .await?;
-    let amount = amount
-        .parse::<u128>()
-        .map_err(|_| anyhow!("Invalid amount"))?;
 
-    Ok((allowance >= amount).to_string())
+    Ok(allowance != MAX_APPROVAL_AMOUNT_0X)
 }
 
 #[tool(description = "
@@ -357,7 +366,7 @@ pub async fn ensure_lifi_router_approvals(
         &chain_id.to_string(),
     )
     .await?;
-    if allowance < amount.parse::<u128>().map_err(|e| anyhow!(e))? {
+    if allowance != MAX_APPROVAL_AMOUNT_0X {
         tracing::info!(
             "Approving Lifi Router for {} of {}",
             amount,
@@ -386,4 +395,57 @@ pub async fn ensure_lifi_router_approvals(
             .await?;
     }
     Ok(())
+}
+
+/// Removes both escaped and unescaped quotes from a string
+fn clean_quotes(s: &str) -> String {
+    s.replace("\\\"", "") // first remove escaped quotes
+        .trim_matches('"') // then remove surrounding quotes
+        .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use crate::solana::util::make_test_signer;
+
+    pub use super::*;
+
+    #[tokio::test]
+    async fn test_quote_tool() {
+        let params: serde_json::Value = serde_json::from_str(
+            "{\"from_token_address\":\"So11111111111111111111111111111111111111112\",\"amount\":\"100000000\",\"from_chain\":\"1151111081099710\",\"to_token_address\":\"0x14feE680690900BA0ccCfC76AD70Fd1b95D10e16\",\"to_chain\":\"1\"}",
+        )
+        .unwrap();
+        let signer = make_test_signer();
+        SignerContext::with_signer(signer, async {
+            let quote = get_quote(
+                params["from_token_address"].to_string(),
+                params["to_token_address"].to_string(),
+                params["amount"].to_string(),
+                params["from_chain"].to_string(),
+                params["to_chain"].to_string(),
+            )
+            .await
+            .unwrap();
+            println!("quote: {:?}", quote);
+            Ok(())
+        })
+        .await
+        .unwrap();
+    }
+    #[test]
+    fn test_clean_quotes() {
+        let s = "\"some_param\"";
+        let cleaned = clean_quotes(s);
+        assert_eq!(cleaned, "some_param");
+    }
+
+    #[test]
+    fn test_parse_u64() {
+        let s = "\"10000\"";
+        let cleaned = clean_quotes(s);
+        let parsed = cleaned.parse::<u64>();
+        assert!(parsed.is_ok(), "{:?}", parsed);
+        assert_eq!(parsed.unwrap(), 10000);
+    }
 }

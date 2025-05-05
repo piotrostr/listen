@@ -1,9 +1,9 @@
 import { describe, expect, it, test } from "bun:test";
 import { embedResearchAnchors } from "../components/ResearchOutput";
-import { swapStepToTransaction } from "../eoa-tx";
 import { parseAgentOutput } from "../parse-agent-output";
 import { convertMarkdownToXmlTags } from "../process-tags";
 import { PipelineActionType, SwapOrderAction } from "../types/pipeline";
+import { swapStepToTransaction } from "./eoa-tx";
 import { renderAddressOrTx } from "./util";
 
 describe("process model fuckups with codeblock instead of tags", () => {

@@ -1,6 +1,6 @@
 import { z } from "zod";
-import { caip2ToLifiChainId } from "./hooks/util";
-import { SwapOrderAction } from "./types/pipeline";
+import { SwapOrderAction } from "../types/pipeline";
+import { caip2ToLifiChainId } from "./util";
 
 export const TransactionRequestSchema = z.object({
   to: z.string().optional(),
@@ -52,6 +52,7 @@ export async function swapStepToTransaction(
       method: "GET",
       headers: {
         accept: "application/json",
+        "x-lifi-integrator": "listen",
       },
     });
 

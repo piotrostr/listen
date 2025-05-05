@@ -7,7 +7,7 @@ import { useFundWallet as useFundSolanaWallet } from "@privy-io/react-auth/solan
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
-import { imageMap } from "../hooks/util";
+import { imageMap } from "../lib/util";
 import { CopyIcon } from "./CopyIcon";
 
 export function WalletAddresses() {

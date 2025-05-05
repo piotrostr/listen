@@ -27,13 +27,13 @@ const SplTokenMetadataSchema = z.object({
   freeze_authority: z.string().nullable().optional(),
 });
 
-export const TokenMetadataSchema = z.object({
+export const TokenMetadataRawSchema = z.object({
   mint: z.string(),
   mpl: MplTokenMetadataSchema,
   spl: SplTokenMetadataSchema,
 });
 
-export type TokenMetadataRaw = z.infer<typeof TokenMetadataSchema>;
+export type TokenMetadataRaw = z.infer<typeof TokenMetadataRawSchema>;
 
 export const GtTokenMetadataSchema = z.object({
   address: z.string(),

@@ -11,8 +11,12 @@ import {
 import { FaImage, FaRobot, FaXTwitter } from "react-icons/fa6";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { z } from "zod";
-import { CandlestickDataSchema } from "../hooks/types";
-import { renderTimestamps } from "../hooks/util";
+import {
+  CandlestickDataSchema,
+  PriceActionAnalysisResponseSchema,
+  TokenSchema,
+} from "../lib/types";
+import { renderTimestamps } from "../lib/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
 import {
   Message,
@@ -21,7 +25,10 @@ import {
   ToolCallSchema,
   ToolResult,
 } from "../types/message";
-import { GtTokenMetadataSchema, TokenMetadataSchema } from "../types/metadata";
+import {
+  GtTokenMetadataSchema,
+  TokenMetadataRawSchema,
+} from "../types/metadata";
 import {
   JupiterQuoteResponseSchema,
   QuoteResponseSchema,
@@ -46,6 +53,7 @@ import { QuoteDisplay } from "./QuoteDisplay";
 import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
 import { embedResearchAnchors } from "./ResearchOutput";
 import { RiskAnalysisDisplay, RiskAnalysisSchema } from "./RiskDisplay";
+import { TokenDisplay } from "./TokenDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 import { TopicDisplay, TopicSchema } from "./TopicDisplay";
 
@@ -198,6 +206,22 @@ export const ToolMessage = ({
     return null;
   }
 
+  if (toolOutput.name === "get_token") {
+    try {
+      const parsed = TokenSchema.safeParse(JSON.parse(toolOutput.result));
+      if (parsed.success) {
+        return <TokenDisplay token={parsed.data} />;
+      }
+    } catch (e) {
+      console.error("Failed to parse token:", e);
+    }
+    return (
+      <div className="text-gray-400">
+        <ChatMessage message={toolOutput.result} direction="agent" />
+      </div>
+    );
+  }
+
   if (toolOutput.name === "fetch_price_action_analysis_evm") {
     const params = useMemo(() => {
       if (!toolCallInfo) return null;
@@ -241,6 +265,11 @@ export const ToolMessage = ({
       } catch (e) {
         console.error("Failed to parse price action analysis:", e);
       }
+      const withAggregates =
+        PriceActionAnalysisResponseSchema.safeParse(parsed);
+      const analysis = withAggregates.success
+        ? withAggregates.data.analysis
+        : parsed;
       return (
         <div className="mb-1">
           <div className="h-[350px] mb-3">
@@ -252,7 +281,7 @@ export const ToolMessage = ({
           </div>
           <DropdownMessage
             title={t("tool_messages.price_action_analysis")}
-            message={renderTimestamps(parsed)}
+            message={renderTimestamps(analysis)}
             icon={<FaChartLine />}
           />
         </div>
@@ -309,6 +338,11 @@ export const ToolMessage = ({
         } catch (e) {
           console.error("Failed to parse price action analysis:", e);
         }
+        const withAggregates =
+          PriceActionAnalysisResponseSchema.safeParse(parsed);
+        const analysis = withAggregates.success
+          ? withAggregates.data.analysis
+          : parsed;
         return (
           <div className="mb-1">
             <div className="h-[300px] mb-3">
@@ -316,7 +350,7 @@ export const ToolMessage = ({
             </div>
             <DropdownMessage
               title={t("tool_messages.price_action_analysis")}
-              message={renderTimestamps(parsed)}
+              message={renderTimestamps(analysis)}
               icon={<FaChartLine />}
             />
           </div>
@@ -662,7 +696,9 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "fetch_token_metadata") {
     try {
-      const parsed = TokenMetadataSchema.parse(JSON.parse(toolOutput.result));
+      const parsed = TokenMetadataRawSchema.parse(
+        JSON.parse(toolOutput.result)
+      );
       return <RawTokenMetadataDisplay metadata={parsed} />;
     } catch (e) {
       console.error("Failed to parse token metadata:", e);

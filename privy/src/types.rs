@@ -2,7 +2,7 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 pub struct SignAndSendEvmTransactionRequest {
-    pub address: String,
+    // pub address: String,
     pub chain_type: String, // Always "ethereum"
     pub method: String,     // Always "eth_sendTransaction"
     pub caip2: String,      // Format: "eip155:{chain_id}"
@@ -11,7 +11,34 @@ pub struct SignAndSendEvmTransactionRequest {
 
 #[derive(Serialize)]
 pub struct SignAndSendEvmTransactionParams {
-    pub transaction: serde_json::Value,
+    pub transaction: EvmTransaction,
+}
+
+#[derive(Deserialize, Serialize)]
+#[serde(rename_all = "snake_case")]
+pub struct EvmTransaction {
+    pub from: String,
+    pub to: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub value: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub data: Option<String>,
+    // #[serde(skip_serializing_if = "Option::is_none")]
+    // #[serde(deserialize_with = "deserialize_chain_id")]
+    // #[serde(alias = "chainId")]
+    // chain_id is not required, if passed it throws
+    // pub chain_id: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub nonce: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(alias = "gasLimit")]
+    pub gas_limit: Option<String>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(alias = "gasPrice")]
+    pub gas_price: Option<String>,
+    #[serde(rename = "type")]
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub _type: Option<serde_json::Number>,
 }
 
 // Request types for signing transactions

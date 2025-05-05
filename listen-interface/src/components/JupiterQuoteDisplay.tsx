@@ -1,5 +1,5 @@
 import { useListenMetadata } from "../hooks/useListenMetadata";
-import { formatAmount, imageMap } from "../hooks/util";
+import { formatAmount, imageMap } from "../lib/util";
 import { JupiterQuoteResponse } from "../types/quote";
 
 interface JupiterQuoteDisplayProps {

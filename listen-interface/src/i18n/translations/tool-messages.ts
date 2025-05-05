@@ -16,6 +16,7 @@ export const toolMessages = {
     delegate_to_chart_agent: "Chart Agent",
     delegate_to_solana_trader_agent: "Trader Agent",
     view_image: "Image Analysis",
+    dexscreener_search: "Dexscreener Search",
   },
   zh: {
     account_suspended: "账户被暂停",
@@ -34,5 +35,6 @@ export const toolMessages = {
     delegate_to_chart_agent: "图表代理",
     delegate_to_solana_trader_agent: "交易代理",
     view_image: "图片分析",
+    dexscreener_search: "Dexscreener 搜索",
   },
 };

@@ -1,7 +1,7 @@
 import ReactMarkdown from "react-markdown";
 import rehypeRaw from "rehype-raw";
 import remarkGfm from "remark-gfm";
-import { renderAddressOrTx } from "../hooks/util";
+import { renderAddressOrTx } from "../lib/util";
 import { renderAgentOutput } from "../parse-agent-output";
 
 const sanitizeOutput = (message: string) => {

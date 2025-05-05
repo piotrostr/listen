@@ -1,4 +1,4 @@
-import { addressBook, caip2Map } from "../hooks/util";
+import { addressBook, caip2Map } from "../lib/util";
 
 const pipelineExample = `
 Example Pipeline:

@@ -7,8 +7,8 @@ import { RiDeleteBin5Line, RiEdit2Line, RiShare2Line } from "react-icons/ri";
 import { useChat } from "../contexts/ChatContext";
 import { useModal } from "../contexts/ModalContext";
 import { useSidebar } from "../contexts/SidebarContext";
-import { chatCache } from "../hooks/localStorage";
 import i18n from "../i18n";
+import { chatCache } from "../lib/localStorage";
 import { Chat } from "../types/message";
 
 const DropdownMenu = ({

@@ -8,8 +8,8 @@ import {
   UTCTimestamp,
 } from "lightweight-charts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { CandlestickData, CandlestickDataSchema } from "../hooks/types";
 import { useListenMetadata } from "../hooks/useListenMetadata";
+import { CandlestickData, CandlestickDataSchema } from "../lib/types";
 import { useTokenStore } from "../store/tokenStore";
 import { Socials } from "./Socials";
 

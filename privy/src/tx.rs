@@ -1,6 +1,6 @@
 use crate::{
     types::{
-        SignAndSendEvmTransactionParams, SignAndSendEvmTransactionRequest,
+        EvmTransaction, SignAndSendEvmTransactionParams, SignAndSendEvmTransactionRequest,
         SignAndSendTransactionParams, SignAndSendTransactionRequest,
         SignAndSendTransactionResponse,
     },
@@ -45,6 +45,8 @@ impl Privy {
         &self,
         transaction: PrivyTransaction,
     ) -> Result<String, PrivyTransactionError> {
+        let wallet_address = self.get_user_by_id(&transaction.user_id).await.unwrap();
+        let user_info = self.user_to_user_info(&wallet_address);
         if transaction.is_solana() {
             if transaction.solana_transaction.is_none() {
                 return Err(PrivyTransactionError::ExecuteTransactionError(
@@ -64,7 +66,7 @@ impl Privy {
                 ));
             }
             self.execute_evm_transaction(
-                transaction.address,
+                user_info.wallet_id.unwrap(),
                 transaction.evm_transaction.unwrap(),
                 transaction.from_chain_caip2,
             )
@@ -74,22 +76,35 @@ impl Privy {
 
     pub async fn execute_evm_transaction(
         &self,
-        address: String,
+        wallet_id: String,
         transaction: serde_json::Value,
         caip2: String,
     ) -> Result<String, PrivyTransactionError> {
-        tracing::info!(?address, "Executing EVM transaction");
+        tracing::info!(?wallet_id, "Executing EVM transaction");
+        tracing::debug!(
+            "fucked {}",
+            serde_json::to_string_pretty(&transaction).unwrap()
+        );
+        let unfucked_transaction: EvmTransaction = serde_json::from_value(transaction).unwrap();
+        tracing::debug!(
+            "unfucked {}",
+            serde_json::to_string_pretty(&unfucked_transaction).unwrap()
+        );
         let request = SignAndSendEvmTransactionRequest {
-            address,
             chain_type: "ethereum".to_string(),
             method: "eth_sendTransaction".to_string(),
             caip2,
-            params: SignAndSendEvmTransactionParams { transaction },
+            params: SignAndSendEvmTransactionParams {
+                transaction: unfucked_transaction,
+            },
         };
 
         let response = self
             .client
-            .post("https://auth.privy.io/api/v1/wallets/rpc")
+            .post(&format!(
+                "https://api.privy.io/v1/wallets/{}/rpc",
+                wallet_id
+            ))
             .json(&request)
             .send()
             .await?;

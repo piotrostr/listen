@@ -1,6 +1,6 @@
 import { usePrivy, User, useSolanaWallets } from "@privy-io/react-auth";
 import { FaEnvelope, FaGoogle, FaPhone, FaXTwitter } from "react-icons/fa6";
-import { imageMap } from "../hooks/util";
+import { imageMap } from "../lib/util";
 import { ConnectedAccount } from "./ConnectedAccount";
 
 interface ConnectedAccountsProps {

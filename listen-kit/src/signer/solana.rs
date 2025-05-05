@@ -26,7 +26,8 @@ impl LocalSolanaSigner {
 impl TransactionSigner for LocalSolanaSigner {
     #[cfg(feature = "evm")]
     fn address(&self) -> Option<String> {
-        None
+        // fallback for some addr depended methods to work in tests
+        Some("0xCCC48877a33a2C14e40c82da843Cf4c607ABF770".to_string())
     }
 
     #[cfg(feature = "solana")]

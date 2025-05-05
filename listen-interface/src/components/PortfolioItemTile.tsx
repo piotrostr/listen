@@ -1,5 +1,5 @@
 import { useModal } from "../contexts/ModalContext";
-import { PortfolioItem } from "../hooks/types";
+import { PortfolioItem } from "../lib/types";
 import { ChainIcon } from "./ChainIcon";
 
 interface PortfolioItemTileProps {

@@ -15,6 +15,8 @@ import { WagmiProvider, createConfig, http } from "wagmi";
 import { MobileProvider } from "./contexts/MobileContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { ToastProvider } from "./contexts/ToastContext";
+import { WorldProvider } from "./contexts/WorldContext";
+
 import i18n from "./i18n";
 import "./index.css";
 
@@ -38,8 +40,8 @@ declare module "@tanstack/react-router" {
   }
 }
 
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+const AppContent = () => {
+  const content = (
     <MobileProvider>
       <I18nextProvider i18n={i18n}>
         <PrivyProvider
@@ -85,5 +87,17 @@ createRoot(document.getElementById("root")!).render(
         </PrivyProvider>
       </I18nextProvider>
     </MobileProvider>
+  );
+
+  return import.meta.env.VITE_WORLD_MINIAPP_ENABLED ? (
+    <WorldProvider>{content}</WorldProvider>
+  ) : (
+    content
+  );
+};
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <AppContent />
   </StrictMode>
 );

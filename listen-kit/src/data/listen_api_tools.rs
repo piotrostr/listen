@@ -1,3 +1,4 @@
+use crate::data::candlesticks_and_analysis_to_price_action_analysis_response;
 use crate::distiller::analyst::Analyst;
 use crate::reasoning_loop::ReasoningLoop;
 use crate::signer::SignerContext;
@@ -8,7 +9,7 @@ use anyhow::{anyhow, Result};
 use rig_tool_macro::tool;
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Candlestick {
     pub timestamp: u64,
     pub open: f64,
@@ -51,7 +52,18 @@ pub struct TopToken {
     pub pools: Vec<PoolInfo>,
 }
 
-const API_BASE: &str = "https://api.listen-rs.com/v1/adapter";
+#[derive(Debug, Serialize, Deserialize)]
+pub struct PriceActionAnalysisResponse {
+    pub analysis: String,
+    pub current_price: f64,
+    pub current_time: String,
+    pub total_volume: f64,
+    pub price_change: f64,
+    pub high: f64,
+    pub low: f64,
+}
+
+pub const LISTEN_API_BASE: &str = "https://api.listen-rs.com/v1/adapter";
 
 #[tool(description = "
 Fetch token metadata for any Solana token from the Listen API. This is the metadata that was
@@ -70,7 +82,7 @@ pub async fn fetch_token_metadata(mint: String) -> Result<serde_json::Value> {
     validate_mint(&mint)?;
 
     let response =
-        reqwest::get(format!("{}/metadata?mint={}", API_BASE, mint))
+        reqwest::get(format!("{}/metadata?mint={}", LISTEN_API_BASE, mint))
             .await
             .map_err(|e| anyhow!("Failed to fetch token metadata: {}", e))?;
 
@@ -91,9 +103,10 @@ Returns the price of the token in USD.
 pub async fn fetch_token_price(mint: String) -> Result<f64> {
     validate_mint(&mint)?;
 
-    let response = reqwest::get(format!("{}/price?mint={}", API_BASE, mint))
-        .await
-        .map_err(|e| anyhow!("Failed to fetch token price: {}", e))?;
+    let response =
+        reqwest::get(format!("{}/price?mint={}", LISTEN_API_BASE, mint))
+            .await
+            .map_err(|e| anyhow!("Failed to fetch token price: {}", e))?;
 
     let data = response
         .json::<serde_json::Value>()
@@ -132,7 +145,7 @@ pub async fn fetch_top_tokens(
     let max_market_cap = max_market_cap.unwrap_or("0".to_string());
     let timeframe = timeframe.unwrap_or("7200".to_string());
 
-    let mut url = format!("{}/top-tokens", API_BASE);
+    let mut url = format!("{}/top-tokens", LISTEN_API_BASE);
     let mut query_params = vec![];
 
     query_params.push(format!("limit={}", limit));
@@ -178,17 +191,7 @@ pub async fn fetch_price_chart(
 ) -> Result<Vec<PriceTick>> {
     validate_mint(&mint)?;
 
-    let response = reqwest::get(format!(
-        "{}/candlesticks?mint={}&interval={}",
-        API_BASE, mint, interval
-    ))
-    .await
-    .map_err(|e| anyhow!("Failed to fetch chart: {}", e))?;
-
-    let candlesticks = response
-        .json::<Vec<Candlestick>>()
-        .await
-        .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
+    let candlesticks = fetch_candlesticks(mint, interval).await?;
 
     let price_ticks = candlesticks
         .iter()
@@ -223,7 +226,7 @@ pub async fn fetch_price_action_analysis(
     mint: String,
     interval: String,
     intent: Option<String>,
-) -> Result<String> {
+) -> Result<PriceActionAnalysisResponse> {
     validate_mint(&mint)?;
 
     // Validate interval
@@ -239,19 +242,9 @@ pub async fn fetch_price_action_analysis(
         ));
     }
 
-    let url = format!(
-        "{}/candlesticks?mint={}&interval={}",
-        API_BASE, mint, interval
-    );
+    let candlesticks = fetch_candlesticks(mint, interval.clone()).await?;
 
-    let response = reqwest::get(&url)
-        .await
-        .map_err(|e| anyhow!("Failed to fetch candlesticks: {}", e))?;
-
-    let candlesticks = response
-        .json::<Vec<Candlestick>>()
-        .await
-        .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
+    let candlesticks_clone = candlesticks.clone();
 
     let ctx = SignerContext::current().await;
     let locale = ctx.locale();
@@ -260,14 +253,20 @@ pub async fn fetch_price_action_analysis(
 
     let channel = ReasoningLoop::get_current_stream_channel().await;
 
-    spawn_with_signer_and_channel(ctx, channel, move || async move {
-        analyst
-            .analyze_chart(&candlesticks, &interval, intent)
-            .await
-            .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
-    })
-    .await
-    .await?
+    let analysis =
+        spawn_with_signer_and_channel(ctx, channel, move || async move {
+            analyst
+                .analyze_chart(&candlesticks, &interval, intent)
+                .await
+                .map_err(|e| anyhow!("Failed to analyze chart: {}", e))
+        })
+        .await
+        .await??;
+
+    candlesticks_and_analysis_to_price_action_analysis_response(
+        candlesticks_clone,
+        analysis,
+    )
 }
 
 #[cfg(test)]
@@ -297,4 +296,23 @@ mod tests {
         .await;
         tracing::info!("{:?}", analysis);
     }
+}
+
+pub async fn fetch_candlesticks(
+    mint: String,
+    interval: String,
+) -> Result<Vec<Candlestick>> {
+    let url = format!(
+        "{}/candlesticks?mint={}&interval={}",
+        LISTEN_API_BASE, mint, interval
+    );
+
+    let response = reqwest::get(&url)
+        .await
+        .map_err(|e| anyhow!("Failed to fetch candlesticks: {}", e))?;
+
+    response
+        .json::<Vec<Candlestick>>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse response: {}", e))
 }

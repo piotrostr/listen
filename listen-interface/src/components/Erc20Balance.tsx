@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { useToken } from "../hooks/useToken";
-import { formatAmount } from "../hooks/util";
+import { formatAmount } from "../lib/util";
 
 export const Erc20BalanceSchema = z.object({
   balance: z.string(),

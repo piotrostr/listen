@@ -3,6 +3,7 @@ import { Link } from "@tanstack/react-router";
 import { memo, useEffect } from "react";
 import { Background } from "./Background";
 
+import { useSolanaLedgerPlugin } from "@privy-io/react-auth/solana";
 import { useTranslation } from "react-i18next";
 import { BiCoin } from "react-icons/bi";
 import { FaXTwitter } from "react-icons/fa6";
@@ -93,6 +94,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, ready, authenticated } = usePrivy();
   const { clearPortfolio } = usePortfolioStore();
   const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
+  useSolanaLedgerPlugin();
   const handleLogout = () => {
     logout();
     clearPortfolio();

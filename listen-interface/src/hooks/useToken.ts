@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
-import { LifiToken, LifiTokenSchema, TokenMetadata } from "./types";
-import { fetchTokenMetadata } from "./useSolanaPortfolio";
-import { caip2Map, caip2ToLifiChainId } from "./util";
+import { fetchTokenMetadata } from "../lib/solanaPortfolio";
+import { LifiToken, LifiTokenSchema, TokenMetadata } from "../lib/types";
+import { caip2Map, caip2ToLifiChainId } from "../lib/util";
 
 export async function getAnyToken(
   token: string,
