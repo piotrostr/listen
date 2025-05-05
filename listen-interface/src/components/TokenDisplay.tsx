@@ -37,7 +37,7 @@ const PercentageChange = ({ pct_change }: { pct_change: number }) => {
 
 const Container = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="flex flex-col items-start p-0 w-full h-[205px] bg-[#0d0d0e] border-[1px] border-[#1e1e21] rounded-[20px]">
+    <div className="flex flex-col items-start p-0 w-full h-[196px] bg-[#0d0d0e] border-[1px] border-[#1e1e21] rounded-[20px]">
       {children}
     </div>
   );
@@ -166,7 +166,7 @@ export function TokenDisplay({ token }: { token: Token }) {
 
   return (
     <Container>
-      <div className="flex flex-row p-4 items-center">
+      <div className="flex flex-row pt-4 px-4 items-center">
         <TokenImage
           src={tokenMetadata?.image || ""}
           alt={tokenMetadata?.name || ""}
