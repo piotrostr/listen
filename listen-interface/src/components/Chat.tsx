@@ -14,6 +14,7 @@ import { MessageRenderer } from "./MessageRenderer";
 import { NestedAgentOutputDisplay } from "./NestedAgentOutputDisplay";
 import { NewChatCarousel } from "./NewChatCarousel";
 import { ThinkingIndicator } from "./ThinkingIndicator";
+import { TokenDisplay } from "./TokenDisplay";
 import { ToolCallMessage } from "./ToolCallMessage";
 
 const IS_DISABLED = false;
@@ -299,6 +300,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
         hasMessages={messages.length > 0}
         chatId={urlParams.chatId}
       >
+        <TokenDisplay token={{}} />
         <div className="h-full flex flex-col">
           {messages.length === 0 && (
             <div className="flex flex-col items-center justify-center py-12 px-4">

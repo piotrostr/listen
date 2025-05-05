@@ -14,6 +14,7 @@ import { z } from "zod";
 import {
   CandlestickDataSchema,
   PriceActionAnalysisResponseSchema,
+  TokenSchema,
 } from "../lib/types";
 import { renderTimestamps } from "../lib/util";
 import { DexScreenerResponseSchema } from "../types/dexscreener";
@@ -24,7 +25,10 @@ import {
   ToolCallSchema,
   ToolResult,
 } from "../types/message";
-import { GtTokenMetadataSchema, TokenMetadataSchema } from "../types/metadata";
+import {
+  GtTokenMetadataSchema,
+  TokenMetadataRawSchema,
+} from "../types/metadata";
 import {
   JupiterQuoteResponseSchema,
   QuoteResponseSchema,
@@ -49,6 +53,7 @@ import { QuoteDisplay } from "./QuoteDisplay";
 import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
 import { embedResearchAnchors } from "./ResearchOutput";
 import { RiskAnalysisDisplay, RiskAnalysisSchema } from "./RiskDisplay";
+import { TokenDisplay } from "./TokenDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 import { TopicDisplay, TopicSchema } from "./TopicDisplay";
 
@@ -199,6 +204,18 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "think") {
     return null;
+  }
+
+  if (toolOutput.name === "get_token") {
+    const parsed = TokenSchema.safeParse(JSON.parse(toolOutput.result));
+    if (parsed.success) {
+      return <TokenDisplay token={parsed.data} />;
+    }
+    return (
+      <div className="text-gray-400">
+        <ChatMessage message={toolOutput.result} direction="agent" />
+      </div>
+    );
   }
 
   if (toolOutput.name === "fetch_price_action_analysis_evm") {
@@ -675,7 +692,9 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "fetch_token_metadata") {
     try {
-      const parsed = TokenMetadataSchema.parse(JSON.parse(toolOutput.result));
+      const parsed = TokenMetadataRawSchema.parse(
+        JSON.parse(toolOutput.result)
+      );
       return <RawTokenMetadataDisplay metadata={parsed} />;
     } catch (e) {
       console.error("Failed to parse token metadata:", e);

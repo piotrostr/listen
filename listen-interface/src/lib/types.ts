@@ -1,4 +1,8 @@
 import { z } from "zod";
+import {
+  GtTokenMetadataSchema,
+  TokenMetadataRawSchema,
+} from "../types/metadata";
 
 // this is the same pretty much as PortfolioItem - nice!
 export const LifiTokenSchema = z.object({
@@ -85,3 +89,30 @@ export const PriceActionAnalysisResponseSchema = z.object({
 export type PriceActionAnalysisResponse = z.infer<
   typeof PriceActionAnalysisResponseSchema
 >;
+
+export const SimplePriceTickSchema = z.object({
+  price: z.number(),
+});
+
+export type SimplePriceTick = z.infer<typeof SimplePriceTickSchema>;
+
+export const PriceInfoSchema = z.object({
+  latest_price: z.number(),
+  ema_price_ticks: z.array(SimplePriceTickSchema),
+  price_ticks_timeframe: z.string(),
+  total_volume: z.number(),
+  pct_change: z.number(),
+  period: z.string(),
+});
+
+export type PriceInfo = z.infer<typeof PriceInfoSchema>;
+
+export const TokenSchema = z.object({
+  metadata: z
+    .union([TokenMetadataRawSchema, GtTokenMetadataSchema])
+    .nullable()
+    .optional(),
+  price_info: PriceInfoSchema.nullable().optional(),
+});
+
+export type Token = z.infer<typeof TokenSchema>;

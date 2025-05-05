@@ -6,6 +6,7 @@ export default {
       fontFamily: {
         mono: ["Space Grotesk", "monospace"],
         'space-grotesk': ['Space Grotesk', 'sans-serif'],
+        'dm-sans': ['DM Sans', 'sans-serif'],
       },
       animation: {
         blob: "blob 7s infinite",
@@ -35,6 +36,10 @@ export default {
       },
       colors: {
         black: "#151518",
+        'pump-green': '#8DFC63',
+        'pump-green-bg': '#8DFC631A',
+        'pump-red': '#F72777',
+        'pump-red-bg': '#F727771A',
       },
     },
   },
