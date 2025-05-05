@@ -11,6 +11,9 @@ pub use error::*;
 pub const MAX_APPROVAL_AMOUNT: &str =
     "ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
 
+pub const MAX_APPROVAL_AMOUNT_0X: &str =
+    "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+
 pub async fn get_allowance(
     token_address: &str,
     owner_address: &str,
