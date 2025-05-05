@@ -33,6 +33,7 @@ export const toolCalls = {
     get_etm_balance: "Fetching balance...",
     fetch_top_tokens_by_chain_id: "Fetching trending tokens...",
     fetch_top_tokens_by_category: "Browsing trending by category...",
+    get_token: "Grabbing token...",
   },
   zh: {
     get_quote: "获取报价中...",
@@ -68,5 +69,6 @@ export const toolCalls = {
     get_etm_balance: "获取余额中...",
     fetch_top_tokens_by_chain_id: "获取热门代币中...",
     fetch_top_tokens_by_category: "浏览热门代币中...",
+    get_token: "获取代币中...",
   },
 };
