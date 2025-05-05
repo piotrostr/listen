@@ -30,7 +30,7 @@ pub struct Token {
 }
 
 #[tool(description = "
-Get the token info - the metadata, recent price, socials and more.
+Get the core token information - the metadata, socials, recent price action and volume.
 
 Parameters:
 - address (string): The address of the token to fetch metadata for

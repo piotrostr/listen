@@ -18,7 +18,6 @@ Fetch token metadata for any EVM token from the GeckoTerminal API.
 Parameters:
 - address (string): The address of the token to fetch metadata for
 - chain_id (u64): The chain ID of the token
-
 ")]
 pub async fn fetch_token_metadata_evm(
     address: String,

@@ -67,7 +67,6 @@ pub fn equip_with_tools<M: StreamingCompletionModel>(
         .tool(SearchOnDexScreener)
         .tool(FetchTopTokens)
         .tool(DeployPumpFunToken)
-        .tool(FetchTokenMetadata)
         .tool(ResearchXProfile)
         .tool(FetchXPost)
         .tool(SearchTweets)
@@ -88,7 +87,6 @@ pub fn equip_with_evm_tools<M: StreamingCompletionModel>(
     agent_builder
         .tool(GetEthBalance)
         .tool(GetErc20Balance)
-        .tool(FetchTokenMetadataEvm)
         .tool(FetchPriceActionAnalysisEvm)
         .tool(FetchTopTokensByChainId)
         .tool(FetchTopTokensByCategory)

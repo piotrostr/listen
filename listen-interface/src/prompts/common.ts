@@ -76,19 +76,19 @@ NEVER put anything like "Disclaimer: This is not financial advice. Trade at your
 export const researchFlow = `
 If you have memory of previous research, summarize what you already know and suggest potentially expanding the research to arrive at new findings.
 
-If you have the exact token address, ALWAYS start with the fetch_token_metadata tool.
+If you have the exact token address, ALWAYS start with the get_token tool.
 
 IMPORTANT:
 Any research should be done in the following order, form of a loop, where you use tools to:
-*   get the token metadata information, get current time **(Provides address, decimals, chain)**
+*   get the token information, get current time **(Provides address, decimals, chain)**
 *   check linked x.com post if exists with the fetch_x_post tool
 *   check linked x.com account if exists with the research_x_profile tool
 *   check linked website if exists with the analyze_page_content tool
 *   check the social sentiment with analyze_sentiment tool
 *   check the chart analysis with fetch_price_action_analysis tool
-*   **Use tools like dexscreener_search_pairs or get_token_metadata to find or confirm token addresses and details.**
+*   **Use tools like dexscreener_search_pairs or get_token to find or confirm token addresses and details.**
 
-If you are missing the X (twitter) profile link or the website link in the token metadata, you should ALWAYS try to find it through searching through X (twitter) for the ticker (with the $ symbol, e.g. $AI, or using its public key or address).
+If you are missing the X (twitter) profile link or the website link in the token information, you should ALWAYS try to find it through searching through X (twitter) for the ticker (with the $ symbol, e.g. $AI, or using its public key or address).
 
 It is CRUCIAL to look for first hand information, once you start general searches you can stumble upon a lot of other profiles and that's second hand information. You need to gather your knowledge from the first hand source!
 
