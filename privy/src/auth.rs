@@ -37,6 +37,8 @@ pub struct UserInfo {
     pub pubkey: Option<String>,
     pub wallet_address: Option<String>,
     pub email: Option<String>,
+    pub pubkey_id: Option<String>,
+    pub wallet_id: Option<String>,
 }
 
 impl Privy {
@@ -73,17 +75,21 @@ impl Privy {
         let mut wallets = UserInfo {
             pubkey: None,
             wallet_address: None,
+            pubkey_id: None,
+            wallet_id: None,
             email: None,
         };
 
         let solana_wallet = find_wallet(&user.linked_accounts, "solana", "privy");
         if let Ok(wallet) = solana_wallet {
             wallets.pubkey = Some(wallet.address.clone());
+            wallets.pubkey_id = wallet.id.clone();
         }
 
         let evm_wallet = find_wallet(&user.linked_accounts, "ethereum", "privy");
         if let Ok(wallet) = evm_wallet {
             wallets.wallet_address = Some(wallet.address.clone());
+            wallets.wallet_id = wallet.id.clone();
         }
 
         let email = find_email(&user.linked_accounts);
