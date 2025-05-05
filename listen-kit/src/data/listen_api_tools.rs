@@ -63,7 +63,7 @@ pub struct PriceActionAnalysisResponse {
     pub low: f64,
 }
 
-const API_BASE: &str = "https://api.listen-rs.com/v1/adapter";
+pub const LISTEN_API_BASE: &str = "https://api.listen-rs.com/v1/adapter";
 
 #[tool(description = "
 Fetch token metadata for any Solana token from the Listen API. This is the metadata that was
@@ -82,7 +82,7 @@ pub async fn fetch_token_metadata(mint: String) -> Result<serde_json::Value> {
     validate_mint(&mint)?;
 
     let response =
-        reqwest::get(format!("{}/metadata?mint={}", API_BASE, mint))
+        reqwest::get(format!("{}/metadata?mint={}", LISTEN_API_BASE, mint))
             .await
             .map_err(|e| anyhow!("Failed to fetch token metadata: {}", e))?;
 
@@ -103,9 +103,10 @@ Returns the price of the token in USD.
 pub async fn fetch_token_price(mint: String) -> Result<f64> {
     validate_mint(&mint)?;
 
-    let response = reqwest::get(format!("{}/price?mint={}", API_BASE, mint))
-        .await
-        .map_err(|e| anyhow!("Failed to fetch token price: {}", e))?;
+    let response =
+        reqwest::get(format!("{}/price?mint={}", LISTEN_API_BASE, mint))
+            .await
+            .map_err(|e| anyhow!("Failed to fetch token price: {}", e))?;
 
     let data = response
         .json::<serde_json::Value>()
@@ -144,7 +145,7 @@ pub async fn fetch_top_tokens(
     let max_market_cap = max_market_cap.unwrap_or("0".to_string());
     let timeframe = timeframe.unwrap_or("7200".to_string());
 
-    let mut url = format!("{}/top-tokens", API_BASE);
+    let mut url = format!("{}/top-tokens", LISTEN_API_BASE);
     let mut query_params = vec![];
 
     query_params.push(format!("limit={}", limit));
@@ -190,17 +191,7 @@ pub async fn fetch_price_chart(
 ) -> Result<Vec<PriceTick>> {
     validate_mint(&mint)?;
 
-    let response = reqwest::get(format!(
-        "{}/candlesticks?mint={}&interval={}",
-        API_BASE, mint, interval
-    ))
-    .await
-    .map_err(|e| anyhow!("Failed to fetch chart: {}", e))?;
-
-    let candlesticks = response
-        .json::<Vec<Candlestick>>()
-        .await
-        .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
+    let candlesticks = fetch_candlesticks(mint, interval).await?;
 
     let price_ticks = candlesticks
         .iter()
@@ -251,19 +242,7 @@ pub async fn fetch_price_action_analysis(
         ));
     }
 
-    let url = format!(
-        "{}/candlesticks?mint={}&interval={}",
-        API_BASE, mint, interval
-    );
-
-    let response = reqwest::get(&url)
-        .await
-        .map_err(|e| anyhow!("Failed to fetch candlesticks: {}", e))?;
-
-    let candlesticks = response
-        .json::<Vec<Candlestick>>()
-        .await
-        .map_err(|e| anyhow!("Failed to parse response: {}", e))?;
+    let candlesticks = fetch_candlesticks(mint, interval.clone()).await?;
 
     let candlesticks_clone = candlesticks.clone();
 
@@ -317,4 +296,23 @@ mod tests {
         .await;
         tracing::info!("{:?}", analysis);
     }
+}
+
+pub async fn fetch_candlesticks(
+    mint: String,
+    interval: String,
+) -> Result<Vec<Candlestick>> {
+    let url = format!(
+        "{}/candlesticks?mint={}&interval={}",
+        LISTEN_API_BASE, mint, interval
+    );
+
+    let response = reqwest::get(&url)
+        .await
+        .map_err(|e| anyhow!("Failed to fetch candlesticks: {}", e))?;
+
+    response
+        .json::<Vec<Candlestick>>()
+        .await
+        .map_err(|e| anyhow!("Failed to parse response: {}", e))
 }
