@@ -99,7 +99,7 @@ const ChartLine = ({
   const gradientPath = `${linePath} L358,105 L0,105 Z`;
 
   return (
-    <div className="w-full h-[100px]">
+    <div className="w-full h-[109px]">
       <svg
         width="100%"
         height="100%"
