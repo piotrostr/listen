@@ -25,7 +25,7 @@ const PercentageChange = ({ pct_change }: { pct_change: number }) => {
 
 const Container = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="flex flex-col items-start p-0 w-full h-[196px] bg-[#0d0d0e] border-[1px] border-[#1e1e21] rounded-[20px]">
+    <div className="flex flex-col items-start p-0 w-full h-[205px] bg-[#0d0d0e] border-[1px] border-[#1e1e21] rounded-[20px]">
       {children}
     </div>
   );
@@ -48,7 +48,6 @@ const ChartLine = ({
   ema_price_ticks: { price: number }[];
   pct_change: number;
 }) => {
-  // Skip if no data
   if (!ema_price_ticks?.length) return null;
 
   const isPositive = pct_change >= 0;
@@ -73,38 +72,40 @@ const ChartLine = ({
   const fillPath = `${linePath} L358,105 L0,105 Z`;
 
   return (
-    <svg
-      width="100%"
-      height="105"
-      viewBox="0 0 358 105"
-      fill="none"
-      xmlns="http://www.w3.org/2000/svg"
-      className="w-full"
-    >
-      <defs>
-        <linearGradient
-          id="chartGradient"
-          x1="179"
-          y1="5"
-          x2="179"
-          y2="105"
-          gradientUnits="userSpaceOnUse"
-        >
-          <stop stopColor={gradientStartColor} />
-          <stop offset="1" stopColor={gradientEndColor} stopOpacity="0" />
-        </linearGradient>
-      </defs>
-
-      <path d={fillPath} fill="url(#chartGradient)" fillOpacity="0.16" />
-
-      <path
-        d={linePath}
-        stroke={lineColor}
-        strokeWidth="4"
-        strokeLinecap="round"
+    <div className="w-full h-[100px]">
+      <svg
+        width="100%"
+        height="100%"
+        preserveAspectRatio="none"
+        viewBox="0 0 358 105"
         fill="none"
-      />
-    </svg>
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <defs>
+          <linearGradient
+            id="chartGradient"
+            x1="179"
+            y1="5"
+            x2="179"
+            y2="105"
+            gradientUnits="userSpaceOnUse"
+          >
+            <stop stopColor={gradientStartColor} />
+            <stop offset="1" stopColor={gradientEndColor} stopOpacity="0" />
+          </linearGradient>
+        </defs>
+
+        <path d={fillPath} fill="url(#chartGradient)" fillOpacity="0.16" />
+
+        <path
+          d={linePath}
+          stroke={lineColor}
+          strokeWidth="4"
+          strokeLinecap="round"
+          fill="none"
+        />
+      </svg>
+    </div>
   );
 };
 
