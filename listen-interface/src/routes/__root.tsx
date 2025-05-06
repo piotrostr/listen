@@ -1,4 +1,5 @@
 import { Outlet, createRootRoute } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { Layout } from "../components/Layout";
 import { ModalContainer } from "../components/ModalContainer";
 import { ChatProvider } from "../contexts/ChatContext";
@@ -6,6 +7,18 @@ import { ModalProvider } from "../contexts/ModalContext";
 import { PanelProvider } from "../contexts/PanelContext";
 
 function ErrorComponent() {
+  const [shouldShow, setShouldShow] = useState(false);
+
+  useEffect(() => {
+    // Delay showing the error to prevent flashing during hot reload
+    const timeout = setTimeout(() => setShouldShow(true), 500);
+    return () => clearTimeout(timeout);
+  }, []);
+
+  if (!shouldShow) {
+    return null;
+  }
+
   return (
     <div className="flex items-center justify-center h-screen bg-black text-white">
       <div className="text-center p-8 rounded-lg">

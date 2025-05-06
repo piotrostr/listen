@@ -62,7 +62,7 @@ export function SimpleHeader({
         >
           <BurgerIcon isOpen={isSidebarOpen} onClick={toggleMobileSidebar} />
           <div
-            className={`text-white ${isVerySmallScreen ? "text-base" : "text-lg"} flex items-center ${isVerySmallScreen ? "gap-2" : "gap-3"} font-dm-sans font-[500]`}
+            className={`text-white ${isVerySmallScreen ? "text-base" : "text-[20px]"} flex items-center ${isVerySmallScreen ? "gap-2" : "gap-3"} font-dm-sans font-[400] leading-4 text-center align-middle`}
             onClick={user ? () => setActivePanel("portfolio") : () => {}}
           >
             <WalletIcon />${portfolioValue.toFixed(2)}
