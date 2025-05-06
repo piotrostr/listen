@@ -1,3 +1,5 @@
+import { motion, PanInfo, useAnimation } from "framer-motion";
+import { useEffect } from "react";
 import { useTranslation } from "react-i18next";
 import { AddToHomeScreenGuide } from "./AddToHomeScreenGuide";
 import { AddToHomeScreenIcon } from "./AddToHomeScreenIcon";
@@ -8,15 +10,55 @@ import { Rectangle } from "./Rectangle";
 export const AddToHomeScreenPopup = ({
   handleClickOk,
   handleClickLater,
+  isVisible,
 }: {
   handleClickOk: () => void;
   handleClickLater: () => void;
+  isVisible: boolean;
 }) => {
   const { t } = useTranslation();
+  const controls = useAnimation();
+
+  useEffect(() => {
+    if (isVisible) {
+      controls.start({ y: 0, opacity: 1 });
+    } else {
+      controls.start({ y: "100%", opacity: 0 });
+    }
+  }, [isVisible, controls]);
+
+  const handleDragEnd = (
+    event: MouseEvent | TouchEvent | PointerEvent,
+    info: PanInfo
+  ) => {
+    const threshold = 100; // pixels to trigger dismiss
+    if (info.offset.y > threshold) {
+      handleClickLater();
+    } else {
+      // Snap back if not dragged enough
+      controls.start({ y: 0 });
+    }
+  };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-end backdrop-blur-sm bg-black/50">
-      <div className="relative w-full max-w-md bg-[#151518] border border-[#2D2D2D] rounded-t-[24px] shadow-xl pb-9">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 flex items-end backdrop-blur-sm bg-black/50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) handleClickLater();
+      }}
+    >
+      <motion.div
+        drag="y"
+        dragConstraints={{ top: 0 }}
+        dragElastic={0.2}
+        onDragEnd={handleDragEnd}
+        initial={{ y: "100%" }}
+        animate={controls}
+        className="relative w-full max-w-md mx-auto bg-[#151518] border border-[#2D2D2D] rounded-t-[24px] shadow-xl pb-9"
+      >
         <div className="flex justify-center pt-2">
           <Rectangle />
         </div>
@@ -43,7 +85,7 @@ export const AddToHomeScreenPopup = ({
             />
           </div>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 };

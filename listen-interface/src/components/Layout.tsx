@@ -96,8 +96,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, ready, authenticated } = usePrivy();
   const { clearPortfolio } = usePortfolioStore();
   const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
-  const [hasAddedToHomeScreen, updateHomeScreenStatus] =
-    useHasAddedToHomeScreen();
+  const { hasAddedToHomeScreen, isVisible, hide } = useHasAddedToHomeScreen();
   useSolanaLedgerPlugin();
   const handleLogout = () => {
     logout();
@@ -202,8 +201,9 @@ export function Layout({ children }: { children: React.ReactNode }) {
         <Background />
         {isMobile && !hasAddedToHomeScreen && (
           <AddToHomeScreenPopup
-            handleClickOk={() => updateHomeScreenStatus(true)}
-            handleClickLater={() => updateHomeScreenStatus(true)} // in both cases, just not show it again
+            handleClickOk={hide}
+            handleClickLater={hide}
+            isVisible={isVisible}
           />
         )}
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 
 const STORAGE_KEY = "hasAddedToHomeScreen";
 
@@ -6,11 +6,28 @@ export const useHasAddedToHomeScreen = () => {
   const [hasAddedToHomeScreen, setHasAddedToHomeScreen] = useState(() => {
     return localStorage.getItem(STORAGE_KEY) === "true";
   });
+  const [isVisible, setIsVisible] = useState(false);
 
-  const updateHomeScreenStatus = (value: boolean) => {
-    setHasAddedToHomeScreen(value);
-    localStorage.setItem(STORAGE_KEY, String(value));
-  };
+  // Delay the initial appearance
+  useEffect(() => {
+    if (!hasAddedToHomeScreen) {
+      const timer = setTimeout(() => setIsVisible(true), 1000);
+      return () => clearTimeout(timer);
+    }
+  }, [hasAddedToHomeScreen]);
 
-  return [hasAddedToHomeScreen, updateHomeScreenStatus] as const;
+  const hide = useCallback(() => {
+    setIsVisible(false);
+    // After animation completes, update the storage
+    setTimeout(() => {
+      setHasAddedToHomeScreen(true);
+      localStorage.setItem(STORAGE_KEY, "true");
+    }, 300);
+  }, []);
+
+  return {
+    hasAddedToHomeScreen,
+    isVisible,
+    hide,
+  } as const;
 };
