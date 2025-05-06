@@ -1,4 +1,6 @@
 import { useTranslation } from "react-i18next";
+import { GradientOutlineButtonMoreRounded } from "./GradientOutlineButtonMoreRounded";
+import { OutlineButton } from "./OutlineButton";
 
 export function PipelineMenu({
   status,
@@ -22,18 +24,15 @@ export function PipelineMenu({
       return (
         <Container>
           <>
-            <button
+            <OutlineButton
+              text={t("pipelines.reject")}
               onClick={() => setStatus("rejected")}
-              className="px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 rounded-lg transition-colors"
-            >
-              {t("pipelines.reject")}
-            </button>
-            <button
+              className="w-full rounded-[16px]"
+            />
+            <GradientOutlineButtonMoreRounded
               onClick={sendPipelineForExecution || executeFromEoa}
-              className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 text-green-300 rounded-lg transition-colors"
-            >
-              {t("pipelines.approve")}
-            </button>
+              text={t("pipelines.approve")}
+            />
           </>
         </Container>
       );
