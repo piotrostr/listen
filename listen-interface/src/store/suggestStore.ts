@@ -16,6 +16,7 @@ interface SuggestState {
   suggestionsPerChat: SuggestionsPerChat;
   isLoading: boolean;
   error: string | null;
+  lastMessageHadSpecialTags: boolean;
   fetchSuggestions: (
     chatId: string,
     messages: Message[],
@@ -24,15 +25,21 @@ interface SuggestState {
   ) => Promise<void>;
   clearSuggestions: (chatId?: string) => void;
   getSuggestions: (chatId: string) => string[];
+  setLastMessageHadSpecialTags: (value: boolean) => void;
 }
 
 export const useSuggestStore = create<SuggestState>((set, get) => ({
   suggestionsPerChat: {},
   isLoading: false,
   error: null,
+  lastMessageHadSpecialTags: false,
 
   getSuggestions: (chatId: string) => {
     return get().suggestionsPerChat[chatId]?.suggestions || [];
+  },
+
+  setLastMessageHadSpecialTags: (value: boolean) => {
+    set({ lastMessageHadSpecialTags: value });
   },
 
   fetchSuggestions: async (chatId, messages, getAccessToken, locale = "en") => {

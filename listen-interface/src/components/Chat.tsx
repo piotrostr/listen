@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../contexts/ChatContext";
 import { useModal } from "../contexts/ModalContext";
+import { useSettingsStore } from "../store/settingsStore";
 import { useSuggestStore } from "../store/suggestStore";
 import {
   ParToolCallSchema,
@@ -59,6 +60,8 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     isLoading: isSuggestionsLoading,
     fetchSuggestions,
   } = useSuggestStore();
+
+  const { displaySuggestions } = useSettingsStore();
 
   // Memoize the suggestions selector
   const suggestions = useMemo(() => {
@@ -253,6 +256,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     if (!urlParams.chatId) return;
 
     const shouldFetchSuggestions =
+      displaySuggestions &&
       messages.length > 0 &&
       !isLoading &&
       !isSuggestionsLoading &&

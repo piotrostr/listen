@@ -1,7 +1,8 @@
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { processMessageWithAllTags, tagHandlers } from "../process-tags";
 import { useSettingsStore } from "../store/settingsStore";
+import { useSuggestStore } from "../store/suggestStore";
 import {
   ParToolResultSchema,
   ToolCallSchema,
@@ -67,6 +68,7 @@ export function MessageRendererBase({
 }) {
   const { t } = useTranslation();
   const { debugMode } = useSettingsStore();
+  const { setLastMessageHadSpecialTags } = useSuggestStore();
 
   if (debugMode && msg.direction === "incoming") {
     return (
@@ -86,6 +88,28 @@ export function MessageRendererBase({
     if (lastUserMessageIndex === -1) return false;
     return messages[messages.length - 1 - lastUserMessageIndex].id === msg.id;
   }, [messages, msg.direction, msg.id]);
+
+  // Check if this is the last message
+  const isLastMessage = useMemo(() => {
+    return messages[messages.length - 1].id === msg.id;
+  }, [messages, msg.id]);
+
+  // Check for special tags if this is the last message
+  useEffect(() => {
+    if (!isLastMessage) return;
+
+    const hasSpecialTags =
+      Object.keys(tagHandlers).some((tagName) => {
+        const tagRegex = new RegExp(`<${tagName}>.*?<\\/${tagName}>`, "s");
+        const markdownTagRegex = new RegExp(
+          "```" + tagName + "\\s*[\\s\\S]*?\\s*```",
+          "s"
+        );
+        return tagRegex.test(msg.message) || markdownTagRegex.test(msg.message);
+      }) || msg.message.includes("```json");
+
+    setLastMessageHadSpecialTags(hasSpecialTags);
+  }, [isLastMessage, msg.message, setLastMessageHadSpecialTags]);
 
   if (!msg.message) return null;
 
