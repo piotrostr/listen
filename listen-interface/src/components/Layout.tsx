@@ -16,6 +16,7 @@ import { MdHistory } from "react-icons/md";
 import { useMobile } from "../contexts/MobileContext";
 import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
+import { useHasAddedToHomeScreen } from "../hooks/useHasAddedToHomeScreen";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { AddToHomeScreenPopup } from "./AddToHomeScreenPopup";
@@ -95,6 +96,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { user, logout, ready, authenticated } = usePrivy();
   const { clearPortfolio } = usePortfolioStore();
   const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
+  const [hasAddedToHomeScreen, updateHomeScreenStatus] =
+    useHasAddedToHomeScreen();
   useSolanaLedgerPlugin();
   const handleLogout = () => {
     logout();
@@ -197,7 +200,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
         style={{ height: "100dvh" }}
       >
         <Background />
-        <AddToHomeScreenPopup />
+        {isMobile && !hasAddedToHomeScreen && (
+          <AddToHomeScreenPopup
+            handleClickOk={() => updateHomeScreenStatus(true)}
+            handleClickLater={() => updateHomeScreenStatus(false)}
+          />
+        )}
 
         {/* Header */}
         <div className="z-20 bg-black/10 backdrop-blur-sm flex items-center">
