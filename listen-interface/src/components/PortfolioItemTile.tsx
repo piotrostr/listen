@@ -90,12 +90,12 @@ export function PortfolioItemTile({
             )}
           </div>
           <div>
-            <h3 className="font-bold flex items-center gap-2">
-              <div className="truncate max-w-[90px] sm:max-w-none">
+            <h3 className="font-[400] flex items-center gap-2">
+              <div className="truncate max-w-[100px] sm:max-w-none text-lg">
                 {asset.name}
               </div>
             </h3>
-            <p className="text-sm text-gray-400">
+            <p className="text-sm text-gray-400 font-dm-sans">
               {formatAmount(asset.amount)} {asset.symbol}
             </p>
           </div>
@@ -103,10 +103,10 @@ export function PortfolioItemTile({
         <div className="text-right">
           <div className="flex items-center gap-2">
             <div>
-              <p className="font-bold">
+              <p className="font-bold font-dm-sans">
                 ${(asset.price * asset.amount).toFixed(2)}
               </p>
-              <p className="text-sm text-gray-400">
+              <p className="text-sm text-gray-400 font-dm-sans font-[500]">
                 $
                 {asset.address !==
                 "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"

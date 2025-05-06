@@ -11,7 +11,7 @@ export const useHasAddedToHomeScreen = () => {
   // Delay the initial appearance
   useEffect(() => {
     if (!hasAddedToHomeScreen) {
-      const timer = setTimeout(() => setIsVisible(true), 1000);
+      const timer = setTimeout(() => setIsVisible(true), 1200);
       return () => clearTimeout(timer);
     }
   }, [hasAddedToHomeScreen]);
@@ -22,7 +22,7 @@ export const useHasAddedToHomeScreen = () => {
     setTimeout(() => {
       setHasAddedToHomeScreen(true);
       localStorage.setItem(STORAGE_KEY, "true");
-    }, 300);
+    }, 360);
   }, []);
 
   return {
