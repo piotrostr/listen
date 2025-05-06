@@ -22,16 +22,16 @@ export const GradientOutlineButtonMoreRounded = ({
         <svg
           className="w-full h-full"
           preserveAspectRatio="none"
-          viewBox={`0 0 ${isMobile ? "175" : "358"} 56`}
+          viewBox={`0 0 ${isMobile ? "175" : "358"} ${isVerySmallScreen ? "50" : "56"}`}
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
         >
           <path
-            d={`M16 0.5H${isMobile ? "159" : "342"}C${isMobile ? "167.56" : "350.56"} 0.5 ${isMobile ? "174.5" : "357.5"} 7.43959 ${isMobile ? "174.5" : "357.5"} 16V40C${isMobile ? "174.5" : "357.5"} 48.5604 ${isMobile ? "167.56" : "350.56"} 55.5 ${isMobile ? "159" : "342"} 55.5H16C7.43959 55.5 0.5 48.5604 0.5 40V16C0.5 7.43959 7.43959 0.5 16 0.5Z`}
+            d={`M16 0.5H${isMobile ? "159" : "342"}C${isMobile ? "167.56" : "350.56"} 0.5 ${isMobile ? "174.5" : "357.5"} 7.43959 ${isMobile ? "174.5" : "357.5"} 16V${isVerySmallScreen ? "34" : "40"}C${isMobile ? "174.5" : "357.5"} ${isVerySmallScreen ? "42.5604" : "48.5604"} ${isMobile ? "167.56" : "350.56"} ${isVerySmallScreen ? "49.5" : "55.5"} ${isMobile ? "159" : "342"} ${isVerySmallScreen ? "49.5" : "55.5"}H16C7.43959 ${isVerySmallScreen ? "49.5" : "55.5"} 0.5 ${isVerySmallScreen ? "42.5604" : "48.5604"} 0.5 ${isVerySmallScreen ? "34" : "40"}V16C0.5 7.43959 7.43959 0.5 16 0.5Z`}
             fill="#151518"
           />
           <path
-            d={`M16 0.5H${isMobile ? "159" : "342"}C${isMobile ? "167.56" : "350.56"} 0.5 ${isMobile ? "174.5" : "357.5"} 7.43959 ${isMobile ? "174.5" : "357.5"} 16V40C${isMobile ? "174.5" : "357.5"} 48.5604 ${isMobile ? "167.56" : "350.56"} 55.5 ${isMobile ? "159" : "342"} 55.5H16C7.43959 55.5 0.5 48.5604 0.5 40V16C0.5 7.43959 7.43959 0.5 16 0.5Z`}
+            d={`M16 0.5H${isMobile ? "159" : "342"}C${isMobile ? "167.56" : "350.56"} 0.5 ${isMobile ? "174.5" : "357.5"} 7.43959 ${isMobile ? "174.5" : "357.5"} 16V${isVerySmallScreen ? "34" : "40"}C${isMobile ? "174.5" : "357.5"} ${isVerySmallScreen ? "42.5604" : "48.5604"} ${isMobile ? "167.56" : "350.56"} ${isVerySmallScreen ? "49.5" : "55.5"} ${isMobile ? "159" : "342"} ${isVerySmallScreen ? "49.5" : "55.5"}H16C7.43959 ${isVerySmallScreen ? "49.5" : "55.5"} 0.5 ${isVerySmallScreen ? "42.5604" : "48.5604"} 0.5 ${isVerySmallScreen ? "34" : "40"}V16C0.5 7.43959 7.43959 0.5 16 0.5Z`}
             stroke="url(#paint0_linear_2033_12189)"
           />
           <defs>
