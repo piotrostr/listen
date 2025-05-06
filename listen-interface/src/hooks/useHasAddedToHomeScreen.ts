@@ -2,18 +2,9 @@ import { useState } from "react";
 
 const STORAGE_KEY = "hasAddedToHomeScreen";
 
-enum HomeScreenStatus {
-  Added = "added",
-  Later = "later",
-  NotAdded = "not_added",
-}
-
 export const useHasAddedToHomeScreen = () => {
   const [hasAddedToHomeScreen, setHasAddedToHomeScreen] = useState(() => {
-    return (
-      localStorage.getItem(STORAGE_KEY) === HomeScreenStatus.Added ||
-      localStorage.getItem(STORAGE_KEY) === HomeScreenStatus.Later
-    );
+    return localStorage.getItem(STORAGE_KEY) === "true";
   });
 
   const updateHomeScreenStatus = (value: boolean) => {

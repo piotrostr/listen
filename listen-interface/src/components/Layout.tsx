@@ -203,7 +203,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {isMobile && !hasAddedToHomeScreen && (
           <AddToHomeScreenPopup
             handleClickOk={() => updateHomeScreenStatus(true)}
-            handleClickLater={() => updateHomeScreenStatus(false)}
+            handleClickLater={() => updateHomeScreenStatus(true)} // in both cases, just not show it again
           />
         )}
 
