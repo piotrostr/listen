@@ -21,4 +21,4 @@ solana-sdk = { version = "2.1.9" }
 bincode = "1.3.3"
 
 [dev-dependencies]
-dotenv = "0.15.0"
+dotenvy = "0.15.7"

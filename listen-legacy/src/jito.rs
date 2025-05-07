@@ -180,7 +180,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_send_jito_tx() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let rpc_client = RpcClient::new(env("RPC_URL"));
 
         let keypair = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))

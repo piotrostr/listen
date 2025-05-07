@@ -22,7 +22,7 @@ pub async fn run() -> std::io::Result<()> {
     tracing::info!("Created channel with capacity 1000");
 
     if std::env::var("IS_SYSTEMD_SERVICE").is_err() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
     }
 
     // Create engine and get price update receiver

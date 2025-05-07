@@ -39,7 +39,7 @@ use log::{error, info, warn};
 
 #[tokio::main(flavor = "multi_thread")]
 async fn main() -> Result<(), Box<dyn Error>> {
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
 
     let _logger =
         Logger::try_with_str(std::option_env!("RUST_LOG").unwrap_or("info"))?

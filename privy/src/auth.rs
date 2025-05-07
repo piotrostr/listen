@@ -174,7 +174,7 @@ mod tests {
 
     #[test]
     fn test_validate_access_token() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let privy = Privy::new(crate::config::PrivyConfig::from_env().unwrap());
         let claims = privy.validate_access_token("eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCIsImtpZCI6IkNPbGxUWHB2R3Jua3hXUThpbDA4V0paVjhvU3Y5c3g1dG5jNHMxS3libW8ifQ.eyJzaWQiOiJjbTc5Ymg0MDkwMXN6MTNqMTdnamtsd254IiwiaXNzIjoicHJpdnkuaW8iLCJpYXQiOjE3Mzk4OTUzNTUsImF1ZCI6ImNtNmM3aWZxZDAwYXI1Mm0xcXhmZ2Jra24iLCJzdWIiOiJkaWQ6cHJpdnk6Y202Y3hreTNpMDBvbmRtdWF0a2VtbWZmbSIsImV4cCI6MTczOTg5ODk1NX0.6XEndM7e1ZBLrLm6mZxor2OJZVtqNYqVHwogYxN14Lv9hEpXcbGktmfBOby1VMa3NIbecFEsMbciW9uAHR384g");
         println!("claims: {:?}", claims);

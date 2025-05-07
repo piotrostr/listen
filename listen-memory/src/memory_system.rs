@@ -311,7 +311,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_semantic_search() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let memory_system = MemorySystem::from_env().await.unwrap();
         let query = "Bitcoin price on 10th of April 2025";
         let results = memory_system
@@ -324,7 +324,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_e2e() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         tracing_subscriber::fmt::init();
         let memory_system = MemorySystem::from_env().await.unwrap();
         let id = memory_system

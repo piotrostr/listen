@@ -261,7 +261,7 @@ mod tests {
         to_chain_caip2: &str,
     ) {
         tracing_subscriber::fmt::init();
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
 
         let swap_order = SwapOrder {
             amount: amount.to_string(),
@@ -465,7 +465,7 @@ mod tests {
     #[ignore]
     async fn test_bsc_to_bsc_simple() {
         // Load env vars and init tracing
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         tracing_subscriber::fmt::init();
 
         // let _lifi = lifi::LiFi::new(None);

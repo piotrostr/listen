@@ -172,7 +172,7 @@ mod tests {
             solana_transaction: None,
         };
 
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let result = Privy::new(PrivyConfig::from_env().unwrap())
             .execute_transaction(privy_tx)
             .await;
