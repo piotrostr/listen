@@ -17,6 +17,7 @@ import { useMobile } from "../contexts/MobileContext";
 import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { useHasAddedToHomeScreen } from "../hooks/useHasAddedToHomeScreen";
+import { usePWAStatus } from "../hooks/usePWAStatus";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { AddToHomeScreenPopup } from "./AddToHomeScreenPopup";
@@ -92,6 +93,7 @@ function getBottomItems(t: (key: string) => string) {
 
 export function Layout({ children }: { children: React.ReactNode }) {
   const { isMobile, isIOS } = useMobile();
+  const isPWA = usePWAStatus();
   const { activePanel, setActivePanel } = usePanel();
   const { user, logout, ready, authenticated } = usePrivy();
   const { clearPortfolio } = usePortfolioStore();
@@ -199,7 +201,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         style={{ height: "100dvh" }}
       >
         <Background />
-        {isMobile && !hasAddedToHomeScreen && (
+        {isMobile && !isPWA && !hasAddedToHomeScreen && (
           <AddToHomeScreenPopup
             handleClickOk={hide}
             handleClickLater={hide}

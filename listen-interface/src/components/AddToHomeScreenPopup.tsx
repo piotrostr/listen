@@ -28,7 +28,7 @@ export const AddToHomeScreenPopup = ({
   }, [isVisible, controls]);
 
   const handleDragEnd = (
-    event: MouseEvent | TouchEvent | PointerEvent,
+    _: MouseEvent | TouchEvent | PointerEvent,
     info: PanInfo
   ) => {
     const threshold = 100; // pixels to trigger dismiss
