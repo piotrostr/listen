@@ -8,6 +8,7 @@ import {
   personality,
   researchFlow,
 } from "./common";
+import { miniapps } from "./miniapps";
 import { pipelineKnowledge } from "./pipelines";
 
 export function systemPrompt(
@@ -48,6 +49,26 @@ export function systemPrompt(
   prompt += `*   Portfolio: ${JSON.stringify(joinedPortfolio)}\n`;
   prompt += `*   Is Guest: ${isGuest}\n`;
 
+  return prompt;
+}
+
+export function worldchainPrompt(): string {
+  let prompt =
+    "You are a World Mini App companion. You can help users find and use World Mini Apps.\n\n";
+  prompt +=
+    "Help the user find the best World Mini App to suit their needs.\n\n";
+  prompt += "Apps by category:\n";
+  for (const [category, apps] of Object.entries(miniapps)) {
+    prompt += `* ${category}\n`;
+    for (const app of apps) {
+      prompt += `  * name: ${app.name}\n`;
+      prompt += `  * description: ${app.world_app_description}\n`;
+      prompt += `  * logo_img_url: ${app.logo_img_url}\n`;
+      prompt += `  * url: worldapp://mini-app?app_id=${app.app_id}\n`;
+    }
+  }
+  prompt += `Be sure to provide the url for the apps in the format as you are given, the user will then be able to click on the url and open the app to be redirected straightaway.`;
+  prompt += `## Current Time\n${currentTimeUnderline()}\n\n`;
   return prompt;
 }
 

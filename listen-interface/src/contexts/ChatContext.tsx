@@ -17,6 +17,7 @@ import { chatCache } from "../lib/localStorage";
 import { compactPortfolio } from "../lib/util";
 import { renderAgentOutput } from "../parse-agent-output";
 import { systemPrompt } from "../prompts";
+import { worldchainPrompt } from "../prompts/system";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { useSuggestStore } from "../store/suggestStore";
@@ -69,6 +70,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   const solanaAssets = getSolanaAssets();
   const evmAssets = getEvmAssets();
+
+  const worldchainEnabled = import.meta.env.VITE_WORLD_MINIAPP_ENABLED;
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -247,13 +250,15 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             }
             return msg;
           });
-        const preamble = systemPrompt(
-          portfolio,
-          wallets?.solanaWallet?.toString() || null,
-          wallets?.evmWallet?.toString() || null,
-          defaultAmount.toString(),
-          user?.isGuest || false
-        );
+        const preamble = worldchainEnabled
+          ? worldchainPrompt()
+          : systemPrompt(
+              portfolio,
+              wallets?.solanaWallet?.toString() || null,
+              wallets?.evmWallet?.toString() || null,
+              defaultAmount.toString(),
+              user?.isGuest || false
+            );
 
         if (researchEnabled && modelType === "claude") {
           // no-go atm
