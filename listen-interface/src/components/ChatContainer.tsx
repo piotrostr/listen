@@ -1,5 +1,6 @@
 import { ReactNode } from "react";
 import { useTranslation } from "react-i18next";
+import { useSettingsStore } from "../store/settingsStore";
 import { useSuggestStore } from "../store/suggestStore";
 import { ChatInput } from "./ChatInput";
 import { NewChatTiles } from "./NewChatTiles";
@@ -35,7 +36,8 @@ export function ChatContainer({
   chatId,
 }: ChatContainerProps) {
   const { t } = useTranslation();
-  const { getSuggestions } = useSuggestStore();
+  const { getSuggestions, lastMessageHadSpecialTags } = useSuggestStore();
+  const { displaySuggestions } = useSettingsStore();
   const suggestions = chatId ? getSuggestions(chatId) : [];
 
   const RECOMMENDED_QUESTIONS_TILES = [
@@ -86,8 +88,10 @@ export function ChatContainer({
       <div className="mt-auto sticky bottom-0 left-0 right-0 bg-[#151518]/80 backdrop-blur-sm pb-2 pt-3">
         {!isGenerating &&
           handleQuestionClick &&
+          displaySuggestions &&
           suggestions.length > 0 &&
-          !displayTiles && (
+          !displayTiles &&
+          !lastMessageHadSpecialTags && (
             <div className="absolute bottom-full w-full">
               <SuggestionTiles
                 suggestions={suggestions}

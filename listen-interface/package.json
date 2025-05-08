@@ -12,6 +12,7 @@
     "deploy-staging": "bun run build && cd dist && bunx vercel -y --name listen-interface . --logs"
   },
   "dependencies": {
+    "@fontsource/dm-sans": "^5.2.5",
     "@fontsource/space-grotesk": "^5.2.5",
     "@privy-io/react-auth": "2.13.0",
     "@radix-ui/react-tooltip": "^1.1.8",

@@ -29,8 +29,15 @@ export function TokenTile({ token }: TokenTileProps) {
   const [isHovered, setIsHovered] = useState(false);
   const [researchCooldown, setResearchCooldown] = useState(false);
   const { toggleWatchlist, toggleHidden, isWatchlisted } = useTokenStore();
+  const [isRouterReady, setIsRouterReady] = useState(false);
 
   const { t } = useTranslation();
+
+  useEffect(() => {
+    // Ensure router is ready before allowing navigation
+    const timeout = setTimeout(() => setIsRouterReady(true), 100);
+    return () => clearTimeout(timeout);
+  }, []);
 
   useEffect(() => {
     if (copied) {
@@ -45,7 +52,7 @@ export function TokenTile({ token }: TokenTileProps) {
   const handleResearchClick = (e: React.MouseEvent) => {
     e.stopPropagation();
 
-    if (researchCooldown) {
+    if (researchCooldown || !isRouterReady) {
       e.preventDefault();
       return;
     }
@@ -134,16 +141,18 @@ export function TokenTile({ token }: TokenTileProps) {
                 <HiOutlineSparkles size={16} />
               </div>
             ) : (
-              <Link
-                to="/"
-                search={{ new: true, message: researchMessage }}
-                onClick={handleResearchClick}
-                className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 rounded-lg transition-all`}
-                title="Research this token"
-                disabled={isLoading}
-              >
-                <HiOutlineSparkles size={16} />
-              </Link>
+              isRouterReady && (
+                <Link
+                  to="/"
+                  search={{ new: true, message: researchMessage }}
+                  onClick={handleResearchClick}
+                  className={`p-2 ${isHovered ? "opacity-100" : "opacity-0"} hover:opacity-100 bg-indigo-500/20 hover:bg-indigo-500/40 text-indigo-300 border border-indigo-500/30 rounded-lg transition-all`}
+                  title="Research this token"
+                  disabled={isLoading}
+                >
+                  <HiOutlineSparkles size={16} />
+                </Link>
+              )
             )}
           </div>
         </div>

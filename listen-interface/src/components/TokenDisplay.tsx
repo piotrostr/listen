@@ -183,7 +183,7 @@ export function TokenDisplay({ token }: { token: Token }) {
             )}
           </div>
           <div className="font-dm-sans font-light text-[14px] leading-[16px] tracking-[0%] align-middle text-[#868686]">
-            {price_info?.latest_price.toFixed(8)}
+            ${price_info?.latest_price.toFixed(8)}
           </div>
         </div>
       </div>

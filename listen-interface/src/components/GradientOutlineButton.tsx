@@ -27,18 +27,28 @@ export const GradientOutlineButton = ({
           xmlns="http://www.w3.org/2000/svg"
         >
           <rect
-            width="100%"
-            height="100%"
-            rx="12"
-            fill="url(#paint0_linear_2033_12189)"
+            x="0.5"
+            y="0.5"
+            width="357"
+            height="55"
+            rx="11.5"
+            fill="#151518"
+          />
+          <rect
+            x="0.5"
+            y="0.5"
+            width="357"
+            height="55"
+            rx="11.5"
+            stroke="url(#paint0_linear_2033_12189)"
           />
           <defs>
             <linearGradient
               id="paint0_linear_2033_12189"
-              x1="0%"
-              y1="50%"
-              x2="100%"
-              y2="50%"
+              x1="0"
+              y1="63"
+              x2="22.8828"
+              y2="-84.2873"
               gradientUnits="userSpaceOnUse"
             >
               <stop stopColor="#FD98A2" />

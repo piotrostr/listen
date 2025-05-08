@@ -1,5 +1,6 @@
 import i18n from "i18next";
 import { initReactI18next } from "react-i18next";
+import { addToHomeScreen } from "./add-to-home-screen";
 import { bubbleMap } from "./translations/bubble-map";
 import { buySellModal } from "./translations/buy-sell-modal";
 import { chat } from "./translations/chat";
@@ -25,6 +26,7 @@ import { walletAddresses } from "./translations/wallet-addresses";
 const resources = {
   en: {
     translation: {
+      add_to_home_screen: addToHomeScreen.en,
       dexscreener_display: dexscreenerDisplay.en,
       topic_display: topicDisplay.en,
       bubble_map: bubbleMap.en,
@@ -50,6 +52,7 @@ const resources = {
   },
   zh: {
     translation: {
+      add_to_home_screen: addToHomeScreen.zh,
       topic_display: topicDisplay.zh,
       dexscreener_display: dexscreenerDisplay.zh,
       bubble_map: bubbleMap.zh,

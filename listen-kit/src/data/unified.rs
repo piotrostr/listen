@@ -117,8 +117,7 @@ pub fn candlesticks_and_timeframe_to_price_info(
 
     candlesticks.sort_by_key(|c| c.timestamp);
 
-    // Increase EMA period for smoother line
-    let period = 30.0;
+    let period = 5.0;
     let multiplier = 2.0 / (period + 1.0);
 
     let first = candlesticks.first().expect("Already checked for empty");
