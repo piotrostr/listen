@@ -111,6 +111,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { isSidebarOpen, setIsSidebarOpen, toggleSidebar, isDropdownOpen } =
     useSidebar();
 
+  const worldchainEnabled = import.meta.env.VITE_WORLD_MINIAPP_ENABLED;
+
   // Add useEffect to handle iOS viewport height
   useEffect(() => {
     // Function to set the correct viewport height
@@ -201,7 +203,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
         style={{ height: "100dvh" }}
       >
         <Background />
-        {isMobile && !isPWA && !hasAddedToHomeScreen && (
+        {isMobile && !isPWA && !hasAddedToHomeScreen && !worldchainEnabled && (
           <AddToHomeScreenPopup
             handleClickOk={hide}
             handleClickLater={hide}
