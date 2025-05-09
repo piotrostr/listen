@@ -62,7 +62,7 @@ mod tests {
     #[timed::timed]
     #[tokio::test]
     async fn test_generate_embedding() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let embedding = generate_embedding("Hello, world!").await.unwrap();
         assert_eq!(embedding.len(), 768);
     }
@@ -71,7 +71,7 @@ mod tests {
     #[timed::timed]
     #[tokio::test]
     async fn test_generate_embeddings_raw() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let embedding = generate_embeddings_raw("Hello, world!", "gemini-embedding-exp-03-07")
             .await
             .unwrap();
@@ -81,7 +81,7 @@ mod tests {
     #[timed::timed]
     #[tokio::test]
     async fn test_generate_embeddings_openai() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let embedding = generate_embeddings_openai("Hello, world!").await.unwrap();
         assert_eq!(embedding.len(), 1536);
     }

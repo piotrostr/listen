@@ -178,7 +178,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_blockhash_cache() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let blockhash = super::BLOCKHASH_CACHE.get_blockhash().await.unwrap();
         assert_ne!(blockhash, solana_sdk::hash::Hash::default());
     }
