@@ -274,6 +274,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             autonomous: agentMode,
             deep_research: researchEnabled,
             memory: memoryEnabled,
+            worldchain: worldchainEnabled === "true",
           },
           model_type: "gemini", // hard-code
           locale: i18n.language,

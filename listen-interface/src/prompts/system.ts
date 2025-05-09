@@ -9,6 +9,7 @@ import {
   researchFlow,
 } from "./common";
 import { miniapps } from "./miniapps";
+import { pipelineKnowledgeWorldchain } from "./pipeline-worldchain";
 import { pipelineKnowledge } from "./pipelines";
 
 export function systemPrompt(
@@ -54,7 +55,7 @@ export function systemPrompt(
 
 export function worldchainPrompt(): string {
   let prompt =
-    "You are a World Mini App companion. You can help users find and use World Mini Apps.\n\n";
+    "You are a World Mini App companion. You can help users find and use World Mini Apps, discover and research tokens or learn about the Worldchain ecosystem.\n\n";
   prompt +=
     "Help the user find the best World Mini App to suit their needs.\n\n";
   prompt += "Apps by category:\n";
@@ -63,6 +64,7 @@ export function worldchainPrompt(): string {
     for (const app of apps) {
       prompt += `  * Name: ${app.name}\n`;
       prompt += `  * Description: ${app.world_app_description}\n`;
+      prompt += `  * Overview: ${app.overview}\n`;
       prompt += `  * App ID: ${app.app_id}\n`;
     }
   }
@@ -73,6 +75,7 @@ export function worldchainPrompt(): string {
   prompt += `In order to provide the redirect, just return <redirect>{APP_ID}</redirect> in your response. For example to redirect to the "Earn $WLD" app: <redirect>app_b0d01dd8f2bdfbff06c9e123de487eb8</redirect>`;
   prompt += `NEVER return the url in your response, ALWAYS use the redirect tag. It can be interleaved with the rest of your response and will be rendered dynamically as a clickable tile, with logo and name.`;
   prompt += `## Current Time\n${currentTimeUnderline()}\n\n`;
+  prompt += `## Orders\n${pipelineKnowledgeWorldchain()}\n\n`;
   return prompt;
 }
 

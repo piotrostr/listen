@@ -11,6 +11,7 @@ const chainIdToGeckoTerminalId = {
   "": "solana",
   "480": "world-chain",
   worldchain: "world-chain",
+  world: "world-chain",
 } as const;
 
 type NetworkId =

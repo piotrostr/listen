@@ -83,6 +83,7 @@ export const caip2Map = {
   bnb: "eip155:56",
   arbitrum: "eip155:42161",
   base: "eip155:8453",
+  world: "eip155:480",
   // berachain: "eip155:80094",
 };
 
