@@ -251,7 +251,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             return msg;
           });
         const preamble = worldchainEnabled
-          ? worldchainPrompt()
+          ? worldchainPrompt(portfolio, wallets?.evmWallet?.toString() || null)
           : systemPrompt(
               portfolio,
               wallets?.solanaWallet?.toString() || null,
