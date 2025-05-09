@@ -253,7 +253,11 @@ export const chainIdNumericToChainId = (chainId: number): string => {
     return "solana";
   }
   const key = `eip155:${chainId}`;
-  return caip2ToChainIdMap[key as keyof typeof caip2ToChainIdMap];
+  const res = caip2ToChainIdMap[key as keyof typeof caip2ToChainIdMap];
+  if (res === "world") {
+    return "worldchain";
+  }
+  return res;
 };
 
 // Validate Solana transaction signatures
