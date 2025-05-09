@@ -9,7 +9,10 @@ use crate::solana::tools::{
 
 use crate::agents::listen::create_deep_research_agent_openrouter;
 use crate::agents::research::ViewImage;
-use crate::common::{openrouter_agent_builder, OpenRouterAgent};
+use crate::common::{
+    gemini_agent_builder, openrouter_agent_builder, GeminiAgent,
+    OpenRouterAgent,
+};
 use crate::cross_chain::tools::{GetQuote, Swap};
 use crate::data::{
     AnalyzePageContent, FetchPriceActionAnalysis, FetchTopTokens, FetchXPost,
@@ -38,7 +41,7 @@ pub struct Features {
 pub fn model_to_versioned_model(model_type: String) -> String {
     match model_type.as_str() {
         // FIXME implement proper rate lims on claude
-        "claude" => "deepseek/deepseek-chat-v3-0324".to_string(), // "anthropic/claude-3.7-sonnet".to_string(),
+        "claude" => "anthropic/claude-3.5-sonnet".to_string(), // "anthropic/claude-3.7-sonnet".to_string(),
         "gemini" => "google/gemini-2.0-flash-001".to_string(),
         "deepseek" => "deepseek/deepseek-chat-v3-0324".to_string(),
         "openai" => "openai/gpt-4o-mini".to_string(),
@@ -100,6 +103,7 @@ pub fn equip_with_worldchain_tools<M: StreamingCompletionModel>(
         .tool(Think)
         .tool(FetchTopTokensByChainId)
         .tool(GetQuote)
+        .tool(GetToken)
         .tool(GetEthBalance)
         .tool(GetErc20Balance)
         .tool(ResearchXProfile)
@@ -146,12 +150,9 @@ pub fn create_listen_agent(
 
 pub fn create_worldchain_agent(preamble: Option<String>) -> OpenRouterAgent {
     let preamble = preamble.unwrap_or("".to_string());
-
-    let model = None;
-    // let model = Some("google/gemini-2.5-flash-preview".to_string());
+    let model = Some("google/gemini-2.5-flash-preview".to_string());
 
     let agent = equip_with_worldchain_tools(openrouter_agent_builder(model))
         .preamble(&preamble);
-
     agent.build()
 }
