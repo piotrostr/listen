@@ -1,6 +1,6 @@
 use crate::data::evm_fallback_tools::{
-    FetchPriceActionAnalysisEvm, FetchTokenMetadataEvm,
-    FetchTopTokensByCategory, FetchTopTokensByChainId,
+    FetchPriceActionAnalysisEvm, FetchTopTokensByCategory,
+    FetchTopTokensByChainId,
 };
 use crate::evm::tools::{GetErc20Balance, GetEthBalance};
 use crate::solana::tools::{
@@ -12,9 +12,8 @@ use crate::agents::research::ViewImage;
 use crate::common::{openrouter_agent_builder, OpenRouterAgent};
 use crate::cross_chain::tools::{GetQuote, Swap};
 use crate::data::{
-    AnalyzePageContent, FetchPriceActionAnalysis, FetchTokenMetadata,
-    FetchTopTokens, FetchXPost, GetToken, ResearchXProfile, SearchTweets,
-    SearchWeb,
+    AnalyzePageContent, FetchPriceActionAnalysis, FetchTopTokens, FetchXPost,
+    GetToken, ResearchXProfile, SearchTweets, SearchWeb,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::faster100x::AnalyzeHolderDistribution;
@@ -26,12 +25,14 @@ use rig::agent::AgentBuilder;
 use rig::streaming::StreamingCompletionModel;
 use serde::{Deserialize, Serialize};
 
-#[derive(Default, Serialize, Deserialize, Clone)]
+#[derive(Serialize, Deserialize, Clone, Default)]
 pub struct Features {
     pub autonomous: bool,
     pub deep_research: bool,
     #[serde(default)]
     pub memory: bool,
+    #[serde(default)]
+    pub worldchain: bool,
 }
 
 pub fn model_to_versioned_model(model_type: String) -> String {
@@ -92,6 +93,23 @@ pub fn equip_with_evm_tools<M: StreamingCompletionModel>(
         .tool(FetchTopTokensByCategory)
 }
 
+pub fn equip_with_worldchain_tools<M: StreamingCompletionModel>(
+    agent_builder: AgentBuilder<M>,
+) -> AgentBuilder<M> {
+    agent_builder
+        .tool(Think)
+        .tool(FetchTopTokensByChainId)
+        .tool(GetQuote)
+        .tool(GetEthBalance)
+        .tool(GetErc20Balance)
+        .tool(ResearchXProfile)
+        .tool(FetchXPost)
+        .tool(SearchTweets)
+        .tool(SearchWeb)
+        .tool(ViewImage)
+        .tool(AnalyzePageContent)
+}
+
 pub fn equip_with_autonomous_tools<M: StreamingCompletionModel>(
     agent_builder: AgentBuilder<M>,
 ) -> AgentBuilder<M> {
@@ -104,6 +122,10 @@ pub fn create_listen_agent(
     features: Features,
     locale: String,
 ) -> OpenRouterAgent {
+    if features.worldchain {
+        return create_worldchain_agent(preamble);
+    }
+
     let preamble = preamble.unwrap_or("".to_string());
 
     if features.deep_research {
@@ -118,6 +140,15 @@ pub fn create_listen_agent(
     if features.autonomous {
         agent = equip_with_autonomous_tools(agent);
     }
+
+    agent.build()
+}
+
+pub fn create_worldchain_agent(preamble: Option<String>) -> OpenRouterAgent {
+    let preamble = preamble.unwrap_or("".to_string());
+
+    let agent = equip_with_worldchain_tools(openrouter_agent_builder(None))
+        .preamble(&preamble);
 
     agent.build()
 }
