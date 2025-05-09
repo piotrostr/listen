@@ -3,6 +3,8 @@ import { EvmWalletCreation } from "./components/EvmWalletCreation";
 import { FundWallet } from "./components/FundWallet";
 import { PipelineDisplay } from "./components/Pipeline";
 import { SolanaWalletCreation } from "./components/SolanaWalletCreation";
+import { WorldAppRedirect } from "./components/WorldAppRedirect";
+import { appIdToApp } from "./prompts/miniapps";
 import { Message } from "./types/message";
 
 // Function to convert markdown code blocks to XML tags
@@ -142,6 +144,26 @@ type TagHandler = {
 
 // Registry of tag handlers
 export const tagHandlers: Record<string, TagHandler> = {
+  redirect: {
+    processTag: (content: string, index: number, msg: Message) => {
+      const appId = content.replace(/<redirect>(.*?)<\/redirect>/, "$1");
+      const app = appIdToApp(appId);
+      if (!app) {
+        return (
+          <ChatMessage
+            key={`redirect-error-${index}`}
+            message={`<redirect>${appId}</redirect>`}
+            direction={msg.direction}
+          />
+        );
+      }
+      return (
+        <div className="my-3">
+          <WorldAppRedirect app={app} />
+        </div>
+      );
+    },
+  },
   pipeline: {
     processTag: (content: string, index: number, msg: Message) => {
       try {

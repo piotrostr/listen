@@ -1,4 +1,12 @@
-export const miniapps = {
+export interface WorldMiniApp {
+  app_id: string;
+  world_app_description: string;
+  name: string;
+  category_ranking: number;
+  logo_img_url: string;
+}
+
+export const miniapps: Record<string, WorldMiniApp[]> = {
   Tokens: [
     {
       app_id: "grants",
@@ -1257,4 +1265,10 @@ export const miniapps = {
         "https://world-id-assets.com/app_e8288209fbe1fc4a1b80619e925a79bd/2d565374-e944-49ac-b283-8193eb908ed8.png",
     },
   ],
-} as const;
+};
+
+export const appIdToApp = (appId: string) => {
+  return Object.values(miniapps)
+    .flat()
+    .find((app) => app.app_id === appId);
+};

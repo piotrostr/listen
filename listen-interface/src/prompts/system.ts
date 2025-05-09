@@ -61,13 +61,17 @@ export function worldchainPrompt(): string {
   for (const [category, apps] of Object.entries(miniapps)) {
     prompt += `* ${category}\n`;
     for (const app of apps) {
-      prompt += `  * name: ${app.name}\n`;
-      prompt += `  * description: ${app.world_app_description}\n`;
-      prompt += `  * logo_img_url: ${app.logo_img_url}\n`;
-      prompt += `  * url: worldapp://mini-app?app_id=${app.app_id}\n`;
+      prompt += `  * Name: ${app.name}\n`;
+      prompt += `  * Description: ${app.world_app_description}\n`;
+      prompt += `  * App ID: ${app.app_id}\n`;
     }
   }
-  prompt += `Be sure to provide the url for the apps in the format as you are given, the user will then be able to click on the url and open the app to be redirected straightaway.`;
+  prompt += `Be sure to provide the url for the apps in the format as you are
+  given, the user will then be able to click on the url and open the app to be
+  redirected straightaway. The users are chatting with you from inside of a
+  World Mini App too! Your app is called "Listen".`;
+  prompt += `In order to provide the redirect, just return <redirect>{APP_ID}</redirect> in your response. For example to redirect to the "Earn $WLD" app: <redirect>app_b0d01dd8f2bdfbff06c9e123de487eb8</redirect>`;
+  prompt += `NEVER return the url in your response, ALWAYS use the redirect tag. It can be interleaved with the rest of your response and will be rendered dynamically as a clickable tile, with logo and name.`;
   prompt += `## Current Time\n${currentTimeUnderline()}\n\n`;
   return prompt;
 }
