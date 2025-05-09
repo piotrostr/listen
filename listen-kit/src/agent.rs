@@ -147,7 +147,10 @@ pub fn create_listen_agent(
 pub fn create_worldchain_agent(preamble: Option<String>) -> OpenRouterAgent {
     let preamble = preamble.unwrap_or("".to_string());
 
-    let agent = equip_with_worldchain_tools(openrouter_agent_builder(None))
+    let model = None;
+    // let model = Some("google/gemini-2.5-flash-preview".to_string());
+
+    let agent = equip_with_worldchain_tools(openrouter_agent_builder(model))
         .preamble(&preamble);
 
     agent.build()
