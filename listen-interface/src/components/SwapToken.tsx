@@ -29,6 +29,7 @@ export const SwapToken = ({
       />
     );
   }
+  const _chainId = chainId === "world" ? "worldchain" : chainId;
   return (
     <div className="flex items-center gap-3">
       <div className="flex flex-col">
@@ -43,9 +44,9 @@ export const SwapToken = ({
       <div>
         <div className="flex items-center gap-2">
           <div className="font-bold text-base sm:text-lg">{name}</div>
-          {chainId && (
+          {chainId && _chainId && (
             <img
-              src={`https://dd.dexscreener.com/ds-data/chains/${chainId.toLowerCase()}.png`}
+              src={`https://dd.dexscreener.com/ds-data/chains/${_chainId.toLowerCase()}.png`}
               alt={chainId}
               className="w-3 h-3 rounded-full"
             />

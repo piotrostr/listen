@@ -36,6 +36,10 @@ pub fn chain_id_to_rpc_url(chain_id: u64) -> String {
             "https://arb-mainnet.g.alchemy.com/v2/{}",
             alchemy_api_key
         ),
+        480 => format!(
+            "https://worldchain-mainnet.g.alchemy.com/v2/{}",
+            alchemy_api_key
+        ),
         _ => panic!("Unsupported chain ID: {}", chain_id),
     }
 }

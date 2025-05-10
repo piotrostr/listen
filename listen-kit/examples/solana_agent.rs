@@ -21,11 +21,7 @@ async fn main() -> anyhow::Result<()> {
     let signer = LocalSolanaSigner::new(env("SOLANA_PRIVATE_KEY"));
 
     SignerContext::with_signer(Arc::new(signer), async {
-        let features = Features {
-            autonomous: false,
-            deep_research: false,
-            memory: false,
-        };
+        let features = Features::default();
         let model = match std::env::var("MODEL").unwrap_or_default().as_str()
         {
             "gemini" => Model::Gemini(Arc::new(create_solana_agent_gemini(

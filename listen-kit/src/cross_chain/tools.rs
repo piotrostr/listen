@@ -43,6 +43,7 @@ Supported from_chain values:
 - arbitrum: \"42161\"
 - base: \"8453\"
 - bsc: \"56\"
+- worldchain: \"480\"
 
 Supported to_chain values:
 - solana: \"1151111081099710\"
@@ -50,6 +51,7 @@ Supported to_chain values:
 - arbitrum: \"42161\"
 - base: \"8453\"
 - bsc: \"56\"
+- worldchain: \"480\"
 
 Special Case: from_token_address/to_token_address for ethereum (any chain) is just \"ETH\"
 Solana Address: \"So11111111111111111111111111111111111111112\"
@@ -157,6 +159,7 @@ Supported from_chain values:
 - mainnet: \"1\"
 - base: \"8453\"
 - bsc: \"56\"
+- worldchain: \"480\"
 
 Supported to_chain values:
 - solana: \"1151111081099710\"
@@ -164,6 +167,7 @@ Supported to_chain values:
 - mainnet: \"1\"
 - base: \"8453\"
 - bsc: \"56\"
+- worldchain: \"480\"
 
 Example:
 {{

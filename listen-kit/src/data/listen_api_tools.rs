@@ -124,6 +124,8 @@ pub async fn fetch_token_price(mint: String) -> Result<f64> {
 #[tool(description = "
 Fetch top Solana tokens based on volume from the Listen API.
 
+This tool is great for finding the most viral tokens on Solana.
+
 Parameters:
 - limit (optional, string): number of tokens to return (default: 4)
 - min_market_cap (optional, string): minimum market cap filter (default: 1000000)
