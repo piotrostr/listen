@@ -112,6 +112,7 @@ pub fn equip_with_worldchain_tools<M: StreamingCompletionModel>(
         .tool(SearchWeb)
         .tool(ViewImage)
         .tool(AnalyzePageContent)
+        .tool(SearchOnDexScreener)
 }
 
 pub fn equip_with_autonomous_tools<M: StreamingCompletionModel>(
@@ -154,5 +155,6 @@ pub fn create_worldchain_agent(preamble: Option<String>) -> OpenRouterAgent {
 
     let agent = equip_with_worldchain_tools(openrouter_agent_builder(model))
         .preamble(&preamble);
+
     agent.build()
 }
