@@ -12,6 +12,8 @@ export const useIsAuthenticated = () => {
   const isDelegatedEvm = userHasDelegatedEvmWallet(user);
   const { worldUserAddress } = useWorldAuth();
 
+  console.log("worldUserAddress", worldUserAddress);
+
   if (worldchainEnabled) {
     return {
       isAuthenticated: typeof worldUserAddress === "string",
