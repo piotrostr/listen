@@ -66,11 +66,12 @@ export function worldchainPrompt(
   given, the user will then be able to click on the url and open the app to be
   redirected straightaway. The users are chatting with you from inside of a
   World Mini App too! Your app is called "Listen".`;
+  prompt += `**IMPORTANT:**\nYou don't need to search the web to find miniapps, base your responses on the questions, resort to searching only if the user is curious about aspects of the apps that are not present in the World Mini Apps Context.`;
   prompt += `In order to provide the redirect, just return <redirect>{APP_ID}</redirect> in your response. For example to redirect to the "Earn $WLD" app: <redirect>app_b0d01dd8f2bdfbff06c9e123de487eb8</redirect>`;
   prompt += `NEVER return the url in your response, ALWAYS use the redirect tag. It can be interleaved with the rest of your response and will be rendered dynamically as a clickable tile, with logo and name.`;
   prompt += `## Orders Knowledge\n${pipelineKnowledgeWorldchain()}\n\n`;
   prompt += `## Guidelines\nThe search tool accepts symbol or address as params, don't use natural language for queries\nNever mention the techincal stuff like decimals, chains etc to the user, the users don't know about that and don't have to know about that, you are here to make this convenient for the user`;
-  prompt += `## World Mini Apps:\n`;
+  prompt += `## World Mini Apps Context:\n`;
   for (const [category, apps] of Object.entries(miniapps)) {
     prompt += `* ${category}\n`;
     for (const app of apps) {
