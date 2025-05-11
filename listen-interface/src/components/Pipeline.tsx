@@ -2,6 +2,7 @@ import { useState } from "react";
 import { worldchainEnabled } from "../config/env";
 import { useEoaExecution } from "../hooks/useEoaExecution";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
+import { useWorldAuth } from "../hooks/useWorldLogin";
 import { useWalletStore } from "../store/walletStore";
 import { Pipeline, PipelineActionType } from "../types/pipeline";
 import { NotificationPipelineStep } from "./NotificationPipelineStep";
@@ -31,8 +32,9 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
     }
   };
 
-  const { activeWallet, eoaEvmAddress, eoaSolanaAddress, worldchainAddress } =
-    useWalletStore();
+  const { activeWallet, eoaEvmAddress, eoaSolanaAddress } = useWalletStore();
+
+  const { worldUserAddress: worldchainAddress } = useWorldAuth();
 
   const executeFromEoa = async () => {
     if (!eoaEvmAddress && !eoaSolanaAddress && !worldchainAddress) {
