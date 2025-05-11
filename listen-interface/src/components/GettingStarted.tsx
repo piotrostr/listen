@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { worldchainEnabled } from "../config/env";
 import { useMobile } from "../contexts/MobileContext";
+import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 import { useWorldAuth } from "../hooks/useWorldLogin";
 import { FullPageLoading } from "./FullPageLoading";
 import { GradientOutlineButton } from "./GradientOutlineButton";
@@ -17,6 +18,7 @@ export function GettingStarted() {
   const { createGuestAccount } = useGuestAccounts();
   const [isCreatingGuestAccount, setIsCreatingGuestAccount] = useState(false);
   const { worldLogin, isLoading: isWorldLoading } = useWorldAuth();
+  const { isLoading } = useIsAuthenticated();
   const navigate = useNavigate();
 
   const handleContinue = async (prompt?: string) => {
@@ -57,7 +59,7 @@ export function GettingStarted() {
     }
   };
 
-  if (isCreatingGuestAccount) {
+  if (isCreatingGuestAccount || isLoading) {
     return <FullPageLoading />;
   }
 

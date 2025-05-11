@@ -14,7 +14,7 @@ export const useIsAuthenticated = () => {
 
   if (worldchainEnabled) {
     return {
-      isAuthenticated: worldUserAddress !== null,
+      isAuthenticated: typeof worldUserAddress === "string",
       hasSolanaWallet: false,
       hasEvmWallet: true,
       ready,

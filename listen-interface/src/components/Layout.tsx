@@ -101,6 +101,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
   const { hasAddedToHomeScreen, isVisible, hide } = useHasAddedToHomeScreen();
   useSolanaLedgerPlugin();
+
   const handleLogout = () => {
     logout();
     clearPortfolio();
