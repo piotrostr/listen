@@ -81,7 +81,10 @@ export const useToken = (address: string, chainId?: string) => {
         if (!token) {
           return null;
         }
-        if (worldchainEnabled) {
+        if (
+          worldchainEnabled &&
+          (chainId.includes("480") || chainId.includes("world"))
+        ) {
           token.logoURI = `https://dd.dexscreener.com/ds-data/tokens/worldchain/${token.address.toLowerCase()}.png`;
         }
         return token;
