@@ -1,8 +1,10 @@
 import { useSolanaWallets, useWallets } from "@privy-io/react-auth";
 import { Connection, VersionedTransaction } from "@solana/web3.js";
+import { MiniKit, type SendTransactionInput } from "@worldcoin/minikit-js";
 import { type EIP1193Provider } from "viem";
 import { ensureApprovals } from "../lib/approvals";
 import { swapStepToTransaction } from "../lib/eoa-tx";
+import { LIFI_DIAMOND_ABI } from "../lib/lifi-abi";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { SwapOrderAction } from "../types/pipeline";
 import { waitForTransaction } from "../utils/transactionMonitor";
@@ -82,8 +84,69 @@ export function useEoaExecution() {
     return null;
   };
 
+  const handleEoaWorld = async (
+    action: SwapOrderAction,
+    worldAddress: string
+  ): Promise<string | null> => {
+    try {
+      if (!MiniKit.isInstalled()) {
+        throw new Error("World App is not installed");
+      }
+
+      const tx = await swapStepToTransaction(action, worldAddress);
+      if (!tx || !tx.to) {
+        throw new Error("Failed to create World transaction request");
+      }
+
+      const permit2 = {
+        permitted: {
+          token: action.input_token,
+          amount: action.amount,
+        },
+        spender: tx.to,
+        nonce: Date.now().toString(),
+        deadline: Math.floor((Date.now() + 30 * 60 * 1000) / 1000).toString(), // 30 minutes
+      };
+
+      const txInput: SendTransactionInput = {
+        transaction: [
+          {
+            address: tx.to,
+            abi: LIFI_DIAMOND_ABI,
+            functionName: "fallback",
+            args: [tx.data || "0x"],
+            value: tx.value || "0x0",
+          },
+        ],
+        permit2: permit2 ? [permit2] : undefined,
+      };
+
+      const { finalPayload } =
+        await MiniKit.commandsAsync.sendTransaction(txInput);
+
+      if (finalPayload.status === "error") {
+        throw new Error(
+          finalPayload.details
+            ? JSON.stringify(finalPayload.details)
+            : `Transaction failed: ${JSON.stringify(finalPayload)}`
+        );
+      }
+
+      // Wait for transaction confirmation
+      await new Promise((resolve) => setTimeout(resolve, 2000));
+      refreshPortfolio(true);
+
+      return finalPayload.transaction_id;
+    } catch (error) {
+      console.error(error);
+    }
+
+    return null;
+  };
+
   return {
     handleEoaSolana,
     handleEoaEvm,
+    handleEoaWorld,
   };
 }
