@@ -3,6 +3,8 @@ import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMobile } from "../contexts/MobileContext";
+import { useWorld } from "../contexts/WorldContext";
+import { useWorldAuth } from "../hooks/useWorldLogin";
 import { FullPageLoading } from "./FullPageLoading";
 import { GradientOutlineButton } from "./GradientOutlineButton";
 import { OutlineButton } from "./OutlineButton";
@@ -14,6 +16,8 @@ export function GettingStarted() {
   const { ready, login } = usePrivy();
   const { createGuestAccount } = useGuestAccounts();
   const [isCreatingGuestAccount, setIsCreatingGuestAccount] = useState(false);
+  const { isWorldApp } = useWorld();
+  const { worldLogin, isLoading: isWorldLoading } = useWorldAuth();
   const navigate = useNavigate();
 
   const handleContinue = async (prompt?: string) => {
@@ -37,6 +41,20 @@ export function GettingStarted() {
     } catch (error) {
       console.error("Error creating guest account:", error);
       setIsCreatingGuestAccount(false);
+    }
+  };
+
+  const handleLogin = async () => {
+    if (isWorldApp) {
+      await worldLogin();
+      setIsCreatingGuestAccount(true);
+      await createGuestAccount();
+      setIsCreatingGuestAccount(false);
+      await navigate({
+        to: "/",
+      });
+    } else {
+      await login();
     }
   };
 
@@ -92,8 +110,8 @@ export function GettingStarted() {
         />
         <OutlineButton
           text={t("getting_started.login")}
-          onClick={() => login()}
-          disabled={!ready || isCreatingGuestAccount}
+          onClick={handleLogin}
+          disabled={isCreatingGuestAccount || isWorldLoading}
         />
       </div>
       <div
