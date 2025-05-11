@@ -145,7 +145,8 @@ export function useEoaExecution() {
             args: [
               calldata,
               [
-                [action.input_token, action.amount],
+                action.input_token,
+                action.amount,
                 permit2.nonce,
                 permit2.deadline,
               ],
