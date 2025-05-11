@@ -22,3 +22,58 @@ export const LIFI_DIAMOND_ABI = [
   { stateMutability: "payable", type: "fallback" },
   { stateMutability: "payable", type: "receive" },
 ];
+
+export const PERMIT2_PROXY_ABI = [
+  {
+    inputs: [
+      {
+        internalType: "bytes",
+        name: "_diamondCalldata",
+        type: "bytes",
+      },
+      {
+        components: [
+          {
+            components: [
+              {
+                internalType: "address",
+                name: "token",
+                type: "address",
+              },
+              {
+                internalType: "uint256",
+                name: "amount",
+                type: "uint256",
+              },
+            ],
+            internalType: "struct ISignatureTransfer.TokenPermissions",
+            name: "permitted",
+            type: "tuple",
+          },
+          {
+            internalType: "uint256",
+            name: "nonce",
+            type: "uint256",
+          },
+          {
+            internalType: "uint256",
+            name: "deadline",
+            type: "uint256",
+          },
+        ],
+        internalType: "struct ISignatureTransfer.PermitTransferFrom",
+        name: "_permit",
+        type: "tuple",
+      },
+      {
+        internalType: "bytes",
+        name: "_signature",
+        type: "bytes",
+      },
+    ],
+    name: "callDiamondWithPermit2",
+    outputs: [],
+    stateMutability: "payable",
+    type: "function",
+  },
+];

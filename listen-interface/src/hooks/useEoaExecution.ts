@@ -4,6 +4,7 @@ import { MiniKit, type SendTransactionInput } from "@worldcoin/minikit-js";
 import { type EIP1193Provider } from "viem";
 import { ensureApprovals } from "../lib/approvals";
 import { swapStepToTransaction } from "../lib/eoa-tx";
+import { PERMIT2_PROXY_ABI } from "../lib/lifi-abi";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { SwapOrderAction } from "../types/pipeline";
 import { waitForTransaction } from "../utils/transactionMonitor";
@@ -119,34 +120,12 @@ export function useEoaExecution() {
         transaction: [
           {
             address: PERMIT2_PROXY_ADDRESS,
-            abi: [
-              {
-                inputs: [
-                  { name: "calldata", type: "bytes" },
-                  {
-                    name: "permitData",
-                    type: "tuple",
-                    components: [
-                      { name: "token", type: "address" },
-                      { name: "amount", type: "uint256" },
-                      { name: "nonce", type: "uint256" },
-                      { name: "deadline", type: "uint256" },
-                    ],
-                  },
-                  { name: "signature", type: "bytes" },
-                ],
-                name: "callDiamondWithPermit2",
-                outputs: [],
-                stateMutability: "nonpayable",
-                type: "function",
-              },
-            ],
+            abi: PERMIT2_PROXY_ABI,
             functionName: "callDiamondWithPermit2",
             args: [
               calldata,
               [
-                action.input_token,
-                action.amount,
+                [action.input_token, action.amount],
                 permit2.nonce,
                 permit2.deadline,
               ],
