@@ -7,7 +7,7 @@ export function VersionDisplay() {
   const { version } = useVersionStore();
   return (
     <span className="text-xs text-gray-400">
-      {t("layout.version")}: {version}
+      {t("layout.version")}: {version} (WLD)
     </span>
   );
 }
