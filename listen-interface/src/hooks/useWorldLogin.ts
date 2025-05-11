@@ -30,12 +30,9 @@ export const useWorldAuth = () => {
   const userQuery = useQuery({
     queryKey: ["user"],
     queryFn: () => {
-      try {
-        const storedAddress = localStorage.getItem("userWalletAddress");
-        return (storedAddress || MiniKit.user?.walletAddress) as Address | null;
-      } catch (error) {
-        return null;
-      }
+      const storedAddress = localStorage.getItem("userWalletAddress");
+      const walletAddress = MiniKit.user?.walletAddress;
+      return (storedAddress || walletAddress || null) as Address | null;
     },
     refetchInterval: 1000,
     staleTime: 0,
