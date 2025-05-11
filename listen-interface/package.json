@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "deploy-prod": "bun run build && cd dist && bunx vercel -y --prod --name listen-interface . --logs",
     "deploy-staging": "bun run build && cd dist && bunx vercel -y --name listen-interface . --logs",
-    "deploy-world-prod": "bun run build && cd dist && bunx vercel -y --prod --name listen-world-prod . --logs"
+    "deploy-world-prod": "VITE_WORLD_MINIAPP_ENABLED=true bun run build && cd dist && bunx vercel -y --prod --name listen-world-prod . --logs"
   },
   "dependencies": {
     "@fontsource/dm-sans": "^5.2.5",
