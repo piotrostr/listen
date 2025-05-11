@@ -32,7 +32,7 @@ export const useWorldAuth = () => {
     queryFn: () => {
       const storedAddress = localStorage.getItem("userWalletAddress");
       const walletAddress = MiniKit.user?.walletAddress;
-      return (storedAddress || walletAddress || null) as Address | null;
+      return (walletAddress || storedAddress || null) as Address | null;
     },
     refetchInterval: 1000,
     staleTime: 0,
