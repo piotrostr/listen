@@ -138,15 +138,30 @@ const ChartLine = ({
   );
 };
 
+const chainIdToDexScreenerChainId = (chainId: string | number) => {
+  const chainIdStr = chainId.toString();
+  if (chainIdStr.includes("480")) return "worldchain";
+  return chainIdStr;
+};
+
 const extractTokenMetadata = (metadata: Token["metadata"]) => {
   if (!metadata) return null;
 
   // Check if it's GT metadata
-  if ("symbol" in metadata && "name" in metadata && "address" in metadata) {
+  if (
+    "symbol" in metadata &&
+    "name" in metadata &&
+    "address" in metadata &&
+    "chain_id" in metadata
+  ) {
     return {
       name: metadata.name,
       symbol: metadata.symbol,
-      image: metadata.image_url || null,
+      image:
+        metadata.image_url ||
+        `https://dd.dexscreener.com/ds-data/tokens/${chainIdToDexScreenerChainId(
+          metadata.chain_id
+        )}/${metadata.address.toLowerCase()}.png`,
     };
   }
 
