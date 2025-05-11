@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { worldchainEnabled } from "../config/env";
 import { useEoaExecution } from "../hooks/useEoaExecution";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { useWalletStore } from "../store/walletStore";
@@ -17,7 +18,7 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
     "loading" | "pending" | "approved" | "rejected"
   >("pending");
   const { isExecuting, executePipeline } = usePipelineExecution();
-  const { handleEoaSolana, handleEoaEvm } = useEoaExecution();
+  const { handleEoaSolana, handleEoaEvm, handleEoaWorld } = useEoaExecution();
 
   const sendPipelineForExecution = async () => {
     setStatus("loading");
@@ -30,7 +31,8 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
     }
   };
 
-  const { activeWallet, eoaEvmAddress, eoaSolanaAddress } = useWalletStore();
+  const { activeWallet, eoaEvmAddress, eoaSolanaAddress, worldchainAddress } =
+    useWalletStore();
 
   const executeFromEoa = async () => {
     setStatus("loading");
@@ -42,6 +44,26 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
       switch (step.action.type) {
         case PipelineActionType.SwapOrder:
           const action = step.action;
+          if (worldchainEnabled) {
+            if (!action.from_chain_caip2 || !action.to_chain_caip2) {
+              throw new Error("Missing chain CAIP2");
+            }
+            if (
+              action.from_chain_caip2 !== "eip155:480" ||
+              action.to_chain_caip2 !== "eip155:480"
+            ) {
+              throw new Error("Invalid chain CAIP2 for Worldchain");
+            }
+            if (!worldchainAddress) {
+              throw new Error("Missing Worldchain address");
+            }
+            const result = await handleEoaWorld(action, worldchainAddress);
+            if (!result) {
+              setStatus("pending");
+              return;
+            }
+            setStatus("approved");
+          }
           if (
             action.from_chain_caip2?.startsWith("solana:") &&
             action.to_chain_caip2?.startsWith("solana:") &&

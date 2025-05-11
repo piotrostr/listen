@@ -2,7 +2,12 @@ import { z } from "zod";
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 
-export const ActiveWalletSchema = z.enum(["listen", "eoaSolana", "eoaEvm"]);
+export const ActiveWalletSchema = z.enum([
+  "listen",
+  "eoaSolana",
+  "eoaEvm",
+  "worldchain",
+]);
 
 export type ActiveWallet = z.infer<typeof ActiveWalletSchema>;
 
@@ -10,6 +15,7 @@ interface WalletState {
   // Wallet addresses
   solanaAddress: string | null;
   evmAddress: string | null;
+  worldchainAddress: string | null;
 
   // EOA - Externally Owned Account
   eoaSolanaAddress: string | null;
@@ -26,6 +32,8 @@ interface WalletState {
     solanaAddress: string | null,
     evmAddress: string | null
   ) => void;
+
+  setWorldchainAddress: (address: string | null) => void;
 
   setEoaSolanaAddress: (solanaAddress: string | null) => void;
   setEoaEvmAddress: (evmAddress: string | null) => void;
@@ -45,6 +53,7 @@ export const useWalletStore = create<WalletState>()(
       // Initial state
       solanaAddress: null,
       evmAddress: null,
+      worldchainAddress: null,
 
       eoaSolanaAddress: null,
       eoaEvmAddress: null,
@@ -65,10 +74,18 @@ export const useWalletStore = create<WalletState>()(
         });
       },
 
+      setWorldchainAddress: (address: string | null) => {
+        set({
+          worldchainAddress: address,
+          activeWallet: address ? "worldchain" : "listen",
+        });
+      },
+
       clearWalletAddresses: () => {
         set({
           solanaAddress: null,
           evmAddress: null,
+          worldchainAddress: null,
         });
       },
 

@@ -1,5 +1,7 @@
 import { useState } from "react";
+import { worldchainEnabled } from "../config/env";
 import { useMobile } from "../contexts/MobileContext";
+import { useWorldAuth } from "../hooks/useWorldLogin";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { BuySellModal } from "./BuySellModal";
@@ -11,6 +13,7 @@ import { WalletSwitcher } from "./WalletSwitcher";
 export function Portfolio() {
   const { getCombinedPortfolio, isLoading } = usePortfolioStore();
   const { solanaAddress, evmAddress, activeWallet } = useWalletStore();
+  const { worldUserAddress } = useWorldAuth();
   const quickBuyAvailable = activeWallet === "listen";
 
   const [modalOpen, setModalOpen] = useState(false);
@@ -18,7 +21,10 @@ export function Portfolio() {
   const [selectedAsset, setSelectedAsset] = useState<any>(null);
   const { isMobile } = useMobile();
 
-  const hasWallet = Boolean(solanaAddress || evmAddress);
+  // If worldchain is enabled, we only check for worldchain address
+  const hasWallet = worldchainEnabled
+    ? Boolean(worldUserAddress)
+    : Boolean(solanaAddress || evmAddress);
 
   const handleOpenModal = (asset: any, action: "buy" | "sell") => {
     setSelectedAsset(asset);
@@ -44,7 +50,7 @@ export function Portfolio() {
         isMobile ? "p-0" : "p-4"
       }`}
     >
-      <WalletSwitcher />
+      {!worldchainEnabled && <WalletSwitcher />}
       <PortfolioSummary totalBalance={totalBalance} />
       <div className="flex-1 space-y-2">
         {assets
