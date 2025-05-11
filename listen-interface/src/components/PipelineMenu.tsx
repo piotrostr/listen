@@ -19,6 +19,14 @@ export function PipelineMenu({
     return <div className="flex gap-2">{children}</div>;
   };
 
+  const handleClickConfirm = () => {
+    const handler = sendPipelineForExecution || executeFromEoa;
+    console.log("handler", handler);
+    if (handler) {
+      handler();
+    }
+  };
+
   switch (status) {
     case "pending":
       return (
@@ -30,7 +38,7 @@ export function PipelineMenu({
               className="w-full rounded-[16px]"
             />
             <GradientOutlineButtonMoreRounded
-              onClick={sendPipelineForExecution || executeFromEoa}
+              onClick={handleClickConfirm}
               text={t("pipelines.approve")}
             />
           </>
