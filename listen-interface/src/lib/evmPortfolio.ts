@@ -1,16 +1,19 @@
 import { getAddress } from "viem";
 import { z } from "zod";
+import { worldchainEnabled } from "../config/env";
 import { getAnyToken } from "../hooks/useToken";
 import { tokenMetadataCache } from "./localStorage";
 import { PortfolioItem, TokenMetadata } from "./types";
 
-const SUPPORTED_NETWORKS = [
-  { chainId: "1", networkId: "eth-mainnet", chain: "ethereum" },
-  { chainId: "42161", networkId: "arb-mainnet", chain: "arbitrum" },
-  { chainId: "56", networkId: "bnb-mainnet", chain: "bsc" },
-  { chainId: "8453", networkId: "base-mainnet", chain: "base" },
-  { chainId: "480", networkId: "worldchain-mainnet", chain: "worldchain" },
-] as const;
+const SUPPORTED_NETWORKS = worldchainEnabled
+  ? [{ chainId: "480", networkId: "worldchain-mainnet", chain: "worldchain" }]
+  : ([
+      { chainId: "1", networkId: "eth-mainnet", chain: "ethereum" },
+      { chainId: "42161", networkId: "arb-mainnet", chain: "arbitrum" },
+      { chainId: "56", networkId: "bnb-mainnet", chain: "bsc" },
+      { chainId: "8453", networkId: "base-mainnet", chain: "base" },
+      { chainId: "480", networkId: "worldchain-mainnet", chain: "worldchain" },
+    ] as const);
 
 const TokenPriceSchema = z.object({
   currency: z.string(),
