@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { worldchainEnabled } from "../config/env";
 import { fetchTokenMetadata } from "../lib/solanaPortfolio";
 import { LifiToken, LifiTokenSchema, TokenMetadata } from "../lib/types";
 import { caip2Map, caip2ToLifiChainId } from "../lib/util";
@@ -76,7 +77,14 @@ export const useToken = (address: string, chainId?: string) => {
       if (!chainId || chainId === "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp") {
         return await getSolanaTokenMetadata(address);
       } else {
-        return await getAnyToken(address, chainId);
+        const token = await getAnyToken(address, chainId);
+        if (!token) {
+          return null;
+        }
+        if (worldchainEnabled) {
+          token.logoURI = `https://dd.dexscreener.com/ds-data/tokens/worldchain/${token.address.toLowerCase()}.png`;
+        }
+        return token;
       }
     },
   });
