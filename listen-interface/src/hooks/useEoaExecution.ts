@@ -156,8 +156,12 @@ export function useEoaExecution() {
         permit2: [permit2],
       };
 
+      console.log(txInput);
+
       const { finalPayload } =
         await MiniKit.commandsAsync.sendTransaction(txInput);
+
+      console.log(finalPayload);
 
       if (finalPayload.status === "error") {
         throw new Error(
