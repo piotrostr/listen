@@ -18,11 +18,17 @@ const handlePureAnnotations: Plugin = {
   },
 };
 
-export default defineConfig({
-  plugins: [
-    handlePureAnnotations,
-    TanStackRouterVite(),
-    react(),
+// Only include PWA plugin if World Mini App is not enabled
+const plugins = [
+  handlePureAnnotations,
+  TanStackRouterVite(),
+  react(),
+  visualizer(),
+  compression(),
+];
+
+if (!process.env.VITE_WORLD_MINIAPP_ENABLED) {
+  plugins.push(
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
@@ -40,10 +46,12 @@ export default defineConfig({
       workbox: {
         maximumFileSizeToCacheInBytes: 4 * 1024 * 1024,
       },
-    }),
-    visualizer(),
-    compression(),
-  ],
+    })
+  );
+}
+
+export default defineConfig({
+  plugins,
   build: {
     target: "esnext",
     minify: "esbuild",

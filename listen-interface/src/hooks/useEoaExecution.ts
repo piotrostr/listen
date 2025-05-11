@@ -4,10 +4,11 @@ import { MiniKit, type SendTransactionInput } from "@worldcoin/minikit-js";
 import { type EIP1193Provider } from "viem";
 import { ensureApprovals } from "../lib/approvals";
 import { swapStepToTransaction } from "../lib/eoa-tx";
-import { LIFI_DIAMOND_ABI } from "../lib/lifi-abi";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { SwapOrderAction } from "../types/pipeline";
 import { waitForTransaction } from "../utils/transactionMonitor";
+
+const PERMIT2_PROXY_ADDRESS = "0xA3C7a31a2A97b847D967e0B755921D084C46a742";
 
 export function useEoaExecution() {
   const { wallets: evmWallets } = useWallets();
@@ -103,22 +104,56 @@ export function useEoaExecution() {
           token: action.input_token,
           amount: action.amount,
         },
-        spender: tx.to,
+        spender: PERMIT2_PROXY_ADDRESS,
         nonce: Date.now().toString(),
         deadline: Math.floor((Date.now() + 30 * 60 * 1000) / 1000).toString(), // 30 minutes
       };
+      const calldata = tx.data;
+      if (!calldata) {
+        throw new Error(
+          "Failed to create World transaction request: missing calldata from LiFi response"
+        );
+      }
 
       const txInput: SendTransactionInput = {
         transaction: [
           {
-            address: tx.to,
-            abi: LIFI_DIAMOND_ABI,
-            functionName: "fallback",
-            args: [tx.data || "0x"],
-            value: tx.value || "0x0",
+            address: PERMIT2_PROXY_ADDRESS,
+            abi: [
+              {
+                inputs: [
+                  { name: "calldata", type: "bytes" },
+                  {
+                    name: "permitData",
+                    type: "tuple",
+                    components: [
+                      { name: "token", type: "address" },
+                      { name: "amount", type: "uint256" },
+                      { name: "nonce", type: "uint256" },
+                      { name: "deadline", type: "uint256" },
+                    ],
+                  },
+                  { name: "signature", type: "bytes" },
+                ],
+                name: "callDiamondWithPermit2",
+                outputs: [],
+                stateMutability: "nonpayable",
+                type: "function",
+              },
+            ],
+            functionName: "callDiamondWithPermit2",
+            args: [
+              calldata,
+              [
+                [action.input_token, action.amount],
+                permit2.nonce,
+                permit2.deadline,
+              ],
+              "PERMIT2_SIGNATURE_PLACEHOLDER_0",
+            ],
           },
         ],
-        permit2: permit2 ? [permit2] : undefined,
+        permit2: [permit2],
       };
 
       const { finalPayload } =
