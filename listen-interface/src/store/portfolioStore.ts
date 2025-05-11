@@ -98,6 +98,10 @@ export const usePortfolioStore = create<PortfolioState>()(
             return Array.from(get().eoaSolanaAssetsMap.values());
           case "eoaEvm":
             return Array.from(get().eoaEvmAssetsMap.values());
+          case "worldchain":
+            return Array.from(get().evmAssetsMap.values());
+          default:
+            return [];
         }
       },
       getPortfolioValue: () =>
@@ -199,6 +203,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           eoaSolanaAddress,
           eoaEvmAddress,
           activeWallet,
+          worldchainAddress,
         } = useWalletStore.getState();
 
         console.log(
@@ -209,6 +214,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             eoaSolanaAddress,
             eoaEvmAddress,
             activeWallet,
+            worldchainAddress,
           },
           "all:",
           fetchAll
@@ -239,6 +245,13 @@ export const usePortfolioStore = create<PortfolioState>()(
           if (eoaEvmAddress) {
             fetchPromises.push(
               get().fetchEvmPortfolio(eoaEvmAddress, "eoaEvm")
+            );
+          }
+
+          // Worldchain wallet
+          if (worldchainAddress) {
+            fetchPromises.push(
+              get().fetchEvmPortfolio(worldchainAddress, "worldchain")
             );
           }
 
@@ -278,7 +291,9 @@ export const usePortfolioStore = create<PortfolioState>()(
               ? evmAddress
               : activeWallet === "eoaEvm"
                 ? eoaEvmAddress
-                : null,
+                : activeWallet === "worldchain"
+                  ? worldchainAddress
+                  : null,
         };
 
         if (!addresses.solana && !addresses.evm) {
