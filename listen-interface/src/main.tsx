@@ -43,6 +43,12 @@ declare module "@tanstack/react-router" {
   }
 }
 
+const isWorldApp = import.meta.env.VITE_WORLD_MINIAPP_ENABLED;
+
+if (isWorldApp) {
+  import("eruda").then(({ default: eruda }) => eruda.init());
+}
+
 const AppContent = () => {
   const content = (
     <MobileProvider>
@@ -92,11 +98,7 @@ const AppContent = () => {
     </MobileProvider>
   );
 
-  return import.meta.env.VITE_WORLD_MINIAPP_ENABLED ? (
-    <WorldProvider>{content}</WorldProvider>
-  ) : (
-    content
-  );
+  return isWorldApp ? <WorldProvider>{content}</WorldProvider> : content;
 };
 
 createRoot(document.getElementById("root")!).render(
