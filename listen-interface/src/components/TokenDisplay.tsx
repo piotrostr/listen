@@ -166,6 +166,8 @@ export function TokenDisplay({ token }: { token: Token }) {
   const { metadata, price_info } = token;
   const tokenMetadata = extractTokenMetadata(metadata);
 
+  console.log(token);
+
   return (
     <Container>
       <div className="flex flex-row pt-4 px-4 items-center">

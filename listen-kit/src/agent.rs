@@ -9,10 +9,7 @@ use crate::solana::tools::{
 
 use crate::agents::listen::create_deep_research_agent_openrouter;
 use crate::agents::research::ViewImage;
-use crate::common::{
-    gemini_agent_builder, openrouter_agent_builder, GeminiAgent,
-    OpenRouterAgent,
-};
+use crate::common::{openrouter_agent_builder, OpenRouterAgent};
 use crate::cross_chain::tools::{GetQuote, Swap};
 use crate::data::{
     AnalyzePageContent, FetchPriceActionAnalysis, FetchTopTokens, FetchXPost,
