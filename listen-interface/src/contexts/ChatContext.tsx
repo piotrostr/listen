@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { worldchainEnabled } from "../config/env";
 import { useDebounce } from "../hooks/useDebounce";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import i18n from "../i18n";
@@ -70,8 +71,6 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   const solanaAssets = getSolanaAssets();
   const evmAssets = getEvmAssets();
-
-  const worldchainEnabled = import.meta.env.VITE_WORLD_MINIAPP_ENABLED;
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -274,7 +273,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             autonomous: agentMode,
             deep_research: researchEnabled,
             memory: memoryEnabled,
-            worldchain: worldchainEnabled === "true",
+            worldchain: worldchainEnabled,
           },
           model_type: "gemini", // hard-code
           locale: i18n.language,

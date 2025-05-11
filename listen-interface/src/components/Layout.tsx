@@ -13,6 +13,7 @@ import {
   IoWalletOutline,
 } from "react-icons/io5";
 import { MdHistory } from "react-icons/md";
+import { worldchainEnabled } from "../config/env";
 import { useMobile } from "../contexts/MobileContext";
 import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
@@ -110,8 +111,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const { isSidebarOpen, setIsSidebarOpen, toggleSidebar, isDropdownOpen } =
     useSidebar();
-
-  const worldchainEnabled = import.meta.env.VITE_WORLD_MINIAPP_ENABLED;
 
   // Add useEffect to handle iOS viewport height
   useEffect(() => {

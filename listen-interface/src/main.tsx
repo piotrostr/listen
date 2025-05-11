@@ -10,6 +10,7 @@ import { PrivyProvider } from "@privy-io/react-auth";
 import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
+import { MiniKitProvider } from "@worldcoin/minikit-js/minikit-provider";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
@@ -18,12 +19,12 @@ import { WagmiProvider, createConfig, http } from "wagmi";
 import { MobileProvider } from "./contexts/MobileContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { ToastProvider } from "./contexts/ToastContext";
-import { WorldProvider } from "./contexts/WorldContext";
 
 import i18n from "./i18n";
 import "./index.css";
 
 // Import the generated route tree
+import { worldchainEnabled } from "./config/env";
 import { routeTree } from "./routeTree.gen";
 
 const config = createConfig({
@@ -43,9 +44,7 @@ declare module "@tanstack/react-router" {
   }
 }
 
-const isWorldApp = import.meta.env.VITE_WORLD_MINIAPP_ENABLED;
-
-if (isWorldApp) {
+if (worldchainEnabled) {
   import("eruda").then(({ default: eruda }) => eruda.init());
 }
 
@@ -98,7 +97,11 @@ const AppContent = () => {
     </MobileProvider>
   );
 
-  return isWorldApp ? <WorldProvider>{content}</WorldProvider> : content;
+  return worldchainEnabled ? (
+    <MiniKitProvider>{content}</MiniKitProvider>
+  ) : (
+    content
+  );
 };
 
 createRoot(document.getElementById("root")!).render(

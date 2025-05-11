@@ -2,8 +2,8 @@ import { useGuestAccounts, usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { useTranslation } from "react-i18next";
+import { worldchainEnabled } from "../config/env";
 import { useMobile } from "../contexts/MobileContext";
-import { useWorld } from "../contexts/WorldContext";
 import { useWorldAuth } from "../hooks/useWorldLogin";
 import { FullPageLoading } from "./FullPageLoading";
 import { GradientOutlineButton } from "./GradientOutlineButton";
@@ -16,7 +16,6 @@ export function GettingStarted() {
   const { ready, login } = usePrivy();
   const { createGuestAccount } = useGuestAccounts();
   const [isCreatingGuestAccount, setIsCreatingGuestAccount] = useState(false);
-  const { isWorldApp } = useWorld();
   const { worldLogin, isLoading: isWorldLoading } = useWorldAuth();
   const navigate = useNavigate();
 
@@ -45,7 +44,7 @@ export function GettingStarted() {
   };
 
   const handleLogin = async () => {
-    if (isWorldApp) {
+    if (worldchainEnabled) {
       await worldLogin();
       setIsCreatingGuestAccount(true);
       await createGuestAccount();

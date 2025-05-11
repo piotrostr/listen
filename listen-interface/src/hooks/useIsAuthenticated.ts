@@ -1,5 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useWorld } from "../contexts/WorldContext";
+import { worldchainEnabled } from "../config/env";
 import {
   userHasDelegatedEvmWallet,
   userHasDelegatedSolanaWallet,
@@ -10,10 +10,9 @@ export const useIsAuthenticated = () => {
   const { authenticated, ready, user } = usePrivy();
   const isDelegatedSolana = userHasDelegatedSolanaWallet(user);
   const isDelegatedEvm = userHasDelegatedEvmWallet(user);
-  const { isWorldApp } = useWorld();
   const { worldUserAddress } = useWorldAuth();
 
-  if (isWorldApp) {
+  if (worldchainEnabled) {
     return {
       isAuthenticated: worldUserAddress !== null,
       hasSolanaWallet: false,
