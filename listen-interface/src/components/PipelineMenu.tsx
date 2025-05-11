@@ -1,4 +1,5 @@
 import { useTranslation } from "react-i18next";
+import { worldchainEnabled } from "../config/env";
 import { GradientOutlineButtonMoreRounded } from "./GradientOutlineButtonMoreRounded";
 import { OutlineButton } from "./OutlineButton";
 
@@ -19,12 +20,21 @@ export function PipelineMenu({
     return <div className="flex gap-2">{children}</div>;
   };
 
-  const handleClickConfirm = () => {
-    const handler = sendPipelineForExecution || executeFromEoa;
-    console.log("handler", handler);
-    if (handler) {
-      handler();
+  const handleClickConfirm = async () => {
+    if (worldchainEnabled) {
+      if (!executeFromEoa) {
+        throw new Error(
+          "[worldchain handleClickConfirm] executeFromEoa is not defined"
+        );
+      }
+      await executeFromEoa();
+      return;
     }
+    const handler = sendPipelineForExecution || executeFromEoa;
+    if (!handler) {
+      throw new Error("handler is not defined");
+    }
+    await handler();
   };
 
   switch (status) {

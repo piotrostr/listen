@@ -35,11 +35,10 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
     useWalletStore();
 
   const executeFromEoa = async () => {
-    setStatus("loading");
-    if (!eoaEvmAddress) {
-      setStatus("pending");
-      return;
+    if (!eoaEvmAddress && !eoaSolanaAddress && !worldchainAddress) {
+      throw new Error("No EOA address found");
     }
+    setStatus("loading");
     for (const step of pipeline.steps) {
       switch (step.action.type) {
         case PipelineActionType.SwapOrder:
