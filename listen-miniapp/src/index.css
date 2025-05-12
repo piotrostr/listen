@@ -1,0 +1,284 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+  
+  strong, b, .font-bold, [class*="font-bold"] {
+    font-weight: 700 !important;
+  }
+}
+
+/* Force dark mode */
+:root {
+  color-scheme: dark;
+}
+
+/* Base styles */
+html,
+body,
+code {
+  font-family: "Space Grotesk", monospace;
+}
+
+/* Animation delays */
+.animation-delay-2000 {
+  animation-delay: 2s;
+}
+
+.animation-delay-4000 {
+  animation-delay: 4s;
+}
+
+.animation-delay-6000 {
+  animation-delay: 6s;
+}
+
+/* ChatScope overrides */
+.cs-message-input__content-editor-wrapper,
+.cs-message-input__content-editor,
+.cs-message__content,
+.cs-message-list,
+.cs-chat-container .cs-message-input,
+.cs-message .cs-message__content-wrapper,
+.cs-typing-indicator,
+.cs-message-input__content-editor-container,
+.cs-message-input {
+  background: transparent !important;
+}
+
+.cs-message-input__content-editor {
+  color: white !important;
+  font-family: "Space Grotesk", monospace !important;
+  caret-color: transparent !important;
+}
+
+.cs-message__content {
+  padding: 0 !important;
+}
+
+.cs-chat-container .cs-message-input {
+  border-top: 1px solid rgba(139, 92, 246, 0.3) !important;
+}
+
+.cs-typing-indicator,
+.cs-typing-indicator__text {
+  color: #9ca3af !important;
+}
+
+.cs-button--send {
+  display: none !important;
+}
+
+.cs-message-input {
+  border: none !important;
+}
+
+/* Terminal animations */
+@keyframes terminal-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+@keyframes terminal-jitter {
+  0% {
+    transform: translateX(0);
+  }
+  25% {
+    transform: translateX(0.5px);
+  }
+  50% {
+    transform: translateX(-0.5px);
+  }
+  75% {
+    transform: translateX(0.5px);
+  }
+  100% {
+    transform: translateX(0);
+  }
+}
+
+/* Terminal cursor styles */
+.terminal-blink {
+  animation: terminal-blink 1s step-end infinite;
+}
+
+.terminal-input-display {
+  pointer-events: none;
+}
+
+.terminal-input-container {
+  position: relative;
+}
+
+.terminal-input-container .cs-message-input__content-editor-wrapper {
+  padding-left: 1rem;
+  padding-right: 2rem !important;
+}
+
+.terminal-cursor {
+  position: relative;
+}
+
+.terminal-cursor:hover::after {
+  content: "";
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 8px;
+  height: 16px;
+  background-color: rgb(192, 132, 252, 0.5);
+  animation:
+    terminal-blink 1s steps(1) infinite,
+    terminal-jitter 0.1s steps(1) infinite;
+}
+
+.portfolio-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(147, 51, 234, 0.3) transparent;
+}
+
+.portfolio-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.portfolio-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.portfolio-scroll::-webkit-scrollbar-thumb {
+  background-color: rgba(147, 51, 234, 0.3);
+  border-radius: 3px;
+}
+
+/* After your existing styles, add these rules */
+html, body, #root {
+  height: 100%;
+  overflow: hidden;
+  position: relative;
+  /* Fix for iOS Safari */
+  min-height: -webkit-fill-available;
+}
+
+/* Fix for iOS Safari */
+html {
+  height: -webkit-fill-available;
+}
+
+/* Add this class for scrollable containers */
+.scrollable-container {
+  overflow-y: auto;
+  height: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(147, 51, 234, 0.3) transparent;
+}
+
+.scrollable-container::-webkit-scrollbar {
+  width: 6px;
+}
+
+.scrollable-container::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.scrollable-container::-webkit-scrollbar-thumb {
+  background-color: rgba(147, 51, 234, 0.3);
+  border-radius: 3px;
+}
+
+/* Add this to your existing CSS */
+@media (max-width: 1024px) {
+  .mobile-content-fix {
+    height: calc(100vh - 16px);
+    padding-top: 16px;
+  }
+}
+
+/* Update the chat container width */
+.chat-container {
+  transition: margin-right 0.3s ease;
+  width: 100%;
+  max-width: 1075px; /* Increased from 1024px by ~5% */
+  margin: 0 auto;
+}
+
+.chat-container.panel-open {
+  margin-right: 24rem; /* Keep the margin for when panel is open */
+}
+
+@media (max-width: 1075px) { /* Update the breakpoint to match new width */
+  .chat-container.panel-open {
+    margin-right: 0;
+  }
+}
+
+/* Add this to your existing CSS */
+.container-query {
+  container-type: inline-size;
+  width: 100%;
+}
+
+/* Hide scrollbar from all elements */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+
+.no-scrollbar {
+  -ms-overflow-style: none;  /* IE and Edge */
+  scrollbar-width: none;     /* Firefox */
+}
+
+/* Apply to specific containers */
+.scrollable-container::-webkit-scrollbar {
+  display: none;
+}
+
+.scrollable-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+/* Make sure RecentChats scrollbar is hidden */
+.recent-chats-container::-webkit-scrollbar {
+  display: none;
+}
+
+.recent-chats-container {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes colorPulse {
+  0%, 100% { background-color: rgba(99, 102, 241, 0.6); } /* blue-500/60 */
+  25% { background-color: rgba(192, 132, 252, 0.8); } /* purple-400/80 */
+  50% { background-color: rgba(168, 85, 247, 0.8); } /* purple-500/80 */
+  75% { background-color: rgba(147, 51, 234, 0.8); } /* purple-600/80 */
+}
+
+@keyframes spherePulse {
+  0%, 100% { 
+    transform: scale(0.8);
+    background-color: rgba(99, 102, 241, 0.4);
+    box-shadow: 0 0 5px rgba(99, 102, 241, 0.6);
+  }
+  50% { 
+    transform: scale(1.1);
+    background-color: rgba(168, 85, 247, 0.6);
+    box-shadow: 0 0 10px rgba(168, 85, 247, 0.8);
+  }
+}

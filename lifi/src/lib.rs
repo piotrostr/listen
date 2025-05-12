@@ -257,6 +257,8 @@ mod tests {
             )
             .await;
 
+        println!("{:#?}", quote);
+
         assert!(quote.is_ok(), "{:?}", quote);
     }
 
