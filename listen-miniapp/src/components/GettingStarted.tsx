@@ -8,7 +8,6 @@ import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 import { useWorldAuth } from "../hooks/useWorldLogin";
 import { FullPageLoading } from "./FullPageLoading";
 import { GradientOutlineButton } from "./GradientOutlineButton";
-import { OutlineButton } from "./OutlineButton";
 import { VersionDisplay } from "./VersionAndLanguage";
 
 export function GettingStarted() {
@@ -93,24 +92,7 @@ export function GettingStarted() {
       >
         <GradientOutlineButton
           arrow={true}
-          text={t("getting_started.run_some_research")}
-          onClick={() => handleContinue(t("getting_started.run_some_research"))}
-          disabled={!ready || isCreatingGuestAccount}
-        />
-        <OutlineButton
-          text={t("getting_started.create_an_automated_strategy")}
-          onClick={() =>
-            handleContinue(t("getting_started.create_an_automated_strategy"))
-          }
-          disabled={!ready || isCreatingGuestAccount}
-        />
-        <OutlineButton
-          text={t("getting_started.lets_make_a_trade")}
-          onClick={() => handleContinue(t("getting_started.lets_make_a_trade"))}
-          disabled={!ready || isCreatingGuestAccount}
-        />
-        <OutlineButton
-          text={t("getting_started.login")}
+          text={"Sign In"}
           onClick={handleLogin}
           disabled={isCreatingGuestAccount || isWorldLoading}
         />
