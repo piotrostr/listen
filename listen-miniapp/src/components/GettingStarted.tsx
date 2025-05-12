@@ -13,36 +13,12 @@ import { VersionDisplay } from "./VersionAndLanguage";
 export function GettingStarted() {
   const { t } = useTranslation();
   const { isMobile, isVerySmallScreen } = useMobile();
-  const { ready, login } = usePrivy();
+  const { login } = usePrivy();
   const { createGuestAccount } = useGuestAccounts();
   const [isCreatingGuestAccount, setIsCreatingGuestAccount] = useState(false);
   const { worldLogin, isLoading: isWorldLoading } = useWorldAuth();
   const { isLoading } = useIsAuthenticated();
   const navigate = useNavigate();
-
-  const handleContinue = async (prompt?: string) => {
-    try {
-      setIsCreatingGuestAccount(true);
-      await createGuestAccount();
-      setIsCreatingGuestAccount(false);
-      if (prompt) {
-        await navigate({
-          to: "/",
-          search: {
-            message: prompt,
-            new: true,
-          },
-        });
-      } else {
-        await navigate({
-          to: "/",
-        });
-      }
-    } catch (error) {
-      console.error("Error creating guest account:", error);
-      setIsCreatingGuestAccount(false);
-    }
-  };
 
   const handleLogin = async () => {
     if (worldchainEnabled) {
@@ -80,15 +56,11 @@ export function GettingStarted() {
           {t("getting_started.listen_intro")}
         </p>
       </div>
-      <div>
-        <p
-          className={`font-[500] ${isVerySmallScreen ? "text-[28px] leading-[36px]" : "text-[32px] leading-[40px]"} tracking-[-0.04em]`}
-        >
-          {t("getting_started.where_should_we_start")}
-        </p>
-      </div>
       <div
         className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full justify-center items-center`}
+      ></div>
+      <div
+        className={`flex flex-col ${isVerySmallScreen ? "gap-3" : "gap-4"} w-full text-center text-xs justify-center items-center mb-2`}
       >
         <GradientOutlineButton
           arrow={true}
@@ -96,10 +68,6 @@ export function GettingStarted() {
           onClick={handleLogin}
           disabled={isCreatingGuestAccount || isWorldLoading}
         />
-      </div>
-      <div
-        className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full text-center text-xs justify-center items-center mb-1`}
-      >
         <VersionDisplay />
       </div>
     </div>

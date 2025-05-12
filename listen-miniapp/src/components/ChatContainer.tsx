@@ -42,28 +42,34 @@ export function ChatContainer({
 
   const RECOMMENDED_QUESTIONS_TILES = [
     {
-      question: t("recommended_questions.what_actions_can_you_perform_for_me"),
+      question: "What are the most popular tokens available on World?",
       enabled: true,
-      display: t("recommended_questions.learn_about_listen"),
+      display: "Trade Top Tokens",
     },
     {
-      question: t(
-        "recommended_questions.how_do_pipelines_work_and_what_pipelines_can_you_create_for_me"
-      ),
+      question: "I would like to learn how to invest in crypto effectively.",
       enabled: true,
-      display: t("recommended_questions.complex_made_simple"),
+      display: "Learn to Invest in Crypto",
     },
     {
-      question: t("recommended_questions.what_chains_are_supported"),
+      question: "Which Mini-Apps offer claiming tokens?",
       enabled: true,
-      display: t("recommended_questions.supported_chains"),
+      display: "Claim Daily Tokens",
     },
     {
-      question: t(
-        "recommended_questions.what_tokens_have_received_largest_inflows_outflows_in_the_past_days"
-      ),
+      question: "What are the most popular tokens available on World?",
       enabled: true,
-      display: t("recommended_questions.discover_coins"),
+      display: "Trade Top Tokens",
+    },
+    {
+      question: "I am looking for some cool Mini-Apps, any recommendations?",
+      enabled: true,
+      display: "Find New Mini-Apps",
+    },
+    {
+      question: "I would like to find ways to passively earn with my $WLD",
+      enabled: true,
+      display: "Put your $WLD to work",
     },
   ];
 
