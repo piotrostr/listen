@@ -72,7 +72,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const [inputMessage, setInputMessage] = useState("");
   const { getAccessToken } = usePrivy();
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { openShareModal } = useModal();
 
   const [activeToolCalls, setActiveToolCalls] = useState<Record<
