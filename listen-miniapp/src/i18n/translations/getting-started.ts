@@ -2,7 +2,7 @@ export const gettingStarted = {
   en: {
     listen_hi: "Hi! I’m Listen, your personal crypto broker.",
     listen_intro:
-      "I can help you trade, run custom strategies, or learn and research.",
+      "Everything Worldcoin, All in One Place. Use Mini Apps. Claim More. Trade Smarter.",
     where_should_we_start: "Where should we start?",
     lets_make_a_trade: "Let's make a trade",
     create_an_automated_strategy: "Create an automated strategy",

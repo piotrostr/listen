@@ -45,11 +45,6 @@ export function GettingStarted() {
       <div
         className={`w-full max-w-2xl flex flex-col ${isMobile ? "items-start" : "items-center"} ${isMobile ? "text-left" : "text-center"} ${isVerySmallScreen ? "gap-1.5" : "gap-2"} ${isVerySmallScreen ? "p-1.5" : "p-2"}`}
       >
-        <h2
-          className={`font-light ${isVerySmallScreen ? "text-[26px] leading-[38px]" : "text-[28px] leading-[40px]"} tracking-[-0.03em] ${isVerySmallScreen ? "mb-1.5" : "mb-2"}`}
-        >
-          {t("getting_started.listen_hi")}
-        </h2>
         <p
           className={`font-light ${isVerySmallScreen ? "text-[26px] leading-[38px]" : "text-[28px] leading-[40px]"} tracking-[-0.03em]`}
         >
