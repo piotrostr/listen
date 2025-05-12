@@ -19,7 +19,7 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
     "loading" | "pending" | "approved" | "rejected"
   >("pending");
   const { isExecuting, executePipeline } = usePipelineExecution();
-  const { handleEoaSolana, handleEoaEvm, handleEoaWorld } = useEoaExecution();
+  const { handleEoaSolana, handleEoaEvm } = useEoaExecution();
 
   const sendPipelineForExecution = async () => {
     setStatus("loading");
@@ -58,12 +58,17 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
             if (!worldchainAddress) {
               throw new Error("Missing Worldchain address");
             }
-            const result = await handleEoaWorld(action, worldchainAddress);
-            if (!result) {
+            const deeplink = getUnoDeeplinkUrl({
+              fromToken: action.input_token,
+              toToken: action.output_token,
+              amount: action.amount,
+            });
+            if (!deeplink) {
               setStatus("pending");
               return;
             }
-            setStatus("approved");
+            window.open(deeplink, "_blank");
+            return;
           }
           if (
             action.from_chain_caip2?.startsWith("solana:") &&
@@ -146,4 +151,39 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
       )}
     </div>
   );
+}
+
+const UNO_APP_ID = "app_a4f7f3e62c1de0b9490a5260cb390b56";
+
+function getUnoDeeplinkUrl({
+  fromToken,
+  toToken,
+  amount,
+  referrerAppId,
+  referrerDeeplinkPath,
+}: {
+  fromToken?: string;
+  toToken?: string;
+  amount?: string;
+  referrerAppId?: string;
+  referrerDeeplinkPath?: string;
+}) {
+  let path = `?tab=swap`;
+  if (fromToken) {
+    path += `&fromToken=${fromToken}`;
+    if (amount) {
+      path += `&amount=${amount}`;
+    }
+  }
+  if (toToken) {
+    path += `&toToken=${toToken}`;
+  }
+  if (referrerAppId) {
+    path += `&referrerAppId=${referrerAppId}`;
+  }
+  if (referrerDeeplinkPath) {
+    path += `&referrerDeeplinkPath=${encodeURIComponent(referrerDeeplinkPath)}`;
+  }
+  const encodedPath = encodeURIComponent(path);
+  return `https://worldcoin.org/mini-app?app_id=${UNO_APP_ID}&path=${encodedPath}`;
 }
