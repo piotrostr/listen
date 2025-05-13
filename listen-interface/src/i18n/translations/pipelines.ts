@@ -28,7 +28,7 @@ export const pipelines = {
     approve: "Confirm",
     reject: "Cancel",
     pipeline_rejected: "Order rejected",
-    pipeline_scheduled_for_execution: "Order scheduled for execution",
+    pipeline_scheduled_for_execution: "Order confirmed",
     step_cancelled: "Step cancelled",
     cancel_step_error: "Failed to cancel step",
     invalid_timestamp: "Invalid timestamp",

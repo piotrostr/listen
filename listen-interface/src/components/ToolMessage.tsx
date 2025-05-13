@@ -535,7 +535,9 @@ export const ToolMessage = ({
     toolOutput.result.includes("ToolCallError") &&
     !toolOutput.name.includes("delegate")
   ) {
-    return (
+    return null;
+    // @ts-ignore unused but might be used at some point again
+    const _errorWithTooltip = (
       <Tooltip.Provider>
         <Tooltip.Root delayDuration={100}>
           <Tooltip.Trigger asChild>
@@ -843,7 +845,8 @@ export const ToolMessage = ({
     } catch (e) {
       console.error("Quote processing failed:", e);
 
-      return (
+      // @ts-ignore unused but might be used at some point again
+      const _errorWithTooltip = (
         <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
           <p className="text-red-400 break-words">
             Failed to parse quote data:{" "}
@@ -861,8 +864,9 @@ export const ToolMessage = ({
           </details>
         </div>
       );
+      return null;
     }
   }
 
-  return <ChatMessage message={toolOutput.result} direction="incoming" />;
+  return null;
 };
