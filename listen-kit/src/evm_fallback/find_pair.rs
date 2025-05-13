@@ -26,7 +26,6 @@ struct TokenRelationship {
 #[derive(Debug, Deserialize)]
 struct Relationships {
     base_token: TokenRelationship,
-    quote_token: TokenRelationship,
 }
 
 #[derive(Debug, Deserialize)]
