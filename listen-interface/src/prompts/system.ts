@@ -25,7 +25,8 @@ export function systemPrompt(
   prompt += `## Research Workflow\n${researchFlow}\n\n`;
   prompt += `## Guidelines\n${guidelines("solana", defaultAmount)}\n\n`;
   prompt += `## Pipeline Knowledge\n${pipelineKnowledge()}\n\n`;
-  prompt += `## Reference Data\n\n### Memecoin Lore\n${memecoinLore}\n\n### Glossary\n${glossary}\n\n`;
+  prompt += `## Memecoin Lore\n${memecoinLore}\n\n`;
+  prompt += `## Glossary\n${glossary}\n\n`;
 
   if (!hasWallet || isGuest) {
     prompt += `## Onboarding Required (Solana)\n${onboarding(hasWallet, isGuest)}\n\n`;
