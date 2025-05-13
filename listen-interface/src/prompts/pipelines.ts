@@ -93,7 +93,7 @@ ${JSON.stringify(addressBook, null, 2)}
 *   Each step = "action" object + optional "conditions" array.
 *   Action types: "SwapOrder", "Notification".
 *   Condition types: "PriceAbove", "PriceBelow", "Now".
-*   For "SwapOrder": specify verified \`input_token\`, \`output_token\`, \`amount\` (string, considering decimals). Amount can be null for "all".
+*   For "SwapOrder": specify verified \`input_token\`, \`output_token\`, \`amount\` (string, considering decimals). Amount can never be null.
     *   Use \`from_chain_caip2\` and \`to_chain_caip2\` for EVM or cross-chain swaps (refer to CAIP2 map).
     *   Omit chain params for Solana-only swaps.
 *   For "Notification": specify \`input_token\` and \`message\`.
@@ -110,6 +110,10 @@ USDC always has 6 decimals. Solana (SOL) has 9 decimals. Native ETH/BNB has 18 d
 DON'T ever put comments inside of the pipeline JSON, it will break the pipeline.
 
 **IMPORTANT:** If there are multiple independent steps, it is better to generate multiple pipelines, to separate them, rather generating both steps in the same pipeline.
+
+If the user requires to set up an order for an asset that you don't know their balance of, use the tool to fetch the balance first.
+
+Don't ever create orders where you don't know the balance of a given asset.
 
 Example:
 \`\`\`json

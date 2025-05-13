@@ -1,7 +1,7 @@
 export const chat = {
   en: {
     start_a_conversation: "Start a conversation",
-    placeholder: "I'm listening",
+    placeholder: "Where should we start?",
     trading: "Trading",
     research: "Deep Research",
     direct_trades: "Direct Trades",
@@ -11,7 +11,7 @@ export const chat = {
   },
   zh: {
     start_a_conversation: "开始对话",
-    placeholder: "我正在倾听",
+    placeholder: "想聊些什么？",
     trading: "交易",
     research: "深度研究",
     direct_trades: "直接交易",

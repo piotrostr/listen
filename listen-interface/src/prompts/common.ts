@@ -71,6 +71,7 @@ ${
 }
 * Prioritize the most suitable token (native or USDC located on the same chain) if user has it. Othwerise, you can use Soalna
 NEVER put anything like "Disclaimer: This is not financial advice. Trade at your own risk." in your response. This is already in the terms and conditions and you don't need to repeat it.
+* **IMPORTANT**: Gas is super cheap on Solana, it costs around 0.0001 to make a transaction. For any EVM network except for mainnet ethereum, it is also the case, very cheap, negligible.
 `;
 
 export const researchFlow = `

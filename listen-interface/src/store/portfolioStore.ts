@@ -98,6 +98,8 @@ export const usePortfolioStore = create<PortfolioState>()(
             return Array.from(get().eoaSolanaAssetsMap.values());
           case "eoaEvm":
             return Array.from(get().eoaEvmAssetsMap.values());
+          default:
+            return [];
         }
       },
       getPortfolioValue: () =>

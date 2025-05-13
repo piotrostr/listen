@@ -26,14 +26,25 @@ export default defineConfig({
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
-        name: "listen",
-        short_name: "listen",
+        name: "Listen",
+        short_name: "Listen",
+        description: "Listen",
         theme_color: "#000000",
+        background_color: "#151518",
+        display: "standalone",
+        start_url: "/",
         icons: [
           {
             src: "/listen-icon.png",
             sizes: "192x192",
             type: "image/png",
+            purpose: "any maskable",
+          },
+          {
+            src: "/listen-icon.png",
+            sizes: "512x512",
+            type: "image/png",
+            purpose: "any maskable",
           },
         ],
       },
@@ -44,6 +55,9 @@ export default defineConfig({
     visualizer(),
     compression(),
   ],
+  optimizeDeps: {
+    exclude: ["@tanstack/router-vite-plugin"],
+  },
   build: {
     target: "esnext",
     minify: "esbuild",
