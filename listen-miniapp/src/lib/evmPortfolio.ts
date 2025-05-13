@@ -88,12 +88,18 @@ async function enrichTokenMetadata(
       return null;
     }
 
+    if (address == "0x2cfc85d8e48f8eab294be644d9e25c3030863003") {
+      metadata.logoURI = `https://dd.dexscreener.com/ds-data/tokens/worldchain/${address.toLowerCase()}.png?size=lg&key=9449f3`;
+    }
+
     const tokenMetadata: TokenMetadata = {
       address,
       name: metadata.name || "",
       symbol: metadata.symbol || "",
       decimals: metadata.decimals,
-      logoURI: metadata.logoURI || "",
+      logoURI:
+        metadata.logoURI ||
+        `https://dd.dexscreener.com/ds-data/tokens/worldchain/${address.toLowerCase()}.png?size=lg&key=9449f3`,
       chainId: parseInt(network.chainId),
     };
 
@@ -209,7 +215,11 @@ export async function getTokenHoldings(
       throw new Error("Error parsing Alchemy response");
     }
 
+    console.log("rawData", rawData);
+
     const validatedData = parsedData.data;
+
+    console.log("validatedData", validatedData);
 
     const portfolioPromises = validatedData.data.tokens
       .filter((token) => {

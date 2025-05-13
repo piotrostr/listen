@@ -14,8 +14,24 @@ struct PoolAttributes {
 }
 
 #[derive(Debug, Deserialize)]
+struct TokenData {
+    id: String,
+}
+
+#[derive(Debug, Deserialize)]
+struct TokenRelationship {
+    data: TokenData,
+}
+
+#[derive(Debug, Deserialize)]
+struct Relationships {
+    base_token: TokenRelationship,
+}
+
+#[derive(Debug, Deserialize)]
 struct Pool {
     attributes: PoolAttributes,
+    relationships: Relationships,
 }
 
 #[derive(Debug, Deserialize)]
@@ -65,14 +81,26 @@ impl EvmFallback {
             ));
         }
 
-        let pool_response = response
-            .json::<PoolResponse>()
-            .await
-            .context("Failed to deserialize pools response")?;
+        let raw_response = response.json::<serde_json::Value>().await?;
+        println!("Raw response: {:?}", raw_response);
 
-        // Sort pools by 24h volume
-        let mut pools = pool_response.data;
-        pools.sort_by(|a, b| {
+        let pool_response =
+            serde_json::from_value::<PoolResponse>(raw_response)
+                .context("Failed to deserialize pools response")?;
+
+        // Filter pools where our token is the base token and sort by volume
+        let mut base_token_pools: Vec<&Pool> = pool_response
+            .data
+            .iter()
+            .filter(|pool| {
+                let base_token_id =
+                    format!("{}_{}", network, token_address.to_lowercase());
+                pool.relationships.base_token.data.id == base_token_id
+            })
+            .collect();
+
+        // Sort base token pools by volume
+        base_token_pools.sort_by(|a, b| {
             let vol_a =
                 a.attributes.volume_usd.h24.parse::<f64>().unwrap_or(0.0);
             let vol_b =
@@ -80,8 +108,24 @@ impl EvmFallback {
             vol_b.partial_cmp(&vol_a).unwrap()
         });
 
-        // Get the highest volume pool address
-        Ok(pools.first().map(|pool| pool.attributes.address.clone()))
+        // If we found pools where our token is the base, return the highest volume one
+        if let Some(pool) = base_token_pools.first() {
+            return Ok(Some(pool.attributes.address.clone()));
+        }
+
+        // If no base token pools found, fall back to all pools sorted by volume
+        let mut all_pools: Vec<&Pool> = pool_response.data.iter().collect();
+        all_pools.sort_by(|a, b| {
+            let vol_a =
+                a.attributes.volume_usd.h24.parse::<f64>().unwrap_or(0.0);
+            let vol_b =
+                b.attributes.volume_usd.h24.parse::<f64>().unwrap_or(0.0);
+            vol_b.partial_cmp(&vol_a).unwrap()
+        });
+
+        Ok(all_pools
+            .first()
+            .map(|pool| pool.attributes.address.clone()))
     }
 }
 

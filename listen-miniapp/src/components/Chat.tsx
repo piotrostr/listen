@@ -72,7 +72,7 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   const [inputMessage, setInputMessage] = useState("");
   const { getAccessToken } = usePrivy();
   const [hasLoadedSharedChat, setHasLoadedSharedChat] = useState(false);
-  const { t, i18n } = useTranslation();
+  const { i18n } = useTranslation();
   const { openShareModal } = useModal();
 
   const [activeToolCalls, setActiveToolCalls] = useState<Record<
@@ -84,31 +84,34 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
 
   const RECOMMENDED_QUESTIONS_CAROUSEL = [
     {
-      question: t("recommended_questions.whats_the_most_viral_token_right_now"),
+      question: "What are the most popular tokens available on World?",
       enabled: true,
+      display: "Trade Top Tokens",
     },
     {
-      question: t("recommended_questions.what_does_lp_mean"),
+      question: "I would like to learn how to invest in crypto effectively.",
       enabled: true,
+      display: "Learn to Invest in Crypto",
     },
     {
-      question: t(
-        "recommended_questions.how_to_manage_risk_when_trading_memecoins"
-      ),
+      question: "Which Mini-Apps offer claiming tokens?",
       enabled: true,
+      display: "Claim Daily Tokens",
     },
     {
-      question: t("recommended_questions.im_feeling_lucky_question"),
+      question: "What are the most popular tokens available on World?",
       enabled: true,
-      display: t("recommended_questions.im_feeling_lucky_display"),
+      display: "Trade Top Tokens",
     },
     {
-      question: t("recommended_questions.buy_the_solana_dip"),
+      question: "I am looking for some cool Mini-Apps, any recommendations?",
       enabled: true,
+      display: "Find New Mini-Apps",
     },
     {
-      question: t("recommended_questions.research_arcdotfun_for_me"),
+      question: "I would like to find ways to passively earn with my $WLD",
       enabled: true,
+      display: "Put your $WLD to work",
     },
   ];
 

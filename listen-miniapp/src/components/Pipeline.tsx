@@ -14,6 +14,12 @@ interface PipelineProps {
   pipeline: Pipeline;
 }
 
+// TODO
+// - include the top tokens tool
+// - customize prompt carousel
+// - localization - spanish
+// - prompt caching
+
 export function PipelineDisplay({ pipeline }: PipelineProps) {
   const [status, setStatus] = useState<
     "loading" | "pending" | "approved" | "rejected"

@@ -94,3 +94,41 @@ export const useToken = (address: string, chainId?: string) => {
 
   return { data, isLoading, error };
 };
+
+async function getWorldchainTokenData(address: string): Promise<TokenMetadata> {
+  const response = await fetch(
+    `https://api.geckoterminal.com/api/v2/networks/world-chain/tokens/${address}`,
+    {
+      headers: {
+        accept: "application/json",
+        "Content-Type": "application/json",
+      },
+    }
+  );
+
+  if (!response.ok) {
+    throw new Error("Failed to fetch token data");
+  }
+
+  const data = await response.json();
+  const tokenData = data.data.attributes;
+
+  return {
+    address: tokenData.address,
+    name: tokenData.name,
+    symbol: tokenData.symbol,
+    decimals: tokenData.decimals,
+    logoURI: tokenData.image_url,
+    volume24h: parseFloat(tokenData.volume_usd?.h24 || "0"),
+    chainId: 480, // World Chain ID
+  };
+}
+
+export const useWorldchainToken = (address: string) => {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ["worldchain-token", address],
+    queryFn: () => getWorldchainTokenData(address),
+  });
+
+  return { data, isLoading, error };
+};

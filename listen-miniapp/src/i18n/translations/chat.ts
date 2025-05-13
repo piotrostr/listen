@@ -1,7 +1,7 @@
 export const chat = {
   en: {
     start_a_conversation: "Start a conversation",
-    placeholder: "I'm listening",
+    placeholder: "Where should we start?",
     trading: "Trading",
     research: "Deep Research",
     direct_trades: "Direct Trades",

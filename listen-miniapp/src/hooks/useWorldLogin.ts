@@ -1,8 +1,21 @@
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { type Address } from "viem";
+import { DEVELOPMENT_FALLBACK_ADDRESS } from "../config/env";
 
 export const useWorldAuth = () => {
+  // In development, return the fallback address
+  if (process.env.NODE_ENV === "development") {
+    return {
+      worldLogin: () => {},
+      isLoading: false,
+      error: null,
+      worldUserAddress: DEVELOPMENT_FALLBACK_ADDRESS,
+      isUserLoading: false,
+      userError: null,
+    };
+  }
+
   const mutation = useMutation({
     mutationFn: async () => {
       const nonce = crypto.randomUUID().replace(/-/g, "");

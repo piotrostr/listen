@@ -179,13 +179,21 @@ export const usePortfolioStore = create<PortfolioState>()(
           });
 
           // Store in appropriate map based on wallet type parameter
-          set(() => ({
-            [walletType === "listen"
-              ? "listenEvmAssetsMap"
-              : "eoaEvmAssetsMap"]: evmAssetsMap,
-            isLoading: false,
-            lastUpdated: Date.now(),
-          }));
+          if (walletType === "worldchain") {
+            set(() => ({
+              evmAssetsMap,
+              isLoading: false,
+              lastUpdated: Date.now(),
+            }));
+          } else {
+            set(() => ({
+              [walletType === "listen"
+                ? "listenEvmAssetsMap"
+                : "eoaEvmAssetsMap"]: evmAssetsMap,
+              isLoading: false,
+              lastUpdated: Date.now(),
+            }));
+          }
         } catch (error) {
           set({
             error: error as Error,
@@ -242,7 +250,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           }
 
           // EOA EVM wallet
-          if (eoaEvmAddress) {
+          if (eoaEvmAddress && !worldchainAddress) {
             fetchPromises.push(
               get().fetchEvmPortfolio(eoaEvmAddress, "eoaEvm")
             );
@@ -296,7 +304,7 @@ export const usePortfolioStore = create<PortfolioState>()(
                   : null,
         };
 
-        if (!addresses.solana && !addresses.evm) {
+        if (!addresses.solana && !addresses.evm && !worldchainAddress) {
           set({ isLoading: false, error: null });
           return;
         }
