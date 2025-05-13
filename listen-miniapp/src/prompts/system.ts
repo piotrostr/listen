@@ -88,6 +88,8 @@ export function worldchainPrompt(
     prompt += `*   EVM Address: Not Available\n`;
   }
   prompt += `*   Portfolio: ${JSON.stringify(portfolio)}\n`;
+  prompt += `## Swap Guidelines\n`;
+  prompt += `*   When swapping if the user doesn't provide a specific token to use, use $WLD. Always check the price of $WLD along with the price of the other token for accurate calculations and ensuring correct decimals are used.`;
   return prompt;
 }
 
