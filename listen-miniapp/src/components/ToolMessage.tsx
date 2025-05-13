@@ -1,4 +1,3 @@
-import * as Tooltip from "@radix-ui/react-tooltip";
 import { ReactNode, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { BsClock } from "react-icons/bs";
@@ -535,23 +534,24 @@ export const ToolMessage = ({
     toolOutput.result.includes("ToolCallError") &&
     !toolOutput.name.includes("delegate")
   ) {
-    return (
-      <Tooltip.Provider>
-        <Tooltip.Root delayDuration={100}>
-          <Tooltip.Trigger asChild>
-            <div className="text-red-400 flex items-center gap-1 p-3 text-sm cursor-help">
-              <FaExclamationTriangle /> {t("tool_messages.tool_call_error")}
-            </div>
-          </Tooltip.Trigger>
-          <Tooltip.Portal>
-            <Tooltip.Content className="rounded-md bg-[#2d2d2d] px-4 py-2 text-sm text-white max-w-md break-words shadow-lg z-50">
-              {toolOutput.result}
-              <Tooltip.Arrow className="fill-[#2d2d2d]" />
-            </Tooltip.Content>
-          </Tooltip.Portal>
-        </Tooltip.Root>
-      </Tooltip.Provider>
-    );
+    return null;
+    // return (
+    //   <Tooltip.Provider>
+    //     <Tooltip.Root delayDuration={100}>
+    //       <Tooltip.Trigger asChild>
+    //         <div className="text-red-400 flex items-center gap-1 p-3 text-sm cursor-help">
+    //           <FaExclamationTriangle /> {t("tool_messages.tool_call_error")}
+    //         </div>
+    //       </Tooltip.Trigger>
+    //       <Tooltip.Portal>
+    //         <Tooltip.Content className="rounded-md bg-[#2d2d2d] px-4 py-2 text-sm text-white max-w-md break-words shadow-lg z-50">
+    //           {toolOutput.result}
+    //           <Tooltip.Arrow className="fill-[#2d2d2d]" />
+    //         </Tooltip.Content>
+    //       </Tooltip.Portal>
+    //     </Tooltip.Root>
+    //   </Tooltip.Provider>
+    // );
   }
 
   if (toolOutput.name === "search_web") {
@@ -843,26 +843,27 @@ export const ToolMessage = ({
     } catch (e) {
       console.error("Quote processing failed:", e);
 
-      return (
-        <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
-          <p className="text-red-400 break-words">
-            Failed to parse quote data:{" "}
-            {e instanceof Error ? e.message : "Unknown error"}
-          </p>
-          <details>
-            <summary className="cursor-pointer text-sm">
-              View raw quote data
-            </summary>
-            <pre className="text-xs mt-2 overflow-x-auto p-2 bg-gray-800 rounded break-words whitespace-pre-wrap">
-              {typeof toolOutput.result === "string"
-                ? toolOutput.result
-                : JSON.stringify(toolOutput.result, null, 2)}
-            </pre>
-          </details>
-        </div>
-      );
+      return null;
+      // return (
+      //   <div className="bg-blue-900/20 text-blue-300 rounded-lg px-4 py-3 my-2 backdrop-blur-sm border border-opacity-20 border-blue-500">
+      //     <p className="text-red-400 break-words">
+      //       Failed to parse quote data:{" "}
+      //       {e instanceof Error ? e.message : "Unknown error"}
+      //     </p>
+      //     <details>
+      //       <summary className="cursor-pointer text-sm">
+      //         View raw quote data
+      //       </summary>
+      //       <pre className="text-xs mt-2 overflow-x-auto p-2 bg-gray-800 rounded break-words whitespace-pre-wrap">
+      //         {typeof toolOutput.result === "string"
+      //           ? toolOutput.result
+      //           : JSON.stringify(toolOutput.result, null, 2)}
+      //       </pre>
+      //     </details>
+      //   </div>
+      // );
     }
   }
 
-  return <ChatMessage message={toolOutput.result} direction="incoming" />;
+  return null; // <ChatMessage message={toolOutput.result} direction="incoming" />;
 };
