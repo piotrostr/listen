@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useModal } from "../contexts/ModalContext";
-import { useToken } from "../hooks/useToken";
+import { useToken, useWorldchainToken } from "../hooks/useToken";
+import { TokenMetadata } from "../lib/types";
 
 // Zod schema for token data
 export const TopTokenSchema = z.object({
@@ -112,10 +113,26 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
 };
 
 const TokenTileEvm = ({ token }: { token: TopToken }) => {
-  const { data: tokenData, isLoading } = useToken(
-    token.pubkey,
-    token.chain_id || undefined
-  );
+  let tokenData: TokenMetadata | null = null;
+  let isLoading = false;
+  if (token.chain_id?.includes("world") || token.chain_id?.includes("480")) {
+    const { data, isLoading: isLoadingWorldchain } = useWorldchainToken(
+      token.pubkey
+    );
+    if (data) {
+      tokenData = data;
+      isLoading = isLoadingWorldchain;
+    }
+  } else {
+    const { data, isLoading: isLoadingEvm } = useToken(
+      token.pubkey,
+      token.chain_id || undefined
+    );
+    if (data) {
+      tokenData = data;
+      isLoading = isLoadingEvm;
+    }
+  }
   const { openChart } = useModal();
 
   return (
