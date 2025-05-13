@@ -1,5 +1,6 @@
 import { usePrivy, useSolanaWallets, useWallets } from "@privy-io/react-auth";
 import { useEffect, useRef } from "react";
+import { useWorldAuth } from "../hooks/useWorldLogin";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 
@@ -7,6 +8,7 @@ export function WalletInitializer() {
   const { user } = usePrivy();
   const { ready: solanaReady, wallets: solanaWallets } = useSolanaWallets();
   const { ready: evmReady, wallets: evmWallets } = useWallets();
+  const { worldUserAddress } = useWorldAuth();
   const {
     setWalletAddresses,
     solanaAddress: currentSolanaAddress,
@@ -19,6 +21,8 @@ export function WalletInitializer() {
     setEoaEvmAddress,
     setEoaEvmIcon,
     setEoaSolanaIcon,
+    setWorldchainAddress,
+    worldchainAddress: currentWorldchainAddress,
   } = useWalletStore();
   const { initializePortfolioManager, fetchAllPortfolios } =
     usePortfolioStore();
@@ -29,6 +33,7 @@ export function WalletInitializer() {
   const prevEoaEvmAddressRef = useRef(currentEoaEvmAddress);
   const prevEoaEvmIconRef = useRef(currentEoaEvmIcon);
   const prevEoaSolanaIconRef = useRef(currentEoaSolanaIcon);
+  const prevWorldchainAddressRef = useRef(currentWorldchainAddress);
   const initializedRef = useRef(false);
   const initialFetchDoneRef = useRef(false);
 
@@ -61,6 +66,7 @@ export function WalletInitializer() {
         evmWallets.find(
           (w) => w.type === "ethereum" && w.walletClientType !== "privy"
         )?.address ?? null,
+      worldchain: worldUserAddress ?? null,
     };
 
     const newIcons = {
@@ -81,6 +87,7 @@ export function WalletInitializer() {
         newAddresses.evm !== prevEvmAddressRef.current,
       eoaSolana: newAddresses.eoaSolana !== prevEoaSolanaAddressRef.current,
       eoaEvm: newAddresses.eoaEvm !== prevEoaEvmAddressRef.current,
+      worldchain: newAddresses.worldchain !== prevWorldchainAddressRef.current,
       icons:
         newIcons.eoaEvm !== prevEoaEvmIconRef.current ||
         newIcons.eoaSolana !== prevEoaSolanaIconRef.current,
@@ -94,6 +101,7 @@ export function WalletInitializer() {
       prevEvmAddressRef.current = newAddresses.evm;
       prevEoaSolanaAddressRef.current = newAddresses.eoaSolana;
       prevEoaEvmAddressRef.current = newAddresses.eoaEvm;
+      prevWorldchainAddressRef.current = newAddresses.worldchain;
       prevEoaEvmIconRef.current = newIcons.eoaEvm;
       prevEoaSolanaIconRef.current = newIcons.eoaSolana;
 
@@ -109,6 +117,9 @@ export function WalletInitializer() {
           }
           if (changes.eoaEvm) {
             setEoaEvmAddress(newAddresses.eoaEvm);
+          }
+          if (changes.worldchain) {
+            setWorldchainAddress(newAddresses.worldchain);
           }
           if (changes.icons) {
             setEoaEvmIcon(newIcons.eoaEvm);
@@ -130,7 +141,14 @@ export function WalletInitializer() {
           }
         });
     }
-  }, [solanaReady, evmReady, user, solanaWallets, evmWallets]);
+  }, [
+    solanaReady,
+    evmReady,
+    user,
+    solanaWallets,
+    evmWallets,
+    worldUserAddress,
+  ]);
 
   return null;
 }
