@@ -264,7 +264,7 @@ impl EvmFallback {
 }
 
 // TODO there is no RWA here to put as an option, something that would be useful though
-const CATEGORIES: [&str; 8] = [
+const CATEGORIES: [&str; 9] = [
     "ai-agents",
     "animal",
     "cat",
@@ -273,6 +273,7 @@ const CATEGORIES: [&str; 8] = [
     "tiktok-memes",
     "meme",
     "virtuals-protocol",
+    "defi",
 ];
 
 // sort these by volume
