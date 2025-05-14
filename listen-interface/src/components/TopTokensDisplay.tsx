@@ -86,7 +86,7 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
             </div>
           </div>
           <div className="text-sm text-gray-500">
-            ${token.price.toFixed(token.price < 0.01 ? 4 : 2)}
+            ${token.price.toFixed(token.price < 0.01 ? 6 : 2)}
           </div>
         </div>
       </div>
@@ -152,7 +152,7 @@ const TokenTileEvm = ({ token }: { token: TopToken }) => {
             </div>
           </div>
           <div className="text-sm text-gray-500">
-            ${token.price.toFixed(token.price < 0.01 ? 4 : 2)}
+            ${token.price.toFixed(token.price < 0.01 ? 6 : 2)}
           </div>
         </div>
       </div>
