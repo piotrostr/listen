@@ -546,3 +546,38 @@ export const compactPortfolio = (
     value: (token.amount * token.price).toFixed(2),
   }));
 };
+
+export const chainIdToGeckoTerminalId = {
+  "1": "eth",
+  "8453": "base",
+  "56": "bsc",
+  "42161": "arbitrum",
+  ethereum: "eth",
+  "696969": "solana",
+  "480": "world-chain",
+  worldchain: "world-chain",
+  avax: "avax",
+  "sui-network": "sui-network",
+  sonic: "sonic",
+} as const;
+
+export type NetworkId =
+  (typeof chainIdToGeckoTerminalId)[keyof typeof chainIdToGeckoTerminalId];
+
+// Convert any chain ID (numeric or network name) to a valid network ID
+export function getNetworkId(chainId: string | number): NetworkId | null {
+  const chainIdString = chainId.toString();
+  // If it's already a valid network name, return it
+  if (
+    Object.values(chainIdToGeckoTerminalId).includes(chainIdString as NetworkId)
+  ) {
+    return chainIdString as NetworkId;
+  }
+
+  // Try to convert from chain ID
+  return (
+    chainIdToGeckoTerminalId[
+      chainIdString as keyof typeof chainIdToGeckoTerminalId
+    ] || null
+  );
+}

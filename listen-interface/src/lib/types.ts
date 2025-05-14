@@ -24,7 +24,7 @@ export const TokenMetadataSchema = z.object({
   decimals: z.number(),
   logoURI: z.string().optional().nullable(),
   volume24h: z.number().optional(),
-  chainId: z.number().optional(),
+  chainId: z.union([z.number(), z.string()]).optional(),
 });
 export type TokenMetadata = z.infer<typeof TokenMetadataSchema>;
 

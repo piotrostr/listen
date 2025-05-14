@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useModal } from "../contexts/ModalContext";
 import { useToken } from "../hooks/useToken";
@@ -38,18 +37,12 @@ const formatNumber = (num: number) => {
 };
 
 const TokenTileSolana = ({ token }: { token: TopToken }) => {
-  const [metadata, setMetadata] = useState<any>(null);
+  const { data: metadata, isLoading } = useToken(token.pubkey, "solana");
   const { openChart } = useModal();
 
-  useEffect(() => {
-    fetch(`https://api.listen-rs.com/v1/adapter/metadata?mint=${token.pubkey}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(res.statusText);
-        return res.json();
-      })
-      .then(setMetadata)
-      .catch(console.error);
-  }, [token.pubkey]);
+  if (!metadata?.logoURI) {
+    console.log(metadata, token);
+  }
 
   return (
     <div
@@ -62,12 +55,9 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
       }}
     >
       <div className="flex items-center gap-2 mb-2">
-        {metadata?.mpl?.ipfs_metadata?.image ? (
+        {!isLoading && metadata?.logoURI ? (
           <img
-            src={metadata.mpl.ipfs_metadata.image.replace(
-              "cf-ipfs.com",
-              "ipfs.io"
-            )}
+            src={metadata.logoURI}
             alt={token.name}
             className="w-8 h-8 rounded-full"
           />
@@ -86,7 +76,7 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
               }}
               className="font-medium hover:text-blue-400 truncate cursor-pointer"
             >
-              {metadata?.mpl?.symbol || token.name}
+              {!isLoading ? metadata?.symbol || token.name : token.name}
             </div>
           </div>
           <div className="text-sm text-gray-500">
@@ -117,6 +107,14 @@ const TokenTileEvm = ({ token }: { token: TopToken }) => {
     token.chain_id || undefined
   );
   const { openChart } = useModal();
+
+  if (!tokenData?.logoURI && tokenData) {
+    tokenData.logoURI = `https://dd.dexscreener.com/ds-data/tokens/${token.chain_id}/${token.pubkey}.png`;
+  }
+
+  if (!tokenData?.logoURI) {
+    console.log(tokenData, token);
+  }
 
   return (
     <div className="rounded-lg p-3 border border-[#2D2D2D] transition-colors bg-black/40 backdrop-blur-sm flex flex-col">
@@ -170,8 +168,7 @@ const TokenTileEvm = ({ token }: { token: TopToken }) => {
 };
 
 const TokenTile = ({ token }: { token: TopToken }) => {
-  // If chain_id exists and it's not Solana, use EVM tile
-  if (token.chain_id) {
+  if (token.pubkey.startsWith("0x")) {
     return <TokenTileEvm token={token} />;
   }
 
