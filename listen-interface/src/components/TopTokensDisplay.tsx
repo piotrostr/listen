@@ -36,6 +36,10 @@ const formatNumber = (num: number) => {
   return `$${num.toFixed(1)}`;
 };
 
+const truncateText = (text: string, maxLength: number = 15) => {
+  return text.length > maxLength ? text.slice(0, maxLength - 2) + ".." : text;
+};
+
 const TokenTileSolana = ({ token }: { token: TopToken }) => {
   const { data: metadata, isLoading } = useToken(token.pubkey, "solana");
   const { openChart } = useModal();
@@ -57,7 +61,7 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
       <div className="flex items-center gap-2 mb-2">
         {!isLoading && metadata?.logoURI ? (
           <img
-            src={metadata.logoURI}
+            src={metadata.logoURI.replace("cf-ipfs.com", "ipfs.io")}
             alt={token.name}
             className="w-8 h-8 rounded-full"
           />
@@ -76,7 +80,9 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
               }}
               className="font-medium hover:text-blue-400 truncate cursor-pointer"
             >
-              {!isLoading ? metadata?.symbol || token.name : token.name}
+              {!isLoading
+                ? truncateText(metadata?.symbol || token.name)
+                : truncateText(token.name)}
             </div>
           </div>
           <div className="text-sm text-gray-500">
@@ -140,7 +146,9 @@ const TokenTileEvm = ({ token }: { token: TopToken }) => {
               }}
               className="font-medium hover:text-blue-400 truncate cursor-pointer"
             >
-              {tokenData?.symbol || token.name}
+              {!isLoading
+                ? truncateText(tokenData?.symbol || token.name)
+                : truncateText(token.name)}
             </div>
           </div>
           <div className="text-sm text-gray-500">
