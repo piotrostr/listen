@@ -13,6 +13,7 @@ import {
   IoWalletOutline,
 } from "react-icons/io5";
 import { MdHistory } from "react-icons/md";
+import { useKeyboard } from "../contexts/KeyboardContext";
 import { useMobile } from "../contexts/MobileContext";
 import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
@@ -112,6 +113,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
     useSidebar();
 
   const worldchainEnabled = import.meta.env.VITE_WORLD_MINIAPP_ENABLED;
+
+  const { isKeyboardOpen } = useKeyboard();
 
   // Add useEffect to handle iOS viewport height
   useEffect(() => {
@@ -385,7 +388,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               ${isMobile ? "transform" : "pl-16"} 
               ${isMobile && isSidebarOpen ? "translate-x-64" : "translate-x-0"}
               ${activePanel && !isMobile ? "lg:pr-[440px]" : ""}
-              ${isIOS ? "pb-8" : "pb-3"}`}
+              ${isIOS && !isKeyboardOpen ? "pb-8" : "pb-3"}`}
           >
             <div className="flex-1 max-w-4xl flex flex-col overflow-hidden">
               {children}
