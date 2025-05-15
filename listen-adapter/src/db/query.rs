@@ -35,7 +35,8 @@ impl ClickhouseDb {
         let current_time = std::time::SystemTime::now()
             .duration_since(std::time::UNIX_EPOCH)?
             .as_secs();
-        let start_time = current_time - 24 * 3600; // 24h ago
+        // Get the start of the current day in UTC
+        let day_start = current_time - (current_time % 86400);
 
         let query = format!(
             r#"
@@ -44,7 +45,7 @@ impl ClickhouseDb {
                 timestamp
             FROM price_updates
             WHERE pubkey = '{mint}'
-            AND timestamp >= {start_time}
+            AND timestamp >= {day_start}
             ORDER BY timestamp ASC
             LIMIT 1
             "#

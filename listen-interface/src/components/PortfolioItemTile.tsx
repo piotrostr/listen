@@ -21,27 +21,6 @@ const formatAmount = (amount: number): string => {
   }
 };
 
-// Helper function to format prices to 4 significant digits
-const formatPrice = (price: number): string => {
-  if (!price) return "0";
-
-  // For numbers >= 0.001, use toFixed with appropriate decimal places
-  if (price >= 0.001) {
-    return price.toPrecision(4);
-  }
-
-  // For very small numbers, convert to string and find significant digits
-  const priceStr = price.toString();
-  const match = priceStr.match(/^0\.0*[1-9]/);
-  if (match) {
-    // Count leading zeros after decimal
-    const leadingZeros = match[0].length - 3; // -3 for "0." and the first non-zero digit
-    return price.toFixed(leadingZeros + 3); // Show 4 significant digits
-  }
-
-  return price.toPrecision(4);
-};
-
 export function PortfolioItemTile({
   asset,
   onBuy,
@@ -63,6 +42,10 @@ export function PortfolioItemTile({
       decimals: asset.decimals,
     });
   };
+
+  const pnlColor =
+    asset.priceChange24h >= 0 ? "text-[#8DFC63]" : "text-[#FF5C5C]";
+  const pnlSign = asset.priceChange24h >= 0 ? "+" : "-";
 
   return (
     <div
@@ -106,12 +89,9 @@ export function PortfolioItemTile({
               <p className="font-bold font-dm-sans">
                 ${(asset.price * asset.amount).toFixed(2)}
               </p>
-              <p className="text-sm text-gray-400 font-dm-sans font-[500]">
-                $
-                {asset.address !==
-                "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-                  ? formatPrice(asset.price)
-                  : asset.price?.toFixed(2)}
+              <p className={`text-sm font-dm-sans font-[500] ${pnlColor}`}>
+                {pnlSign}
+                {Math.abs(asset.priceChange24h).toFixed(2)}%
               </p>
             </div>
           </div>

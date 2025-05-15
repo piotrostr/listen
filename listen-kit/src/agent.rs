@@ -133,9 +133,10 @@ pub fn create_listen_agent(
     if features.deep_research {
         return create_deep_research_agent_openrouter(locale, None);
     }
+    let model = Some("google/gemini-2.5-flash-preview".to_string());
 
     let mut agent = equip_with_evm_tools(equip_with_tools(
-        openrouter_agent_builder(None),
+        openrouter_agent_builder(model),
     ))
     .preamble(&preamble);
 

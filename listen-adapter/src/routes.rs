@@ -135,6 +135,20 @@ pub async fn get_price(
     }
 }
 
+pub async fn get_24h_open_price(
+    state: web::Data<AppState>,
+    query: web::Query<PriceQuery>,
+) -> Result<HttpResponse, Error> {
+    let open_price = state.clickhouse_db.get_24h_open_price(&query.mint).await;
+    match open_price {
+        Ok(price) => Ok(HttpResponse::Ok().json(price)),
+        Err(e) => {
+            error!("Error getting 24h open price: {}", e);
+            Err(InternalError::new(e, StatusCode::INTERNAL_SERVER_ERROR).into())
+        }
+    }
+}
+
 #[derive(Deserialize)]
 pub struct QueryParams {
     pub sql: String,

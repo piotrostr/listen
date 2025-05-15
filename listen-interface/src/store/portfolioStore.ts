@@ -10,6 +10,21 @@ export function getPortfolioTotalValue(assets: PortfolioItem[]): number {
   return assets.reduce((total, asset) => total + asset.price * asset.amount, 0);
 }
 
+// Helper to calculate 24h PnL percentage
+export function getPortfolioPnL(assets: PortfolioItem[]): number {
+  let totalValue = 0;
+  let weightedPnL = 0;
+
+  assets.forEach((asset) => {
+    const assetValue = asset.price * asset.amount;
+    totalValue += assetValue;
+    weightedPnL += asset.priceChange24h * assetValue;
+  });
+
+  if (totalValue === 0) return 0;
+  return weightedPnL / totalValue;
+}
+
 // Stale time in milliseconds (data considered fresh for 30 seconds)
 const STALE_TIME = 30 * 1000;
 
@@ -20,6 +35,9 @@ interface PortfolioState {
   eoaSolanaAssetsMap: Map<string, PortfolioItem>;
   eoaEvmAssetsMap: Map<string, PortfolioItem>;
 
+  // 24h open prices
+  openPricesMap: Map<string, number>;
+
   // Data
   solanaAssetsMap: Map<string, PortfolioItem>; // mint => item
   evmAssetsMap: Map<string, PortfolioItem>; // address => item
@@ -29,6 +47,7 @@ interface PortfolioState {
   getEvmAssets: () => PortfolioItem[];
   getCombinedPortfolio: () => PortfolioItem[];
   getPortfolioValue: () => number;
+  getPortfolioPnL: () => number;
 
   // Status
   isLoading: boolean;
@@ -48,10 +67,6 @@ interface PortfolioState {
   refreshPortfolio: (fetchAll?: boolean) => Promise<void>;
   isFresh: () => boolean;
   initializePortfolioManager: () => void;
-
-  clearPortfolio: () => void;
-
-  // Add new action
   updateTokenBalance: (mint: string, amount: number) => void;
 
   // Add these to match the persisted state
@@ -78,6 +93,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       listenEvmAssetsMap: new Map<string, PortfolioItem>(),
       eoaSolanaAssetsMap: new Map<string, PortfolioItem>(),
       eoaEvmAssetsMap: new Map<string, PortfolioItem>(),
+      openPricesMap: new Map<string, number>(),
 
       // Data
       solanaAssetsMap: new Map<string, PortfolioItem>(),
@@ -104,6 +120,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       },
       getPortfolioValue: () =>
         getPortfolioTotalValue(get().getCombinedPortfolio()),
+      getPortfolioPnL: () => getPortfolioPnL(get().getCombinedPortfolio()),
 
       // Initial status
       isLoading: false,

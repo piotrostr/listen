@@ -33,12 +33,12 @@ pub struct Token {
 Get the core token information - the metadata, socials, recent price action and volume.
 
 Parameters:
-- address (string): The address of the token to fetch metadata for
-- chain_id (u64): The chain ID of the token to fetch metadata for. Leave blank for Solana tokens.
+- address (string): address of the token to fetch metadata for
+- chain_id (string): numeric string of the chain ID of the token to fetch metadata for. Leave blank for Solana tokens.
 ")]
 pub async fn get_token(
     address: String,
-    chain_id: Option<u64>,
+    chain_id: Option<String>,
 ) -> Result<Token> {
     if let Some(chain_id) = chain_id {
         get_token_evm(address, chain_id).await
@@ -47,10 +47,11 @@ pub async fn get_token(
     }
 }
 
-async fn get_token_evm(address: String, chain_id: u64) -> Result<Token> {
+async fn get_token_evm(address: String, chain_id: String) -> Result<Token> {
     let evm_fallback = EvmFallback::from_env()?;
-    let pool_address =
-        evm_fallback.find_pair_address(&address, chain_id).await?;
+    let pool_address = evm_fallback
+        .find_pair_address(&address, chain_id.parse::<u64>()?)
+        .await?;
     if pool_address.is_none() {
         return Err(anyhow!("No pool address found for token"));
     }
@@ -58,10 +59,10 @@ async fn get_token_evm(address: String, chain_id: u64) -> Result<Token> {
     let pool_address = pool_address.unwrap();
 
     let (metadata_result, candlesticks_result) = tokio::join!(
-        evm_fallback.fetch_token_info(&address, chain_id),
+        evm_fallback.fetch_token_info(&address, chain_id.parse::<u64>()?),
         evm_fallback.fetch_candlesticks(
             &pool_address,
-            chain_id,
+            chain_id.parse::<u64>()?,
             "15m",
             Some(200)
         )
@@ -86,10 +87,26 @@ async fn get_token_evm(address: String, chain_id: u64) -> Result<Token> {
 async fn get_token_solana(address: String) -> Result<Token> {
     validate_mint(&address)?;
 
-    let (metadata_result, candlesticks_result) = tokio::join!(
-        fetch_token_metadata(address.clone()),
-        fetch_candlesticks(address, "15m".to_string())
-    );
+    let (metadata_result, candlesticks_result) = if address
+        == "So11111111111111111111111111111111111111112".to_string()
+        || address == "solana".to_string()
+    {
+        let evm_fallback = EvmFallback::from_env()?;
+        tokio::join!(
+            fetch_token_metadata(address.clone()),
+            evm_fallback.fetch_candlesticks(
+                &"Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE",
+                69696,
+                "15m",
+                Some(200),
+            ),
+        )
+    } else {
+        tokio::join!(
+            fetch_token_metadata(address.clone()),
+            fetch_candlesticks(address, "15m".to_string())
+        )
+    };
 
     let metadata = metadata_result.ok();
     let price_info = match candlesticks_result {

@@ -7,7 +7,7 @@ import { MdHistory } from "react-icons/md";
 import { useMobile } from "../contexts/MobileContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { usePortfolioStore } from "../store/portfolioStore";
-import { BurgerIcon } from "./Burger";
+import { BurgerIconListenThreeDots } from "./Burger";
 
 interface SimpleHeaderProps {
   activePanel: string | null;
@@ -60,7 +60,10 @@ export function SimpleHeader({
         <div
           className={`flex justify-between items-center w-full ${isVerySmallScreen ? "p-[12px]" : "p-[16px]"} ${isVerySmallScreen ? "mt-1" : "mt-2"}`}
         >
-          <BurgerIcon isOpen={isSidebarOpen} onClick={toggleMobileSidebar} />
+          <BurgerIconListenThreeDots
+            isOpen={isSidebarOpen}
+            onClick={toggleMobileSidebar}
+          />
           <div
             className={`text-white ${isVerySmallScreen ? "text-base" : "text-[20px]"} flex items-center ${isVerySmallScreen ? "gap-2" : "gap-3"} font-dm-sans font-[400] leading-4 text-center align-middle`}
             onClick={user ? () => setActivePanel("portfolio") : () => {}}

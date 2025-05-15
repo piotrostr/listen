@@ -2,6 +2,7 @@ import { getAddress } from "viem";
 import { z } from "zod";
 import { getAnyToken } from "../hooks/useToken";
 import { tokenMetadataCache } from "./localStorage";
+import { fetchTokenPrices } from "./price";
 import { PortfolioItem, TokenMetadata } from "./types";
 
 const SUPPORTED_NETWORKS = [
@@ -208,7 +209,8 @@ export async function getTokenHoldings(
 
     const validatedData = parsedData.data;
 
-    const portfolioPromises = validatedData.data.tokens
+    // First, get all valid tokens and their metadata
+    const validTokens = validatedData.data.tokens
       .filter((token) => {
         const balance = BigInt(token.tokenBalance);
         if (balance <= BigInt(0)) return false;
@@ -219,14 +221,7 @@ export async function getTokenHoldings(
           token.tokenAddress === "0x0000000000000000000000000000000000000000";
         if (isNativeToken) return true;
 
-        // For non-native tokens, check if they have meaningful USD value
-        const decimals = token.tokenMetadata?.decimals ?? 18;
-        const amount = Number(balance) / Math.pow(10, decimals);
-        const price = token.tokenPrices?.[0]?.value
-          ? parseFloat(token.tokenPrices[0].value)
-          : 0;
-
-        return (price * amount).toFixed(2) !== "0.00";
+        return true; // We'll filter by value after getting prices
       })
       .map(async (token) => {
         const network = SUPPORTED_NETWORKS.find(
@@ -239,24 +234,51 @@ export async function getTokenHoldings(
 
         const rawBalance = BigInt(token.tokenBalance);
         const amount = Number(rawBalance) / Math.pow(10, metadata.decimals);
-        const price = token.tokenPrices?.[0]?.value
-          ? parseFloat(token.tokenPrices[0].value)
-          : 0;
+
+        return {
+          metadata,
+          amount,
+          chain: network.chain,
+          address:
+            token.tokenAddress || "0x0000000000000000000000000000000000000000",
+        };
+      });
+
+    const tokens = (await Promise.all(validTokens)).filter(
+      (token): token is NonNullable<typeof token> => token !== null
+    );
+
+    // Fetch prices for all tokens
+    const prices = await fetchTokenPrices(
+      tokens.map((token) => ({
+        address: token.address,
+        chain: token.chain,
+      }))
+    );
+
+    // Combine metadata with prices and filter out zero-value tokens
+    return tokens
+      .map((token) => {
+        const priceData = prices.get(token.address);
+        if (
+          !priceData ||
+          (priceData.price * token.amount).toFixed(2) === "0.00"
+        ) {
+          return null;
+        }
 
         const portfolioItem: PortfolioItem = {
-          ...metadata,
-          chain: network.chain,
-          price,
-          amount,
+          ...token.metadata,
+          amount: token.amount,
+          chain: token.chain,
+          price: priceData.price,
+          priceChange24h: priceData.priceChange24h,
+          logoURI: token.metadata.logoURI || "",
         };
 
         return portfolioItem;
-      });
-
-    const portfolioItems = await Promise.all(portfolioPromises);
-    return portfolioItems.filter(
-      (item): item is PortfolioItem => item !== null
-    );
+      })
+      .filter((item): item is PortfolioItem => item !== null);
   } catch (error) {
     console.error("Error fetching token holdings:", error);
     throw error;

@@ -3,10 +3,11 @@ import * as Tooltip from "@radix-ui/react-tooltip";
 import { Link } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
-import { FiPlus, FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
+import { FiPlus, FiSend, FiStopCircle } from "react-icons/fi";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { LuTelescope } from "react-icons/lu";
 import { MdMemory } from "react-icons/md";
+import { TbShare2 } from "react-icons/tb";
 import { useKeyboard } from "../contexts/KeyboardContext";
 import { useMobile } from "../contexts/MobileContext";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
@@ -235,7 +236,7 @@ export function ChatInput({
                 className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 transition-colors"
                 title="Share this chat"
               >
-                <FiShare2 size={18} />
+                <TbShare2 size={18} />
               </button>
             )}
 
@@ -258,7 +259,7 @@ export function ChatInput({
                 className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 transition-colors"
                 title="Share this chat"
               >
-                <FiShare2 size={18} />
+                <TbShare2 size={18} />
               </button>
             )}
             <Tooltip.Provider>

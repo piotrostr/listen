@@ -6,7 +6,8 @@ import {
 } from "@solana/web3.js";
 import { fetchListenMetadata } from "./listen";
 import { tokenMetadataCache } from "./localStorage";
-import { Holding, PortfolioItem, PriceResponse, TokenMetadata } from "./types";
+import { fetchTokenPrices } from "./price";
+import { Holding, PortfolioItem, TokenMetadata } from "./types";
 import { decodeTokenAccount, imageMap } from "./util";
 
 const TOKEN_PROGRAM_ID = new PublicKey(
@@ -106,21 +107,6 @@ export async function fetchTokenMetadataFromJupiter(
   }
 }
 
-async function fetchPrices(mints: string[]): Promise<PriceResponse> {
-  try {
-    const response = await fetch(
-      `https://api.jup.ag/price/v2?ids=${mints.join(",")}`
-    );
-    if (!response.ok) {
-      throw new Error("Failed to fetch prices");
-    }
-    return response.json();
-  } catch (error) {
-    console.error("Error fetching prices:", error);
-    throw error;
-  }
-}
-
 export const fetchPortfolio = async (
   address: string
 ): Promise<PortfolioItem[]> => {
@@ -136,21 +122,22 @@ export const fetchPortfolio = async (
   const mints = [WSOL_MINT, ...holdings.map((h) => h.mint)];
 
   // Get metadata and prices in parallel
-  const [tokenMetadata, pricesResponse] = await Promise.all([
+  const [tokenMetadata, prices] = await Promise.all([
     Promise.all(mints.map(fetchTokenMetadata)),
-    fetchPrices(mints),
+    fetchTokenPrices(mints.map((mint) => ({ address: mint, chain: "solana" }))),
   ]);
 
   const solMetadata = tokenMetadata[0];
-  const solPortfolioItem = {
+  const solPrice = prices.get(WSOL_MINT);
+  const solPortfolioItem: PortfolioItem = {
     address: WSOL_MINT,
     name: "Solana",
     symbol: "SOL",
     decimals: solMetadata.decimals,
-    logoURI: solMetadata.logoURI,
-    price: Number(pricesResponse.data[WSOL_MINT]?.price || 0),
+    logoURI: solMetadata.logoURI || "",
+    price: solPrice?.price || 0,
+    priceChange24h: solPrice?.priceChange24h || 0,
     amount: solBalance / LAMPORTS_PER_SOL,
-    daily_volume: solMetadata.volume24h || 0,
     chain: "solana",
   };
 
@@ -158,18 +145,20 @@ export const fetchPortfolio = async (
   const tokenPortfolioItems = holdings
     .map((holding, index) => {
       const metadata = tokenMetadata[index + 1]; // offset by 1 since SOL metadata is first
-      const price = Number(pricesResponse.data[holding.mint]?.price || 0);
+      const priceData = prices.get(holding.mint);
       const amount = Number(holding.amount) / Math.pow(10, metadata.decimals);
 
-      if ((price * amount).toFixed(2) === "0.00") return null;
+      if (!priceData || (priceData.price * amount).toFixed(2) === "0.00")
+        return null;
 
       const portfolioItem: PortfolioItem = {
         address: metadata.address,
         name: metadata.name,
         symbol: metadata.symbol,
         decimals: metadata.decimals,
-        logoURI: metadata.logoURI,
-        price,
+        logoURI: metadata.logoURI || "",
+        price: priceData.price,
+        priceChange24h: priceData.priceChange24h,
         amount,
         chain: "solana",
       };

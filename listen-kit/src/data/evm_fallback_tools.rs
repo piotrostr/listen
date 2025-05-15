@@ -16,16 +16,17 @@ use rig_tool_macro::tool;
 Fetch token metadata for any EVM token from the GeckoTerminal API.
 
 Parameters:
-- address (string): The address of the token to fetch metadata for
-- chain_id (u64): The chain ID of the token
+- address (string): address of the token to fetch metadata for
+- chain_id (string): numeric string of the chain ID of the token
 ")]
 pub async fn fetch_token_metadata_evm(
     address: String,
-    chain_id: u64,
+    chain_id: String,
 ) -> Result<GtTokenMetadata> {
     let evm_fallback = EvmFallback::from_env()?;
-    let token_info =
-        evm_fallback.fetch_token_info(&address, chain_id).await?;
+    let token_info = evm_fallback
+        .fetch_token_info(&address, chain_id.parse::<u64>()?)
+        .await?;
     Ok(token_info)
 }
 
@@ -33,11 +34,11 @@ pub async fn fetch_token_metadata_evm(
 Fetch token price analysis for any EVM token based on OHLCV data from the GeckoTerminal API.
 
 Parameters:
-- pair_address (string): The address of the token LP pair to fetch price for -
+- pair_address (string): address of the token LP pair to fetch price for -
 this is different from the token address, the LP address can be found through
 searching on DexScreener.
-- chain_id (u64): The chain ID of the token
-- interval (string): The candlestick interval, one of:
+- chain_id (string): numeric string of the chain ID of the token
+- interval (string): candlestick interval, one of:
   * '15m' (15 minutes)
   * '30m' (30 minutes)
   * '1h'  (1 hour)
@@ -47,13 +48,18 @@ searching on DexScreener.
 ")]
 pub async fn fetch_price_action_analysis_evm(
     pair_address: String,
-    chain_id: u64,
+    chain_id: String,
     interval: String,
     intent: Option<String>,
 ) -> Result<PriceActionAnalysisResponse> {
     let evm_fallback = EvmFallback::from_env()?;
     let candlesticks = evm_fallback
-        .fetch_candlesticks(&pair_address, chain_id, &interval, Some(200))
+        .fetch_candlesticks(
+            &pair_address,
+            chain_id.parse::<u64>()?,
+            &interval,
+            Some(200),
+        )
         .await?;
     let candlesticks_clone = candlesticks.clone();
 
@@ -86,7 +92,7 @@ Fetch top tokens by chain ID from the GeckoTerminal API.
 Use this tool to find trending tokens on EVM chains: Eth Mainnet, Base, Arbitrum or Binance Smart Chain.
 
 Parameters:
-- chain_id (u64): The chain ID of the tokens to fetch
+- chain_id (string): numeric string of the chain ID of the tokens to fetch
 - limit (string, optional): number of tokens to return; defaults to \"6\"
 - duration (string, optional): duration over which to aggregate the data, one of:
   * 5m (5 minutes)
@@ -98,7 +104,7 @@ Parameters:
 Returns a list of top tokens with their market data, sorted by volume.
 ")]
 pub async fn fetch_top_tokens_by_chain_id(
-    chain_id: u64,
+    chain_id: String,
     limit: Option<String>,
     duration: Option<String>,
 ) -> Result<Vec<TopToken>> {
@@ -106,7 +112,11 @@ pub async fn fetch_top_tokens_by_chain_id(
     let duration = duration.unwrap_or("6h".to_string());
     let evm_fallback = EvmFallback::from_env()?;
     let tokens = evm_fallback
-        .fetch_top_tokens(chain_id, duration, limit.parse::<usize>()?)
+        .fetch_top_tokens(
+            chain_id.parse::<u64>()?,
+            duration,
+            limit.parse::<usize>()?,
+        )
         .await?;
     Ok(tokens)
 }
@@ -159,7 +169,7 @@ mod tests {
         SignerContext::with_signer(make_test_signer(), async {
             let analysis = fetch_price_action_analysis_evm(
                 "0x4e829F8A5213c42535AB84AA40BD4aDCCE9cBa02".to_string(),
-                8453, // base
+                "8453".to_string(), // base
                 "5m".to_string(),
                 None,
             )
