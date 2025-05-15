@@ -67,7 +67,7 @@ export const guidelines = (chain: string, defaultAmount?: string) => `
 * if the user's wallet doesn't have a sufficient Solana balance before a trade, return <fund_${chain}_wallet></fund_${chain}_wallet> tags in your response to allow the user to fund the wallet
 ${
   defaultAmount &&
-  `*   The default amount that the user uses for entries for a given position is ${defaultAmount} SOL`
+  `*   The default amount that the user uses for entries for a given position is ${defaultAmount} SOL. Use that for swapping from SOL into new tokens after completing token research. You can also remind the user that this parameter can be edited in the Settings tab.`
 }
 * Prioritize the most suitable token (native or USDC located on the same chain) if user has it. Othwerise, you can use Soalna
 NEVER put anything like "Disclaimer: This is not financial advice. Trade at your own risk." in your response. This is already in the terms and conditions and you don't need to repeat it.
