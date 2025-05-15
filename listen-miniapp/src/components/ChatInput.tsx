@@ -7,6 +7,7 @@ import { FiPlus, FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { LuTelescope } from "react-icons/lu";
 import { MdMemory } from "react-icons/md";
+import { useKeyboard } from "../contexts/KeyboardContext";
 import { useMobile } from "../contexts/MobileContext";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSettingsStore } from "../store/settingsStore";
@@ -50,6 +51,8 @@ export function ChatInput({
   const { isMobile } = useMobile();
 
   const { user } = usePrivy();
+
+  const { setIsKeyboardOpen } = useKeyboard();
 
   // const { data: listenBalance } = useListenBalance();
 
@@ -144,6 +147,12 @@ export function ChatInput({
           style={{
             minHeight: "20px",
             maxHeight: "80px", // Approximately 4 lines
+          }}
+          onFocus={() => {
+            setIsKeyboardOpen(true);
+          }}
+          onBlur={() => {
+            setIsKeyboardOpen(false);
           }}
         />
       </div>

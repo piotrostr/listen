@@ -49,7 +49,7 @@ export function ChatContainer({
       >
         <div className="flex flex-col gap-3 px-4 pt-1">{children}</div>
       </div>
-      <div className="mt-auto sticky bottom-0 left-0 right-0 bg-[#151518]/80 backdrop-blur-sm pb-2 pt-3">
+      <div className="mt-auto sticky bottom-0 left-0 right-0 bg-[#151518]/80 backdrop-blur-sm pb-1 pt-3">
         {!isGenerating &&
           handleQuestionClick &&
           displaySuggestions &&
