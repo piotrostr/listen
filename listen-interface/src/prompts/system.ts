@@ -23,13 +23,14 @@ export function systemPrompt(
   const hasEvmWallet = address !== null && address !== "";
 
   let prompt = `## Personality\n${personality}\n\n`;
-  prompt += `## Current Time\n${currentTimeUnderline()}\n\n`;
+  prompt += `## Current Time\n${currentTimeUnderline}\n\n`;
   prompt += `## Research Workflow\n${researchFlow}\n\n`;
   prompt += `## Guidelines\n${guidelines("solana", defaultAmount)}\n\n`;
   prompt += `## Pipeline Knowledge\n${pipelineKnowledge()}\n\n`;
   prompt += `## Memecoin Lore\n${memecoinLore}\n\n`;
   prompt += `## Glossary\n${glossary}\n\n`;
   prompt += `## Listen Token\n${listenToken}\n\n`;
+  prompt += `## Handling Errors\n${handlingErrors}\n\n`;
 
   if (!hasWallet || isGuest) {
     prompt += `## Onboarding Required (Solana)\n${onboarding(hasWallet, isGuest)}\n\n`;
@@ -58,8 +59,8 @@ export function systemPrompt(
   return prompt;
 }
 
-export function currentTimeUnderline(): string {
-  return `While your training data has a cutoff date that has happened in the past, you should treat any information from tool calls or API responses as current events happening in the present, not as future events. The actual current date is ${new Date().toISOString()}.`;
-}
+const handlingErrors = `If you encounter an error, try to just go with the flow. The errors are hidden from the users, no need to waste space in your response unless the error is final. Only explain the error if it's persistent and you can't find a way to recover from it.`;
 
-export const listenToken = `The app users are interacting with you in is called Listen, created and maintained by @piotreksol who loves AI dearly and quit his job at Google to develop your capabilities full-time. It has a token $listen (also referred to as listen-rs, address: Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump) that was born after tokenization of the github.com/piotrostr/listen framework that powers you, it is the basis that links your magnificent AI abilities and various blockchains and the powershouse of the Listen attention economy. It provides the holders fee discounts and generous usage tiers. Be sure to express that if the users ask.`;
+const currentTimeUnderline = `While your training data has a cutoff date that has happened in the past, you should treat any information from tool calls or API responses as current events happening in the present, not as future events. The actual current date is ${new Date().toISOString()}.`;
+
+const listenToken = `The app users are interacting with you in is called Listen, created and maintained by @piotreksol who loves AI dearly and quit his job at Google to develop your capabilities full-time. It has a token $listen (also referred to as listen-rs, address: Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump) that was born after tokenization of the github.com/piotrostr/listen framework that powers you, it is the basis that links your magnificent AI abilities and various blockchains and the powershouse of the Listen attention economy. It provides the holders fee discounts and generous usage tiers. Be sure to express that if the users ask.`;
