@@ -1,5 +1,4 @@
 import { useModal } from "../contexts/ModalContext";
-import { use24hOpenPrice } from "../hooks/use24hOpenPrice";
 import { PortfolioItem } from "../lib/types";
 import { ChainIcon } from "./ChainIcon";
 
@@ -22,41 +21,12 @@ const formatAmount = (amount: number): string => {
   }
 };
 
-// Helper function to format prices to 4 significant digits
-const formatPrice = (price: number): string => {
-  if (!price) return "0";
-
-  // For numbers >= 0.001, use toFixed with appropriate decimal places
-  if (price >= 0.001) {
-    return price.toPrecision(4);
-  }
-
-  // For very small numbers, convert to string and find significant digits
-  const priceStr = price.toString();
-  const match = priceStr.match(/^0\.0*[1-9]/);
-  if (match) {
-    // Count leading zeros after decimal
-    const leadingZeros = match[0].length - 3; // -3 for "0." and the first non-zero digit
-    return price.toFixed(leadingZeros + 3); // Show 4 significant digits
-  }
-
-  return price.toPrecision(4);
-};
-
-// Helper function to format percentage change
-const formatPnL = (currentPrice: number, openPrice: number): string => {
-  const pctChange = ((currentPrice - openPrice) / openPrice) * 100;
-  const sign = pctChange >= 0 ? "+" : "";
-  return `${sign}${pctChange.toFixed(2)}%`;
-};
-
 export function PortfolioItemTile({
   asset,
   onBuy,
   onSell,
 }: PortfolioItemTileProps) {
   const { openChart } = useModal();
-  const { data: openPriceData } = use24hOpenPrice(asset.address);
 
   const handleOpenChart = () => {
     openChart({
@@ -73,11 +43,9 @@ export function PortfolioItemTile({
     });
   };
 
-  const pnlColor = openPriceData
-    ? asset.price >= openPriceData.price
-      ? "text-green-500"
-      : "text-red-500"
-    : "";
+  const pnlColor =
+    asset.priceChange24h >= 0 ? "text-[#8DFC63]" : "text-[#FF5C5C]";
+  const pnlSign = asset.priceChange24h >= 0 ? "+" : "-";
 
   return (
     <div
@@ -122,9 +90,8 @@ export function PortfolioItemTile({
                 ${(asset.price * asset.amount).toFixed(2)}
               </p>
               <p className={`text-sm font-dm-sans font-[500] ${pnlColor}`}>
-                {openPriceData
-                  ? formatPnL(asset.price, openPriceData.price)
-                  : "$" + formatPrice(asset.price)}
+                {pnlSign}
+                {Math.abs(asset.priceChange24h).toFixed(2)}%
               </p>
             </div>
           </div>

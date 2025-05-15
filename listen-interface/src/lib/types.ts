@@ -55,7 +55,10 @@ export const PortfolioItemSchema = z.object({
   price: z.number(),
   amount: z.number(),
   chain: z.string(),
+  priceChange24h: z.number(),
+  volume24h: z.number().optional(),
 });
+
 export type PortfolioItem = z.infer<typeof PortfolioItemSchema>;
 
 export const PortfolioDataSchema = z.array(PortfolioItemSchema);

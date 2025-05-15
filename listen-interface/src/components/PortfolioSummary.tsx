@@ -48,8 +48,7 @@ export function PortfolioSummary({ totalBalance }: PortfolioSummaryProps) {
   const { login } = usePrivy();
   const { showMfaEnrollmentModal } = useMfaEnrollment();
   const portfolioPnL = usePortfolioStore((state) => state.getPortfolioPnL());
-  const openValue = totalBalance / (1 + portfolioPnL / 100);
-  const pnlAmount = totalBalance - openValue;
+  const pnlAmount = (totalBalance * portfolioPnL) / 100;
 
   const handleTopupListen = async () => {
     if (solanaAddress) {

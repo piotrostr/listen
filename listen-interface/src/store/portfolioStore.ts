@@ -11,23 +11,18 @@ export function getPortfolioTotalValue(assets: PortfolioItem[]): number {
 }
 
 // Helper to calculate 24h PnL percentage
-export function getPortfolioPnL(
-  assets: PortfolioItem[],
-  openPrices: Map<string, number>
-): number {
-  let currentValue = 0;
-  let openValue = 0;
+export function getPortfolioPnL(assets: PortfolioItem[]): number {
+  let totalValue = 0;
+  let weightedPnL = 0;
 
   assets.forEach((asset) => {
-    const openPrice = openPrices.get(asset.address);
-    if (openPrice) {
-      currentValue += asset.price * asset.amount;
-      openValue += openPrice * asset.amount;
-    }
+    const assetValue = asset.price * asset.amount;
+    totalValue += assetValue;
+    weightedPnL += asset.priceChange24h * assetValue;
   });
 
-  if (openValue === 0) return 0;
-  return ((currentValue - openValue) / openValue) * 100;
+  if (totalValue === 0) return 0;
+  return weightedPnL / totalValue;
 }
 
 // Stale time in milliseconds (data considered fresh for 30 seconds)
@@ -72,11 +67,6 @@ interface PortfolioState {
   refreshPortfolio: (fetchAll?: boolean) => Promise<void>;
   isFresh: () => boolean;
   initializePortfolioManager: () => void;
-  updateOpenPrice: (mint: string, price: number) => void;
-
-  clearPortfolio: () => void;
-
-  // Add new action
   updateTokenBalance: (mint: string, amount: number) => void;
 
   // Add these to match the persisted state
@@ -130,8 +120,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       },
       getPortfolioValue: () =>
         getPortfolioTotalValue(get().getCombinedPortfolio()),
-      getPortfolioPnL: () =>
-        getPortfolioPnL(get().getCombinedPortfolio(), get().openPricesMap),
+      getPortfolioPnL: () => getPortfolioPnL(get().getCombinedPortfolio()),
 
       // Initial status
       isLoading: false,
@@ -461,14 +450,6 @@ export const usePortfolioStore = create<PortfolioState>()(
             solanaAssetsMap: updatedMap,
             lastUpdated: Date.now(),
           };
-        });
-      },
-
-      updateOpenPrice: (mint: string, price: number) => {
-        set((state) => {
-          const newMap = new Map(state.openPricesMap);
-          newMap.set(mint, price);
-          return { openPricesMap: newMap };
         });
       },
     }),
