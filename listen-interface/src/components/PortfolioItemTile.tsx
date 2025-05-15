@@ -1,4 +1,5 @@
 import { useModal } from "../contexts/ModalContext";
+import { use24hOpenPrice } from "../hooks/use24hOpenPrice";
 import { PortfolioItem } from "../lib/types";
 import { ChainIcon } from "./ChainIcon";
 
@@ -42,12 +43,20 @@ const formatPrice = (price: number): string => {
   return price.toPrecision(4);
 };
 
+// Helper function to format percentage change
+const formatPnL = (currentPrice: number, openPrice: number): string => {
+  const pctChange = ((currentPrice - openPrice) / openPrice) * 100;
+  const sign = pctChange >= 0 ? "+" : "";
+  return `${sign}${pctChange.toFixed(2)}%`;
+};
+
 export function PortfolioItemTile({
   asset,
   onBuy,
   onSell,
 }: PortfolioItemTileProps) {
   const { openChart } = useModal();
+  const { data: openPriceData } = use24hOpenPrice(asset.address);
 
   const handleOpenChart = () => {
     openChart({
@@ -63,6 +72,12 @@ export function PortfolioItemTile({
       decimals: asset.decimals,
     });
   };
+
+  const pnlColor = openPriceData
+    ? asset.price >= openPriceData.price
+      ? "text-green-500"
+      : "text-red-500"
+    : "";
 
   return (
     <div
@@ -106,12 +121,10 @@ export function PortfolioItemTile({
               <p className="font-bold font-dm-sans">
                 ${(asset.price * asset.amount).toFixed(2)}
               </p>
-              <p className="text-sm text-gray-400 font-dm-sans font-[500]">
-                $
-                {asset.address !==
-                "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v"
-                  ? formatPrice(asset.price)
-                  : asset.price?.toFixed(2)}
+              <p className={`text-sm font-dm-sans font-[500] ${pnlColor}`}>
+                {openPriceData
+                  ? formatPnL(asset.price, openPriceData.price)
+                  : "$" + formatPrice(asset.price)}
               </p>
             </div>
           </div>
