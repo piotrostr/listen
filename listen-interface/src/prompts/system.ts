@@ -41,7 +41,7 @@ export function systemPrompt(
 
   prompt += `## Current Context\n`;
   if (currentSolanaPrice) {
-    prompt += `*   Solana Price: $${currentSolanaPrice.price.toFixed(2)}\n`;
+    prompt += `*   Solana Price: $${currentSolanaPrice.price.toFixed(2)} (24h change: ${currentSolanaPrice.priceChange24h.toFixed(1)}) (timestamp: ${new Date().toISOString()})\n`;
   }
   if (hasWallet && pubkey) {
     prompt += `*   Solana Address: \`${pubkey}\`\n`;

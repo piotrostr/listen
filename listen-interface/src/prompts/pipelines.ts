@@ -93,7 +93,7 @@ ${JSON.stringify(addressBook, null, 2)}
 *   Each step = "action" object + optional "conditions" array.
 *   Action types: "SwapOrder", "Notification".
 *   Condition types: "PriceAbove", "PriceBelow", "Now".
-*   For "SwapOrder": specify verified \`input_token\`, \`output_token\`, \`amount\` (string, considering decimals). Amount can never be null.
+*   For "SwapOrder": specify verified \`input_token\`, \`output_token\`, \`amount\` (string, considering decimals). Amount can never be null, nor zero!!!
     *   Use \`from_chain_caip2\` and \`to_chain_caip2\` for EVM or cross-chain swaps (refer to CAIP2 map).
     *   Omit chain params for Solana-only swaps.
 *   For "Notification": specify \`input_token\` and \`message\`.
