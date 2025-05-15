@@ -72,7 +72,7 @@ export function PortfolioSummary({ totalBalance }: PortfolioSummaryProps) {
           })}
         </span>
         <div
-          className={`mt-4 text-lg ${pnlColor} flex items-center justify-center gap-1`}
+          className={`mt-4 text-lg ${pnlColor} flex items-center justify-center gap-1 font-dm-sans`}
         >
           <PnLArrow isPositive={portfolioPnL >= 0} />
           <span>
