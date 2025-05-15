@@ -20,6 +20,7 @@ use yellowstone_grpc_proto::geyser::{
 
 use crate::{
     constants::{
+        TOKEN_2022_PROGRAM_ID,
         TOKEN_PROGRAM_ID,
         // METEORA_DLMM_PROGRAM_ID, PUMP_SWAP_PROGRAM_ID,
         // RAYDIUM_AMM_V4_PROGRAM_ID, RAYDIUM_CLMM_PROGRAM_ID,
@@ -53,6 +54,7 @@ pub fn make_geyser_pipeline(
             failed: Some(false),
             account_include: vec![
                 TOKEN_PROGRAM_ID.to_string(),
+                TOKEN_2022_PROGRAM_ID.to_string(),
                 // RAYDIUM_AMM_V4_PROGRAM_ID.to_string(),
                 // RAYDIUM_CLMM_PROGRAM_ID.to_string(),
                 // RAYDIUM_CPMM_PROGRAM_ID.to_string(),
