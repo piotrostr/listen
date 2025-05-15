@@ -68,6 +68,7 @@ interface PortfolioState {
   isFresh: () => boolean;
   initializePortfolioManager: () => void;
   updateTokenBalance: (mint: string, amount: number) => void;
+  clearPortfolio: () => void;
 
   // Add these to match the persisted state
   listenSolanaAssets?: PortfolioItem[];
