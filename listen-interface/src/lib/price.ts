@@ -1,13 +1,13 @@
 import { getNetworkId } from "./util";
 
-interface TokenPrice {
+export interface TokenPrice {
   price: number;
   priceChange24h: number;
 }
 
 export type TokenPriceMap = Map<string, TokenPrice>;
 
-interface GeckoTerminalResponse {
+export interface GeckoTerminalResponse {
   data: {
     attributes: {
       token_prices: Record<string, string>;
@@ -17,7 +17,7 @@ interface GeckoTerminalResponse {
 }
 
 // Solana native token wrapped address
-const WSOL_MINT = "So11111111111111111111111111111111111111112";
+export const WSOL_MINT = "So11111111111111111111111111111111111111112";
 
 // Group tokens by their network for batch fetching
 function groupTokensByNetwork(

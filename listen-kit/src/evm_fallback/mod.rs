@@ -21,6 +21,7 @@ pub fn map_chain_id_to_network(chain_id: u64) -> Result<&'static str> {
         42161 => Ok("arbitrum"),
         8453 => Ok("base"),
         480 => Ok("world-chain"),
+        69696 => Ok("solana"),
         _ => Err(anyhow!("Unsupported chain ID: {}", chain_id)),
     }
 }

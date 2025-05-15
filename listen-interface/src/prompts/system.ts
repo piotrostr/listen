@@ -1,3 +1,4 @@
+import { TokenPrice } from "../lib/price";
 import { CompactPortfolio } from "../lib/util";
 import {
   glossary,
@@ -15,7 +16,8 @@ export function systemPrompt(
   pubkey: string | null,
   address: string | null,
   defaultAmount: string,
-  isGuest: boolean
+  isGuest: boolean,
+  currentSolanaPrice?: TokenPrice
 ): string {
   const hasWallet = pubkey !== null && pubkey !== "";
   const hasEvmWallet = address !== null && address !== "";
@@ -37,6 +39,9 @@ export function systemPrompt(
   }
 
   prompt += `## Current Context\n`;
+  if (currentSolanaPrice) {
+    prompt += `*   Solana Price: $${currentSolanaPrice.price.toFixed(2)}\n`;
+  }
   if (hasWallet && pubkey) {
     prompt += `*   Solana Address: \`${pubkey}\`\n`;
   } else {
