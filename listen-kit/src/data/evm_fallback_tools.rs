@@ -127,6 +127,7 @@ Parameters:
   * 'tiktok-memes'
   * 'meme'
   * 'virtuals-protocol'
+  * 'defi'
 - limit (string, optional): number of tokens to return; defaults to \"6\"
 
 Returns a list of top tokens with their market data, sorted by volume.

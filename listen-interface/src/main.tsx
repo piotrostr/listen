@@ -15,6 +15,7 @@ import { createRoot } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
 import { arbitrum } from "viem/chains";
 import { WagmiProvider, createConfig, http } from "wagmi";
+import { KeyboardProvider } from "./contexts/KeyboardContext";
 import { MobileProvider } from "./contexts/MobileContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { ToastProvider } from "./contexts/ToastContext";
@@ -82,7 +83,9 @@ const AppContent = () => {
             <WagmiProvider config={config}>
               <QueryClientProvider client={new QueryClient()}>
                 <SidebarProvider>
-                  <RouterProvider router={router} />
+                  <KeyboardProvider>
+                    <RouterProvider router={router} />
+                  </KeyboardProvider>
                 </SidebarProvider>
               </QueryClientProvider>
             </WagmiProvider>

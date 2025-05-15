@@ -1,4 +1,3 @@
-import { useEffect, useState } from "react";
 import { z } from "zod";
 import { useModal } from "../contexts/ModalContext";
 import { useToken } from "../hooks/useToken";
@@ -37,19 +36,17 @@ const formatNumber = (num: number) => {
   return `$${num.toFixed(1)}`;
 };
 
+const truncateText = (text: string, maxLength: number = 15) => {
+  return text.length > maxLength ? text.slice(0, maxLength - 2) + ".." : text;
+};
+
 const TokenTileSolana = ({ token }: { token: TopToken }) => {
-  const [metadata, setMetadata] = useState<any>(null);
+  const { data: metadata, isLoading } = useToken(token.pubkey, "solana");
   const { openChart } = useModal();
 
-  useEffect(() => {
-    fetch(`https://api.listen-rs.com/v1/adapter/metadata?mint=${token.pubkey}`)
-      .then(async (res) => {
-        if (!res.ok) throw new Error(res.statusText);
-        return res.json();
-      })
-      .then(setMetadata)
-      .catch(console.error);
-  }, [token.pubkey]);
+  if (!metadata?.logoURI) {
+    console.log(metadata, token);
+  }
 
   return (
     <div
@@ -62,12 +59,9 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
       }}
     >
       <div className="flex items-center gap-2 mb-2">
-        {metadata?.mpl?.ipfs_metadata?.image ? (
+        {!isLoading && metadata?.logoURI ? (
           <img
-            src={metadata.mpl.ipfs_metadata.image.replace(
-              "cf-ipfs.com",
-              "ipfs.io"
-            )}
+            src={metadata.logoURI.replace("cf-ipfs.com", "ipfs.io")}
             alt={token.name}
             className="w-8 h-8 rounded-full"
           />
@@ -86,11 +80,13 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
               }}
               className="font-medium hover:text-blue-400 truncate cursor-pointer"
             >
-              {metadata?.mpl?.symbol || token.name}
+              {!isLoading
+                ? truncateText(metadata?.symbol || token.name)
+                : truncateText(token.name)}
             </div>
           </div>
           <div className="text-sm text-gray-500">
-            ${token.price.toFixed(token.price < 0.01 ? 4 : 2)}
+            ${token.price.toFixed(token.price < 0.01 ? 6 : 2)}
           </div>
         </div>
       </div>
@@ -118,6 +114,14 @@ const TokenTileEvm = ({ token }: { token: TopToken }) => {
   );
   const { openChart } = useModal();
 
+  if (!tokenData?.logoURI && tokenData) {
+    tokenData.logoURI = `https://dd.dexscreener.com/ds-data/tokens/${token.chain_id}/${token.pubkey}.png`;
+  }
+
+  if (!tokenData?.logoURI) {
+    console.log(tokenData, token);
+  }
+
   return (
     <div className="rounded-lg p-3 border border-[#2D2D2D] transition-colors bg-black/40 backdrop-blur-sm flex flex-col">
       <div className="flex items-center gap-2 mb-2">
@@ -142,11 +146,13 @@ const TokenTileEvm = ({ token }: { token: TopToken }) => {
               }}
               className="font-medium hover:text-blue-400 truncate cursor-pointer"
             >
-              {tokenData?.symbol || token.name}
+              {!isLoading
+                ? truncateText(tokenData?.symbol || token.name)
+                : truncateText(token.name)}
             </div>
           </div>
           <div className="text-sm text-gray-500">
-            ${token.price.toFixed(token.price < 0.01 ? 4 : 2)}
+            ${token.price.toFixed(token.price < 0.01 ? 6 : 2)}
           </div>
         </div>
       </div>
@@ -170,8 +176,7 @@ const TokenTileEvm = ({ token }: { token: TopToken }) => {
 };
 
 const TokenTile = ({ token }: { token: TopToken }) => {
-  // If chain_id exists and it's not Solana, use EVM tile
-  if (token.chain_id) {
+  if (token.pubkey.startsWith("0x")) {
     return <TokenTileEvm token={token} />;
   }
 

@@ -1,37 +1,14 @@
 import { useEffect, useState } from "react";
 import { z } from "zod";
+import { getNetworkId } from "../lib/util";
 import { Spinner } from "./Spinner";
 
-const chainIdToGeckoTerminalId = {
-  "1": "eth",
-  "8453": "base",
-  "56": "bsc",
-  "42161": "arbitrum",
-  ethereum: "eth",
-  "": "solana",
-  "480": "world-chain",
-  worldchain: "world-chain",
-} as const;
+// Cache for pair addresses to prevent repeated API calls
+const pairAddressCache: Record<string, { address: string; timestamp: number }> =
+  {};
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
-type NetworkId =
-  (typeof chainIdToGeckoTerminalId)[keyof typeof chainIdToGeckoTerminalId];
-
-// Convert any chain ID (numeric or network name) to a valid network ID
-function getNetworkId(chainId: string): NetworkId | null {
-  // If it's already a valid network name, return it
-  if (Object.values(chainIdToGeckoTerminalId).includes(chainId as NetworkId)) {
-    return chainId as NetworkId;
-  }
-
-  // Try to convert from chain ID
-  return (
-    chainIdToGeckoTerminalId[
-      chainId as keyof typeof chainIdToGeckoTerminalId
-    ] || null
-  );
-}
-
-const poolResponseSchema = z.object({
+export const PoolResponseSchema = z.object({
   data: z.array(
     z.object({
       attributes: z.object({
@@ -43,11 +20,6 @@ const poolResponseSchema = z.object({
     })
   ),
 });
-
-// Cache for pair addresses to prevent repeated API calls
-const pairAddressCache: Record<string, { address: string; timestamp: number }> =
-  {};
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes in milliseconds
 
 async function findPairAddress(
   tokenAddress: string,
@@ -85,7 +57,7 @@ async function findPairAddress(
     }
 
     const json = await response.json();
-    const result = poolResponseSchema.safeParse(json);
+    const result = PoolResponseSchema.safeParse(json);
 
     if (!result.success) {
       console.error("Failed to parse API response:", result.error);

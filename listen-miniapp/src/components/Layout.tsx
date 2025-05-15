@@ -14,6 +14,7 @@ import {
 } from "react-icons/io5";
 import { MdHistory } from "react-icons/md";
 import { worldchainEnabled } from "../config/env";
+import { useKeyboard } from "../contexts/KeyboardContext";
 import { useMobile } from "../contexts/MobileContext";
 import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
@@ -103,6 +104,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
   const { hasAddedToHomeScreen, isVisible, hide } = useHasAddedToHomeScreen();
   useSolanaLedgerPlugin();
+  const { isKeyboardOpen } = useKeyboard();
 
   const handleLogout = () => {
     logout();
@@ -388,7 +390,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               ${isMobile ? "transform" : "pl-16"} 
               ${isMobile && isSidebarOpen ? "translate-x-64" : "translate-x-0"}
               ${activePanel && !isMobile ? "lg:pr-[440px]" : ""}
-              ${isIOS ? "pb-8" : "pb-3"}`}
+              ${isIOS && !isKeyboardOpen ? "pb-8" : "pb-3"}`}
           >
             <div className="flex-1 max-w-4xl flex flex-col overflow-hidden">
               {children}
