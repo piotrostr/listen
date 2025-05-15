@@ -1,3 +1,4 @@
+use crate::version::VERSION;
 use crate::websocket::handle_ws_connection;
 use crate::{db::candlesticks::CandlestickInterval, state::AppState};
 use actix_web::{error::InternalError, http::StatusCode, web, Error, HttpRequest, HttpResponse};
@@ -33,7 +34,7 @@ pub async fn health_check() -> HttpResponse {
 
 pub async fn version() -> HttpResponse {
     HttpResponse::Ok().json(json!({
-        "version": "3.1.2"
+        "version": VERSION
     }))
 }
 
