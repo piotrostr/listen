@@ -24,13 +24,13 @@ On EVM, before swapping a token, this function has to be called to verify swap w
 ")]
 pub async fn verify_swap_router_has_allowance(
     token_address: String,
-    chain_id: u64,
+    chain_id: String,
 ) -> Result<bool> {
     let signer = SignerContext::current().await;
     ensure_evm_wallet_created(signer.clone()).await?;
     let owner = signer.address().unwrap();
     wrap_unsafe(move || async move {
-        let provider = make_provider(chain_id)?;
+        let provider = make_provider(chain_id.parse::<u64>()?)?;
         let router_address = *SWAP_ROUTER_02_ADDRESSES
             .get(&provider.get_chain_id().await?)
             .context("Router address not found")?;
@@ -54,12 +54,12 @@ allowance error, call this function to approve the token for swap router spend
 ")]
 pub async fn approve_token_for_router_spend(
     input_token_address: String,
-    chain_id: u64,
+    chain_id: String,
 ) -> Result<String> {
-    let provider = make_provider(chain_id)?;
+    let provider = make_provider(chain_id.parse::<u64>()?)?;
     let router_address = wrap_unsafe(move || async move {
         let router_address = *SWAP_ROUTER_02_ADDRESSES
-            .get(&chain_id)
+            .get(&chain_id.parse::<u64>()?)
             .context("Router address not found")?;
 
         Ok(router_address)
@@ -87,7 +87,7 @@ pub async fn trade(
     input_token_address: String,
     input_amount: String,
     output_token_address: String,
-    chain_id: u64,
+    chain_id: String,
 ) -> Result<String> {
     let input_amount = if input_amount.contains('.') {
         parse_ether(&input_amount)?.to_string()
@@ -99,7 +99,7 @@ pub async fn trade(
             input_token_address,
             input_amount,
             output_token_address,
-            &make_provider(chain_id)?,
+            &make_provider(chain_id.parse::<u64>()?)?,
             owner,
         )
         .await
@@ -118,13 +118,13 @@ double-checked with the user
 pub async fn transfer_eth(
     recipient: String,
     amount: String,
-    chain_id: u64,
+    chain_id: String,
 ) -> Result<String> {
     execute_evm_transaction(move |owner| async move {
         create_transfer_eth_tx(
             recipient,
             amount,
-            &make_provider(chain_id)?,
+            &make_provider(chain_id.parse::<u64>()?)?,
             owner,
         )
         .await
@@ -144,14 +144,14 @@ pub async fn transfer_erc20(
     recipient: String,
     token_address: String,
     amount: String,
-    chain_id: u64,
+    chain_id: String,
 ) -> Result<String> {
     execute_evm_transaction(move |owner| async move {
         create_transfer_erc20_tx(
             token_address,
             recipient,
             amount,
-            &make_provider(chain_id)?,
+            &make_provider(chain_id.parse::<u64>()?)?,
             owner,
         )
         .await
@@ -174,11 +174,13 @@ Most chains it will return Ethereum, in case of BSC it will return BNB balance (
 ")]
 pub async fn get_eth_balance(
     address: String,
-    chain_id: u64,
+    chain_id: String,
 ) -> Result<(String, u64)> {
     wrap_unsafe(move || async move {
-        let balance = balance(&make_provider(chain_id)?, address).await?;
-        Ok((balance, chain_id))
+        let balance =
+            balance(&make_provider(chain_id.parse::<u64>()?)?, address)
+                .await?;
+        Ok((balance, chain_id.parse::<u64>()?))
     })
     .await
 }
@@ -187,13 +189,13 @@ pub async fn get_eth_balance(
 pub async fn get_erc20_balance(
     token_address: String,
     address: String,
-    chain_id: u64,
+    chain_id: String,
 ) -> Result<serde_json::Value> {
     wrap_unsafe(move || async move {
         let (balance, decimals) = token_balance(
             address.clone(),
             token_address.clone(),
-            &make_provider(chain_id)?,
+            &make_provider(chain_id.parse::<u64>()?)?,
         )
         .await?;
         Ok(serde_json::json!({
