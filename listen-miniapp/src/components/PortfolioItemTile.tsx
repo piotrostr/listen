@@ -1,3 +1,4 @@
+import React from "react";
 import { useModal } from "../contexts/ModalContext";
 import { PortfolioItem } from "../lib/types";
 import { ChainIcon } from "./ChainIcon";
@@ -7,6 +8,28 @@ interface PortfolioItemTileProps {
   onBuy?: (asset: PortfolioItem) => void;
   onSell?: (asset: PortfolioItem) => void;
 }
+
+const TokenLogo = ({ src, alt }: { src?: string; alt: string }) => {
+  const [hasError, setHasError] = React.useState(false);
+  const initials = alt.slice(0, 2).toUpperCase();
+
+  if (!src || hasError) {
+    return (
+      <div className="w-12 h-12 rounded-full bg-[#1e1e21] flex items-center justify-center border-[1px] border-[#404040]">
+        <span className="text-white">{initials}</span>
+      </div>
+    );
+  }
+
+  return (
+    <img
+      src={src.replace("cf-ipfs.com", "ipfs.io")}
+      alt={alt}
+      className="w-12 h-12 rounded-full"
+      onError={() => setHasError(true)}
+    />
+  );
+};
 
 // Helper function to format amounts
 const formatAmount = (amount: number): string => {
@@ -72,17 +95,7 @@ export function PortfolioItemTile({
       <div className="flex justify-between items-start">
         <div className="flex items-center gap-3">
           <div className="relative">
-            {asset.logoURI ? (
-              <img
-                src={asset.logoURI.replace("cf-ipfs.com", "ipfs.io")}
-                alt={asset.symbol}
-                className="w-12 h-12 rounded-full"
-              />
-            ) : (
-              <div className="w-12 h-12 rounded-full bg-gray-200 flex items-center justify-center">
-                <span className="text-gray-500 dark:text-gray-400">?</span>
-              </div>
-            )}
+            <TokenLogo src={asset.logoURI || undefined} alt={asset.symbol} />
             {asset.chain !== "solana" && (
               <div className="absolute top-1 -left-1 z-10">
                 <ChainIcon chainId={asset.chain} className="w-4 h-4" />
