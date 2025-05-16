@@ -45,10 +45,6 @@ declare module "@tanstack/react-router" {
   }
 }
 
-if (worldchainEnabled) {
-  import("eruda").then(({ default: eruda }) => eruda.init());
-}
-
 const AppContent = () => {
   const content = (
     <MobileProvider>
@@ -110,5 +106,5 @@ const AppContent = () => {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AppContent />
-  </StrictMode>
+  </StrictMode>,
 );

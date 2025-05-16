@@ -171,22 +171,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
     toggleSidebar();
   };
 
-  // Function to handle navigation item clicks
-  const handleNavClick = (navType: string | null) => {
-    if (navType === "chat") {
-      // Always show chat, hide any panel
-      setActivePanel(null);
-    } else {
-      // For other nav items, toggle the corresponding panel
-      setActivePanel(activePanel === navType ? null : navType);
-    }
-
-    // Close sidebar on mobile after selection
-    if (isMobile) {
-      setIsSidebarOpen(false);
-    }
-  };
-
   // Avoid rendering initializers until providers are ready and user is potentially authenticated
   // but DON'T render them conditionally *between* renders once authenticated.
   const shouldRenderInitializers =
@@ -201,8 +185,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
           <PipelinesInitializer />
         </>
       )}
-      <WebsocketInitializer />
-      <VersionInitializer />
       <div
         className="relative flex flex-col text-white overflow-hidden"
         style={{ height: "100dvh" }}
@@ -279,55 +261,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
                   </div>
                 )}
 
-                {/* Mobile Navigation Items - Only shown on mobile */}
-                {isMobile && user && isSidebarOpen && (
-                  <div className="px-4 mb-4 mt-5 flex-shrink-0">
-                    <div className="space-y-1">
-                      <button
-                        onClick={() => handleNavClick("chat")}
-                        className={`flex items-center h-10 w-full rounded-lg ${activePanel === null ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
-                      >
-                        <IoChatboxOutline className="w-5 h-5" />
-                        <span className="ml-3">{t("layout.chat")}</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleNavClick("portfolio")}
-                        className={`flex items-center h-10 w-full rounded-lg ${activePanel === "portfolio" ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
-                      >
-                        <IoWalletOutline className="w-5 h-5" />
-                        <span className="ml-3">{t("layout.portfolio")}</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleNavClick("screener")}
-                        className={`flex items-center h-10 w-full rounded-lg ${activePanel === "screener" ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
-                      >
-                        <BiCoin className="w-5 h-5" />
-                        <span className="ml-3">{t("layout.screener")}</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleNavClick("pipelines")}
-                        className={`flex items-center h-10 w-full rounded-lg ${activePanel === "pipelines" ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
-                      >
-                        <MdHistory className="w-5 h-5" />
-                        <span className="ml-3">{t("layout.pipelines")}</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleNavClick("settings")}
-                        className={`flex items-center h-10 w-full rounded-lg ${activePanel === "settings" ? "text-white bg-[#212121]" : "text-gray-300 hover:text-white hover:bg-[#212121]"} transition-colors px-4`}
-                      >
-                        <IoSettingsOutline className="w-5 h-5" />
-                        <span className="ml-3">{t("layout.settings")}</span>
-                      </button>
-                    </div>
-                  </div>
-                )}
-
                 {/* Recent Chats Section - Modified to use flex-grow */}
-                <div className="px-4 flex-grow flex flex-col min-h-0">
+                <div className="px-4 flex-grow flex flex-col min-h-0 mt-4">
                   <div
                     className={`${isSidebarOpen ? "block" : "hidden"} h-full`}
                   >
