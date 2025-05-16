@@ -93,7 +93,7 @@ Use this tool to find trending tokens on EVM chains: Eth Mainnet, Base, Arbitrum
 
 Parameters:
 - chain_id (string): numeric string of the chain ID of the tokens to fetch
-- limit (string, optional): number of tokens to return; defaults to \"6\", follow the user's request
+- limit (string, optional): number of tokens to return; use \"6\" for default unless specified otherwise by the user
 - duration (string, optional): duration over which to aggregate the data, one of:
   * 5m (5 minutes)
   * 1h (1 hour)
