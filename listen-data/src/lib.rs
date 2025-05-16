@@ -1,7 +1,7 @@
 #[cfg(test)]
 #[ctor::ctor]
 fn init() {
-    dotenv::from_filename(".env").ok();
+    dotenvy::from_filename(".env").ok();
     std::env::set_var("RUST_LOG", "debug");
     let _ = tracing_subscriber::fmt::try_init();
 }

@@ -27,7 +27,7 @@ carbon-raydium-cpmm-decoder = { git = "https://github.com/sevenlabs-hq/carbon", 
 carbon-token-program-decoder = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.6.2" }
 carbon-token-2022-decoder = { git = "https://github.com/sevenlabs-hq/carbon", branch = "main", version = "0.6.2" }
 ctor = "0.2.9"
-dotenv = "0.15.0"
+dotenvy = "0.15.7"
 
 # need yellowstone protos compat
 solana-account-decoder = "=2.1.16"

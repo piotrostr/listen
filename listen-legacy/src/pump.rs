@@ -1010,7 +1010,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_pump_bump() {
-        dotenv::from_filename(".env").unwrap();
+        dotenvy::from_filename(".env").unwrap();
         let wallet = Keypair::read_from_file(env("FUND_KEYPAIR_PATH"))
             .expect("read wallet");
         let rpc_client =
@@ -1094,7 +1094,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_buy_pump_token() {
-        dotenv::from_filename(".env").unwrap();
+        dotenvy::from_filename(".env").unwrap();
         // 0.00069 sol
         let lamports = 690000;
         let pump_accounts = PumpAccounts {
@@ -1141,7 +1141,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_bonding_curve_incomplete() {
-        dotenv::from_filename(".env").unwrap();
+        dotenvy::from_filename(".env").unwrap();
         let rpc_client = RpcClient::new(env("RPC_URL").to_string());
         let bonding_curve_pubkey = Pubkey::from_str(
             "Drhj4djqLsPyiA9qK2YmBngteFba8XhhvuQoBToW6pMS", // some shitter
@@ -1163,7 +1163,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_bonding_curve_complete() {
-        dotenv::from_filename(".env").unwrap();
+        dotenvy::from_filename(".env").unwrap();
         let rpc_client = RpcClient::new(env("RPC_URL").to_string());
         let bonding_curve_pubkey = Pubkey::from_str(
             "EB5tQ64HwNjaEoKKYAPkZqndwbULX249EuWSnkjfvR3y", // michi
