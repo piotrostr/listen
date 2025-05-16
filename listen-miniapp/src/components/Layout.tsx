@@ -7,7 +7,6 @@ import { useSolanaLedgerPlugin } from "@privy-io/react-auth/solana";
 import { useTranslation } from "react-i18next";
 import { FaXTwitter } from "react-icons/fa6";
 import { worldchainEnabled } from "../config/env";
-import { useKeyboard } from "../contexts/KeyboardContext";
 import { useMobile } from "../contexts/MobileContext";
 import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
@@ -95,7 +94,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
   const { hasAddedToHomeScreen, isVisible, hide } = useHasAddedToHomeScreen();
   useSolanaLedgerPlugin();
-  const { isKeyboardOpen } = useKeyboard();
 
   const handleLogout = () => {
     logout();

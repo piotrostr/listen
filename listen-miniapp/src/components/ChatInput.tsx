@@ -5,7 +5,6 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FiPlus, FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { useKeyboard } from "../contexts/KeyboardContext";
-import { useMobile } from "../contexts/MobileContext";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 
 interface ChatInputProps {
@@ -30,8 +29,6 @@ export function ChatInput({
   hasMessages = false,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const { isMobile } = useMobile();
 
   const { user } = usePrivy();
 
