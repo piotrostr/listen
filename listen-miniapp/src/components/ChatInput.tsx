@@ -76,7 +76,7 @@ export function ChatInput({
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center gap-2 pl-3">
+    <div className="flex items-center gap-2 px-3">
       {/* Plus button outside of input */}
       {!hasMessages ? (
         <button className="p-2 rounded-full bg-gray-600/20 hover:bg-gray-600/30 transition-colors text-gray-400">
