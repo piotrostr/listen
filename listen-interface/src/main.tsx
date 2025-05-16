@@ -63,6 +63,7 @@ const AppContent = () => {
                 "rainbow",
                 "wallet_connect",
                 "rabby_wallet",
+                "solflare",
               ],
             },
             fundingMethodConfig: {
