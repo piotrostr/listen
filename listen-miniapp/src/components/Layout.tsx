@@ -5,14 +5,7 @@ import { Background } from "./Background";
 
 import { useSolanaLedgerPlugin } from "@privy-io/react-auth/solana";
 import { useTranslation } from "react-i18next";
-import { BiCoin } from "react-icons/bi";
 import { FaXTwitter } from "react-icons/fa6";
-import {
-  IoChatboxOutline,
-  IoSettingsOutline,
-  IoWalletOutline,
-} from "react-icons/io5";
-import { MdHistory } from "react-icons/md";
 import { worldchainEnabled } from "../config/env";
 import { useKeyboard } from "../contexts/KeyboardContext";
 import { useMobile } from "../contexts/MobileContext";
@@ -30,9 +23,7 @@ import { RecentChats } from "./RecentChats";
 import { SimpleHeader } from "./SimpleHeader";
 import { SwipeHandler } from "./SwipeHandler";
 import { VersionAndLanguageDisplay } from "./VersionAndLanguage";
-import { VersionInitializer } from "./VersionInitializer";
 import { WalletInitializer } from "./WalletInitializer";
-import { WebsocketInitializer } from "./WebsocketInitializer";
 
 // Memoize the BottomLink component
 const MemoizedBottomLink = memo(function BottomLink({
