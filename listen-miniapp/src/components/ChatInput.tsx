@@ -79,137 +79,132 @@ export function ChatInput({
   const { t } = useTranslation();
 
   return (
-    <div
-      className={`flex flex-col rounded-3xl overflow-hidden border-[#2D2D2D] bg-[#151518]/40 backdrop-blur-sm ${
-        isMobile ? "mb-0 border-t" : "mb-2 border"
-      }`}
-    >
-      {/* Textarea row */}
-      <div className="flex items-center px-4 py-3">
-        <textarea
-          ref={textareaRef}
-          value={inputMessage}
-          onChange={(e) => onInputChange(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) {
-              e.preventDefault();
-              if (isGenerating) {
-                onStopGeneration();
-              } else {
-                handleSend();
-              }
-            }
-            if (e.key === "Escape" && isGenerating) {
-              e.preventDefault();
-              onStopGeneration();
-            }
-          }}
-          rows={1}
-          className="w-full bg-transparent text-white outline-none resize-none chat-input overflow-y-auto scrollbar-hide"
-          placeholder={t("chat.placeholder")}
-          style={{
-            minHeight: "20px",
-            maxHeight: "80px", // Approximately 4 lines
-          }}
-          onFocus={() => {
-            setIsKeyboardOpen(true);
-          }}
-          onBlur={() => {
-            setIsKeyboardOpen(false);
-          }}
-        />
-      </div>
-
-      {/* Button row */}
-      <div className="flex items-center px-2 py-2 gap-2">
-        {/* Plus button (noop) */}
-        {!hasMessages ? (
-          <button className="p-2 rounded-full bg-gray-600/20 hover:bg-gray-600/30 transition-colors text-gray-400">
-            <FiPlus size={18} />
-          </button>
-        ) : (
-          <Link
-            to="/"
-            search={{ new: true }}
-            className="p-2 rounded-full bg-gray-600/20 hover:bg-gray-600/30 transition-colors text-gray-400"
-            title="New Chat"
+    <div className="flex items-center gap-2 pl-3">
+      {/* Plus button outside of input */}
+      {!hasMessages ? (
+        <button className="p-2 rounded-full bg-gray-600/20 hover:bg-gray-600/30 transition-colors text-gray-400">
+          <FiPlus size={18} />
+        </button>
+      ) : (
+        <Link
+          to="/"
+          search={{ new: true }}
+          className="p-2 rounded-full bg-gray-600/20 hover:bg-gray-600/30 transition-colors text-gray-400"
+          title="New Chat"
+        >
+          <svg
+            width="18"
+            height="18"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <svg
-              width="18"
-              height="18"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            >
-              <line x1="12" y1="5" x2="12" y2="19"></line>
-              <line x1="5" y1="12" x2="19" y2="12"></line>
-            </svg>
-          </Link>
-        )}
+            <line x1="12" y1="5" x2="12" y2="19"></line>
+            <line x1="5" y1="12" x2="19" y2="12"></line>
+          </svg>
+        </Link>
+      )}
 
-        {/* Arrow up button on the far right */}
-        {isGenerating ? (
-          <div className="flex items-center gap-2 ml-auto">
-            {!isSharedChat && onShareChat && (
-              <button
-                onClick={onShareChat}
-                className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 transition-colors"
-                title="Share this chat"
-              >
-                <FiShare2 size={18} />
-              </button>
-            )}
-
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
+      {/* Main input container */}
+      <div
+        className={`flex flex-1 items-center rounded-3xl overflow-hidden border-[#2D2D2D] bg-[#151518]/40 backdrop-blur-sm border`}
+      >
+        <div className="flex-1 flex items-center px-4 py-3">
+          <textarea
+            ref={textareaRef}
+            value={inputMessage}
+            onChange={(e) => onInputChange(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && !e.shiftKey) {
+                e.preventDefault();
+                if (isGenerating) {
+                  onStopGeneration();
+                } else {
+                  handleSend();
+                }
+              }
+              if (e.key === "Escape" && isGenerating) {
+                e.preventDefault();
                 onStopGeneration();
-              }}
-              className="p-2 rounded-full bg-red-500/20 hover:bg-red-500/40 transition-colors"
-              aria-label="Stop generating"
-            >
-              <FiStopCircle className="text-red-400" size={18} />
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center gap-2 ml-auto">
-            {!isSharedChat && onShareChat && (
+              }
+            }}
+            rows={1}
+            className="w-full bg-transparent text-white outline-none resize-none chat-input overflow-y-auto scrollbar-hide"
+            placeholder={t("chat.placeholder")}
+            style={{
+              minHeight: "20px",
+              maxHeight: "80px",
+            }}
+            onFocus={() => setIsKeyboardOpen(true)}
+            onBlur={() => setIsKeyboardOpen(false)}
+          />
+        </div>
+
+        <div className="flex items-center px-2 py-2 gap-2">
+          {isGenerating ? (
+            <div className="flex items-center gap-2">
+              {!isSharedChat && onShareChat && (
+                <button
+                  onClick={onShareChat}
+                  className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 transition-colors"
+                  title="Share this chat"
+                >
+                  <FiShare2 size={18} />
+                </button>
+              )}
               <button
-                onClick={onShareChat}
-                className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 transition-colors"
-                title="Share this chat"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onStopGeneration();
+                }}
+                className="p-2 rounded-full bg-red-500/20 hover:bg-red-500/40 transition-colors"
+                aria-label="Stop generating"
               >
-                <FiShare2 size={18} />
+                <FiStopCircle className="text-red-400" size={18} />
               </button>
-            )}
-            <Tooltip.Provider>
-              <Tooltip.Root>
-                <Tooltip.Trigger asChild>
-                  <div className="relative">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleSend();
-                      }}
-                      disabled={!inputMessage.trim() || !walletsReady || !user}
-                      className={`p-2 rounded-full ${
-                        inputMessage.trim() && walletsReady && user
-                          ? "bg-[#FB2671]/20 hover:bg-[#FB2671]/40 text-[#FB2671]"
-                          : "bg-gray-500/10 text-gray-500"
-                      } transition-colors`}
-                      aria-label="Send message"
-                    >
-                      <FiSend size={18} />
-                    </button>
-                  </div>
-                </Tooltip.Trigger>
-              </Tooltip.Root>
-            </Tooltip.Provider>
-          </div>
-        )}
+            </div>
+          ) : (
+            <div className="flex items-center gap-2">
+              {!isSharedChat && onShareChat && (
+                <button
+                  onClick={onShareChat}
+                  className="p-2 rounded-full bg-blue-500/20 hover:bg-blue-500/40 text-blue-300 transition-colors"
+                  title="Share this chat"
+                >
+                  <FiShare2 size={18} />
+                </button>
+              )}
+              <Tooltip.Provider>
+                <Tooltip.Root>
+                  <Tooltip.Trigger asChild>
+                    <div className="relative">
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          handleSend();
+                        }}
+                        disabled={
+                          !inputMessage.trim() || !walletsReady || !user
+                        }
+                        className={`p-2 rounded-full ${
+                          inputMessage.trim() && walletsReady && user
+                            ? "bg-[#FB2671]/20 hover:bg-[#FB2671]/40 text-[#FB2671]"
+                            : "bg-gray-500/10 text-gray-500"
+                        } transition-colors`}
+                        aria-label="Send message"
+                      >
+                        <FiSend size={18} />
+                      </button>
+                    </div>
+                  </Tooltip.Trigger>
+                </Tooltip.Root>
+              </Tooltip.Provider>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

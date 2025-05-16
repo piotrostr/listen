@@ -316,7 +316,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
               ${isMobile ? "transform" : "pl-16"} 
               ${isMobile && isSidebarOpen ? "translate-x-64" : "translate-x-0"}
               ${activePanel && !isMobile ? "lg:pr-[440px]" : ""}
-              ${isIOS && !isKeyboardOpen ? "pb-8" : "pb-3"}`}
+              ${isIOS && "pb-8"}`}
           >
             <div className="flex-1 max-w-4xl flex flex-col overflow-hidden">
               {children}
