@@ -4,9 +4,6 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FiPlus, FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
-import { IoSwapHorizontal } from "react-icons/io5";
-import { LuTelescope } from "react-icons/lu";
-import { MdMemory } from "react-icons/md";
 import { useKeyboard } from "../contexts/KeyboardContext";
 import { useMobile } from "../contexts/MobileContext";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
@@ -186,45 +183,6 @@ export function ChatInput({
             </svg>
           </Link>
         )}
-
-        {/* Search button */}
-        <button
-          onClick={toggleTrading}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-            agentMode
-              ? "bg-blue-600/20 text-blue-400"
-              : "bg-gray-600/20 text-gray-400"
-          } hover:bg-gray-600/30 transition-colors text-sm`}
-        >
-          <IoSwapHorizontal size={18} />
-          {!isMobile && <span>{t("chat.direct_trades")}</span>}
-        </button>
-
-        {/* Research Feature */}
-        <button
-          onClick={toggleResearch}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-            researchEnabled
-              ? "bg-blue-600/20 text-blue-400"
-              : "bg-gray-600/20 text-gray-400"
-          } hover:bg-gray-600/30 transition-colors text-sm`}
-        >
-          <LuTelescope size={18} />
-          {!isMobile && <span>{t("chat.research")}</span>}
-        </button>
-
-        {/* Memory Feature */}
-        <button
-          onClick={toggleMemory}
-          className={`flex items-center gap-2 px-4 py-2 rounded-full ${
-            memoryEnabled
-              ? "bg-blue-600/20 text-blue-400"
-              : "bg-gray-600/20 text-gray-400"
-          } hover:bg-gray-600/30 transition-colors text-sm`}
-        >
-          <MdMemory size={18} />
-          {!isMobile && <span>{t("chat.memory")}</span>}
-        </button>
 
         {/* Arrow up button on the far right */}
         {isGenerating ? (
