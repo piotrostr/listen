@@ -92,24 +92,6 @@ export function ChatInput({
 
   const { t } = useTranslation();
 
-  // Toggle the research mode
-  const toggleResearch = () => {
-    setAgentMode(false);
-    setResearchEnabled(!researchEnabled);
-  };
-
-  // Toggle the trading mode
-  const toggleTrading = () => {
-    if (activeWallet === "listen") {
-      setResearchEnabled(false);
-      setAgentMode(!agentMode);
-    }
-  };
-
-  const toggleMemory = () => {
-    setMemoryEnabled(!memoryEnabled);
-  };
-
   const sendDisabled = modelType === "claude" && researchEnabled;
 
   return (

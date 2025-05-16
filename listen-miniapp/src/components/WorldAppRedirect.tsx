@@ -1,3 +1,4 @@
+import React from "react";
 import { WorldMiniApp } from "../prompts/miniapps";
 
 const Container = ({ children }: { children: React.ReactNode }) => {
@@ -9,11 +10,23 @@ const Container = ({ children }: { children: React.ReactNode }) => {
 };
 
 const AppLogo = ({ src, alt }: { src: string; alt: string }) => {
+  const [hasError, setHasError] = React.useState(false);
+  const initials = alt.slice(0, 2).toUpperCase();
+
+  if (hasError) {
+    return (
+      <div className="w-[56px] h-[56px] border-[1px] border-[#404040] rounded-full flex items-center justify-center bg-[#1e1e21] text-white">
+        {initials}
+      </div>
+    );
+  }
+
   return (
     <img
       src={src}
       alt={alt}
       className="w-[56px] h-[56px] border-[1px] border-[#404040] rounded-full"
+      onError={() => setHasError(true)}
     />
   );
 };
