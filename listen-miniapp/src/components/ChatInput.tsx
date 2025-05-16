@@ -7,8 +7,6 @@ import { FiPlus, FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { useKeyboard } from "../contexts/KeyboardContext";
 import { useMobile } from "../contexts/MobileContext";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
-import { useSettingsStore } from "../store/settingsStore";
-import { useWalletStore } from "../store/walletStore";
 
 interface ChatInputProps {
   inputMessage: string;
@@ -32,18 +30,6 @@ export function ChatInput({
   hasMessages = false,
 }: ChatInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
-
-  const {
-    researchEnabled,
-    agentMode,
-    setAgentMode,
-    setResearchEnabled,
-    modelType,
-    memoryEnabled,
-    setMemoryEnabled,
-  } = useSettingsStore();
-
-  const { activeWallet } = useWalletStore();
 
   const { isMobile } = useMobile();
 
@@ -91,8 +77,6 @@ export function ChatInput({
     wallets?.evmWallet !== undefined && wallets?.solanaWallet !== undefined;
 
   const { t } = useTranslation();
-
-  const sendDisabled = modelType === "claude" && researchEnabled;
 
   return (
     <div
@@ -210,17 +194,9 @@ export function ChatInput({
                         e.stopPropagation();
                         handleSend();
                       }}
-                      disabled={
-                        !inputMessage.trim() ||
-                        !walletsReady ||
-                        !user ||
-                        sendDisabled
-                      }
+                      disabled={!inputMessage.trim() || !walletsReady || !user}
                       className={`p-2 rounded-full ${
-                        inputMessage.trim() &&
-                        walletsReady &&
-                        user &&
-                        !sendDisabled
+                        inputMessage.trim() && walletsReady && user
                           ? "bg-[#FB2671]/20 hover:bg-[#FB2671]/40 text-[#FB2671]"
                           : "bg-gray-500/10 text-gray-500"
                       } transition-colors`}
@@ -230,17 +206,6 @@ export function ChatInput({
                     </button>
                   </div>
                 </Tooltip.Trigger>
-                {sendDisabled && (
-                  <Tooltip.Portal>
-                    <Tooltip.Content
-                      className="rounded-md bg-[#2d2d2d] px-4 py-2 text-sm text-white"
-                      sideOffset={5}
-                    >
-                      {t("chat.research_disabled")}
-                      <Tooltip.Arrow className="fill-[#2d2d2d]" />
-                    </Tooltip.Content>
-                  </Tooltip.Portal>
-                )}
               </Tooltip.Root>
             </Tooltip.Provider>
           </div>
