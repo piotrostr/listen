@@ -33,7 +33,7 @@ console.log("ethereum: ", ethereumWallets.length);
 const connection = new Connection(process.env.SOLANA_RPC_URL!);
 
 // Process Solana wallets
-// await processSolanaWallets(solanaWallets, connection);
+await processSolanaWallets(solanaWallets, connection);
 
 // Process Ethereum and other EVM wallets
 await processEVMWallets(ethereumWallets, process.env.ALCHEMY_API_KEY!);
