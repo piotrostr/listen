@@ -46,6 +46,7 @@ pub struct TopToken {
     pub price: f64,
     pub market_cap: f64,
     pub volume_24h: f64,
+    #[serde(default)]
     pub price_change_24h: f64,
     pub chain_id: Option<String>,
     #[serde(default)]
