@@ -7,7 +7,7 @@ const VersionResponseSchema = z.object({
 
 const POLL_INTERVAL = 15000;
 
-export const CURRENT_VERSION = "3.1.4";
+export const CURRENT_VERSION = "3.1.5";
 
 interface VersionState {
   version: string;

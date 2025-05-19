@@ -44,10 +44,6 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
   const { data: metadata, isLoading } = useToken(token.pubkey, "solana");
   const { openChart } = useModal();
 
-  if (!metadata?.logoURI) {
-    console.log(metadata, token);
-  }
-
   return (
     <div
       className="rounded-lg p-3 border border-[#2D2D2D] transition-colors bg-black/40 backdrop-blur-sm flex flex-col cursor-pointer"
@@ -116,10 +112,6 @@ const TokenTileEvm = ({ token }: { token: TopToken }) => {
 
   if (!tokenData?.logoURI && tokenData) {
     tokenData.logoURI = `https://dd.dexscreener.com/ds-data/tokens/${token.chain_id}/${token.pubkey}.png`;
-  }
-
-  if (!tokenData?.logoURI) {
-    console.log(tokenData, token);
   }
 
   return (

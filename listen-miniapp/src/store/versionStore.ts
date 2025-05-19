@@ -7,7 +7,7 @@ const VersionResponseSchema = z.object({
 
 const POLL_INTERVAL = 15000;
 
-export const CURRENT_VERSION = "3.1.4";
+export const CURRENT_VERSION = "3.1.5";
 
 interface VersionState {
   version: string;
@@ -26,7 +26,7 @@ export const useVersionStore = create<VersionState>((set) => {
     try {
       set({ isLoading: true, error: null });
       const response = await fetch(
-        "https://api.listen-rs.com/v1/adapter/version",
+        "https://api.listen-rs.com/v1/adapter/version"
       );
 
       if (!response.ok) {

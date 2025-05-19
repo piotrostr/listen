@@ -21,7 +21,7 @@ export const waitForTransaction = async (
     return false;
   }
 
-  console.log(`Transaction monitor: Subscribing to signature ${signature}`);
+  console.debug(`Transaction monitor: Subscribing to signature ${signature}`);
   const connection = new Connection(rpcUrl);
 
   return new Promise((resolve) => {
@@ -51,7 +51,7 @@ export const waitForTransaction = async (
           return;
         }
 
-        console.log(
+        console.debug(
           `Transaction monitor: Transaction confirmed! Slot: ${context.slot}`
         );
         onSuccess?.();
@@ -91,7 +91,7 @@ export const waitForTransaction = async (
             status.value.confirmationStatus === "confirmed" ||
             status.value.confirmationStatus === "finalized"
           ) {
-            console.log(
+            console.debug(
               `Transaction monitor: Transaction already confirmed! Status: ${status.value.confirmationStatus}`
             );
             onSuccess?.();

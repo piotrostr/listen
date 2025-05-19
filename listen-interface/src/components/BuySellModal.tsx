@@ -35,8 +35,6 @@ export function BuySellModal({
     usePipelineExecution();
   const { returnToChart, hasChartToReturnTo } = useModal();
 
-  console.log(asset);
-
   // Always refetch SOL balance when modal is open
   useEffect(() => {
     if (isOpen) {
