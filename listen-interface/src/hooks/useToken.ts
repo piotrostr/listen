@@ -33,11 +33,7 @@ export const useToken = (address: string, chainId?: string) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["token", address, chainId],
     queryFn: async () => {
-      if (
-        !chainId ||
-        chainId === "solana:5eykt4UsFv8P8P8NJdTREpY1vzqKqZKvdp" ||
-        chainId === "solana"
-      ) {
+      if (!chainId || chainId.includes("solana")) {
         const token = await getSolanaTokenMetadata(address);
         if (!token || !token.logoURI) {
           return await getTokenFallback(address, "696969");
