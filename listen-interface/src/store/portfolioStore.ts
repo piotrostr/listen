@@ -221,7 +221,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           activeWallet,
         } = useWalletStore.getState();
 
-        console.log(
+        console.debug(
           "fetch all portfolios:",
           {
             solanaAddress,

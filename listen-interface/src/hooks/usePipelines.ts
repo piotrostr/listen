@@ -32,7 +32,7 @@ export const usePipelines = () => {
     }
 
     pendingRefreshTimeoutRef.current = setTimeout(() => {
-      console.log("usePipelines: Debounced portfolio refresh triggered");
+      console.debug("usePipelines: Debounced portfolio refresh triggered");
       refreshPortfolio();
       pendingRefreshTimeoutRef.current = null;
     }, 100);
@@ -140,7 +140,7 @@ export const usePipelines = () => {
           PENDING_STEP_IDS.has(step.id) && // We previously saw this step as pending
           !MONITORING_TX_HASHES.has(step.transaction_hash) // Not already monitoring
         ) {
-          console.log(
+          console.debug(
             `usePipelines: Step ${step.id} transitioned from Pending to Completed`
           );
 
@@ -149,7 +149,7 @@ export const usePipelines = () => {
 
           // Only monitor for Order actions
           if ("Order" in step.action) {
-            console.log(
+            console.debug(
               `usePipelines: Monitoring newly completed Order transaction ${step.transaction_hash}`
             );
 
@@ -161,7 +161,7 @@ export const usePipelines = () => {
                 step.transaction_hash!,
                 undefined,
                 () => {
-                  console.log(
+                  console.debug(
                     `usePipelines: Transaction ${step.transaction_hash} confirmed, refreshing portfolio`
                   );
                   MONITORING_TX_HASHES.delete(step.transaction_hash!);
@@ -175,13 +175,13 @@ export const usePipelines = () => {
             } else if (step.action.Order.from_chain_caip2.startsWith("eip")) {
               // For EVM transactions, use timeout
               setTimeout(() => {
-                console.log(`usePipelines: EVM transaction timeout complete`);
+                console.debug(`usePipelines: EVM transaction timeout complete`);
                 MONITORING_TX_HASHES.delete(step.transaction_hash!);
                 debouncedRefreshPortfolio();
               }, 2000);
             }
           } else {
-            console.log(
+            console.debug(
               `usePipelines: Completed step is not an Order, ignoring`
             );
           }

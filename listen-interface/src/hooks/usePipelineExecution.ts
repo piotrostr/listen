@@ -27,7 +27,7 @@ export function usePipelineExecution() {
   const { t } = useTranslation();
 
   const triggerPipelinesRefetch = () => {
-    console.log(
+    console.debug(
       "usePipelineExecution: Triggering immediate pipelines refetch."
     );
     queryClient.invalidateQueries({ queryKey: ["pipelines"] });
@@ -58,7 +58,7 @@ export function usePipelineExecution() {
         );
       }
 
-      console.log("Pipeline submitted successfully.");
+      console.debug("Pipeline submitted successfully.");
       triggerPipelinesRefetch();
 
       options?.onSuccess?.();
