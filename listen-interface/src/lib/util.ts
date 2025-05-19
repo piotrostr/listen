@@ -566,7 +566,12 @@ export type NetworkId =
 
 // Convert any chain ID (numeric or network name) to a valid network ID
 export function getNetworkId(chainId: string | number): NetworkId | null {
-  const chainIdString = chainId.toString();
+  let chainIdString: string;
+  if (chainId.toString().includes("solana")) {
+    chainIdString = "solana";
+  } else {
+    chainIdString = chainId.toString();
+  }
   // If it's already a valid network name, return it
   if (
     Object.values(chainIdToGeckoTerminalId).includes(chainIdString as NetworkId)

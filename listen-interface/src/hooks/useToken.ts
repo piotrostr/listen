@@ -40,7 +40,7 @@ export const useToken = (address: string, chainId?: string) => {
         }
         return token;
       } else {
-        return await getTokenFallback(address, chainId);
+        return await getTokenFallback(address, chainId ?? "696969");
       }
     },
   });
