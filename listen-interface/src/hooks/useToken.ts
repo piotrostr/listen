@@ -52,7 +52,7 @@ export const useToken = (address: string, chainId?: string) => {
   return { data, isLoading, error };
 };
 
-async function getTokenFallback(
+export async function getTokenFallback(
   address: string,
   chainId: string
 ): Promise<TokenMetadata> {

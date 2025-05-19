@@ -1,6 +1,5 @@
 import { getAddress } from "viem";
 import { z } from "zod";
-import { getAnyToken } from "../hooks/useToken";
 import { tokenMetadataCache } from "./localStorage";
 import { fetchTokenPrices } from "./price";
 import { PortfolioItem, TokenMetadata } from "./types";
@@ -39,6 +38,50 @@ const AlchemyResponseSchema = z.object({
     tokens: z.array(TokenSchema),
   }),
 });
+
+import { LifiToken, LifiTokenSchema } from "../lib/types";
+import { caip2Map, caip2ToLifiChainId } from "../lib/util";
+
+export async function getAnyToken(
+  token: string,
+  chainIdOrCaip2: string
+): Promise<LifiToken | null> {
+  console.info("getAnyToken", token, chainIdOrCaip2);
+  let chainId: number | string | null = null;
+  if (chainIdOrCaip2.includes(":")) {
+    chainId = caip2ToLifiChainId(chainIdOrCaip2);
+  } else {
+    if (Object.keys(caip2Map).includes(chainIdOrCaip2)) {
+      const caip2 = caip2Map[chainIdOrCaip2 as keyof typeof caip2Map];
+      chainId = caip2ToLifiChainId(caip2);
+    }
+  }
+  if (chainId === null) {
+    chainId = chainIdOrCaip2;
+  }
+  try {
+    const res = await fetch(
+      `https://li.quest/v1/token?token=${token}&chain=${chainId}`,
+      {
+        method: "GET",
+        headers: {
+          "Content-Type": "application/json",
+          Accept: "application/json",
+        },
+      }
+    );
+    if (!res.ok) {
+      console.error(res);
+      return null;
+    }
+    const data = await res.json();
+    const parsed = LifiTokenSchema.parse(data);
+    return parsed;
+  } catch (error) {
+    console.error(error);
+    return null;
+  }
+}
 
 async function enrichTokenMetadata(
   token: z.infer<typeof TokenSchema>,
