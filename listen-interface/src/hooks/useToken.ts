@@ -3,7 +3,9 @@ import { fetchTokenMetadata } from "../lib/solanaPortfolio";
 import { TokenMetadata } from "../lib/types";
 import { getNetworkId } from "../lib/util";
 
-async function getSolanaTokenMetadata(mint: string): Promise<TokenMetadata> {
+export async function getSolanaTokenMetadata(
+  mint: string
+): Promise<TokenMetadata> {
   return fetchTokenMetadata(mint);
 }
 

@@ -1,11 +1,11 @@
-import { config } from "../config";
 import { TokenMetadataRaw } from "../types/metadata";
 
 export async function fetchListenMetadata(
   pubkey: string
 ): Promise<TokenMetadataRaw> {
   const response = await fetch(
-    `${config.adapterEndpoint}/metadata?mint=${pubkey}`
+    // always prod
+    `https://api.listen-rs.com/v1/adapter/metadata?mint=${pubkey}`
   );
 
   if (!response.ok) {
