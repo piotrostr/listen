@@ -1,4 +1,7 @@
-use crate::data::{PoolInfo, TopToken};
+use crate::{
+    data::{PoolInfo, TopToken},
+    evm_fallback::top_tokens_by_category_cmc,
+};
 
 use super::EvmFallback;
 use anyhow::{anyhow, Context, Result};
@@ -252,6 +255,13 @@ impl EvmFallback {
         page: Option<u32>,
         limit: Option<usize>,
     ) -> Result<Vec<TopToken>> {
+        if category_id == "defi" {
+            return top_tokens_by_category_cmc::fetch_tokens_by_category(
+                "5fb62883c9ddcc213ed13308",
+                limit,
+            )
+            .await;
+        }
         let pools_response =
             self.fetch_pools_by_category(category_id, page).await?;
         // debug
@@ -330,6 +340,20 @@ mod tests {
             EvmFallback::from_env().expect("Failed to create client");
         let top_tokens = client
             .fetch_top_tokens_by_category("ai-agents", None, Some(10))
+            .await
+            .unwrap();
+        println!(
+            "top_tokens: {}",
+            serde_json::to_string_pretty(&top_tokens).unwrap()
+        );
+    }
+
+    #[tokio::test]
+    async fn test_e2e_top_tokens_by_category_defi_cmc_fallback() {
+        let client =
+            EvmFallback::from_env().expect("Failed to create client");
+        let top_tokens = client
+            .fetch_top_tokens_by_category("defi", None, Some(10))
             .await
             .unwrap();
         println!(
