@@ -87,8 +87,8 @@ mod tests {
             .await
             .unwrap();
 
-        let mut price_sub = subscriber.subscribe_prices();
-        let mut tx_sub = subscriber.subscribe_transactions();
+        subscriber.subscribe_prices();
+        subscriber.subscribe_transactions();
 
         // You can add test messages here using a separate Redis client
         // For now just testing the setup works
