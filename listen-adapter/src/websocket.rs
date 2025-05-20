@@ -8,7 +8,7 @@ use tracing::{debug, error, info};
 
 use crate::redis_subscriber::RedisSubscriber;
 
-#[derive(Deserialize)]
+#[derive(Debug, Deserialize)]
 struct SubscribeMessage {
     action: String,
     #[serde(default)]
@@ -78,6 +78,7 @@ pub async fn handle_ws_connection(
                                 }
                             }
                             Err(e) => {
+                                error!("Failed to parse message: {}, content: {}", e, text);
                                 let error_msg = ErrorMessage {
                                     error: format!("Invalid message format: {}", e),
                                 };

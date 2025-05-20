@@ -1,6 +1,5 @@
 use actix_web::{web, HttpResponse};
 use serde::{Deserialize, Serialize};
-use tracing::{debug, error};
 
 use crate::state::AppState;
 
@@ -17,7 +16,7 @@ pub async fn webhook(
     payload: web::Json<PrivyWebhookPayload>,
     state: web::Data<AppState>,
 ) -> HttpResponse {
-    debug!("Received webhook: {:?}", payload);
+    tracing::debug!("Received webhook: {:?}", payload);
 
     // Publish the webhook payload to the transaction_updates channel
     match state
@@ -26,11 +25,11 @@ pub async fn webhook(
         .await
     {
         Ok(_) => {
-            debug!("Successfully published webhook to Redis");
+            tracing::info!("Passing on the webhook");
             HttpResponse::Ok().finish()
         }
         Err(e) => {
-            error!("Failed to publish webhook to Redis: {}", e);
+            tracing::error!("Failed to publish webhook to Redis: {}", e);
             HttpResponse::InternalServerError().finish()
         }
     }

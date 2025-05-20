@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use futures::StreamExt;
-use serde_json::Value;
 use tokio::sync::broadcast;
 use tracing::{debug, error};
 
