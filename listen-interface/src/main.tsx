@@ -19,7 +19,6 @@ import { KeyboardProvider } from "./contexts/KeyboardContext";
 import { MobileProvider } from "./contexts/MobileContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
 import { ToastProvider } from "./contexts/ToastContext";
-import { WorldProvider } from "./contexts/WorldContext";
 
 import i18n from "./i18n";
 import "./index.css";
@@ -44,42 +43,42 @@ declare module "@tanstack/react-router" {
   }
 }
 
-const AppContent = () => {
-  const content = (
-    <MobileProvider>
-      <I18nextProvider i18n={i18n}>
-        <PrivyProvider
-          appId={"cm6c7ifqd00ar52m1qxfgbkkn"}
-          config={{
-            appearance: {
-              theme: "dark",
-              walletChainType: "ethereum-and-solana",
-              walletList: [
-                "phantom",
-                "okx_wallet",
-                "metamask",
-                "bybit_wallet",
-                "coinbase_wallet",
-                "rainbow",
-                "wallet_connect",
-                "rabby_wallet",
-                "solflare",
-              ],
-            },
-            fundingMethodConfig: {
-              moonpay: {
-                paymentMethod: "credit_debit_card",
-              },
-            },
-            externalWallets: {
-              solana: {
-                connectors: toSolanaWalletConnectors({
-                  shouldAutoConnect: true,
-                }),
-              },
-            },
-          }}
-        >
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <PrivyProvider
+      appId={"cm6c7ifqd00ar52m1qxfgbkkn"}
+      config={{
+        appearance: {
+          theme: "dark",
+          walletChainType: "ethereum-and-solana",
+          walletList: [
+            "phantom",
+            "okx_wallet",
+            "metamask",
+            "bybit_wallet",
+            "coinbase_wallet",
+            "rainbow",
+            "wallet_connect",
+            "rabby_wallet",
+            "solflare",
+          ],
+        },
+        fundingMethodConfig: {
+          moonpay: {
+            paymentMethod: "credit_debit_card",
+          },
+        },
+        externalWallets: {
+          solana: {
+            connectors: toSolanaWalletConnectors({
+              shouldAutoConnect: true,
+            }),
+          },
+        },
+      }}
+    >
+      <MobileProvider>
+        <I18nextProvider i18n={i18n}>
           <ToastProvider>
             <WagmiProvider config={config}>
               <QueryClientProvider client={new QueryClient()}>
@@ -91,20 +90,8 @@ const AppContent = () => {
               </QueryClientProvider>
             </WagmiProvider>
           </ToastProvider>
-        </PrivyProvider>
-      </I18nextProvider>
-    </MobileProvider>
-  );
-
-  return import.meta.env.VITE_WORLD_MINIAPP_ENABLED ? (
-    <WorldProvider>{content}</WorldProvider>
-  ) : (
-    content
-  );
-};
-
-createRoot(document.getElementById("root")!).render(
-  <StrictMode>
-    <AppContent />
-  </StrictMode>
+        </I18nextProvider>
+      </MobileProvider>
+    </PrivyProvider>
+  </StrictMode>,
 );
