@@ -1,16 +1,33 @@
 import { config } from "../config";
 import { useTokenStore } from "../store/tokenStore";
-import type { PriceUpdate } from "../types/price";
+import { PriceUpdate } from "../types/price";
 
-export function setupWebSocket() {
+interface TransactionUpdate {
+  [key: string]: string;
+}
+
+export function setupWebSocket(walletIds: string[]) {
   const updateTokenData = useTokenStore.getState().updateTokenData;
 
   const ws = new WebSocket(config.adapterWsEndpoint);
 
+  console.log(
+    `Subscribing to ${config.adapterWsEndpoint} (wallet IDs: ${walletIds})`
+  );
+
   ws.onmessage = (event) => {
     try {
-      const data: PriceUpdate = JSON.parse(event.data);
-      updateTokenData(data);
+      const data = JSON.parse(event.data);
+      if ("event" in data) {
+        const transactionUpdate: TransactionUpdate = data;
+        console.log("Transaction update", transactionUpdate);
+        return;
+      }
+      if ("mint" in data) {
+        const priceUpdate: PriceUpdate = data;
+        updateTokenData(priceUpdate);
+        return;
+      }
     } catch (error) {
       console.error("Error parsing message:", error);
     }
@@ -21,6 +38,7 @@ export function setupWebSocket() {
       JSON.stringify({
         action: "subscribe",
         mints: ["*"],
+        wallet_ids: walletIds,
       })
     );
   };

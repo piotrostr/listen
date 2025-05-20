@@ -1,14 +1,18 @@
 import { useEffect } from "react";
+import { useWalletIds } from "../hooks/useWalletIds";
 import { setupWebSocket } from "../services/websocketService";
 
 export const WebsocketInitializer = () => {
-  // Setup WebSocket connection
+  const walletIds = useWalletIds();
   useEffect(() => {
-    const ws = setupWebSocket();
+    if (!walletIds) {
+      return;
+    }
+    const ws = setupWebSocket(walletIds);
     return () => {
       ws.close();
     };
-  }, []);
+  }, [walletIds]);
 
   return null;
 };
