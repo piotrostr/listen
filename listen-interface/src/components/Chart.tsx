@@ -447,6 +447,7 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
 
       try {
         const response = await fetch(
+          // use prod for charts always
           `https://api.listen-rs.com/v1/adapter/candlesticks?mint=${mint}&interval=${selectedInterval}`
         );
         const responseData = CandlestickDataSchema.parse(await response.json());

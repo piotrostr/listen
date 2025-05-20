@@ -10,6 +10,7 @@ import {
   useState,
 } from "react";
 import { v4 as uuidv4 } from "uuid";
+import { config } from "../config";
 import { useDebounce } from "../hooks/useDebounce";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSolanaPrice } from "../hooks/useSolanaPrice";
@@ -277,20 +278,15 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           locale: i18n.language,
         });
 
-        const response = await fetch(
-          process.env.NODE_ENV === "production"
-            ? "https://api.listen-rs.com/v1/kit/stream"
-            : "http://localhost:6969/stream",
-          {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-              Authorization: "Bearer " + (await getAccessToken()),
-            },
-            body,
-            signal,
-          }
-        );
+        const response = await fetch(`${config.kitEndpoint}/stream`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: "Bearer " + (await getAccessToken()),
+          },
+          body,
+          signal,
+        });
 
         if (!response.ok) {
           throw new Error("Failed to initialize stream");
@@ -573,19 +569,16 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     }
 
     try {
-      const response = await fetch(
-        "https://api.listen-rs.com/v1/adapter/save-chat",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            chat_id: chatId,
-            chat: _chat, // The entire chat object
-          }),
-        }
-      );
+      const response = await fetch(`${config.adapterEndpoint}/save-chat`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          chat_id: chatId,
+          chat: _chat, // The entire chat object
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to share chat");
@@ -608,6 +601,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const loadSharedChat = async (chatId: string) => {
     try {
       const response = await fetch(
+        // leave this as always prod for debugging prod chats locally
         `https://api.listen-rs.com/v1/adapter/get-chat?chat_id=${chatId}`,
         {
           method: "GET",

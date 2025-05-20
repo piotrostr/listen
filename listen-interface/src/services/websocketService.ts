@@ -1,10 +1,11 @@
+import { config } from "../config";
 import { useTokenStore } from "../store/tokenStore";
 import type { PriceUpdate } from "../types/price";
 
 export function setupWebSocket() {
   const updateTokenData = useTokenStore.getState().updateTokenData;
 
-  const ws = new WebSocket("wss://api.listen-rs.com/v1/adapter/ws");
+  const ws = new WebSocket(config.adapterWsEndpoint);
 
   ws.onmessage = (event) => {
     try {
