@@ -4,6 +4,8 @@ use serde::{Deserialize, Serialize};
 use std::sync::Arc;
 use tracing::debug;
 
+use crate::webhook::PrivyWebhookPayload;
+
 pub struct RedisClient {
     pool: bb8::Pool<RedisConnectionManager>,
 }
@@ -141,6 +143,23 @@ impl RedisClient {
             .query_async(&mut *conn)
             .await
             .with_context(|| format!("Failed to save chat: {}", chat_id))?;
+
+        Ok(())
+    }
+
+    pub async fn publish_transaction_update(&self, payload: &PrivyWebhookPayload) -> Result<()> {
+        let mut conn = self
+            .pool
+            .get()
+            .await
+            .context("Failed to get Redis connection")?;
+
+        let _: () = cmd("PUBLISH")
+            .arg("transaction_updates")
+            .arg(serde_json::to_string(payload)?)
+            .query_async(&mut *conn)
+            .await
+            .context("Failed to publish transaction update")?;
 
         Ok(())
     }
