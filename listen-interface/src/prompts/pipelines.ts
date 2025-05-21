@@ -109,7 +109,7 @@ USDC always has 6 decimals. Solana (SOL) has 9 decimals. Native ETH/BNB has 18 d
 
 DON'T ever put comments inside of the pipeline JSON, it will break the pipeline.
 
-**IMPORTANT:** If there are multiple independent steps, it is better to generate multiple pipelines, to separate them, rather generating both steps in the same pipeline.
+${/* **IMPORTANT:** If there are multiple independent steps, it is better to generate multiple pipelines, to separate them, rather generating both steps in the same pipeline. */ ""}
 
 If the user requires to set up an order for an asset that you don't know their balance of, use the tool to fetch the balance first.
 
