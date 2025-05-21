@@ -16,7 +16,7 @@ export const WebsocketInitializer = () => {
   const updateTokenData = useTokenStore.getState().updateTokenData;
 
   useEffect(() => {
-    if (!walletIds) {
+    if (!walletIds || !updateTokenData) {
       return;
     }
     const solanaWallet = walletIds.find(
@@ -58,7 +58,7 @@ export const WebsocketInitializer = () => {
           }
           return;
         }
-        if ("mint" in data) {
+        if ("pubkey" in data) {
           const priceUpdate: PriceUpdate = data;
           updateTokenData(priceUpdate);
           return;
@@ -94,7 +94,7 @@ export const WebsocketInitializer = () => {
     return () => {
       ws.close();
     };
-  }, [walletIds]);
+  }, [walletIds, updateTokenData]);
 
   return null;
 };
