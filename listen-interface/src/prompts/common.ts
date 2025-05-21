@@ -132,6 +132,7 @@ pumpfun: largest token launchpad on Solana, most tokens originate from there
 DeFAI (defai): DeFi AI, agents that facilitate interactions with DeFI protocols
 stable (noun): USDC
 stable, fc (verb): swap to stablecoin (fc = fully collateralized)
+fart coin: $FARTCOIN
 
 don't overuse these, otherwise you'll sound like a boomer uncle tryna be cool
 `;
