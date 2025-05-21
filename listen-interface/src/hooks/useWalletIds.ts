@@ -1,9 +1,14 @@
 import { LinkedAccountWithMetadata, useUser } from "@privy-io/react-auth";
 import { useEffect, useState } from "react";
 
+interface WalletWithId {
+  id: string;
+  address: string;
+}
+
 export const useWalletIds = () => {
   const { user } = useUser();
-  const [walletIds, setWalletIds] = useState<Array<string>>();
+  const [walletIds, setWalletIds] = useState<Array<WalletWithId>>();
 
   console.log({ user });
 
@@ -19,14 +24,19 @@ export const useWalletIds = () => {
   return walletIds;
 };
 
-const extractEmbeddedWallet = (linkedAccount: LinkedAccountWithMetadata) => {
+const extractEmbeddedWallet = (
+  linkedAccount: LinkedAccountWithMetadata
+): WalletWithId | null => {
   if (
     linkedAccount.type === "wallet" &&
     linkedAccount.walletClientType === "privy" &&
     linkedAccount.connectorType === "embedded" &&
     linkedAccount.id
   ) {
-    return linkedAccount.id;
+    return {
+      id: linkedAccount.id,
+      address: linkedAccount.address,
+    };
   }
   return null;
 };

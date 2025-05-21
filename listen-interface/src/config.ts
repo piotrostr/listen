@@ -7,10 +7,10 @@ export const config = {
     process.env.NODE_ENV === "production"
       ? "https://api.listen-rs.com/v1/kit"
       : "http://localhost:6969",
-  adapterEndpoint:
-    process.env.NODE_ENV === "production"
-      ? "https://api.listen-rs.com/v1/adapter"
-      : "http://localhost:6968",
+  adapterEndpoint: "https://api.listen-rs.com/v1/adapter",
+  // process.env.NODE_ENV === "production"
+  //   ? "https://api.listen-rs.com/v1/adapter"
+  //   : "http://localhost:6968",
   adapterWsEndpoint:
     process.env.NODE_ENV === "production"
       ? "wss://api.listen-rs.com/v1/adapter/ws"
