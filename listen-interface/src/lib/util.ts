@@ -582,6 +582,8 @@ export function getNetworkId(chainId: string | number): NetworkId | null {
   let chainIdString: string;
   if (chainId.toString().includes("solana")) {
     chainIdString = "solana";
+  } else if (chainId.toString().includes("eip155")) {
+    chainIdString = chainId.toString().split(":")[1];
   } else {
     chainIdString = chainId.toString();
   }
