@@ -4,7 +4,7 @@ export const settings = {
     quick_buy: "Quick Buy",
     quick_buy_default_sol_amount: "Default SOL amount for quick buy",
     quick_buy_default_sol_amount_description:
-      "This is the default amount of SOL that will be used for quick buys",
+      "This is the default amount of SOL that will be used for quick buys.",
     mode: "Mode",
     wallet_addresses: "Wallet addresses",
     connected_accounts: "Connected accounts",
