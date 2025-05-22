@@ -25,7 +25,7 @@ async fn main() -> Result<()> {
 
     setup_tracing();
     if std::env::var("IS_SYSTEMD_SERVICE").is_err() {
-        dotenv::dotenv().expect("Failed to load .env file");
+        dotenvy::dotenv().expect("Failed to load .env file");
     }
     info!("Starting RPC service...");
 

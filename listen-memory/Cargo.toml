@@ -26,5 +26,5 @@ bm25 = "2.2.1"
 timed = "0.2.1"
 
 [dev-dependencies]
-dotenv = "0.15.0"
+dotenvy = "0.15.7"
 timed = "0.2.1"
