@@ -127,7 +127,8 @@ pub struct WalletAccount {
     pub latest_verified_at: u64,
     pub verified_at: u64,
     pub wallet_client: String,
-    pub wallet_client_type: String,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub wallet_client_type: Option<String>,
     // Optional fields
     #[serde(default)]
     pub delegated: bool,
@@ -217,7 +218,7 @@ mod tests {
                 "aiamaErRMjbeNmf2b8BMZWFR3ofxrnZEf2mLKp935fM"
             );
             assert_eq!(wallet.chain_type, "solana");
-            assert_eq!(wallet.wallet_client_type, "phantom");
+            assert_eq!(wallet.wallet_client_type.as_ref().unwrap(), "phantom");
             assert!(wallet.chain_id.is_none()); // First wallet has no chain_id
         } else {
             panic!("First account should be a wallet");
