@@ -12,18 +12,26 @@ export function GettingStarted() {
   const { t } = useTranslation();
   const { isMobile, isVerySmallScreen } = useMobile();
   const { login } = usePrivy();
-  const { worldLogin, isLoading: isWorldLoading } = useWorldAuth();
+  const {
+    worldLogin,
+    isLoading: isWorldLoading,
+    error: worldError,
+  } = useWorldAuth();
   const { isLoading } = useIsAuthenticated();
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    if (worldchainEnabled) {
-      await worldLogin();
-      await navigate({
-        to: "/",
-      });
-    } else {
-      await login();
+    try {
+      if (worldchainEnabled) {
+        await worldLogin();
+        await navigate({
+          to: "/",
+        });
+      } else {
+        await login();
+      }
+    } catch (error) {
+      console.error("Login error:", error);
     }
   };
 
@@ -50,9 +58,14 @@ export function GettingStarted() {
       <div
         className={`flex flex-col ${isVerySmallScreen ? "gap-3" : "gap-4"} w-full text-center text-xs justify-center items-center mb-2`}
       >
+        {process.env.NODE_ENV === "development" && worldchainEnabled && (
+          <div className="text-yellow-500 text-xs mb-2">
+            Development mode: Using fallback authentication
+          </div>
+        )}
         <GradientOutlineButton
           arrow={true}
-          text={"Sign In"}
+          text={isWorldLoading ? "Signing In..." : "Sign In"}
           onClick={handleLogin}
           disabled={isWorldLoading}
         />
