@@ -1,5 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";
+import { MiniKit } from "@worldcoin/minikit-js";
 import { useTranslation } from "react-i18next";
 import { worldchainEnabled } from "../config/env";
 import { useMobile } from "../contexts/MobileContext";
@@ -16,19 +17,23 @@ export function GettingStarted() {
   const { isLoading } = useIsAuthenticated();
   const navigate = useNavigate();
 
+  // Check if MiniKit is available
+  const isMiniKitAvailable = (() => {
+    try {
+      return MiniKit.isInstalled();
+    } catch {
+      return false;
+    }
+  })();
+
   const handleLogin = async () => {
     try {
-      console.log("handleLogin called, worldchainEnabled:", worldchainEnabled);
       if (worldchainEnabled) {
-        console.log("Calling worldLogin...");
         await worldLogin();
-        console.log("worldLogin completed, navigating...");
         await navigate({
           to: "/",
         });
-        console.log("Navigation completed");
       } else {
-        console.log("Calling regular login...");
         await login();
       }
     } catch (error) {
@@ -59,17 +64,58 @@ export function GettingStarted() {
       <div
         className={`flex flex-col ${isVerySmallScreen ? "gap-3" : "gap-4"} w-full text-center text-xs justify-center items-center mb-2`}
       >
+        {worldchainEnabled && !isMiniKitAvailable && (
+          <div className="text-orange-500 text-sm mb-2 text-center max-w-md">
+            To use Worldcoin authentication, please open this app in the World
+            App.
+            <br />
+            <span className="text-xs text-gray-400">
+              Currently running in:{" "}
+              {navigator.userAgent.includes("Chrome")
+                ? "Chrome"
+                : navigator.userAgent.includes("Safari")
+                  ? "Safari"
+                  : navigator.userAgent.includes("Firefox")
+                    ? "Firefox"
+                    : "Browser"}
+            </span>
+            <br />
+            <a
+              href={`${window.location.origin}${window.location.pathname}?test-worldcoin=true`}
+              className="text-blue-400 hover:text-blue-300 underline mt-2 inline-block"
+            >
+              Or click here to test with fallback authentication
+            </a>
+          </div>
+        )}
         {process.env.NODE_ENV === "development" && worldchainEnabled && (
           <div className="text-yellow-500 text-xs mb-2">
             Development mode: Using fallback authentication
+          </div>
+        )}
+        {window.location.search.includes("test-worldcoin=true") && (
+          <div className="text-blue-500 text-xs mb-2">
+            Testing mode: Using fallback authentication
           </div>
         )}
         <GradientOutlineButton
           arrow={true}
           text={isWorldLoading ? "Signing In..." : "Sign In"}
           onClick={handleLogin}
-          disabled={isWorldLoading}
+          disabled={
+            isWorldLoading ||
+            (worldchainEnabled &&
+              !isMiniKitAvailable &&
+              !window.location.search.includes("test-worldcoin=true"))
+          }
         />
+        {worldchainEnabled &&
+          !isMiniKitAvailable &&
+          !window.location.search.includes("test-worldcoin=true") && (
+            <p className="text-xs text-gray-500 mt-2">
+              Button disabled - World App required for Worldcoin authentication
+            </p>
+          )}
       </div>
     </div>
   );

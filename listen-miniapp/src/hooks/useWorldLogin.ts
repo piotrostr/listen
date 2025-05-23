@@ -5,8 +5,14 @@ import { type Address } from "viem";
 import { DEVELOPMENT_FALLBACK_ADDRESS } from "../config/env";
 
 export const useWorldAuth = () => {
-  // In development, return the fallback address
-  if (process.env.NODE_ENV === "development") {
+  // Check for development mode OR testing override
+  const isDevMode = process.env.NODE_ENV === "development";
+  const isTestingOverride = window.location.search.includes(
+    "test-worldcoin=true"
+  );
+
+  // In development or testing mode, return the fallback address
+  if (isDevMode || isTestingOverride) {
     return {
       worldLogin: () => {},
       isLoading: false,
@@ -22,10 +28,7 @@ export const useWorldAuth = () => {
   const mutation = useMutation({
     mutationFn: async () => {
       // Get nonce from Privy
-      // @ts-expect-error - Privy types are not updated yet
       const privyNonce = await generateSiweNonce();
-
-      console.log("privyNonce", privyNonce);
 
       // Use nonce with Worldcoin walletAuth
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
@@ -72,7 +75,9 @@ export const useWorldAuth = () => {
   };
 
   try {
-    if (!MiniKit.isInstalled()) {
+    const isInstalled = MiniKit.isInstalled();
+
+    if (!isInstalled) {
       return nullState;
     }
   } catch (error) {
