@@ -1,3 +1,4 @@
+import { useLoginWithSiwe } from "@privy-io/react-auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { type Address } from "viem";
@@ -16,34 +17,51 @@ export const useWorldAuth = () => {
     };
   }
 
+  const { generateSiweNonce, loginWithSiwe } = useLoginWithSiwe();
+
   const mutation = useMutation({
     mutationFn: async () => {
-      const nonce = crypto.randomUUID().replace(/-/g, "");
+      // Get the user's address from MiniKit
+      const address = MiniKit.user?.walletAddress;
+      if (!address) {
+        throw new Error("No wallet address available");
+      }
 
+      // Get nonce from Privy
+      const privyNonce = await generateSiweNonce({ address });
+
+      // Use nonce with Worldcoin walletAuth
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
-        nonce,
+        nonce: privyNonce,
         requestId: "0",
         expirationTime: new Date(
           new Date().getTime() + 7 * 24 * 60 * 60 * 1000
         ),
         notBefore: new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
-        statement: "Sign in",
+        statement: "Sign in with Ethereum to authenticate with our app",
       });
 
       if (finalPayload.status === "error") {
         throw new Error("Login failed");
       }
 
-      localStorage.setItem("worldUserLoginAddress", finalPayload.address);
+      // Complete SIWE flow with Privy
+      const { message, signature } = finalPayload;
+      const user = await loginWithSiwe({ message, signature });
 
-      return finalPayload;
+      // Store the address for future use
+      if (user?.wallet?.address) {
+        localStorage.setItem("worldUserLoginAddress", user.wallet.address);
+      }
+
+      return user;
     },
   });
 
   const userQuery = useQuery({
     queryKey: ["user"],
     queryFn: () => {
-      const storedAddress = localStorage.getItem("userWalletAddress");
+      const storedAddress = localStorage.getItem("worldUserLoginAddress");
       const walletAddress = MiniKit.user?.walletAddress;
       return (walletAddress || storedAddress || null) as Address | null;
     },

@@ -4,12 +4,11 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
+    "dev": "vite --port 5174",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy-prod": "bun run build && cd dist && bunx vercel -y --prod --name listen-interface . --logs",
-    "deploy-staging": "bun run build && cd dist && bunx vercel -y --name listen-interface . --logs",
+    "deploy-world-staging": "bun run build && cd dist && bunx vercel -y --name listen-world-staging . --logs",
     "deploy-world-prod": "bun run build && cd dist && bunx vercel -y --prod --name listen-world-prod . --logs"
   },
   "dependencies": {
