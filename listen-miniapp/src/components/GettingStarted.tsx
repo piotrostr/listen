@@ -18,12 +18,17 @@ export function GettingStarted() {
 
   const handleLogin = async () => {
     try {
+      console.log("handleLogin called, worldchainEnabled:", worldchainEnabled);
       if (worldchainEnabled) {
+        console.log("Calling worldLogin...");
         await worldLogin();
+        console.log("worldLogin completed, navigating...");
         await navigate({
           to: "/",
         });
+        console.log("Navigation completed");
       } else {
+        console.log("Calling regular login...");
         await login();
       }
     } catch (error) {

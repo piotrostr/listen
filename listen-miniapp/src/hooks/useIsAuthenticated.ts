@@ -21,6 +21,11 @@ export const useIsAuthenticated = () => {
       ? typeof worldUserAddress === "string"
       : typeof worldUserAddress === "string" && user !== null;
 
+    console.log("Development mode:", isDevMode);
+    console.log("worldUserAddress type:", typeof worldUserAddress);
+    console.log("isWorldAuthenticated:", isWorldAuthenticated);
+    console.log("ready:", ready);
+
     return {
       isAuthenticated: isWorldAuthenticated,
       hasSolanaWallet: false,
