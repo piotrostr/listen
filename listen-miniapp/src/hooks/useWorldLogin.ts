@@ -21,14 +21,9 @@ export const useWorldAuth = () => {
 
   const mutation = useMutation({
     mutationFn: async () => {
-      // Get the user's address from MiniKit
-      const address = MiniKit.user?.walletAddress;
-      if (!address) {
-        throw new Error("No wallet address available");
-      }
-
       // Get nonce from Privy
-      const privyNonce = await generateSiweNonce({ address });
+      // @ts-expect-error - Privy types are not updated yet
+      const privyNonce = await generateSiweNonce();
 
       // Use nonce with Worldcoin walletAuth
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
