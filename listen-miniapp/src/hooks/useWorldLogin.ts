@@ -30,12 +30,6 @@ export const useWorldAuth = () => {
       // Use nonce with Worldcoin walletAuth
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
         nonce: privyNonce,
-        requestId: "0",
-        expirationTime: new Date(
-          new Date().getTime() + 7 * 24 * 60 * 60 * 1000
-        ),
-        notBefore: new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
-        statement: "Sign in with Ethereum to authenticate with our app",
       });
 
       if (finalPayload.status === "error") {
