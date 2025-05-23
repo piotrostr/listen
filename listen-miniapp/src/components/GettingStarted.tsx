@@ -12,11 +12,7 @@ export function GettingStarted() {
   const { t } = useTranslation();
   const { isMobile, isVerySmallScreen } = useMobile();
   const { login } = usePrivy();
-  const {
-    worldLogin,
-    isLoading: isWorldLoading,
-    error: worldError,
-  } = useWorldAuth();
+  const { worldLogin, isLoading: isWorldLoading } = useWorldAuth();
   const { isLoading } = useIsAuthenticated();
   const navigate = useNavigate();
 
