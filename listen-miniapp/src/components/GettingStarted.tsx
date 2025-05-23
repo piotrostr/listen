@@ -99,7 +99,7 @@ export function GettingStarted() {
           </div>
         )}
         <GradientOutlineButton
-          arrow={true}
+          arrow={false}
           text={isWorldLoading ? "Signing In..." : "Sign In"}
           onClick={handleLogin}
           disabled={
