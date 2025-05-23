@@ -25,6 +25,8 @@ export const useWorldAuth = () => {
       // @ts-expect-error - Privy types are not updated yet
       const privyNonce = await generateSiweNonce();
 
+      console.log("privyNonce", privyNonce);
+
       // Use nonce with Worldcoin walletAuth
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
         nonce: privyNonce,

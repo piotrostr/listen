@@ -8,7 +8,7 @@
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
-    "deploy-world-staging": "bun run build && cd dist && bunx vercel -y --name listen-world-staging . --logs",
+    "deploy-world-staging": "bun run build && cd dist && bunx vercel -y --prod --name listen-world-staging . --logs",
     "deploy-world-prod": "bun run build && cd dist && bunx vercel -y --prod --name listen-world-prod . --logs"
   },
   "dependencies": {

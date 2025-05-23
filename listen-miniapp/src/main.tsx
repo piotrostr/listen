@@ -28,15 +28,17 @@ import "./index.css";
 import { worldchainEnabled } from "./config/env";
 import { routeTree } from "./routeTree.gen";
 
-import("eruda")
-  .then((eruda) => {
-    console.log("Eruda loaded successfully");
-    eruda.default.init();
-    console.log("Eruda initialized");
-  })
-  .catch((error) => {
-    console.error("Failed to load eruda:", error);
-  });
+if (window.location.href.includes("staging")) {
+  import("eruda")
+    .then((eruda) => {
+      console.log("Eruda loaded successfully");
+      eruda.default.init();
+      console.log("Eruda initialized");
+    })
+    .catch((error) => {
+      console.error("Failed to load eruda:", error);
+    });
+}
 
 const config = createConfig({
   chains: [arbitrum],

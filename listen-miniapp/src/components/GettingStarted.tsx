@@ -1,6 +1,5 @@
-import { useGuestAccounts, usePrivy } from "@privy-io/react-auth";
+import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { worldchainEnabled } from "../config/env";
 import { useMobile } from "../contexts/MobileContext";
@@ -8,14 +7,11 @@ import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 import { useWorldAuth } from "../hooks/useWorldLogin";
 import { FullPageLoading } from "./FullPageLoading";
 import { GradientOutlineButton } from "./GradientOutlineButton";
-import { VersionDisplay } from "./VersionAndLanguage";
 
 export function GettingStarted() {
   const { t } = useTranslation();
   const { isMobile, isVerySmallScreen } = useMobile();
   const { login } = usePrivy();
-  const { createGuestAccount } = useGuestAccounts();
-  const [isCreatingGuestAccount, setIsCreatingGuestAccount] = useState(false);
   const { worldLogin, isLoading: isWorldLoading } = useWorldAuth();
   const { isLoading } = useIsAuthenticated();
   const navigate = useNavigate();
@@ -23,9 +19,6 @@ export function GettingStarted() {
   const handleLogin = async () => {
     if (worldchainEnabled) {
       await worldLogin();
-      setIsCreatingGuestAccount(true);
-      await createGuestAccount();
-      setIsCreatingGuestAccount(false);
       await navigate({
         to: "/",
       });
@@ -34,7 +27,7 @@ export function GettingStarted() {
     }
   };
 
-  if (isCreatingGuestAccount || isLoading) {
+  if (isLoading) {
     return <FullPageLoading />;
   }
 
@@ -61,9 +54,8 @@ export function GettingStarted() {
           arrow={true}
           text={"Sign In"}
           onClick={handleLogin}
-          disabled={isCreatingGuestAccount || isWorldLoading}
+          disabled={isWorldLoading}
         />
-        <VersionDisplay />
       </div>
     </div>
   );
