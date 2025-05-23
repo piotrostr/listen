@@ -6,7 +6,7 @@ export const ListenThreeDots = () => (
     fill="none"
     xmlns="http://www.w3.org/2000/svg"
   >
-    <rect width="40" height="40" rx="20" fill="white" fill-opacity="0.08" />
+    <rect width="40" height="40" rx="20" fill="white" fillOpacity="0.08" />
     <rect
       x="0.5"
       y="0.5"
@@ -29,8 +29,8 @@ export const ListenThreeDots = () => (
         y2="0"
         gradientUnits="userSpaceOnUse"
       >
-        <stop stop-color="white" stop-opacity="0" />
-        <stop offset="1" stop-color="white" />
+        <stop stopColor="white" stopOpacity="0" />
+        <stop offset="1" stopColor="white" />
       </linearGradient>
       <linearGradient
         id="paint1_linear_4002_8298"
@@ -40,10 +40,10 @@ export const ListenThreeDots = () => (
         y2="8.69309"
         gradientUnits="userSpaceOnUse"
       >
-        <stop stop-color="#FD98A2" />
-        <stop offset="0.315" stop-color="#FB2671" />
-        <stop offset="0.675" stop-color="#A42CCD" />
-        <stop offset="1" stop-color="#7F4AFB" />
+        <stop stopColor="#FD98A2" />
+        <stop offset="0.315" stopColor="#FB2671" />
+        <stop offset="0.675" stopColor="#A42CCD" />
+        <stop offset="1" stopColor="#7F4AFB" />
       </linearGradient>
     </defs>
   </svg>
