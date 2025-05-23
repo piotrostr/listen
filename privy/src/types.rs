@@ -122,7 +122,7 @@ pub struct WalletAccount {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub chain_id: Option<String>, // Can be either "eip155:1" or "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp" format
     pub chain_type: String, // Can be "ethereum" or "solana"
-    pub connector_type: String,
+    pub connector_type: Option<String>,
     pub first_verified_at: u64,
     pub latest_verified_at: u64,
     pub verified_at: u64,
