@@ -1,5 +1,6 @@
 import { useModal } from "../contexts/ModalContext";
 import { PortfolioItem } from "../lib/types";
+import { formatAmountUI } from "../lib/util";
 import { ChainIcon } from "./ChainIcon";
 
 interface PortfolioItemTileProps {
@@ -7,19 +8,6 @@ interface PortfolioItemTileProps {
   onBuy?: (asset: PortfolioItem) => void;
   onSell?: (asset: PortfolioItem) => void;
 }
-
-// Helper function to format amounts
-const formatAmount = (amount: number): string => {
-  if (amount >= 1_000_000_000) {
-    return (amount / 1_000_000_000).toFixed(3) + "B";
-  } else if (amount >= 1_000_000) {
-    return (amount / 1_000_000).toFixed(3) + "M";
-  } else if (amount >= 1000) {
-    return amount.toFixed(3);
-  } else {
-    return amount.toFixed(6);
-  }
-};
 
 export function PortfolioItemTile({
   asset,
@@ -79,7 +67,7 @@ export function PortfolioItemTile({
               </div>
             </h3>
             <p className="text-sm text-gray-400 font-dm-sans">
-              {formatAmount(asset.amount)} {asset.symbol}
+              {formatAmountUI(asset.amount)} {asset.symbol}
             </p>
           </div>
         </div>

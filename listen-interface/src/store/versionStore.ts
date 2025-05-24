@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { create } from "zustand";
+import { config } from "../config";
 
 const VersionResponseSchema = z.object({
   version: z.string(),
@@ -25,9 +26,7 @@ export const useVersionStore = create<VersionState>((set) => {
   const fetchLatestVersion = async () => {
     try {
       set({ isLoading: true, error: null });
-      const response = await fetch(
-        "https://api.listen-rs.com/v1/adapter/version"
-      );
+      const response = await fetch(`${config.adapterEndpoint}/version`);
 
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);

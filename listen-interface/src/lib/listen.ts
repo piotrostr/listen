@@ -4,6 +4,7 @@ export async function fetchListenMetadata(
   pubkey: string
 ): Promise<TokenMetadataRaw> {
   const response = await fetch(
+    // always prod
     `https://api.listen-rs.com/v1/adapter/metadata?mint=${pubkey}`
   );
 

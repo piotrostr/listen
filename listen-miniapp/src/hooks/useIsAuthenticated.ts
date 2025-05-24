@@ -12,11 +12,19 @@ export const useIsAuthenticated = () => {
   const isDelegatedEvm = userHasDelegatedEvmWallet(user);
   const { worldUserAddress } = useWorldAuth();
 
-  console.log("worldUserAddress", worldUserAddress);
-
   if (worldchainEnabled) {
+    // In development mode or testing mode, only check if we have a worldUserAddress
+    const isDevMode = process.env.NODE_ENV === "development";
+    const isTestingOverride = window.location.search.includes(
+      "test-worldcoin=true"
+    );
+    const isWorldAuthenticated =
+      isDevMode || isTestingOverride
+        ? typeof worldUserAddress === "string"
+        : typeof worldUserAddress === "string" && user !== null;
+
     return {
-      isAuthenticated: typeof worldUserAddress === "string" && user !== null,
+      isAuthenticated: isWorldAuthenticated,
       hasSolanaWallet: false,
       hasEvmWallet: true,
       ready,

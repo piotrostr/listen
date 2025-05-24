@@ -1,6 +1,6 @@
-import { useGuestAccounts, usePrivy } from "@privy-io/react-auth";
+import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { MiniKit } from "@worldcoin/minikit-js";
 import { useTranslation } from "react-i18next";
 import { worldchainEnabled } from "../config/env";
 import { useMobile } from "../contexts/MobileContext";
@@ -8,33 +8,40 @@ import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 import { useWorldAuth } from "../hooks/useWorldLogin";
 import { FullPageLoading } from "./FullPageLoading";
 import { GradientOutlineButton } from "./GradientOutlineButton";
-import { VersionDisplay } from "./VersionAndLanguage";
 
 export function GettingStarted() {
   const { t } = useTranslation();
   const { isMobile, isVerySmallScreen } = useMobile();
   const { login } = usePrivy();
-  const { createGuestAccount } = useGuestAccounts();
-  const [isCreatingGuestAccount, setIsCreatingGuestAccount] = useState(false);
   const { worldLogin, isLoading: isWorldLoading } = useWorldAuth();
   const { isLoading } = useIsAuthenticated();
   const navigate = useNavigate();
 
+  // Check if MiniKit is available
+  const isMiniKitAvailable = (() => {
+    try {
+      return MiniKit.isInstalled();
+    } catch {
+      return false;
+    }
+  })();
+
   const handleLogin = async () => {
-    if (worldchainEnabled) {
-      await worldLogin();
-      setIsCreatingGuestAccount(true);
-      await createGuestAccount();
-      setIsCreatingGuestAccount(false);
-      await navigate({
-        to: "/",
-      });
-    } else {
-      await login();
+    try {
+      if (worldchainEnabled) {
+        await worldLogin();
+        await navigate({
+          to: "/",
+        });
+      } else {
+        await login();
+      }
+    } catch (error) {
+      console.error("Login error:", error);
     }
   };
 
-  if (isCreatingGuestAccount || isLoading) {
+  if (isLoading) {
     return <FullPageLoading />;
   }
 
@@ -57,13 +64,58 @@ export function GettingStarted() {
       <div
         className={`flex flex-col ${isVerySmallScreen ? "gap-3" : "gap-4"} w-full text-center text-xs justify-center items-center mb-2`}
       >
+        {worldchainEnabled && !isMiniKitAvailable && (
+          <div className="text-orange-500 text-sm mb-2 text-center max-w-md">
+            To use Worldcoin authentication, please open this app in the World
+            App.
+            <br />
+            <span className="text-xs text-gray-400">
+              Currently running in:{" "}
+              {navigator.userAgent.includes("Chrome")
+                ? "Chrome"
+                : navigator.userAgent.includes("Safari")
+                  ? "Safari"
+                  : navigator.userAgent.includes("Firefox")
+                    ? "Firefox"
+                    : "Browser"}
+            </span>
+            <br />
+            <a
+              href={`${window.location.origin}${window.location.pathname}?test-worldcoin=true`}
+              className="text-blue-400 hover:text-blue-300 underline mt-2 inline-block"
+            >
+              Or click here to test with fallback authentication
+            </a>
+          </div>
+        )}
+        {process.env.NODE_ENV === "development" && worldchainEnabled && (
+          <div className="text-yellow-500 text-xs mb-2">
+            Development mode: Using fallback authentication
+          </div>
+        )}
+        {window.location.search.includes("test-worldcoin=true") && (
+          <div className="text-blue-500 text-xs mb-2">
+            Testing mode: Using fallback authentication
+          </div>
+        )}
         <GradientOutlineButton
-          arrow={true}
-          text={"Sign In"}
+          arrow={false}
+          text={isWorldLoading ? "Signing In..." : "Sign In"}
           onClick={handleLogin}
-          disabled={isCreatingGuestAccount || isWorldLoading}
+          disabled={
+            isWorldLoading ||
+            (worldchainEnabled &&
+              !isMiniKitAvailable &&
+              !window.location.search.includes("test-worldcoin=true"))
+          }
         />
-        <VersionDisplay />
+        {worldchainEnabled &&
+          !isMiniKitAvailable &&
+          !window.location.search.includes("test-worldcoin=true") && (
+            <p className="text-xs text-gray-500 mt-2">
+              Button disabled - World App required for Worldcoin authentication
+            </p>
+          )}
       </div>
     </div>
   );

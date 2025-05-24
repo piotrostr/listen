@@ -1,11 +1,18 @@
+import { useLoginWithSiwe } from "@privy-io/react-auth";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import { MiniKit } from "@worldcoin/minikit-js";
 import { type Address } from "viem";
 import { DEVELOPMENT_FALLBACK_ADDRESS } from "../config/env";
 
 export const useWorldAuth = () => {
-  // In development, return the fallback address
-  if (process.env.NODE_ENV === "development") {
+  // Check for development mode OR testing override
+  const isDevMode = process.env.NODE_ENV === "development";
+  const isTestingOverride = window.location.search.includes(
+    "test-worldcoin=true"
+  );
+
+  // In development or testing mode, return the fallback address
+  if (isDevMode || isTestingOverride) {
     return {
       worldLogin: () => {},
       isLoading: false,
@@ -16,34 +23,39 @@ export const useWorldAuth = () => {
     };
   }
 
+  const { generateSiweNonce, loginWithSiwe } = useLoginWithSiwe();
+
   const mutation = useMutation({
     mutationFn: async () => {
-      const nonce = crypto.randomUUID().replace(/-/g, "");
+      // Get nonce from Privy
+      const privyNonce = await generateSiweNonce();
 
+      // Use nonce with Worldcoin walletAuth
       const { finalPayload } = await MiniKit.commandsAsync.walletAuth({
-        nonce,
-        requestId: "0",
-        expirationTime: new Date(
-          new Date().getTime() + 7 * 24 * 60 * 60 * 1000
-        ),
-        notBefore: new Date(new Date().getTime() - 24 * 60 * 60 * 1000),
-        statement: "Sign in",
+        nonce: privyNonce,
       });
 
       if (finalPayload.status === "error") {
         throw new Error("Login failed");
       }
 
-      localStorage.setItem("worldUserLoginAddress", finalPayload.address);
+      // Complete SIWE flow with Privy
+      const { message, signature } = finalPayload;
+      const user = await loginWithSiwe({ message, signature });
 
-      return finalPayload;
+      // Store the address for future use
+      if (user?.wallet?.address) {
+        localStorage.setItem("worldUserLoginAddress", user.wallet.address);
+      }
+
+      return user;
     },
   });
 
   const userQuery = useQuery({
     queryKey: ["user"],
     queryFn: () => {
-      const storedAddress = localStorage.getItem("userWalletAddress");
+      const storedAddress = localStorage.getItem("worldUserLoginAddress");
       const walletAddress = MiniKit.user?.walletAddress;
       return (walletAddress || storedAddress || null) as Address | null;
     },
@@ -63,7 +75,9 @@ export const useWorldAuth = () => {
   };
 
   try {
-    if (!MiniKit.isInstalled()) {
+    const isInstalled = MiniKit.isInstalled();
+
+    if (!isInstalled) {
       return nullState;
     }
   } catch (error) {

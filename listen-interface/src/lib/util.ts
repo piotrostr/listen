@@ -119,6 +119,19 @@ export const addressBook = {
   },
 };
 
+// Helper function to format amounts
+export const formatAmountUI = (amount: number): string => {
+  if (amount >= 1_000_000_000) {
+    return (amount / 1_000_000_000).toFixed(3) + "B";
+  } else if (amount >= 1_000_000) {
+    return (amount / 1_000_000).toFixed(3) + "M";
+  } else if (amount >= 1) {
+    return amount.toFixed(3);
+  } else {
+    return amount.toFixed(6);
+  }
+};
+
 export const formatAmount = (amount: string, decimals: number) => {
   const amountNum = parseFloat(amount);
   return (amountNum / Math.pow(10, decimals)).toFixed(5).toString();
@@ -569,6 +582,8 @@ export function getNetworkId(chainId: string | number): NetworkId | null {
   let chainIdString: string;
   if (chainId.toString().includes("solana")) {
     chainIdString = "solana";
+  } else if (chainId.toString().includes("eip155")) {
+    chainIdString = chainId.toString().split(":")[1];
   } else {
     chainIdString = chainId.toString();
   }

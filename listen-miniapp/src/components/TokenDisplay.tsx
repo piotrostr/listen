@@ -177,6 +177,13 @@ const extractTokenMetadata = (metadata: Token["metadata"]) => {
   return null;
 };
 
+function truncateName(name: string) {
+  if (name.length > 12) {
+    return name.slice(0, 12) + "...";
+  }
+  return name;
+}
+
 export function TokenDisplay({ token }: { token: Token }) {
   const { metadata, price_info } = token;
   const tokenMetadata = extractTokenMetadata(metadata);
@@ -193,7 +200,7 @@ export function TokenDisplay({ token }: { token: Token }) {
         <div className="flex flex-col p-2">
           <div className="flex flex-row items-center space-x-2">
             <div className="font-space-grotesk font-normal text-2xl leading-8 tracking-[-0.03em] text-center align-middle">
-              {tokenMetadata?.name}
+              {truncateName(tokenMetadata?.name || "")}
             </div>
             {price_info?.pct_change && (
               <PercentageChange pct_change={price_info.pct_change} />

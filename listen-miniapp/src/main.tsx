@@ -28,6 +28,18 @@ import "./index.css";
 import { worldchainEnabled } from "./config/env";
 import { routeTree } from "./routeTree.gen";
 
+if (window.location.href.includes("staging")) {
+  import("eruda")
+    .then((eruda) => {
+      console.log("Eruda loaded successfully");
+      eruda.default.init();
+      console.log("Eruda initialized");
+    })
+    .catch((error) => {
+      console.error("Failed to load eruda:", error);
+    });
+}
+
 const config = createConfig({
   chains: [arbitrum],
   transports: {
@@ -106,5 +118,5 @@ const AppContent = () => {
 createRoot(document.getElementById("root")!).render(
   <StrictMode>
     <AppContent />
-  </StrictMode>,
+  </StrictMode>
 );

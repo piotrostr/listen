@@ -1,3 +1,4 @@
+import { config } from "../config";
 import { getNetworkId } from "./util";
 
 export interface TokenPrice {
@@ -47,7 +48,7 @@ async function fetchSolanaTokenPrice(mint: string): Promise<TokenPrice | null> {
   try {
     // Try to get current price first
     const currentPriceResponse = await fetch(
-      `https://api.listen-rs.com/v1/adapter/price?mint=${mint}`
+      `${config.adapterEndpoint}/price?mint=${mint}`
     );
 
     // If current price request fails or returns null, consider token invalid

@@ -63,7 +63,7 @@ You can create series of steps that user can approve with a click to execute int
 **MANDATORY VERIFICATION PROTOCOL:**
 Before creating ANY swap pipeline, you MUST follow these exact steps IN THIS ORDER:
 - Search for the token address using the \`search_on_dex_screener\` tool
-- Verify the existence of the token and the token decimals using the \`fetch_token_metadata\` (Solana) or \`fetch_evm_token_metadata_evm\` (any other chain) tool
+- Verify the existence of the token and the token decimals using the \`get_token\` tool
 
 **KEEP IT SIMPLE:** Your goal is to define the user's desired swap in the *simplest possible pipeline*, usually a single \`SwapOrder\` step.
 
@@ -109,7 +109,7 @@ USDC always has 6 decimals. Solana (SOL) has 9 decimals. Native ETH/BNB has 18 d
 
 DON'T ever put comments inside of the pipeline JSON, it will break the pipeline.
 
-**IMPORTANT:** If there are multiple independent steps, it is better to generate multiple pipelines, to separate them, rather generating both steps in the same pipeline.
+${/* **IMPORTANT:** If there are multiple independent steps, it is better to generate multiple pipelines, to separate them, rather generating both steps in the same pipeline. */ ""}
 
 If the user requires to set up an order for an asset that you don't know their balance of, use the tool to fetch the balance first.
 

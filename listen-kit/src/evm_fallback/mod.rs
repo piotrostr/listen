@@ -6,6 +6,7 @@ pub mod find_pair;
 pub mod token_info;
 pub mod top_tokens;
 pub mod top_tokens_by_category;
+pub mod top_tokens_by_category_cmc;
 
 pub struct EvmFallback {
     client: reqwest::Client,

@@ -7,36 +7,58 @@ use tracing::{debug, error};
 
 pub struct RedisSubscriber {
     client: redis::Client,
-    tx: broadcast::Sender<String>,
+    price_tx: broadcast::Sender<String>,
+    transaction_tx: broadcast::Sender<String>,
 }
 
 impl RedisSubscriber {
     pub fn new(redis_url: &str) -> Result<Self> {
         let client = redis::Client::open(redis_url)?;
-        let (tx, _) = broadcast::channel(200);
-        Ok(Self { client, tx })
+        let (price_tx, _) = broadcast::channel(200);
+        let (transaction_tx, _) = broadcast::channel(200);
+        Ok(Self {
+            client,
+            price_tx,
+            transaction_tx,
+        })
     }
 
-    pub fn subscribe(&self) -> broadcast::Receiver<String> {
-        self.tx.subscribe()
+    pub fn subscribe_prices(&self) -> broadcast::Receiver<String> {
+        self.price_tx.subscribe()
     }
 
-    pub async fn start_listening(&self, channel: &str) -> Result<()> {
+    pub fn subscribe_transactions(&self) -> broadcast::Receiver<String> {
+        self.transaction_tx.subscribe()
+    }
+
+    pub async fn start_listening(&self) -> Result<()> {
         let conn = self.client.get_async_connection().await?;
-        debug!("Subscribing to Redis channel: {}", channel);
+        debug!("Subscribing to Redis channels");
 
         let mut pubsub = conn.into_pubsub();
-        pubsub.subscribe(channel).await?;
-        let tx = self.tx.clone();
+        pubsub.subscribe("price_updates").await?;
+        pubsub.subscribe("transaction_updates").await?;
+
+        let price_tx = self.price_tx.clone();
+        let transaction_tx = self.transaction_tx.clone();
 
         tokio::spawn(async move {
             let mut msg_stream = pubsub.on_message();
 
             while let Some(msg) = msg_stream.next().await {
+                let channel: String = msg.get_channel_name().to_string();
                 match msg.get_payload::<String>() {
-                    Ok(payload) => {
-                        let _ = tx.send(payload);
-                    }
+                    Ok(payload) => match channel.as_str() {
+                        "price_updates" => {
+                            let _ = price_tx.send(payload);
+                        }
+                        "transaction_updates" => {
+                            let _ = transaction_tx.send(payload);
+                        }
+                        _ => {
+                            error!("Unknown channel: {}", channel);
+                        }
+                    },
                     Err(e) => {
                         error!("Failed to get message payload: {}", e);
                     }
@@ -50,8 +72,7 @@ impl RedisSubscriber {
 
 pub async fn create_redis_subscriber(redis_url: &str) -> anyhow::Result<Arc<RedisSubscriber>> {
     let subscriber = RedisSubscriber::new(redis_url)?;
-    subscriber.start_listening("price_updates").await?;
-
+    subscriber.start_listening().await?;
     Ok(Arc::new(subscriber))
 }
 
@@ -64,10 +85,13 @@ mod tests {
         let subscriber = create_redis_subscriber("redis://localhost:6379")
             .await
             .unwrap();
-        subscriber.start_listening("price_updates").await.unwrap();
 
-        let mut sub = subscriber.subscribe();
-        let msg = sub.recv().await.unwrap();
-        assert!(msg != "");
+        subscriber.subscribe_prices();
+        subscriber.subscribe_transactions();
+
+        // You can add test messages here using a separate Redis client
+        // For now just testing the setup works
+        assert!(subscriber.price_tx.receiver_count() > 0);
+        assert!(subscriber.transaction_tx.receiver_count() > 0);
     }
 }

@@ -1,4 +1,5 @@
 import { create } from "zustand";
+import { config } from "../config";
 import { compactPortfolio } from "../lib/util";
 import { Message } from "../types/message";
 import { usePortfolioStore } from "./portfolioStore";
@@ -80,23 +81,18 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
 
     try {
       const token = await getAccessToken();
-      const response = await fetch(
-        process.env.NODE_ENV === "production"
-          ? "https://api.listen-rs.com/v1/kit/suggest"
-          : "http://localhost:6969/suggest",
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${token}`,
-          },
-          body: JSON.stringify({
-            chat_history: chatHistory,
-            locale,
-            context: JSON.stringify(portfolio),
-          }),
-        }
-      );
+      const response = await fetch(`${config.kitEndpoint}/suggest`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          chat_history: chatHistory,
+          locale,
+          context: JSON.stringify(portfolio),
+        }),
+      });
 
       if (!response.ok) {
         throw new Error("Failed to fetch suggestions");
