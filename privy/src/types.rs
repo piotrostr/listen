@@ -104,8 +104,10 @@ pub enum LinkedAccount {
     Wallet(WalletAccount),
     #[serde(rename = "phone")]
     Phone(serde_json::Value),
-    #[serde(rename = "unknown")]
-    Unknown(serde_json::Map<String, serde_json::Value>),
+    #[serde(rename = "passkey")]
+    Passkey(serde_json::Value),
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Serialize, Deserialize)]
