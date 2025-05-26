@@ -65,7 +65,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_doc() {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let uuid = "c10d61e0-5995-41e8-ac92-1fe079c49f3c";
         let memory_store = MemoryStore::from_env().await.unwrap();
         let memory = memory_store.get_memory(uuid).await.unwrap().unwrap();

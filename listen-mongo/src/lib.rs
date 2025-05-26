@@ -195,7 +195,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_mongo_client() -> Result<()> {
-        dotenv::dotenv().ok();
+        dotenvy::dotenv().ok();
         let repo = MongoClient::from_env().await?;
 
         // Test with UUID

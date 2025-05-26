@@ -11,7 +11,7 @@ pub mod websocket;
 #[cfg(test)]
 #[ctor::ctor]
 fn init() {
-    dotenv::dotenv().ok();
+    dotenvy::dotenv().ok();
     std::env::set_var("RUST_LOG", "debug");
     listen_tracing::setup_tracing();
 }

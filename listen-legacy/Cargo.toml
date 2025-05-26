@@ -43,7 +43,7 @@ raydium_amm = { git = "https://github.com/piotrostr/raydium-amm", default-featur
 log = "0.4.21"
 env_logger = "0.11.3"
 chrono = "0.4.38"
-dotenv = "0.15.0"
+dotenvy = "0.15.7"
 jito-searcher-client = { git = "https://github.com/piotrostr/searcher-examples", version = "0.1.0" }
 jito-protos = { git = "https://github.com/piotrostr/searcher-examples", version = "0.1.0" }
 tonic = { version = "0.10", features = [

@@ -121,7 +121,7 @@ pub mod test_swaps {
             transaction_metadata_from_original_meta,
         },
     };
-    use dotenv::dotenv;
+    use dotenvy::dotenv;
     use solana_client::rpc_config::RpcTransactionConfig;
     use solana_sdk::{
         commitment_config::CommitmentConfig, signature::Signature,
