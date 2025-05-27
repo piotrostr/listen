@@ -112,7 +112,7 @@ export const drawOrderbook = async (
       yValues: bidValues,
     }),
     stroke: appTheme.VividGreen,
-    fill: "00ff0033",
+    fill: "#122F2E",
     strokeThickness: 2,
     isDigitalLine: true,
   });
@@ -124,7 +124,7 @@ export const drawOrderbook = async (
       yValues: askValues,
     }),
     stroke: appTheme.VividRed,
-    fill: "ff000033",
+    fill: "#30282F",
     strokeThickness: 2,
     isDigitalLine: true,
   });
@@ -134,14 +134,19 @@ export const drawOrderbook = async (
   // Add hover functionality to show price/volume on cursor
   sciChartSurface.chartModifiers.add(
     new CursorModifier({
-      showTooltip: true,
+      showTooltip: false,
       showAxisLabels: true,
-      axisLabelFill: "#333",
-      axisLabelStroke: "#fff",
+      crosshairStroke: "#ffffff",
+      crosshairStrokeThickness: 1,
+      axisLabelFill: "transparent",
+      axisLabelStroke: "#ffffff",
+      showXLine: true,
+      showYLine: false,
     }),
     new RolloverModifier({
       showTooltip: true,
-      showAxisLabel: true,
+      showAxisLabel: false,
+      showRolloverLine: false,
     })
   );
 

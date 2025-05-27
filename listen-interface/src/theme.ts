@@ -7,9 +7,14 @@ export interface AppTheme {
 }
 
 export class MinimalAppTheme implements AppTheme {
-  SciChartJsTheme = new SciChartJsNavyTheme();
-  VividGreen = "#00ff00";
-  VividRed = "#ff0000";
+  SciChartJsTheme = {
+    ...new SciChartJsNavyTheme(),
+    rolloverTooltipFill: "#1a1a1a",
+    rolloverTooltipStroke: "#333333",
+    rolloverTooltipTextColor: "#ffffff",
+  };
+  VividGreen = "#1FA67D";
+  VividRed = "#ED7087";
 }
 
 export const appTheme = new MinimalAppTheme();
