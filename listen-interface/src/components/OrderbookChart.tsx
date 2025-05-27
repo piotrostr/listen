@@ -1,9 +1,12 @@
 import {
+  CursorModifier,
   EAutoRange,
   EAxisAlignment,
   FastMountainRenderableSeries,
   NumberRange,
   NumericAxis,
+  NumericLabelProvider,
+  RolloverModifier,
   SciChartSurface,
   XyDataSeries,
 } from "scichart";
@@ -34,17 +37,19 @@ export const drawOrderbook = async (
 
   const xAxis = new NumericAxis(wasmContext, {
     axisAlignment: EAxisAlignment.Top,
-    labelPrecision: 4,
+    labelPrecision: 2,
     rotation: 90,
     drawMajorBands: false,
     drawMinorGridLines: false,
     drawMajorGridLines: false,
+    drawLabels: false,
     axisBorder: {
       borderTop: 0,
       borderBottom: 0,
       borderLeft: 0,
       borderRight: 0,
     },
+    labelProvider: new NumericLabelProvider(),
   });
 
   sciChartSurface.xAxes.add(xAxis);
@@ -55,12 +60,14 @@ export const drawOrderbook = async (
     drawMajorBands: false,
     drawMinorGridLines: false,
     drawMajorGridLines: false,
+    drawLabels: false,
     axisBorder: {
       borderTop: 0,
       borderBottom: 0,
       borderLeft: 0,
       borderRight: 0,
     },
+    labelProvider: new NumericLabelProvider(),
   });
   sciChartSurface.yAxes.add(yAxis);
 
@@ -123,6 +130,20 @@ export const drawOrderbook = async (
   });
 
   sciChartSurface.renderableSeries.add(bidSeries, askSeries);
+
+  // Add hover functionality to show price/volume on cursor
+  sciChartSurface.chartModifiers.add(
+    new CursorModifier({
+      showTooltip: true,
+      showAxisLabels: true,
+      axisLabelFill: "#333",
+      axisLabelStroke: "#fff",
+    }),
+    new RolloverModifier({
+      showTooltip: true,
+      showAxisLabel: true,
+    })
+  );
 
   return { sciChartSurface };
 };
