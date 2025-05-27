@@ -272,35 +272,6 @@ pub async fn fetch_price_action_analysis(
     )
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[tokio::test]
-    async fn test_fetch_top_tokens() {
-        fetch_top_tokens(
-            Some("10".to_string()),
-            Some("1000000000000000000".to_string()),
-            Some("1000000000000000000".to_string()),
-            Some("1d".to_string()),
-        )
-        .await
-        .unwrap();
-    }
-
-    #[tokio::test]
-    async fn test_fetch_price_action_analysis() {
-        // FIXME thread local signer needs init
-        let analysis = fetch_price_action_analysis(
-            "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump".to_string(),
-            "5m".to_string(),
-            None,
-        )
-        .await;
-        tracing::info!("{:?}", analysis);
-    }
-}
-
 pub async fn fetch_candlesticks(
     mint: String,
     interval: String,
@@ -318,4 +289,33 @@ pub async fn fetch_candlesticks(
         .json::<Vec<Candlestick>>()
         .await
         .map_err(|e| anyhow!("Failed to parse response: {}", e))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[tokio::test]
+    async fn test_fetch_top_tokens() {
+        fetch_top_tokens(
+            Some("10".to_string()),
+            Some("1000000000000000000".to_string()),
+            Some("1000000000000000000".to_string()),
+            Some("36400".to_string()),
+        )
+        .await
+        .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_fetch_price_action_analysis() {
+        // FIXME thread local signer needs init
+        let analysis = fetch_price_action_analysis(
+            "61V8vBaqAGMpgDQi4JcAwo1dmBGHsyhzodcPqnEVpump".to_string(),
+            "5m".to_string(),
+            None,
+        )
+        .await;
+        tracing::info!("{:?}", analysis);
+    }
 }
