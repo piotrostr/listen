@@ -107,11 +107,14 @@ export function Settings() {
         {t("settings.agent_mode_disabled")}
       </p>
 
+      <br />
+
       <Toggle
         label={t("settings.hyperliquid")}
         checked={hyperliquid}
         onChange={handleHyperliquidToggle}
       />
+      <br />
 
       {/*
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.mode")}</h2>
