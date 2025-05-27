@@ -13,6 +13,9 @@ pub mod solana;
 #[cfg(feature = "evm")]
 pub mod evm;
 
+#[cfg(feature = "hype")]
+pub mod hype;
+
 pub mod agent;
 pub mod common;
 pub mod cross_chain;
