@@ -58,6 +58,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     modelType,
     researchEnabled,
     memoryEnabled,
+    hyperliquid,
   } = useSettingsStore();
   const { getAccessToken, user } = usePrivy();
   const {
@@ -273,6 +274,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             autonomous: agentMode,
             deep_research: researchEnabled,
             memory: memoryEnabled,
+            hyperliquid,
           },
           model_type: "gemini", // hard-code
           locale: i18n.language,
