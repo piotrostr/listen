@@ -3,6 +3,7 @@ use crate::data::evm_fallback_tools::{
     FetchTopTokensByChainId,
 };
 use crate::evm::tools::{GetErc20Balance, GetEthBalance};
+use crate::hype::equip_with_hype_tools;
 use crate::solana::tools::{
     DeployPumpFunToken, GetCurrentTime, GetSolBalance, GetSplTokenBalance,
 };
@@ -33,6 +34,8 @@ pub struct Features {
     pub memory: bool,
     #[serde(default)]
     pub worldchain: bool,
+    #[serde(default)]
+    pub hyperliquid: bool,
 }
 
 pub fn model_to_versioned_model(model_type: String) -> String {
@@ -142,6 +145,10 @@ pub fn create_listen_agent(
 
     if features.autonomous {
         agent = equip_with_autonomous_tools(agent);
+    }
+
+    if features.hyperliquid {
+        agent = equip_with_hype_tools(agent);
     }
 
     agent.build()
