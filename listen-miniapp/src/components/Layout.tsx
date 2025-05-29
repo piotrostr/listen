@@ -12,6 +12,7 @@ import { useMobile } from "../contexts/MobileContext";
 import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { useHasAddedToHomeScreen } from "../hooks/useHasAddedToHomeScreen";
+import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 import { usePWAStatus } from "../hooks/usePWAStatus";
 import { useWorldAuth } from "../hooks/useWorldLogin";
 import { usePortfolioStore } from "../store/portfolioStore";
@@ -98,6 +99,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { messages } = useChat();
   const hasMessages = messages.length > 0;
   useSolanaLedgerPlugin();
+  const { isAuthenticated } = useIsAuthenticated();
 
   const handleLogout = () => {
     logout();
@@ -313,7 +315,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
           )}
 
           {/* ChainSwitcher - positioned absolutely */}
-          {isMobile && !hasMessages && (
+          {isMobile && !hasMessages && isAuthenticated && (
             <div className="fixed top-20 left-4 z-30">
               <ChainSwitcher />
             </div>
