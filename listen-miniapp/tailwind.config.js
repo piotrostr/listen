@@ -7,6 +7,7 @@ export default {
         mono: ["Space Grotesk", "monospace"],
         'space-grotesk': ['Space Grotesk', 'sans-serif'],
         'dm-sans': ['DM Sans', 'sans-serif'],
+        'work-sans': ['Work Sans', 'sans-serif'],
       },
       animation: {
         blob: "blob 7s infinite",

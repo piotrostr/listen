@@ -5,6 +5,7 @@ import { useChat } from "../contexts/ChatContext";
 import { useModal } from "../contexts/ModalContext";
 import { useSettingsStore } from "../store/settingsStore";
 import { useSuggestStore } from "../store/suggestStore";
+import { useWalletStore } from "../store/walletStore";
 import {
   ParToolCallSchema,
   RigToolCall,
@@ -20,6 +21,7 @@ import { ToolCallMessage } from "./ToolCallMessage";
 const IS_DISABLED = false;
 
 export function Chat({ selectedChatId }: { selectedChatId?: string }) {
+  const { t } = useTranslation();
   // Add useEffect to update urlParams when location changes
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -55,6 +57,8 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     nestedAgentOutput,
   } = useChat();
 
+  const { activeWallet } = useWalletStore();
+
   const {
     getSuggestions,
     isLoading: isSuggestionsLoading,
@@ -82,38 +86,74 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
 
   const [justSentMessage, setJustSentMessage] = useState(false);
 
-  const RECOMMENDED_QUESTIONS_CAROUSEL = [
-    {
-      question: "What are the most popular tokens available on World?",
-      enabled: true,
-      display: "Trade Top Tokens",
-    },
-    {
-      question: "I would like to learn how to invest in crypto effectively.",
-      enabled: true,
-      display: "Learn to Invest in Crypto",
-    },
-    {
-      question: "Which Mini-Apps offer claiming tokens?",
-      enabled: true,
-      display: "Claim Daily Tokens",
-    },
-    {
-      question: "What are the most popular tokens available on World?",
-      enabled: true,
-      display: "Trade Top Tokens",
-    },
-    {
-      question: "I am looking for some cool Mini-Apps, any recommendations?",
-      enabled: true,
-      display: "Find New Mini-Apps",
-    },
-    {
-      question: "I would like to find ways to passively earn with my $WLD",
-      enabled: true,
-      display: "Put your $WLD to work",
-    },
-  ];
+  const RECOMMENDED_QUESTIONS_CAROUSEL =
+    activeWallet === "listen"
+      ? [
+          {
+            question: t(
+              "recommended_questions.whats_the_most_viral_token_right_now"
+            ),
+            enabled: true,
+          },
+          {
+            question: t("recommended_questions.what_does_lp_mean"),
+            enabled: true,
+          },
+          {
+            question: t(
+              "recommended_questions.how_to_manage_risk_when_trading_memecoins"
+            ),
+            enabled: true,
+          },
+          {
+            question: t("recommended_questions.im_feeling_lucky_question"),
+            enabled: true,
+            display: t("recommended_questions.im_feeling_lucky_display"),
+          },
+          {
+            question: t("recommended_questions.buy_the_solana_dip"),
+            enabled: true,
+          },
+          {
+            question: t("recommended_questions.research_arcdotfun_for_me"),
+            enabled: true,
+          },
+        ]
+      : [
+          {
+            question: "What are the most popular tokens available on World?",
+            enabled: true,
+            display: "Trade Top Tokens",
+          },
+          {
+            question:
+              "I would like to learn how to invest in crypto effectively.",
+            enabled: true,
+            display: "Learn to Invest in Crypto",
+          },
+          {
+            question: "Which Mini-Apps offer claiming tokens?",
+            enabled: true,
+            display: "Claim Daily Tokens",
+          },
+          {
+            question: "What are the most popular tokens available on World?",
+            enabled: true,
+            display: "Trade Top Tokens",
+          },
+          {
+            question:
+              "I am looking for some cool Mini-Apps, any recommendations?",
+            enabled: true,
+            display: "Find New Mini-Apps",
+          },
+          {
+            question:
+              "I would like to find ways to passively earn with my $WLD",
+            enabled: true,
+            display: "Put your $WLD to work",
+          },
+        ];
 
   useEffect(() => {
     if (messages.length > 0 && lastUserMessageRef.current && justSentMessage) {

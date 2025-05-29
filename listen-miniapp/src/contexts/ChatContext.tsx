@@ -10,7 +10,6 @@ import {
   useState,
 } from "react";
 import { v4 as uuidv4 } from "uuid";
-import { worldchainEnabled } from "../config/env";
 import { useDebounce } from "../hooks/useDebounce";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useWorldAuth } from "../hooks/useWorldLogin";
@@ -278,7 +277,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             autonomous: agentMode,
             deep_research: researchEnabled,
             memory: memoryEnabled,
-            worldchain: worldchainEnabled,
+            worldchain: activeWallet === "worldchain",
           },
           model_type: "gemini", // hard-code
           locale: i18n.language,
