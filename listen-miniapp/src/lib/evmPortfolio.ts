@@ -1,19 +1,32 @@
 import { getAddress } from "viem";
 import { z } from "zod";
-import { worldchainEnabled } from "../config/env";
 import { getAnyToken } from "../hooks/useToken";
 import { tokenMetadataCache } from "./localStorage";
 import { PortfolioItem, TokenMetadata } from "./types";
 
-const SUPPORTED_NETWORKS = worldchainEnabled
-  ? [{ chainId: "480", networkId: "worldchain-mainnet", chain: "worldchain" }]
-  : ([
-      { chainId: "1", networkId: "eth-mainnet", chain: "ethereum" },
-      { chainId: "42161", networkId: "arb-mainnet", chain: "arbitrum" },
-      { chainId: "56", networkId: "bnb-mainnet", chain: "bsc" },
-      { chainId: "8453", networkId: "base-mainnet", chain: "base" },
-      { chainId: "480", networkId: "worldchain-mainnet", chain: "worldchain" },
-    ] as const);
+interface SupportedNetwork {
+  chainId: string;
+  networkId: string;
+  chain: string;
+}
+
+const getSupportedNetworks = (
+  worldchainEnabled: boolean
+): SupportedNetwork[] => {
+  return worldchainEnabled
+    ? [{ chainId: "480", networkId: "worldchain-mainnet", chain: "worldchain" }]
+    : ([
+        { chainId: "1", networkId: "eth-mainnet", chain: "ethereum" },
+        { chainId: "42161", networkId: "arb-mainnet", chain: "arbitrum" },
+        { chainId: "56", networkId: "bnb-mainnet", chain: "bsc" },
+        { chainId: "8453", networkId: "base-mainnet", chain: "base" },
+        {
+          chainId: "480",
+          networkId: "worldchain-mainnet",
+          chain: "worldchain",
+        },
+      ] as const);
+};
 
 const TokenPriceSchema = z.object({
   currency: z.string(),
@@ -44,7 +57,7 @@ const AlchemyResponseSchema = z.object({
 
 async function enrichTokenMetadata(
   token: z.infer<typeof TokenSchema>,
-  network: (typeof SUPPORTED_NETWORKS)[number]
+  network: SupportedNetwork
 ): Promise<TokenMetadata | null> {
   try {
     const address =
@@ -179,7 +192,8 @@ export async function getTokensMetadata(
 }
 
 export async function getTokenHoldings(
-  address: string
+  address: string,
+  worldchainEnabled: boolean = false
 ): Promise<PortfolioItem[]> {
   try {
     const response = await fetch(
@@ -194,7 +208,9 @@ export async function getTokenHoldings(
           addresses: [
             {
               address,
-              networks: SUPPORTED_NETWORKS.map((n) => n.networkId),
+              networks: getSupportedNetworks(worldchainEnabled).map(
+                (n) => n.networkId
+              ),
             },
           ],
           withMetadata: true,
@@ -242,7 +258,7 @@ export async function getTokenHoldings(
         return (price * amount).toFixed(2) !== "0.00";
       })
       .map(async (token) => {
-        const network = SUPPORTED_NETWORKS.find(
+        const network = getSupportedNetworks(worldchainEnabled).find(
           (n) => n.networkId === token.network
         );
         if (!network) return null;

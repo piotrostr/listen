@@ -1,19 +1,14 @@
-import React, { useState } from "react";
+import { useWalletStore } from "../store/walletStore";
 
-interface ChainSwitcherProps {
-  onChainChange?: (chain: "world" | "all") => void;
-  selectedChain?: "world" | "all";
-}
+export const ChainSwitcher = () => {
+  const { setActiveWallet, activeWallet } = useWalletStore();
 
-export const ChainSwitcher: React.FC<ChainSwitcherProps> = ({
-  onChainChange,
-  selectedChain = "world",
-}) => {
-  const [selected, setSelected] = useState<"world" | "all">(selectedChain);
-
-  const handleChainSelect = (chain: "world" | "all") => {
-    setSelected(chain);
-    onChainChange?.(chain);
+  const handleChainSelect = () => {
+    if (activeWallet === "worldchain") {
+      setActiveWallet("listen");
+    } else {
+      setActiveWallet("worldchain");
+    }
   };
 
   return (
@@ -47,11 +42,11 @@ export const ChainSwitcher: React.FC<ChainSwitcherProps> = ({
 
         {/* World Chain Button */}
         <g
-          onClick={() => handleChainSelect("world")}
+          onClick={handleChainSelect}
           className="cursor-pointer"
-          style={{ opacity: selected === "world" ? 1 : 0.7 }}
+          style={{ opacity: activeWallet === "worldchain" ? 1 : 0.7 }}
         >
-          {selected === "world" ? (
+          {activeWallet === "worldchain" ? (
             <>
               <rect
                 x="4.5"
@@ -97,11 +92,11 @@ export const ChainSwitcher: React.FC<ChainSwitcherProps> = ({
 
         {/* All Chains Button */}
         <g
-          onClick={() => handleChainSelect("all")}
+          onClick={handleChainSelect}
           className="cursor-pointer"
-          style={{ opacity: selected === "all" ? 1 : 0.7 }}
+          style={{ opacity: activeWallet === "listen" ? 1 : 0.7 }}
         >
-          {selected === "all" ? (
+          {activeWallet === "listen" ? (
             <>
               <rect
                 x="113.5"
@@ -136,7 +131,7 @@ export const ChainSwitcher: React.FC<ChainSwitcherProps> = ({
             y="23"
             textAnchor="middle"
             dominantBaseline="middle"
-            fill={selected === "all" ? "white" : "#8F8F8F"}
+            fill={activeWallet === "listen" ? "white" : "#8F8F8F"}
             fontSize="12"
             fontFamily="system-ui, -apple-system, sans-serif"
             fontWeight="500"
