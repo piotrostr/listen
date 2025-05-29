@@ -16,6 +16,7 @@ import { useWorldAuth } from "../hooks/useWorldLogin";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { AddToHomeScreenPopup } from "./AddToHomeScreenPopup";
+import ChainSwitcher from "./ChainSwitcher";
 import { PanelSelector } from "./PanelSelector";
 import { PipelinesInitializer } from "./PipelinesInitializer";
 import { RecentChats } from "./RecentChats";
@@ -307,6 +308,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
               onClick={() => setIsSidebarOpen(false)}
             ></div>
           )}
+
+          {/* ChainSwitcher - positioned absolutely */}
+          <div className="fixed top-20 left-4 z-30">
+            <ChainSwitcher />
+          </div>
 
           {/* Main Content Area - Modified for X-style shifting */}
           <div
