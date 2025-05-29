@@ -17,7 +17,7 @@ export function PortfolioSummary({ totalBalance }: PortfolioSummaryProps) {
 
   const handleTopupListen = async () => {
     if (solanaAddress) {
-      await fundWallet(solanaAddress, { defaultFundingMethod: "card" });
+      await fundWallet(solanaAddress);
     } else {
       login();
     }

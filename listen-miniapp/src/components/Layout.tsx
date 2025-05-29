@@ -310,9 +310,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
           )}
 
           {/* ChainSwitcher - positioned absolutely */}
-          <div className="fixed top-20 left-4 z-30">
-            <ChainSwitcher />
-          </div>
+          {isMobile && (
+            <div className="fixed top-20 left-4 z-30">
+              <ChainSwitcher />
+            </div>
+          )}
 
           {/* Main Content Area - Modified for X-style shifting */}
           <div
