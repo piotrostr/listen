@@ -46,7 +46,7 @@ export const userHasDelegatedSolanaWallet = (user: User | null) => {
     (account): account is WalletWithMetadata =>
       account.type === "wallet" &&
       account.delegated &&
-      account.chainType === "solana"
+      account.chainType === "solana",
   );
 };
 
@@ -55,7 +55,7 @@ export const userHasDelegatedEvmWallet = (user: User | null) => {
     (account): account is WalletWithMetadata =>
       account.type === "wallet" &&
       account.delegated &&
-      account.chainType === "ethereum"
+      account.chainType === "ethereum",
   );
 };
 
@@ -90,7 +90,7 @@ export const caip2Map = {
 export function chainIdToCaip2(chainId?: string) {
   if (!chainId) return "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 
-  let values = Object.values(caip2Map);
+  const values = Object.values(caip2Map);
   if (values.includes(chainId)) {
     return chainId;
   }
@@ -262,7 +262,7 @@ export const chainIdNumericToChainId = (chainId: number): string => {
 
 // Validate Solana transaction signatures
 export const isValidSolanaTransactionSignature = (
-  signature: string
+  signature: string,
 ): boolean => {
   try {
     // Check that it only contains valid base58 characters
@@ -391,7 +391,7 @@ export const renderAddressOrTx = (text: string): string => {
       // Create the replacement with the link
       const replacement = `"<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${txSignature.slice(
         0,
-        4
+        4,
       )}..${txSignature.slice(-4)}</a>"`;
 
       // Replace this specific occurrence
@@ -415,7 +415,7 @@ export const renderAddressOrTx = (text: string): string => {
     // Skip if this is already inside an HTML tag (from previous replacements)
     const prevText = processedText.substring(
       Math.max(0, longTxMatch.index - 50),
-      longTxMatch.index
+      longTxMatch.index,
     );
     if (prevText.includes('<a href="https://solscan.io/')) {
       continue;
@@ -427,7 +427,7 @@ export const renderAddressOrTx = (text: string): string => {
       // Create the replacement with the link
       const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch.slice(
         0,
-        4
+        4,
       )}..${fullMatch.slice(-4)}</a>`;
 
       // Replace this specific occurrence
@@ -452,7 +452,7 @@ export const renderAddressOrTx = (text: string): string => {
     // Skip if this is already inside an HTML tag (from previous replacements)
     const prevText = processedText.substring(
       Math.max(0, match.index - 50),
-      match.index
+      match.index,
     );
     if (prevText.includes('<a href="https://solscan.io/')) {
       continue;
@@ -470,7 +470,7 @@ export const renderAddressOrTx = (text: string): string => {
       // Create the replacement with the link
       const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch.slice(
         0,
-        4
+        4,
       )}..${fullMatch.slice(-4)}</a>`;
 
       // Replace this specific occurrence
@@ -496,7 +496,7 @@ export const renderAddressOrTx = (text: string): string => {
     // Skip if this is already inside an HTML tag (from previous replacements)
     const prevText = processedText.substring(
       Math.max(0, match.index - 50),
-      match.index
+      match.index,
     );
     if (prevText.includes('<a href="https://blockscan.com/')) {
       continue;
@@ -539,7 +539,7 @@ export type CompactPortfolio = {
 }[];
 
 export const compactPortfolio = (
-  portfolio: PortfolioItem[]
+  portfolio: PortfolioItem[],
 ): CompactPortfolio => {
   return portfolio.map((token) => ({
     chain: token.chain,
@@ -551,3 +551,45 @@ export const compactPortfolio = (
     value: (token.amount * token.price).toFixed(2),
   }));
 };
+
+export const chainIdToGeckoTerminalId = {
+  "1": "eth",
+  "8453": "base",
+  "56": "bsc",
+  "42161": "arbitrum",
+  ethereum: "eth",
+  "696969": "solana",
+  "480": "world-chain",
+  worldchain: "world-chain",
+  avax: "avax",
+  "sui-network": "sui-network",
+  sonic: "sonic",
+} as const;
+
+export type NetworkId =
+  (typeof chainIdToGeckoTerminalId)[keyof typeof chainIdToGeckoTerminalId];
+
+// Convert any chain ID (numeric or network name) to a valid network ID
+export function getNetworkId(chainId: string | number): NetworkId | null {
+  let chainIdString: string;
+  if (chainId.toString().includes("solana")) {
+    chainIdString = "solana";
+  } else if (chainId.toString().includes("eip155")) {
+    chainIdString = chainId.toString().split(":")[1];
+  } else {
+    chainIdString = chainId.toString();
+  }
+  // If it's already a valid network name, return it
+  if (
+    Object.values(chainIdToGeckoTerminalId).includes(chainIdString as NetworkId)
+  ) {
+    return chainIdString as NetworkId;
+  }
+
+  // Try to convert from chain ID
+  return (
+    chainIdToGeckoTerminalId[
+      chainIdString as keyof typeof chainIdToGeckoTerminalId
+    ] || null
+  );
+}

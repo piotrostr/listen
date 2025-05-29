@@ -65,6 +65,10 @@ const formatPrice = (price: number): string => {
   return price.toPrecision(4);
 };
 
+function truncate(str: string, maxLength: number): string {
+  return str.length > maxLength ? str.slice(0, maxLength) + "..." : str;
+}
+
 export function PortfolioItemTile({
   asset,
   onBuy,
@@ -105,7 +109,7 @@ export function PortfolioItemTile({
           <div>
             <h3 className="font-[400] flex items-center gap-2">
               <div className="truncate max-w-[100px] sm:max-w-none text-lg">
-                {asset.name}
+                {truncate(asset.name, 12)}
               </div>
             </h3>
             <p className="text-sm text-gray-400 font-dm-sans">

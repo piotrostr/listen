@@ -13,15 +13,17 @@ import { v4 as uuidv4 } from "uuid";
 import { worldchainEnabled } from "../config/env";
 import { useDebounce } from "../hooks/useDebounce";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { useWorldAuth } from "../hooks/useWorldLogin";
 import i18n from "../i18n";
 import { chatCache } from "../lib/localStorage";
 import { compactPortfolio } from "../lib/util";
 import { renderAgentOutput } from "../parse-agent-output";
 import { systemPrompt } from "../prompts";
-import { worldchainPrompt } from "../prompts/system";
+import { worldchainPrompt } from "../prompts/system-world";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { useSuggestStore } from "../store/suggestStore";
+import { useWalletStore } from "../store/walletStore";
 import {
   Chat,
   Message,
@@ -68,6 +70,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
   const { getSolanaAssets, getEvmAssets } = usePortfolioStore();
+  const { activeWallet } = useWalletStore();
+  const { worldUserAddress } = useWorldAuth();
 
   const solanaAssets = getSolanaAssets();
   const evmAssets = getEvmAssets();
@@ -249,15 +253,16 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             }
             return msg;
           });
-        const preamble = worldchainEnabled
-          ? worldchainPrompt(portfolio, wallets?.evmWallet?.toString() || null)
-          : systemPrompt(
-              portfolio,
-              wallets?.solanaWallet?.toString() || null,
-              wallets?.evmWallet?.toString() || null,
-              defaultAmount.toString(),
-              user?.isGuest || false
-            );
+        const preamble =
+          activeWallet === "worldchain"
+            ? worldchainPrompt(portfolio, worldUserAddress || null)
+            : systemPrompt(
+                portfolio,
+                wallets?.solanaWallet?.toString() || null,
+                wallets?.evmWallet?.toString() || null,
+                defaultAmount.toString(),
+                user?.isGuest || false
+              );
 
         if (researchEnabled && modelType === "claude") {
           // no-go atm
