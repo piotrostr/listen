@@ -14,8 +14,8 @@ export const OrderbookDisplay = ({
   };
 
   return (
-    <div className="w-full h-full">
-      <h1 className="text-xl font-bold mb-4">{coin} Orderbook</h1>
+    <div className="w-full h-full mt-3">
+      <h1 className="text-xl font-bold">{coin} Market Depth</h1>
       <div className="w-full h-96">
         <SciChartReact initChart={initChart} className="w-full h-full" />
       </div>
