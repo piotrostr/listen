@@ -15,14 +15,14 @@ export function useCancelPipeline() {
   const [isCancelling, setIsCancelling] = useState(false);
   const { getAccessToken } = usePrivy();
   const { showToast } = useToast();
-  const { data: wallets } = usePrivyWallets();
+  const { solanaWalletAddress } = usePrivyWallets();
   const queryClient = useQueryClient();
   const { t } = useTranslation();
 
   const invalidateSolanaPortfolio = () => {
-    if (wallets?.solanaWallet) {
+    if (solanaWalletAddress) {
       queryClient.refetchQueries({
-        queryKey: ["portfolio", wallets.solanaWallet.toString()],
+        queryKey: ["portfolio", solanaWalletAddress],
       });
     }
   };

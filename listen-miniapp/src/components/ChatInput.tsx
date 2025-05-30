@@ -68,10 +68,9 @@ export function ChatInput({
     }
   };
 
-  const { data: wallets } = usePrivyWallets();
+  const { isLoadingSolana, isLoadingEvm } = usePrivyWallets();
 
-  const walletsReady =
-    wallets?.evmWallet !== undefined && wallets?.solanaWallet !== undefined;
+  const walletsReady = !isLoadingSolana && !isLoadingEvm;
 
   const { t } = useTranslation();
 

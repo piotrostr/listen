@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { formatEther, parseEther } from "viem";
 import { useEoaExecution } from "../hooks/useEoaExecution";
+import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useWLDBalance, WLD_TOKEN_ADDRESS } from "../hooks/useWLDBalance";
 import { useWorldAuth } from "../hooks/useWorldLogin";
 import { SOLANA_CAIP2, WORLD_CAIP2 } from "../lib/util";
@@ -15,9 +16,10 @@ export const FundPanel = () => {
   const [amount, setAmount] = useState("0");
   const { handleEoaWorld } = useEoaExecution();
   const [isFunding, setIsFunding] = useState(false);
+  const { solanaWalletAddress } = usePrivyWallets();
 
   const handleFund = async () => {
-    if (!worldUserAddress || !amount) {
+    if (!worldUserAddress || !amount || !solanaWalletAddress) {
       return;
     }
     setIsFunding(true);
@@ -30,7 +32,11 @@ export const FundPanel = () => {
         to_chain_caip2: SOLANA_CAIP2,
         type: PipelineActionType.SwapOrder,
       };
-      const tx = await handleEoaWorld(action, worldUserAddress);
+      const tx = await handleEoaWorld(
+        action,
+        worldUserAddress,
+        solanaWalletAddress
+      );
       console.log("tx", tx);
     } catch (error) {
       console.error(error);
@@ -119,7 +125,9 @@ export const FundPanel = () => {
         <GradientOutlineButton
           text={isFunding ? "Funding..." : "Fund"}
           onClick={handleFund}
-          disabled={isFunding || !amount || !worldUserAddress}
+          disabled={
+            isFunding || !amount || !worldUserAddress || !solanaWalletAddress
+          }
         />
       </div>
     </div>

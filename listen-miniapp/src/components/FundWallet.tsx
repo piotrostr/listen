@@ -13,7 +13,7 @@ interface FundWalletProps {
 
 export const FundWallet = ({ error = null }: FundWalletProps) => {
   const { ready, user, login } = usePrivy();
-  const { data: wallets } = usePrivyWallets();
+  const { solanaWalletAddress } = usePrivyWallets();
   const { fundWallet } = useFundWallet();
   const [isFunding, setIsFunding] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
@@ -26,7 +26,7 @@ export const FundWallet = ({ error = null }: FundWalletProps) => {
   }, [user]);
 
   const handleFundWallet = async () => {
-    if (!wallets?.solanaWallet) return;
+    if (!solanaWalletAddress) return;
     if (worldchainEnabled) {
       setActivePanel("fund");
       return;
@@ -34,7 +34,7 @@ export const FundWallet = ({ error = null }: FundWalletProps) => {
 
     try {
       setIsFunding(true);
-      await fundWallet(wallets.solanaWallet);
+      await fundWallet(solanaWalletAddress);
     } catch (error) {
       console.error("Error funding Solana wallet:", error);
     } finally {
@@ -73,7 +73,7 @@ export const FundWallet = ({ error = null }: FundWalletProps) => {
     );
   }
 
-  if (!wallets?.solanaWallet) {
+  if (!solanaWalletAddress) {
     return <SolanaWalletCreation error={error} />;
   }
 

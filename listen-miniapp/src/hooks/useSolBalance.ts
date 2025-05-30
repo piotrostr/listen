@@ -1,19 +1,19 @@
-import { useQuery } from "@tanstack/react-query";
 import { Connection, LAMPORTS_PER_SOL, PublicKey } from "@solana/web3.js";
+import { useQuery } from "@tanstack/react-query";
 import { usePrivyWallets } from "./usePrivyWallet";
 
 export const useSolBalance = () => {
   const connection = new Connection(import.meta.env.VITE_RPC_URL);
-  const { data: wallets } = usePrivyWallets();
+  const { solanaWalletAddress } = usePrivyWallets();
 
   const fetchSOLBalance = async (): Promise<number> => {
     try {
-      if (!wallets?.solanaWallet) {
+      if (!solanaWalletAddress) {
         throw new Error("No pubkey available");
       }
 
       const balance = await connection.getBalance(
-        new PublicKey(wallets.solanaWallet),
+        new PublicKey(solanaWalletAddress)
       );
       return balance / LAMPORTS_PER_SOL;
     } catch (error) {
@@ -27,6 +27,6 @@ export const useSolBalance = () => {
     queryFn: fetchSOLBalance,
     refetchInterval: 20000,
     staleTime: 20000,
-    enabled: !!wallets?.solanaWallet,
+    enabled: !!solanaWalletAddress,
   });
 };

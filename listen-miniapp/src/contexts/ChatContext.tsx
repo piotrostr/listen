@@ -67,7 +67,13 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     message: initialMessage,
   } = useSearch({ from: "/" });
   const navigate = useNavigate();
-  const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
+  const {
+    solanaWalletAddress,
+    evmWalletAddress,
+    isLoadingSolana,
+    isLoadingEvm,
+  } = usePrivyWallets();
+  const isLoadingWallets = isLoadingSolana || isLoadingEvm;
   const { getSolanaAssets, getEvmAssets } = usePortfolioStore();
   const { activeWallet } = useWalletStore();
   const { worldUserAddress } = useWorldAuth();
@@ -257,8 +263,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
             ? worldchainPrompt(portfolio, worldUserAddress || null)
             : systemPrompt(
                 portfolio,
-                wallets?.solanaWallet?.toString() || null,
-                wallets?.evmWallet?.toString() || null,
+                solanaWalletAddress || null,
+                evmWalletAddress || null,
                 defaultAmount.toString(),
                 user?.isGuest || false
               );
@@ -514,7 +520,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       getAccessToken,
       solanaAssets,
       evmAssets,
-      wallets,
+      solanaWalletAddress,
+      evmWalletAddress,
       chatType,
       navigate,
     ]

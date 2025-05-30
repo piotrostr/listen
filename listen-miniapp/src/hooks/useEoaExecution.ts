@@ -88,14 +88,15 @@ export function useEoaExecution() {
 
   const handleEoaWorld = async (
     action: SwapOrderAction,
-    worldAddress: string
+    worldAddress: string,
+    toAddress?: string
   ): Promise<string | null> => {
     try {
       if (!MiniKit.isInstalled()) {
         throw new Error("World App is not installed");
       }
 
-      const tx = await swapStepToTransaction(action, worldAddress);
+      const tx = await swapStepToTransaction(action, worldAddress, toAddress);
       if (!tx || !tx.to) {
         throw new Error("Failed to create World transaction request");
       }

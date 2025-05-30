@@ -11,7 +11,7 @@ import { imageMap } from "../lib/util";
 import { CopyIcon } from "./CopyIcon";
 
 export function WalletAddresses() {
-  const { data: wallets } = usePrivyWallets();
+  const { solanaWalletAddress, evmWalletAddress } = usePrivyWallets();
   const { exportWallet: exportEvmWallet } = usePrivy();
   const { exportWallet: exportSolanaWallet } = useSolanaWallets();
   const { fundWallet: fundEvmWallet } = useFundWallet();
@@ -20,15 +20,15 @@ export function WalletAddresses() {
   const [clickedEvm, setClickedEvm] = useState(false);
 
   const handleClickCopySolana = () => {
-    if (!wallets?.solanaWallet) return;
-    navigator.clipboard.writeText(wallets.solanaWallet.toString());
+    if (!solanaWalletAddress) return;
+    navigator.clipboard.writeText(solanaWalletAddress);
     setClickedSolana(true);
     setTimeout(() => setClickedSolana(false), 1000);
   };
 
   const handleClickCopyEvm = () => {
-    if (!wallets?.evmWallet) return;
-    navigator.clipboard.writeText(wallets.evmWallet.toString());
+    if (!evmWalletAddress) return;
+    navigator.clipboard.writeText(evmWalletAddress);
     setClickedEvm(true);
     setTimeout(() => setClickedEvm(false), 1000);
   };
@@ -41,7 +41,7 @@ export function WalletAddresses() {
 
   return (
     <div className="space-y-2">
-      {wallets?.solanaWallet && (
+      {solanaWalletAddress && (
         <div className="rounded-lg p-3 transition-colors backdrop-blur-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -62,8 +62,8 @@ export function WalletAddresses() {
                 {t("wallet_addresses.export")}
               </button>
               <button
-                onClick={() => fundSolanaWallet(wallets.solanaWallet!)}
-                disabled={!wallets.solanaWallet}
+                onClick={() => fundSolanaWallet(solanaWalletAddress)}
+                disabled={!solanaWalletAddress}
                 className="p-2 border-2 border-[#2d2d2d] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-[#2D2D2D]"
               >
                 {t("wallet_addresses.fund")}
@@ -72,11 +72,9 @@ export function WalletAddresses() {
           </div>
           <div className="flex items-center justify-between gap-2 bg-black/40 p-2 rounded font-mono text-xs sm:text-sm">
             <div className="truncate">
-              <span className="hidden sm:inline">
-                {wallets.solanaWallet.toString()}
-              </span>
+              <span className="hidden sm:inline">{solanaWalletAddress}</span>
               <span className="sm:hidden">
-                {formatAddress(wallets.solanaWallet.toString())}
+                {formatAddress(solanaWalletAddress)}
               </span>
             </div>
             <div
@@ -89,7 +87,7 @@ export function WalletAddresses() {
         </div>
       )}
 
-      {wallets?.evmWallet && (
+      {evmWalletAddress && (
         <div className="rounded-lg p-3 transition-colors backdrop-blur-sm">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
@@ -110,7 +108,7 @@ export function WalletAddresses() {
                 {t("wallet_addresses.export")}
               </button>
               <button
-                onClick={() => fundEvmWallet(wallets.evmWallet!)}
+                onClick={() => fundEvmWallet(evmWalletAddress)}
                 disabled={true}
                 className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-xs sm:text-sm hover:bg-[#2D2D2D] disabled:opacity-50"
               >
@@ -120,11 +118,9 @@ export function WalletAddresses() {
           </div>
           <div className="flex items-center justify-between gap-2 bg-black/40 p-2 rounded font-mono text-xs sm:text-sm">
             <div className="truncate">
-              <span className="hidden sm:inline">
-                {wallets.evmWallet.toString()}
-              </span>
+              <span className="hidden sm:inline">{evmWalletAddress}</span>
               <span className="sm:hidden">
-                {formatAddress(wallets.evmWallet.toString())}
+                {formatAddress(evmWalletAddress)}
               </span>
             </div>
             <div
