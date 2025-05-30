@@ -5,7 +5,6 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FiPlus, FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { useKeyboard } from "../contexts/KeyboardContext";
-import { usePrivyWallets } from "../hooks/usePrivyWallet";
 
 interface ChatInputProps {
   inputMessage: string;
@@ -67,10 +66,6 @@ export function ChatInput({
       onSendMessage(inputMessage);
     }
   };
-
-  const { isLoadingSolana, isLoadingEvm } = usePrivyWallets();
-
-  const walletsReady = !isLoadingSolana && !isLoadingEvm;
 
   const { t } = useTranslation();
 

@@ -70,10 +70,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const {
     solanaWalletAddress,
     evmWalletAddress,
-    isLoadingSolana,
-    isLoadingEvm,
   } = usePrivyWallets();
-  const isLoadingWallets = isLoadingSolana || isLoadingEvm;
   const { getSolanaAssets, getEvmAssets } = usePortfolioStore();
   const { activeWallet } = useWalletStore();
   const { worldUserAddress } = useWorldAuth();
