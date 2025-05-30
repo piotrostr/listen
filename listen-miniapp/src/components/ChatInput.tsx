@@ -182,11 +182,9 @@ export function ChatInput({
                           e.stopPropagation();
                           handleSend();
                         }}
-                        disabled={
-                          !inputMessage.trim() || !walletsReady || !user
-                        }
+                        disabled={!inputMessage.trim() || !user}
                         className={`p-2 rounded-full ${
-                          inputMessage.trim() && walletsReady && user
+                          inputMessage.trim() && user
                             ? "bg-[#FB2671]/20 hover:bg-[#FB2671]/40 text-[#FB2671]"
                             : "bg-gray-500/10 text-gray-500"
                         } transition-colors`}

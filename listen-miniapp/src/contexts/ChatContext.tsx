@@ -707,7 +707,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     messages: chat?.messages || [],
-    isLoading: isLoadingWallets || isLoading,
+    isLoading,
     nestedAgentOutput,
     sendMessage,
     setMessages: (messages: Message[]) =>
