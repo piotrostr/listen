@@ -2,6 +2,8 @@ import { useMfaEnrollment, usePrivy } from "@privy-io/react-auth";
 import { useFundWallet } from "@privy-io/react-auth/solana";
 import { MdOutlineArrowOutward } from "react-icons/md";
 import { TbDots, TbPlus } from "react-icons/tb";
+import { worldchainEnabled } from "../config/env";
+import { usePanel } from "../contexts/PanelContext";
 import { useWalletStore } from "../store/walletStore";
 import TileButton from "./TileButton";
 
@@ -14,8 +16,13 @@ export function PortfolioSummary({ totalBalance }: PortfolioSummaryProps) {
   const { fundWallet } = useFundWallet();
   const { login } = usePrivy();
   const { showMfaEnrollmentModal } = useMfaEnrollment();
+  const { setActivePanel } = usePanel();
 
   const handleTopupListen = async () => {
+    if (worldchainEnabled) {
+      setActivePanel("fund");
+      return;
+    }
     if (solanaAddress) {
       await fundWallet(solanaAddress);
     } else {
