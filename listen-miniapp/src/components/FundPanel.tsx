@@ -25,7 +25,7 @@ export const FundPanel = () => {
       const action: SwapOrderAction = {
         amount: parseEther(amount).toString(),
         input_token: WLD_TOKEN_ADDRESS,
-        output_token: "solana",
+        output_token: "SOL",
         from_chain_caip2: WORLD_CAIP2,
         to_chain_caip2: SOLANA_CAIP2,
         type: PipelineActionType.SwapOrder,
