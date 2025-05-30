@@ -4299,6 +4299,7 @@ dependencies = [
 [[package]]
 name = "hyperliquid_rust_sdk"
 version = "0.6.0"
+source = "git+https://github.com/piotrostr/hyperliquid-rust-sdk#84b55dd00db0c0624e2f1a6a46d03bfb36a0b431"
 dependencies = [
  "chrono",
  "env_logger 0.10.2",
