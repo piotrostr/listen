@@ -9,7 +9,7 @@ import { usePortfolioStore } from "../store/portfolioStore";
 import { SwapOrderAction } from "../types/pipeline";
 import { waitForTransaction } from "../utils/transactionMonitor";
 
-const PERMIT2_PROXY_ADDRESS = "0xA3C7a31a2A97b847D967e0B755921D084C46a742";
+const PERMIT2_PROXY_ADDRESS = "0xfD7c2Ad2fd5c5392904e6d64226c28b0F42da9ed";
 
 export function useEoaExecution() {
   const { wallets: evmWallets } = useWallets();

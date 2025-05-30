@@ -46,7 +46,7 @@ export const userHasDelegatedSolanaWallet = (user: User | null) => {
     (account): account is WalletWithMetadata =>
       account.type === "wallet" &&
       account.delegated &&
-      account.chainType === "solana",
+      account.chainType === "solana"
   );
 };
 
@@ -55,7 +55,7 @@ export const userHasDelegatedEvmWallet = (user: User | null) => {
     (account): account is WalletWithMetadata =>
       account.type === "wallet" &&
       account.delegated &&
-      account.chainType === "ethereum",
+      account.chainType === "ethereum"
   );
 };
 
@@ -167,8 +167,11 @@ export const mockOrderPipeline: Pipeline = {
   ],
 };
 
+export const SOLANA_CAIP2 = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+export const WORLD_CAIP2 = "eip155:480";
+
 export const caip2ToChainIdMap = {
-  "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": "solana",
+  SOLANA_CAIP2: "solana",
   "eip155:1": "ethereum",
   "eip155:56": "bsc",
   "eip155:42161": "arbitrum",
@@ -196,7 +199,7 @@ export const caip2ToChainIdMap = {
   "eip155:252": "fraxtal",
   "eip155:2741": "abstract",
   "eip155:42220": "celo",
-  "eip155:480": "world",
+  WORLD_CAIP2: "world",
   "eip155:5000": "manta",
   "eip155:80094": "berachain",
 };
@@ -262,7 +265,7 @@ export const chainIdNumericToChainId = (chainId: number): string => {
 
 // Validate Solana transaction signatures
 export const isValidSolanaTransactionSignature = (
-  signature: string,
+  signature: string
 ): boolean => {
   try {
     // Check that it only contains valid base58 characters
@@ -391,7 +394,7 @@ export const renderAddressOrTx = (text: string): string => {
       // Create the replacement with the link
       const replacement = `"<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${txSignature.slice(
         0,
-        4,
+        4
       )}..${txSignature.slice(-4)}</a>"`;
 
       // Replace this specific occurrence
@@ -415,7 +418,7 @@ export const renderAddressOrTx = (text: string): string => {
     // Skip if this is already inside an HTML tag (from previous replacements)
     const prevText = processedText.substring(
       Math.max(0, longTxMatch.index - 50),
-      longTxMatch.index,
+      longTxMatch.index
     );
     if (prevText.includes('<a href="https://solscan.io/')) {
       continue;
@@ -427,7 +430,7 @@ export const renderAddressOrTx = (text: string): string => {
       // Create the replacement with the link
       const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch.slice(
         0,
-        4,
+        4
       )}..${fullMatch.slice(-4)}</a>`;
 
       // Replace this specific occurrence
@@ -452,7 +455,7 @@ export const renderAddressOrTx = (text: string): string => {
     // Skip if this is already inside an HTML tag (from previous replacements)
     const prevText = processedText.substring(
       Math.max(0, match.index - 50),
-      match.index,
+      match.index
     );
     if (prevText.includes('<a href="https://solscan.io/')) {
       continue;
@@ -470,7 +473,7 @@ export const renderAddressOrTx = (text: string): string => {
       // Create the replacement with the link
       const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch.slice(
         0,
-        4,
+        4
       )}..${fullMatch.slice(-4)}</a>`;
 
       // Replace this specific occurrence
@@ -496,7 +499,7 @@ export const renderAddressOrTx = (text: string): string => {
     // Skip if this is already inside an HTML tag (from previous replacements)
     const prevText = processedText.substring(
       Math.max(0, match.index - 50),
-      match.index,
+      match.index
     );
     if (prevText.includes('<a href="https://blockscan.com/')) {
       continue;
@@ -539,7 +542,7 @@ export type CompactPortfolio = {
 }[];
 
 export const compactPortfolio = (
-  portfolio: PortfolioItem[],
+  portfolio: PortfolioItem[]
 ): CompactPortfolio => {
   return portfolio.map((token) => ({
     chain: token.chain,

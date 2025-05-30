@@ -3,7 +3,7 @@ import { Address, erc20Abi, PublicClient } from "viem";
 import { usePublicClient } from "wagmi";
 import { useWorldAuth } from "./useWorldLogin";
 
-const WLD_TOKEN_ADDRESS = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003";
+export const WLD_TOKEN_ADDRESS = "0x2cFc85d8E48F8EAB294be644d9E25C3030863003";
 
 export async function getWLDBalance(
   publicClient: PublicClient,

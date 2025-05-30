@@ -1,13 +1,43 @@
 import { useState } from "react";
-import { formatEther } from "viem";
-import { useWLDBalance } from "../hooks/useWLDBalance";
+import { formatEther, parseEther } from "viem";
+import { useEoaExecution } from "../hooks/useEoaExecution";
+import { useWLDBalance, WLD_TOKEN_ADDRESS } from "../hooks/useWLDBalance";
+import { useWorldAuth } from "../hooks/useWorldLogin";
+import { SOLANA_CAIP2, WORLD_CAIP2 } from "../lib/util";
+import { PipelineActionType, SwapOrderAction } from "../types/pipeline";
 import { GradientOutlineButton } from "./GradientOutlineButton";
 import { PercentageButton, percentages } from "./PercentageButton";
 
 export const FundPanel = () => {
   const [selectedPercentage, setSelectedPercentage] = useState(0);
+  const { worldUserAddress } = useWorldAuth();
   const { data: balance, isLoading: balanceIsLoading } = useWLDBalance();
   const [amount, setAmount] = useState("0");
+  const { handleEoaWorld } = useEoaExecution();
+  const [isFunding, setIsFunding] = useState(false);
+
+  const handleFund = async () => {
+    if (!worldUserAddress || !amount) {
+      return;
+    }
+    setIsFunding(true);
+    try {
+      const action: SwapOrderAction = {
+        amount: parseEther(amount).toString(),
+        input_token: WLD_TOKEN_ADDRESS,
+        output_token: "solana",
+        from_chain_caip2: WORLD_CAIP2,
+        to_chain_caip2: SOLANA_CAIP2,
+        type: PipelineActionType.SwapOrder,
+      };
+      const tx = await handleEoaWorld(action, worldUserAddress);
+      console.log("tx", tx);
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setIsFunding(false);
+    }
+  };
 
   const handlePercentageClick = (percentage: number) => {
     if (!balance) return;
@@ -27,7 +57,7 @@ export const FundPanel = () => {
         </div>
         <div className="font-space-grotesk text-[16px] font-normal leading-[140%] tracking-[-0.03em] text-center align-middle text-[#B8B8B8] mb-3 px-4">
           Buy some Solana to start trading - this <br />
-          will allow to swap into any token on any chain.
+          will allow you to buy any token on any chain.
         </div>
       </div>
 
@@ -87,11 +117,9 @@ export const FundPanel = () => {
       </div>
       <div className="mt-auto pb-4">
         <GradientOutlineButton
-          text="Fund"
-          onClick={() => {
-            // Handle funding logic here
-            console.log("Fund clicked with amount:", amount);
-          }}
+          text={isFunding ? "Funding..." : "Fund"}
+          onClick={handleFund}
+          disabled={isFunding || !amount || !worldUserAddress}
         />
       </div>
     </div>
