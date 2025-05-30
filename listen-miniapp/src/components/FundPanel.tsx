@@ -25,7 +25,10 @@ export const FundPanel = () => {
     setIsFunding(true);
     try {
       const action: SwapOrderAction = {
-        amount: parseEther(amount).toString(),
+        amount:
+          selectedPercentage === 100 && balance
+            ? formatEther(balance)
+            : parseEther(amount).toString(),
         input_token: WLD_TOKEN_ADDRESS,
         output_token: "SOL",
         from_chain_caip2: WORLD_CAIP2,
