@@ -18,7 +18,7 @@ import { MiniKitProvider } from "@worldcoin/minikit-js/minikit-provider";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
-import { arbitrum, worldchain } from "viem/chains";
+import { worldchain } from "viem/chains";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { KeyboardProvider } from "./contexts/KeyboardContext";
 import { MobileProvider } from "./contexts/MobileContext";
@@ -45,9 +45,8 @@ if (window.location.href.includes("staging")) {
 }
 
 const config = createConfig({
-  chains: [arbitrum, worldchain],
+  chains: [worldchain],
   transports: {
-    [arbitrum.id]: http(),
     [worldchain.id]: http(),
   },
 });
