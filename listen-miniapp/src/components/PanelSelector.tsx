@@ -103,7 +103,10 @@ export function PanelSelector() {
 
     if (activePanel === "fund") {
       return (
-        <div className="h-full bg-black">
+        <div className="h-[90vh] bg-black">
+          <MobileHeader>
+            <></>
+          </MobileHeader>
           <FundPanel />
         </div>
       );

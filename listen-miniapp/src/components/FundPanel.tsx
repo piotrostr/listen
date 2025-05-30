@@ -19,9 +19,9 @@ export const FundPanel = () => {
 
   return (
     <div
-      className={`h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container pb-16 md:pb-0 flex flex-col`}
+      className={`h-full flex flex-col font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container`}
     >
-      <div className="flex flex-col gap-4">
+      <div className="flex flex-col gap-4 mt-8">
         <div className="text-white font-space-grotesk text-[32px] font-[500] leading-[130%] tracking-[-0.04em] text-center align-middle mt-5">
           Ready to trade?
         </div>
@@ -54,7 +54,7 @@ export const FundPanel = () => {
           />
         </div>
 
-        <div className="flex gap-3 justify-center mb-4 w-full">
+        <div className="flex gap-3 justify-center mb-2 w-full">
           {percentages.map(({ value }) => (
             <PercentageButton
               key={value}
@@ -66,9 +66,7 @@ export const FundPanel = () => {
         </div>
 
         <div className="flex items-center justify-between w-full">
-          <div className="text-[#B8B8B8] font-space-grotesk mb-2">
-            Available
-          </div>
+          <div className="text-[#B8B8B8] font-space-grotesk">Available</div>
           <div className="flex flex-row gap-2 items-center">
             <div className="text-white flex flex-col items-end justify-end">
               <p className="text-right truncate whitespace-nowrap font-space-grotesk">
@@ -87,13 +85,15 @@ export const FundPanel = () => {
           </div>
         </div>
       </div>
-      <GradientOutlineButton
-        text="Fund"
-        onClick={() => {
-          // Handle funding logic here
-          console.log("Fund clicked with amount:", amount);
-        }}
-      />
+      <div className="mt-auto pb-4">
+        <GradientOutlineButton
+          text="Fund"
+          onClick={() => {
+            // Handle funding logic here
+            console.log("Fund clicked with amount:", amount);
+          }}
+        />
+      </div>
     </div>
   );
 };
