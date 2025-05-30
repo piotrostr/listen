@@ -6,6 +6,7 @@ import { usePanel } from "../contexts/PanelContext";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { Chat } from "./Chat";
 import { FloatingPanel } from "./FloatingPanel";
+import { FundPanel } from "./FundPanel";
 import { Pipelines, PipelinesHeader } from "./Pipelines";
 import { Portfolio } from "./Portfolio";
 import { PriceUpdates } from "./PriceUpdates";
@@ -96,6 +97,14 @@ export function PanelSelector() {
             <div className="text-white font-medium">{t("layout.settings")}</div>
           </MobileHeader>
           <Settings />
+        </div>
+      );
+    }
+
+    if (activePanel === "fund") {
+      return (
+        <div className="h-full bg-black">
+          <FundPanel />
         </div>
       );
     }

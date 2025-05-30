@@ -1,6 +1,8 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useFundWallet } from "@privy-io/react-auth/solana";
 import { useEffect, useState } from "react";
+import { worldchainEnabled } from "../config/env";
+import { usePanel } from "../contexts/PanelContext";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { SolanaWalletCreation } from "./SolanaWalletCreation";
 import { Spinner } from "./Spinner";
@@ -15,6 +17,7 @@ export const FundWallet = ({ error = null }: FundWalletProps) => {
   const { fundWallet } = useFundWallet();
   const [isFunding, setIsFunding] = useState(false);
   const [isLogin, setIsLogin] = useState(false);
+  const { setActivePanel } = usePanel();
 
   useEffect(() => {
     if (user) {
@@ -24,6 +27,10 @@ export const FundWallet = ({ error = null }: FundWalletProps) => {
 
   const handleFundWallet = async () => {
     if (!wallets?.solanaWallet) return;
+    if (worldchainEnabled) {
+      setActivePanel("fund");
+      return;
+    }
 
     try {
       setIsFunding(true);
