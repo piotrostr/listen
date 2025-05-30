@@ -48,6 +48,7 @@ export async function swapStepToTransaction(
     });
 
     const url = `https://li.quest/v1/quote?${params}`;
+    console.log("url", url);
     const response = await fetch(url, {
       method: "GET",
       headers: {
