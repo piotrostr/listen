@@ -1,9 +1,6 @@
-import { useDelegatedActions, useSolanaWallets } from "@privy-io/react-auth";
 import { AnimatePresence, motion, PanInfo, useAnimation } from "framer-motion";
-import { useEffect, useState } from "react";
-import { usePanel } from "../contexts/PanelContext";
-import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
-import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { useEffect } from "react";
+import { useWalletCreate } from "../hooks/useWalletCreate";
 import { GradientOutlineButtonMoreRounded } from "./GradientOutlineButtonMoreRounded";
 import { OutlineButton } from "./OutlineButton";
 import { Rectangle } from "./Rectangle";
@@ -16,13 +13,8 @@ export const CreateMultichainWalletPopup = ({
   onClose: () => void;
 }) => {
   const controls = useAnimation();
-  const [isCreating, setIsCreating] = useState(false);
-  const { setActivePanel } = usePanel();
-  const { ready: solanaReady, createWallet: createSolanaWallet } =
-    useSolanaWallets();
-  const { delegateWallet } = useDelegatedActions();
-  const { solanaWalletAddress } = usePrivyWallets();
-  const { hasSolanaWallet: hasSolanaWalletDelegated } = useIsAuthenticated();
+  const { handleCreate, getButtonText, isCreating, solanaReady } =
+    useWalletCreate();
 
   useEffect(() => {
     if (isVisible) {
@@ -44,44 +36,9 @@ export const CreateMultichainWalletPopup = ({
     }
   };
 
-  console.log({
-    solanaReady,
-    isCreating,
-    solanaWalletAddress,
-    hasSolanaWalletDelegated,
-  });
-
-  const handleCreate = async () => {
-    if (!solanaReady || isCreating) return;
-    try {
-      setIsCreating(true);
-      // no wallet - create
-      if (solanaReady && !solanaWalletAddress) {
-        await createSolanaWallet();
-        // wallet - not delegated - delegate
-      } else if (solanaWalletAddress && !hasSolanaWalletDelegated) {
-        await delegateWallet({
-          address: solanaWalletAddress,
-          chainType: "solana",
-        });
-      } else {
-        // wallet - delegated - fund
-        setActivePanel("fund");
-        onClose();
-      }
-    } catch (error) {
-      console.error("Error in wallet creation/delegation:", error);
-    } finally {
-      setIsCreating(false);
-    }
-  };
-
-  const getButtonText = () => {
-    if (!solanaReady) return "Loading...";
-    if (isCreating) return "Creating...";
-    if (!solanaWalletAddress) return "Create wallet";
-    if (!hasSolanaWalletDelegated) return "Delegate wallet";
-    return "Fund wallet";
+  const handleCreateAndClose = async () => {
+    await handleCreate();
+    onClose();
   };
 
   return (
@@ -120,7 +77,7 @@ export const CreateMultichainWalletPopup = ({
               <div className="flex flex-row justify-center gap-4">
                 <GradientOutlineButtonMoreRounded
                   text={getButtonText()}
-                  onClick={handleCreate}
+                  onClick={handleCreateAndClose}
                   disabled={isCreating || !solanaReady}
                 />
                 <OutlineButton
