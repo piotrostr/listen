@@ -1,6 +1,7 @@
 pub mod auth;
 pub mod caip2;
 pub mod config;
+pub mod sign;
 pub mod tx;
 pub mod types;
 pub mod util;
@@ -20,6 +21,9 @@ pub enum PrivyError {
 
     #[error("Authentication error: {0}")]
     Auth(auth::PrivyAuthError),
+
+    #[error("Sign error: {0}")]
+    Sign(sign::PrivySignError),
 }
 
 impl Privy {
