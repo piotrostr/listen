@@ -1,6 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { memo, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import { Background } from "./Background";
 
 import { useSolanaLedgerPlugin } from "@privy-io/react-auth/solana";
@@ -19,6 +19,7 @@ import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { AddToHomeScreenPopup } from "./AddToHomeScreenPopup";
 import ChainSwitcher from "./ChainSwitcher";
+import { CreateMultichainWalletPopup } from "./CreateMultichainWalletPopup";
 import { PanelSelector } from "./PanelSelector";
 import { PipelinesInitializer } from "./PipelinesInitializer";
 import { RecentChats } from "./RecentChats";
@@ -96,6 +97,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { clearPortfolio } = usePortfolioStore();
   const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
   const { hasAddedToHomeScreen, isVisible, hide } = useHasAddedToHomeScreen();
+  const { hasSolanaWallet } = useIsAuthenticated();
   const { messages } = useChat();
   const hasMessages = messages.length > 0;
   useSolanaLedgerPlugin();
@@ -111,6 +113,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const { isSidebarOpen, setIsSidebarOpen, toggleSidebar, isDropdownOpen } =
     useSidebar();
+  const [
+    isVisibleCreateMultichainWalletPopup,
+    setIsVisibleCreateMultichainWalletPopup,
+  ] = useState(true);
 
   // Add useEffect to handle iOS viewport height
   useEffect(() => {
@@ -190,6 +196,12 @@ export function Layout({ children }: { children: React.ReactNode }) {
             handleClickOk={hide}
             handleClickLater={hide}
             isVisible={isVisible}
+          />
+        )}
+        {worldchainEnabled && !hasSolanaWallet && (
+          <CreateMultichainWalletPopup
+            isVisible={isVisibleCreateMultichainWalletPopup}
+            onClose={() => setIsVisibleCreateMultichainWalletPopup(false)}
           />
         )}
 
