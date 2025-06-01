@@ -201,7 +201,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
         {worldchainEnabled &&
           !hasSolanaWallet &&
           worldUserAddress &&
-          authenticated && (
+          authenticated &&
+          isVisibleCreateMultichainWalletPopup && (
             <CreateMultichainWalletPopup
               isVisible={isVisibleCreateMultichainWalletPopup}
               onClose={() => setIsVisibleCreateMultichainWalletPopup(false)}
