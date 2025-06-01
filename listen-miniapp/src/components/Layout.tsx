@@ -18,7 +18,7 @@ import { useWorldAuth } from "../hooks/useWorldLogin";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { AddToHomeScreenPopup } from "./AddToHomeScreenPopup";
-import ChainSwitcher from "./ChainSwitcher";
+import { ChainSwitcher } from "./ChainSwitcher";
 import { CreateMultichainWalletPopup } from "./CreateMultichainWalletPopup";
 import { PanelSelector } from "./PanelSelector";
 import { PipelinesInitializer } from "./PipelinesInitializer";
@@ -328,7 +328,7 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
           {/* ChainSwitcher - positioned absolutely */}
           {isMobile && !hasMessages && isAuthenticated && (
-            <div className="fixed top-20 left-4 z-30">
+            <div className="fixed top-6 left-16 z-30">
               <ChainSwitcher />
             </div>
           )}

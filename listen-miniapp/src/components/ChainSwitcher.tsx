@@ -12,7 +12,7 @@ export const ChainSwitcher = () => {
   };
 
   return (
-    <div className="chain-switcher w-[234px] h-[46px]">
+    <div className="chain-switcher w-[211px] h-[41px]">
       <svg
         width="234"
         height="46"
@@ -143,5 +143,3 @@ export const ChainSwitcher = () => {
     </div>
   );
 };
-
-export default ChainSwitcher;
