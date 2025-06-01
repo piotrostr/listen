@@ -198,12 +198,15 @@ export function Layout({ children }: { children: React.ReactNode }) {
             isVisible={isVisible}
           />
         )}
-        {worldchainEnabled && !hasSolanaWallet && worldUserAddress && (
-          <CreateMultichainWalletPopup
-            isVisible={isVisibleCreateMultichainWalletPopup}
-            onClose={() => setIsVisibleCreateMultichainWalletPopup(false)}
-          />
-        )}
+        {worldchainEnabled &&
+          !hasSolanaWallet &&
+          worldUserAddress &&
+          authenticated && (
+            <CreateMultichainWalletPopup
+              isVisible={isVisibleCreateMultichainWalletPopup}
+              onClose={() => setIsVisibleCreateMultichainWalletPopup(false)}
+            />
+          )}
 
         {/* Header */}
         <div className="z-20 bg-black/10 backdrop-blur-sm flex items-center">
