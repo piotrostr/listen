@@ -30,7 +30,8 @@ export type TransactionRequest = z.infer<typeof TransactionRequestSchema>;
 
 export async function swapStepToTransaction(
   swapAction: SwapOrderAction,
-  signerAddress: string
+  signerAddress: string,
+  toAddress?: string
 ): Promise<TransactionRequest | null> {
   try {
     const params = new URLSearchParams({
@@ -43,11 +44,12 @@ export async function swapStepToTransaction(
       fromToken: swapAction.input_token,
       toToken: swapAction.output_token,
       fromAddress: signerAddress,
-      toAddress: signerAddress,
+      toAddress: toAddress ?? signerAddress,
       fromAmount: swapAction.amount,
     });
 
     const url = `https://li.quest/v1/quote?${params}`;
+    console.log("url", url);
     const response = await fetch(url, {
       method: "GET",
       headers: {

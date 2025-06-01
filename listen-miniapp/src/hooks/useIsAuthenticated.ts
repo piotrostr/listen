@@ -25,8 +25,8 @@ export const useIsAuthenticated = () => {
 
     return {
       isAuthenticated: isWorldAuthenticated,
-      hasSolanaWallet: false,
-      hasEvmWallet: true,
+      hasSolanaWallet: isDelegatedSolana,
+      hasEvmWallet: isDelegatedEvm,
       ready,
       isLoading: !ready,
     };

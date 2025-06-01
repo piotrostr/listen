@@ -5,7 +5,6 @@ import { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { FiPlus, FiSend, FiShare2, FiStopCircle } from "react-icons/fi";
 import { useKeyboard } from "../contexts/KeyboardContext";
-import { usePrivyWallets } from "../hooks/usePrivyWallet";
 
 interface ChatInputProps {
   inputMessage: string;
@@ -67,11 +66,6 @@ export function ChatInput({
       onSendMessage(inputMessage);
     }
   };
-
-  const { data: wallets } = usePrivyWallets();
-
-  const walletsReady =
-    wallets?.evmWallet !== undefined && wallets?.solanaWallet !== undefined;
 
   const { t } = useTranslation();
 
@@ -183,11 +177,9 @@ export function ChatInput({
                           e.stopPropagation();
                           handleSend();
                         }}
-                        disabled={
-                          !inputMessage.trim() || !walletsReady || !user
-                        }
+                        disabled={!inputMessage.trim() || !user}
                         className={`p-2 rounded-full ${
-                          inputMessage.trim() && walletsReady && user
+                          inputMessage.trim() && user
                             ? "bg-[#FB2671]/20 hover:bg-[#FB2671]/40 text-[#FB2671]"
                             : "bg-gray-500/10 text-gray-500"
                         } transition-colors`}

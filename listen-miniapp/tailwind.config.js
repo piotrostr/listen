@@ -7,6 +7,34 @@ export default {
         mono: ["Space Grotesk", "monospace"],
         'space-grotesk': ['Space Grotesk', 'sans-serif'],
         'dm-sans': ['DM Sans', 'sans-serif'],
+        'work-sans': ['Work Sans', 'sans-serif'],
+        'work-sans-chat': ['Work Sans', 'sans-serif'],
+      },
+      backgroundImage: {
+        'text-gradient': 'linear-gradient(180deg, rgba(255, 255, 255, 0.8) 60%, #151518 100%)',
+      },
+      letterSpacing: {
+        'chat': '-0.04em',
+      },
+      textStyles: {
+        'chat': {
+          fontFamily: 'Work Sans',
+          fontSize: '16px',
+          fontWeight: '400',
+          lineHeight: '150%',
+          letterSpacing: '-0.04em',
+          verticalAlign: 'middle',
+          backgroundImage: 'linear-gradient(180deg, rgba(255, 255, 255, 0.8) 60%, #151518 100%)',
+          backgroundClip: 'text',
+          textFillColor: 'transparent',
+        },
+      },
+      fontSize: {
+        'work-sans-chat': ['16px', {
+          lineHeight: '150%',
+          letterSpacing: '-0.04em',
+          fontWeight: '400',
+        }],
       },
       animation: {
         blob: "blob 7s infinite",
@@ -45,6 +73,19 @@ export default {
   },
   plugins: [
     require("tailwind-scrollbar"),
-    require('tailwind-scrollbar-hide')
+    require('tailwind-scrollbar-hide'),
+    function({ addUtilities }) {
+      addUtilities({
+        '.font-work-sans-chat': {
+          fontFamily: 'Work Sans, sans-serif',
+          fontSize: '16px',
+          fontWeight: '400',
+          lineHeight: '150%',
+          letterSpacing: '-0.04em',
+          verticalAlign: 'middle',
+          color: '#D0D0D1',
+        },
+      })
+    }
   ],
 };

@@ -4,7 +4,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite --port 5174",
+    "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
     "preview": "vite preview",
@@ -14,6 +14,7 @@
   "dependencies": {
     "@fontsource/dm-sans": "^5.2.5",
     "@fontsource/space-grotesk": "^5.2.5",
+    "@fontsource/work-sans": "^5.2.5",
     "@privy-io/react-auth": "latest",
     "@radix-ui/react-tooltip": "^1.1.8",
     "@solana/spl-token": "^0.4.13",

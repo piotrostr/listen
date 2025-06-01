@@ -6,6 +6,10 @@ import "@fontsource/space-grotesk/400.css";
 import "@fontsource/space-grotesk/500.css";
 import "@fontsource/space-grotesk/600.css";
 import "@fontsource/space-grotesk/700.css";
+import "@fontsource/work-sans/400.css";
+import "@fontsource/work-sans/500.css";
+import "@fontsource/work-sans/600.css";
+import "@fontsource/work-sans/700.css";
 import { PrivyProvider } from "@privy-io/react-auth";
 import { toSolanaWalletConnectors } from "@privy-io/react-auth/solana";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -14,7 +18,7 @@ import { MiniKitProvider } from "@worldcoin/minikit-js/minikit-provider";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
-import { arbitrum } from "viem/chains";
+import { worldchain } from "viem/chains";
 import { WagmiProvider, createConfig, http } from "wagmi";
 import { KeyboardProvider } from "./contexts/KeyboardContext";
 import { MobileProvider } from "./contexts/MobileContext";
@@ -41,9 +45,9 @@ if (window.location.href.includes("staging")) {
 }
 
 const config = createConfig({
-  chains: [arbitrum],
+  chains: [worldchain],
   transports: {
-    [arbitrum.id]: http(),
+    [worldchain.id]: http(),
   },
 });
 

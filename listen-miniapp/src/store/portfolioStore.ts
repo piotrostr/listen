@@ -19,6 +19,7 @@ interface PortfolioState {
   listenEvmAssetsMap: Map<string, PortfolioItem>;
   eoaSolanaAssetsMap: Map<string, PortfolioItem>;
   eoaEvmAssetsMap: Map<string, PortfolioItem>;
+  worldchainAssetsMap: Map<string, PortfolioItem>;
 
   // Data
   solanaAssetsMap: Map<string, PortfolioItem>; // mint => item
@@ -27,6 +28,7 @@ interface PortfolioState {
   // Computed/derived values (can be accessed via selectors)
   getSolanaAssets: () => PortfolioItem[];
   getEvmAssets: () => PortfolioItem[];
+  getWorldchainAssets: () => PortfolioItem[];
   getCombinedPortfolio: () => PortfolioItem[];
   getPortfolioValue: () => number;
 
@@ -44,6 +46,7 @@ interface PortfolioState {
     address: string,
     walletType: ActiveWallet
   ) => Promise<void>;
+  fetchWorldchainPortfolio: (address: string) => Promise<void>;
   fetchAllPortfolios: (fetchAll?: boolean) => Promise<void>;
   refreshPortfolio: (fetchAll?: boolean) => Promise<void>;
   isFresh: () => boolean;
@@ -59,6 +62,7 @@ interface PortfolioState {
   listenEvmAssets?: PortfolioItem[];
   eoaSolanaAssets?: PortfolioItem[];
   eoaEvmAssets?: PortfolioItem[];
+  worldchainAssets?: PortfolioItem[];
 }
 
 // Define the persisted state type
@@ -67,6 +71,7 @@ interface PersistedPortfolioState {
   listenEvmAssets: PortfolioItem[];
   eoaSolanaAssets: PortfolioItem[];
   eoaEvmAssets: PortfolioItem[];
+  worldchainAssets: PortfolioItem[];
   lastUpdated: number | null;
 }
 
@@ -78,6 +83,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       listenEvmAssetsMap: new Map<string, PortfolioItem>(),
       eoaSolanaAssetsMap: new Map<string, PortfolioItem>(),
       eoaEvmAssetsMap: new Map<string, PortfolioItem>(),
+      worldchainAssetsMap: new Map<string, PortfolioItem>(),
 
       // Data
       solanaAssetsMap: new Map<string, PortfolioItem>(),
@@ -85,6 +91,7 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       getSolanaAssets: () => Array.from(get().solanaAssetsMap.values()),
       getEvmAssets: () => Array.from(get().evmAssetsMap.values()),
+      getWorldchainAssets: () => Array.from(get().worldchainAssetsMap.values()),
       getCombinedPortfolio: () => {
         const { activeWallet } = useWalletStore.getState();
 
@@ -99,7 +106,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           case "eoaEvm":
             return Array.from(get().eoaEvmAssetsMap.values());
           case "worldchain":
-            return Array.from(get().evmAssetsMap.values());
+            return Array.from(get().worldchainAssetsMap.values());
           default:
             return [];
         }
@@ -172,34 +179,55 @@ export const usePortfolioStore = create<PortfolioState>()(
         }));
 
         try {
-          const evmAssets = await fetchEvmPortfolio(address);
+          const evmAssets = await fetchEvmPortfolio(address, false);
           const evmAssetsMap = new Map();
           evmAssets.forEach((asset) => {
             evmAssetsMap.set(asset.address, asset);
           });
 
           // Store in appropriate map based on wallet type parameter
-          if (walletType === "worldchain") {
-            set(() => ({
-              evmAssetsMap,
-              isLoading: false,
-              lastUpdated: Date.now(),
-            }));
-          } else {
-            set(() => ({
-              [walletType === "listen"
-                ? "listenEvmAssetsMap"
-                : "eoaEvmAssetsMap"]: evmAssetsMap,
-              isLoading: false,
-              lastUpdated: Date.now(),
-            }));
-          }
+          set(() => ({
+            [walletType === "listen"
+              ? "listenEvmAssetsMap"
+              : "eoaEvmAssetsMap"]: evmAssetsMap,
+            isLoading: false,
+            lastUpdated: Date.now(),
+          }));
         } catch (error) {
           set({
             error: error as Error,
             isLoading: false,
           });
           console.error("Error fetching EVM portfolio:", error);
+        }
+      },
+
+      fetchWorldchainPortfolio: async (address: string) => {
+        if (!address) return;
+
+        set((state) => ({
+          isLoading: state.worldchainAssetsMap.size === 0,
+          error: null,
+        }));
+
+        try {
+          const worldchainAssets = await fetchEvmPortfolio(address);
+          const worldchainAssetsMap = new Map();
+          worldchainAssets.forEach((asset) => {
+            worldchainAssetsMap.set(asset.address, asset);
+          });
+
+          set(() => ({
+            worldchainAssetsMap,
+            isLoading: false,
+            lastUpdated: Date.now(),
+          }));
+        } catch (error) {
+          set({
+            error: error as Error,
+            isLoading: false,
+          });
+          console.error("Error fetching Worldchain portfolio:", error);
         }
       },
 
@@ -259,7 +287,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           // Worldchain wallet
           if (worldchainAddress) {
             fetchPromises.push(
-              get().fetchEvmPortfolio(worldchainAddress, "worldchain")
+              get().fetchWorldchainPortfolio(worldchainAddress)
             );
           }
 
@@ -299,9 +327,7 @@ export const usePortfolioStore = create<PortfolioState>()(
               ? evmAddress
               : activeWallet === "eoaEvm"
                 ? eoaEvmAddress
-                : activeWallet === "worldchain"
-                  ? worldchainAddress
-                  : null,
+                : null,
         };
 
         if (!addresses.solana && !addresses.evm && !worldchainAddress) {
@@ -321,6 +347,11 @@ export const usePortfolioStore = create<PortfolioState>()(
           if (addresses.evm) {
             fetchPromises.push(
               get().fetchEvmPortfolio(addresses.evm, activeWallet)
+            );
+          }
+          if (activeWallet === "worldchain" && worldchainAddress) {
+            fetchPromises.push(
+              get().fetchWorldchainPortfolio(worldchainAddress)
             );
           }
 
@@ -432,6 +463,7 @@ export const usePortfolioStore = create<PortfolioState>()(
         set({
           solanaAssetsMap: new Map(),
           evmAssetsMap: new Map(),
+          worldchainAssetsMap: new Map(),
           isLoading: false, // Also reset loading state
           error: null,
           lastUpdated: null,
@@ -464,6 +496,7 @@ export const usePortfolioStore = create<PortfolioState>()(
         listenEvmAssets: Array.from(state.listenEvmAssetsMap.values()),
         eoaSolanaAssets: Array.from(state.eoaSolanaAssetsMap.values()),
         eoaEvmAssets: Array.from(state.eoaEvmAssetsMap.values()),
+        worldchainAssets: Array.from(state.worldchainAssetsMap.values()),
         lastUpdated: state.lastUpdated,
       }),
     }

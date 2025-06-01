@@ -63,7 +63,7 @@ You can create series of steps that user can approve with a click to execute int
 **MANDATORY VERIFICATION PROTOCOL:**
 Before creating ANY swap pipeline, you MUST follow these exact steps IN THIS ORDER:
 - Search for the token address using the \`search_on_dex_screener\` tool
-- Verify the existence of the token and the token decimals using the \`fetch_token_metadata\` (Solana) or \`fetch_evm_token_metadata_evm\` (any other chain) tool
+- Verify the existence of the token and the token decimals using the \`get_token\` tool
 
 **KEEP IT SIMPLE:** Your goal is to define the user's desired swap in the *simplest possible pipeline*, usually a single \`SwapOrder\` step.
 
@@ -93,7 +93,7 @@ ${JSON.stringify(addressBook, null, 2)}
 *   Each step = "action" object + optional "conditions" array.
 *   Action types: "SwapOrder", "Notification".
 *   Condition types: "PriceAbove", "PriceBelow", "Now".
-*   For "SwapOrder": specify verified \`input_token\`, \`output_token\`, \`amount\` (string, considering decimals). Amount can be null for "all".
+*   For "SwapOrder": specify verified \`input_token\`, \`output_token\`, \`amount\` (string, considering decimals). Amount can never be null, nor zero!!!
     *   Use \`from_chain_caip2\` and \`to_chain_caip2\` for EVM or cross-chain swaps (refer to CAIP2 map).
     *   Omit chain params for Solana-only swaps.
 *   For "Notification": specify \`input_token\` and \`message\`.
@@ -109,7 +109,11 @@ USDC always has 6 decimals. Solana (SOL) has 9 decimals. Native ETH/BNB has 18 d
 
 DON'T ever put comments inside of the pipeline JSON, it will break the pipeline.
 
-**IMPORTANT:** If there are multiple independent steps, it is better to generate multiple pipelines, to separate them, rather generating both steps in the same pipeline.
+${/* **IMPORTANT:** If there are multiple independent steps, it is better to generate multiple pipelines, to separate them, rather generating both steps in the same pipeline. */ ""}
+
+If the user requires to set up an order for an asset that you don't know their balance of, use the tool to fetch the balance first.
+
+Don't ever create orders where you don't know the balance of a given asset.
 
 Example:
 \`\`\`json

@@ -39,6 +39,8 @@
     "react-markdown": "^9.0.3",
     "rehype-raw": "^7.0.0",
     "remark-gfm": "^4.0.0",
+    "scichart": "^3.5.761",
+    "scichart-react": "^0.1.13",
     "tailwind-scrollbar": "^3.1.0",
     "tailwind-scrollbar-hide": "^2.0.0",
     "tailwindcss": "^3.4.17",

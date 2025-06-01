@@ -41,6 +41,8 @@ export function Settings() {
     setDebugMode,
     displaySuggestions,
     setDisplaySuggestions,
+    hyperliquid,
+    setHyperliquid,
   } = useSettingsStore();
 
   const { t } = useTranslation();
@@ -59,6 +61,10 @@ export function Settings() {
   // Handle display suggestions toggle
   const handleDisplaySuggestionsToggle = () => {
     setDisplaySuggestions(!displaySuggestions);
+  };
+
+  const handleHyperliquidToggle = () => {
+    setHyperliquid(!hyperliquid);
   };
 
   return (
@@ -100,6 +106,15 @@ export function Settings() {
       <p className="text-xs text-gray-400 mt-2">
         {t("settings.agent_mode_disabled")}
       </p>
+
+      <br />
+
+      <Toggle
+        label={t("settings.hyperliquid")}
+        checked={hyperliquid}
+        onChange={handleHyperliquidToggle}
+      />
+      <br />
 
       {/*
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.mode")}</h2>

@@ -29,6 +29,7 @@ import {
   GtTokenMetadataSchema,
   TokenMetadataRawSchema,
 } from "../types/metadata";
+import { L2OrderbookSnapshotSchema } from "../types/orderbook";
 import {
   JupiterQuoteResponseSchema,
   QuoteResponseSchema,
@@ -48,6 +49,7 @@ import { EvmRawTokenMetadataDisplay } from "./EvmRawTokenMetadataDisplay";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
 import { GeckoTerminalChart } from "./GeckoTerminalChart";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
+import { OrderbookDisplay } from "./OrderbookDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
 import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
@@ -203,6 +205,17 @@ export const ToolMessage = ({
   ]);
 
   if (toolOutput.name === "think") {
+    return null;
+  }
+
+  if (toolOutput.name === "get_l2_snapshot") {
+    const parsed = L2OrderbookSnapshotSchema.safeParse(
+      JSON.parse(toolOutput.result)
+    );
+    if (parsed.success) {
+      return <OrderbookDisplay orderbookSnapshot={parsed.data} />;
+    }
+    console.error("Failed to parse l2 snapshot:", parsed.error);
     return null;
   }
 

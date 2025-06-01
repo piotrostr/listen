@@ -44,7 +44,7 @@ export const ChatMessage = ({
   return (
     <div
       className={`
-        rounded-lg px-4 py-1 my-2 font-light
+        rounded-lg px-4 py-1 my-2 font-light font-work-sans font-work-sans-chat
         break-words word-break-all overflow-hidden
         ${direction === "outgoing" ? "rounded-3xl bg-[#2f2f2f]/40 ml-auto" : "max-w-full"}
       `}

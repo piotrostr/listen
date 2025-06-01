@@ -34,6 +34,7 @@ export const toolCalls = {
     fetch_top_tokens_by_chain_id: "Fetching trending tokens...",
     fetch_top_tokens_by_category: "Browsing trending by category...",
     get_token: "Grabbing token...",
+    get_l2_snapshot: "Peeking in the orderbook...",
   },
   zh: {
     get_quote: "获取报价中...",
@@ -70,5 +71,6 @@ export const toolCalls = {
     fetch_top_tokens_by_chain_id: "获取热门代币中...",
     fetch_top_tokens_by_category: "浏览热门代币中...",
     get_token: "获取代币中...",
+    get_l2_snapshot: "查看订单簿中...",
   },
 };

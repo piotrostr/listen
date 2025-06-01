@@ -135,24 +135,16 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
         <Spinner />
       ) : (
         <>
-          {worldchainEnabled ? (
-            <PipelineMenu
-              status={status}
-              setStatus={setStatus}
-              executeFromEoa={executeFromEoa}
-            />
-          ) : (
-            <PipelineMenu
-              status={status}
-              setStatus={setStatus}
-              sendPipelineForExecution={
-                activeWallet === "listen" ? sendPipelineForExecution : undefined
-              }
-              executeFromEoa={
-                activeWallet !== "listen" ? () => executeFromEoa() : undefined
-              }
-            />
-          )}
+          <PipelineMenu
+            status={status}
+            setStatus={setStatus}
+            sendPipelineForExecution={
+              activeWallet === "listen" ? sendPipelineForExecution : undefined
+            }
+            executeFromEoa={
+              activeWallet !== "listen" ? () => executeFromEoa() : undefined
+            }
+          />
         </>
       )}
     </div>

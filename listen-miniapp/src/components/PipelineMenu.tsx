@@ -1,5 +1,6 @@
 import { useTranslation } from "react-i18next";
 import { worldchainEnabled } from "../config/env";
+import { useWalletStore } from "../store/walletStore";
 import { GradientOutlineButtonMoreRounded } from "./GradientOutlineButtonMoreRounded";
 import { OutlineButton } from "./OutlineButton";
 
@@ -15,13 +16,14 @@ export function PipelineMenu({
   executeFromEoa?: () => void;
 }) {
   const { t } = useTranslation();
+  const { activeWallet } = useWalletStore();
 
   const Container = ({ children }: { children: React.ReactNode }) => {
     return <div className="flex gap-2">{children}</div>;
   };
 
   const handleClickConfirm = async () => {
-    if (worldchainEnabled) {
+    if (worldchainEnabled && activeWallet !== "listen") {
       if (!executeFromEoa) {
         throw new Error(
           "[worldchain handleClickConfirm] executeFromEoa is not defined"

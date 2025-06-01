@@ -1,15 +1,12 @@
 import { useSolanaWallets, useWallets } from "@privy-io/react-auth";
-import { useQuery, UseQueryResult } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 
 interface WalletAddresses {
-  solanaWallet: string | null;
-  evmWallet: string | null;
+  solanaWalletAddress: string | null;
+  evmWalletAddress: string | null;
 }
 
-export const usePrivyWallets = (): UseQueryResult<
-  WalletAddresses | null,
-  Error
-> => {
+export const usePrivyWallets = () => {
   const { ready: solanaReady, wallets: solanaWallets } = useSolanaWallets();
   const { ready: evmReady, wallets: evmWallets } = useWallets();
 
@@ -22,12 +19,12 @@ export const usePrivyWallets = (): UseQueryResult<
       wallet.type === "ethereum" && wallet.walletClientType === "privy"
   );
 
-  return useQuery<WalletAddresses | null, Error>({
+  const { data } = useQuery<WalletAddresses | null, Error>({
     queryKey: ["privy-wallet"],
     queryFn: () => {
       const res = {
-        solanaWallet: solanaWallet?.address ?? null,
-        evmWallet: evmWallet?.address ?? null,
+        solanaWalletAddress: solanaWallet?.address ?? null,
+        evmWalletAddress: evmWallet?.address ?? null,
       };
       return res;
     },
@@ -35,4 +32,11 @@ export const usePrivyWallets = (): UseQueryResult<
     staleTime: 20000,
     refetchInterval: 20000,
   });
+
+  return {
+    solanaWalletAddress: data?.solanaWalletAddress,
+    evmWalletAddress: data?.evmWalletAddress,
+    isLoadingSolana: solanaReady,
+    isLoadingEvm: evmReady,
+  };
 };

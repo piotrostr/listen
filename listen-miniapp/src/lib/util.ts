@@ -90,7 +90,7 @@ export const caip2Map = {
 export function chainIdToCaip2(chainId?: string) {
   if (!chainId) return "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 
-  let values = Object.values(caip2Map);
+  const values = Object.values(caip2Map);
   if (values.includes(chainId)) {
     return chainId;
   }
@@ -167,8 +167,11 @@ export const mockOrderPipeline: Pipeline = {
   ],
 };
 
+export const SOLANA_CAIP2 = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+export const WORLD_CAIP2 = "eip155:480";
+
 export const caip2ToChainIdMap = {
-  "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": "solana",
+  SOLANA_CAIP2: "solana",
   "eip155:1": "ethereum",
   "eip155:56": "bsc",
   "eip155:42161": "arbitrum",
@@ -196,7 +199,7 @@ export const caip2ToChainIdMap = {
   "eip155:252": "fraxtal",
   "eip155:2741": "abstract",
   "eip155:42220": "celo",
-  "eip155:480": "world",
+  WORLD_CAIP2: "world",
   "eip155:5000": "manta",
   "eip155:80094": "berachain",
 };
@@ -551,3 +554,45 @@ export const compactPortfolio = (
     value: (token.amount * token.price).toFixed(2),
   }));
 };
+
+export const chainIdToGeckoTerminalId = {
+  "1": "eth",
+  "8453": "base",
+  "56": "bsc",
+  "42161": "arbitrum",
+  ethereum: "eth",
+  "696969": "solana",
+  "480": "world-chain",
+  worldchain: "world-chain",
+  avax: "avax",
+  "sui-network": "sui-network",
+  sonic: "sonic",
+} as const;
+
+export type NetworkId =
+  (typeof chainIdToGeckoTerminalId)[keyof typeof chainIdToGeckoTerminalId];
+
+// Convert any chain ID (numeric or network name) to a valid network ID
+export function getNetworkId(chainId: string | number): NetworkId | null {
+  let chainIdString: string;
+  if (chainId.toString().includes("solana")) {
+    chainIdString = "solana";
+  } else if (chainId.toString().includes("eip155")) {
+    chainIdString = chainId.toString().split(":")[1];
+  } else {
+    chainIdString = chainId.toString();
+  }
+  // If it's already a valid network name, return it
+  if (
+    Object.values(chainIdToGeckoTerminalId).includes(chainIdString as NetworkId)
+  ) {
+    return chainIdString as NetworkId;
+  }
+
+  // Try to convert from chain ID
+  return (
+    chainIdToGeckoTerminalId[
+      chainIdString as keyof typeof chainIdToGeckoTerminalId
+    ] || null
+  );
+}

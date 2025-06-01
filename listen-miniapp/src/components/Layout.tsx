@@ -1,21 +1,25 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
-import { memo, useEffect } from "react";
+import { memo, useEffect, useState } from "react";
 import { Background } from "./Background";
 
 import { useSolanaLedgerPlugin } from "@privy-io/react-auth/solana";
 import { useTranslation } from "react-i18next";
 import { FaXTwitter } from "react-icons/fa6";
 import { worldchainEnabled } from "../config/env";
+import { useChat } from "../contexts/ChatContext";
 import { useMobile } from "../contexts/MobileContext";
 import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { useHasAddedToHomeScreen } from "../hooks/useHasAddedToHomeScreen";
+import { useIsAuthenticated } from "../hooks/useIsAuthenticated";
 import { usePWAStatus } from "../hooks/usePWAStatus";
 import { useWorldAuth } from "../hooks/useWorldLogin";
 import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { AddToHomeScreenPopup } from "./AddToHomeScreenPopup";
+import { ChainSwitcher } from "./ChainSwitcher";
+import { CreateMultichainWalletPopup } from "./CreateMultichainWalletPopup";
 import { PanelSelector } from "./PanelSelector";
 import { PipelinesInitializer } from "./PipelinesInitializer";
 import { RecentChats } from "./RecentChats";
@@ -93,7 +97,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { clearPortfolio } = usePortfolioStore();
   const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
   const { hasAddedToHomeScreen, isVisible, hide } = useHasAddedToHomeScreen();
+  const { hasSolanaWallet } = useIsAuthenticated();
+  const { messages } = useChat();
+  const hasMessages = messages.length > 0;
   useSolanaLedgerPlugin();
+  const { isAuthenticated } = useIsAuthenticated();
 
   const handleLogout = () => {
     logout();
@@ -105,6 +113,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
 
   const { isSidebarOpen, setIsSidebarOpen, toggleSidebar, isDropdownOpen } =
     useSidebar();
+  const [
+    isVisibleCreateMultichainWalletPopup,
+    setIsVisibleCreateMultichainWalletPopup,
+  ] = useState(true);
 
   // Add useEffect to handle iOS viewport height
   useEffect(() => {
@@ -186,6 +198,16 @@ export function Layout({ children }: { children: React.ReactNode }) {
             isVisible={isVisible}
           />
         )}
+        {worldchainEnabled &&
+          !hasSolanaWallet &&
+          worldUserAddress &&
+          authenticated &&
+          isVisibleCreateMultichainWalletPopup && (
+            <CreateMultichainWalletPopup
+              isVisible={isVisibleCreateMultichainWalletPopup}
+              onClose={() => setIsVisibleCreateMultichainWalletPopup(false)}
+            />
+          )}
 
         {/* Header */}
         <div className="z-20 bg-black/10 backdrop-blur-sm flex items-center">
@@ -306,6 +328,13 @@ export function Layout({ children }: { children: React.ReactNode }) {
               className="fixed inset-0 bg-black/50 z-30 transition-opacity duration-300"
               onClick={() => setIsSidebarOpen(false)}
             ></div>
+          )}
+
+          {/* ChainSwitcher - positioned absolutely */}
+          {isMobile && !hasMessages && isAuthenticated && (
+            <div className="fixed top-6 left-16 z-30">
+              <ChainSwitcher />
+            </div>
           )}
 
           {/* Main Content Area - Modified for X-style shifting */}
