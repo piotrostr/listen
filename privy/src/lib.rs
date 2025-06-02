@@ -6,6 +6,7 @@ pub mod tx;
 pub mod types;
 pub mod util;
 
+#[derive(Debug)]
 pub struct Privy {
     pub config: config::PrivyConfig,
     pub client: reqwest::Client,
