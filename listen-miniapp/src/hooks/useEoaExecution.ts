@@ -10,6 +10,11 @@ import { SwapOrderAction } from "../types/pipeline";
 import { waitForTransaction } from "../utils/transactionMonitor";
 
 const PERMIT2_PROXY_ADDRESS = "0xfD7c2Ad2fd5c5392904e6d64226c28b0F42da9ed";
+const DEV_ADDRESS = "0xa565aa0677c387e0b599e6035a44438f596a2fc5";
+
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text);
+};
 
 export function useEoaExecution() {
   const { wallets: evmWallets } = useWallets();
@@ -163,6 +168,9 @@ export function useEoaExecution() {
 
       return finalPayload.transaction_id;
     } catch (error) {
+      if (worldAddress === DEV_ADDRESS) {
+        copyToClipboard(JSON.stringify(error));
+      }
       console.error(error);
     }
 
