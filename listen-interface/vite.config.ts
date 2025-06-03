@@ -5,6 +5,7 @@ import type { Plugin } from "vite";
 import { defineConfig } from "vite";
 import compression from "vite-plugin-compression";
 import { VitePWA } from "vite-plugin-pwa";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 const handlePureAnnotations: Plugin = {
   name: "handle-pure-annotations",
@@ -23,6 +24,7 @@ export default defineConfig({
     handlePureAnnotations,
     TanStackRouterVite(),
     react(),
+    nodePolyfills(),
     VitePWA({
       registerType: "autoUpdate",
       manifest: {
