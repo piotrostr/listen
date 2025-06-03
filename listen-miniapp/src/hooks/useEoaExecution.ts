@@ -18,12 +18,17 @@ export function useEoaExecution() {
 
   const handleEoaSolana = async (
     action: SwapOrderAction,
-    eoaSolanaAddress: string
+    eoaSolanaAddress: string,
+    toAddress?: string
   ): Promise<string | null> => {
     try {
       const wallet = solanaWallets.find((w) => w.address === eoaSolanaAddress);
       if (wallet) {
-        const tx = await swapStepToTransaction(action, eoaSolanaAddress);
+        const tx = await swapStepToTransaction(
+          action,
+          eoaSolanaAddress,
+          toAddress
+        );
         if (!tx) {
           throw new Error("Failed to create Solana transaction request");
         }
