@@ -290,6 +290,7 @@ mod tests {
                 session_id: "test".to_string(),
                 user_id: "test".to_string(),
                 email: Some("test@test.com".to_string()),
+                evm_wallet_id: None,
             },
             "en".to_string(),
         );

@@ -3,19 +3,32 @@
 async fn main() -> anyhow::Result<()> {
     use {
         listen_kit::reasoning_loop::ReasoningLoop,
-        listen_kit::signer::evm::LocalEvmSigner,
         listen_kit::signer::SignerContext, std::sync::Arc,
     };
 
     use listen_kit::{
-        agent::Features, evm::util::env, hype::create_hype_agent_openrouter,
-        reasoning_loop::Model,
+        agent::Features, hype::create_hype_agent_openrouter,
+        reasoning_loop::Model, signer::privy::PrivySigner,
     };
+    use privy::{auth::UserSession, config::PrivyConfig, Privy};
 
-    let prompt = "if i were to buy 1000 eth, what would the average price of my order be?"
+    let prompt = "if i were to buy 1000 eth, what would the average price of my order be? and what about my current open orders?"
         .to_string();
 
-    let signer = LocalEvmSigner::new(env("ETHEREUM_PRIVATE_KEY"));
+    // TODO allow local signer (hyperliquid-rust-sdk uses ethers LocalWallet not alloy)
+    let session = UserSession {
+        user_id: "".to_string(),
+        evm_wallet_id: Some("k0pq0k5an1fvo35m5gm3wn8d".to_string()),
+        wallet_address: Some(
+            "0xCCC48877a33a2C14e40c82da843Cf4c607ABF770".to_string(),
+        ),
+        ..Default::default()
+    };
+    let signer = PrivySigner::new(
+        Arc::new(Privy::new(PrivyConfig::from_env()?)),
+        session,
+        "en".to_string(),
+    );
 
     SignerContext::with_signer(Arc::new(signer), async {
         let model =

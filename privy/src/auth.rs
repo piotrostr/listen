@@ -6,7 +6,7 @@ use crate::{
     Privy,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Default, Debug)]
 pub struct UserSession {
     pub user_id: String,
     pub session_id: String,
