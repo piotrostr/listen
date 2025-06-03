@@ -100,7 +100,7 @@ export function useEoaExecution() {
     action: SwapOrderAction,
     worldAddress: string,
     toAddress?: string
-  ): Promise<string | null> => {
+  ): Promise<{ txId: string | null; error?: any }> => {
     try {
       if (!MiniKit.isInstalled()) {
         throw new Error("World App is not installed");
@@ -166,15 +166,14 @@ export function useEoaExecution() {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       refreshPortfolio(true);
 
-      return finalPayload.transaction_id;
+      return { txId: finalPayload.transaction_id };
     } catch (error) {
       if (worldAddress === DEV_ADDRESS) {
         copyToClipboard(JSON.stringify(error));
       }
       console.error(error);
+      return { txId: null, error };
     }
-
-    return null;
   };
 
   return {
