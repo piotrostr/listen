@@ -43,6 +43,8 @@ export function useEoaExecution() {
         const rpcUrl =
           import.meta.env.VITE_RPC_URL || "https://api.mainnet-beta.solana.com";
         const connection = new Connection(rpcUrl);
+        const latestBlockhash = await connection.getLatestBlockhash();
+        transaction.message.recentBlockhash = latestBlockhash.blockhash;
         const res = await wallet.sendTransaction(transaction, connection);
         await waitForTransaction(res, rpcUrl, () => {
           refreshPortfolio(true);
