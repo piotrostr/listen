@@ -9,7 +9,7 @@
 </p>
 
 <p align="center">
-<code>listen</code> started sa Solana Swiss-Knife toolkit for algorithmic trading, its mission is to become the go-to framework for AI portfolio management agents
+<code>listen</code> started as Solana Swiss-Knife toolkit for algorithmic trading, its mission is to become the go-to framework for AI portfolio management agents
 </p>
 <p align="center">
 It powers the <a href="https://app.listen-rs.com/">Listen App</a>, check it out to see what <code>listen</code> framework is capable of
