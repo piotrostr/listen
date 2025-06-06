@@ -95,7 +95,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const { activePanel, setActivePanel } = usePanel();
   const { user, logout, ready, authenticated } = usePrivy();
   const { clearPortfolio } = usePortfolioStore();
-  const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
+  const { activeWallet, clearWalletAddresses, clearEoaAddresses } =
+    useWalletStore();
   const { hasAddedToHomeScreen, isVisible, hide } = useHasAddedToHomeScreen();
   const { hasSolanaWallet } = useIsAuthenticated();
   const { messages } = useChat();
@@ -202,7 +203,8 @@ export function Layout({ children }: { children: React.ReactNode }) {
           !hasSolanaWallet &&
           worldUserAddress &&
           authenticated &&
-          isVisibleCreateMultichainWalletPopup && (
+          isVisibleCreateMultichainWalletPopup &&
+          activeWallet === "listen" && (
             <CreateMultichainWalletPopup
               isVisible={isVisibleCreateMultichainWalletPopup}
               onClose={() => setIsVisibleCreateMultichainWalletPopup(false)}
