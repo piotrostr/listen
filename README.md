@@ -84,6 +84,8 @@ interact with the Solana blockchain, see example:
 [src/agent.rs](https://github.com/piotrostr/listen/blob/main/src/agent.rs) and
 the output [image](https://github.com/piotrostr/listen/blob/main/example.png).
 
+Some more docs on the agentic stuff: [rig-onchain-kit](https://0xplaygrounds.github.io/rig-onchain-kit/introduction.html)
+
 For complete rundown of features, check out the CLI output of `cargo run` or the
 [documentation](https://docs.listen-rs.com/).
 
