@@ -90,6 +90,19 @@ pub trait TransactionSigner: Send + Sync {
             "EVM transactions not supported by this signer"
         ))
     }
+
+    #[cfg(feature = "hype")]
+    async fn secp256k1_sign(
+        &self,
+        message: ethers::types::H256,
+    ) -> std::result::Result<
+        ethers::types::Signature,
+        hyperliquid_rust_sdk::Error,
+    > {
+        Err(hyperliquid_rust_sdk::Error::Wallet(
+            "secp256k1_sign not supported by this signer".to_string(),
+        ))
+    }
 }
 
 tokio::task_local! {
