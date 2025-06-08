@@ -22,6 +22,7 @@ pub struct EvmTransaction {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(alias = "input")]
     pub data: Option<String>,
     // #[serde(skip_serializing_if = "Option::is_none")]
     // #[serde(deserialize_with = "deserialize_chain_id")]
