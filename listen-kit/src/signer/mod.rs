@@ -11,6 +11,47 @@ use std::sync::Arc;
 use anyhow::Result;
 use async_trait::async_trait;
 
+#[cfg(feature = "hype")]
+pub trait AsHypeSigner {
+    fn as_hype_signer(&self)
+        -> Arc<dyn hyperliquid_rust_sdk::signer::Signer>;
+}
+
+#[cfg(feature = "hype")]
+impl AsHypeSigner for Arc<dyn TransactionSigner> {
+    fn as_hype_signer(
+        &self,
+    ) -> Arc<dyn hyperliquid_rust_sdk::signer::Signer> {
+        Arc::new(HypeSigner(self.clone()))
+    }
+}
+
+#[cfg(feature = "hype")]
+#[derive(Debug)]
+struct HypeSigner(Arc<dyn TransactionSigner>);
+
+#[cfg(feature = "hype")]
+#[async_trait]
+impl hyperliquid_rust_sdk::signer::Signer for HypeSigner {
+    fn address(&self) -> ethers::types::Address {
+        self.0
+            .address()
+            .expect("Address not available")
+            .parse()
+            .expect("Invalid address format")
+    }
+
+    async fn secp256k1_sign(
+        &self,
+        message: ethers::types::H256,
+    ) -> std::result::Result<
+        ethers::types::Signature,
+        hyperliquid_rust_sdk::Error,
+    > {
+        self.0.secp256k1_sign(message).await
+    }
+}
+
 #[cfg(feature = "evm")]
 use self::evm::LocalEvmSigner;
 #[cfg(feature = "http")]
@@ -35,7 +76,7 @@ pub enum SignerType {
 }
 
 #[async_trait]
-pub trait TransactionSigner: Send + Sync {
+pub trait TransactionSigner: Send + Sync + std::fmt::Debug {
     fn locale(&self) -> String {
         "en".to_string()
     }
@@ -94,7 +135,7 @@ pub trait TransactionSigner: Send + Sync {
     #[cfg(feature = "hype")]
     async fn secp256k1_sign(
         &self,
-        message: ethers::types::H256,
+        _message: ethers::types::H256,
     ) -> std::result::Result<
         ethers::types::Signature,
         hyperliquid_rust_sdk::Error,

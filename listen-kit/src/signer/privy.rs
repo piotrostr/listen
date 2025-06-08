@@ -1,5 +1,7 @@
 use anyhow::Result;
 use async_trait::async_trait;
+#[cfg(feature = "hype")]
+use ethers::utils::hex::ToHexExt;
 use hyperliquid_rust_sdk::signer::signature_string_to_ethers_signature;
 use serde::Serialize;
 
@@ -28,44 +30,6 @@ impl PrivySigner {
             session,
             locale,
         }
-    }
-}
-
-#[async_trait::async_trait]
-impl hyperliquid_rust_sdk::signer::Signer for PrivySigner {
-    fn address(&self) -> ethers::types::Address {
-        self.session
-            .wallet_address
-            .as_ref()
-            .unwrap()
-            .parse()
-            .unwrap() // TODO no unwrap
-    }
-
-    async fn secp256k1_sign(
-        &self,
-        message: ethers::types::H256,
-    ) -> std::result::Result<
-        ethers::types::Signature,
-        hyperliquid_rust_sdk::Error,
-    > {
-        if self.session.evm_wallet_id.is_none() {
-            return Err(hyperliquid_rust_sdk::Error::Wallet(
-                "EVM wallet ID is not set, wallet unavailable".to_string(),
-            ));
-        }
-        let signature = self
-            .privy
-            .secp256k1_sign(
-                self.session.evm_wallet_id.clone().unwrap(),
-                message.to_string(),
-            )
-            .await
-            .map_err(|e| {
-                hyperliquid_rust_sdk::Error::SignatureFailure(e.to_string())
-            })?;
-
-        signature_string_to_ethers_signature(signature)
     }
 }
 
@@ -209,5 +173,34 @@ impl TransactionSigner for PrivySigner {
                     e
                 )
             })
+    }
+
+    #[cfg(feature = "hype")]
+    async fn secp256k1_sign(
+        &self,
+        message: ethers::types::H256,
+    ) -> std::result::Result<
+        ethers::types::Signature,
+        hyperliquid_rust_sdk::Error,
+    > {
+        use alloy::hex::ToHexExt;
+
+        if self.session.evm_wallet_id.is_none() {
+            return Err(hyperliquid_rust_sdk::Error::Wallet(
+                "EVM wallet ID is not set, wallet unavailable".to_string(),
+            ));
+        }
+        let signature = self
+            .privy
+            .secp256k1_sign(
+                self.session.evm_wallet_id.clone().unwrap(),
+                format!("0x{}", message.as_bytes().encode_hex()),
+            )
+            .await
+            .map_err(|e| {
+                hyperliquid_rust_sdk::Error::SignatureFailure(e.to_string())
+            })?;
+
+        signature_string_to_ethers_signature(signature)
     }
 }

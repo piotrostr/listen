@@ -7,7 +7,9 @@ use rig::{agent::AgentBuilder, streaming::StreamingCompletionModel};
 use rig_tool_macro::tool;
 
 use crate::agent::Features;
-use crate::common::OpenRouterAgent;
+use crate::common::{spawn_with_signer, OpenRouterAgent};
+#[cfg(feature = "hype")]
+use crate::signer::AsHypeSigner;
 use crate::signer::SignerContext;
 use crate::{
     agent::model_to_versioned_model, common::openrouter_agent_builder,
@@ -67,33 +69,43 @@ pub async fn send_market_order(
     size: String,
 ) -> Result<serde_json::Value> {
     let signer = SignerContext::current().await;
-    let client =
-        ExchangeClient::new(None, signer, Some(BaseUrl::Mainnet)).await?;
-    let info = client
-        .order(
-            ClientOrderRequest {
-                asset: coin,
-                is_buy: side == "buy",
-                reduce_only: false,
-                limit_px: 0.,
-                sz: size.parse::<f64>()?,
-                cloid: None,
-                order_type: ClientOrder::Trigger(ClientTrigger {
-                    is_market: true,
-                    trigger_px: 0.,
-                    tpsl: "".to_string(),
-                }),
-            },
-            Some(signer),
+    spawn_with_signer(signer.clone(), move || async move {
+        let client = ExchangeClient::new(
+            None,
+            signer.as_hype_signer(),
+            Some(BaseUrl::Mainnet),
+            None,
+            None,
         )
         .await?;
-    Ok(serde_json::to_value(info)?)
+        let info = client
+            .order(
+                ClientOrderRequest {
+                    asset: coin,
+                    is_buy: side == "buy",
+                    reduce_only: false,
+                    limit_px: 0.,
+                    sz: size.parse::<f64>()?,
+                    cloid: None,
+                    order_type: ClientOrder::Trigger(ClientTrigger {
+                        is_market: true,
+                        trigger_px: 0.,
+                        tpsl: "".to_string(),
+                    }),
+                },
+                Some(&*signer.as_hype_signer()),
+            )
+            .await?;
+        Ok(serde_json::to_value(info)?)
+    })
+    .await
+    .await?
 }
 
 pub fn equip_with_hype_tools<M: StreamingCompletionModel>(
     agent: AgentBuilder<M>,
 ) -> AgentBuilder<M> {
-    agent.tool(GetL2Snapshot)
+    agent.tool(GetL2Snapshot).tool(SendMarketOrder)
 }
 
 pub fn create_hype_agent_openrouter(
