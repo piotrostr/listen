@@ -4302,6 +4302,7 @@ version = "0.6.0"
 dependencies = [
  "async-trait",
  "chrono",
+ "dotenv",
  "env_logger 0.10.2",
  "ethers",
  "futures-util",

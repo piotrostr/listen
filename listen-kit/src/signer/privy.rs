@@ -1,7 +1,5 @@
 use anyhow::Result;
 use async_trait::async_trait;
-#[cfg(feature = "hype")]
-use ethers::utils::hex::ToHexExt;
 use hyperliquid_rust_sdk::signer::signature_string_to_ethers_signature;
 use serde::Serialize;
 
