@@ -1,3 +1,5 @@
+use crate::evm::transfer::create_transfer_erc20_tx;
+use crate::evm::util::{execute_evm_transaction, make_provider};
 use crate::signer::SignerContext;
 use crate::{common::spawn_with_signer, signer::AsHypeSigner};
 use anyhow::Result;
@@ -67,10 +69,25 @@ pub async fn send_market_order(
 #[tool(description = "
 Deposit USDC into the exchange.
 {
-  \"amount\": \"1000\",
+  \"amount\": \"10000000\", // 10 usdc, 6 decimals
 }
 ")]
-pub async fn deposit_usdc(amount: String) -> Result<serde_json::Value> {
+pub async fn deposit_usdc(amount: String) -> Result<String> {
+    execute_evm_transaction(move |owner| async move {
+        create_transfer_erc20_tx(
+            "0xaf88d065e77c8cC2239327C5EDb3A432268e5831".to_string(), // usdc
+            "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7".to_string(), // hyperliquid deposit bridge 2
+            amount,
+            &make_provider(42161)?,
+            owner,
+        )
+        .await
+    })
+    .await
+}
+
+// this is a transfer to self, doesnt really do anything but the part with spawning an agent to be used elsewhere
+pub async fn _action_with_agent() -> Result<serde_json::Value> {
     let signer = SignerContext::current().await;
     spawn_with_signer(signer.clone(), move || async move {
         let exchange_client = ExchangeClient::new(
@@ -97,7 +114,7 @@ pub async fn deposit_usdc(amount: String) -> Result<serde_json::Value> {
         tracing::info!("approve_agent: {:?}", response);
         exchange_client
             .usdc_transfer(
-                &amount,
+                "123",
                 &signer
                     .address()
                     .ok_or(anyhow::anyhow!("No address found"))?,

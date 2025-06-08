@@ -1,5 +1,5 @@
 use anyhow::Result;
-use ethers::types::{H160, H256};
+use ethers::types::H160;
 use hyperliquid_rust_sdk::{BaseUrl, InfoClient};
 use rig_tool_macro::tool;
 
@@ -60,8 +60,6 @@ pub async fn _get_balance_overview(
 
 #[cfg(test)]
 mod tests {
-    use ethers::signers::LocalWallet;
-    use listen_memory::util::must_get_env;
 
     use super::*;
 

@@ -60,9 +60,12 @@ pub async fn create_transfer_erc20_tx(
 
 #[cfg(test)]
 mod tests {
+    use privy::types::EvmTransaction;
+
     use super::*;
     use crate::evm::util::{
         execute_evm_transaction, make_provider, with_local_evm_signer,
+        with_privy_evm_signer_test,
     };
 
     #[tokio::test]
@@ -97,6 +100,34 @@ mod tests {
                     owner,
                 )
                 .await
+            },
+        ))
+        .await
+        .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_transfer_erc20_with_privy_signer() {
+        with_privy_evm_signer_test(execute_evm_transaction(
+            move |owner: Address| async move {
+                let tx = create_transfer_erc20_tx(
+                    "0xaf88d065e77c8cc2239327c5edb3a432268e5831".to_string(),
+                    owner.to_string(),
+                    "1000000".to_string(),
+                    &make_provider(42161)?,
+                    owner,
+                )
+                .await?;
+                let tried: EvmTransaction = serde_json::from_value(
+                    serde_json::to_value(tx.clone())?,
+                )?;
+                tracing::info!(
+                    "tx: {:?}, serialized: {}, tried to privy: {}",
+                    tx.clone(),
+                    serde_json::to_string_pretty(&tx).unwrap(),
+                    serde_json::to_string_pretty(&tried).unwrap()
+                );
+                Ok(tx)
             },
         ))
         .await
