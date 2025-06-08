@@ -12,8 +12,7 @@ async fn main() -> anyhow::Result<()> {
     };
     use privy::{auth::UserSession, config::PrivyConfig, Privy};
 
-    let prompt = "if i were to buy 1000 eth, what would the average price of my order be? and what about my current open orders?"
-        .to_string();
+    let prompt = "check my open orders on hype".to_string();
 
     // TODO allow local signer (hyperliquid-rust-sdk uses ethers LocalWallet not alloy)
     let session = UserSession {
@@ -46,7 +45,7 @@ async fn main() -> anyhow::Result<()> {
                 vec![],
                 None,
                 None,
-                "replace-with-any-persistant-user-id".to_string(),
+                "replace-with-any-persistent-user-id".to_string(),
             )
             .await?;
 
