@@ -100,14 +100,14 @@ impl TransactionSigner for PrivySigner {
             tx.chain_id.map_or(Caip2::ARBITRUM.to_string(), |chain_id| {
                 Caip2::from_chain_id(chain_id).to_string()
             });
-        if self.address().is_none() {
+        if self.evm_wallet_id().is_none() {
             return Err(anyhow::anyhow!(
                 "Address is not set, wallet unavailable"
             ));
         }
         self.privy
             .execute_evm_transaction(
-                self.address().unwrap(),
+                self.evm_wallet_id().unwrap(),
                 serde_json::to_value(tx)?,
                 caip2,
             )
