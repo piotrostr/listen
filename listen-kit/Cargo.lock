@@ -4299,10 +4299,10 @@ dependencies = [
 [[package]]
 name = "hyperliquid_rust_sdk"
 version = "0.6.0"
+source = "git+https://github.com/piotrostr/hyperliquid-rust-sdk#2ec8c51718a59d484a60bee5dd16dc67cf5c88d8"
 dependencies = [
  "async-trait",
  "chrono",
- "dotenv",
  "env_logger 0.10.2",
  "ethers",
  "futures-util",

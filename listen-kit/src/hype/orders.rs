@@ -5,10 +5,7 @@ use crate::{common::spawn_with_signer, signer::AsHypeSigner};
 use anyhow::Result;
 use ethers::signers::LocalWallet;
 use hyperliquid_rust_sdk::signer::Signer;
-use hyperliquid_rust_sdk::{
-    BaseUrl, ClientOrder, ClientOrderRequest, ClientTrigger, ExchangeClient,
-    MarketOrderParams,
-};
+use hyperliquid_rust_sdk::{BaseUrl, ExchangeClient, MarketOrderParams};
 use rig_tool_macro::tool;
 use std::sync::Arc;
 
