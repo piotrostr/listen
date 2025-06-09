@@ -25,10 +25,11 @@ pub fn equip_with_hype_tools<M: StreamingCompletionModel>(
 ) -> AgentBuilder<M> {
     agent
         .tool(GetL2Snapshot)
-        .tool(SendMarketOrder)
+        .tool(MarketOpen)
         .tool(GetOpenOrders)
         .tool(DepositUsdc)
         .tool(GetBalanceOverview)
+        .tool(GetLatestPrice)
 }
 
 pub fn create_hype_agent_openrouter(

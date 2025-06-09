@@ -33,7 +33,7 @@ pub async fn get_l2_snapshot(coin: String) -> Result<serde_json::Value> {
 }
 
 #[tool(description = "
-Gets the open orders for the current user.
+Gets the open orders for the current user
 ")]
 pub async fn get_open_orders() -> Result<serde_json::Value> {
     let client = InfoClient::new(None, Some(BaseUrl::Mainnet)).await?;
@@ -48,6 +48,20 @@ Gets the balance overview of the current user. Example response:
 pub async fn get_balance_overview() -> Result<serde_json::Value> {
     let address = SignerContext::current().await.address();
     _get_balance_overview(parse_evm_address(address)?).await
+}
+
+#[tool(description = "
+Gets the latest price for a coin.
+")]
+pub async fn get_latest_price(coin: String) -> Result<serde_json::Value> {
+    let client = InfoClient::new(None, Some(BaseUrl::Mainnet)).await?;
+    let res = client.l2_snapshot(coin).await?;
+    let bid = res.levels[0][0].px.parse::<f64>()?;
+    let ask = res.levels[1][0].px.parse::<f64>()?;
+    Ok(serde_json::json!({
+        "bid": bid,
+        "ask": ask,
+    }))
 }
 
 pub async fn _get_balance_overview(

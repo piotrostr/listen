@@ -7,30 +7,40 @@ use ethers::signers::LocalWallet;
 use hyperliquid_rust_sdk::signer::Signer;
 use hyperliquid_rust_sdk::{
     BaseUrl, ClientOrder, ClientOrderRequest, ClientTrigger, ExchangeClient,
+    MarketOrderParams,
 };
 use rig_tool_macro::tool;
 use std::sync::Arc;
 
 #[tool(description = "
-Send a market order to the exchange.
+Open a market order on the exchange.
 
-example
+Parameters:
+- coin: the coin to trade
+- side: the side of the order
+- size: the size of the order
+- leverage: the leverage to use, e.g. 0.1 eth with price of eth $1000 is 100 usdc notional, with 4x leverage requires minimum 25 usdc margin
+
+Example
 {
-  \"coin\": \"ETH/USDC\",
+  \"coin\": \"ETH\",
   \"side\": \"buy\",
   \"size\": \"0.01\",
 }
 
 {
-  \"coin\": \"ETH/USDC\",
+  \"coin\": \"ETH\",
   \"side\": \"sell\",
   \"size\": \"0.01\",
 }
+
+Minimum buy size is 10 USDC worth, less will result in error creating the order.
 ")]
-pub async fn send_market_order(
+pub async fn market_open(
     coin: String,
     side: String,
     size: String,
+    leverage: u32,
 ) -> Result<serde_json::Value> {
     let signer = SignerContext::current().await;
     spawn_with_signer(signer.clone(), move || async move {
@@ -42,23 +52,17 @@ pub async fn send_market_order(
             None,
         )
         .await?;
+        client.update_leverage(leverage, &coin, true, None).await?;
         let info = client
-            .order(
-                ClientOrderRequest {
-                    asset: coin,
-                    is_buy: side == "buy",
-                    reduce_only: false,
-                    limit_px: 0.,
-                    sz: size.parse::<f64>()?,
-                    cloid: None,
-                    order_type: ClientOrder::Trigger(ClientTrigger {
-                        is_market: true,
-                        trigger_px: 0.,
-                        tpsl: "".to_string(),
-                    }),
-                },
-                Some(&*signer.as_hype_signer()),
-            )
+            .market_open(MarketOrderParams {
+                asset: &coin,
+                is_buy: side == "buy",
+                sz: size.parse::<f64>()?,
+                px: None,
+                cloid: None,
+                slippage: Some(0.001), // .1% slippage
+                wallet: None,
+            })
             .await?;
         Ok(serde_json::to_value(info)?)
     })
