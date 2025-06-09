@@ -57,6 +57,10 @@ impl TransactionSigner for PrivySigner {
         self.session.pubkey.clone()
     }
 
+    fn evm_wallet_id(&self) -> Option<String> {
+        self.session.evm_wallet_id.clone()
+    }
+
     #[cfg(feature = "solana")]
     async fn sign_and_send_solana_transaction(
         &self,
@@ -145,9 +149,9 @@ impl TransactionSigner for PrivySigner {
         tx: serde_json::Value,
         caip2: Option<String>,
     ) -> Result<String> {
-        if self.address().is_none() {
+        if self.evm_wallet_id().is_none() {
             return Err(anyhow::anyhow!(
-                "Address is not set, wallet unavailable"
+                "EVM wallet ID is not set, wallet unavailable"
             ));
         }
         let caip2 = if let Some(caip2) = caip2 {
@@ -163,7 +167,7 @@ impl TransactionSigner for PrivySigner {
             }
         };
         self.privy
-            .execute_evm_transaction(self.address().unwrap(), tx, caip2)
+            .execute_evm_transaction(self.evm_wallet_id().unwrap(), tx, caip2)
             .await
             .map_err(|e| {
                 anyhow::anyhow!(

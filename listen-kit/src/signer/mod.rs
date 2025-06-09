@@ -93,6 +93,10 @@ pub trait TransactionSigner: Send + Sync + std::fmt::Debug {
         None
     }
 
+    fn evm_wallet_id(&self) -> Option<String> {
+        None
+    }
+
     #[cfg(feature = "solana")]
     async fn sign_and_send_solana_transaction(
         &self,
