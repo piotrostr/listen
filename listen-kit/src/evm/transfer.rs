@@ -131,6 +131,6 @@ mod tests {
             },
         ))
         .await
-        .unwrap();
+        .expect("Failed to execute evm transaction");
     }
 }
