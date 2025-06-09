@@ -76,7 +76,7 @@ pub async fn deposit_usdc(amount: String) -> Result<String> {
     execute_evm_transaction(move |owner| async move {
         create_transfer_erc20_tx(
             "0xaf88d065e77c8cC2239327C5EDb3A432268e5831".to_string(), // usdc
-            "0x2Df1c51E09aECF9cacB7bc98cB1742757f163dF7".to_string(), // hyperliquid deposit bridge 2
+            "0x2df1c51e09aecf9cacb7bc98cb1742757f163df7".to_string(), // hyperliquid deposit bridge 2
             amount,
             &make_provider(42161)?,
             owner,
