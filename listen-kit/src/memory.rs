@@ -64,7 +64,7 @@ pub async fn inject_memories(
             let user_mems = match user_mems {
                 Ok(mems) => mems,
                 Err(e) => {
-                    tracing::error!("Failed to fetch user memories: {}", e);
+                    tracing::warn!("Failed to fetch user memories: {}", e);
                     mem0.empty_search_result()
                 }
             };
@@ -80,7 +80,7 @@ pub async fn inject_memories(
             {
                 Ok(mems) => mems,
                 Err(e) => {
-                    tracing::error!("Failed to fetch user memories: {}", e);
+                    tracing::warn!("Failed to fetch user memories: {}", e);
                     mem0.empty_search_result()
                 }
             };

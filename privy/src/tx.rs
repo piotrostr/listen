@@ -196,4 +196,25 @@ mod tests {
         let result = privy.execute_transaction(privy_transaction).await.unwrap();
         assert_eq!(result.len(), 66);
     }
+
+    pub const TEST_WALLET_ID: &str = "k0pq0k5an1fvo35m5gm3wn8d";
+
+    #[tokio::test]
+    #[ignore = "this is for debugging specific txs, change the from and to and data"]
+    async fn test_execute_order_eth_debug() {
+        dotenv::dotenv().ok();
+        let tx = serde_json::json!({
+          "from": "0xccc48877a33a2c14e40c82da843cf4c607abf770",
+          "to": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+          "data": "0xa9059cbb000000000000000000000000ccc48877a33a2c14e40c82da843cf4c607abf77000000000000000000000000000000000000000000000000000000000000f4240",
+          "gas_price": "0x121b410"
+        });
+        let privy = Privy::new(PrivyConfig::from_env().unwrap());
+        let result = privy
+            .execute_evm_transaction(TEST_WALLET_ID.to_string(), tx, Caip2::ARBITRUM.to_string())
+            .await
+            .unwrap();
+
+        println!("result: {}", result);
+    }
 }

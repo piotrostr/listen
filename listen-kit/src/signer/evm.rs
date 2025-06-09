@@ -23,6 +23,16 @@ impl LocalEvmSigner {
     }
 }
 
+impl std::fmt::Debug for LocalEvmSigner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "LocalEvmSigner({})",
+            self.wallet.default_signer().address()
+        )
+    }
+}
+
 #[async_trait]
 impl TransactionSigner for LocalEvmSigner {
     fn address(&self) -> Option<String> {

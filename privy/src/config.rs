@@ -7,6 +7,27 @@ pub struct PrivyConfig {
     pub verification_key: String,
 }
 
+fn redact_secret(s: &str) -> String {
+    let first_three = s.chars().take(3).collect::<String>();
+    let last_three = s.chars().rev().take(3).collect::<String>();
+    let length = s.len();
+    let filled_length = length - 6;
+    let filled_string = "*".repeat(filled_length);
+    format!("{}{}{}", first_three, filled_string, last_three)
+}
+
+impl std::fmt::Debug for PrivyConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "PrivyConfig {{ app_id: {}, app_secret: {}, verification_key: {} }}",
+            self.app_id,
+            redact_secret(&self.app_secret),
+            redact_secret(&self.verification_key)
+        )
+    }
+}
+
 #[derive(Debug, thiserror::Error)]
 pub enum PrivyConfigError {
     #[error("[Privy] Missing required environment variable: {0}")]
