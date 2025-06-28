@@ -121,7 +121,6 @@ pub fn equip_with_autonomous_tools<M: StreamingCompletionModel>(
     agent_builder.tool(Swap) // .tool(CreateAdvancedOrder)
 }
 
-// TODO ensure that the reserach trader agent has evm tools too
 pub fn create_listen_agent(
     preamble: Option<String>,
     features: Features,

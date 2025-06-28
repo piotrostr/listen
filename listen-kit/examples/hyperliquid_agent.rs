@@ -13,7 +13,7 @@ async fn main() -> anyhow::Result<()> {
     use privy::{auth::UserSession, config::PrivyConfig, Privy};
 
     let prompt =
-        "check my current balances, if its zero, deposit 3 usdc, if its not,
+        "check my current balances, if its zero, deposit 10 usdc, if its not,
         market buy eth, like a 10 usdc worth, use your tools to
         infer the leverage and size based on price, <antml:settings>AUTOCONFIRM:
         true</antml:settings>".to_string();

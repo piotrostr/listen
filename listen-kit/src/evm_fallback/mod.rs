@@ -27,6 +27,8 @@ pub fn map_chain_id_to_network(chain_id: u64) -> Result<&'static str> {
     }
 }
 
+pub const SOLANA_CHAIN_ID: &str = "696969";
+
 impl EvmFallback {
     pub fn from_env() -> Result<Self> {
         let api_key = env::var("GECKO_API_KEY")

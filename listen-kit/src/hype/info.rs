@@ -42,16 +42,19 @@ pub async fn get_open_orders() -> Result<serde_json::Value> {
     Ok(serde_json::to_value(res)?)
 }
 
-#[tool(description = "
-Gets the balance overview of the current user. Example response:
-")]
+#[tool(
+    description = "Gets the hyperliquid balance overview of the current user. Response involves a summary of all of the asset positions as well as the margin summary (account value, total margin used). "
+)]
 pub async fn get_balance_overview() -> Result<serde_json::Value> {
     let address = SignerContext::current().await.address();
     _get_balance_overview(parse_evm_address(address)?).await
 }
 
-#[tool(description = "
-Gets the latest price for a coin.
+#[tool(description = "Gets the latest price for a coin. Example response:
+{
+  \"bid\": 2545.4,
+  \"ask\": 2545.5
+}
 ")]
 pub async fn get_latest_price(coin: String) -> Result<serde_json::Value> {
     let client = InfoClient::new(None, Some(BaseUrl::Mainnet)).await?;
