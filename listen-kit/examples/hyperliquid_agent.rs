@@ -6,11 +6,11 @@ async fn main() -> anyhow::Result<()> {
         listen_kit::signer::SignerContext, std::sync::Arc,
     };
 
+    use ethers::signers::LocalWallet;
     use listen_kit::{
         agent::Features, hype::create_hype_agent_openrouter,
-        reasoning_loop::Model, signer::privy::PrivySigner,
+        reasoning_loop::Model,
     };
-    use privy::{auth::UserSession, config::PrivyConfig, Privy};
 
     let prompt =
         "check my current balances, if its zero, deposit 10 usdc, if its not,
@@ -18,20 +18,9 @@ async fn main() -> anyhow::Result<()> {
         infer the leverage and size based on price, <antml:settings>AUTOCONFIRM:
         true</antml:settings>".to_string();
 
-    // TODO allow local signer (hyperliquid-rust-sdk uses ethers LocalWallet not alloy)
-    let session = UserSession {
-        user_id: "".to_string(),
-        evm_wallet_id: Some("k0pq0k5an1fvo35m5gm3wn8d".to_string()),
-        wallet_address: Some(
-            "0xCCC48877a33a2C14e40c82da843Cf4c607ABF770".to_string(),
-        ),
-        ..Default::default()
-    };
-    let signer = PrivySigner::new(
-        Arc::new(Privy::new(PrivyConfig::from_env()?)),
-        session,
-        "en".to_string(),
-    );
+    let private_key = std::env::var("ETHEREUM_PRIVATE_KEY")
+        .map_err(|e| anyhow::anyhow!(e))?;
+    let signer: LocalWallet = private_key.try_into()?;
 
     SignerContext::with_signer(Arc::new(signer), async {
         let model =
