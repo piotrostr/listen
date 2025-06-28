@@ -5,6 +5,9 @@ pub mod privy;
 #[cfg(feature = "solana")]
 pub mod solana;
 
+#[cfg(feature = "evm")]
+pub mod local_wallet;
+
 use std::future::Future;
 use std::sync::Arc;
 

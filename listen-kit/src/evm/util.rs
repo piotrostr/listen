@@ -53,6 +53,14 @@ pub fn make_provider(chain_id: u64) -> Result<EvmProvider> {
     Ok(ProviderBuilder::new().on_http(rpc_url.parse()?))
 }
 
+pub fn make_ethers_provider(
+    chain_id: u64,
+) -> Result<ethers::providers::Provider<ethers::providers::Http>> {
+    let rpc_url = chain_id_to_rpc_url(chain_id);
+    ethers::providers::Provider::<ethers::providers::Http>::try_from(rpc_url)
+        .map_err(|e| anyhow::anyhow!(e))
+}
+
 pub fn make_signer() -> Result<PrivateKeySigner> {
     Ok(PrivateKeySigner::from_str(&env("ETHEREUM_PRIVATE_KEY"))?)
 }
