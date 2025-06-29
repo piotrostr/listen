@@ -30,7 +30,8 @@ pub fn equip_with_hype_tools<M: StreamingCompletionModel>(
         .tool(DepositUsdc)
         .tool(GetBalanceOverview)
         .tool(GetLatestPrice)
-    // .tool(GetPriceLine)
+        .tool(GetCandlesticksRaw)
+        .tool(GetCandlesticksAnalysis)
 }
 
 pub fn create_hype_agent_openrouter(

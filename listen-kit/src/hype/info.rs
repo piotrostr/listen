@@ -11,7 +11,7 @@ use crate::{
         candlesticks_and_analysis_to_price_action_analysis_response,
         Candlestick, PriceActionAnalysisResponse,
     },
-    distiller::analyst::Analyst,
+    distiller::analyst::{humanize_timestamp, Analyst},
     hype::parse_evm_address,
     reasoning_loop::ReasoningLoop,
     signer::SignerContext,
@@ -96,6 +96,13 @@ list of candles, each with the following fields:
 - c: close
 - v: volume
 
+Example:
+{{
+  \"coin\": \"ETH\",
+  \"interval\": \"1m\",
+  \"limit\": \"100\"
+}}
+
 This method can be useful for fetching a small chunk of price action, say
 the last 5 5m candles. For larger timeframes, to save context and extract
 the most relevant information, use the get_candlesticks_analysis tool.
@@ -103,7 +110,7 @@ the most relevant information, use the get_candlesticks_analysis tool.
 pub async fn get_candlesticks_raw(
     coin: String,
     interval: String,
-    limit: Option<String>,
+    limit: String,
 ) -> Result<serde_json::Value> {
     let res = get_candles_snapshot(coin, &interval, limit).await?;
     leanify_candles_snapshot_response(res)
@@ -112,9 +119,9 @@ pub async fn get_candlesticks_raw(
 pub async fn get_candles_snapshot(
     coin: String,
     interval: &str,
-    limit: Option<String>,
+    limit: String,
 ) -> Result<Vec<CandlesSnapshotResponse>> {
-    let limit = limit.unwrap_or("100".to_string()).parse::<u64>()?;
+    let limit = limit.parse::<u64>()?;
     if limit < 1 || limit > 200 {
         // limit over 200 yields too much
         return Err(anyhow::anyhow!("Limit must be between 1 and 200"));
@@ -136,6 +143,14 @@ Parameters:
 - limit: The limit of candles to get the analysis for
 - intent: The intent of the analysis
 
+Example:
+{{
+  \"coin\": \"ETH\",
+  \"interval\": \"1m\",
+  \"limit\": \"100\",
+  \"intent\": \"What is the price action for ETH in the last 100 1m candles?\"
+}}
+
 Returns the price action analysis for the coin from the Chart Analyst agent
 along with summary of the price action - the current price, time, total volume,
 price change in the period analysed and the high/low price.
@@ -143,10 +158,11 @@ price change in the period analysed and the high/low price.
 pub async fn get_candlesticks_analysis(
     coin: String,
     interval: String,
-    limit: Option<String>,
+    limit: String,
     intent: Option<String>,
 ) -> Result<PriceActionAnalysisResponse> {
-    let candles = get_candles_snapshot(coin, &interval, limit).await?;
+    let candles =
+        get_candles_snapshot(coin, &interval, limit.clone()).await?;
     let ctx = SignerContext::current().await;
     let locale = ctx.locale();
     let analyst = Analyst::from_env_with_locale(locale)
@@ -194,7 +210,7 @@ pub fn leanify_candles_snapshot_response(
     let mut data = Vec::new();
     for candle in res {
         data.push(serde_json::json!({
-            "t": candle.time_open / 1000,
+            "t": humanize_timestamp(candle.time_open / 1000)?,
             "o": candle.open,
             "h": candle.high,
             "l": candle.low,
@@ -280,7 +296,7 @@ mod tests {
         let res = get_candlesticks_raw(
             "ETH".to_string(),
             "1m".to_string(),
-            Some("100".to_string()),
+            "100".to_string(),
         )
         .await
         .unwrap();
@@ -300,7 +316,7 @@ mod tests {
             let res = get_candlesticks_analysis(
                 "ETH".to_string(),
                 "1m".to_string(),
-                Some("100".to_string()),
+                "100".to_string(),
                 None,
             )
             .await

@@ -84,6 +84,7 @@ async fn get_token_evm(address: String, chain_id: String) -> Result<Token> {
     })
 }
 
+#[allow(unused)]
 async fn get_token_solana(address: String) -> Result<Token> {
     validate_mint(&address)?;
 

@@ -60,15 +60,13 @@ pub async fn create_transfer_erc20_tx(
 
 #[cfg(test)]
 mod tests {
-    use privy::{
-        caip2::Caip2, config::PrivyConfig, types::EvmTransaction, Privy,
-    };
+    use privy::{caip2::Caip2, types::EvmTransaction};
 
     use super::*;
     use crate::{
         evm::util::{
             execute_evm_transaction, make_provider, with_local_evm_signer,
-            with_privy_evm_signer_test, TEST_WALLET_ID,
+            with_privy_evm_signer_test,
         },
         signer::SignerContext,
     };

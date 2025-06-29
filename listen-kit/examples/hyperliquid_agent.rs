@@ -12,11 +12,19 @@ async fn main() -> anyhow::Result<()> {
         reasoning_loop::Model,
     };
 
-    let prompt =
+    let _many_tools_prompt =
         "check my current balances, if its zero, deposit 10 usdc, if its not,
         market buy eth, like a 10 usdc worth, use your tools to
         infer the leverage and size based on price, <antml:settings>AUTOCONFIRM:
         true</antml:settings>".to_string();
+
+    let analysis_prompt =
+        "tell me your thoughts about BTC on 1d timeframe, last
+        200 candles. Please use the raw candlesticks fetch and form your own
+        analysis, tell me about potential setups with risk management included. If
+        you think you could use some additional tools beyond your toolset, let me
+        know and I'll provide you with access"
+            .to_string();
 
     let private_key = std::env::var("ETHEREUM_PRIVATE_KEY")
         .map_err(|e| anyhow::anyhow!(e))?;
@@ -34,7 +42,7 @@ async fn main() -> anyhow::Result<()> {
 
         let messages = agent
             .stream(
-                prompt,
+                analysis_prompt,
                 vec![],
                 None,
                 None,
