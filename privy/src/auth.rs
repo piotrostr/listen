@@ -6,13 +6,14 @@ use crate::{
     Privy,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Default, Debug)]
 pub struct UserSession {
     pub user_id: String,
     pub session_id: String,
     pub wallet_address: Option<String>,
     pub pubkey: Option<String>,
     pub email: Option<String>,
+    pub evm_wallet_id: Option<String>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -61,12 +62,14 @@ impl Privy {
             wallet_address: None,
             pubkey: None,
             email: None,
+            evm_wallet_id: None,
         };
 
         let user_info = self.user_to_user_info(&user);
         session.pubkey = user_info.pubkey;
         session.wallet_address = user_info.wallet_address;
         session.email = user_info.email;
+        session.evm_wallet_id = user_info.wallet_id;
 
         Ok(session)
     }

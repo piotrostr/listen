@@ -69,4 +69,37 @@ impl Caip2 {
             _ => "eip155:1",
         }
     }
+    pub fn to_chain_id(caip2: &str) -> u64 {
+        match caip2 {
+            Caip2::ETHEREUM => 1,
+            Caip2::BSC => 56,
+            Caip2::ARBITRUM => 42161,
+            Caip2::BASE => 8453,
+            Caip2::BLAST => 81457,
+            Caip2::AVALANCHE => 43114,
+            Caip2::POLYGON => 137,
+            Caip2::LINEA => 59144,
+            Caip2::GNOSIS => 100,
+            Caip2::FANTOM => 250,
+            Caip2::MOONRIVER => 1285,
+            Caip2::MOONBEAM => 1284,
+            Caip2::BOBA => 288,
+            Caip2::MODE => 34443,
+            Caip2::METIS => 1088,
+            Caip2::LISK => 1135,
+            Caip2::AURORA => 1313161554,
+            Caip2::SEI => 1329,
+            Caip2::IMMUTABLE => 13371,
+            Caip2::GRAVITY => 1625,
+            Caip2::TAIKO => 167000,
+            Caip2::CRONOS => 25,
+            Caip2::FRAXTAL => 252,
+            Caip2::ABSTRACT => 2741,
+            Caip2::CELO => 42220,
+            Caip2::WORLD => 480,
+            Caip2::MANTLE => 5000,
+            Caip2::BERACHAIN => 80094,
+            _ => 1,
+        }
+    }
 }

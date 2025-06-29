@@ -2,6 +2,7 @@ use std::future::Future;
 use std::str::FromStr;
 use std::sync::Arc;
 
+use crate::signer::privy::PrivySigner;
 use alloy::network::EthereumWallet;
 use alloy::primitives::Address;
 use alloy::providers::{ProviderBuilder, RootProvider};
@@ -9,6 +10,9 @@ use alloy::rpc::types::TransactionRequest;
 use alloy::signers::local::PrivateKeySigner;
 use alloy::transports::http::{Client, Http};
 use anyhow::{anyhow, Result};
+use privy::auth::UserSession;
+use privy::config::PrivyConfig;
+use privy::Privy;
 
 use crate::common::wrap_unsafe;
 use crate::ensure_evm_wallet_created;
@@ -49,6 +53,14 @@ pub fn make_provider(chain_id: u64) -> Result<EvmProvider> {
     Ok(ProviderBuilder::new().on_http(rpc_url.parse()?))
 }
 
+pub fn make_ethers_provider(
+    chain_id: u64,
+) -> Result<ethers::providers::Provider<ethers::providers::Http>> {
+    let rpc_url = chain_id_to_rpc_url(chain_id);
+    ethers::providers::Provider::<ethers::providers::Http>::try_from(rpc_url)
+        .map_err(|e| anyhow::anyhow!(e))
+}
+
 pub fn make_signer() -> Result<PrivateKeySigner> {
     Ok(PrivateKeySigner::from_str(&env("ETHEREUM_PRIVATE_KEY"))?)
 }
@@ -67,6 +79,28 @@ where
 {
     SignerContext::with_signer(
         Arc::new(LocalEvmSigner::new(env("ETHEREUM_PRIVATE_KEY"))),
+        future,
+    )
+    .await
+}
+
+pub const TEST_WALLET_ID: &str = "k0pq0k5an1fvo35m5gm3wn8d";
+pub const TEST_ADDRESS: &str = "0xCCC48877a33a2C14e40c82da843Cf4c607ABF770";
+
+pub async fn with_privy_evm_signer_test<Fut, T>(future: Fut) -> Result<T>
+where
+    Fut: Future<Output = Result<T>> + Send,
+{
+    SignerContext::with_signer(
+        Arc::new(PrivySigner::new(
+            Arc::new(Privy::new(PrivyConfig::from_env()?)),
+            UserSession {
+                wallet_address: Some(TEST_ADDRESS.to_string()),
+                evm_wallet_id: Some(TEST_WALLET_ID.to_string()),
+                ..Default::default()
+            },
+            "en".to_string(),
+        )),
         future,
     )
     .await

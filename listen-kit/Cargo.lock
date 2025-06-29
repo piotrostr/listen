@@ -4299,8 +4299,9 @@ dependencies = [
 [[package]]
 name = "hyperliquid_rust_sdk"
 version = "0.6.0"
-source = "git+https://github.com/piotrostr/hyperliquid-rust-sdk#84b55dd00db0c0624e2f1a6a46d03bfb36a0b431"
+source = "git+https://github.com/piotrostr/hyperliquid-rust-sdk#2ec8c51718a59d484a60bee5dd16dc67cf5c88d8"
 dependencies = [
+ "async-trait",
  "chrono",
  "env_logger 0.10.2",
  "ethers",
@@ -4309,6 +4310,7 @@ dependencies = [
  "http 0.2.12",
  "lazy_static",
  "log",
+ "privy 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "rand 0.8.5",
  "reqwest 0.11.27",
  "rmp-serde",
@@ -4965,6 +4967,7 @@ dependencies = [
  "ctor",
  "dotenv",
  "env_logger 0.11.6",
+ "ethers",
  "evm-approvals",
  "futures",
  "futures-util",
@@ -4979,7 +4982,7 @@ dependencies = [
  "log",
  "once_cell",
  "petgraph 0.7.1",
- "privy",
+ "privy 0.8.0",
  "rand 0.8.5",
  "redis",
  "reqwest 0.12.15",
@@ -6093,7 +6096,24 @@ dependencies = [
 
 [[package]]
 name = "privy"
-version = "0.6.0"
+version = "0.8.0"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "jsonwebtoken 9.3.1",
+ "reqwest 0.12.15",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "privy"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cd6ba531bde13ad865fe7c919c854d8906cb443221c4c4cbfbad53bfb033c1b"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

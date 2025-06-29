@@ -22,6 +22,7 @@ pub struct EvmTransaction {
     #[serde(skip_serializing_if = "Option::is_none")]
     pub value: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
+    #[serde(alias = "input")]
     pub data: Option<String>,
     // #[serde(skip_serializing_if = "Option::is_none")]
     // #[serde(deserialize_with = "deserialize_chain_id")]
@@ -144,6 +145,30 @@ pub struct WalletAccount {
     pub wallet_index: Option<u64>,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub id: Option<String>,
+}
+
+#[derive(Serialize)]
+pub struct Secp256k1SignRequest {
+    pub chain_type: String, // Always "ethereum"
+    pub method: String,     // Always "secp256k1_sign"
+    pub params: Secp256k1SignParams,
+}
+
+#[derive(Serialize)]
+pub struct Secp256k1SignParams {
+    pub hash: String,
+}
+
+#[derive(Deserialize)]
+pub struct Secp256k1SignResponse {
+    pub method: String,
+    pub data: Secp256k1SignData,
+}
+
+#[derive(Deserialize)]
+pub struct Secp256k1SignData {
+    pub signature: String,
+    pub encoding: String,
 }
 
 #[cfg(test)]

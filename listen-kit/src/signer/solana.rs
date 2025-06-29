@@ -22,6 +22,12 @@ impl LocalSolanaSigner {
     }
 }
 
+impl std::fmt::Debug for LocalSolanaSigner {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "LocalSolanaSigner({})", self.keypair.pubkey())
+    }
+}
+
 #[async_trait]
 impl TransactionSigner for LocalSolanaSigner {
     #[cfg(feature = "evm")]

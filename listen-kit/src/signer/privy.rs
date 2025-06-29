@@ -1,5 +1,6 @@
 use anyhow::Result;
 use async_trait::async_trait;
+use hyperliquid_rust_sdk::signer::signature_string_to_ethers_signature;
 use serde::Serialize;
 
 #[cfg(feature = "solana")]
@@ -9,6 +10,7 @@ use std::sync::Arc;
 
 use super::TransactionSigner;
 
+#[derive(Debug)]
 pub struct PrivySigner {
     privy: Arc<Privy>,
     session: UserSession,
@@ -55,6 +57,10 @@ impl TransactionSigner for PrivySigner {
         self.session.pubkey.clone()
     }
 
+    fn evm_wallet_id(&self) -> Option<String> {
+        self.session.evm_wallet_id.clone()
+    }
+
     #[cfg(feature = "solana")]
     async fn sign_and_send_solana_transaction(
         &self,
@@ -94,14 +100,14 @@ impl TransactionSigner for PrivySigner {
             tx.chain_id.map_or(Caip2::ARBITRUM.to_string(), |chain_id| {
                 Caip2::from_chain_id(chain_id).to_string()
             });
-        if self.address().is_none() {
+        if self.evm_wallet_id().is_none() {
             return Err(anyhow::anyhow!(
                 "Address is not set, wallet unavailable"
             ));
         }
         self.privy
             .execute_evm_transaction(
-                self.address().unwrap(),
+                self.evm_wallet_id().unwrap(),
                 serde_json::to_value(tx)?,
                 caip2,
             )
@@ -143,9 +149,9 @@ impl TransactionSigner for PrivySigner {
         tx: serde_json::Value,
         caip2: Option<String>,
     ) -> Result<String> {
-        if self.address().is_none() {
+        if self.evm_wallet_id().is_none() {
             return Err(anyhow::anyhow!(
-                "Address is not set, wallet unavailable"
+                "EVM wallet ID is not set, wallet unavailable"
             ));
         }
         let caip2 = if let Some(caip2) = caip2 {
@@ -161,7 +167,7 @@ impl TransactionSigner for PrivySigner {
             }
         };
         self.privy
-            .execute_evm_transaction(self.address().unwrap(), tx, caip2)
+            .execute_evm_transaction(self.evm_wallet_id().unwrap(), tx, caip2)
             .await
             .map_err(|e| {
                 anyhow::anyhow!(
@@ -169,5 +175,34 @@ impl TransactionSigner for PrivySigner {
                     e
                 )
             })
+    }
+
+    #[cfg(feature = "hype")]
+    async fn secp256k1_sign(
+        &self,
+        message: ethers::types::H256,
+    ) -> std::result::Result<
+        ethers::types::Signature,
+        hyperliquid_rust_sdk::Error,
+    > {
+        use alloy::hex::ToHexExt;
+
+        if self.session.evm_wallet_id.is_none() {
+            return Err(hyperliquid_rust_sdk::Error::Wallet(
+                "EVM wallet ID is not set, wallet unavailable".to_string(),
+            ));
+        }
+        let signature = self
+            .privy
+            .secp256k1_sign(
+                self.session.evm_wallet_id.clone().unwrap(),
+                format!("0x{}", message.as_bytes().encode_hex()),
+            )
+            .await
+            .map_err(|e| {
+                hyperliquid_rust_sdk::Error::SignatureFailure(e.to_string())
+            })?;
+
+        signature_string_to_ethers_signature(signature)
     }
 }

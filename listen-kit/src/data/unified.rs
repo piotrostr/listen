@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     data::{fetch_candlesticks, fetch_token_metadata, Candlestick},
-    evm_fallback::EvmFallback,
+    evm_fallback::{EvmFallback, SOLANA_CHAIN_ID},
     solana::util::validate_mint,
 };
 
@@ -43,7 +43,7 @@ pub async fn get_token(
     if let Some(chain_id) = chain_id {
         get_token_evm(address, chain_id).await
     } else {
-        get_token_solana(address).await
+        get_token_evm(address, SOLANA_CHAIN_ID.to_string()).await
     }
 }
 
@@ -84,6 +84,7 @@ async fn get_token_evm(address: String, chain_id: String) -> Result<Token> {
     })
 }
 
+#[allow(unused)]
 async fn get_token_solana(address: String) -> Result<Token> {
     validate_mint(&address)?;
 

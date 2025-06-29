@@ -60,9 +60,15 @@ pub async fn create_transfer_erc20_tx(
 
 #[cfg(test)]
 mod tests {
+    use privy::{caip2::Caip2, types::EvmTransaction};
+
     use super::*;
-    use crate::evm::util::{
-        execute_evm_transaction, make_provider, with_local_evm_signer,
+    use crate::{
+        evm::util::{
+            execute_evm_transaction, make_provider, with_local_evm_signer,
+            with_privy_evm_signer_test,
+        },
+        signer::SignerContext,
     };
 
     #[tokio::test]
@@ -101,5 +107,51 @@ mod tests {
         ))
         .await
         .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_transfer_erc20_with_privy_signer() {
+        with_privy_evm_signer_test(execute_evm_transaction(
+            move |owner: Address| async move {
+                let tx = create_transfer_erc20_tx(
+                    "0xaf88d065e77c8cc2239327c5edb3a432268e5831".to_string(),
+                    owner.to_string(),
+                    "1000000".to_string(),
+                    &make_provider(42161)?,
+                    owner,
+                )
+                .await?;
+                let tried: EvmTransaction = serde_json::from_value(
+                    serde_json::to_value(tx.clone())?,
+                )?;
+                tracing::info!(
+                    "tx: {:?}, serialized: {}, tried to privy: {}",
+                    tx.clone(),
+                    serde_json::to_string_pretty(&tx).unwrap(),
+                    serde_json::to_string_pretty(&tried).unwrap()
+                );
+                Ok(tx)
+            },
+        ))
+        .await
+        .expect("Failed to execute evm transaction");
+    }
+
+    #[tokio::test]
+    async fn test_debug_privy_context() {
+        with_privy_evm_signer_test(async move {
+            let tx = serde_json::json!({
+              "from": "0xccc48877a33a2c14e40c82da843cf4c607abf770",
+              "to": "0xaf88d065e77c8cc2239327c5edb3a432268e5831",
+              "data": "0xa9059cbb000000000000000000000000ccc48877a33a2c14e40c82da843cf4c607abf77000000000000000000000000000000000000000000000000000000000000f4240",
+              "gas_price": "0x121b410"
+            });
+            let signer = SignerContext::current().await;
+            let res = signer.sign_and_send_json_evm_transaction(tx, Some(Caip2::ARBITRUM.to_string())).await?;
+
+            println!("res: {:?}", res);
+
+            Ok(())
+    }).await.unwrap()
     }
 }
