@@ -50,16 +50,7 @@ pub fn model_to_versioned_model(model_type: String) -> String {
     }
 }
 
-// TODO
-// - gas sponsoring
-// For Solana candlesticks, return the timestamp field as ISO date string
-// TODO
-// - Set up Sentry and grab any issue with the tool calls straight up (set up pager ideally)
-// - It might be sound to include tool descriptions, which would require
-//   extending the macro and a bit of migration but in the end might be a good
-//   idea if model struggles with certain params
-// - Use firecrawl instead of Exa (tight rate-limit and not good at "scrapes", like potential t.co/ redirects)
-
+// TODO unify the four tools for getting each of the balances for any token into just GetTokenBalance
 pub fn equip_with_tools<M: StreamingCompletionModel>(
     agent_builder: AgentBuilder<M>,
 ) -> AgentBuilder<M> {
