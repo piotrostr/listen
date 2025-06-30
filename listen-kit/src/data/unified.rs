@@ -4,8 +4,14 @@ use serde::{Deserialize, Serialize};
 
 use crate::{
     data::{fetch_candlesticks, fetch_token_metadata, Candlestick},
-    evm_fallback::{EvmFallback, SOLANA_CHAIN_ID},
-    solana::util::validate_mint,
+    evm::tools::{get_erc20_balance, get_eth_balance},
+    evm_fallback::{validate_chain_id, EvmFallback, SOLANA_CHAIN_ID},
+    signer::SignerContext,
+    solana::{
+        constants::WSOL,
+        tools::{get_sol_balance, get_spl_token_balance},
+        util::validate_mint,
+    },
 };
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -82,6 +88,77 @@ async fn get_token_evm(address: String, chain_id: String) -> Result<Token> {
         metadata: serde_json::to_value(metadata).ok(),
         price_info,
     })
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct TokenBalance {
+    pub balance: String,
+    pub address: String,
+    pub chain_id: String,
+    pub decimals: u8,
+}
+
+#[tool(description = "
+Get the balance of a token.
+
+If the token is native to the chain, it will return the balance of the native token.
+If the token is an SPL token, it will return the balance of the SPL token.
+If the token is an EVM token, it will return the balance of the EVM token.
+
+Parameters:
+- address (string): address of the token to fetch balance for, for native tokens, use \"native\" (solana on svm, ethereum/bnb etc on evm)
+- chain_id (string): numeric string of the chain ID of the token to fetch balance for.
+")]
+pub async fn get_token_balance(
+    address: String,
+    chain_id: String,
+) -> Result<TokenBalance> {
+    validate_chain_id(chain_id.parse::<u64>()?)?;
+
+    if address == "native" {
+        if chain_id == SOLANA_CHAIN_ID.to_string() {
+            let balance = get_sol_balance().await?;
+            return Ok(TokenBalance {
+                balance: balance.to_string(),
+                address,
+                chain_id,
+                decimals: 9,
+            });
+        }
+
+        let evm_wallet_address = SignerContext::current()
+            .await
+            .address()
+            .ok_or(anyhow!("EVM wallet not found"))?;
+
+        let (balance, decimals) =
+            get_eth_balance(evm_wallet_address, chain_id.clone()).await?;
+
+        return Ok(TokenBalance {
+            balance,
+            address,
+            chain_id,
+            decimals: decimals as u8,
+        });
+    }
+    if chain_id == SOLANA_CHAIN_ID.to_string() {
+        let (balance, decimals, address) =
+            get_spl_token_balance(address).await?;
+
+        return Ok(TokenBalance {
+            balance: balance.to_string(),
+            address,
+            chain_id,
+            decimals,
+        });
+    }
+
+    let evm_wallet_address = SignerContext::current()
+        .await
+        .address()
+        .ok_or(anyhow!("EVM wallet not found"))?;
+
+    get_erc20_balance(address, evm_wallet_address, chain_id).await
 }
 
 #[allow(unused)]
@@ -176,4 +253,90 @@ pub fn candlesticks_and_timeframe_to_price_info(
         pct_change,
         period,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use std::sync::Arc;
+
+    use ethers::signers::LocalWallet;
+
+    use crate::signer::solana::LocalSolanaSigner;
+
+    use super::*;
+
+    fn make_test_signer_evm() -> LocalWallet {
+        let private_key = std::env::var("ETHEREUM_PRIVATE_KEY").unwrap();
+        private_key.parse().unwrap()
+    }
+
+    fn make_test_signer_sol() -> LocalSolanaSigner {
+        let private_key = std::env::var("SOLANA_PRIVATE_KEY").unwrap();
+        LocalSolanaSigner::new(private_key)
+    }
+
+    #[tokio::test]
+    async fn test_get_token_balance_sol_native() {
+        let signer = make_test_signer_sol();
+        SignerContext::with_signer(Arc::new(signer), async {
+            let balance = get_token_balance(
+                "native".to_string(),
+                SOLANA_CHAIN_ID.to_string(),
+            )
+            .await;
+            println!("{:?}", balance);
+            assert!(balance.is_ok());
+            Ok(())
+        })
+        .await
+        .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_get_token_balance_evm_native() {
+        let signer = make_test_signer_evm();
+        SignerContext::with_signer(Arc::new(signer), async {
+            let balance =
+                get_token_balance("native".to_string(), "1".to_string())
+                    .await;
+            println!("{:?}", balance);
+            assert!(balance.is_ok());
+            Ok(())
+        })
+        .await
+        .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_get_token_balance_evm_erc20() {
+        let signer = make_test_signer_evm();
+        SignerContext::with_signer(Arc::new(signer), async {
+            let pepe = "0x6982508145454Ce325dDbE47a25d4ec3d2311933";
+            let balance =
+                get_token_balance(pepe.to_string(), "1".to_string()).await;
+            println!("{:?}", balance);
+            assert!(balance.is_ok());
+            Ok(())
+        })
+        .await
+        .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_get_token_balance_sol_spl() {
+        let signer = make_test_signer_sol();
+        SignerContext::with_signer(Arc::new(signer), async {
+            let fartcoin = "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump";
+            let balance = get_token_balance(
+                fartcoin.to_string(),
+                SOLANA_CHAIN_ID.to_string(),
+            )
+            .await;
+            println!("{:?}", balance);
+            assert!(balance.is_ok());
+            Ok(())
+        })
+        .await
+        .unwrap();
+    }
 }
