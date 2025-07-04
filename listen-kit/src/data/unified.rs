@@ -115,7 +115,7 @@ pub async fn get_token_balance(
     validate_chain_id(chain_id.parse::<u64>()?)?;
 
     if address == "native" {
-        if chain_id == SOLANA_CHAIN_ID.to_string() {
+        if chain_id == *SOLANA_CHAIN_ID {
             let balance = get_sol_balance().await?;
             return Ok(TokenBalance {
                 balance: balance.to_string(),

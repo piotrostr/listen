@@ -55,6 +55,7 @@ import { QuoteDisplay } from "./QuoteDisplay";
 import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
 import { embedResearchAnchors } from "./ResearchOutput";
 import { RiskAnalysisDisplay, RiskAnalysisSchema } from "./RiskDisplay";
+import { TokenBalanceDisplay, TokenBalanceSchema } from "./TokenBalanceDisplay";
 import { TokenDisplay } from "./TokenDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 import { TopicDisplay, TopicSchema } from "./TopicDisplay";
@@ -408,6 +409,19 @@ export const ToolMessage = ({
       );
     } catch (e) {
       console.error("Failed to parse erc20 balance:", e);
+    }
+  }
+
+  if (toolOutput.name === "get_token_balance") {
+    try {
+      const parsed = TokenBalanceSchema.parse(JSON.parse(toolOutput.result));
+      return (
+        <div className="p-3">
+          <TokenBalanceDisplay tokenBalance={parsed} />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse token balance:", e);
     }
   }
 
