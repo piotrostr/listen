@@ -35,7 +35,7 @@ fn create_rpc() -> RpcClient {
 }
 
 #[tool(description = "
-Runs risk checks for any Solana token.
+Runs risk checks for a token. Currently only supports Solana tokens.
 
 Params:
 mint: public key of the token to analyze
