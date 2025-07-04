@@ -8,7 +8,6 @@ use crate::{
     evm_fallback::{validate_chain_id, EvmFallback, SOLANA_CHAIN_ID},
     signer::SignerContext,
     solana::{
-        constants::WSOL,
         tools::{get_sol_balance, get_spl_token_balance},
         util::validate_mint,
     },

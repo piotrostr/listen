@@ -3,7 +3,7 @@ use crate::{
     common::{gemini_agent_builder, GeminiAgent},
     data::{
         evm_fallback_tools::{
-            FetchPriceActionAnalysisEvm, FetchTokenMetadataEvm,
+            FetchPriceActionAnalysis, FetchTokenMetadataEvm,
         },
         FetchTokenMetadata, FetchTokenPrice,
     },
@@ -62,7 +62,7 @@ pub fn create_trader_agent(locale: String) -> GeminiAgent {
         .tool(GetEthBalance)
         .tool(GetErc20Balance)
         .tool(FetchTokenMetadataEvm)
-        .tool(FetchPriceActionAnalysisEvm)
+        .tool(FetchPriceActionAnalysis)
         .build()
 }
 

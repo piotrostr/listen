@@ -1,12 +1,7 @@
-use crate::data::evm_fallback_tools::{
-    FetchPriceActionAnalysisEvm, FetchTopTokensByCategory,
-    FetchTopTokensByChainId,
-};
+use crate::data::evm_fallback_tools::FetchTopTokensByCategory;
 use crate::evm::tools::{GetErc20Balance, GetEthBalance};
 use crate::hype::equip_with_hype_tools;
-use crate::solana::tools::{
-    DeployPumpFunToken, GetCurrentTime, GetSolBalance, GetSplTokenBalance,
-};
+use crate::solana::tools::{DeployPumpFunToken, GetCurrentTime};
 
 use crate::agents::listen::create_deep_research_agent_openrouter;
 use crate::agents::research::ViewImage;
@@ -61,7 +56,6 @@ pub fn equip_with_tools<M: StreamingCompletionModel>(
         .tool(GetQuote)
         .tool(GetTokenBalance)
         .tool(SearchOnDexScreener)
-        .tool(FetchTopTokens) // TODO use GT for this
         .tool(DeployPumpFunToken)
         .tool(ResearchXProfile)
         .tool(FetchXPost)
@@ -75,14 +69,7 @@ pub fn equip_with_tools<M: StreamingCompletionModel>(
         .tool(SearchWeb)
         .tool(ViewImage)
         .tool(AnalyzePageContent)
-}
-
-pub fn equip_with_evm_tools<M: StreamingCompletionModel>(
-    agent_builder: AgentBuilder<M>,
-) -> AgentBuilder<M> {
-    agent_builder
-        .tool(FetchPriceActionAnalysisEvm) // TODO unify
-        .tool(FetchTopTokensByChainId) // TODO unify with solana FetchTopTokens
+        .tool(FetchTopTokens)
         .tool(FetchTopTokensByCategory)
 }
 
@@ -91,7 +78,7 @@ pub fn equip_with_worldchain_tools<M: StreamingCompletionModel>(
 ) -> AgentBuilder<M> {
     agent_builder
         .tool(Think)
-        .tool(FetchTopTokensByChainId)
+        .tool(FetchTopTokens)
         .tool(GetQuote)
         .tool(GetToken)
         .tool(GetEthBalance)
@@ -127,10 +114,8 @@ pub fn create_listen_agent(
     }
     let model = Some("google/gemini-2.5-flash-preview".to_string());
 
-    let mut agent = equip_with_evm_tools(equip_with_tools(
-        openrouter_agent_builder(model),
-    ))
-    .preamble(&preamble);
+    let mut agent =
+        equip_with_tools(openrouter_agent_builder(model)).preamble(&preamble);
 
     if features.autonomous {
         agent = equip_with_autonomous_tools(agent);
