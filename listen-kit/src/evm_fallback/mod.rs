@@ -14,17 +14,32 @@ pub struct EvmFallback {
     api_key: String,
 }
 
+fn supported_chain_ids_map() -> serde_json::Value {
+    serde_json::json!({
+        "1": "eth",
+        "56": "bsc",
+        "42161": "arbitrum",
+        "8453": "base",
+        "480": "world-chain",
+        "1151111081099710": "solana",
+    })
+}
+
 // Helper function to map chain ID (u64) to CoinGecko network string
-pub fn map_chain_id_to_network(chain_id: u64) -> Result<&'static str> {
-    match chain_id {
-        1 => Ok("eth"),
-        56 => Ok("bsc"),
-        42161 => Ok("arbitrum"),
-        8453 => Ok("base"),
-        480 => Ok("world-chain"),
-        1151111081099710 => Ok("solana"),
-        _ => Err(anyhow!("Unsupported chain ID: {}", chain_id)),
-    }
+pub fn map_chain_id_to_network(chain_id: u64) -> Result<String> {
+    let map = supported_chain_ids_map();
+    map.get(&chain_id.to_string())
+        .ok_or(anyhow!(
+            "Unsupported chain ID: {}, supported chains: {}",
+            chain_id,
+            map
+        ))
+        .map(|s| s.to_string())
+}
+
+pub fn validate_chain_id(chain_id: u64) -> Result<()> {
+    map_chain_id_to_network(chain_id)?;
+    Ok(())
 }
 
 pub const SOLANA_CHAIN_ID: &str = "1151111081099710";
