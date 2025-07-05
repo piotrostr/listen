@@ -8,7 +8,7 @@ const VersionResponseSchema = z.object({
 
 const POLL_INTERVAL = 15000;
 
-export const CURRENT_VERSION = "3.2.0";
+export const CURRENT_VERSION = "4.0.0";
 
 interface VersionState {
   version: string;
@@ -26,7 +26,7 @@ export const useVersionStore = create<VersionState>((set) => {
   const fetchLatestVersion = async () => {
     try {
       set({ isLoading: true, error: null });
-      const response = await fetch(`${config.adapterEndpoint}/version`);
+      const response = await fetch(`${config.kitEndpoint}/healthz`);
 
       if (!response.ok) {
         throw new Error(`API request failed with status ${response.status}`);

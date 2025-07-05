@@ -1,3 +1,4 @@
+import { z } from "zod";
 import { config } from "../config";
 import { getNetworkId } from "./util";
 
@@ -39,7 +40,9 @@ function groupTokensByNetwork(
   );
 }
 
-async function fetchSolanaTokenPrice(mint: string): Promise<TokenPrice | null> {
+async function fetchSolanaTokenPriceFromListenApi(
+  mint: string
+): Promise<TokenPrice | null> {
   // For WSOL, use GeckoTerminal directly
   if (mint === WSOL_MINT) {
     return fetchSolanaTokenPriceFromGecko(mint);
@@ -156,13 +159,12 @@ async function fetchSolanaTokenPriceFromGecko(
 
     const data = (await response.json()) as GeckoTerminalResponse;
     const priceStr = data.data.attributes.token_prices[mint];
-    const priceChange = parseFloat(
-      data.data.attributes.h24_price_change_percentage[mint] || "0"
-    );
+    const priceChange =
+      data.data.attributes.h24_price_change_percentage[mint] || "0";
 
     return {
-      price: parseFloat(priceStr),
-      priceChange24h: priceChange,
+      price: parseFloat(priceStr ?? "0"),
+      priceChange24h: parseFloat(priceChange ?? "0"),
     };
   } catch (error) {
     console.error(
@@ -182,46 +184,82 @@ export async function fetchTokenPrices(
   const solanaTokens = tokens.filter((token) => token.chain === "solana");
   const evmTokens = tokens.filter((token) => token.chain !== "solana");
 
-  // Fetch Solana token prices
-  await Promise.all(
-    solanaTokens.map(async (token) => {
-      try {
-        // Try Listen API (or GeckoTerminal for WSOL)
-        const price = await fetchSolanaTokenPrice(token.address);
-        if (price) {
-          priceMap.set(token.address, price);
-        } else {
-          // If price is null, token is likely invalid/scam, set price to 0
-          priceMap.set(token.address, { price: 0, priceChange24h: 0 });
-        }
-      } catch (error) {
-        console.error(
-          `Failed to fetch Solana token price for ${token.address}:`,
-          error
-        );
-        priceMap.set(token.address, { price: 0, priceChange24h: 0 });
-      }
-    })
-  );
+  if (solanaTokens.length > 0) {
+    const solanaPrices = await fetchJupPrices(
+      solanaTokens.map((token) => token.address)
+    );
+    solanaPrices.forEach((price, address) => {
+      priceMap.set(address, price);
+    });
+  }
 
   // Fetch EVM token prices
   const tokensByNetwork = groupTokensByNetwork(evmTokens);
-  await Promise.all(
-    Object.entries(tokensByNetwork).map(async ([network, addresses]) => {
-      try {
-        const networkPrices = await fetchEvmNetworkPrices(network, addresses);
-        networkPrices.forEach((price, address) => {
-          priceMap.set(address, price);
-        });
-      } catch (error) {
-        console.error(`Failed to fetch prices for network ${network}:`, error);
-        // Set default values for failed tokens
-        addresses.forEach((address) => {
-          priceMap.set(address, { price: 0, priceChange24h: 0 });
-        });
-      }
-    })
-  );
+  if (Object.keys(tokensByNetwork).length > 0) {
+    await Promise.all(
+      Object.entries(tokensByNetwork).map(async ([network, addresses]) => {
+        try {
+          const networkPrices = await fetchEvmNetworkPrices(network, addresses);
+          networkPrices.forEach((price, address) => {
+            priceMap.set(address, price);
+          });
+        } catch (error) {
+          console.error(
+            `Failed to fetch prices for network ${network}:`,
+            error
+          );
+          // Set default values for failed tokens
+          addresses.forEach((address) => {
+            priceMap.set(address, { price: 0, priceChange24h: 0 });
+          });
+        }
+      })
+    );
+  }
 
   return priceMap;
 }
+
+const JupPrice = z.object({
+  usdPrice: z.number().optional().nullable(),
+  priceChange24h: z.number().optional().nullable(),
+});
+
+const JupPriceResponse = z.record(z.string(), JupPrice);
+
+export const fetchJupPrices = async (
+  addresses: string[]
+): Promise<TokenPriceMap> => {
+  if (addresses.length > 50) {
+    console.warn(
+      "fetchJupPrices: cannot fetch more than 50 addresses, implement batching"
+    );
+  }
+  console.debug("fetchJupPrices", addresses);
+  const priceMap = new Map<string, TokenPrice>();
+  try {
+    const ids = addresses.join(",");
+    const response = await (
+      await fetch(`https://lite-api.jup.ag/price/v3?ids=${ids}`)
+    ).json();
+    const parsed = JupPriceResponse.safeParse(response);
+    if (!parsed.success) {
+      console.error(
+        `Error parsing Jup price response: ${ids}, raw: ${JSON.stringify(
+          response
+        )}, error: ${parsed.error}`
+      );
+      return priceMap;
+    }
+    Object.entries(parsed.data).forEach(([address, price]) => {
+      priceMap.set(address, {
+        price: price.usdPrice ?? 0,
+        priceChange24h: price.priceChange24h ?? 0,
+      });
+    });
+    return priceMap;
+  } catch (error) {
+    console.error("Error fetching Jup price:", error);
+    return priceMap;
+  }
+};

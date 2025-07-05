@@ -105,7 +105,15 @@ export async function fetchTokenMetadataFromJupiter(
     return metadata;
   } catch (error) {
     console.error(`Error fetching metadata for ${mint}:`, error);
-    throw error;
+    return {
+      address: mint,
+      decimals: 9,
+      name: "unknown",
+      symbol: "unknown",
+      logoURI: "",
+      volume24h: 0,
+      chainId: 1151111081099710,
+    };
   }
 }
 

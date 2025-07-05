@@ -78,7 +78,7 @@ export async function getAnyToken(
     const parsed = LifiTokenSchema.parse(data);
     return parsed;
   } catch (error) {
-    console.error(error);
+    console.warn(error);
     return null;
   }
 }
