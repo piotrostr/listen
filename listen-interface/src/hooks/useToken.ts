@@ -1,19 +1,13 @@
 import { useQuery } from "@tanstack/react-query";
-import { fetchTokenMetadata } from "../lib/solanaPortfolio";
+import { fetchTokenMetadataFromJupiter } from "../lib/solanaPortfolio";
 import { TokenMetadata } from "../lib/types";
 import { getNetworkId } from "../lib/util";
-
-export async function getSolanaTokenMetadata(
-  mint: string
-): Promise<TokenMetadata> {
-  return fetchTokenMetadata(mint);
-}
 
 export const useSolanaToken = (mint: string) => {
   const { data, isLoading, error } = useQuery({
     queryKey: ["solana-token", mint],
     queryFn: async () => {
-      return getSolanaTokenMetadata(mint);
+      return fetchTokenMetadataFromJupiter(mint);
     },
   });
 
@@ -36,7 +30,7 @@ export const useToken = (address: string, chainId?: string) => {
     queryKey: ["token", address, chainId],
     queryFn: async () => {
       if (!chainId || chainId.includes("solana")) {
-        const token = await getSolanaTokenMetadata(address);
+        const token = await fetchTokenMetadataFromJupiter(address);
         if (!token || !token.logoURI) {
           return await getTokenFallback(address, "696969");
         }

@@ -57,7 +57,9 @@ function parseHolding(ata: {
   }
 }
 
-export async function fetchTokenMetadata(mint: string): Promise<TokenMetadata> {
+export async function fetchTokenMetadataLegacy(
+  mint: string
+): Promise<TokenMetadata> {
   try {
     // listen metadata is cached on server, could cache on client too here
     const metadataRaw = await fetchListenMetadata(mint);
@@ -123,7 +125,7 @@ export const fetchPortfolio = async (
 
   // Get metadata and prices in parallel
   const [tokenMetadata, prices] = await Promise.all([
-    Promise.all(mints.map(fetchTokenMetadata)),
+    Promise.all(mints.map(fetchTokenMetadataFromJupiter)),
     fetchTokenPrices(mints.map((mint) => ({ address: mint, chain: "solana" }))),
   ]);
 
