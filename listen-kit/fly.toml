@@ -4,22 +4,65 @@ primary_region = 'waw'
 [build]
 
 [env]
-PORT = '6969'
+FIRST_APP_PORT = "6969"
+SECOND_APP_PORT = "6966"
 
-# Main HTTP Service with SSE support
-[http_service]
+[experimental]
+allowed_public_ports = []
+auto_rollback = true
+
+[[services]]
+kill_signal = "SIGINT"
+kill_timeout = 5
+processes = ["app"]
+http_checks = []
 internal_port = 6969
-force_https = true
-auto_stop_machines = 'stop'
-auto_start_machines = true
-min_machines_running = 0
-processes = ['app']
+protocol = "tcp"
+script_checks = []
 
-# Additional HTTP service for engine
 [[services.ports]]
-port = 6966
-handlers = ["http"]
 force_https = true
+handlers = ["http"]
+port = 80
+
+[[services.ports]]
+handlers = ["tls", "http"]
+port = 443
+
+[[services.tcp_checks]]
+grace_period = "1s"
+interval = "15s"
+restart_limit = 0
+timeout = "2s"
+
+[[services]]
+kill_signal = "SIGINT"
+kill_timeout = 5
+processes = ["app"]
+http_checks = []
+internal_port = 6966
+protocol = "tcp"
+script_checks = []
+
+[services.concurrency]
+hard_limit = 25
+soft_limit = 20
+type = "connections"
+
+[[services.ports]]
+force_https = true
+handlers = ["http"]
+port = 6966
+
+[[services.ports]]
+handlers = ["tls", "http"]
+port = 6967
+
+[[services.tcp_checks]]
+grace_period = "1s"
+interval = "15s"
+restart_limit = 0
+timeout = "2s"
 
 [[vm]]
 memory = '1gb'
