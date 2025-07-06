@@ -45,11 +45,8 @@ pub async fn get_token(
     address: String,
     chain_id: Option<String>,
 ) -> Result<Token> {
-    if let Some(chain_id) = chain_id {
-        get_token_evm(address, chain_id).await
-    } else {
-        get_token_evm(address, SOLANA_CHAIN_ID.to_string()).await
-    }
+    get_token_evm(address, chain_id.unwrap_or(SOLANA_CHAIN_ID.to_string()))
+        .await
 }
 
 async fn get_token_evm(address: String, chain_id: String) -> Result<Token> {
@@ -337,5 +334,15 @@ mod tests {
         })
         .await
         .unwrap();
+    }
+
+    #[tokio::test]
+    async fn test_get_token_sol() {
+        let address = "GcbBU9phXen93bdFGVdujTprrKLvszcbfLDmq9TDEBMB";
+        let token =
+            get_token(address.to_string(), Some(SOLANA_CHAIN_ID.to_string()))
+                .await;
+        println!("{:?}", token);
+        assert!(token.is_ok());
     }
 }

@@ -47,6 +47,8 @@ impl EvmFallback {
     ) -> Result<Option<String>> {
         let network = map_chain_id_to_network(chain_id)?;
 
+        println!("network: {:?}", network);
+
         log::debug!(
             "Resolving pair address for {} on {}",
             token_address,

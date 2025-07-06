@@ -34,7 +34,7 @@ pub fn map_chain_id_to_network(chain_id: u64) -> Result<String> {
             chain_id,
             map
         ))
-        .map(|s| s.to_string())
+        .map(|s| s.as_str().unwrap_or_default().to_string())
 }
 
 pub fn validate_chain_id(chain_id: u64) -> Result<()> {
