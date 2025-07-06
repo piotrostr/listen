@@ -62,7 +62,7 @@ lifi = { git = "https://github.com/piotrostr/listen", package = "lifi", optional
 listen-tracing = { git = "https://github.com/piotrostr/listen", package = "listen-tracing", optional = true, branch = "feat/v4.0.0" }
 listen-memory = { git = "https://github.com/piotrostr/listen", package = "listen-memory", optional = true, branch = "feat/v4.0.0" }
 blockhash-cache = { git = "https://github.com/piotrostr/listen", package = "blockhash-cache", optional = true, branch = "feat/v4.0.0" }
-evm-approvals = { git = "https://github.com/piotrostr/listen", package = "approvals", optional = true, branch = "feat/v4.0.0" }
+evm-approvals = { git = "https://github.com/piotrostr/listen", package = "evm-approvals", optional = true, branch = "feat/v4.0.0" }
 listen-mongo = { git = "https://github.com/piotrostr/listen", package = "listen-mongo", optional = true, branch = "feat/v4.0.0" }
 
 # evm
