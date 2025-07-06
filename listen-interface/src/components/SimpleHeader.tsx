@@ -1,7 +1,6 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { Link } from "@tanstack/react-router";
 import { useTranslation } from "react-i18next";
-import { BiCoin } from "react-icons/bi";
 import { IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
 import { MdHistory } from "react-icons/md";
 import { useMobile } from "../contexts/MobileContext";
@@ -101,13 +100,13 @@ export function SimpleHeader({
               >
                 <IoWalletOutline className="w-5 h-5" />
               </button>
-              <button
+              {/* <button
                 onClick={() => togglePanel("screener")}
                 className={panelButtonStyle(activePanel === "screener")}
                 title={t("layout.screener")}
               >
                 <BiCoin className="w-5 h-5" />
-              </button>
+              </button> */}
               <button
                 onClick={() => togglePanel("pipelines")}
                 className={panelButtonStyle(activePanel === "pipelines")}
