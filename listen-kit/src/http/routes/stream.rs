@@ -181,27 +181,30 @@ async fn stream(
                     }
                 });
 
-                // dump to mongo
-                let collection = mongo.collection::<Chat>("chats");
-                let chat = Chat {
-                    user_id: user_id.as_str(),
-                    wallet_address: wallet_address.as_deref(),
-                    pubkey: None,
-                    chat_request,
-                    responses,
-                };
+                // dump to mongo if available
+                if let Some(mongo) = mongo {
+                    let collection = mongo.collection::<Chat>("chats");
+                    let chat = Chat {
+                        user_id: user_id.as_str(),
+                        wallet_address: wallet_address.as_deref(),
+                        pubkey: None,
+                        chat_request,
+                        responses,
+                    };
 
-                match collection.insert_one(chat, None).await {
-                    Ok(_) => tracing::info!(
+                    match collection.insert_one(chat, None).await {
+                        Ok(_) => tracing::info!(
                         "Successfully saved chat with responses to MongoDB"
                     ),
-                    Err(e) => {
-                        tracing::error!(
-                            "Failed to save chat to MongoDB: {}",
-                            e
-                        )
+                        Err(e) => {
+                            tracing::error!(
+                                "Failed to save chat to MongoDB: {}",
+                                e
+                            )
+                        }
                     }
                 }
+
                 match handle.await {
                     Ok(_) => {}
                     Err(e) => {

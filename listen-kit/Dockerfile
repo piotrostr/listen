@@ -11,9 +11,14 @@ RUN cargo chef cook --features http --features solana --release --recipe-path re
 COPY . .
 RUN cargo build --features http --features solana --release --bin server
 
+# main listen-kit port
 EXPOSE 6969
+
+# engine ports
+EXPOSE 6966
+EXPOSE 6901
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
-COPY --from=builder /app/target/release/server /usr/local/bin
-ENTRYPOINT ["/usr/local/bin/server"]
+COPY --from=builder /app/target/release/kit /usr/local/bin
+ENTRYPOINT ["/usr/local/bin/kit"]

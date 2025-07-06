@@ -9,20 +9,23 @@ use {
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
     // Initialize Privy client
+
+    use std::sync::Arc;
     let privy_client =
         Privy::new(PrivyConfig::from_env().map_err(|e| {
             std::io::Error::new(std::io::ErrorKind::Other, e)
         })?);
 
-    let mongo = MongoClient::from_env()
-        .await
-        .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
+    let mongo = MongoClient::from_env().await.map(Arc::new).ok();
+    if mongo.is_none() {
+        tracing::warn!("Starting without MongoDB, chats will not be saved");
+    }
 
     #[cfg(feature = "engine")]
     {
         tokio::select! {
             res1 = listen_engine::server::run() => res1,
-            res2 = run_server(privy_client, mongo) => res2,
+            res2 = run_server(privy_client, mongo.clone()) => res2,
         }
     }
 

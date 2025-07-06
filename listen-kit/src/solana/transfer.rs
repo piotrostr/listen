@@ -60,7 +60,7 @@ pub async fn create_transfer_spl_tx(
 mod tests {
     use std::str::FromStr;
 
-    use solana_sdk::native_token::sol_to_lamports;
+    use solana_sdk::native_token::sol_str_to_lamports;
     use solana_sdk::pubkey;
 
     use super::*;
@@ -71,7 +71,7 @@ mod tests {
         let signer = make_test_signer();
         tracing::info!("signer: {:?}", signer.pubkey());
         let owner = Pubkey::from_str(&signer.pubkey().unwrap()).unwrap();
-        let amount = sol_to_lamports(0.0001);
+        let amount = sol_str_to_lamports("0.0001").unwrap();
         let mut tx = create_transfer_sol_tx(&owner, amount, &owner)
             .await
             .unwrap();

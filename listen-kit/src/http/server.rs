@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use actix_cors::Cors;
 use actix_web::middleware::{Compress, Logger};
 use actix_web::{web, App, HttpServer};
@@ -9,7 +11,7 @@ use listen_mongo::MongoClient;
 
 pub async fn run_server(
     privy: Privy,
-    mongo: MongoClient,
+    mongo: Option<Arc<MongoClient>>,
 ) -> std::io::Result<()> {
     let state =
         web::Data::new(AppState::new(privy, mongo).await.map_err(|e| {
