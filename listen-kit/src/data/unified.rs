@@ -95,7 +95,7 @@ pub struct TokenBalance {
 }
 
 #[tool(description = "
-Get the balance of a token.
+Get the balance of any token. EVM (ERC20), SVM (SPL) or native (Solana, Ethereum, BNB, etc).
 
 If the token is native to the chain, it will return the balance of the native token.
 If the token is an SPL token, it will return the balance of the SPL token.
