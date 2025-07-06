@@ -6,8 +6,11 @@ if [ ! -f .env ]; then
     exit 1
 fi
 
-# initialize an empty string to store all secrets
-secrets=""
+# initialize an array to store secrets
+declare -a secrets_array
+
+# counter for secrets
+secret_count=0
 
 # read .env line by line
 while IFS= read -r line || [ -n "$line" ]; do
@@ -21,22 +24,20 @@ while IFS= read -r line || [ -n "$line" ]; do
 
     # check if line contains an equals sign
     if [[ $line == *"="* ]]; then
+        key=$(echo "$line" | cut -d= -f1)
         redacted_secret=$(echo "$line" | cut -d= -f2 | sed 's/./x/g')
-        echo "Processing secret: $(echo "$line" | cut -d= -f1)=$redacted_secret"
-
-        # append to secrets string with a space separator
-        if [ -z "$secrets" ]; then
-            secrets="$line"
-        else
-            secrets="$secrets $line"
-        fi
+        echo "Processing secret: $key=$redacted_secret"
+        
+        # add to array
+        secrets_array+=("$line")
+        ((secret_count++))
     fi
 done < .env
 
-if [ -n "$secrets" ]; then
-    echo "Setting all secrets at once..."
-    fly secrets set "$secrets"
-    echo "All secrets from .env have been set to Fly.io"
+if [ $secret_count -gt 0 ]; then
+    echo "Setting $secret_count secrets at once..."
+    fly secrets set "${secrets_array[@]}"
+    echo "Successfully set $secret_count secrets to Fly.io"
 else
     echo "No secrets found in .env"
 fi

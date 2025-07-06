@@ -1,5 +1,5 @@
 app = 'listen-kit'
-primary_region = 'sfo'
+primary_region = 'waw'
 
 [build]
 
