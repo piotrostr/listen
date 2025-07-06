@@ -1802,6 +1802,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "blockhash-cache"
+version = "0.1.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
+dependencies = [
+ "anyhow",
+ "base64 0.22.1",
+ "bincode",
+ "bs58",
+ "hex",
+ "once_cell",
+ "reqwest 0.11.27",
+ "serde",
+ "serde_json",
+ "solana-sdk",
+ "thiserror 2.0.12",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "blst"
 version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -3645,6 +3665,21 @@ dependencies = [
 ]
 
 [[package]]
+name = "evm-approvals"
+version = "0.1.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
+dependencies = [
+ "anyhow",
+ "dotenv",
+ "reqwest 0.12.15",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "eyre"
 version = "0.6.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5111,6 +5146,20 @@ dependencies = [
 ]
 
 [[package]]
+name = "lifi"
+version = "0.2.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
+dependencies = [
+ "anyhow",
+ "reqwest 0.12.15",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "tracing",
+ "tracing-subscriber",
+]
+
+[[package]]
 name = "linked-hash-map"
 version = "0.5.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5125,6 +5174,7 @@ checksum = "d26c52dbd32dccf2d10cac7725f8eae5296885fb5703b261f7d0a0739ec807ab"
 [[package]]
 name = "listen-engine"
 version = "0.1.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
 dependencies = [
  "actix-cors 0.7.1",
  "actix-web",
@@ -5132,21 +5182,21 @@ dependencies = [
  "base64 0.22.1",
  "bb8-redis",
  "bincode",
- "blockhash-cache",
+ "blockhash-cache 0.1.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
  "chrono",
  "ctor",
  "dashmap 6.1.0",
  "dotenv",
- "evm-approvals",
+ "evm-approvals 0.1.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
  "futures-util",
  "hex",
- "lifi",
- "listen-tracing",
+ "lifi 0.2.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
+ "listen-tracing 0.1.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
  "metrics",
  "metrics-exporter-prometheus",
  "once_cell",
  "parking_lot",
- "privy 0.8.0",
+ "privy 0.8.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
  "redis 0.23.3",
  "reqwest 0.12.15",
  "resend-rs",
@@ -5172,29 +5222,29 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "bincode",
- "blockhash-cache",
+ "blockhash-cache 0.1.0",
  "borsh 1.5.5",
  "chrono",
  "ctor",
  "dotenv",
  "env_logger 0.11.6",
  "ethers",
- "evm-approvals",
+ "evm-approvals 0.1.0",
  "futures",
  "futures-util",
  "hex",
  "hyperliquid_rust_sdk",
  "jsonwebtoken 9.3.1",
  "lazy_static",
- "lifi",
+ "lifi 0.2.0",
  "listen-engine",
  "listen-memory",
- "listen-mongo",
- "listen-tracing",
+ "listen-mongo 0.1.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
+ "listen-tracing 0.1.0",
  "log",
  "once_cell",
  "petgraph 0.7.1",
- "privy 0.8.0",
+ "privy 0.8.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
  "rand 0.8.5",
  "redis 0.28.2",
  "reqwest 0.12.15",
@@ -5229,7 +5279,7 @@ dependencies = [
  "bm25",
  "bson",
  "chrono",
- "listen-mongo",
+ "listen-mongo 0.1.0",
  "neo4rs",
  "qdrant-client",
  "regex",
@@ -5263,8 +5313,35 @@ dependencies = [
 ]
 
 [[package]]
+name = "listen-mongo"
+version = "0.1.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
+dependencies = [
+ "anyhow",
+ "bson",
+ "dotenv",
+ "futures",
+ "mongodb",
+ "serde",
+ "serde_json",
+ "thiserror 2.0.12",
+ "tokio",
+ "tracing",
+]
+
+[[package]]
 name = "listen-tracing"
 version = "0.1.0"
+dependencies = [
+ "tracing",
+ "tracing-journald",
+ "tracing-subscriber",
+]
+
+[[package]]
+name = "listen-tracing"
+version = "0.1.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
 dependencies = [
  "tracing",
  "tracing-journald",
@@ -6384,6 +6461,8 @@ dependencies = [
 [[package]]
 name = "privy"
 version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0cd6ba531bde13ad865fe7c919c854d8906cb443221c4c4cbfbad53bfb033c1b"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -6399,8 +6478,7 @@ dependencies = [
 [[package]]
 name = "privy"
 version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0cd6ba531bde13ad865fe7c919c854d8906cb443221c4c4cbfbad53bfb033c1b"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
