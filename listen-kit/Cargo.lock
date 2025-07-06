@@ -1785,26 +1785,7 @@ dependencies = [
 [[package]]
 name = "blockhash-cache"
 version = "0.1.0"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "bincode",
- "bs58",
- "hex",
- "once_cell",
- "reqwest 0.11.27",
- "serde",
- "serde_json",
- "solana-sdk",
- "thiserror 2.0.12",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "blockhash-cache"
-version = "0.1.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -3653,21 +3634,7 @@ dependencies = [
 [[package]]
 name = "evm-approvals"
 version = "0.1.0"
-dependencies = [
- "anyhow",
- "dotenv",
- "reqwest 0.12.15",
- "serde",
- "serde_json",
- "thiserror 2.0.12",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "evm-approvals"
-version = "0.1.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "anyhow",
  "dotenv",
@@ -5135,20 +5102,7 @@ dependencies = [
 [[package]]
 name = "lifi"
 version = "0.2.0"
-dependencies = [
- "anyhow",
- "reqwest 0.12.15",
- "serde",
- "serde_json",
- "thiserror 2.0.12",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "lifi"
-version = "0.2.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "anyhow",
  "reqwest 0.12.15",
@@ -5174,7 +5128,7 @@ checksum = "d26c52dbd32dccf2d10cac7725f8eae5296885fb5703b261f7d0a0739ec807ab"
 [[package]]
 name = "listen-engine"
 version = "0.1.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "actix-cors 0.7.1",
  "actix-web",
@@ -5182,16 +5136,16 @@ dependencies = [
  "base64 0.22.1",
  "bb8-redis",
  "bincode",
- "blockhash-cache 0.1.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
+ "blockhash-cache",
  "chrono",
  "ctor",
  "dashmap 6.1.0",
  "dotenv",
- "evm-approvals 0.1.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
+ "evm-approvals",
  "futures-util",
  "hex",
- "lifi 0.2.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
- "listen-tracing 0.1.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
+ "lifi",
+ "listen-tracing",
  "metrics",
  "metrics-exporter-prometheus",
  "once_cell",
@@ -5222,25 +5176,25 @@ dependencies = [
  "async-trait",
  "base64 0.22.1",
  "bincode",
- "blockhash-cache 0.1.0",
+ "blockhash-cache",
  "borsh 1.5.5",
  "chrono",
  "ctor",
  "dotenv",
  "env_logger 0.11.6",
  "ethers",
- "evm-approvals 0.1.0",
+ "evm-approvals",
  "futures",
  "futures-util",
  "hex",
  "hyperliquid_rust_sdk",
  "jsonwebtoken 9.3.1",
  "lazy_static",
- "lifi 0.2.0",
+ "lifi",
  "listen-engine",
  "listen-memory",
- "listen-mongo 0.1.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
- "listen-tracing 0.1.0",
+ "listen-mongo",
+ "listen-tracing",
  "log",
  "once_cell",
  "petgraph 0.7.1",
@@ -5273,13 +5227,14 @@ dependencies = [
 [[package]]
 name = "listen-memory"
 version = "0.1.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "anyhow",
  "async-trait",
  "bm25",
  "bson",
  "chrono",
- "listen-mongo 0.1.0",
+ "listen-mongo",
  "neo4rs",
  "qdrant-client",
  "regex",
@@ -5299,23 +5254,7 @@ dependencies = [
 [[package]]
 name = "listen-mongo"
 version = "0.1.0"
-dependencies = [
- "anyhow",
- "bson",
- "dotenv",
- "futures",
- "mongodb",
- "serde",
- "serde_json",
- "thiserror 2.0.12",
- "tokio",
- "tracing",
-]
-
-[[package]]
-name = "listen-mongo"
-version = "0.1.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "anyhow",
  "bson",
@@ -5332,16 +5271,7 @@ dependencies = [
 [[package]]
 name = "listen-tracing"
 version = "0.1.0"
-dependencies = [
- "tracing",
- "tracing-journald",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "listen-tracing"
-version = "0.1.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "tracing",
  "tracing-journald",
@@ -6478,7 +6408,7 @@ dependencies = [
 [[package]]
 name = "privy"
 version = "0.8.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

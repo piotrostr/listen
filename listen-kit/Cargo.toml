@@ -58,12 +58,12 @@ serde_with = "3.12.0"
 async-trait = "0.1.85"
 ctor = "0.2.0"
 futures-util = { version = "0.3" }
-lifi = { git = "https://github.com/piotrostr/listen", package = "lifi", optional = true, branch = "feat/v4.0.0" }
-listen-tracing = { git = "https://github.com/piotrostr/listen", package = "listen-tracing", optional = true, branch = "feat/v4.0.0" }
-listen-memory = { git = "https://github.com/piotrostr/listen", package = "listen-memory", optional = true, branch = "feat/v4.0.0" }
-blockhash-cache = { git = "https://github.com/piotrostr/listen", package = "blockhash-cache", optional = true, branch = "feat/v4.0.0" }
-evm-approvals = { git = "https://github.com/piotrostr/listen", package = "evm-approvals", optional = true, branch = "feat/v4.0.0" }
-listen-mongo = { git = "https://github.com/piotrostr/listen", package = "listen-mongo", optional = true, branch = "feat/v4.0.0" }
+lifi = { git = "https://github.com/piotrostr/listen", package = "lifi", branch = "feat/v4.0.0" }
+listen-tracing = { git = "https://github.com/piotrostr/listen", package = "listen-tracing", branch = "feat/v4.0.0" }
+listen-memory = { git = "https://github.com/piotrostr/listen", package = "listen-memory", branch = "feat/v4.0.0" }
+blockhash-cache = { git = "https://github.com/piotrostr/listen", package = "blockhash-cache", branch = "feat/v4.0.0" }
+evm-approvals = { git = "https://github.com/piotrostr/listen", package = "evm-approvals", branch = "feat/v4.0.0" }
+listen-mongo = { git = "https://github.com/piotrostr/listen", package = "listen-mongo", branch = "feat/v4.0.0" }
 
 # evm
 alloy = { version = "0.9", features = ["full"], optional = true }
