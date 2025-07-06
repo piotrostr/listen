@@ -338,7 +338,7 @@ mod tests {
 
     #[tokio::test]
     async fn test_get_token_sol() {
-        let address = "GcbBU9phXen93bdFGVdujTprrKLvszcbfLDmq9TDEBMB";
+        let address = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
         let token =
             get_token(address.to_string(), Some(SOLANA_CHAIN_ID.to_string()))
                 .await;
