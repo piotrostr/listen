@@ -8,7 +8,7 @@ documentation = "https://docs.listen-rs.com"
 
 [features]
 default = ["full"]
-full = ["http", "solana", "evm", "hype"]
+full = ["http", "solana", "evm", "hype", "engine"]
 http = [
   "actix-web",
   "actix-cors",
@@ -18,6 +18,7 @@ http = [
   "redis",
   "privy",
 ]
+engine = ["listen-engine", "http"]
 solana = [
   "solana-account-decoder",
   "solana-sdk",
@@ -101,3 +102,5 @@ petgraph = "0.7.1"
 # hyperliquid_rust_sdk = { path = "../../hyperliquid-rust-sdk", optional = true }
 hyperliquid_rust_sdk = { git = "https://github.com/piotrostr/hyperliquid-rust-sdk", optional = true }
 ethers = "2.0.14"
+
+listen-engine = { path = "../listen-engine", optional = true }

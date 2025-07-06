@@ -18,9 +18,20 @@ async fn main() -> std::io::Result<()> {
         .await
         .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e))?;
 
-    // Run server with just the Privy client
-    // Agents will be created dynamically based on requests
-    run_server(privy_client, mongo).await
+    #[cfg(feature = "engine")]
+    {
+        tokio::select! {
+            res1 = listen_engine::server::run() => res1,
+            res2 = run_server(privy_client, mongo) => res2,
+        }
+    }
+
+    #[cfg(not(feature = "engine"))]
+    {
+        // Run server with just the Privy client
+        // Agents will be created dynamically based on requests
+        run_server(privy_client, mongo).await
+    }
 }
 
 #[cfg(not(feature = "http"))]
