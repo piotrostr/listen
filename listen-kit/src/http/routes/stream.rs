@@ -262,7 +262,7 @@ async fn stream(
                 messages,
                 Some(internal_tx),
                 if with_memory {
-                    Some(state.global_memory.clone())
+                    state.global_memory.as_ref().map(|m| m.clone())
                 } else {
                     None
                 },
