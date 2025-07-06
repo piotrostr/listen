@@ -16,7 +16,8 @@ EXPOSE 6969
 
 # engine ports
 EXPOSE 6966
-EXPOSE 6901
+# internal, shouldn't have ingress
+EXPOSE 6901 
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
