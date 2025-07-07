@@ -1,13 +1,13 @@
-app = 'listen-kit'
+app = 'listen-engine'
 primary_region = 'waw'
 
 [build]
 
 [env]
-PORT = '6969'
+PORT = '6966'
 
 [http_service]
-internal_port = 6969
+internal_port = 6966
 force_https = true
 auto_stop_machines = 'stop'
 auto_start_machines = true

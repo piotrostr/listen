@@ -7,14 +7,13 @@ RUN cargo chef prepare --recipe-path recipe.json
 
 FROM chef AS builder
 COPY --from=planner /app/recipe.json recipe.json
-RUN cargo chef cook --features full --release --recipe-path recipe.json
+RUN cargo chef cook --release --recipe-path recipe.json
 COPY . .
-RUN cargo build --features full --release --bin kit
+RUN cargo build --release --bin engine
 
-# main listen-kit port
-EXPOSE 6969
+EXPOSE 6966
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
-COPY --from=builder /app/target/release/kit /usr/local/bin
-ENTRYPOINT ["/usr/local/bin/kit"]
+COPY --from=builder /app/target/release/engine /usr/local/bin
+ENTRYPOINT ["/usr/local/bin/engine"]
