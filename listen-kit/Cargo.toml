@@ -8,7 +8,7 @@ documentation = "https://docs.listen-rs.com"
 
 [features]
 default = ["full"]
-full = ["http", "solana", "evm", "hype", "engine"]
+full = ["http", "solana", "evm", "hype"]
 http = [
   "actix-web",
   "actix-cors",
