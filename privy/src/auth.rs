@@ -54,7 +54,10 @@ impl Privy {
         access_token: &str,
     ) -> Result<UserSession, PrivyAuthError> {
         let claims = self.validate_access_token(access_token)?;
-        let user = self.get_user_by_id(&claims.user_id).await?;
+        let user = self.get_user_by_id(&claims.user_id).await.map_err(|e| {
+            tracing::error!(?e, ?claims, "Failed to get user by id");
+            e
+        })?;
 
         let mut session = UserSession {
             user_id: user.id.clone(),
