@@ -82,7 +82,7 @@ solana-transaction-status = { version = "2.1.9", optional = true }
 spl-associated-token-account = { version = "6.0.0", optional = true }
 
 # http
-privy = { git = "https://github.com/piotrostr/listen", package = "privy", optional = true, branch = "feat/v4.0.0" }
+privy = { version = "0.9.0", optional = true }
 actix-web = { version = "4", optional = true }
 actix-cors = { version = "0.6", optional = true }
 actix-web-lab = { version = "0.20", optional = true }
