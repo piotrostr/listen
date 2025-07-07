@@ -6,6 +6,8 @@ use actix_web::{web, App, HttpServer};
 use listen_memory::graph::GraphMemory;
 use privy::Privy;
 
+use crate::http::routes::claims;
+
 use super::routes::{auth, healthz, stream, suggest};
 use super::state::AppState;
 use listen_mongo::MongoClient;
@@ -37,6 +39,7 @@ pub async fn run_server(
             .service(stream)
             .service(auth)
             .service(suggest)
+            .service(claims)
     })
     .bind("0.0.0.0:6969")?
     .run()
