@@ -24,7 +24,7 @@ metrics = "0.21"
 metrics-exporter-prometheus = "0.12"
 once_cell = "1.18"
 bb8-redis = "0.20.0"
-privy = { git = "https://github.com/piotrostr/listen", package = "privy", branch = "feat/v4.0.0" }
+privy = { version = "0.9.0" }
 actix-cors = "0.7.0"
 lifi = { git = "https://github.com/piotrostr/listen", package = "lifi", branch = "feat/v4.0.0" }
 blockhash-cache = { git = "https://github.com/piotrostr/listen", package = "blockhash-cache", branch = "feat/v4.0.0" }
