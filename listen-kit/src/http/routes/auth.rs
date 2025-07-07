@@ -38,5 +38,6 @@ async fn auth(req: HttpRequest) -> Result<HttpResponse, Error> {
         "user_id": user_session.user_id,
         "privy_app_id": state.privy.config.app_id,
         "claims": claims,
+        "timestamp": chrono::Utc::now().to_rfc3339(),
     })))
 }
