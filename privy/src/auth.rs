@@ -54,7 +54,7 @@ impl Privy {
         access_token: &str,
     ) -> Result<UserSession, PrivyAuthError> {
         let claims = self.validate_access_token(access_token)?;
-        println!("claims: {:?}", claims);
+        tracing::info!(?claims, "claims");
         let user = self.get_user_by_id(&claims.user_id).await.map_err(|e| {
             tracing::error!(?e, ?claims, "Failed to get user by id");
             e
