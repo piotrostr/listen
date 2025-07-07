@@ -16,5 +16,7 @@ EXPOSE 6969
 
 FROM debian:bookworm-slim AS runtime
 WORKDIR /app
+# ensure certs
+RUN apt-get update && apt-get install -y ca-certificates && rm -rf /var/lib/apt/lists/*
 COPY --from=builder /app/target/release/kit /usr/local/bin
 ENTRYPOINT ["/usr/local/bin/kit"]
