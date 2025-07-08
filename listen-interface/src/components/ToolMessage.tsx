@@ -229,11 +229,7 @@ export const ToolMessage = ({
     } catch (e) {
       console.error("Failed to parse token:", e);
     }
-    return (
-      <div className="text-gray-400">
-        <ChatMessage message={toolOutput.result} direction="agent" />
-      </div>
-    );
+    return null;
   }
 
   if (toolOutput.name === "fetch_price_action_analysis_evm") {
