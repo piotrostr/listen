@@ -102,7 +102,7 @@ If the token is an SPL token, it will return the balance of the SPL token.
 If the token is an EVM token, it will return the balance of the EVM token.
 
 Parameters:
-- address (string): address of the token to fetch balance for, for native tokens, use \"native\" (solana on svm, ethereum/bnb etc on evm)
+- address (string): address of the token to fetch balance for, for native tokens, use \"native\" (Solana, Ethereum or BNB)
 - chain_id (string): numeric string of the chain ID of the token to fetch balance for.
 ")]
 pub async fn get_token_balance(
@@ -111,7 +111,11 @@ pub async fn get_token_balance(
 ) -> Result<TokenBalance> {
     validate_chain_id(chain_id.clone())?;
 
-    if address == "native" {
+    if address == "native"
+        || address == "solana"
+        || address == "So11111111111111111111111111111111111111112"
+        || address == "0x0000000000000000000000000000000000000000"
+    {
         if chain_id == *SOLANA_CHAIN_ID {
             let balance = get_sol_balance().await?;
             return Ok(TokenBalance {
@@ -137,6 +141,7 @@ pub async fn get_token_balance(
             decimals: decimals as u8,
         });
     }
+
     if chain_id == SOLANA_CHAIN_ID.to_string() {
         let (balance, decimals, address) =
             get_spl_token_balance(address).await?;
