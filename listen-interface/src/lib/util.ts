@@ -73,6 +73,7 @@ export const imageMap = {
   arb: "https://arbiscan.io/assets/arbitrum/images/svg/logos/chain-light.svg?v=25.1.4.0",
   "11111111111111111111111111111111":
     "https://raw.githubusercontent.com/solana-labs/token-list/main/assets/mainnet/So11111111111111111111111111111111111111112/logo.png",
+  bnb: "https://dd.dexscreener.com/ds-data/chains/bsc.png",
 };
 
 export const caip2Map = {
@@ -572,6 +573,13 @@ export const chainIdToGeckoTerminalId = {
   avax: "avax",
   "sui-network": "sui-network",
   sonic: "sonic",
+  "1151111081099710": "solana",
+  "eip:1": "eth",
+  "eip:56": "bsc",
+  "eip:42161": "arbitrum",
+  "eip:8453": "base",
+  "eip:480": "world-chain",
+  "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp": "solana",
 } as const;
 
 export type NetworkId =

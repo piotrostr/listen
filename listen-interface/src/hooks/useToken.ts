@@ -1,7 +1,7 @@
 import { useQuery } from "@tanstack/react-query";
 import { fetchTokenMetadataFromJupiter } from "../lib/solanaPortfolio";
 import { TokenMetadata } from "../lib/types";
-import { getNetworkId } from "../lib/util";
+import { getNetworkId, imageMap } from "../lib/util";
 
 export const useSolanaToken = (mint: string) => {
   const { data, isLoading, error } = useQuery({
@@ -44,14 +44,65 @@ export const useToken = (address: string, chainId?: string) => {
   return { data, isLoading, error };
 };
 
+const nativeToken = (geckoTerminalId: string): TokenMetadata => {
+  if (geckoTerminalId === "solana") {
+    return {
+      address: "So11111111111111111111111111111111111111112",
+      name: "Solana",
+      symbol: "SOL",
+      decimals: 9,
+      logoURI: imageMap["solana"],
+    };
+  }
+
+  if (
+    geckoTerminalId === "eth" ||
+    geckoTerminalId === "base" ||
+    geckoTerminalId === "arbitrum"
+  ) {
+    return {
+      address: "0x0000000000000000000000000000000000000000",
+      name: "Ethereum",
+      symbol: "ETH",
+      decimals: 18,
+      logoURI: imageMap["eth"],
+    };
+  }
+
+  if (geckoTerminalId === "bsc") {
+    return {
+      address: "0x0000000000000000000000000000000000000000",
+      name: "BNB",
+      symbol: "BNB",
+      decimals: 18,
+      logoURI: imageMap["bnb"],
+    };
+  }
+
+  return {
+    address: "0x0000000000000000000000000000000000000000",
+    name: "unknown",
+    symbol: "unknown",
+    decimals: 18,
+    logoURI: null,
+  };
+};
+
 export async function getTokenFallback(
   address: string,
   chainId: string
 ): Promise<TokenMetadata> {
+  const geckoTerminalId = getNetworkId(chainId);
+  if (!geckoTerminalId) {
+    throw new Error("Invalid chain ID");
+  }
+
+  if (address === "native") {
+    return nativeToken(geckoTerminalId);
+  }
+
   const response = await fetch(
-    `https://api.geckoterminal.com/api/v2/networks/${getNetworkId(
-      chainId
-    )}/tokens/${address}`,
+    `https://api.geckoterminal.com/api/v2/networks/${geckoTerminalId}/tokens/${address}`,
     {
       headers: {
         accept: "application/json",

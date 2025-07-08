@@ -6,7 +6,7 @@ export const TokenBalanceSchema = z.object({
   balance: z.string(),
   decimals: z.number(),
   address: z.string(),
-  chain_id: z.number(),
+  chain_id: z.union([z.number(), z.string()]),
 });
 type TokenBalance = z.infer<typeof TokenBalanceSchema>;
 
