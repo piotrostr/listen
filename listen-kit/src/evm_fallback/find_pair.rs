@@ -43,9 +43,9 @@ impl EvmFallback {
     pub async fn find_pair_address(
         &self,
         token_address: &str,
-        chain_id: u64,
+        chain_id: String,
     ) -> Result<Option<String>> {
-        let network = map_chain_id_to_network(chain_id)?;
+        let network = map_chain_id_to_network(chain_id.clone())?;
 
         println!("network: {:?}", network);
 
@@ -145,7 +145,7 @@ mod tests {
         let result = client
             .find_pair_address(
                 "0x6982508145454ce325ddbe47a25d4ec3d2311933",
-                1,
+                "1".to_string(),
             )
             .await;
 
@@ -162,10 +162,7 @@ mod tests {
         let address = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
         // BONK token on Solana
         let result = client
-            .find_pair_address(
-                address,
-                SOLANA_CHAIN_ID.parse::<u64>().unwrap(),
-            )
+            .find_pair_address(address, SOLANA_CHAIN_ID.to_string())
             .await;
 
         assert!(result.is_ok());

@@ -52,7 +52,7 @@ pub async fn get_token(
 async fn get_token_evm(address: String, chain_id: String) -> Result<Token> {
     let evm_fallback = EvmFallback::from_env()?;
     let pool_address = evm_fallback
-        .find_pair_address(&address, chain_id.parse::<u64>()?)
+        .find_pair_address(&address, chain_id.clone())
         .await?;
     if pool_address.is_none() {
         return Err(anyhow!("No pool address found for token"));
@@ -61,10 +61,10 @@ async fn get_token_evm(address: String, chain_id: String) -> Result<Token> {
     let pool_address = pool_address.unwrap();
 
     let (metadata_result, candlesticks_result) = tokio::join!(
-        evm_fallback.fetch_token_info(&address, chain_id.parse::<u64>()?),
+        evm_fallback.fetch_token_info(&address, chain_id.clone()),
         evm_fallback.fetch_candlesticks(
             &pool_address,
-            chain_id.parse::<u64>()?,
+            chain_id.clone(),
             "15m",
             Some(200)
         )
@@ -109,7 +109,7 @@ pub async fn get_token_balance(
     address: String,
     chain_id: String,
 ) -> Result<TokenBalance> {
-    validate_chain_id(chain_id.parse::<u64>()?)?;
+    validate_chain_id(chain_id.clone())?;
 
     if address == "native" {
         if chain_id == *SOLANA_CHAIN_ID {
@@ -170,7 +170,7 @@ async fn get_token_solana(address: String) -> Result<Token> {
             fetch_token_metadata(address.clone()),
             evm_fallback.fetch_candlesticks(
                 &"Czfq3xZZDmsdGdUyrNLtRhGc47cXcZtLG4crryfu44zE",
-                69696,
+                SOLANA_CHAIN_ID.to_string(),
                 "15m",
                 Some(200),
             ),

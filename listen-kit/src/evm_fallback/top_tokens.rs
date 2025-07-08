@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use crate::data::{PoolInfo, TopToken};
 
 use super::{map_chain_id_to_network, EvmFallback};
@@ -59,11 +61,11 @@ const DURATION_OPTIONS: &[&str] = &["5m", "1h", "6h", "24h"];
 impl EvmFallback {
     pub async fn fetch_top_tokens(
         &self,
-        chain_id: u64,
+        chain_id: String,
         duration: String,
         limit: usize,
     ) -> Result<Vec<TopToken>> {
-        let network = map_chain_id_to_network(chain_id)?;
+        let network = map_chain_id_to_network(chain_id.clone())?;
         if !DURATION_OPTIONS.contains(&duration.as_str()) {
             return Err(anyhow!(
                 "Invalid duration: {}, must be one of: {}",
@@ -77,11 +79,14 @@ impl EvmFallback {
             self.base_url, network, duration
         );
 
+        tracing::info!("Fetching top tokens from {}", url);
+
         let response = self
             .client
             .get(&url)
             .header("Accept", "application/json")
             .header("x-cg-pro-api-key", self.api_key.clone())
+            .timeout(Duration::from_secs(5))
             .send()
             .await
             .context(format!("Failed to send request to {}", url))?;
@@ -167,7 +172,7 @@ impl EvmFallback {
                             market_cap,
                             volume_24h: 0.0,
                             price_change_24h,
-                            chain_id: Some(chain_id.to_string()),
+                            chain_id: Some(chain_id.clone()),
                             pools: Vec::new(),
                         },
                         0.0,
@@ -198,6 +203,8 @@ impl EvmFallback {
 
 #[cfg(test)]
 mod tests {
+    use crate::evm_fallback::SOLANA_CHAIN_ID;
+
     use super::*;
 
     #[tokio::test]
@@ -205,7 +212,22 @@ mod tests {
         let evm_fallback = EvmFallback::from_env()
             .expect("Failed to create EvmFallback from environment");
         let top_tokens = evm_fallback
-            .fetch_top_tokens(1, "24h".to_string(), 10)
+            .fetch_top_tokens("1".to_string(), "24h".to_string(), 10)
+            .await
+            .expect("Failed to fetch top tokens");
+        println!("Top tokens: {:?}", top_tokens);
+    }
+
+    #[tokio::test]
+    async fn test_fetch_top_tokens_sol() {
+        let evm_fallback = EvmFallback::from_env()
+            .expect("Failed to create EvmFallback from environment");
+        let top_tokens = evm_fallback
+            .fetch_top_tokens(
+                SOLANA_CHAIN_ID.to_string().parse().unwrap(),
+                "24h".to_string(),
+                10,
+            )
             .await
             .expect("Failed to fetch top tokens");
         println!("Top tokens: {:?}", top_tokens);

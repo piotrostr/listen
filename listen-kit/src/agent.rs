@@ -1,4 +1,6 @@
-use crate::data::evm_fallback_tools::FetchTopTokensByCategory;
+use crate::data::evm_fallback_tools::{
+    FetchTopTokens, FetchTopTokensByCategory,
+};
 use crate::evm::tools::{GetErc20Balance, GetEthBalance};
 use crate::hype::equip_with_hype_tools;
 use crate::solana::tools::{DeployPumpFunToken, GetCurrentTime};
@@ -8,8 +10,8 @@ use crate::agents::research::ViewImage;
 use crate::common::{openrouter_agent_builder, OpenRouterAgent};
 use crate::cross_chain::tools::{GetQuote, Swap};
 use crate::data::{
-    AnalyzePageContent, FetchPriceActionAnalysis, FetchTopTokens, FetchXPost,
-    GetToken, GetTokenBalance, ResearchXProfile, SearchTweets, SearchWeb,
+    AnalyzePageContent, FetchPriceActionAnalysis, FetchXPost, GetToken,
+    GetTokenBalance, ResearchXProfile, SearchTweets, SearchWeb,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::faster100x::AnalyzeHolderDistribution;

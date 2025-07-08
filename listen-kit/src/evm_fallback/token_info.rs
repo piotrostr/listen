@@ -11,7 +11,7 @@ pub struct GtTokenMetadata {
     pub image_url: Option<String>,
     pub description: Option<String>,
     pub websites: Option<Vec<String>>,
-    pub chain_id: u64,
+    pub chain_id: String,
     pub discord_url: Option<String>,
     pub telegram_handle: Option<String>,
     pub twitter_handle: Option<String>,
@@ -45,9 +45,9 @@ impl EvmFallback {
     pub async fn fetch_token_info(
         &self,
         address: &str,
-        chain_id: u64,
+        chain_id: String,
     ) -> Result<GtTokenMetadata> {
-        let network = map_chain_id_to_network(chain_id)?;
+        let network = map_chain_id_to_network(chain_id.clone())?;
         let url = format!(
             "{}/networks/{}/tokens/{}/info",
             self.base_url, network, address

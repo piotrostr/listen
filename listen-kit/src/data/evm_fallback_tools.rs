@@ -26,9 +26,8 @@ pub async fn fetch_token_metadata_evm(
     chain_id: String,
 ) -> Result<GtTokenMetadata> {
     let evm_fallback = EvmFallback::from_env()?;
-    let token_info = evm_fallback
-        .fetch_token_info(&address, chain_id.parse::<u64>()?)
-        .await?;
+    let token_info =
+        evm_fallback.fetch_token_info(&address, chain_id).await?;
     Ok(token_info)
 }
 
@@ -54,16 +53,11 @@ pub async fn fetch_price_action_analysis(
     interval: String,
     intent: Option<String>,
 ) -> Result<PriceActionAnalysisResponse> {
-    validate_chain_id(chain_id.parse::<u64>()?)?;
+    validate_chain_id(chain_id.clone())?;
 
     let evm_fallback = EvmFallback::from_env()?;
     let candlesticks = evm_fallback
-        .fetch_candlesticks(
-            &pair_address,
-            chain_id.parse::<u64>()?,
-            &interval,
-            Some(200),
-        )
+        .fetch_candlesticks(&pair_address, chain_id, &interval, Some(200))
         .await?;
     let candlesticks_clone = candlesticks.clone();
 
@@ -114,11 +108,7 @@ pub async fn fetch_top_tokens(
     let duration = duration.unwrap_or("6h".to_string());
     let evm_fallback = EvmFallback::from_env()?;
     let tokens = evm_fallback
-        .fetch_top_tokens(
-            chain_id.parse::<u64>()?,
-            duration,
-            limit.parse::<usize>()?,
-        )
+        .fetch_top_tokens(chain_id, duration, limit.parse::<usize>()?)
         .await?;
     Ok(tokens)
 }
