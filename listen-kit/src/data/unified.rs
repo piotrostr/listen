@@ -1,4 +1,5 @@
 use anyhow::{anyhow, Result};
+use privy::caip2::Caip2;
 use rig_tool_macro::tool;
 use serde::{Deserialize, Serialize};
 
@@ -116,7 +117,9 @@ pub async fn get_token_balance(
         || address == "So11111111111111111111111111111111111111112"
         || address == "0x0000000000000000000000000000000000000000"
     {
-        if chain_id == *SOLANA_CHAIN_ID {
+        if chain_id == *SOLANA_CHAIN_ID
+            || chain_id == Caip2::SOLANA.to_string()
+        {
             let balance = get_sol_balance().await?;
             return Ok(TokenBalance {
                 balance: balance.to_string(),
@@ -349,5 +352,22 @@ mod tests {
                 .await;
         println!("{:?}", token);
         assert!(token.is_ok());
+    }
+
+    #[tokio::test]
+    async fn test_get_token_balance_sol_caip2() {
+        let chain_id = "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
+        let address = "So11111111111111111111111111111111111111112";
+        let signer = make_test_signer_sol();
+        SignerContext::with_signer(Arc::new(signer), async {
+            let balance =
+                get_token_balance(address.to_string(), chain_id.to_string())
+                    .await;
+            println!("{:?}", balance);
+            assert!(balance.is_ok());
+            Ok(())
+        })
+        .await
+        .unwrap();
     }
 }
