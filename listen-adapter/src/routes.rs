@@ -1,6 +1,9 @@
 use crate::version::VERSION;
 use crate::websocket::handle_ws_connection;
-use crate::{db::candlesticks::CandlestickInterval, state::AppState};
+use crate::{
+    db::candlesticks::CandlestickInterval,
+    state::{AppState, RedisClientExt},
+};
 use actix_web::{error::InternalError, http::StatusCode, web, Error, HttpRequest, HttpResponse};
 use regex::Regex;
 use serde::Deserialize;
@@ -137,10 +140,10 @@ pub struct PriceQuery {
 }
 
 pub async fn get_price(
-    state: web::Data<AppState>,
+    redis_client: RedisClientExt,
     query: web::Query<PriceQuery>,
 ) -> Result<HttpResponse, Error> {
-    let price = state.redis_client.get_price(&query.mint).await;
+    let price = redis_client.0.get_price(&query.mint).await;
     match price {
         Ok(price) => Ok(HttpResponse::Ok().json(price)),
         Err(e) => {
