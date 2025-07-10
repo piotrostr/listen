@@ -52,8 +52,16 @@ pub async fn top_tokens(
     state: web::Data<AppState>,
     query: web::Query<TopTokensQuery>,
 ) -> Result<HttpResponse, Error> {
-    let tokens = state
-        .clickhouse_db
+    let clickhouse_db = match state.clickhouse_db.as_ref() {
+        None => {
+            return Ok(HttpResponse::Ok().json(json!({
+                "error": "Clickhouse DB is not available"
+            })));
+        }
+        Some(db) => db,
+    };
+
+    let tokens = clickhouse_db
         .get_top_tokens(
             query.limit.unwrap_or(20),
             query.min_volume,
@@ -85,8 +93,15 @@ pub async fn get_candlesticks(
     query: web::Query<CandlestickParams>,
 ) -> Result<HttpResponse, Error> {
     let params = query.into_inner();
-    let candlesticks = state
-        .clickhouse_db
+    let clickhouse_db = match state.clickhouse_db.as_ref() {
+        None => {
+            return Ok(HttpResponse::Ok().json(json!({
+                "error": "Clickhouse DB is not available"
+            })));
+        }
+        Some(db) => db,
+    };
+    let candlesticks = clickhouse_db
         .get_candlesticks(&params.mint, &params.interval.to_string(), params.limit)
         .await;
 
@@ -139,7 +154,15 @@ pub async fn get_24h_open_price(
     state: web::Data<AppState>,
     query: web::Query<PriceQuery>,
 ) -> Result<HttpResponse, Error> {
-    let open_price = state.clickhouse_db.get_24h_open_price(&query.mint).await;
+    let clickhouse_db = match state.clickhouse_db.as_ref() {
+        None => {
+            return Ok(HttpResponse::Ok().json(json!({
+                "error": "Clickhouse DB is not available"
+            })));
+        }
+        Some(db) => db,
+    };
+    let open_price = clickhouse_db.get_24h_open_price(&query.mint).await;
     match open_price {
         Ok(price) => Ok(HttpResponse::Ok().json(price)),
         Err(e) => {
@@ -188,7 +211,15 @@ pub async fn query_db(
     }
 
     // Execute the validated query
-    let result = state.clickhouse_db.generic_query(sql).await;
+    let clickhouse_db = match state.clickhouse_db.as_ref() {
+        None => {
+            return Ok(HttpResponse::Ok().json(json!({
+                "error": "Clickhouse DB is not available"
+            })));
+        }
+        Some(db) => db,
+    };
+    let result = clickhouse_db.generic_query(sql).await;
     match result {
         Ok(result) => Ok(HttpResponse::Ok().json(result)),
         Err(e) => {

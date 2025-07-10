@@ -8,5 +8,5 @@ use crate::redis_subscriber::RedisSubscriber;
 pub struct AppState {
     pub redis_subscriber: Arc<RedisSubscriber>,
     pub redis_client: Arc<RedisClient>,
-    pub clickhouse_db: Arc<ClickhouseDb>,
+    pub clickhouse_db: Option<Arc<ClickhouseDb>>,
 }
