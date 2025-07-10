@@ -296,6 +296,19 @@ dependencies = [
 ]
 
 [[package]]
+name = "actix-ws"
+version = "0.2.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "535aec173810be3ca6f25dd5b4d431ae7125d62000aa3cbae1ec739921b02cf3"
+dependencies = [
+ "actix-codec",
+ "actix-http",
+ "actix-web",
+ "futures-core",
+ "tokio",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1785,7 +1798,7 @@ dependencies = [
 [[package]]
 name = "blockhash-cache"
 version = "0.1.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#650948696412412c65439e527b8cb3d12acbc33e"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1961,6 +1974,15 @@ dependencies = [
  "time",
  "uuid 0.8.2",
  "uuid 1.15.1",
+]
+
+[[package]]
+name = "bstr"
+version = "1.12.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "234113d19d0d7d613b40e86fb654acf958910802bcceab913a4f9e7cda03b1a4"
+dependencies = [
+ "memchr",
 ]
 
 [[package]]
@@ -2224,6 +2246,50 @@ checksum = "773f3b9af64447d2ce9850330c473515014aa235e6a783b02db81ff39e4a3dad"
 dependencies = [
  "crypto-common",
  "inout",
+]
+
+[[package]]
+name = "cityhash-rs"
+version = "1.0.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "93a719913643003b84bd13022b4b7e703c09342cd03b679c4641c7d2e50dc34d"
+
+[[package]]
+name = "clickhouse"
+version = "0.13.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "9a9a81a1dffadd762ee662635ce409232258ce9beebd7cc0fa227df0b5e7efc0"
+dependencies = [
+ "bstr",
+ "bytes",
+ "cityhash-rs",
+ "clickhouse-derive",
+ "futures",
+ "futures-channel",
+ "http-body-util",
+ "hyper 1.5.2",
+ "hyper-tls 0.6.0",
+ "hyper-util",
+ "lz4_flex",
+ "replace_with",
+ "sealed",
+ "serde",
+ "static_assertions",
+ "thiserror 1.0.69",
+ "tokio",
+ "url",
+]
+
+[[package]]
+name = "clickhouse-derive"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d70f3e2893f7d3e017eeacdc9a708fbc29a10488e3ebca21f9df6a5d2b616dbb"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "serde_derive_internals",
+ "syn 2.0.96",
 ]
 
 [[package]]
@@ -2548,6 +2614,21 @@ dependencies = [
  "quote",
  "syn 2.0.96",
 ]
+
+[[package]]
+name = "ctor"
+version = "0.3.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "21d960ecacd0a1bf55e73144b72de745e7bf275c7952c50e36e8af0a0cb7ab1f"
+dependencies = [
+ "ctor-proc-macro",
+]
+
+[[package]]
+name = "ctor-proc-macro"
+version = "0.0.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c426d2ba3e525b39c1f0a9ba41b9fe61878dee11fa4e4a76b6ab440f46c5db5d"
 
 [[package]]
 name = "ctr"
@@ -3634,7 +3715,7 @@ dependencies = [
 [[package]]
 name = "evm-approvals"
 version = "0.1.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#650948696412412c65439e527b8cb3d12acbc33e"
 dependencies = [
  "anyhow",
  "dotenv",
@@ -4485,7 +4566,7 @@ dependencies = [
  "http 0.2.12",
  "lazy_static",
  "log",
- "privy 0.8.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "privy 0.8.0",
  "rand 0.8.5",
  "reqwest 0.11.27",
  "rmp-serde",
@@ -5102,7 +5183,7 @@ dependencies = [
 [[package]]
 name = "lifi"
 version = "0.2.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#650948696412412c65439e527b8cb3d12acbc33e"
 dependencies = [
  "anyhow",
  "reqwest 0.12.15",
@@ -5126,9 +5207,38 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d26c52dbd32dccf2d10cac7725f8eae5296885fb5703b261f7d0a0739ec807ab"
 
 [[package]]
+name = "listen-adapter"
+version = "0.1.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#650948696412412c65439e527b8cb3d12acbc33e"
+dependencies = [
+ "actix-cors 0.7.1",
+ "actix-web",
+ "actix-ws",
+ "anyhow",
+ "async-stream",
+ "bb8-redis",
+ "chrono",
+ "clickhouse",
+ "ctor 0.3.6",
+ "dotenv",
+ "futures",
+ "listen-tracing",
+ "redis 0.23.3",
+ "regex",
+ "reqwest 0.12.15",
+ "serde",
+ "serde_json",
+ "thiserror 1.0.69",
+ "tokio",
+ "tracing",
+ "tracing-subscriber",
+ "url",
+]
+
+[[package]]
 name = "listen-engine"
 version = "0.1.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#650948696412412c65439e527b8cb3d12acbc33e"
 dependencies = [
  "actix-cors 0.7.1",
  "actix-web",
@@ -5138,7 +5248,7 @@ dependencies = [
  "bincode",
  "blockhash-cache",
  "chrono",
- "ctor",
+ "ctor 0.2.9",
  "dashmap 6.1.0",
  "dotenv",
  "evm-approvals",
@@ -5150,7 +5260,7 @@ dependencies = [
  "metrics-exporter-prometheus",
  "once_cell",
  "parking_lot",
- "privy 0.8.0 (git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0)",
+ "privy 0.9.0",
  "redis 0.23.3",
  "reqwest 0.12.15",
  "resend-rs",
@@ -5179,7 +5289,7 @@ dependencies = [
  "blockhash-cache",
  "borsh 1.5.5",
  "chrono",
- "ctor",
+ "ctor 0.2.9",
  "dotenv",
  "env_logger 0.11.6",
  "ethers",
@@ -5191,6 +5301,7 @@ dependencies = [
  "jsonwebtoken 9.3.1",
  "lazy_static",
  "lifi",
+ "listen-adapter",
  "listen-engine",
  "listen-memory",
  "listen-mongo",
@@ -5202,7 +5313,7 @@ dependencies = [
  "rand 0.8.5",
  "redis 0.28.2",
  "reqwest 0.12.15",
- "rig-core 0.10.0 (git+https://github.com/piotrostr/rig?branch=fix%2Fopenai-id-missing)",
+ "rig-core",
  "rig-tool-macro",
  "serde",
  "serde_json",
@@ -5227,7 +5338,7 @@ dependencies = [
 [[package]]
 name = "listen-memory"
 version = "0.1.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#650948696412412c65439e527b8cb3d12acbc33e"
 dependencies = [
  "anyhow",
  "async-trait",
@@ -5239,7 +5350,7 @@ dependencies = [
  "qdrant-client",
  "regex",
  "reqwest 0.12.15",
- "rig-core 0.10.0 (git+https://github.com/piotrostr/rig?branch=fix%2Fopenai-id-missing)",
+ "rig-core",
  "rig-tool-macro",
  "serde",
  "serde_json",
@@ -5254,7 +5365,7 @@ dependencies = [
 [[package]]
 name = "listen-mongo"
 version = "0.1.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#650948696412412c65439e527b8cb3d12acbc33e"
 dependencies = [
  "anyhow",
  "bson",
@@ -5271,7 +5382,7 @@ dependencies = [
 [[package]]
 name = "listen-tracing"
 version = "0.1.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#650948696412412c65439e527b8cb3d12acbc33e"
 dependencies = [
  "tracing",
  "tracing-journald",
@@ -5334,6 +5445,12 @@ checksum = "31e24f1ad8321ca0e8a1e0ac13f23cb668e6f5466c2c57319f6a5cf1cc8e3b1c"
 dependencies = [
  "linked-hash-map",
 ]
+
+[[package]]
+name = "lz4_flex"
+version = "0.11.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "08ab2867e3eeeca90e844d1940eab391c9dc5228783db2ed999acbc0a9ed375a"
 
 [[package]]
 name = "mach2"
@@ -6407,22 +6524,6 @@ dependencies = [
 
 [[package]]
 name = "privy"
-version = "0.8.0"
-source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
-dependencies = [
- "anyhow",
- "base64 0.22.1",
- "jsonwebtoken 9.3.1",
- "reqwest 0.12.15",
- "serde",
- "serde_json",
- "thiserror 2.0.12",
- "tracing",
- "tracing-subscriber",
-]
-
-[[package]]
-name = "privy"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bb555161fa108aa1f1babe98562be326a218a6f2d45a08bc6fbe76680791daf9"
@@ -6524,7 +6625,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a56d757972c98b346a9b766e3f02746cde6dd1cd1d1d563472929fdd74bec4d"
 dependencies = [
  "anyhow",
- "itertools 0.13.0",
+ "itertools 0.11.0",
  "proc-macro2",
  "quote",
  "syn 2.0.96",
@@ -6971,6 +7072,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2b15c43186be67a4fd63bee50d0303afffcef381492ebe2c5d87f324e1b8815c"
 
 [[package]]
+name = "replace_with"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "51743d3e274e2b18df81c4dc6caf8a5b8e15dbe799e0dca05c7617380094e884"
+
+[[package]]
 name = "reqwest"
 version = "0.11.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -7130,27 +7237,7 @@ dependencies = [
 [[package]]
 name = "rig-core"
 version = "0.10.0"
-source = "git+https://github.com/piotrostr/rig?branch=fix%2Fno-param-tool-definitions-gemini#88f36b46a0bf32ceda80fa478d73765c07049a8d"
-dependencies = [
- "async-stream",
- "base64 0.22.1",
- "bytes",
- "futures",
- "glob",
- "mime_guess",
- "ordered-float",
- "reqwest 0.12.15",
- "schemars",
- "serde",
- "serde_json",
- "thiserror 1.0.69",
- "tracing",
-]
-
-[[package]]
-name = "rig-core"
-version = "0.10.0"
-source = "git+https://github.com/piotrostr/rig?branch=fix%2Fopenai-id-missing#b7ccd2a9dedfecd1a388b51f6aef6b691ba903ad"
+source = "git+https://github.com/piotrostr/rig?branch=fix%2Fopenai-id-missing#da98231a0dc9031b978477d94bd5993a43036892"
 dependencies = [
  "async-stream",
  "base64 0.22.1",
@@ -7170,12 +7257,12 @@ dependencies = [
 [[package]]
 name = "rig-tool-macro"
 version = "0.5.0"
-source = "git+https://github.com/piotrostr/rig-tool-macro#7fa7744b7cdd15cf0326ab74f011bf2c7cfcff31"
+source = "git+https://github.com/piotrostr/rig-tool-macro#fd0b3fb63d12f1bc01c4a19072004bfb315d4436"
 dependencies = [
  "anyhow",
  "proc-macro2",
  "quote",
- "rig-core 0.10.0 (git+https://github.com/piotrostr/rig?branch=fix%2Fno-param-tool-definitions-gemini)",
+ "rig-core",
  "serde",
  "serde_json",
  "syn 1.0.109",
@@ -7660,6 +7747,17 @@ checksum = "da046153aa2352493d6cb7da4b6e5c0c057d8a1d0a9aa8560baffdd945acd414"
 dependencies = [
  "ring 0.17.8",
  "untrusted 0.9.0",
+]
+
+[[package]]
+name = "sealed"
+version = "0.6.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "22f968c5ea23d555e670b449c1c5e7b2fc399fdaec1d304a17cd48e288abc107"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn 2.0.96",
 ]
 
 [[package]]
