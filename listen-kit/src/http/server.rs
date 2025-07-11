@@ -79,10 +79,10 @@ pub async fn run_server(
                     config,
                     adapter_state.clone(),
                     with_data_routes,
-                    false,
+                    true,
                     true,
                     false,
-                    "/adapter",
+                    "",
                 );
             });
         }

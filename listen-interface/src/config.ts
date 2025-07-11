@@ -17,7 +17,7 @@ export const config = {
     process.env.NODE_ENV === "production"
       ? KIT_PROD_ENDPOINT
       : "http://localhost:6969",
-  adapterEndpoint: "https://api.listen-rs.com/v1/adapter",
+  adapterEndpoint: "https://listen-kit.fly.dev",
   // process.env.NODE_ENV === "production"
   //   ? "https://api.listen-rs.com/v1/adapter"
   //   : "http://localhost:6968",
