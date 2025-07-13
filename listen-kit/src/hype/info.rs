@@ -45,7 +45,9 @@ pub async fn get_l2_snapshot(coin: String) -> Result<serde_json::Value> {
     Ok(serde_json::to_value(info)?)
 }
 
-#[tool(description = "Gets the open orders for the current user")]
+#[tool(
+    description = "Gets the open orders on the Hyperliquid exchange for the current user"
+)]
 pub async fn get_open_orders() -> Result<serde_json::Value> {
     let client = InfoClient::new(None, Some(BaseUrl::Mainnet)).await?;
     let address = SignerContext::current().await.address();
@@ -54,7 +56,7 @@ pub async fn get_open_orders() -> Result<serde_json::Value> {
 }
 
 #[tool(
-    description = "Gets the hyperliquid balance overview of the current user. Response involves a summary of all of the asset positions as well as the margin summary (account value, total margin used)."
+    description = "Gets the Hyperliquid balance overview of the current user. Response involves a summary of all of the asset positions as well as the margin summary (account value, total margin used)."
 )]
 pub async fn get_balance_overview() -> Result<serde_json::Value> {
     let address = SignerContext::current().await.address();
@@ -154,6 +156,9 @@ Example:
 Returns the price action analysis for the coin from the Chart Analyst agent
 along with summary of the price action - the current price, time, total volume,
 price change in the period analysed and the high/low price.
+
+This is the go-to method for getting a high-level overview of the price action, while condensing
+the verbose candlesticks output
 ")]
 pub async fn get_candlesticks_analysis(
     coin: String,
