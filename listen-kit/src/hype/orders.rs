@@ -10,7 +10,9 @@ use rig_tool_macro::tool;
 use std::sync::Arc;
 
 #[tool(description = "
-Open a market order on the exchange.
+Hyperliquid
+
+Open a market order.
 
 Parameters:
 - coin: the coin to trade
@@ -68,14 +70,19 @@ pub async fn market_open(
 }
 
 #[tool(description = "
-Deposit USDC into the exchange.
+Hyperliquid
+
+Deposit USDC into Hyperliquid.
 {
   \"amount\": \"10000000\", // 10 usdc, 6 decimals
 }
 Minimum amount is 5 USDC, if less is sent it will not be accepted and be lost forever.
 
-The deposit requires arbitrum USDC to be available (chain id 42161, address: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831).
-")]
+The deposit requires arbitrum USDC to be available
+
+Arbitrum USDC: 
+- chain id 42161
+- address: 0xaf88d065e77c8cC2239327C5EDb3A432268e5831).")]
 pub async fn deposit_usdc(amount: String) -> Result<String> {
     if amount.parse::<u64>().unwrap() < 5_000_000 {
         return Err(anyhow::anyhow!("Minimum amount is 5 USDC"));

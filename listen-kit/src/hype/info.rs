@@ -18,6 +18,8 @@ use crate::{
 };
 
 #[tool(description = "
+Hyperliquid 
+
 Gets the complete orderbook snapshot for a given coin. Example response:
 {
   \"coin\": \"ETH\",
@@ -45,9 +47,10 @@ pub async fn get_l2_snapshot(coin: String) -> Result<serde_json::Value> {
     Ok(serde_json::to_value(info)?)
 }
 
-#[tool(
-    description = "Gets the open orders on the Hyperliquid exchange for the current user"
-)]
+#[tool(description = "
+Hyperliquid 
+
+Gets the open orders on the Hyperliquid exchange for the current user")]
 pub async fn get_open_orders() -> Result<serde_json::Value> {
     let client = InfoClient::new(None, Some(BaseUrl::Mainnet)).await?;
     let address = SignerContext::current().await.address();
@@ -55,9 +58,10 @@ pub async fn get_open_orders() -> Result<serde_json::Value> {
     Ok(serde_json::to_value(res)?)
 }
 
-#[tool(
-    description = "Gets the Hyperliquid balance overview of the current user. Response involves a summary of all of the asset positions as well as the margin summary (account value, total margin used)."
-)]
+#[tool(description = "
+Hyperliquid
+
+Gets the balance overview of the current user. Response involves a summary of all of the asset positions as well as the margin summary (account value, total margin used).")]
 pub async fn get_balance_overview() -> Result<serde_json::Value> {
     let address = SignerContext::current().await.address();
     let parsed_address = parse_evm_address(address)?;
@@ -77,7 +81,10 @@ pub async fn get_balance_overview() -> Result<serde_json::Value> {
     }))
 }
 
-#[tool(description = "Gets the latest price for a coin. Example response:
+#[tool(description = "
+Hyperliquid
+
+Gets the latest price for a coin. Example response:
 {
   \"bid\": 2545.4,
   \"ask\": 2545.5
@@ -111,8 +118,9 @@ pub async fn _get_balance_overview_spot(
 }
 
 #[tool(description = "
-Gets the raw candlestick data for a coin. In the OHLCV format, the response is a
-list of candles, each with the following fields:
+Hyperliquid
+
+Gets the raw candlestick data for a coin. In the OHLCV format, the response is a list of candles, each with the following fields:
 - t: timestamp
 - o: open
 - h: high
@@ -127,9 +135,7 @@ Example:
   \"limit\": \"100\"
 }}
 
-This method can be useful for fetching a small chunk of price action, say
-the last 5 5m candles. For larger timeframes, to save context and extract
-the most relevant information, use the get_candlesticks_analysis tool.
+This method can be useful for fetching a small chunk of price action, say the last 5 5m candles. For larger timeframes, to save context and extract the most relevant information, use the get_candlesticks_analysis tool.
 ")]
 pub async fn get_candlesticks_raw(
     coin: String,
@@ -159,6 +165,8 @@ pub async fn get_candles_snapshot(
 }
 
 #[tool(description = "
+Hyperliquid
+
 Gets the price action analysis for a coin.
 
 Parameters:
@@ -175,12 +183,9 @@ Example:
   \"intent\": \"What is the price action for ETH in the last 100 1m candles?\"
 }}
 
-Returns the price action analysis for the coin from the Chart Analyst agent
-along with summary of the price action - the current price, time, total volume,
-price change in the period analysed and the high/low price.
+Returns the price action analysis for the coin from the Chart Analyst agent along with summary of the price action - the current price, time, total volume, price change in the period analysed and the high/low price.
 
-This is the go-to method for getting a high-level overview of the price action, while condensing
-the verbose candlesticks output
+This is the go-to method for getting a high-level overview of the price action, while condensing the verbose candlesticks output
 ")]
 pub async fn get_candlesticks_analysis(
     coin: String,
