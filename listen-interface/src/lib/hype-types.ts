@@ -53,7 +53,7 @@ export const SpotClearinghouseStateSchema = z.object({
   balances: z.array(
     z.object({
       coin: z.string(),
-      token: z.number(),
+      token: z.optional(z.number()),
       hold: z.string(),
       total: z.string(),
       entryNtl: z.string(),

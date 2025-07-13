@@ -2,111 +2,123 @@ import { HyperliquidPortfolioOverview } from "../lib/hype-types";
 
 const Container = ({ children }: { children: React.ReactNode }) => {
   return (
-    <div className="flex flex-col items-start p-0 w-full bg-[#0d0d0e] border-[1px] border-[#1e1e21] rounded-[20px]">
+    <div className="flex flex-col items-start p-0 w-full bg-[#0d0d0e] border-[1px] border-[#1e1e21] rounded-[20px] mt-2">
       {children}
     </div>
   );
 };
 
-const SectionHeader = ({ title, value }: { title: string; value: string }) => {
+const SectionHeader = ({ title }: { title: string }) => {
   return (
-    <div className="flex flex-row justify-between items-center w-full p-4 border-b border-[#1e1e21]">
-      <div className="font-space-grotesk font-normal text-lg leading-6 tracking-[-0.03em] text-white">
-        {title}
-      </div>
-      <div className="font-dm-sans font-medium text-sm leading-4 text-[#868686]">
-        {value}
+    <div className="flex flex-col w-full border-b border-[#1e1e21] pb-2 mb-2">
+      <div className="flex flex-row justify-between items-center">
+        <div className="font-space-grotesk font-normal text-base leading-6 tracking-[-0.03em] text-white">
+          {title}
+        </div>
       </div>
     </div>
   );
 };
 
-const BalanceItem = ({
+const formatLiquidationPrice = (price: string) => {
+  const numPrice = parseFloat(price);
+  if (numPrice > 999) {
+    return numPrice.toFixed(2);
+  }
+  return numPrice.toFixed(6);
+};
+
+const PositionRow = ({
   coin,
-  balance,
-  value,
+  amount,
+  type,
+  entryPx,
   pnl,
+  leverage,
+  liquidationPx,
+  returnOnEquity,
+  positionValue,
+  showLongShort = true,
 }: {
   coin: string;
-  balance: string;
-  value: string;
+  amount: string;
+  type: string;
+  entryPx?: string;
   pnl?: string;
+  leverage?: number;
+  liquidationPx?: string;
+  returnOnEquity?: string;
+  positionValue?: string;
+  showLongShort?: boolean;
 }) => {
-  const isPositive = pnl ? parseFloat(pnl) >= 0 : true;
+  const positionSize = parseFloat(amount);
+  const isLong = positionSize > 0;
+  const isShort = positionSize < 0;
 
   return (
-    <div className="flex flex-row justify-between items-center w-full p-4 border-b border-[#1e1e21] last:border-b-0">
-      <div className="flex flex-col">
-        <div className="font-dm-sans font-medium text-sm leading-4 text-white">
-          {coin}
-        </div>
-        <div className="font-dm-sans font-light text-xs leading-3 text-[#868686]">
-          {balance}
-        </div>
-      </div>
-      <div className="flex flex-col items-end">
-        <div className="font-dm-sans font-medium text-sm leading-4 text-white">
-          ${parseFloat(value).toFixed(2)}
-        </div>
-        {pnl && (
-          <div
-            className={`font-dm-sans font-light text-xs leading-3 ${
-              isPositive ? "text-pump-green" : "text-pump-red"
-            }`}
-          >
-            {isPositive ? "+" : ""}
-            {parseFloat(pnl).toFixed(2)}
+    <div className="flex flex-col w-full py-1 border-b border-[#1e1e21] last:border-b-0">
+      <div className="flex flex-row justify-between items-center">
+        <div className="flex flex-col">
+          <div className="flex flex-row items-center gap-2">
+            <div className="font-dm-sans font-normal text-sm text-white">
+              {coin}
+            </div>
+            {leverage && (
+              <div className="font-dm-sans font-normal text-xs text-[#868686]">
+                {leverage}x
+              </div>
+            )}
+            {showLongShort && (isLong || isShort) && (
+              <div
+                className={`font-dm-sans font-normal text-xs px-1 rounded ${isLong ? "text-pump-green" : "text-pump-red"}`}
+              >
+                {isLong ? "Long" : "Short"}
+              </div>
+            )}
           </div>
-        )}
+          <div className="font-dm-sans font-light text-[10px] text-[#868686]">
+            {type}
+          </div>
+        </div>
+        <div className="flex flex-col items-end">
+          <div className="font-dm-sans font-normal text-sm text-white">
+            {Math.abs(positionSize).toFixed(4)} {coin}
+          </div>
+          {positionValue && (
+            <div className="font-dm-sans font-light text-xs text-[#868686]">
+              ${parseFloat(positionValue).toFixed(2)}
+            </div>
+          )}
+        </div>
       </div>
-    </div>
-  );
-};
 
-const SummaryCard = ({
-  title,
-  accountValue,
-  totalMarginUsed,
-  withdrawable,
-}: {
-  title: string;
-  accountValue: string;
-  totalMarginUsed: string;
-  withdrawable?: string;
-}) => {
-  return (
-    <div className="w-full p-4 bg-[#1a1a1c] border border-[#2a2a2c] rounded-[12px] m-4">
-      <div className="font-dm-sans font-medium text-sm leading-4 text-[#868686] mb-2">
-        {title}
-      </div>
-      <div className="flex flex-col space-y-1">
-        <div className="flex justify-between">
-          <span className="font-dm-sans font-light text-xs text-[#868686]">
-            Account Value:
-          </span>
-          <span className="font-dm-sans font-medium text-xs text-white">
-            ${parseFloat(accountValue).toFixed(2)}
-          </span>
-        </div>
-        <div className="flex justify-between">
-          <span className="font-dm-sans font-light text-xs text-[#868686]">
-            Margin Used:
-          </span>
-          <span className="font-dm-sans font-medium text-xs text-white">
-            ${parseFloat(totalMarginUsed).toFixed(2)}
-          </span>
-        </div>
-        {withdrawable && (
-          <div className="flex justify-between">
-            <span className="font-dm-sans font-light text-xs text-[#868686]">
-              Withdrawable:
-            </span>
-            <span className="font-dm-sans font-medium text-xs text-white">
-              ${parseFloat(withdrawable).toFixed(2)}
-            </span>
+      {/* Additional info for perpetual positions */}
+      {(entryPx || pnl || liquidationPx) && (
+        <div className="flex flex-row justify-between items-center mt-1 text-xs">
+          <div className="flex flex-row gap-3">
+            {entryPx && (
+              <span className="text-[#868686]">Entry: ${entryPx}</span>
+            )}
+            {liquidationPx && (
+              <span className="text-pump-red">
+                Liq: ${formatLiquidationPrice(liquidationPx)}
+              </span>
+            )}
           </div>
-        )}
-      </div>
+          {pnl && (
+            <span
+              className={`${parseFloat(pnl) >= 0 ? "text-pump-green" : "text-pump-red"}`}
+            >
+              ${parseFloat(pnl).toFixed(4)}
+              {returnOnEquity && (
+                <span className="ml-1">
+                  ({(parseFloat(returnOnEquity) * 100).toFixed(2)}%)
+                </span>
+              )}
+            </span>
+          )}
+        </div>
+      )}
     </div>
   );
 };
@@ -116,66 +128,65 @@ export function GetBalanceOverviewDisplay({
 }: {
   balanceOverview: HyperliquidPortfolioOverview;
 }) {
-  const { spotBalances, perpBalances } = balanceOverview;
+  // Get all positions (spot and perpetual)
+  const spotPositions = balanceOverview.spotBalances.balances.filter(
+    (balance) => parseFloat(balance.total) > 0
+  );
+
+  const perpPositions = balanceOverview.perpBalances.assetPositions.filter(
+    (position) => parseFloat(position.position.szi) !== 0
+  );
+
+  // Check if we have USDC available balance to show
+  const accountValue = parseFloat(
+    balanceOverview.perpBalances.marginSummary.accountValue
+  );
 
   return (
     <Container>
-      <div className="w-full">
-        {/* Perpetual Summary */}
-        <SectionHeader
-          title="Perpetual Positions"
-          value={`${perpBalances.assetPositions.length} positions`}
-        />
+      <div className="flex flex-col p-3 w-full">
+        <SectionHeader title="Hyperliquid Balances" />
 
-        <SummaryCard
-          title="Perpetual Summary"
-          accountValue={perpBalances.marginSummary.accountValue}
-          totalMarginUsed={perpBalances.marginSummary.totalMarginUsed}
-          withdrawable={perpBalances.withdrawable}
-        />
+        <div className="flex flex-col gap-1">
+          {/* USDC Available Balance (show as perpetual) */}
+          {accountValue > 0 && (
+            <PositionRow
+              key="usdc-perpetual"
+              coin="USDC"
+              amount={accountValue.toString()}
+              type={`Perpetual`}
+              showLongShort={false}
+            />
+          )}
 
-        {/* Perpetual Positions */}
-        {perpBalances.assetPositions.length > 0 ? (
-          perpBalances.assetPositions.map((position, index) => (
-            <BalanceItem
-              key={`${position.position.coin}-${index}`}
+          {/* Perpetual positions (excluding USDC available balance) */}
+          {perpPositions.map((position) => (
+            <PositionRow
+              key={`perp-${position.position.coin}`}
               coin={position.position.coin}
-              balance={position.position.szi}
-              value={position.position.positionValue}
+              amount={position.position.szi}
+              type="Perpetual"
+              entryPx={position.position.entryPx}
               pnl={position.position.unrealizedPnl}
+              leverage={position.position.leverage.value}
+              liquidationPx={position.position.liquidationPx}
+              returnOnEquity={position.position.returnOnEquity}
+              positionValue={position.position.positionValue}
+              showLongShort={true}
             />
-          ))
-        ) : (
-          <div className="p-4 text-center">
-            <div className="font-dm-sans font-light text-sm text-[#868686]">
-              No perpetual positions
-            </div>
-          </div>
-        )}
+          ))}
 
-        {/* Spot Summary */}
-        <SectionHeader
-          title="Spot Balances"
-          value={`${spotBalances.balances.length} assets`}
-        />
-
-        {/* Spot Balances */}
-        {spotBalances.balances.length > 0 ? (
-          spotBalances.balances.map((balance, index) => (
-            <BalanceItem
-              key={`${balance.coin}-${index}`}
+          {/* Spot positions */}
+          {spotPositions.map((balance) => (
+            <PositionRow
+              key={`spot-${balance.coin}`}
               coin={balance.coin}
-              balance={balance.hold}
-              value={balance.total}
+              amount={balance.total}
+              type="Spot"
+              showLongShort={false}
             />
-          ))
-        ) : (
-          <div className="p-4 text-center">
-            <div className="font-dm-sans font-light text-sm text-[#868686]">
-              No spot balances
-            </div>
-          </div>
-        )}
+          ))}
+        </div>
       </div>
     </Container>
   );
