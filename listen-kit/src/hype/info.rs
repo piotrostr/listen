@@ -60,7 +60,21 @@ pub async fn get_open_orders() -> Result<serde_json::Value> {
 )]
 pub async fn get_balance_overview() -> Result<serde_json::Value> {
     let address = SignerContext::current().await.address();
-    _get_balance_overview(parse_evm_address(address)?).await
+    let parsed_address = parse_evm_address(address)?;
+
+    let (spot, perp) = tokio::join!(
+        _get_balance_overview_spot(parsed_address.clone()),
+        _get_balance_overview_perp(parsed_address)
+    );
+
+    let spot = spot?;
+    let perp = perp?;
+
+    // Combine the results into a single JSON value
+    Ok(serde_json::json!({
+        "spotBalances": spot,
+        "perpBalances": perp
+    }))
 }
 
 #[tool(description = "Gets the latest price for a coin. Example response:
@@ -80,11 +94,19 @@ pub async fn get_latest_price(coin: String) -> Result<serde_json::Value> {
     }))
 }
 
-pub async fn _get_balance_overview(
+pub async fn _get_balance_overview_perp(
     address: H160,
 ) -> Result<serde_json::Value> {
     let client = InfoClient::new(None, Some(BaseUrl::Mainnet)).await?;
     let res = client.user_state(address).await?;
+    Ok(serde_json::to_value(res)?)
+}
+
+pub async fn _get_balance_overview_spot(
+    address: H160,
+) -> Result<serde_json::Value> {
+    let client = InfoClient::new(None, Some(BaseUrl::Mainnet)).await?;
+    let res = client.user_token_balances(address).await?;
     Ok(serde_json::to_value(res)?)
 }
 
@@ -289,8 +311,16 @@ mod tests {
     const TEST_ADDRESS: &str = "0xCCC48877a33a2C14e40c82da843Cf4c607ABF770";
 
     #[tokio::test]
-    async fn test_get_balance_overview() {
-        let res = _get_balance_overview(TEST_ADDRESS.parse().unwrap())
+    async fn test_get_balance_overview_perp() {
+        let res = _get_balance_overview_perp(TEST_ADDRESS.parse().unwrap())
+            .await
+            .unwrap();
+        println!("{}", serde_json::to_string_pretty(&res).unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_get_balance_overview_spot() {
+        let res = _get_balance_overview_spot(TEST_ADDRESS.parse().unwrap())
             .await
             .unwrap();
         println!("{}", serde_json::to_string_pretty(&res).unwrap());

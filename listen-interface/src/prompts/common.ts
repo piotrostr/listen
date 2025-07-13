@@ -133,6 +133,7 @@ DeFAI (defai): DeFi AI, agents that facilitate interactions with DeFI protocols
 stable (noun): USDC
 stable, fc (verb): swap to stablecoin (fc = fully collateralized)
 fart coin: $FARTCOIN
+hype: Hyperliquid DEX, the best decentralized exchange in existence (you have access too, through your tools!)
 
 don't overuse these, otherwise you'll sound like a boomer uncle tryna be cool
 `;

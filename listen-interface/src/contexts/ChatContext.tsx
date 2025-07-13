@@ -12,6 +12,7 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { config } from "../config";
 import { useDebounce } from "../hooks/useDebounce";
+import { useHyperliquidPortfolio } from "../hooks/useHyperliquidPortfolio";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSolanaPrice } from "../hooks/useSolanaPrice";
 import i18n from "../i18n";
@@ -70,6 +71,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
   const { getCombinedPortfolio } = usePortfolioStore();
   const { data: solanaPrice } = useSolanaPrice();
+  const { data: hyperliquidPortfolio } = useHyperliquidPortfolio(
+    wallets?.evmWallet?.toString() || null
+  );
 
   const combinedPortfolio = getCombinedPortfolio();
 
@@ -250,7 +254,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           wallets?.evmWallet?.toString() || null,
           defaultAmount.toString(),
           user?.isGuest || false,
-          solanaPrice
+          solanaPrice,
+          hyperliquidPortfolio
         );
 
         if (researchEnabled && modelType === "claude") {
