@@ -18,6 +18,8 @@ use crate::{
 };
 
 #[tool(description = "
+Hyperliquid 
+
 Gets the complete orderbook snapshot for a given coin. Example response:
 {
   \"coin\": \"ETH\",
@@ -45,7 +47,10 @@ pub async fn get_l2_snapshot(coin: String) -> Result<serde_json::Value> {
     Ok(serde_json::to_value(info)?)
 }
 
-#[tool(description = "Gets the open orders for the current user")]
+#[tool(description = "
+Hyperliquid 
+
+Gets the open orders on the Hyperliquid exchange for the current user")]
 pub async fn get_open_orders() -> Result<serde_json::Value> {
     let client = InfoClient::new(None, Some(BaseUrl::Mainnet)).await?;
     let address = SignerContext::current().await.address();
@@ -53,15 +58,33 @@ pub async fn get_open_orders() -> Result<serde_json::Value> {
     Ok(serde_json::to_value(res)?)
 }
 
-#[tool(
-    description = "Gets the hyperliquid balance overview of the current user. Response involves a summary of all of the asset positions as well as the margin summary (account value, total margin used)."
-)]
+#[tool(description = "
+Hyperliquid
+
+Gets the balance overview of the current user. Response involves a summary of all of the asset positions as well as the margin summary (account value, total margin used).")]
 pub async fn get_balance_overview() -> Result<serde_json::Value> {
     let address = SignerContext::current().await.address();
-    _get_balance_overview(parse_evm_address(address)?).await
+    let parsed_address = parse_evm_address(address)?;
+
+    let (spot, perp) = tokio::join!(
+        _get_balance_overview_spot(parsed_address.clone()),
+        _get_balance_overview_perp(parsed_address)
+    );
+
+    let spot = spot?;
+    let perp = perp?;
+
+    // Combine the results into a single JSON value
+    Ok(serde_json::json!({
+        "spotBalances": spot,
+        "perpBalances": perp
+    }))
 }
 
-#[tool(description = "Gets the latest price for a coin. Example response:
+#[tool(description = "
+Hyperliquid
+
+Gets the latest price for a coin. Example response:
 {
   \"bid\": 2545.4,
   \"ask\": 2545.5
@@ -78,7 +101,7 @@ pub async fn get_latest_price(coin: String) -> Result<serde_json::Value> {
     }))
 }
 
-pub async fn _get_balance_overview(
+pub async fn _get_balance_overview_perp(
     address: H160,
 ) -> Result<serde_json::Value> {
     let client = InfoClient::new(None, Some(BaseUrl::Mainnet)).await?;
@@ -86,9 +109,18 @@ pub async fn _get_balance_overview(
     Ok(serde_json::to_value(res)?)
 }
 
+pub async fn _get_balance_overview_spot(
+    address: H160,
+) -> Result<serde_json::Value> {
+    let client = InfoClient::new(None, Some(BaseUrl::Mainnet)).await?;
+    let res = client.user_token_balances(address).await?;
+    Ok(serde_json::to_value(res)?)
+}
+
 #[tool(description = "
-Gets the raw candlestick data for a coin. In the OHLCV format, the response is a
-list of candles, each with the following fields:
+Hyperliquid
+
+Gets the raw candlestick data for a coin. In the OHLCV format, the response is a list of candles, each with the following fields:
 - t: timestamp
 - o: open
 - h: high
@@ -103,9 +135,7 @@ Example:
   \"limit\": \"100\"
 }}
 
-This method can be useful for fetching a small chunk of price action, say
-the last 5 5m candles. For larger timeframes, to save context and extract
-the most relevant information, use the get_candlesticks_analysis tool.
+This method can be useful for fetching a small chunk of price action, say the last 5 5m candles. For larger timeframes, to save context and extract the most relevant information, use the get_candlesticks_analysis tool.
 ")]
 pub async fn get_candlesticks_raw(
     coin: String,
@@ -135,6 +165,8 @@ pub async fn get_candles_snapshot(
 }
 
 #[tool(description = "
+Hyperliquid
+
 Gets the price action analysis for a coin.
 
 Parameters:
@@ -151,9 +183,9 @@ Example:
   \"intent\": \"What is the price action for ETH in the last 100 1m candles?\"
 }}
 
-Returns the price action analysis for the coin from the Chart Analyst agent
-along with summary of the price action - the current price, time, total volume,
-price change in the period analysed and the high/low price.
+Returns the price action analysis for the coin from the Chart Analyst agent along with summary of the price action - the current price, time, total volume, price change in the period analysed and the high/low price.
+
+This is the go-to method for getting a high-level overview of the price action, while condensing the verbose candlesticks output
 ")]
 pub async fn get_candlesticks_analysis(
     coin: String,
@@ -284,8 +316,16 @@ mod tests {
     const TEST_ADDRESS: &str = "0xCCC48877a33a2C14e40c82da843Cf4c607ABF770";
 
     #[tokio::test]
-    async fn test_get_balance_overview() {
-        let res = _get_balance_overview(TEST_ADDRESS.parse().unwrap())
+    async fn test_get_balance_overview_perp() {
+        let res = _get_balance_overview_perp(TEST_ADDRESS.parse().unwrap())
+            .await
+            .unwrap();
+        println!("{}", serde_json::to_string_pretty(&res).unwrap());
+    }
+
+    #[tokio::test]
+    async fn test_get_balance_overview_spot() {
+        let res = _get_balance_overview_spot(TEST_ADDRESS.parse().unwrap())
             .await
             .unwrap();
         println!("{}", serde_json::to_string_pretty(&res).unwrap());

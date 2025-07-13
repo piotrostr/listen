@@ -57,6 +57,7 @@ export const PortfolioItemSchema = z.object({
   chain: z.string(),
   priceChange24h: z.number(),
   volume24h: z.number().optional(),
+  type: z.optional(z.enum(["spot", "perp"])),
 });
 
 export type PortfolioItem = z.infer<typeof PortfolioItemSchema>;

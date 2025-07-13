@@ -10,7 +10,12 @@ import {
 } from "react-icons/fa";
 import { FaImage, FaRobot, FaXTwitter } from "react-icons/fa6";
 import { IoSwapHorizontal } from "react-icons/io5";
+import { formatUnits } from "viem";
 import { z } from "zod";
+import {
+  HyperliquidPortfolioOverviewSchema,
+  MarketOpenResponseSchema,
+} from "../lib/hype-types";
 import {
   CandlestickDataSchema,
   PriceActionAnalysisResponseSchema,
@@ -42,13 +47,16 @@ import {
 } from "./BubbleMapDisplay";
 import { Chart, InnerChart } from "./Chart";
 import { ChatMessage } from "./ChatMessage";
+import { DepositUsdcDisplay } from "./DepositUsdcDisplay";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import DropdownMessage from "./DropdownMessage";
 import { Erc20Balance, Erc20BalanceSchema } from "./Erc20Balance";
 import { EvmRawTokenMetadataDisplay } from "./EvmRawTokenMetadataDisplay";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
 import { GeckoTerminalChart } from "./GeckoTerminalChart";
+import { GetBalanceOverviewDisplay } from "./GetBalanceOverviewDisplay";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
+import { MarketOpenDisplay } from "./MarketOpenDisplay";
 import { OrderbookDisplay } from "./OrderbookDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
@@ -125,6 +133,34 @@ const parseAndCleanMessage = (input: string): string => {
   } catch (e) {
     console.error("[parsing error]:", e);
     return input;
+  }
+};
+
+const extractToolCallParams = (
+  toolCallInfo: any
+): Record<string, any> | null => {
+  if (!toolCallInfo) return null;
+  try {
+    // Use pre-parsed arguments if available (from RigToolCall)
+    if ("_arguments" in toolCallInfo && toolCallInfo._arguments) {
+      return toolCallInfo._arguments as Record<string, any>;
+    }
+    // Otherwise parse the params string (from ToolCall or adapted RigToolCall)
+    // Check if params exists and is a string before parsing
+    if ("params" in toolCallInfo && typeof toolCallInfo.params === "string") {
+      return JSON.parse(toolCallInfo.params);
+    } else if ("params" in toolCallInfo) {
+      // Log a warning if params exists but is not a string
+      console.warn(
+        "Tool call 'params' exists but is not a string:",
+        toolCallInfo.params
+      );
+      return null; // Return null as we can't parse it
+    }
+    return null; // Return null if neither _arguments nor valid params string is found
+  } catch (e) {
+    console.error("Failed to parse tool call params:", e);
+    return null;
   }
 };
 
@@ -209,6 +245,26 @@ export const ToolMessage = ({
     return null;
   }
 
+  if (toolOutput.name === "deposit_usdc") {
+    const params = useMemo(
+      () => extractToolCallParams(toolCallInfo),
+      [toolCallInfo]
+    );
+    const amount = params?.amount;
+    if (!amount) {
+      console.warn("Failed to parse deposit usdc amount:", toolOutput.result);
+      return null;
+    }
+    const transactionHash = toolOutput.result;
+    const uiAmount = formatUnits(BigInt(String(amount)), 6);
+    return (
+      <DepositUsdcDisplay
+        transactionHash={transactionHash}
+        uiAmount={uiAmount}
+      />
+    );
+  }
+
   if (toolOutput.name === "get_l2_snapshot") {
     const parsed = L2OrderbookSnapshotSchema.safeParse(
       JSON.parse(toolOutput.result)
@@ -217,6 +273,37 @@ export const ToolMessage = ({
       return <OrderbookDisplay orderbookSnapshot={parsed.data} />;
     }
     console.error("Failed to parse l2 snapshot:", parsed.error);
+    return null;
+  }
+
+  if (toolOutput.name === "market_open") {
+    const params = useMemo(
+      () => extractToolCallParams(toolCallInfo),
+      [toolCallInfo]
+    );
+    let side = params?.side;
+    if (!side) {
+      side = "long";
+    }
+    console.log(params);
+    const parsed = MarketOpenResponseSchema.safeParse(
+      JSON.parse(toolOutput.result)
+    );
+    if (parsed.success) {
+      return <MarketOpenDisplay marketOpenResponse={parsed.data} side={side} />;
+    }
+    console.error("Failed to parse market open:", parsed.error);
+    return null;
+  }
+
+  if (toolOutput.name === "get_balance_overview") {
+    const parsed = HyperliquidPortfolioOverviewSchema.safeParse(
+      JSON.parse(toolOutput.result)
+    );
+    if (parsed.success) {
+      return <GetBalanceOverviewDisplay balanceOverview={parsed.data} />;
+    }
+    console.error("Failed to parse balance overview:", parsed.error);
     return null;
   }
 
@@ -233,35 +320,10 @@ export const ToolMessage = ({
   }
 
   if (toolOutput.name === "fetch_price_action_analysis_evm") {
-    const params = useMemo(() => {
-      if (!toolCallInfo) return null;
-      try {
-        // Use pre-parsed arguments if available (from RigToolCall)
-        if ("_arguments" in toolCallInfo && toolCallInfo._arguments) {
-          return toolCallInfo._arguments as Record<string, any>;
-        }
-        // Otherwise parse the params string (from ToolCall or adapted RigToolCall)
-        // Check if params exists and is a string before parsing
-        if (
-          "params" in toolCallInfo &&
-          typeof toolCallInfo.params === "string"
-        ) {
-          return JSON.parse(toolCallInfo.params);
-        } else if ("params" in toolCallInfo) {
-          // Log a warning if params exists but is not a string
-          console.warn(
-            "Tool call 'params' exists but is not a string:",
-            toolCallInfo.params
-          );
-          return null; // Return null as we can't parse it
-        }
-        // Redundant else-if removed
-        return null; // Return null if neither _arguments nor valid params string is found
-      } catch (e) {
-        console.error("Failed to parse tool call params:", e);
-        return null;
-      }
-    }, [toolCallInfo]);
+    const params = useMemo(
+      () => extractToolCallParams(toolCallInfo),
+      [toolCallInfo]
+    );
 
     console.debug(params);
     const pairAddress = params?.pair_address;
@@ -308,35 +370,10 @@ export const ToolMessage = ({
   if (toolOutput.name === "fetch_price_action_analysis") {
     try {
       // Extract parameters using toolCallInfo
-      const params = useMemo(() => {
-        if (!toolCallInfo) return null;
-        try {
-          // Use pre-parsed arguments if available (from RigToolCall)
-          if ("_arguments" in toolCallInfo && toolCallInfo._arguments) {
-            return toolCallInfo._arguments as Record<string, any>;
-          }
-          // Otherwise parse the params string (from ToolCall or adapted RigToolCall)
-          // Check if params exists and is a string before parsing
-          if (
-            "params" in toolCallInfo &&
-            typeof toolCallInfo.params === "string"
-          ) {
-            return JSON.parse(toolCallInfo.params);
-          } else if ("params" in toolCallInfo) {
-            // Log a warning if params exists but is not a string
-            console.warn(
-              "Tool call 'params' exists but is not a string:",
-              toolCallInfo.params
-            );
-            return null; // Return null as we can't parse it
-          }
-          // Redundant else-if removed
-          return null; // Return null if neither _arguments nor valid params string is found
-        } catch (e) {
-          console.error("Failed to parse tool call params:", e);
-          return null;
-        }
-      }, [toolCallInfo]);
+      const params = useMemo(
+        () => extractToolCallParams(toolCallInfo),
+        [toolCallInfo]
+      );
 
       const mint = params?.mint;
       const interval = params?.interval || "30s";
