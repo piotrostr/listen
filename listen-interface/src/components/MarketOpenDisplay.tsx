@@ -29,7 +29,7 @@ const OrderRow = ({
             {isLong && <IoTrendingUp className="w-4 h-4 text-pump-green" />}
             {isShort && <IoTrendingDown className="w-4 h-4 text-pump-red" />}
             <div className="font-dm-sans font-normal text-sm text-white">
-              Market {isLong ? "Buy" : "Sell"} Filled
+              Market {isLong ? "Buy" : "Sell"}
             </div>
           </div>
         </div>
@@ -73,7 +73,7 @@ export function MarketOpenDisplay({
         <div className="flex flex-col gap-1">
           {orderData.statuses.map((status, index) => (
             <OrderRow
-              key={`order-${status.filled.oid}-${index}`}
+              key={`order-${index}`}
               totalSize={status.filled.totalSz}
               avgPrice={status.filled.avgPx}
               side={side}

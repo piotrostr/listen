@@ -10,6 +10,7 @@ import {
 } from "react-icons/fa";
 import { FaImage, FaRobot, FaXTwitter } from "react-icons/fa6";
 import { IoSwapHorizontal } from "react-icons/io5";
+import { formatUnits } from "viem";
 import { z } from "zod";
 import {
   HyperliquidPortfolioOverviewSchema,
@@ -46,6 +47,7 @@ import {
 } from "./BubbleMapDisplay";
 import { Chart, InnerChart } from "./Chart";
 import { ChatMessage } from "./ChatMessage";
+import { DepositUsdcDisplay } from "./DepositUsdcDisplay";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import DropdownMessage from "./DropdownMessage";
 import { Erc20Balance, Erc20BalanceSchema } from "./Erc20Balance";
@@ -241,6 +243,26 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "think") {
     return null;
+  }
+
+  if (toolOutput.name === "deposit_usdc") {
+    const params = useMemo(
+      () => extractToolCallParams(toolCallInfo),
+      [toolCallInfo]
+    );
+    const amount = params?.amount;
+    if (!amount) {
+      console.warn("Failed to parse deposit usdc amount:", toolOutput.result);
+      return null;
+    }
+    const transactionHash = toolOutput.result;
+    const uiAmount = formatUnits(BigInt(String(amount)), 6);
+    return (
+      <DepositUsdcDisplay
+        transactionHash={transactionHash}
+        uiAmount={uiAmount}
+      />
+    );
   }
 
   if (toolOutput.name === "get_l2_snapshot") {
