@@ -1,6 +1,5 @@
 import { usePrivy } from "@privy-io/react-auth";
 import { useTranslation } from "react-i18next";
-import { BiCoin } from "react-icons/bi";
 import {
   IoChatboxOutline,
   IoSettingsOutline,
@@ -61,13 +60,13 @@ export function MobileNavigation({
           <span className="text-xs mt-1">{t("layout.portfolio")}</span>
         </button>
 
-        <button
+        {/* <button
           onClick={() => handleNavClick("screener")}
           className={`flex flex-col items-center justify-center p-2 ${activePanel === "screener" ? "text-white-400" : "text-gray-400"}`}
         >
           <BiCoin className="w-6 h-6" />
           <span className="text-xs mt-1">{t("layout.screener")}</span>
-        </button>
+        </button> */}
 
         <button
           onClick={() => handleNavClick("pipelines")}

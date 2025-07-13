@@ -1,6 +1,6 @@
 [package]
 name = "privy"
-version = "0.8.0"
+version = "0.9.0"
 edition = "2021"
 authors = ["piotrostr"]
 license = "MIT"

@@ -576,6 +576,7 @@ dependencies = [
 [[package]]
 name = "blockhash-cache"
 version = "0.1.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "anyhow",
  "base64 0.22.1",
@@ -1195,6 +1196,7 @@ dependencies = [
 [[package]]
 name = "evm-approvals"
 version = "0.1.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "anyhow",
  "dotenv",
@@ -2043,6 +2045,7 @@ dependencies = [
 [[package]]
 name = "lifi"
 version = "0.2.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "anyhow",
  "reqwest 0.12.12",
@@ -2100,6 +2103,7 @@ dependencies = [
 [[package]]
 name = "listen-tracing"
 version = "0.1.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#ce7e398dd19ee96726b99544dc2cd0787604e838"
 dependencies = [
  "tracing",
  "tracing-journald",
@@ -2561,7 +2565,9 @@ dependencies = [
 
 [[package]]
 name = "privy"
-version = "0.8.0"
+version = "0.9.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bb555161fa108aa1f1babe98562be326a218a6f2d45a08bc6fbe76680791daf9"
 dependencies = [
  "anyhow",
  "base64 0.22.1",

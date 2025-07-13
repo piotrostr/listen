@@ -45,7 +45,7 @@ spl-token = "6.0.0"
 spl-token-2022 = "6.0.0"
 clap = { version = "4.5.28", features = ["derive"] }
 tracing = "0.1.41"
-listen-tracing = { path = "../listen-tracing" }
+listen-tracing = { git = "https://github.com/piotrostr/listen", package = "listen-tracing", branch = "feat/v4.0.0" }
 chrono = "0.4.39"
 futures-util = "0.3.30"
 url = "2.5.4"

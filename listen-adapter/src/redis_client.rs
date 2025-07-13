@@ -6,6 +6,7 @@ use tracing::debug;
 
 use crate::webhook::PrivyWebhookPayload;
 
+#[derive(Clone)]
 pub struct RedisClient {
     pool: bb8::Pool<RedisConnectionManager>,
 }

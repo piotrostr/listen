@@ -43,7 +43,7 @@ export const GtTokenMetadataSchema = z.object({
   image_url: z.string().nullable().optional(),
   description: z.string().nullable().optional(),
   websites: z.array(z.string()).nullable().optional(),
-  chain_id: z.number(),
+  chain_id: z.union([z.number(), z.string()]),
   discord_url: z.string().nullable().optional(),
   telegram_handle: z.string().nullable().optional(),
   twitter_handle: z.string().nullable().optional(),

@@ -1,6 +1,8 @@
 use super::ClickhouseDb;
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use serde::{Deserialize, Serialize};
+use std::fmt;
+use std::str::FromStr;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Candlestick {
@@ -25,8 +27,10 @@ pub enum CandlestickInterval {
     OneDay,
 }
 
-impl CandlestickInterval {
-    pub fn from_str(s: &str) -> Result<Self> {
+impl FromStr for CandlestickInterval {
+    type Err = anyhow::Error;
+
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "15s" => Ok(CandlestickInterval::FifteenSeconds),
             "30s" => Ok(CandlestickInterval::ThirtySeconds),
@@ -37,22 +41,25 @@ impl CandlestickInterval {
             "1h" => Ok(CandlestickInterval::OneHour),
             "4h" => Ok(CandlestickInterval::FourHours),
             "1d" => Ok(CandlestickInterval::OneDay),
-            _ => Err(anyhow::anyhow!("Invalid interval: {}", s)),
+            _ => Err(anyhow!("Invalid interval: {}", s)),
         }
     }
+}
 
-    pub fn to_string(&self) -> String {
-        match self {
-            CandlestickInterval::FifteenSeconds => "15 SECOND".to_string(),
-            CandlestickInterval::ThirtySeconds => "30 SECOND".to_string(),
-            CandlestickInterval::OneMinute => "1 MINUTE".to_string(),
-            CandlestickInterval::FiveMinutes => "5 MINUTE".to_string(),
-            CandlestickInterval::FifteenMinutes => "15 MINUTE".to_string(),
-            CandlestickInterval::ThirtyMinutes => "30 MINUTE".to_string(),
-            CandlestickInterval::OneHour => "1 HOUR".to_string(),
-            CandlestickInterval::FourHours => "4 HOUR".to_string(),
-            CandlestickInterval::OneDay => "1 DAY".to_string(),
-        }
+impl fmt::Display for CandlestickInterval {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let s = match self {
+            CandlestickInterval::FifteenSeconds => "15 SECOND",
+            CandlestickInterval::ThirtySeconds => "30 SECOND",
+            CandlestickInterval::OneMinute => "1 MINUTE",
+            CandlestickInterval::FiveMinutes => "5 MINUTE",
+            CandlestickInterval::FifteenMinutes => "15 MINUTE",
+            CandlestickInterval::ThirtyMinutes => "30 MINUTE",
+            CandlestickInterval::OneHour => "1 HOUR",
+            CandlestickInterval::FourHours => "4 HOUR",
+            CandlestickInterval::OneDay => "1 DAY",
+        };
+        write!(f, "{}", s)
     }
 }
 
@@ -142,7 +149,7 @@ impl ClickhouseDb {
 }
 
 /// Filter out extreme price wicks from candlestick data
-fn filter_extreme_wicks(candlesticks: &mut Vec<Candlestick>) {
+fn filter_extreme_wicks(candlesticks: &mut [Candlestick]) {
     if candlesticks.len() <= 2 {
         return;
     }

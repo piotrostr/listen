@@ -5,6 +5,7 @@ use serde_json::json;
 async fn healthz() -> Result<HttpResponse, Error> {
     Ok(HttpResponse::Ok().json(json!({
         "status": "ok",
-        "timestamp": chrono::Utc::now().to_rfc3339()
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+        "version": "4.0.0"
     })))
 }

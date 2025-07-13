@@ -18,6 +18,7 @@ http = [
   "redis",
   "privy",
 ]
+engine = ["listen-engine", "http"]
 solana = [
   "solana-account-decoder",
   "solana-sdk",
@@ -47,7 +48,6 @@ dotenv = "0.15.0"
 hex = "0.4.3"
 anyhow = "1.0.95"
 rig-core = { git = "https://github.com/piotrostr/rig", branch = "fix/openai-id-missing" }
-# rig-core = { path = "../../rig-piotr/rig-core" }
 rig-tool-macro = { git = "https://github.com/piotrostr/rig-tool-macro" }
 thiserror = "2.0.11"
 once_cell = "1.20.2"
@@ -58,15 +58,13 @@ serde_with = "3.12.0"
 async-trait = "0.1.85"
 ctor = "0.2.0"
 futures-util = { version = "0.3" }
-lifi = { path = "../lifi" }
-listen-tracing = { path = "../listen-tracing" }
-listen-memory = { path = "../listen-memory" }
-# TODO this brings solana sdk dependency, worth trying to go to non-native blockahsh
-# injection, otherwise this is required for privy + lifi
-blockhash-cache = { path = "../blockhash-cache" }
-evm-approvals = { path = "../approvals" }
-
-listen-mongo = { path = "../listen-mongo" }
+lifi = { git = "https://github.com/piotrostr/listen", package = "lifi", branch = "feat/v4.0.0" }
+listen-tracing = { git = "https://github.com/piotrostr/listen", package = "listen-tracing", branch = "feat/v4.0.0" }
+listen-memory = { git = "https://github.com/piotrostr/listen", package = "listen-memory", branch = "feat/v4.0.0" }
+blockhash-cache = { git = "https://github.com/piotrostr/listen", package = "blockhash-cache", branch = "feat/v4.0.0" }
+evm-approvals = { git = "https://github.com/piotrostr/listen", package = "evm-approvals", branch = "feat/v4.0.0" }
+listen-mongo = { git = "https://github.com/piotrostr/listen", package = "listen-mongo", branch = "feat/v4.0.0" }
+listen-adapter = { git = "https://github.com/piotrostr/listen", package = "listen-adapter", branch = "feat/v4.0.0" }
 
 # evm
 alloy = { version = "0.9", features = ["full"], optional = true }
@@ -85,7 +83,7 @@ solana-transaction-status = { version = "2.1.9", optional = true }
 spl-associated-token-account = { version = "6.0.0", optional = true }
 
 # http
-privy = { path = "../privy", optional = true }
+privy = { version = "0.9.0", optional = true }
 actix-web = { version = "4", optional = true }
 actix-cors = { version = "0.6", optional = true }
 actix-web-lab = { version = "0.20", optional = true }
@@ -97,7 +95,7 @@ lazy_static = { version = "1.5.0", optional = true }
 tracing-subscriber = "0.3.19"
 petgraph = "0.7.1"
 
-# hyperliquid_rust_sdk = { version = "0.6.0", optional = true }
-# hyperliquid_rust_sdk = { path = "../../hyperliquid-rust-sdk", optional = true }
 hyperliquid_rust_sdk = { git = "https://github.com/piotrostr/hyperliquid-rust-sdk", optional = true }
 ethers = "2.0.14"
+
+listen-engine = { git = "https://github.com/piotrostr/listen", package = "listen-engine", optional = true, branch = "feat/v4.0.0" }

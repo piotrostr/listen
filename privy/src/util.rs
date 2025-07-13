@@ -14,6 +14,7 @@ pub fn base64decode(data: &str) -> Result<Vec<u8>> {
 
 pub fn create_privy_client(privy_config: &PrivyConfig) -> reqwest::Client {
     reqwest::Client::builder()
+        .http1_only()
         .default_headers({
             let mut headers = reqwest::header::HeaderMap::new();
             headers.insert(

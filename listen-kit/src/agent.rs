@@ -1,20 +1,17 @@
 use crate::data::evm_fallback_tools::{
-    FetchPriceActionAnalysisEvm, FetchTopTokensByCategory,
-    FetchTopTokensByChainId,
+    FetchTopTokens, FetchTopTokensByCategory,
 };
 use crate::evm::tools::{GetErc20Balance, GetEthBalance};
 use crate::hype::equip_with_hype_tools;
-use crate::solana::tools::{
-    DeployPumpFunToken, GetCurrentTime, GetSolBalance, GetSplTokenBalance,
-};
+use crate::solana::tools::{DeployPumpFunToken, GetCurrentTime};
 
 use crate::agents::listen::create_deep_research_agent_openrouter;
 use crate::agents::research::ViewImage;
 use crate::common::{openrouter_agent_builder, OpenRouterAgent};
 use crate::cross_chain::tools::{GetQuote, Swap};
 use crate::data::{
-    AnalyzePageContent, FetchPriceActionAnalysis, FetchTopTokens, FetchXPost,
-    GetToken, ResearchXProfile, SearchTweets, SearchWeb,
+    AnalyzePageContent, FetchPriceActionAnalysis, FetchXPost, GetToken,
+    GetTokenBalance, ResearchXProfile, SearchTweets, SearchWeb,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::faster100x::AnalyzeHolderDistribution;
@@ -50,40 +47,31 @@ pub fn model_to_versioned_model(model_type: String) -> String {
     }
 }
 
-// TODO unify the four tools for getting each of the balances for any token into just GetTokenBalance
+// TODOs
+// add the display for the unified get_token_balance tool (any token, currently 4 tools)
+
 pub fn equip_with_tools<M: StreamingCompletionModel>(
     agent_builder: AgentBuilder<M>,
 ) -> AgentBuilder<M> {
     agent_builder
         .tool(GetToken)
         .tool(GetQuote)
-        .tool(GetSolBalance)
-        .tool(GetSplTokenBalance)
+        .tool(GetTokenBalance)
         .tool(SearchOnDexScreener)
-        .tool(FetchTopTokens)
         .tool(DeployPumpFunToken)
         .tool(ResearchXProfile)
         .tool(FetchXPost)
         .tool(SearchTweets)
-        .tool(AnalyzeRisk)
+        .tool(AnalyzeRisk) // TODO add evm equivalent
         .tool(FetchPriceActionAnalysis)
         .tool(Think)
         .tool(AnalyzeHolderDistribution)
-        .tool(AnalyzeSentiment)
+        .tool(AnalyzeSentiment) // TODO possibly drop? lunarcrush-specific
         .tool(GetCurrentTime)
         .tool(SearchWeb)
         .tool(ViewImage)
         .tool(AnalyzePageContent)
-}
-
-pub fn equip_with_evm_tools<M: StreamingCompletionModel>(
-    agent_builder: AgentBuilder<M>,
-) -> AgentBuilder<M> {
-    agent_builder
-        .tool(GetEthBalance)
-        .tool(GetErc20Balance)
-        .tool(FetchPriceActionAnalysisEvm)
-        .tool(FetchTopTokensByChainId)
+        .tool(FetchTopTokens)
         .tool(FetchTopTokensByCategory)
 }
 
@@ -92,7 +80,7 @@ pub fn equip_with_worldchain_tools<M: StreamingCompletionModel>(
 ) -> AgentBuilder<M> {
     agent_builder
         .tool(Think)
-        .tool(FetchTopTokensByChainId)
+        .tool(FetchTopTokens)
         .tool(GetQuote)
         .tool(GetToken)
         .tool(GetEthBalance)
@@ -128,10 +116,8 @@ pub fn create_listen_agent(
     }
     let model = Some("google/gemini-2.5-flash-preview".to_string());
 
-    let mut agent = equip_with_evm_tools(equip_with_tools(
-        openrouter_agent_builder(model),
-    ))
-    .preamble(&preamble);
+    let mut agent =
+        equip_with_tools(openrouter_agent_builder(model)).preamble(&preamble);
 
     if features.autonomous {
         agent = equip_with_autonomous_tools(agent);

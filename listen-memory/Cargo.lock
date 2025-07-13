@@ -1559,6 +1559,7 @@ dependencies = [
 [[package]]
 name = "listen-mongo"
 version = "0.1.0"
+source = "git+https://github.com/piotrostr/listen?branch=feat%2Fv4.0.0#2858473f1dbf8c358880a9ccf9dc600e88669f9a"
 dependencies = [
  "anyhow",
  "bson",

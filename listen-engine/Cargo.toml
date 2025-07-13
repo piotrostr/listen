@@ -14,7 +14,7 @@ serde = { version = "1.0.217", features = ["derive"] }
 serde_json = "1.0.138"
 tokio = { version = "1.43.0", features = ["full"] }
 tracing = "0.1.41"
-listen-tracing = { path = "../listen-tracing" }
+listen-tracing = { git = "https://github.com/piotrostr/listen", package = "listen-tracing", branch = "feat/v4.0.0" }
 uuid = { version = "1.12.1", features = ["serde", "v4"] }
 redis = { version = "0.23.3", features = ["tokio-comp"] }
 futures-util = "0.3.31"
@@ -24,13 +24,13 @@ metrics = "0.21"
 metrics-exporter-prometheus = "0.12"
 once_cell = "1.18"
 bb8-redis = "0.20.0"
-privy = { path = "../privy" }
+privy = { version = "0.9.0" }
 actix-cors = "0.7.0"
-lifi = { path = "../lifi" }
-blockhash-cache = { path = "../blockhash-cache" }
+lifi = { git = "https://github.com/piotrostr/listen", package = "lifi", branch = "feat/v4.0.0" }
+blockhash-cache = { git = "https://github.com/piotrostr/listen", package = "blockhash-cache", branch = "feat/v4.0.0" }
 dashmap = "6.1.0"
 parking_lot = "0.12.3"
-evm-approvals = { path = "../approvals" }
+evm-approvals = { git = "https://github.com/piotrostr/listen", package = "evm-approvals", branch = "feat/v4.0.0" }
 hex = "0.4.3"
 tracing-subscriber = "0.3.19"
 solana-sdk = "2.2.1"

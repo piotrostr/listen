@@ -5,7 +5,9 @@ use crate::{
         PriceActionAnalysisResponse, TopToken,
     },
     distiller::analyst::Analyst,
-    evm_fallback::{token_info::GtTokenMetadata, EvmFallback},
+    evm_fallback::{
+        token_info::GtTokenMetadata, validate_chain_id, EvmFallback,
+    },
     reasoning_loop::ReasoningLoop,
     signer::SignerContext,
 };
@@ -24,9 +26,8 @@ pub async fn fetch_token_metadata_evm(
     chain_id: String,
 ) -> Result<GtTokenMetadata> {
     let evm_fallback = EvmFallback::from_env()?;
-    let token_info = evm_fallback
-        .fetch_token_info(&address, chain_id.parse::<u64>()?)
-        .await?;
+    let token_info =
+        evm_fallback.fetch_token_info(&address, chain_id).await?;
     Ok(token_info)
 }
 
@@ -46,20 +47,17 @@ searching on DexScreener.
   * '1d'  (1 day)
 - intent (string, optional): The intent of the analysis, passed on to the Chart Analyst agent
 ")]
-pub async fn fetch_price_action_analysis_evm(
+pub async fn fetch_price_action_analysis(
     pair_address: String,
     chain_id: String,
     interval: String,
     intent: Option<String>,
 ) -> Result<PriceActionAnalysisResponse> {
+    validate_chain_id(chain_id.clone())?;
+
     let evm_fallback = EvmFallback::from_env()?;
     let candlesticks = evm_fallback
-        .fetch_candlesticks(
-            &pair_address,
-            chain_id.parse::<u64>()?,
-            &interval,
-            Some(200),
-        )
+        .fetch_candlesticks(&pair_address, chain_id, &interval, Some(200))
         .await?;
     let candlesticks_clone = candlesticks.clone();
 
@@ -87,9 +85,7 @@ pub async fn fetch_price_action_analysis_evm(
 }
 
 #[tool(description = "
-Fetch top tokens by chain ID from the GeckoTerminal API. 
-
-Use this tool to find trending tokens on EVM chains: Eth Mainnet, Base, Arbitrum or Binance Smart Chain.
+Fetch the most trending tokens on a given chain.
 
 Parameters:
 - chain_id (string): numeric string of the chain ID of the tokens to fetch
@@ -103,7 +99,7 @@ Parameters:
 
 Returns a list of top tokens with their market data, sorted by volume.
 ")]
-pub async fn fetch_top_tokens_by_chain_id(
+pub async fn fetch_top_tokens(
     chain_id: String,
     limit: Option<String>,
     duration: Option<String>,
@@ -112,11 +108,7 @@ pub async fn fetch_top_tokens_by_chain_id(
     let duration = duration.unwrap_or("6h".to_string());
     let evm_fallback = EvmFallback::from_env()?;
     let tokens = evm_fallback
-        .fetch_top_tokens(
-            chain_id.parse::<u64>()?,
-            duration,
-            limit.parse::<usize>()?,
-        )
+        .fetch_top_tokens(chain_id, duration, limit.parse::<usize>()?)
         .await?;
     Ok(tokens)
 }
@@ -167,7 +159,7 @@ mod tests {
     #[tokio::test]
     async fn test_fetch_price_action_analysis() {
         SignerContext::with_signer(make_test_signer(), async {
-            let analysis = fetch_price_action_analysis_evm(
+            let analysis = fetch_price_action_analysis(
                 "0x4e829F8A5213c42535AB84AA40BD4aDCCE9cBa02".to_string(),
                 "8453".to_string(), // base
                 "5m".to_string(),

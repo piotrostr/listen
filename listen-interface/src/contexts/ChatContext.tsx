@@ -68,11 +68,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   } = useSearch({ from: "/" });
   const navigate = useNavigate();
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
-  const { getSolanaAssets, getEvmAssets } = usePortfolioStore();
+  const { getCombinedPortfolio } = usePortfolioStore();
   const { data: solanaPrice } = useSolanaPrice();
 
-  const solanaAssets = getSolanaAssets();
-  const evmAssets = getEvmAssets();
+  const combinedPortfolio = getCombinedPortfolio();
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -227,13 +226,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           lastMessageAt: new Date(),
         }));
 
-        const portfolio = [];
-        if (solanaAssets) {
-          portfolio.push(...compactPortfolio(solanaAssets));
-        }
-        if (evmAssets && chatType === "omni") {
-          portfolio.push(...compactPortfolio(evmAssets));
-        }
+        const portfolio = compactPortfolio(combinedPortfolio);
         const chat_history = messageHistory
           .filter((msg) => msg.content !== "")
           .map((msg) => {
@@ -504,8 +497,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       chatId,
       updateAssistantMessage,
       getAccessToken,
-      solanaAssets,
-      evmAssets,
+      combinedPortfolio,
       wallets,
       chatType,
       navigate,
