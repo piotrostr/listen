@@ -41,10 +41,10 @@ export const ClearinghouseStateSchema = z.object({
     totalRawUsd: z.string(),
     totalMarginUsed: z.string(),
   }),
-  crossMaintenanceMarginUsed: z.string(),
+  crossMaintenanceMarginUsed: z.optional(z.string()),
   withdrawable: z.string(),
   assetPositions: z.array(ClearinghouseAssetPositionSchema),
-  time: z.number(),
+  time: z.optional(z.number()),
 });
 
 export type ClearinghouseState = z.infer<typeof ClearinghouseStateSchema>;
@@ -63,4 +63,13 @@ export const SpotClearinghouseStateSchema = z.object({
 
 export type SpotClearinghouseState = z.infer<
   typeof SpotClearinghouseStateSchema
+>;
+
+export const HyperliquidPortfolioOverviewSchema = z.object({
+  spotBalances: SpotClearinghouseStateSchema,
+  perpBalances: ClearinghouseStateSchema,
+});
+
+export type HyperliquidPortfolioOverview = z.infer<
+  typeof HyperliquidPortfolioOverviewSchema
 >;

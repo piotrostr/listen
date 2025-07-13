@@ -1,14 +1,8 @@
 import {
-  ClearinghouseState,
   ClearinghouseStateSchema,
-  SpotClearinghouseState,
+  HyperliquidPortfolioOverview,
   SpotClearinghouseStateSchema,
 } from "./hype-types";
-
-export interface HyperliquidPortfolioOverview {
-  spotBalances: SpotClearinghouseState;
-  perpBalances: ClearinghouseState;
-}
 
 export class Hyperliquid {
   readonly baseUrl = "https://api.hyperliquid.xyz/info";

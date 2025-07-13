@@ -11,6 +11,7 @@ import {
 import { FaImage, FaRobot, FaXTwitter } from "react-icons/fa6";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { z } from "zod";
+import { HyperliquidPortfolioOverviewSchema } from "../lib/hype-types";
 import {
   CandlestickDataSchema,
   PriceActionAnalysisResponseSchema,
@@ -48,6 +49,7 @@ import { Erc20Balance, Erc20BalanceSchema } from "./Erc20Balance";
 import { EvmRawTokenMetadataDisplay } from "./EvmRawTokenMetadataDisplay";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
 import { GeckoTerminalChart } from "./GeckoTerminalChart";
+import { GetBalanceOverviewDisplay } from "./GetBalanceOverviewDisplay";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
 import { OrderbookDisplay } from "./OrderbookDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
@@ -218,6 +220,18 @@ export const ToolMessage = ({
     }
     console.error("Failed to parse l2 snapshot:", parsed.error);
     return null;
+  }
+
+  if (toolOutput.name === "get_balance_overview") {
+    const parsed = HyperliquidPortfolioOverviewSchema.safeParse(
+      JSON.parse(toolOutput.result)
+    );
+    if (parsed.success) {
+      return <GetBalanceOverviewDisplay balanceOverview={parsed.data} />;
+    } else {
+      console.error("Failed to parse balance overview:", parsed.error);
+      return null;
+    }
   }
 
   if (toolOutput.name === "get_token") {
