@@ -144,7 +144,7 @@ export function GetBalanceOverviewDisplay({
 
   return (
     <Container>
-      <div className="flex flex-col p-3 w-full">
+      <div className="flex flex-col p-4 w-full">
         <SectionHeader title="Hyperliquid Balances" />
 
         <div className="flex flex-col gap-1">

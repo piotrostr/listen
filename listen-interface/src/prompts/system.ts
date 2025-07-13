@@ -1,4 +1,4 @@
-import { HyperliquidPortfolioOverview } from "../lib/hype";
+import { HyperliquidPortfolioOverview } from "../lib/hype-types";
 import { TokenPrice } from "../lib/price";
 import { CompactPortfolio } from "../lib/util";
 import {

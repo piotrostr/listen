@@ -73,3 +73,29 @@ export const HyperliquidPortfolioOverviewSchema = z.object({
 export type HyperliquidPortfolioOverview = z.infer<
   typeof HyperliquidPortfolioOverviewSchema
 >;
+
+export const FilledStatusSchema = z.object({
+  totalSz: z.string(),
+  avgPx: z.string(),
+  oid: z.number(),
+});
+
+export const OrderStatusSchema = z.object({
+  filled: FilledStatusSchema,
+});
+
+export const OrderDataSchema = z.object({
+  statuses: z.array(OrderStatusSchema),
+});
+
+export const OrderResponseSchema = z.object({
+  type: z.literal("order"),
+  data: OrderDataSchema,
+});
+
+export const MarketOpenResponseSchema = z.object({
+  status: z.literal("ok"),
+  response: OrderResponseSchema,
+});
+
+export type MarketOpenResponse = z.infer<typeof MarketOpenResponseSchema>;

@@ -1,11 +1,12 @@
 import { useQuery } from "@tanstack/react-query";
-import { Hyperliquid, HyperliquidPortfolioOverview } from "../lib/hype";
+import { Hyperliquid } from "../lib/hype";
+import { HyperliquidPortfolioOverview } from "../lib/hype-types";
 
 async function fetchHyperliquidPortfolio(
   address: string | null
 ): Promise<HyperliquidPortfolioOverview | null> {
   if (!address) return null;
-  
+
   const hyperliquid = new Hyperliquid();
   return await hyperliquid.portfolioOverview(address);
 }
