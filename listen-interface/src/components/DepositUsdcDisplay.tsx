@@ -1,4 +1,5 @@
 import { HiOutlineBanknotes } from "react-icons/hi2";
+import { MdArrowOutward } from "react-icons/md";
 
 const Container = ({ children }: { children: React.ReactNode }) => {
   return (
@@ -39,9 +40,10 @@ export function DepositUsdcDisplay({
                 href={`https://arbiscan.io/tx/${cleanHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="font-dm-sans font-light text-xs text-[#868686] hover:text-white transition-colors"
+                className="font-dm-sans font-light text-xs text-[#868686] hover:text-white transition-colors flex items-center gap-1"
               >
                 {shortHash}
+                <MdArrowOutward className="w-3 h-3" />
               </a>
             </div>
           </div>
