@@ -88,12 +88,12 @@ const parseAndCleanMessage = (input: string): string => {
       (parsed.startsWith("{") ||
         parsed.startsWith("[") ||
         parsed.startsWith('"') ||
-        parsed.includes('\\\"') ||
+        parsed.includes('\\"') ||
         parsed.includes("\\\\"))
     ) {
       try {
         parsed = JSON.parse(parsed);
-      } catch (e) {
+      } catch {
         break;
       }
     }
@@ -122,7 +122,7 @@ const parseAndCleanMessage = (input: string): string => {
             return content;
           }
           return match;
-        }
+        },
       );
     }
 
@@ -137,7 +137,7 @@ const parseAndCleanMessage = (input: string): string => {
 };
 
 const extractToolCallParams = (
-  toolCallInfo: any
+  toolCallInfo: any,
 ): Record<string, any> | null => {
   if (!toolCallInfo) return null;
   try {
@@ -153,7 +153,7 @@ const extractToolCallParams = (
       // Log a warning if params exists but is not a string
       console.warn(
         "Tool call 'params' exists but is not a string:",
-        toolCallInfo.params
+        toolCallInfo.params,
       );
       return null; // Return null as we can't parse it
     }
@@ -241,15 +241,16 @@ export const ToolMessage = ({
     toolOutput.name,
   ]);
 
+  const params = useMemo(
+    () => extractToolCallParams(toolCallInfo),
+    [toolCallInfo],
+  );
+
   if (toolOutput.name === "think") {
     return null;
   }
 
   if (toolOutput.name === "deposit_usdc") {
-    const params = useMemo(
-      () => extractToolCallParams(toolCallInfo),
-      [toolCallInfo]
-    );
     const amount = params?.amount;
     if (!amount) {
       console.warn("Failed to parse deposit usdc amount:", toolOutput.result);
@@ -267,7 +268,7 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "get_l2_snapshot") {
     const parsed = L2OrderbookSnapshotSchema.safeParse(
-      JSON.parse(toolOutput.result)
+      JSON.parse(toolOutput.result),
     );
     if (parsed.success) {
       return <OrderbookDisplay orderbookSnapshot={parsed.data} />;
@@ -277,17 +278,13 @@ export const ToolMessage = ({
   }
 
   if (toolOutput.name === "market_open") {
-    const params = useMemo(
-      () => extractToolCallParams(toolCallInfo),
-      [toolCallInfo]
-    );
     let side = params?.side;
     if (!side) {
       side = "long";
     }
     console.log(params);
     const parsed = MarketOpenResponseSchema.safeParse(
-      JSON.parse(toolOutput.result)
+      JSON.parse(toolOutput.result),
     );
     if (parsed.success) {
       return <MarketOpenDisplay marketOpenResponse={parsed.data} side={side} />;
@@ -298,7 +295,7 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "get_balance_overview") {
     const parsed = HyperliquidPortfolioOverviewSchema.safeParse(
-      JSON.parse(toolOutput.result)
+      JSON.parse(toolOutput.result),
     );
     if (parsed.success) {
       return <GetBalanceOverviewDisplay balanceOverview={parsed.data} />;
@@ -320,11 +317,6 @@ export const ToolMessage = ({
   }
 
   if (toolOutput.name === "fetch_price_action_analysis_evm") {
-    const params = useMemo(
-      () => extractToolCallParams(toolCallInfo),
-      [toolCallInfo]
-    );
-
     console.debug(params);
     const pairAddress = params?.pair_address;
     const interval = params?.interval || "30s";
@@ -369,12 +361,6 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "fetch_price_action_analysis") {
     try {
-      // Extract parameters using toolCallInfo
-      const params = useMemo(
-        () => extractToolCallParams(toolCallInfo),
-        [toolCallInfo]
-      );
-
       const mint = params?.mint;
       const interval = params?.interval || "30s";
 
@@ -491,7 +477,7 @@ export const ToolMessage = ({
             } catch (parseError) {
               console.error(
                 "Failed to parse params in error handler:",
-                parseError
+                parseError,
               );
             }
           }
@@ -704,7 +690,7 @@ export const ToolMessage = ({
   if (toolOutput.name === "analyze_holder_distribution") {
     try {
       const parsed = TokenHolderAnalysisSchema.parse(
-        JSON.parse(toolOutput.result)
+        JSON.parse(toolOutput.result),
       );
       return <BubbleMapDisplay topHolderAnalysis={parsed} />;
     } catch (e) {
@@ -724,7 +710,18 @@ export const ToolMessage = ({
   if (toolOutput.name === "fetch_top_tokens_by_category") {
     try {
       const parsed = TopTokensResponseSchema.parse(
-        JSON.parse(toolOutput.result)
+        JSON.parse(toolOutput.result),
+      );
+      return <TopTokensDisplay tokens={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse top tokens response:", e);
+    }
+  }
+
+  if (toolOutput.name === "fetch_top_stocks") {
+    try {
+      const parsed = TopTokensResponseSchema.parse(
+        JSON.parse(toolOutput.result),
       );
       return <TopTokensDisplay tokens={parsed} />;
     } catch (e) {
@@ -759,7 +756,7 @@ export const ToolMessage = ({
   if (toolOutput.name === "fetch_token_metadata") {
     try {
       const parsed = TokenMetadataRawSchema.parse(
-        JSON.parse(toolOutput.result)
+        JSON.parse(toolOutput.result),
       );
       return <RawTokenMetadataDisplay metadata={parsed} />;
     } catch (e) {
@@ -794,7 +791,7 @@ export const ToolMessage = ({
   if (toolOutput.name === "search_on_dex_screener") {
     try {
       const parsed = DexScreenerResponseSchema.parse(
-        JSON.parse(toolOutput.result)
+        JSON.parse(toolOutput.result),
       );
       return <DexscreenerDisplay pairs={parsed.pairs} />;
     } catch (e) {
@@ -822,7 +819,7 @@ export const ToolMessage = ({
   ) {
     try {
       const parsed = TopTokensResponseSchema.parse(
-        JSON.parse(toolOutput.result)
+        JSON.parse(toolOutput.result),
       );
       return <TopTokensDisplay tokens={parsed} />;
     } catch (e) {

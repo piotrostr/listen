@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { useModal } from "../contexts/ModalContext";
-import { useToken } from "../hooks/useToken";
+import { useEnrichedToken } from "../hooks/useEnrichedToken";
 
 // Zod schema for token data
 export const TopTokenSchema = z.object({
@@ -15,6 +15,7 @@ export const TopTokenSchema = z.object({
     .transform((val) => val?.toString())
     .optional()
     .nullable(),
+  img_url: z.string().optional().nullable(),
 });
 
 export const TopTokensResponseSchema = z.array(TopTokenSchema);
@@ -41,8 +42,13 @@ const truncateText = (text: string, maxLength: number = 15) => {
 };
 
 const TokenTileSolana = ({ token }: { token: TopToken }) => {
-  const { data: metadata, isLoading } = useToken(token.pubkey, "solana");
+  const { data: metadata, isLoading } = useEnrichedToken(token);
   const { openChart } = useModal();
+
+  const tokenName = token.name.replace("xStock", "");
+  const displayName = !isLoading
+    ? truncateText(metadata?.symbol.replace("xStock", "") || tokenName)
+    : truncateText(tokenName);
 
   return (
     <div
@@ -76,9 +82,7 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
               }}
               className="font-medium hover:text-blue-400 truncate cursor-pointer"
             >
-              {!isLoading
-                ? truncateText(metadata?.symbol || token.name)
-                : truncateText(token.name)}
+              {displayName}
             </div>
           </div>
           <div className="text-sm text-gray-500">
@@ -104,10 +108,7 @@ const TokenTileSolana = ({ token }: { token: TopToken }) => {
 };
 
 const TokenTileEvm = ({ token }: { token: TopToken }) => {
-  const { data: tokenData, isLoading } = useToken(
-    token.pubkey,
-    token.chain_id || undefined
-  );
+  const { data: tokenData, isLoading } = useEnrichedToken(token);
   const { openChart } = useModal();
 
   if (!tokenData?.logoURI && tokenData) {
