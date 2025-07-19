@@ -19,7 +19,7 @@ export function systemPrompt(
   defaultAmount: string,
   isGuest: boolean,
   currentSolanaPrice?: TokenPrice,
-  hyperliquidPortfolio?: HyperliquidPortfolioOverview | null
+  hyperliquidPortfolio?: HyperliquidPortfolioOverview | null,
 ): string {
   const hasWallet = pubkey !== null && pubkey !== "";
   const hasEvmWallet = address !== null && address !== "";
@@ -34,6 +34,7 @@ export function systemPrompt(
   prompt += `## Listen Token\n${listenToken}\n\n`;
   prompt += `## Handling Errors\n${handlingErrors}\n\n`;
   prompt += `## Hyperliquid\n${hyperliquid}\n\n`;
+  prompt += `## Stocks\n${stocks}\n\n`;
 
   if (!hasWallet || isGuest) {
     prompt += `## Onboarding Required (Solana)\n${onboarding(hasWallet, isGuest)}\n\n`;
@@ -72,3 +73,22 @@ const currentTimeUnderline = `While your training data has a cutoff date that ha
 const listenToken = `The app users are interacting with you in is called Listen, created and maintained by @piotreksol who loves AI dearly and quit his job at Google to develop your capabilities full-time. It has a token $listen (also referred to as listen-rs, address: Cn5Ne1vmR9ctMGY9z5NC71A3NYFvopjXNyxYtfVYpump) that was born after tokenization of the github.com/piotrostr/listen framework that powers you, it is the basis that links your magnificent AI abilities and various blockchains and the powershouse of the Listen attention economy. It provides the holders fee discounts and generous usage tiers. Be sure to express that if the users ask.`;
 
 const hyperliquid = `You have access to Hyperliquid, which allows you to trade BTC, HYPE (the hyperliquid token) and perpetuals on all of the major symbols.`;
+
+const stocks = `There are tokenized stocks available on Solana. You can suggest to the user to potentially diversify a bit into those stocks. The tickers available:
+- CRCL (Circle): XsueG8BtpquVJX9LVLLEGuViXUungE6WmK5YZ3p3bd1
+- NVDA (NVIDIA): Xsc9qvGR1efVDFGLrVsmkzv3qi45LTBjeUKSPmx9qEh
+- TSLA (Tesla): XsDoVfqeBukxuZHWhdvWHBhgEHjGNst4MLodqsJHzoB
+- MSTR (MicroStrategy): XsP7xzNPvEHS1m6qfanPUGjNmdnmsLKEoNAnHjdxxyZ
+- GOOGL (Alphabet): XsCPL9dNWBMvFtTmwcCA5v3xWPSMEBCszbQdiLLq6aN
+- AAPL (Apple): XsbEhLAtcf6HdfpFZ5xEMdqW8nfAvcsP5bdudRLJzJp
+- HOOD (Robinhood): XsvNBAYkrDRNhA7wPHQfX3ZUXZyZLdnCQDfHZ56bzpg
+- AMZN (Amazon): Xs3eBt7uRfJX8QUs4suhyU8p2M6DoUDrJyWBa8LLZsg
+- COIN (Coinbase): Xs7ZdzSHLU9ftNJsii5fCeJhoRWSC32SQGzGQtePxNu
+- META (Meta Platforms): Xsa62P5mvPszXL1krVUnU5ar38bBSVcWAB6fmPCo5Zu
+
+Indices:
+- SPY (S&P 500 ETF): XsoCS1TfEyfFhfvj8EtZ528L3CaKBDBRqRapnBbDF2W
+- QQQ (Nasdaq-100): Xs8S1uUs1zvS2p7iwtsG3b6fkhpvmwz4GYU3gWAmWHZ
+
+Those work the same way as any other SPL token.
+`;

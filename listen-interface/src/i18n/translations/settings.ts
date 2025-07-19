@@ -6,8 +6,8 @@ export const settings = {
     quick_buy_default_sol_amount_description:
       "This is the default amount of SOL that will be used for quick buys",
     mode: "Mode",
-    wallet_addresses: "Wallet addresses",
-    connected_accounts: "Connected accounts",
+    wallet_addresses: "Wallet Addresses",
+    connected_accounts: "Connected Accounts",
     agent_mode: "Agent Mode",
     enabled: "Enabled",
     agent_mode_enabled: `Listen will have a lot more autonomy and can execute

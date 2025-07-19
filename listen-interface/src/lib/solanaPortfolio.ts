@@ -11,23 +11,23 @@ import { Holding, PortfolioItem, TokenMetadata } from "./types";
 import { decodeTokenAccount, imageMap } from "./util";
 
 const TOKEN_PROGRAM_ID = new PublicKey(
-  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+  "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
 );
 
 const connection = new Connection(
-  import.meta.env?.VITE_RPC_URL ?? "https://api.mainnet-beta.solana.com"
+  import.meta.env?.VITE_RPC_URL ?? "https://api.mainnet-beta.solana.com",
 );
 
 export async function getHoldings(
   connection: Connection,
-  owner: PublicKey
+  owner: PublicKey,
 ): Promise<Holding[]> {
   const atas = await connection.getTokenAccountsByOwner(
     owner,
     {
       programId: TOKEN_PROGRAM_ID,
     },
-    "processed"
+    "processed",
   );
 
   const holdings = atas.value
@@ -58,7 +58,7 @@ function parseHolding(ata: {
 }
 
 export async function fetchTokenMetadataLegacy(
-  mint: string
+  mint: string,
 ): Promise<TokenMetadata> {
   try {
     // listen metadata is cached on server, could cache on client too here
@@ -78,12 +78,13 @@ export async function fetchTokenMetadataLegacy(
       chainId: 1151111081099710,
     };
   } catch (error) {
+    console.warn(`Failed to fetch legacy metadata for ${mint}:`, error);
     return await fetchTokenMetadataFromJupiter(mint);
   }
 }
 
 export async function fetchTokenMetadataFromJupiter(
-  mint: string
+  mint: string,
 ): Promise<TokenMetadata> {
   try {
     // First check IndexedDB cache
@@ -118,7 +119,7 @@ export async function fetchTokenMetadataFromJupiter(
 }
 
 export const fetchPortfolio = async (
-  address: string
+  address: string,
 ): Promise<PortfolioItem[]> => {
   const pubkey = new PublicKey(address);
   const WSOL_MINT = "So11111111111111111111111111111111111111112";

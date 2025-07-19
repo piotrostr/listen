@@ -8,6 +8,7 @@ import {
   UTCTimestamp,
 } from "lightweight-charts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { z } from "zod";
 import { useListenMetadata } from "../hooks/useListenMetadata";
 import { CandlestickData, CandlestickDataSchema } from "../lib/types";
 import { useTokenStore } from "../store/tokenStore";
@@ -31,6 +32,34 @@ export interface ChartProps {
 // Available time intervals for the chart
 const INTERVALS = ["30s", "1m", "5m", "15m", "30m", "1h", "4h", "1d"] as const;
 
+// GeckoTerminal API schemas
+const GeckoTerminalPoolSchema = z.object({
+  data: z.array(
+    z.object({
+      attributes: z.object({
+        address: z.string(),
+        volume_usd: z.object({
+          h24: z.string(),
+        }),
+      }),
+    })
+  ),
+});
+
+const GeckoTerminalOHLCVSchema = z.object({
+  data: z.object({
+    attributes: z.object({
+      ohlcv_list: z.array(
+        z.array(z.union([z.number(), z.string()]))
+      ),
+    }),
+  }),
+});
+
+// Cache for pool addresses to prevent repeated API calls
+const poolAddressCache: Record<string, { address: string; timestamp: number }> = {};
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 // Add TradingView color constants
 const TV_COLORS = {
   GREEN: "#26a69a",
@@ -38,6 +67,134 @@ const TV_COLORS = {
   GREEN_TRANSPARENT: "rgba(38, 166, 154, 0.3)",
   RED_TRANSPARENT: "rgba(239, 83, 80, 0.3)",
 } as const;
+
+// Find the most liquid pool for a token on Solana
+async function findSolanaPoolAddress(tokenAddress: string): Promise<string | null> {
+  const cacheKey = `solana:${tokenAddress}`;
+  const cached = poolAddressCache[cacheKey];
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.address;
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.geckoterminal.com/api/v2/networks/solana/tokens/${tokenAddress}/pools`,
+      {
+        headers: {
+          Accept: "application/json;version=20230302",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Failed to fetch pools for token ${tokenAddress}`);
+      return null;
+    }
+
+    const json = await response.json();
+    const result = GeckoTerminalPoolSchema.safeParse(json);
+
+    if (!result.success) {
+      console.error("Failed to parse pool response:", result.error);
+      return null;
+    }
+
+    // Sort pools by 24h volume to get the most active pool
+    const sortedPools = result.data.data.sort(
+      (a, b) =>
+        parseFloat(b.attributes.volume_usd.h24) -
+        parseFloat(a.attributes.volume_usd.h24)
+    );
+
+    if (sortedPools.length > 0) {
+      const address = sortedPools[0].attributes.address;
+      poolAddressCache[cacheKey] = {
+        address,
+        timestamp: Date.now(),
+      };
+      return address;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Failed to fetch pool address:", error);
+    return null;
+  }
+}
+
+// Map chart intervals to GeckoTerminal timeframes
+function mapIntervalToGeckoTimeframe(interval: string): { timeframe: string; aggregate: number } {
+  switch (interval) {
+    case "30s":
+    case "1m":
+      return { timeframe: "minute", aggregate: 1 };
+    case "5m":
+      return { timeframe: "minute", aggregate: 5 };
+    case "15m":
+      return { timeframe: "minute", aggregate: 15 };
+    case "30m":
+      return { timeframe: "hour", aggregate: 1 }; // Use 1h as closest available
+    case "1h":
+      return { timeframe: "hour", aggregate: 1 };
+    case "4h":
+      return { timeframe: "hour", aggregate: 4 };
+    case "1d":
+      return { timeframe: "day", aggregate: 1 };
+    default:
+      return { timeframe: "minute", aggregate: 1 };
+  }
+}
+
+// Fetch OHLC data from GeckoTerminal
+async function fetchGeckoTerminalOHLC(
+  poolAddress: string,
+  interval: string
+): Promise<CandlestickData | null> {
+  try {
+    const { timeframe, aggregate } = mapIntervalToGeckoTimeframe(interval);
+    
+    const response = await fetch(
+      `https://api.geckoterminal.com/api/v2/networks/solana/pools/${poolAddress}/ohlcv/${timeframe}?aggregate=${aggregate}&limit=1000`,
+      {
+        headers: {
+          Accept: "application/json;version=20230302",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Failed to fetch OHLC data for pool ${poolAddress}`);
+      return null;
+    }
+
+    const json = await response.json();
+    const result = GeckoTerminalOHLCVSchema.safeParse(json);
+
+    if (!result.success) {
+      console.error("Failed to parse OHLC response:", result.error);
+      return null;
+    }
+
+    // Convert GeckoTerminal OHLCV format to our Candlestick format
+    const candlesticks: CandlestickData = result.data.data.attributes.ohlcv_list.map((item) => {
+      const [timestamp, open, high, low, close, volume] = item;
+      return {
+        timestamp: typeof timestamp === "number" ? timestamp : parseInt(timestamp as string),
+        open: typeof open === "number" ? open : parseFloat(open as string),
+        high: typeof high === "number" ? high : parseFloat(high as string),
+        low: typeof low === "number" ? low : parseFloat(low as string),
+        close: typeof close === "number" ? close : parseFloat(close as string),
+        volume: typeof volume === "number" ? volume : parseFloat(volume as string),
+      };
+    });
+
+    return candlesticks;
+  } catch (error) {
+    console.error("Failed to fetch GeckoTerminal OHLC data:", error);
+    return null;
+  }
+}
 
 export function InnerChart({ data, displayOhlc }: InnerChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -446,14 +603,27 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
       if (isDisposed.current) return;
 
       try {
-        const response = await fetch(
-          // use prod for charts always
-          `https://api.listen-rs.com/v1/adapter/candlesticks?mint=${mint}&interval=${selectedInterval}`
-        );
-        const responseData = CandlestickDataSchema.parse(await response.json());
+        // First try to get data from GeckoTerminal
+        const poolAddress = await findSolanaPoolAddress(mint);
+        let responseData: CandlestickData | null = null;
+
+        if (poolAddress) {
+          console.log(`Found pool address ${poolAddress} for token ${mint}, fetching from GeckoTerminal`);
+          responseData = await fetchGeckoTerminalOHLC(poolAddress, selectedInterval);
+        }
+
+        // If GeckoTerminal fails or no pool found, fall back to custom API
+        if (!responseData || responseData.length === 0) {
+          console.log(`Falling back to custom API for token ${mint}`);
+          const response = await fetch(
+            // use prod for charts always
+            `https://api.listen-rs.com/v1/adapter/candlesticks?mint=${mint}&interval=${selectedInterval}`
+          );
+          responseData = CandlestickDataSchema.parse(await response.json());
+        }
 
         if (!isDisposed.current) {
-          setData(responseData);
+          setData(responseData || []);
           setIsLoading(false);
         }
       } catch (error) {

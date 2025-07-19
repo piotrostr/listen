@@ -117,9 +117,7 @@ pub async fn get_token_balance(
         || address == "So11111111111111111111111111111111111111112"
         || address == "0x0000000000000000000000000000000000000000"
     {
-        if chain_id == *SOLANA_CHAIN_ID
-            || chain_id == Caip2::SOLANA.to_string()
-        {
+        if chain_id == *SOLANA_CHAIN_ID || chain_id == *Caip2::SOLANA {
             let balance = get_sol_balance().await?;
             return Ok(TokenBalance {
                 balance: balance.to_string(),

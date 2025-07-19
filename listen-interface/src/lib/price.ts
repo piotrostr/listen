@@ -25,7 +25,7 @@ export const WSOL_MINT = "So11111111111111111111111111111111111111112";
 
 // Group tokens by their network for batch fetching
 function groupTokensByNetwork(
-  tokens: { address: string; chain: string }[]
+  tokens: { address: string; chain: string }[],
 ): Record<string, string[]> {
   return tokens.reduce(
     (acc, token) => {
@@ -38,14 +38,13 @@ function groupTokensByNetwork(
       acc[networkId].push(token.address);
       return acc;
     },
-    {} as Record<string, string[]>
+    {} as Record<string, string[]>,
   );
 }
 
-// @deprecated
-// @ts-ignore: unused
-async function fetchSolanaTokenPriceFromListenApi(
-  mint: string
+/** @deprecated */
+export async function fetchSolanaTokenPriceFromListenApi(
+  mint: string,
 ): Promise<TokenPrice | null> {
   // For WSOL, use GeckoTerminal directly
   if (mint === WSOL_MINT) {
@@ -55,7 +54,7 @@ async function fetchSolanaTokenPriceFromListenApi(
   try {
     // Try to get current price first
     const currentPriceResponse = await fetch(
-      `${config.adapterEndpoint}/price?mint=${mint}`
+      `${config.adapterEndpoint}/price?mint=${mint}`,
     );
 
     // If current price request fails or returns null, consider token invalid
@@ -70,7 +69,7 @@ async function fetchSolanaTokenPriceFromListenApi(
 
     // If we got current price, try to get 24h open price
     const openPriceResponse = await fetch(
-      `https://api.listen-rs.com/v1/adapter/24h-open?mint=${mint}`
+      `https://api.listen-rs.com/v1/adapter/24h-open?mint=${mint}`,
     );
 
     if (!openPriceResponse.ok) {
@@ -108,13 +107,13 @@ async function fetchSolanaTokenPriceFromListenApi(
 // Helper function to chunk array into batches
 function chunkArray<T>(array: T[], size: number): T[][] {
   return Array.from({ length: Math.ceil(array.length / size) }, (_, i) =>
-    array.slice(i * size, i * size + size)
+    array.slice(i * size, i * size + size),
   );
 }
 
 async function fetchEvmNetworkPrices(
   network: string,
-  addresses: string[]
+  addresses: string[],
 ): Promise<TokenPriceMap> {
   const BATCH_SIZE = 30;
   const result = new Map<string, TokenPrice>();
@@ -128,13 +127,13 @@ async function fetchEvmNetworkPrices(
       try {
         const response = await fetch(
           `https://api.geckoterminal.com/api/v2/simple/networks/${network}/token_price/${batchAddresses.join(
-            ","
+            ",",
           )}?include_24hr_price_change=true`,
           {
             headers: {
               accept: "application/json",
             },
-          }
+          },
         );
 
         if (!response.ok) {
@@ -147,33 +146,33 @@ async function fetchEvmNetworkPrices(
           ([address, priceStr]) => {
             const price = parseFloat(priceStr ?? "0");
             const priceChange = parseFloat(
-              data.data.attributes.h24_price_change_percentage[address] ?? "0"
+              data.data.attributes.h24_price_change_percentage[address] ?? "0",
             );
 
             result.set(address, {
               price,
               priceChange24h: priceChange,
             });
-          }
+          },
         );
       } catch (error) {
         console.error(
           `Failed to fetch prices for batch in network ${network}:`,
-          error
+          error,
         );
         // Set default values for failed batch
         batchAddresses.forEach((address) => {
           result.set(address, { price: 0, priceChange24h: 0 });
         });
       }
-    })
+    }),
   );
 
   return result;
 }
 
 async function fetchSolanaTokenPriceFromGecko(
-  mint: string
+  mint: string,
 ): Promise<TokenPrice | null> {
   try {
     const response = await fetch(
@@ -182,7 +181,7 @@ async function fetchSolanaTokenPriceFromGecko(
         headers: {
           accept: "application/json",
         },
-      }
+      },
     );
 
     if (!response.ok) {
@@ -201,14 +200,14 @@ async function fetchSolanaTokenPriceFromGecko(
   } catch (error) {
     console.error(
       `Error fetching Solana token price from Gecko for ${mint}:`,
-      error
+      error,
     );
     return null;
   }
 }
 
 export async function fetchTokenPrices(
-  tokens: { address: string; chain: string }[]
+  tokens: { address: string; chain: string }[],
 ): Promise<TokenPriceMap> {
   const priceMap = new Map<string, TokenPrice>();
 
@@ -218,7 +217,7 @@ export async function fetchTokenPrices(
 
   if (solanaTokens.length > 0) {
     const solanaPrices = await fetchJupPrices(
-      solanaTokens.map((token) => token.address)
+      solanaTokens.map((token) => token.address),
     );
     solanaPrices.forEach((price, address) => {
       priceMap.set(address, price);
@@ -238,14 +237,14 @@ export async function fetchTokenPrices(
         } catch (error) {
           console.error(
             `Failed to fetch prices for network ${network}:`,
-            error
+            error,
           );
           // Set default values for failed tokens
           addresses.forEach((address) => {
             priceMap.set(address, { price: 0, priceChange24h: 0 });
           });
         }
-      })
+      }),
     );
   }
 
@@ -260,7 +259,7 @@ const JupPrice = z.object({
 const JupPriceResponse = z.record(z.string(), JupPrice);
 
 export const fetchJupPrices = async (
-  addresses: string[]
+  addresses: string[],
 ): Promise<TokenPriceMap> => {
   const BATCH_SIZE = 50;
   const result = new Map<string, TokenPrice>();
@@ -278,8 +277,8 @@ export const fetchJupPrices = async (
         if (!parsed.success) {
           console.error(
             `Error parsing Jup price response: ${ids}, raw: ${JSON.stringify(
-              response
-            )}, error: ${parsed.error}`
+              response,
+            )}, error: ${parsed.error}`,
           );
           // Set default values for failed batch
           batchAddresses.forEach((address) => {
@@ -301,7 +300,7 @@ export const fetchJupPrices = async (
           result.set(address, { price: 0, priceChange24h: 0 });
         });
       }
-    })
+    }),
   );
 
   return result;
