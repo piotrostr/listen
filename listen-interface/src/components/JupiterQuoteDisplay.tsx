@@ -1,4 +1,4 @@
-import { useListenMetadata } from "../hooks/useListenMetadata";
+import { useSolanaToken } from "../hooks/useToken";
 import { formatAmount, imageMap } from "../lib/util";
 import { JupiterQuoteResponse } from "../types/quote";
 
@@ -8,11 +8,11 @@ interface JupiterQuoteDisplayProps {
 
 export const JupiterQuoteDisplay = ({ quote }: JupiterQuoteDisplayProps) => {
   // Fetch token metadata for images
-  const inputTokenMetadata = useListenMetadata(quote.inputMint);
-  const outputTokenMetadata = useListenMetadata(quote.outputMint);
+  const inputTokenMetadata = useSolanaToken(quote.inputMint);
+  const outputTokenMetadata = useSolanaToken(quote.outputMint);
 
-  let inputSymbol = inputTokenMetadata.data?.mpl?.symbol || "Unknown";
-  let outputSymbol = outputTokenMetadata.data?.mpl?.symbol || "Unknown";
+  let inputSymbol = inputTokenMetadata.data?.symbol || "Unknown";
+  let outputSymbol = outputTokenMetadata.data?.symbol || "Unknown";
 
   if (quote.inputMint === "So11111111111111111111111111111111111111112") {
     inputSymbol = "wSOL";
@@ -25,16 +25,16 @@ export const JupiterQuoteDisplay = ({ quote }: JupiterQuoteDisplayProps) => {
   const inputImage =
     quote.inputMint in imageMap
       ? imageMap[quote.inputMint as keyof typeof imageMap]
-      : inputTokenMetadata.data?.mpl?.ipfs_metadata?.image;
+      : inputTokenMetadata.data?.logoURI;
 
   const outputImage =
     quote.outputMint in imageMap
       ? imageMap[quote.outputMint as keyof typeof imageMap]
-      : outputTokenMetadata.data?.mpl?.ipfs_metadata?.image;
+      : outputTokenMetadata.data?.logoURI;
 
   // Calculate formatted amounts based on token decimals
-  const inputDecimals = inputTokenMetadata.data?.spl?.decimals || 9;
-  const outputDecimals = outputTokenMetadata.data?.spl?.decimals || 9;
+  const inputDecimals = inputTokenMetadata.data?.decimals || 9;
+  const outputDecimals = outputTokenMetadata.data?.decimals || 9;
 
   // Format price impact as percentage
   const priceImpactPercentage = (

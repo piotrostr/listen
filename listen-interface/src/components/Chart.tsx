@@ -9,8 +9,8 @@ import {
 } from "lightweight-charts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { z } from "zod";
-import { useListenMetadata } from "../hooks/useListenMetadata";
-import { CandlestickData, CandlestickDataSchema } from "../lib/types";
+import { useSolanaToken } from "../hooks/useToken";
+import { CandlestickData } from "../lib/types";
 import { useTokenStore } from "../store/tokenStore";
 import { Socials } from "./Socials";
 
@@ -188,6 +188,9 @@ async function fetchGeckoTerminalOHLC(
         volume: typeof volume === "number" ? volume : parseFloat(volume as string),
       };
     });
+
+    // Sort by timestamp in ascending order (required by lightweight-charts)
+    candlesticks.sort((a, b) => a.timestamp - b.timestamp);
 
     return candlesticks;
   } catch (error) {
@@ -482,7 +485,7 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
   // Subscribe to token store updates
   const latestUpdate = useTokenStore((state) => state.latestUpdate);
 
-  const { data: metadata } = useListenMetadata(mint);
+  const { data: metadata } = useSolanaToken(mint);
 
   const percentChange = useMemo(() => {
     if (!data || data.length < 2) {
@@ -612,14 +615,10 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
           responseData = await fetchGeckoTerminalOHLC(poolAddress, selectedInterval);
         }
 
-        // If GeckoTerminal fails or no pool found, fall back to custom API
+        // If GeckoTerminal fails or no pool found, show empty chart
         if (!responseData || responseData.length === 0) {
-          console.log(`Falling back to custom API for token ${mint}`);
-          const response = await fetch(
-            // use prod for charts always
-            `https://api.listen-rs.com/v1/adapter/candlesticks?mint=${mint}&interval=${selectedInterval}`
-          );
-          responseData = CandlestickDataSchema.parse(await response.json());
+          console.log(`No chart data available for token ${mint} - pool might not exist on GeckoTerminal`);
+          responseData = [];
         }
 
         if (!isDisposed.current) {
@@ -660,10 +659,10 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
 
   // Format pubkey for display
   const formattedPubkey = useMemo(() => {
-    if (!metadata?.mint) return "";
-    return metadata.mint.length > 12
-      ? `${metadata.mint.slice(0, 6)}...${metadata.mint.slice(-6)}`
-      : metadata.mint;
+    if (!metadata?.address) return "";
+    return metadata.address.length > 12
+      ? `${metadata.address.slice(0, 6)}...${metadata.address.slice(-6)}`
+      : metadata.address;
   }, [metadata]);
 
   return (
@@ -672,34 +671,34 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
       <div className="flex items-center justify-between mb-2 p-3 backdrop-blur-sm">
         <div className="flex items-center">
           {/* Add token image with proper spacing */}
-          {metadata?.mpl.ipfs_metadata?.image && (
+          {metadata?.logoURI && (
             <div className="w-8 h-8 relative rounded-full overflow-hidden mr-3">
               <img
-                src={metadata.mpl.ipfs_metadata.image.replace(
+                src={metadata.logoURI.replace(
                   "cf-ipfs.com",
                   "ipfs.io"
                 )}
-                alt={metadata?.mpl.symbol || "Token"}
+                alt={metadata?.symbol || "Token"}
                 className="w-full h-full object-cover"
               />
             </div>
           )}
           <div className="flex flex-col">
             <div className="flex items-center space-x-2">
-              {metadata?.mpl.symbol && (
+              {metadata?.symbol && (
                 <span className="font-bold text-white">
-                  {metadata.mpl.symbol}
+                  {metadata.symbol}
                 </span>
               )}
-              {metadata?.mpl.name && (
+              {metadata?.name && (
                 <span className="text-white ml-2 hidden lg:block">
-                  {metadata.mpl.name}
+                  {metadata.name}
                 </span>
               )}
-              {metadata?.mint && (
+              {metadata?.address && (
                 <span
                   className="text-xs text-white/70 ml-2 hidden lg:block"
-                  title={metadata.mint}
+                  title={metadata.address}
                 >
                   ({formattedPubkey})
                 </span>
@@ -717,7 +716,7 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
                 </span>
               )}
             </div>
-            <Socials tokenMetadata={metadata ?? null} pubkey={mint} />
+            <Socials tokenMetadata={null} pubkey={mint} />
           </div>
         </div>
 

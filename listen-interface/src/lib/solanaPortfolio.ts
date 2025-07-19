@@ -4,11 +4,10 @@ import {
   LAMPORTS_PER_SOL,
   PublicKey,
 } from "@solana/web3.js";
-import { fetchListenMetadata } from "./listen";
 import { tokenMetadataCache } from "./localStorage";
 import { fetchTokenPrices } from "./price";
 import { Holding, PortfolioItem, TokenMetadata } from "./types";
-import { decodeTokenAccount, imageMap } from "./util";
+import { decodeTokenAccount } from "./util";
 
 const TOKEN_PROGRAM_ID = new PublicKey(
   "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA",
@@ -57,31 +56,6 @@ function parseHolding(ata: {
   }
 }
 
-export async function fetchTokenMetadataLegacy(
-  mint: string,
-): Promise<TokenMetadata> {
-  try {
-    // listen metadata is cached on server, could cache on client too here
-    const metadataRaw = await fetchListenMetadata(mint);
-    const USDC_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-    const usdcImage = imageMap[USDC_MINT];
-    const logoUri =
-      mint === USDC_MINT ? usdcImage : metadataRaw.mpl.ipfs_metadata?.image;
-
-    return {
-      address: metadataRaw.mint,
-      name: metadataRaw.mpl.name,
-      symbol: metadataRaw.mpl.symbol,
-      decimals: metadataRaw.spl.decimals,
-      logoURI: logoUri ?? "",
-      volume24h: 0,
-      chainId: 1151111081099710,
-    };
-  } catch (error) {
-    console.warn(`Failed to fetch legacy metadata for ${mint}:`, error);
-    return await fetchTokenMetadataFromJupiter(mint);
-  }
-}
 
 export async function fetchTokenMetadataFromJupiter(
   mint: string,
