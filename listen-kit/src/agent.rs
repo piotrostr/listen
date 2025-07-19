@@ -10,8 +10,8 @@ use crate::agents::research::ViewImage;
 use crate::common::{openrouter_agent_builder, OpenRouterAgent};
 use crate::cross_chain::tools::{GetQuote, Swap};
 use crate::data::{
-    AnalyzePageContent, FetchPriceActionAnalysis, FetchXPost, GetToken,
-    GetTokenBalance, ResearchXProfile, SearchTweets, SearchWeb,
+    AnalyzePageContent, FetchPriceActionAnalysis, FetchTopStocks, FetchXPost,
+    GetToken, GetTokenBalance, ResearchXProfile, SearchTweets, SearchWeb,
 };
 use crate::dexscreener::tools::SearchOnDexScreener;
 use crate::faster100x::AnalyzeHolderDistribution;
@@ -73,6 +73,7 @@ pub fn equip_with_tools<M: StreamingCompletionModel>(
         .tool(AnalyzePageContent)
         .tool(FetchTopTokens)
         .tool(FetchTopTokensByCategory)
+        .tool(FetchTopStocks)
 }
 
 pub fn equip_with_worldchain_tools<M: StreamingCompletionModel>(

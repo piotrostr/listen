@@ -223,6 +223,7 @@ impl EvmFallback {
                             price_change_24h,
                             chain_id: Some(chain_id.to_string()),
                             pools: Vec::new(),
+                            img_url: None,
                         },
                         0.0,
                     )

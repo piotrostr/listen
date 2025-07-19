@@ -51,6 +51,8 @@ pub struct TopToken {
     pub chain_id: Option<String>,
     #[serde(default)]
     pub pools: Vec<PoolInfo>,
+    #[serde(default)]
+    pub img_url: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -277,23 +279,31 @@ pub async fn fetch_candlesticks(
     interval: String,
 ) -> Result<Vec<Candlestick>> {
     use crate::evm_fallback::{EvmFallback, SOLANA_CHAIN_ID};
-    
+
     // Use CoinGecko API instead of deprecated Listen-RS API
-    let evm_fallback = EvmFallback::from_env()
-        .map_err(|e| anyhow!("Failed to initialize CoinGecko client: {}", e))?;
-    
+    let evm_fallback = EvmFallback::from_env().map_err(|e| {
+        anyhow!("Failed to initialize CoinGecko client: {}", e)
+    })?;
+
     // Find the pool address for this Solana token
     let pool_address = evm_fallback
         .find_pair_address(&mint, SOLANA_CHAIN_ID.to_string())
         .await
         .map_err(|e| anyhow!("Failed to find pair address: {}", e))?
         .ok_or_else(|| anyhow!("No pool found for token {}", mint))?;
-    
+
     // Fetch candlesticks using CoinGecko
     evm_fallback
-        .fetch_candlesticks(&pool_address, SOLANA_CHAIN_ID.to_string(), &interval, None)
+        .fetch_candlesticks(
+            &pool_address,
+            SOLANA_CHAIN_ID.to_string(),
+            &interval,
+            None,
+        )
         .await
-        .map_err(|e| anyhow!("Failed to fetch candlesticks from CoinGecko: {}", e))
+        .map_err(|e| {
+            anyhow!("Failed to fetch candlesticks from CoinGecko: {}", e)
+        })
 }
 
 #[cfg(test)]

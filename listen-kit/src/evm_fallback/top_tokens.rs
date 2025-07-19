@@ -174,6 +174,7 @@ impl EvmFallback {
                             price_change_24h,
                             chain_id: Some(chain_id.clone()),
                             pools: Vec::new(),
+                            img_url: None, // TODO add image url not to fetch possibly
                         },
                         0.0,
                     )
