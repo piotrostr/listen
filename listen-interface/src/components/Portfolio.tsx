@@ -124,8 +124,8 @@ export function Portfolio() {
 
   console.log({ isListenWallet, hasWallet, len: assets.length });
 
-  // Show zero state if we have a wallet but no assets
-  if (isListenWallet && !isLoading && assets.length === 0) {
+  // Show PortfolioZeroState only if there's no Listen wallet at all
+  if (!solanaAddress && !evmAddress && !isLoading) {
     return (
       <div
         className={`h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container pb-16 md:pb-0 ${
@@ -134,6 +134,27 @@ export function Portfolio() {
       >
         <WalletSwitcher />
         <PortfolioZeroState />
+      </div>
+    );
+  }
+
+  // Show empty portfolio if we have a wallet but no assets
+  if (hasWallet && !isLoading && assets.length === 0) {
+    return (
+      <div
+        className={`h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container pb-16 md:pb-0 ${
+          isMobile ? "p-0" : "p-4"
+        }`}
+      >
+        <WalletSwitcher />
+        {activeWallet === "eoaEvm" && <EoaEvmWalletSelector />}
+        <PortfolioSummary
+          totalBalance={0}
+          portfolioPnL={0}
+        />
+        <div className="flex-1 flex items-center justify-center">
+          <p className="text-gray-400 text-center">No assets in this wallet</p>
+        </div>
       </div>
     );
   }

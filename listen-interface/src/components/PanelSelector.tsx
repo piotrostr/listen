@@ -56,7 +56,7 @@ export function PanelSelector() {
 
     if (activePanel === "screener") {
       return (
-        <div className="h-full bg-[#17181D]">
+        <div className="h-full bg-black">
           <MobileHeader>
             <PriceUpdatesHeader />
           </MobileHeader>
@@ -67,7 +67,7 @@ export function PanelSelector() {
 
     if (activePanel === "pipelines") {
       return (
-        <div className="h-full bg-[#17181D]">
+        <div className="h-full bg-black">
           <MobileHeader>
             <PipelinesHeader
               statusFilter={statusFilter}
@@ -81,7 +81,7 @@ export function PanelSelector() {
 
     if (activePanel === "chat") {
       return (
-        <div className="h-full bg-[#17181D]">
+        <div className="h-full bg-black">
           <MobileHeader>
             <div className="text-white font-medium">{t("layout.chat")}</div>
           </MobileHeader>
@@ -92,7 +92,7 @@ export function PanelSelector() {
 
     if (activePanel === "portfolio") {
       return (
-        <div className="h-full bg-[#17181D]">
+        <div className="h-full bg-black">
           <MobileHeader>
             <PortfolioHeader onRefresh={refreshPortfolio} />
           </MobileHeader>
@@ -103,7 +103,7 @@ export function PanelSelector() {
 
     if (activePanel === "settings") {
       return (
-        <div className="h-full bg-[#17181D]">
+        <div className="h-full bg-black">
           <MobileHeader>
             <div className="text-white font-medium">{t("layout.settings")}</div>
           </MobileHeader>

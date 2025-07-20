@@ -39,7 +39,7 @@ export function systemPrompt(
   if (!hasWallet || isGuest) {
     prompt += `## Onboarding Required (Solana)\n${onboarding(hasWallet, isGuest)}\n\n`;
   }
-  if (hasWallet && !hasEvmWallet) {
+  if (!hasEvmWallet) {
     prompt += `## Onboarding Required (EVM)\n${onboardingEvm(hasWallet, isGuest)}\n\n`;
   }
 
