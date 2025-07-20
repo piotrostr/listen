@@ -42,7 +42,10 @@ const PnLArrow = ({ isPositive }: { isPositive: boolean }) => {
   );
 };
 
-export function PortfolioSummary({ totalBalance, portfolioPnL }: PortfolioSummaryProps) {
+export function PortfolioSummary({
+  totalBalance,
+  portfolioPnL,
+}: PortfolioSummaryProps) {
   const { solanaAddress, activeWallet } = useWalletStore();
   const { fundWallet } = useFundWallet();
   const { login } = usePrivy();
@@ -70,15 +73,17 @@ export function PortfolioSummary({ totalBalance, portfolioPnL }: PortfolioSummar
             maximumFractionDigits: 2,
           })}
         </span>
-        <div
-          className={`mt-4 text-lg ${pnlColor} flex items-center justify-center gap-1 font-dm-sans`}
-        >
-          <PnLArrow isPositive={portfolioPnL >= 0} />
-          <span>
-            {pnlSign}${Math.abs(pnlAmount).toFixed(2)} {pnlSign}(
-            {Math.abs(portfolioPnL).toFixed(2)}%)
-          </span>
-        </div>
+        {portfolioPnL != 0 && (
+          <div
+            className={`mt-4 text-lg ${pnlColor} flex items-center justify-center gap-1 font-dm-sans`}
+          >
+            <PnLArrow isPositive={portfolioPnL >= 0} />
+            <span>
+              {pnlSign}${Math.abs(pnlAmount).toFixed(2)} {pnlSign}(
+              {Math.abs(portfolioPnL).toFixed(2)}%)
+            </span>
+          </div>
+        )}
       </div>
       <div className="flex flex-row items-center gap-3 justify-center mt-2">
         <>

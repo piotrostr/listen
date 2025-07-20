@@ -88,10 +88,12 @@ export function PortfolioItemTile({
               <p className="font-bold font-dm-sans">
                 ${(asset.price * asset.amount).toFixed(2)}
               </p>
-              <p className={`text-sm font-dm-sans font-[500] ${pnlColor}`}>
-                {pnlSign}
-                {Math.abs(asset.priceChange24h).toFixed(2)}%
-              </p>
+              {asset.priceChange24h != 0 && (
+                <p className={`text-sm font-dm-sans font-[500] ${pnlColor}`}>
+                  {pnlSign}
+                  {Math.abs(asset.priceChange24h).toFixed(2)}%
+                </p>
+              )}
             </div>
           </div>
         </div>

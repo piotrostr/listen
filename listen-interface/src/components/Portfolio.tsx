@@ -14,7 +14,7 @@ import { WalletSwitcher } from "./WalletSwitcher";
 import { EoaEvmWalletSelector } from "./EoaEvmWalletSelector";
 import { PortfolioItem } from "../lib/types";
 import { aggregatePortfolioItems } from "../lib/portfolioHelpers";
-import { ensurePortfolioItem } from "../lib/util";
+import { ensurePortfolioItem, imageMap } from "../lib/util";
 
 export function Portfolio() {
   const {
@@ -140,6 +140,43 @@ export function Portfolio() {
 
   // Show empty portfolio if we have a wallet but no assets
   if (hasWallet && !isLoading && assets.length === 0) {
+    // Create placeholder assets with zero balances
+    const placeholderAssets: PortfolioItem[] = [
+      {
+        address: "So11111111111111111111111111111111111111112",
+        name: "Solana",
+        symbol: "SOL",
+        decimals: 9,
+        logoURI: imageMap.solana,
+        price: 0,
+        amount: 0,
+        chain: "solana",
+        priceChange24h: 0,
+      },
+      {
+        address: "BTC",
+        name: "Bitcoin",
+        symbol: "BTC",
+        decimals: 8,
+        logoURI: "https://app.hyperliquid.xyz/coins/BTC.svg",
+        price: 0,
+        amount: 0,
+        chain: "hyperliquid",
+        priceChange24h: 0,
+      },
+      {
+        address: "ETH",
+        name: "Ethereum",
+        symbol: "ETH",
+        decimals: 18,
+        logoURI: imageMap.eth,
+        price: 0,
+        amount: 0,
+        chain: "ethereum",
+        priceChange24h: 0,
+      },
+    ];
+
     return (
       <div
         className={`h-full font-mono overflow-y-auto scrollbar-thin scrollbar-thumb-[#2D2D2D] scrollbar-track-transparent scrollable-container pb-16 md:pb-0 ${
@@ -148,12 +185,11 @@ export function Portfolio() {
       >
         <WalletSwitcher />
         {activeWallet === "eoaEvm" && <EoaEvmWalletSelector />}
-        <PortfolioSummary
-          totalBalance={0}
-          portfolioPnL={0}
-        />
-        <div className="flex-1 flex items-center justify-center">
-          <p className="text-gray-400 text-center">No assets in this wallet</p>
+        <PortfolioSummary totalBalance={0} portfolioPnL={0} />
+        <div className="flex-1 space-y-2">
+          {placeholderAssets.map((asset) => (
+            <PortfolioItemTile key={asset.address} asset={asset} />
+          ))}
         </div>
       </div>
     );
