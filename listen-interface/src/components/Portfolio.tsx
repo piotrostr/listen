@@ -11,6 +11,7 @@ import { PortfolioSkeleton } from "./PortfolioSkeleton";
 import { PortfolioSummary } from "./PortfolioSummary";
 import { WalletSwitcher } from "./WalletSwitcher";
 import { PortfolioItem } from "../lib/types";
+import { aggregatePortfolioItems } from "../lib/portfolioHelpers";
 
 export function Portfolio() {
   const { 
@@ -49,13 +50,16 @@ export function Portfolio() {
   };
 
   // Combine all portfolio data
-  const assets: PortfolioItem[] = [
+  const rawAssets: PortfolioItem[] = [
     ...(solanaQuery.data || []),
     ...(evmQuery.data || []),
     ...(hyperliquidQuery.data || []),
   ];
 
-  // Calculate total balance from assets
+  // Aggregate assets with the same symbol across chains
+  const assets = aggregatePortfolioItems(rawAssets);
+
+  // Calculate total balance from aggregated assets
   const totalBalance = assets.reduce((sum, asset) => sum + asset.price * asset.amount, 0);
   
   // Calculate 24h PnL percentage

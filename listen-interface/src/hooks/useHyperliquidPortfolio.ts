@@ -2,16 +2,23 @@ import { useQuery } from "@tanstack/react-query";
 import { Hyperliquid } from "../lib/hype";
 import { HyperliquidPortfolioOverview } from "../lib/hype-types";
 import { PortfolioItem } from "../lib/types";
+import { useHyperliquidMids } from "./useHyperliquidMids";
 
 // Helper to convert Hyperliquid portfolio to PortfolioItem format
 function convertHyperliquidToPortfolioItems(
-  portfolio: HyperliquidPortfolioOverview
+  portfolio: HyperliquidPortfolioOverview,
+  midsMap?: Map<string, number>
 ): PortfolioItem[] {
   const items: PortfolioItem[] = [];
 
   // Convert spot balances
   portfolio.spotBalances.balances.forEach((balance) => {
     if (parseFloat(balance.total) > 0) {
+      // Get price from mids map, default to 1 for USDC or if not found
+      const price = balance.coin.toUpperCase() === "USDC" 
+        ? 1 
+        : midsMap?.get(balance.coin) || 1;
+      
       items.push({
         address: balance.coin,
         name: balance.coin,
@@ -20,7 +27,7 @@ function convertHyperliquidToPortfolioItems(
         logoURI: balance.coin.toUpperCase() === "USDC" 
           ? "/usdc-logo.svg" 
           : `https://app.hyperliquid.xyz/coins/${balance.coin}_USDC.svg`,
-        price: 1, // Would need to fetch actual price
+        price: price,
         amount: parseFloat(balance.total),
         chain: "hyperliquid",
         priceChange24h: 0, // Would need to fetch from API
@@ -58,7 +65,8 @@ function convertHyperliquidToPortfolioItems(
 }
 
 async function fetchHyperliquidPortfolio(
-  address: string | null
+  address: string | null,
+  midsMap?: Map<string, number>
 ): Promise<PortfolioItem[] | null> {
   if (!address) return null;
 
@@ -67,14 +75,17 @@ async function fetchHyperliquidPortfolio(
   
   if (!portfolio) return null;
   
-  return convertHyperliquidToPortfolioItems(portfolio);
+  return convertHyperliquidToPortfolioItems(portfolio, midsMap);
 }
 
 export function useHyperliquidPortfolio(address: string | null) {
+  // Fetch mids data to get current prices
+  const { data: midsMap } = useHyperliquidMids();
+  
   return useQuery({
-    queryKey: ["hyperliquid-portfolio", address],
-    queryFn: () => fetchHyperliquidPortfolio(address),
-    enabled: !!address,
+    queryKey: ["hyperliquid-portfolio", address, midsMap?.size || 0], // Include mids size to refetch when prices update
+    queryFn: () => fetchHyperliquidPortfolio(address, midsMap),
+    enabled: !!address, // Only fetch when we have an address
     staleTime: 5 * 60_000, // 5 minutes - data considered fresh
     gcTime: 30 * 60_000, // 30 minutes - keep in cache
     refetchInterval: 60_000, // Refetch every minute
