@@ -15,7 +15,7 @@ import { useDebounce } from "../hooks/useDebounce";
 import { useHyperliquidPortfolio } from "../hooks/useHyperliquidPortfolio";
 import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
 import { useEvmPortfolio } from "../hooks/useEvmPortfolio";
-import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { useWalletStore } from "../store/walletStore";
 import { useSolanaPrice } from "../hooks/useSolanaPrice";
 import i18n from "../i18n";
 import { chatCache } from "../lib/localStorage";
@@ -69,16 +69,38 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     message: initialMessage,
   } = useSearch({ from: "/" });
   const navigate = useNavigate();
-  const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
+  const { 
+    solanaAddress, 
+    evmAddress, 
+    eoaSolanaAddress, 
+    eoaEvmAddress,
+    eoaEvmWallets,
+    selectedEoaEvmIndex,
+    activeWallet 
+  } = useWalletStore();
   const { data: solanaPrice } = useSolanaPrice();
   
+  // Get addresses based on active wallet
+  const currentSolanaAddress = activeWallet === "listen" ? solanaAddress : 
+                              activeWallet === "eoaSolana" ? eoaSolanaAddress : null;
+  
+  // For EOA EVM, use the selected wallet from the list
+  const selectedEoaEvmWallet = eoaEvmWallets[selectedEoaEvmIndex];
+  const currentEvmAddress = activeWallet === "listen" ? evmAddress : 
+                           activeWallet === "eoaEvm" ? selectedEoaEvmWallet?.address || eoaEvmAddress : null;
+  
   // Use individual portfolio hooks
-  const solanaQuery = useSolanaPortfolio(wallets?.solanaWallet?.toString() || null);
-  const evmQuery = useEvmPortfolio(wallets?.evmWallet?.toString() || null);
+  const solanaQuery = useSolanaPortfolio(currentSolanaAddress);
+  const evmQuery = useEvmPortfolio(currentEvmAddress);
+  
+  // For Hyperliquid, we need to use the appropriate EVM address based on active wallet
+  const hyperliquidAddress = activeWallet === "listen" ? evmAddress : 
+                            activeWallet === "eoaEvm" ? selectedEoaEvmWallet?.address || eoaEvmAddress : null;
+  
   // Always call the hook, but control with enabled flag
   const { data: hyperliquidPortfolio } = useHyperliquidPortfolio(
-    wallets?.evmWallet?.toString() || null,
-    hyperliquid
+    hyperliquidAddress,
+    hyperliquid && !!hyperliquidAddress
   );
 
   // Combine all portfolio data
@@ -261,8 +283,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           });
         const preamble = systemPrompt(
           portfolio,
-          wallets?.solanaWallet?.toString() || null,
-          wallets?.evmWallet?.toString() || null,
+          currentSolanaAddress,
+          currentEvmAddress,
           defaultAmount.toString(),
           user?.isGuest || false,
           solanaPrice,
@@ -514,9 +536,19 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       updateAssistantMessage,
       getAccessToken,
       combinedPortfolio,
-      wallets,
+      currentSolanaAddress,
+      currentEvmAddress,
       chatType,
       navigate,
+      defaultAmount,
+      user?.isGuest,
+      solanaPrice,
+      hyperliquidPortfolio,
+      researchEnabled,
+      modelType,
+      agentMode,
+      memoryEnabled,
+      hyperliquid,
     ],
   );
 
@@ -698,7 +730,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
 
   const value = {
     messages: chat?.messages || [],
-    isLoading: isLoadingWallets || isLoading,
+    isLoading: isLoading,
     nestedAgentOutput,
     sendMessage,
     setMessages: (messages: Message[]) =>
