@@ -11,7 +11,6 @@ import { PortfolioSkeleton } from "./PortfolioSkeleton";
 import { PortfolioSummary } from "./PortfolioSummary";
 import { PortfolioZeroState } from "./PortfolioZeroState";
 import { WalletSwitcher } from "./WalletSwitcher";
-import { EoaEvmWalletSelector } from "./EoaEvmWalletSelector";
 import { PortfolioItem } from "../lib/types";
 import { aggregatePortfolioItems } from "../lib/portfolioHelpers";
 import { ensurePortfolioItem, imageMap } from "../lib/util";
@@ -184,7 +183,6 @@ export function Portfolio() {
         }`}
       >
         <WalletSwitcher />
-        {activeWallet === "eoaEvm" && <EoaEvmWalletSelector />}
         <PortfolioSummary totalBalance={0} portfolioPnL={0} />
         <div className="flex-1 space-y-2">
           {placeholderAssets.map((asset) => (
@@ -202,7 +200,6 @@ export function Portfolio() {
       }`}
     >
       <WalletSwitcher />
-      {activeWallet === "eoaEvm" && <EoaEvmWalletSelector />}
       <PortfolioSummary
         totalBalance={totalBalance}
         portfolioPnL={portfolioPnL}

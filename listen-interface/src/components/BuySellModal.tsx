@@ -86,7 +86,7 @@ export function BuySellModal({
           await invalidatePortfolios();
           onClose();
         },
-        chainId: asset.chainId,
+        chainId: asset.chain,
       });
     } else {
       await sellTokenForSol(asset.address, amount, asset.decimals, asset.name, {
@@ -94,7 +94,7 @@ export function BuySellModal({
           await invalidatePortfolios();
           onClose();
         },
-        chainId: asset.chainId,
+        chainId: asset.chain,
       });
     }
   };

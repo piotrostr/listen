@@ -1,5 +1,5 @@
 import { usePrivy, useSolanaWallets, useWallets } from "@privy-io/react-auth";
-import { useEffect, useRef } from "react";
+import { useEffect } from "react";
 import { useWalletStore } from "../store/walletStore";
 
 export function WalletInitializer() {
@@ -23,30 +23,30 @@ export function WalletInitializer() {
     const newAddresses = {
       solana:
         solanaWallets.find(
-          (w) => w.type === "solana" && w.walletClientType === "privy"
+          (w) => w.type === "solana" && w.walletClientType === "privy",
         )?.address ?? null,
       evm:
         evmWallets.find(
-          (w) => w.type === "ethereum" && w.walletClientType === "privy"
+          (w) => w.type === "ethereum" && w.walletClientType === "privy",
         )?.address ?? null,
       eoaSolana:
         solanaWallets.find(
-          (w) => w.type === "solana" && w.walletClientType !== "privy"
+          (w) => w.type === "solana" && w.walletClientType !== "privy",
         )?.address ?? null,
       eoaEvm:
         evmWallets.find(
-          (w) => w.type === "ethereum" && w.walletClientType !== "privy"
+          (w) => w.type === "ethereum" && w.walletClientType !== "privy",
         )?.address ?? null,
     };
 
     const newIcons = {
       eoaEvm:
         evmWallets.find(
-          (w) => w.type === "ethereum" && w.walletClientType !== "privy"
+          (w) => w.type === "ethereum" && w.walletClientType !== "privy",
         )?.meta?.icon ?? null,
       eoaSolana:
         solanaWallets.find(
-          (w) => w.type === "solana" && w.walletClientType !== "privy"
+          (w) => w.type === "solana" && w.walletClientType !== "privy",
         )?.meta?.icon ?? null,
     };
 
@@ -56,7 +56,7 @@ export function WalletInitializer() {
       .map((w) => ({
         address: w.address,
         icon: w.meta?.icon ?? null,
-        name: w.meta?.name || w.walletClientType || "Unknown Wallet"
+        name: w.meta?.name || w.walletClientType || "Unknown Wallet",
       }));
 
     // Set wallet addresses and icons
@@ -66,7 +66,19 @@ export function WalletInitializer() {
     setEoaEvmIcon(newIcons.eoaEvm);
     setEoaSolanaIcon(newIcons.eoaSolana);
     setEoaEvmWallets(allEoaEvmWallets);
-  }, [solanaReady, evmReady, user, solanaWallets, evmWallets, setWalletAddresses, setEoaSolanaAddress, setEoaEvmAddress, setEoaEvmIcon, setEoaSolanaIcon, setEoaEvmWallets]);
+  }, [
+    solanaReady,
+    evmReady,
+    user,
+    solanaWallets,
+    evmWallets,
+    setWalletAddresses,
+    setEoaSolanaAddress,
+    setEoaEvmAddress,
+    setEoaEvmIcon,
+    setEoaSolanaIcon,
+    setEoaEvmWallets,
+  ]);
 
   return null;
 }
