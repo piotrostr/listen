@@ -19,8 +19,8 @@ export function PortfolioItemTile({
 
   const handleOpenChart = () => {
     // For aggregated items, use the first chain
-    const chainId = 'chains' in asset ? asset.chains[0] : asset.chain;
-    
+    const chainId = "chains" in asset ? asset.chains[0] : asset.chain;
+
     openChart({
       mint: asset.address,
       chainId: chainId,
@@ -65,10 +65,14 @@ export function PortfolioItemTile({
                 {asset.name}
               </div>
               {/* Display chain icons next to the name for aggregated assets */}
-              {'chains' in asset && asset.chains.length > 0 && (
+              {"chains" in asset && asset.chains.length > 0 && (
                 <div className="flex items-center gap-1">
                   {asset.chains.map((chain) => (
-                    <ChainIcon key={chain} chainId={chain} className="w-4 h-4" />
+                    <ChainIcon
+                      key={chain}
+                      chainId={chain}
+                      className="w-4 h-4"
+                    />
                   ))}
                 </div>
               )}

@@ -6,21 +6,13 @@ import { useModal } from "../contexts/ModalContext";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { useSolBalance } from "../hooks/useSolBalance";
 import { usePortfolioInvalidation } from "../hooks/usePortfolioInvalidation";
+import { PortfolioItem } from "../lib/types";
 
 interface BuySellModalProps {
   isOpen: boolean;
   onClose: () => void;
   action: "buy" | "sell";
-  asset: {
-    address: string;
-    name: string;
-    symbol: string;
-    amount: number;
-    logoURI?: string;
-    price: number;
-    decimals: number;
-    chainId?: string;
-  };
+  asset: PortfolioItem;
 }
 
 export function BuySellModal({
@@ -82,7 +74,7 @@ export function BuySellModal({
   };
 
   const formattedAmount = calculateAmount().toFixed(
-    action === "buy" ? 2 : asset.decimals > 6 ? 6 : asset.decimals
+    action === "buy" ? 2 : asset.decimals > 6 ? 6 : asset.decimals,
   );
 
   const handleSubmit = async () => {

@@ -19,16 +19,16 @@ export function PanelSelector() {
   const { activePanel, setActivePanel } = usePanel();
 
   const queryClient = useQueryClient();
-  
+
   const refreshPortfolio = useCallback(async () => {
-    await queryClient.invalidateQueries({ 
-      queryKey: ['solana-portfolio'] 
+    await queryClient.invalidateQueries({
+      queryKey: ["solana-portfolio"],
     });
-    await queryClient.invalidateQueries({ 
-      queryKey: ['evm-portfolio'] 
+    await queryClient.invalidateQueries({
+      queryKey: ["evm-portfolio"],
     });
-    await queryClient.invalidateQueries({ 
-      queryKey: ['hyperliquid-portfolio'] 
+    await queryClient.invalidateQueries({
+      queryKey: ["hyperliquid-portfolio"],
     });
   }, [queryClient]);
 
@@ -56,7 +56,7 @@ export function PanelSelector() {
 
     if (activePanel === "screener") {
       return (
-        <div className="h-full bg-black">
+        <div className="h-full bg-[#17181D]">
           <MobileHeader>
             <PriceUpdatesHeader />
           </MobileHeader>
@@ -67,7 +67,7 @@ export function PanelSelector() {
 
     if (activePanel === "pipelines") {
       return (
-        <div className="h-full bg-black">
+        <div className="h-full bg-[#17181D]">
           <MobileHeader>
             <PipelinesHeader
               statusFilter={statusFilter}
@@ -81,7 +81,7 @@ export function PanelSelector() {
 
     if (activePanel === "chat") {
       return (
-        <div className="h-full bg-black">
+        <div className="h-full bg-[#17181D]">
           <MobileHeader>
             <div className="text-white font-medium">{t("layout.chat")}</div>
           </MobileHeader>
@@ -92,7 +92,7 @@ export function PanelSelector() {
 
     if (activePanel === "portfolio") {
       return (
-        <div className="h-full bg-black">
+        <div className="h-full bg-[#17181D]">
           <MobileHeader>
             <PortfolioHeader onRefresh={refreshPortfolio} />
           </MobileHeader>
@@ -103,7 +103,7 @@ export function PanelSelector() {
 
     if (activePanel === "settings") {
       return (
-        <div className="h-full bg-black">
+        <div className="h-full bg-[#17181D]">
           <MobileHeader>
             <div className="text-white font-medium">{t("layout.settings")}</div>
           </MobileHeader>

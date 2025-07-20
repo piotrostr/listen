@@ -10,6 +10,7 @@ import {
   PipelineSchema,
 } from "../types/pipeline";
 import { PortfolioItem } from "./types";
+import { AggregatedPortfolioItem } from "./portfolioHelpers";
 
 interface RawAccount {
   mint: PublicKey;
@@ -46,7 +47,7 @@ export const userHasDelegatedSolanaWallet = (user: User | null) => {
     (account): account is WalletWithMetadata =>
       account.type === "wallet" &&
       account.delegated &&
-      account.chainType === "solana"
+      account.chainType === "solana",
   );
 };
 
@@ -55,7 +56,7 @@ export const userHasDelegatedEvmWallet = (user: User | null) => {
     (account): account is WalletWithMetadata =>
       account.type === "wallet" &&
       account.delegated &&
-      account.chainType === "ethereum"
+      account.chainType === "ethereum",
   );
 };
 
@@ -90,7 +91,7 @@ export const caip2Map = {
 export function chainIdToCaip2(chainId?: string) {
   if (!chainId) return "solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp";
 
-  let values = Object.values(caip2Map);
+  const values = Object.values(caip2Map);
   if (values.includes(chainId)) {
     return chainId;
   }
@@ -271,7 +272,7 @@ export const chainIdNumericToChainId = (chainId: number): string => {
 
 // Validate Solana transaction signatures
 export const isValidSolanaTransactionSignature = (
-  signature: string
+  signature: string,
 ): boolean => {
   try {
     // Check that it only contains valid base58 characters
@@ -400,7 +401,7 @@ export const renderAddressOrTx = (text: string): string => {
       // Create the replacement with the link
       const replacement = `"<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${txSignature.slice(
         0,
-        4
+        4,
       )}..${txSignature.slice(-4)}</a>"`;
 
       // Replace this specific occurrence
@@ -424,7 +425,7 @@ export const renderAddressOrTx = (text: string): string => {
     // Skip if this is already inside an HTML tag (from previous replacements)
     const prevText = processedText.substring(
       Math.max(0, longTxMatch.index - 50),
-      longTxMatch.index
+      longTxMatch.index,
     );
     if (prevText.includes('<a href="https://solscan.io/')) {
       continue;
@@ -436,7 +437,7 @@ export const renderAddressOrTx = (text: string): string => {
       // Create the replacement with the link
       const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch.slice(
         0,
-        4
+        4,
       )}..${fullMatch.slice(-4)}</a>`;
 
       // Replace this specific occurrence
@@ -461,7 +462,7 @@ export const renderAddressOrTx = (text: string): string => {
     // Skip if this is already inside an HTML tag (from previous replacements)
     const prevText = processedText.substring(
       Math.max(0, match.index - 50),
-      match.index
+      match.index,
     );
     if (prevText.includes('<a href="https://solscan.io/')) {
       continue;
@@ -479,7 +480,7 @@ export const renderAddressOrTx = (text: string): string => {
       // Create the replacement with the link
       const replacement = `<a href="${url}" target="_blank" rel="noopener noreferrer" class="text-blue-400 underline">${fullMatch.slice(
         0,
-        4
+        4,
       )}..${fullMatch.slice(-4)}</a>`;
 
       // Replace this specific occurrence
@@ -505,7 +506,7 @@ export const renderAddressOrTx = (text: string): string => {
     // Skip if this is already inside an HTML tag (from previous replacements)
     const prevText = processedText.substring(
       Math.max(0, match.index - 50),
-      match.index
+      match.index,
     );
     if (prevText.includes('<a href="https://blockscan.com/')) {
       continue;
@@ -548,7 +549,7 @@ export type CompactPortfolio = {
 }[];
 
 export const compactPortfolio = (
-  portfolio: PortfolioItem[]
+  portfolio: PortfolioItem[],
 ): CompactPortfolio => {
   return portfolio.map((token) => ({
     chain: token.chain,
@@ -608,4 +609,15 @@ export function getNetworkId(chainId: string | number): NetworkId | null {
       chainIdString as keyof typeof chainIdToGeckoTerminalId
     ] || null
   );
+}
+
+export function ensurePortfolioItem(
+  item: AggregatedPortfolioItem | PortfolioItem,
+): PortfolioItem {
+  if ("isAggregated" in item && item.isAggregated) {
+    // For aggregated items, return the first original item
+    return item.originalItems[0];
+  }
+
+  return item as PortfolioItem;
 }
