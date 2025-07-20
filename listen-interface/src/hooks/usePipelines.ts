@@ -2,7 +2,7 @@ import { usePrivy } from "@privy-io/react-auth";
 import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef } from "react";
 import { config } from "../config";
-import { usePortfolioStore } from "../store/portfolioStore";
+import { useInvalidatePortfolio } from "./useInvalidatePortfolio";
 import { ExtendedPipelineResponse, ExtendedPipelineSchema } from "../types/api";
 import { waitForTransaction } from "../utils/transactionMonitor";
 import { useIsAuthenticated } from "./useIsAuthenticated";
@@ -18,7 +18,7 @@ const MONITORING_TX_HASHES = new Set<string>();
 export const usePipelines = () => {
   const { isAuthenticated } = useIsAuthenticated();
   const { getAccessToken, ready } = usePrivy();
-  const refreshPortfolio = usePortfolioStore((state) => state.refreshPortfolio);
+  const { refreshPortfolio } = useInvalidatePortfolio();
 
   // Use a local ref for debounce timing
   const pendingRefreshTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(

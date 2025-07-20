@@ -1,6 +1,6 @@
 import { Connection, TransactionSignature } from "@solana/web3.js";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { usePortfolioStore } from "../store/portfolioStore";
+import { useInvalidatePortfolio } from "./useInvalidatePortfolio";
 
 interface TransactionResult {
   success: boolean;
@@ -13,7 +13,7 @@ export const useWaitForTransaction = (
 ) => {
   const connection = new Connection(import.meta.env.VITE_RPC_URL);
   const queryClient = useQueryClient();
-  const { refreshPortfolio } = usePortfolioStore();
+  const { refreshPortfolio } = useInvalidatePortfolio();
 
   return useQuery<TransactionResult>({
     queryKey: ["transaction", signature],
