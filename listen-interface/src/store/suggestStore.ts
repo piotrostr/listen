@@ -44,7 +44,7 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
     set({ lastMessageHadSpecialTags: value });
   },
 
-  fetchSuggestions: async (chatId, messages, getAccessToken, portfolio, chatType, locale = "en") => {
+  fetchSuggestions: async (chatId, messages, getAccessToken, portfolio, _chatType, locale = "en") => {
     if (messages.length === 0) return;
 
     const lastMessage = messages[messages.length - 1];
