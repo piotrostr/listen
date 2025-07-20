@@ -91,7 +91,9 @@ export function SimpleHeader({
     ...(solanaQuery.data || []),
     ...(evmQuery.data || []),
     ...(hyperliquidQuery.data || []),
-  ].reduce((sum, asset) => sum + asset.price * asset.amount, 0);
+  ]
+    .filter(asset => asset.price * asset.amount > 0.02)
+    .reduce((sum, asset) => sum + asset.price * asset.amount, 0);
 
   const panelButtonStyle = (active: boolean) =>
     `p-2 rounded-lg ${active ? "bg-[#2D2D2D]" : "bg-black/40"} hover:bg-[#2D2D2D] transition-colors`;

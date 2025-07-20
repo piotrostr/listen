@@ -41,6 +41,7 @@ const AlchemyResponseSchema = z.object({
 
 import { LifiToken, LifiTokenSchema } from "../lib/types";
 import { caip2Map, caip2ToLifiChainId } from "../lib/util";
+import { tokenDenylistCache } from "./denylistCache";
 
 export async function getAnyToken(
   token: string,
@@ -59,6 +60,13 @@ export async function getAnyToken(
   if (chainId === null) {
     chainId = chainIdOrCaip2;
   }
+
+  // Check denylist cache first
+  if (await tokenDenylistCache.isDenylisted(token, chainId)) {
+    console.log(`Token ${chainId}-${token} is in denylist, skipping API call`);
+    return null;
+  }
+
   try {
     const res = await fetch(
       `https://li.quest/v1/token?token=${token}&chain=${chainId}`,
@@ -71,14 +79,28 @@ export async function getAnyToken(
       }
     );
     if (!res.ok) {
-      console.error(res);
+      const errorText = await res.text();
+      console.error("LiFi API error:", res.status, errorText);
+      
+      // Check if this is a denylist error and cache it
+      if (await tokenDenylistCache.handlePotentialDenylistError(errorText, token, chainId)) {
+        console.log(`Token ${chainId}-${token} added to denylist due to error: ${errorText}`);
+      }
+      
       return null;
     }
     const data = await res.json();
     const parsed = LifiTokenSchema.parse(data);
     return parsed;
   } catch (error) {
-    console.warn(error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    console.warn("getAnyToken error:", errorMessage);
+    
+    // Check if this is a denylist error and cache it
+    if (await tokenDenylistCache.handlePotentialDenylistError(errorMessage, token, chainId)) {
+      console.log(`Token ${chainId}-${token} added to denylist due to error: ${errorMessage}`);
+    }
+    
     return null;
   }
 }
@@ -160,6 +182,12 @@ export async function getTokensMetadata(
 
     await Promise.all(
       addresses.map(async (address) => {
+        // Skip denylisted tokens
+        if (await tokenDenylistCache.isDenylisted(address, chainId)) {
+          console.log(`Skipping denylisted token: ${chainId}-${address}`);
+          return;
+        }
+
         const cacheKey = `${address}-${chainId}`;
         const cachedMetadata = await tokenMetadataCache.get(cacheKey);
         if (cachedMetadata) {
@@ -252,21 +280,35 @@ export async function getTokenHoldings(
 
     const validatedData = parsedData.data;
 
-    // First, get all valid tokens and their metadata
-    const validTokens = validatedData.data.tokens
-      .filter((token) => {
-        const balance = BigInt(token.tokenBalance);
-        if (balance <= BigInt(0)) return false;
+    // First, filter out invalid tokens, then process them
+    const preFilteredTokens = validatedData.data.tokens.filter((token) => {
+      const balance = BigInt(token.tokenBalance);
+      return balance > BigInt(0);
+    });
 
-        // Don't filter out native tokens by price
-        const isNativeToken =
-          !token.tokenAddress ||
-          token.tokenAddress === "0x0000000000000000000000000000000000000000";
-        if (isNativeToken) return true;
+    // Filter out denylisted tokens asynchronously
+    const validTokenPromises = preFilteredTokens.map(async (token) => {
+      // Don't filter out native tokens by denylist
+      const isNativeToken =
+        !token.tokenAddress ||
+        token.tokenAddress === "0x0000000000000000000000000000000000000000";
+      
+      if (!isNativeToken) {
+        // Filter out denylisted tokens
+        const network = SUPPORTED_NETWORKS.find(n => n.networkId === token.network);
+        if (network && token.tokenAddress && await tokenDenylistCache.isDenylisted(token.tokenAddress, network.chainId)) {
+          console.log(`Filtering out denylisted token: ${network.chainId}-${token.tokenAddress}`);
+          return null;
+        }
+      }
 
-        return true; // We'll filter by value after getting prices
-      })
-      .map(async (token) => {
+      return token;
+    });
+
+    const filteredTokens = (await Promise.all(validTokenPromises)).filter(token => token !== null);
+
+    // Process metadata for valid tokens
+    const validTokens = filteredTokens.map(async (token) => {
         const network = SUPPORTED_NETWORKS.find(
           (n) => n.networkId === token.network
         );

@@ -70,7 +70,10 @@ export function Portfolio() {
   ];
 
   // Aggregate assets with the same symbol across chains
-  const assets = aggregatePortfolioItems(rawAssets);
+  const aggregatedAssets = aggregatePortfolioItems(rawAssets);
+  
+  // Filter out assets with USD value <= $0.02
+  const assets = aggregatedAssets.filter(asset => asset.price * asset.amount > 0.02);
 
   // Calculate total balance from aggregated assets
   const totalBalance = assets.reduce((sum, asset) => sum + asset.price * asset.amount, 0);
