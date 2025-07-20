@@ -14,6 +14,10 @@ interface WalletState {
   // EOA - Externally Owned Account
   eoaSolanaAddress: string | null;
   eoaEvmAddress: string | null;
+  
+  // Multiple EOA EVM wallets
+  eoaEvmWallets: Array<{address: string; icon: string | null; name?: string}>;
+  selectedEoaEvmIndex: number; // Index of selected EOA EVM wallet
 
   activeWallet: ActiveWallet;
 
@@ -29,6 +33,10 @@ interface WalletState {
 
   setEoaSolanaAddress: (solanaAddress: string | null) => void;
   setEoaEvmAddress: (evmAddress: string | null) => void;
+  
+  // Multiple EOA EVM wallet actions
+  setEoaEvmWallets: (wallets: Array<{address: string; icon: string | null; name?: string}>) => void;
+  setSelectedEoaEvmIndex: (index: number) => void;
 
   setEoaEvmIcon: (icon: string | null) => void;
   setEoaSolanaIcon: (icon: string | null) => void;
@@ -48,6 +56,10 @@ export const useWalletStore = create<WalletState>()(
 
       eoaSolanaAddress: null,
       eoaEvmAddress: null,
+      
+      // Multiple EOA EVM wallets
+      eoaEvmWallets: [],
+      selectedEoaEvmIndex: 0,
 
       eoaEvmIcon: null,
       eoaSolanaIcon: null,
@@ -78,6 +90,15 @@ export const useWalletStore = create<WalletState>()(
 
       setEoaEvmAddress: (evmAddress: string | null) => {
         set({ eoaEvmAddress: evmAddress });
+      },
+      
+      // Multiple EOA EVM wallet actions
+      setEoaEvmWallets: (wallets: Array<{address: string; icon: string | null; name?: string}>) => {
+        set({ eoaEvmWallets: wallets, selectedEoaEvmIndex: 0 }); // Reset to first wallet
+      },
+      
+      setSelectedEoaEvmIndex: (index: number) => {
+        set({ selectedEoaEvmIndex: index });
       },
 
       setEoaEvmIcon: (icon: string | null) => {

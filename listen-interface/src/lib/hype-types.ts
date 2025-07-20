@@ -13,7 +13,7 @@ export const ClearinghouseAssetPositionSchema = z.object({
       type: z.string(),
       value: z.number(),
     }),
-    liquidationPx: z.string(),
+    liquidationPx: z.string().nullable(),
     marginUsed: z.string(),
     maxLeverage: z.number(),
     positionValue: z.string(),
@@ -49,16 +49,20 @@ export const ClearinghouseStateSchema = z.object({
 
 export type ClearinghouseState = z.infer<typeof ClearinghouseStateSchema>;
 
+export const SpotClearinghouseBalanceSchema = z.object({
+  coin: z.string(),
+  token: z.optional(z.number()),
+  hold: z.string(),
+  total: z.string(),
+  entryNtl: z.string(),
+});
+
+export type SpotClearinghouseBalance = z.infer<
+  typeof SpotClearinghouseBalanceSchema
+>;
+
 export const SpotClearinghouseStateSchema = z.object({
-  balances: z.array(
-    z.object({
-      coin: z.string(),
-      token: z.optional(z.number()),
-      hold: z.string(),
-      total: z.string(),
-      entryNtl: z.string(),
-    })
-  ),
+  balances: z.array(SpotClearinghouseBalanceSchema),
 });
 
 export type SpotClearinghouseState = z.infer<

@@ -12,13 +12,12 @@ export function WalletInitializer() {
     setEoaEvmAddress,
     setEoaEvmIcon,
     setEoaSolanaIcon,
+    setEoaEvmWallets,
   } = useWalletStore();
-
-  const initializedRef = useRef(false);
 
   useEffect(() => {
     // Exit early if dependencies not ready
-    if (!solanaReady || !evmReady || !user || initializedRef.current) return;
+    if (!solanaReady || !evmReady || !user) return;
 
     // Find current wallet addresses
     const newAddresses = {
@@ -51,15 +50,23 @@ export function WalletInitializer() {
         )?.meta?.icon ?? null,
     };
 
+    // Get all EOA EVM wallets (non-Privy)
+    const allEoaEvmWallets = evmWallets
+      .filter((w) => w.type === "ethereum" && w.walletClientType !== "privy")
+      .map((w) => ({
+        address: w.address,
+        icon: w.meta?.icon ?? null,
+        name: w.meta?.name || w.walletClientType || "Unknown Wallet"
+      }));
+
     // Set wallet addresses and icons
     setWalletAddresses(newAddresses.solana, newAddresses.evm);
     setEoaSolanaAddress(newAddresses.eoaSolana);
     setEoaEvmAddress(newAddresses.eoaEvm);
     setEoaEvmIcon(newIcons.eoaEvm);
     setEoaSolanaIcon(newIcons.eoaSolana);
-
-    initializedRef.current = true;
-  }, [solanaReady, evmReady, user, solanaWallets, evmWallets]);
+    setEoaEvmWallets(allEoaEvmWallets);
+  }, [solanaReady, evmReady, user, solanaWallets, evmWallets, setWalletAddresses, setEoaSolanaAddress, setEoaEvmAddress, setEoaEvmIcon, setEoaSolanaIcon, setEoaEvmWallets]);
 
   return null;
 }

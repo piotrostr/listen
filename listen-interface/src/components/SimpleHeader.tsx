@@ -51,7 +51,9 @@ export function SimpleHeader({
     solanaAddress, 
     evmAddress, 
     eoaSolanaAddress, 
-    eoaEvmAddress, 
+    eoaEvmAddress,
+    eoaEvmWallets,
+    selectedEoaEvmIndex,
     activeWallet 
   } = useWalletStore();
   
@@ -64,14 +66,24 @@ export function SimpleHeader({
   // Get addresses based on active wallet
   const currentSolanaAddress = activeWallet === "listen" ? solanaAddress : 
                               activeWallet === "eoaSolana" ? eoaSolanaAddress : null;
+  
+  // For EOA EVM, use the selected wallet from the list
+  const selectedEoaEvmWallet = eoaEvmWallets[selectedEoaEvmIndex];
   const currentEvmAddress = activeWallet === "listen" ? evmAddress : 
-                           activeWallet === "eoaEvm" ? eoaEvmAddress : null;
+                           activeWallet === "eoaEvm" ? selectedEoaEvmWallet?.address || eoaEvmAddress : null;
 
   // Use individual portfolio hooks
   const solanaQuery = useSolanaPortfolio(currentSolanaAddress);
   const evmQuery = useEvmPortfolio(currentEvmAddress);
+  
+  // For Hyperliquid, we need to use the appropriate EVM address based on active wallet
+  const hyperliquidAddress = activeWallet === "listen" ? evmAddress : 
+                            activeWallet === "eoaEvm" ? selectedEoaEvmWallet?.address || eoaEvmAddress : null;
+  
+  // Always call the hook, but control with enabled flag
   const hyperliquidQuery = useHyperliquidPortfolio(
-    hyperliquid && activeWallet === "listen" ? evmAddress : null
+    hyperliquidAddress,
+    hyperliquid && !!hyperliquidAddress
   );
 
   // Calculate portfolio value

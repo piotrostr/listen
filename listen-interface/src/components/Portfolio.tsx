@@ -10,6 +10,7 @@ import { PortfolioItemTile } from "./PortfolioItemTile";
 import { PortfolioSkeleton } from "./PortfolioSkeleton";
 import { PortfolioSummary } from "./PortfolioSummary";
 import { WalletSwitcher } from "./WalletSwitcher";
+import { EoaEvmWalletSelector } from "./EoaEvmWalletSelector";
 import { PortfolioItem } from "../lib/types";
 import { aggregatePortfolioItems } from "../lib/portfolioHelpers";
 
@@ -19,6 +20,8 @@ export function Portfolio() {
     evmAddress, 
     eoaSolanaAddress, 
     eoaEvmAddress, 
+    eoaEvmWallets,
+    selectedEoaEvmIndex,
     activeWallet 
   } = useWalletStore();
   
@@ -33,14 +36,24 @@ export function Portfolio() {
   // Get addresses based on active wallet
   const currentSolanaAddress = activeWallet === "listen" ? solanaAddress : 
                               activeWallet === "eoaSolana" ? eoaSolanaAddress : null;
+  
+  // For EOA EVM, use the selected wallet from the list
+  const selectedEoaEvmWallet = eoaEvmWallets[selectedEoaEvmIndex];
   const currentEvmAddress = activeWallet === "listen" ? evmAddress : 
-                           activeWallet === "eoaEvm" ? eoaEvmAddress : null;
+                           activeWallet === "eoaEvm" ? selectedEoaEvmWallet?.address || eoaEvmAddress : null;
 
   // Use individual portfolio hooks
   const solanaQuery = useSolanaPortfolio(currentSolanaAddress);
   const evmQuery = useEvmPortfolio(currentEvmAddress);
+  
+  // For Hyperliquid, we need to use the appropriate EVM address based on active wallet
+  const hyperliquidAddress = activeWallet === "listen" ? evmAddress : 
+                            activeWallet === "eoaEvm" ? selectedEoaEvmWallet?.address || eoaEvmAddress : null;
+  
+  // Always call the hook, but control with enabled flag
   const hyperliquidQuery = useHyperliquidPortfolio(
-    hyperliquid && activeWallet === "listen" ? evmAddress : null
+    hyperliquidAddress,
+    hyperliquid && !!hyperliquidAddress
   );
 
   const handleOpenModal = (asset: any, action: "buy" | "sell") => {
@@ -84,6 +97,7 @@ export function Portfolio() {
       }`}
     >
       <WalletSwitcher />
+      {activeWallet === "eoaEvm" && <EoaEvmWalletSelector />}
       <PortfolioSummary totalBalance={totalBalance} portfolioPnL={portfolioPnL} />
       <div className="flex-1 space-y-2">
         {assets

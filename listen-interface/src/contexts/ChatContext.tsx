@@ -75,8 +75,10 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   // Use individual portfolio hooks
   const solanaQuery = useSolanaPortfolio(wallets?.solanaWallet?.toString() || null);
   const evmQuery = useEvmPortfolio(wallets?.evmWallet?.toString() || null);
+  // Always call the hook, but control with enabled flag
   const { data: hyperliquidPortfolio } = useHyperliquidPortfolio(
-    hyperliquid ? wallets?.evmWallet?.toString() || null : null,
+    wallets?.evmWallet?.toString() || null,
+    hyperliquid
   );
 
   // Combine all portfolio data
