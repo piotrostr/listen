@@ -104,11 +104,14 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   );
 
   // Combine all portfolio data
-  const combinedPortfolio = [
+  const rawPortfolio = [
     ...(solanaQuery.data || []),
     ...(evmQuery.data || []),
     ...(hyperliquidPortfolio || []),
   ];
+
+  // Filter out low-value assets for cleaner agent context
+  const combinedPortfolio = rawPortfolio.filter(asset => asset.price * asset.amount > 0.02);
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
