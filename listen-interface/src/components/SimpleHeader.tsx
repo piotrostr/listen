@@ -90,7 +90,7 @@ export function SimpleHeader({
   const portfolioValue = [
     ...(solanaQuery.data || []),
     ...(evmQuery.data || []),
-    ...(hyperliquidQuery.data || []),
+    ...(hyperliquidQuery.data?.items || []),
   ]
     .filter(asset => asset.price * asset.amount > 0.02)
     .reduce((sum, asset) => sum + asset.price * asset.amount, 0);

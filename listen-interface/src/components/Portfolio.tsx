@@ -85,7 +85,7 @@ export function Portfolio() {
   const rawAssets: PortfolioItem[] = [
     ...(solanaQuery.data || []),
     ...(evmQuery.data || []),
-    ...(hyperliquidQuery.data || []),
+    ...(hyperliquidQuery.data?.items || []),
   ];
 
   // Aggregate assets with the same symbol across chains

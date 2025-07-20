@@ -84,7 +84,7 @@ function convertHyperliquidToPortfolioItems(
 async function fetchHyperliquidPortfolio(
   address: string | null,
   midsMap?: Map<string, number>,
-): Promise<PortfolioItem[] | null> {
+): Promise<{ items: PortfolioItem[]; raw: HyperliquidPortfolioOverview } | null> {
   if (!address) return null;
 
   const hyperliquid = new Hyperliquid();
@@ -92,7 +92,10 @@ async function fetchHyperliquidPortfolio(
 
   if (!portfolio) return null;
 
-  return convertHyperliquidToPortfolioItems(portfolio, midsMap);
+  return {
+    items: convertHyperliquidToPortfolioItems(portfolio, midsMap),
+    raw: portfolio,
+  };
 }
 
 export function useHyperliquidPortfolio(

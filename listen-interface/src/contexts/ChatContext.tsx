@@ -110,7 +110,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         : null;
 
   // Always call the hook, but control with enabled flag
-  const { data: hyperliquidPortfolio } = useHyperliquidPortfolio(
+  const { data: hyperliquidData } = useHyperliquidPortfolio(
     hyperliquidAddress,
     hyperliquid && !!hyperliquidAddress,
   );
@@ -119,7 +119,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   const rawPortfolio = [
     ...(solanaQuery.data || []),
     ...(evmQuery.data || []),
-    ...(hyperliquidPortfolio || []),
+    ...(hyperliquidData?.items || []),
   ];
 
   // Filter out low-value assets for cleaner agent context
@@ -305,7 +305,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           defaultAmount.toString(),
           user?.isGuest || false,
           solanaPrice,
-          hyperliquidPortfolio ?? null,
+          hyperliquidData?.raw ?? null,
         );
 
         if (researchEnabled && modelType === "claude") {
@@ -560,7 +560,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       defaultAmount,
       user?.isGuest,
       solanaPrice,
-      hyperliquidPortfolio,
+      hyperliquidData,
       researchEnabled,
       modelType,
       agentMode,

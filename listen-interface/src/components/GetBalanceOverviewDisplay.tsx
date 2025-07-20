@@ -169,7 +169,7 @@ export function GetBalanceOverviewDisplay({
               entryPx={position.position.entryPx}
               pnl={position.position.unrealizedPnl}
               leverage={position.position.leverage.value}
-              liquidationPx={position.position.liquidationPx}
+              liquidationPx={position.position.liquidationPx ?? undefined}
               returnOnEquity={position.position.returnOnEquity}
               positionValue={position.position.positionValue}
               showLongShort={true}
