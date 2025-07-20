@@ -5,7 +5,11 @@ import { IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
 import { MdHistory } from "react-icons/md";
 import { useMobile } from "../contexts/MobileContext";
 import { useSidebar } from "../contexts/SidebarContext";
-import { usePortfolioStore } from "../store/portfolioStore";
+import { useWalletStore } from "../store/walletStore";
+import { useSettingsStore } from "../store/settingsStore";
+import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
+import { useEvmPortfolio } from "../hooks/useEvmPortfolio";
+import { useHyperliquidPortfolio } from "../hooks/useHyperliquidPortfolio";
 import { BurgerIconListenThreeDots } from "./Burger";
 
 interface SimpleHeaderProps {
@@ -42,13 +46,40 @@ export function SimpleHeader({
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
   const { isMobile, isVerySmallScreen } = useMobile();
   const { user } = usePrivy();
+  
+  const { 
+    solanaAddress, 
+    evmAddress, 
+    eoaSolanaAddress, 
+    eoaEvmAddress, 
+    activeWallet 
+  } = useWalletStore();
+  
+  const { hyperliquid } = useSettingsStore();
 
   const togglePanel = (panelName: string) => {
     setActivePanel(activePanel === panelName ? null : panelName);
   };
 
-  const { getPortfolioValue } = usePortfolioStore();
-  const portfolioValue = getPortfolioValue();
+  // Get addresses based on active wallet
+  const currentSolanaAddress = activeWallet === "listen" ? solanaAddress : 
+                              activeWallet === "eoaSolana" ? eoaSolanaAddress : null;
+  const currentEvmAddress = activeWallet === "listen" ? evmAddress : 
+                           activeWallet === "eoaEvm" ? eoaEvmAddress : null;
+
+  // Use individual portfolio hooks
+  const solanaQuery = useSolanaPortfolio(currentSolanaAddress);
+  const evmQuery = useEvmPortfolio(currentEvmAddress);
+  const hyperliquidQuery = useHyperliquidPortfolio(
+    hyperliquid && activeWallet === "listen" ? evmAddress : null
+  );
+
+  // Calculate portfolio value
+  const portfolioValue = [
+    ...(solanaQuery.data || []),
+    ...(evmQuery.data || []),
+    ...(hyperliquidQuery.data || []),
+  ].reduce((sum, asset) => sum + asset.price * asset.amount, 0);
 
   const panelButtonStyle = (active: boolean) =>
     `p-2 rounded-lg ${active ? "bg-[#2D2D2D]" : "bg-black/40"} hover:bg-[#2D2D2D] transition-colors`;

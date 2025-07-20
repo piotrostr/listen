@@ -13,6 +13,8 @@ import { v4 as uuidv4 } from "uuid";
 import { config } from "../config";
 import { useDebounce } from "../hooks/useDebounce";
 import { useHyperliquidPortfolio } from "../hooks/useHyperliquidPortfolio";
+import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
+import { useEvmPortfolio } from "../hooks/useEvmPortfolio";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSolanaPrice } from "../hooks/useSolanaPrice";
 import i18n from "../i18n";
@@ -20,7 +22,6 @@ import { chatCache } from "../lib/localStorage";
 import { compactPortfolio } from "../lib/util";
 import { renderAgentOutput } from "../parse-agent-output";
 import { systemPrompt } from "../prompts";
-import { usePortfolioStore } from "../store/portfolioStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { useSuggestStore } from "../store/suggestStore";
 import {
@@ -69,13 +70,21 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   } = useSearch({ from: "/" });
   const navigate = useNavigate();
   const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
-  const { getCombinedPortfolio } = usePortfolioStore();
   const { data: solanaPrice } = useSolanaPrice();
+  
+  // Use individual portfolio hooks
+  const solanaQuery = useSolanaPortfolio(wallets?.solanaWallet?.toString() || null);
+  const evmQuery = useEvmPortfolio(wallets?.evmWallet?.toString() || null);
   const { data: hyperliquidPortfolio } = useHyperliquidPortfolio(
-    wallets?.evmWallet?.toString() || null,
+    hyperliquid ? wallets?.evmWallet?.toString() || null : null,
   );
 
-  const combinedPortfolio = getCombinedPortfolio();
+  // Combine all portfolio data
+  const combinedPortfolio = [
+    ...(solanaQuery.data || []),
+    ...(evmQuery.data || []),
+    ...(hyperliquidPortfolio || []),
+  ];
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);

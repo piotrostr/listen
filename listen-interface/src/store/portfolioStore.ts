@@ -5,6 +5,8 @@ import { fetchPortfolio as fetchSolanaPortfolio } from "../lib/solanaPortfolio";
 import { PortfolioItem } from "../lib/types";
 import { useTokenStore } from "./tokenStore";
 import { ActiveWallet, useWalletStore } from "./walletStore";
+import { useHyperliquidPortfolio } from "../hooks/useHyperliquidPortfolio";
+import { HyperliquidPortfolioOverview } from "../lib/hype-types";
 
 export function getPortfolioTotalValue(assets: PortfolioItem[]): number {
   return assets.reduce((total, asset) => total + asset.price * asset.amount, 0);
@@ -25,6 +27,58 @@ export function getPortfolioPnL(assets: PortfolioItem[]): number {
   return weightedPnL / totalValue;
 }
 
+// Helper to convert Hyperliquid portfolio to PortfolioItem format
+export function convertHyperliquidToPortfolioItems(
+  portfolio: HyperliquidPortfolioOverview
+): PortfolioItem[] {
+  const items: PortfolioItem[] = [];
+
+  // Convert spot balances
+  portfolio.spotBalances.balances.forEach((balance) => {
+    if (parseFloat(balance.total) > 0) {
+      items.push({
+        address: balance.coin,
+        name: balance.coin,
+        symbol: balance.coin,
+        decimals: 6, // Default decimals for Hyperliquid
+        logoURI: null,
+        price: 1, // Would need to fetch actual price
+        amount: parseFloat(balance.total),
+        chain: "hyperliquid",
+        priceChange24h: 0, // Would need to fetch from API
+        volume24h: 0,
+        type: "spot",
+      });
+    }
+  });
+
+  // Convert perp positions
+  portfolio.perpBalances.assetPositions.forEach((position) => {
+    const szi = parseFloat(position.position.szi);
+    if (szi !== 0) {
+      const positionValue = parseFloat(position.position.positionValue);
+      const unrealizedPnl = parseFloat(position.position.unrealizedPnl);
+      const entryPx = parseFloat(position.position.entryPx);
+      
+      items.push({
+        address: position.position.coin,
+        name: position.position.coin,
+        symbol: position.position.coin,
+        decimals: 6,
+        logoURI: null,
+        price: entryPx,
+        amount: Math.abs(szi),
+        chain: "hyperliquid",
+        priceChange24h: positionValue > 0 ? (unrealizedPnl / positionValue) * 100 : 0,
+        volume24h: 0,
+        type: "perp",
+      });
+    }
+  });
+
+  return items;
+}
+
 // Stale time in milliseconds (data considered fresh for 30 seconds)
 const STALE_TIME = 30 * 1000;
 
@@ -34,6 +88,7 @@ interface PortfolioState {
   listenEvmAssetsMap: Map<string, PortfolioItem>;
   eoaSolanaAssetsMap: Map<string, PortfolioItem>;
   eoaEvmAssetsMap: Map<string, PortfolioItem>;
+  hyperliquidAssetsMap: Map<string, PortfolioItem>;
 
   // 24h open prices
   openPricesMap: Map<string, number>;
@@ -63,6 +118,7 @@ interface PortfolioState {
     address: string,
     walletType: ActiveWallet
   ) => Promise<void>;
+  fetchHyperliquidPortfolio: (address: string) => Promise<void>;
   fetchAllPortfolios: (fetchAll?: boolean) => Promise<void>;
   refreshPortfolio: (fetchAll?: boolean) => Promise<void>;
   isFresh: () => boolean;
@@ -83,6 +139,7 @@ interface PersistedPortfolioState {
   listenEvmAssets: PortfolioItem[];
   eoaSolanaAssets: PortfolioItem[];
   eoaEvmAssets: PortfolioItem[];
+  hyperliquidAssets: PortfolioItem[];
   lastUpdated: number | null;
 }
 
@@ -94,6 +151,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       listenEvmAssetsMap: new Map<string, PortfolioItem>(),
       eoaSolanaAssetsMap: new Map<string, PortfolioItem>(),
       eoaEvmAssetsMap: new Map<string, PortfolioItem>(),
+      hyperliquidAssetsMap: new Map<string, PortfolioItem>(),
       openPricesMap: new Map<string, number>(),
 
       // Data
@@ -110,6 +168,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             return [
               ...Array.from(get().listenSolanaAssetsMap.values()),
               ...Array.from(get().listenEvmAssetsMap.values()),
+              ...Array.from(get().hyperliquidAssetsMap.values()),
             ];
           case "eoaSolana":
             return Array.from(get().eoaSolanaAssetsMap.values());
@@ -208,6 +267,42 @@ export const usePortfolioStore = create<PortfolioState>()(
             isLoading: false,
           });
           console.error("Error fetching EVM portfolio:", error);
+        }
+      },
+
+      fetchHyperliquidPortfolio: async (address: string) => {
+        if (!address) return;
+
+        set((state) => ({
+          isLoading: state.hyperliquidAssetsMap.size === 0,
+          error: null,
+        }));
+
+        try {
+          // We need to use the Hyperliquid class directly since we can't use the hook here
+          const { Hyperliquid } = await import("../lib/hype");
+          const hyperliquid = new Hyperliquid();
+          const hyperliquidData = await hyperliquid.portfolioOverview(address);
+          
+          if (hyperliquidData) {
+            const hyperliquidAssets = convertHyperliquidToPortfolioItems(hyperliquidData);
+            const hyperliquidAssetsMap = new Map();
+            hyperliquidAssets.forEach((asset) => {
+              hyperliquidAssetsMap.set(asset.address, asset);
+            });
+
+            set(() => ({
+              hyperliquidAssetsMap,
+              isLoading: false,
+              lastUpdated: Date.now(),
+            }));
+          }
+        } catch (error) {
+          set({
+            error: error as Error,
+            isLoading: false,
+          });
+          console.error("Error fetching Hyperliquid portfolio:", error);
         }
       },
 

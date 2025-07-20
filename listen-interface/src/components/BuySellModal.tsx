@@ -5,6 +5,7 @@ import { MdArrowBack } from "react-icons/md";
 import { useModal } from "../contexts/ModalContext";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { useSolBalance } from "../hooks/useSolBalance";
+import { usePortfolioInvalidation } from "../hooks/usePortfolioInvalidation";
 
 interface BuySellModalProps {
   isOpen: boolean;
@@ -34,6 +35,7 @@ export function BuySellModal({
   const { isExecuting, quickBuyToken, sellTokenForSol } =
     usePipelineExecution();
   const { returnToChart, hasChartToReturnTo } = useModal();
+  const { invalidatePortfolios } = usePortfolioInvalidation();
 
   // Always refetch SOL balance when modal is open
   useEffect(() => {
@@ -88,12 +90,18 @@ export function BuySellModal({
 
     if (action === "buy") {
       await quickBuyToken(asset.address, amount, {
-        onSuccess: onClose,
+        onSuccess: async () => {
+          await invalidatePortfolios();
+          onClose();
+        },
         chainId: asset.chainId,
       });
     } else {
       await sellTokenForSol(asset.address, amount, asset.decimals, asset.name, {
-        onSuccess: onClose,
+        onSuccess: async () => {
+          await invalidatePortfolios();
+          onClose();
+        },
         chainId: asset.chainId,
       });
     }
