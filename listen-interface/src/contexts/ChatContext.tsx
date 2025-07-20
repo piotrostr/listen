@@ -69,38 +69,50 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     message: initialMessage,
   } = useSearch({ from: "/" });
   const navigate = useNavigate();
-  const { 
-    solanaAddress, 
-    evmAddress, 
-    eoaSolanaAddress, 
+  const {
+    solanaAddress,
+    evmAddress,
+    eoaSolanaAddress,
     eoaEvmAddress,
     eoaEvmWallets,
     selectedEoaEvmIndex,
-    activeWallet 
+    activeWallet,
   } = useWalletStore();
   const { data: solanaPrice } = useSolanaPrice();
-  
+
   // Get addresses based on active wallet
-  const currentSolanaAddress = activeWallet === "listen" ? solanaAddress : 
-                              activeWallet === "eoaSolana" ? eoaSolanaAddress : null;
-  
+  const currentSolanaAddress =
+    activeWallet === "listen"
+      ? solanaAddress
+      : activeWallet === "eoaSolana"
+        ? eoaSolanaAddress
+        : null;
+
   // For EOA EVM, use the selected wallet from the list
   const selectedEoaEvmWallet = eoaEvmWallets[selectedEoaEvmIndex];
-  const currentEvmAddress = activeWallet === "listen" ? evmAddress : 
-                           activeWallet === "eoaEvm" ? selectedEoaEvmWallet?.address || eoaEvmAddress : null;
-  
+  const currentEvmAddress =
+    activeWallet === "listen"
+      ? evmAddress
+      : activeWallet === "eoaEvm"
+        ? selectedEoaEvmWallet?.address || eoaEvmAddress
+        : null;
+
   // Use individual portfolio hooks
   const solanaQuery = useSolanaPortfolio(currentSolanaAddress);
   const evmQuery = useEvmPortfolio(currentEvmAddress);
-  
+
   // For Hyperliquid, we need to use the appropriate EVM address based on active wallet
-  const hyperliquidAddress = activeWallet === "listen" ? evmAddress : 
-                            activeWallet === "eoaEvm" ? selectedEoaEvmWallet?.address || eoaEvmAddress : null;
-  
+  const hyperliquidAddress =
+    activeWallet === "listen"
+      ? evmAddress
+      : activeWallet === "eoaEvm"
+        ? selectedEoaEvmWallet?.address || eoaEvmAddress
+        : null;
+
   // Always call the hook, but control with enabled flag
   const { data: hyperliquidPortfolio } = useHyperliquidPortfolio(
     hyperliquidAddress,
-    hyperliquid && !!hyperliquidAddress
+    hyperliquid && !!hyperliquidAddress,
   );
 
   // Combine all portfolio data
@@ -111,7 +123,9 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
   ];
 
   // Filter out low-value assets for cleaner agent context
-  const combinedPortfolio = rawPortfolio.filter(asset => asset.price * asset.amount > 0.02);
+  const combinedPortfolio = rawPortfolio.filter(
+    (asset) => asset.price * asset.amount > 0.02,
+  );
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -291,7 +305,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           defaultAmount.toString(),
           user?.isGuest || false,
           solanaPrice,
-          hyperliquidPortfolio,
+          hyperliquidPortfolio ?? null,
         );
 
         if (researchEnabled && modelType === "claude") {

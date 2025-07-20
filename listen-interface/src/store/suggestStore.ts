@@ -22,7 +22,7 @@ interface SuggestState {
     chatId: string,
     messages: Message[],
     getAccessToken: () => Promise<string | null>,
-    locale?: string
+    locale?: string,
   ) => Promise<void>;
   clearSuggestions: (chatId?: string) => void;
   getSuggestions: (chatId: string) => string[];

@@ -5,7 +5,6 @@ import { fetchPortfolio as fetchSolanaPortfolio } from "../lib/solanaPortfolio";
 import { PortfolioItem } from "../lib/types";
 import { useTokenStore } from "./tokenStore";
 import { ActiveWallet, useWalletStore } from "./walletStore";
-import { useHyperliquidPortfolio } from "../hooks/useHyperliquidPortfolio";
 import { HyperliquidPortfolioOverview } from "../lib/hype-types";
 
 export function getPortfolioTotalValue(assets: PortfolioItem[]): number {
@@ -29,7 +28,7 @@ export function getPortfolioPnL(assets: PortfolioItem[]): number {
 
 // Helper to convert Hyperliquid portfolio to PortfolioItem format
 export function convertHyperliquidToPortfolioItems(
-  portfolio: HyperliquidPortfolioOverview
+  portfolio: HyperliquidPortfolioOverview,
 ): PortfolioItem[] {
   const items: PortfolioItem[] = [];
 
@@ -59,7 +58,7 @@ export function convertHyperliquidToPortfolioItems(
       const positionValue = parseFloat(position.position.positionValue);
       const unrealizedPnl = parseFloat(position.position.unrealizedPnl);
       const entryPx = parseFloat(position.position.entryPx);
-      
+
       items.push({
         address: position.position.coin,
         name: position.position.coin,
@@ -69,7 +68,8 @@ export function convertHyperliquidToPortfolioItems(
         price: entryPx,
         amount: Math.abs(szi),
         chain: "hyperliquid",
-        priceChange24h: positionValue > 0 ? (unrealizedPnl / positionValue) * 100 : 0,
+        priceChange24h:
+          positionValue > 0 ? (unrealizedPnl / positionValue) * 100 : 0,
         volume24h: 0,
         type: "perp",
       });
@@ -112,11 +112,11 @@ interface PortfolioState {
   // Actions
   fetchSolanaPortfolio: (
     address: string,
-    walletType: ActiveWallet
+    walletType: ActiveWallet,
   ) => Promise<void>;
   fetchEvmPortfolio: (
     address: string,
-    walletType: ActiveWallet
+    walletType: ActiveWallet,
   ) => Promise<void>;
   fetchHyperliquidPortfolio: (address: string) => Promise<void>;
   fetchAllPortfolios: (fetchAll?: boolean) => Promise<void>;
@@ -199,7 +199,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       // Actions
       fetchSolanaPortfolio: async (
         address: string,
-        walletType: ActiveWallet = "listen"
+        walletType: ActiveWallet = "listen",
       ) => {
         if (!address) return;
 
@@ -237,7 +237,7 @@ export const usePortfolioStore = create<PortfolioState>()(
 
       fetchEvmPortfolio: async (
         address: string,
-        walletType: ActiveWallet = "listen"
+        walletType: ActiveWallet = "listen",
       ) => {
         if (!address) return;
 
@@ -283,9 +283,10 @@ export const usePortfolioStore = create<PortfolioState>()(
           const { Hyperliquid } = await import("../lib/hype");
           const hyperliquid = new Hyperliquid();
           const hyperliquidData = await hyperliquid.portfolioOverview(address);
-          
+
           if (hyperliquidData) {
-            const hyperliquidAssets = convertHyperliquidToPortfolioItems(hyperliquidData);
+            const hyperliquidAssets =
+              convertHyperliquidToPortfolioItems(hyperliquidData);
             const hyperliquidAssetsMap = new Map();
             hyperliquidAssets.forEach((asset) => {
               hyperliquidAssetsMap.set(asset.address, asset);
@@ -326,7 +327,7 @@ export const usePortfolioStore = create<PortfolioState>()(
             activeWallet,
           },
           "all:",
-          fetchAll
+          fetchAll,
         );
 
         // If fetchAll is true, fetch everything regardless of active wallet
@@ -336,7 +337,7 @@ export const usePortfolioStore = create<PortfolioState>()(
           // Listen wallet
           if (solanaAddress) {
             fetchPromises.push(
-              get().fetchSolanaPortfolio(solanaAddress, "listen")
+              get().fetchSolanaPortfolio(solanaAddress, "listen"),
             );
           }
           if (evmAddress) {
@@ -346,14 +347,14 @@ export const usePortfolioStore = create<PortfolioState>()(
           // EOA Solana wallet
           if (eoaSolanaAddress) {
             fetchPromises.push(
-              get().fetchSolanaPortfolio(eoaSolanaAddress, "eoaSolana")
+              get().fetchSolanaPortfolio(eoaSolanaAddress, "eoaSolana"),
             );
           }
 
           // EOA EVM wallet
           if (eoaEvmAddress) {
             fetchPromises.push(
-              get().fetchEvmPortfolio(eoaEvmAddress, "eoaEvm")
+              get().fetchEvmPortfolio(eoaEvmAddress, "eoaEvm"),
             );
           }
 
@@ -407,12 +408,12 @@ export const usePortfolioStore = create<PortfolioState>()(
           const fetchPromises: Promise<void>[] = [];
           if (addresses.solana) {
             fetchPromises.push(
-              get().fetchSolanaPortfolio(addresses.solana, activeWallet)
+              get().fetchSolanaPortfolio(addresses.solana, activeWallet),
             );
           }
           if (addresses.evm) {
             fetchPromises.push(
-              get().fetchEvmPortfolio(addresses.evm, activeWallet)
+              get().fetchEvmPortfolio(addresses.evm, activeWallet),
             );
           }
 
@@ -443,7 +444,7 @@ export const usePortfolioStore = create<PortfolioState>()(
       initializePortfolioManager: () => {
         // Don't add multiple event listeners
         const visibilityListenerAlreadyAdded = Boolean(
-          (window as any).__portfolioVisibilityListenerAdded
+          (window as any).__portfolioVisibilityListenerAdded,
         );
 
         if (!visibilityListenerAlreadyAdded) {
@@ -558,6 +559,6 @@ export const usePortfolioStore = create<PortfolioState>()(
         eoaEvmAssets: Array.from(state.eoaEvmAssetsMap.values()),
         lastUpdated: state.lastUpdated,
       }),
-    }
-  )
+    },
+  ),
 );
