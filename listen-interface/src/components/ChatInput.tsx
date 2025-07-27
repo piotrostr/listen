@@ -6,7 +6,7 @@ import { useTranslation } from "react-i18next";
 import { FiPlus, FiSend, FiStopCircle } from "react-icons/fi";
 import { IoSwapHorizontal } from "react-icons/io5";
 import { LuTelescope } from "react-icons/lu";
-import { MdMemory } from "react-icons/md";
+// import { MdMemory } from "react-icons/md";
 import { TbShare2 } from "react-icons/tb";
 import { useKeyboard } from "../contexts/KeyboardContext";
 import { useMobile } from "../contexts/MobileContext";
@@ -43,8 +43,10 @@ export function ChatInput({
     setAgentMode,
     setResearchEnabled,
     modelType,
-    memoryEnabled,
-    setMemoryEnabled,
+    // memoryEnabled,
+    // setMemoryEnabled,
+    hyperliquid,
+    setHyperliquid,
   } = useSettingsStore();
 
   const { activeWallet } = useWalletStore();
@@ -110,8 +112,12 @@ export function ChatInput({
     }
   };
 
-  const toggleMemory = () => {
-    setMemoryEnabled(!memoryEnabled);
+  // const toggleMemory = () => {
+  //   setMemoryEnabled(!memoryEnabled);
+  // };
+
+  const toggleHyperliquid = () => {
+    setHyperliquid(!hyperliquid);
   };
 
   const sendDisabled = modelType === "claude" && researchEnabled;
@@ -214,8 +220,8 @@ export function ChatInput({
           {!isMobile && <span>{t("chat.research")}</span>}
         </button>
 
-        {/* Memory Feature */}
-        <button
+        {/* Memory Feature - Commented out for future use */}
+        {/* <button
           onClick={toggleMemory}
           className={`flex items-center gap-2 px-4 py-2 rounded-full ${
             memoryEnabled
@@ -225,6 +231,25 @@ export function ChatInput({
         >
           <MdMemory size={18} />
           {!isMobile && <span>{t("chat.memory")}</span>}
+        </button> */}
+
+        {/* Hyperliquid Feature */}
+        <button
+          onClick={toggleHyperliquid}
+          className={`flex items-center gap-2 px-4 py-2 rounded-full ${
+            hyperliquid
+              ? "bg-blue-600/20 text-blue-400"
+              : "bg-gray-600/20 text-gray-400"
+          } hover:bg-gray-600/30 transition-colors text-sm`}
+        >
+          <img
+            src={
+              hyperliquid ? "/hyperliquid-logo-active.svg" : "/hyperliquid-logo-white.svg"
+            }
+            alt="Hyperliquid"
+            className={`w-[18px] h-[18px] ${!hyperliquid ? "opacity-50" : ""}`}
+          />
+          {!isMobile && <span>{t("chat.hyperliquid")}</span>}
         </button>
 
         {/* Arrow up button on the far right */}
