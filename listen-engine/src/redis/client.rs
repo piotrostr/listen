@@ -94,6 +94,35 @@ impl RedisClient {
         .await
     }
 
+    async fn scan_keys(
+        &self,
+        pattern: &str,
+    ) -> Result<Vec<String>, RedisClientError> {
+        let mut conn = self.pool.get().await?;
+        let mut keys = Vec::new();
+        let mut cursor = 0u64;
+        
+        loop {
+            let (new_cursor, batch): (u64, Vec<String>) = cmd("SCAN")
+                .arg(cursor)
+                .arg("MATCH")
+                .arg(pattern)
+                .arg("COUNT")
+                .arg(100)
+                .query_async(&mut *conn)
+                .await?;
+            
+            keys.extend(batch);
+            cursor = new_cursor;
+            
+            if cursor == 0 {
+                break;
+            }
+        }
+        
+        Ok(keys)
+    }
+
     pub async fn get_all_pipelines_for_user(
         &self,
         user_id: &str,
@@ -101,10 +130,7 @@ impl RedisClient {
         let mut conn = self.pool.get().await?;
 
         tracing::debug!("Fetching pipeline keys for user {}", user_id);
-        let keys: Vec<String> = cmd("KEYS")
-            .arg(format!("pipeline:{}:*", user_id))
-            .query_async(&mut *conn)
-            .await?;
+        let keys = self.scan_keys(&format!("pipeline:{}:*", user_id)).await?;
 
         tracing::debug!("Found {} pipeline keys for user {}", keys.len(), user_id);
 
@@ -137,10 +163,7 @@ impl RedisClient {
     pub async fn get_all_pipelines(&self) -> Result<Vec<Pipeline>, RedisClientError> {
         let mut conn = self.pool.get().await?;
 
-        let keys: Vec<String> = cmd("KEYS")
-            .arg("pipeline:*")
-            .query_async(&mut *conn)
-            .await?;
+        let keys = self.scan_keys("pipeline:*").await?;
 
         // Use Redis pipeline for bulk get
         let mut pipe = pipe();
@@ -168,10 +191,7 @@ impl RedisClient {
         let mut conn = self.pool.get().await?;
 
         // Get all keys for the specific user
-        let keys: Vec<String> = cmd("KEYS")
-            .arg(format!("pipeline:{}:*", user_id))
-            .query_async(&mut *conn)
-            .await?;
+        let keys = self.scan_keys(&format!("pipeline:{}:*", user_id)).await?;
 
         let mut pipe = pipe();
         for key in &keys {

@@ -49,12 +49,28 @@ async fn cleanup_test_pipelines(redis_client: &RedisClient) -> Result<(), Engine
         .await
         .map_err(EngineError::RedisClientError)?;
 
-    // Get all pipeline keys
-    let pipeline_keys: Vec<String> = cmd("KEYS")
-        .arg("pipeline:*")
-        .query_async(&mut *conn)
-        .await
-        .map_err(|e| EngineError::RedisClientError(RedisClientError::RedisError(e)))?;
+    // Get all pipeline keys using SCAN
+    let mut pipeline_keys = Vec::new();
+    let mut cursor = 0u64;
+    
+    loop {
+        let (new_cursor, batch): (u64, Vec<String>) = cmd("SCAN")
+            .arg(cursor)
+            .arg("MATCH")
+            .arg("pipeline:*")
+            .arg("COUNT")
+            .arg(100)
+            .query_async(&mut *conn)
+            .await
+            .map_err(|e| EngineError::RedisClientError(RedisClientError::RedisError(e)))?;
+        
+        pipeline_keys.extend(batch);
+        cursor = new_cursor;
+        
+        if cursor == 0 {
+            break;
+        }
+    }
 
     // Delete all pipelines in batches
     let mut pipe = pipe();
