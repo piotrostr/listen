@@ -1,48 +1,22 @@
-import { useGuestAccounts, usePrivy } from "@privy-io/react-auth";
+import { usePrivy } from "@privy-io/react-auth";
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useMobile } from "../contexts/MobileContext";
-import { FullPageLoading } from "./FullPageLoading";
 import { GradientOutlineButton } from "./GradientOutlineButton";
-import { OutlineButton } from "./OutlineButton";
 import { VersionDisplay } from "./VersionAndLanguage";
 
 export function GettingStarted() {
   const { t } = useTranslation();
   const { isMobile, isVerySmallScreen } = useMobile();
   const { ready, login } = usePrivy();
-  const { createGuestAccount } = useGuestAccounts();
-  const [isCreatingGuestAccount, setIsCreatingGuestAccount] = useState(false);
   const navigate = useNavigate();
 
-  const handleContinue = async (prompt?: string) => {
-    try {
-      setIsCreatingGuestAccount(true);
-      await createGuestAccount();
-      setIsCreatingGuestAccount(false);
-      if (prompt) {
-        await navigate({
-          to: "/",
-          search: {
-            message: prompt,
-            new: true,
-          },
-        });
-      } else {
-        await navigate({
-          to: "/",
-        });
-      }
-    } catch (error) {
-      console.error("Error creating guest account:", error);
-      setIsCreatingGuestAccount(false);
-    }
+  const handleConnectWallet = async () => {
+    // Privy's login() will show wallet connection modal
+    await login();
+    // After successful connection, navigate to home
+    await navigate({ to: "/" });
   };
-
-  if (isCreatingGuestAccount) {
-    return <FullPageLoading />;
-  }
 
   return (
     <div
@@ -74,27 +48,14 @@ export function GettingStarted() {
       >
         <GradientOutlineButton
           arrow={true}
-          text={t("getting_started.run_some_research")}
-          onClick={() => handleContinue(t("getting_started.run_some_research"))}
-          disabled={!ready || isCreatingGuestAccount}
+          text="Connect Wallet"
+          onClick={handleConnectWallet}
+          disabled={!ready}
         />
-        <OutlineButton
-          text={t("getting_started.create_an_automated_strategy")}
-          onClick={() =>
-            handleContinue(t("getting_started.create_an_automated_strategy"))
-          }
-          disabled={!ready || isCreatingGuestAccount}
-        />
-        <OutlineButton
-          text={t("getting_started.lets_make_a_trade")}
-          onClick={() => handleContinue(t("getting_started.lets_make_a_trade"))}
-          disabled={!ready || isCreatingGuestAccount}
-        />
-        <OutlineButton
-          text={t("getting_started.login")}
-          onClick={() => login()}
-          disabled={!ready || isCreatingGuestAccount}
-        />
+        <p className="text-gray-400 text-sm text-center max-w-md">
+          Connect your wallet to start trading, view your portfolio, and interact
+          with the AI assistant.
+        </p>
       </div>
       <div
         className={`flex flex-col ${isVerySmallScreen ? "gap-1.5" : "gap-2"} w-full text-center text-xs justify-center items-center mb-1`}

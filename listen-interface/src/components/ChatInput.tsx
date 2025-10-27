@@ -12,7 +12,6 @@ import { useKeyboard } from "../contexts/KeyboardContext";
 import { useMobile } from "../contexts/MobileContext";
 import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useSettingsStore } from "../store/settingsStore";
-import { useWalletStore } from "../store/walletStore";
 
 interface ChatInputProps {
   inputMessage: string;
@@ -48,8 +47,6 @@ export function ChatInput({
     hyperliquid,
     setHyperliquid,
   } = useSettingsStore();
-
-  const { activeWallet } = useWalletStore();
 
   const { isMobile } = useMobile();
 
@@ -106,10 +103,8 @@ export function ChatInput({
 
   // Toggle the trading mode
   const toggleTrading = () => {
-    if (activeWallet === "listen") {
-      setResearchEnabled(false);
-      setAgentMode(!agentMode);
-    }
+    setResearchEnabled(false);
+    setAgentMode(!agentMode);
   };
 
   // const toggleMemory = () => {

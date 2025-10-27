@@ -31,7 +31,7 @@ export function useEoaExecution() {
         const connection = new Connection(rpcUrl);
         const res = await wallet.sendTransaction(transaction, connection);
         await waitForTransaction(res, rpcUrl, () => {
-          refreshPortfolio(true);
+          refreshPortfolio();
         });
         return res;
       }
@@ -60,7 +60,7 @@ export function useEoaExecution() {
             method: "eth_sendTransaction",
             params: [approvalsTx],
           });
-          refreshPortfolio(true);
+          refreshPortfolio();
         }
         const tx = await swapStepToTransaction(action, eoaEvmAddress);
         if (!tx) {
@@ -72,7 +72,7 @@ export function useEoaExecution() {
         });
         // TODO add evm tx monitor, can use the builtin provider from privy and polling
         await new Promise((resolve) => setTimeout(resolve, 2000));
-        refreshPortfolio(true);
+        refreshPortfolio();
         return res;
       }
     } catch (error) {
