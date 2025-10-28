@@ -291,6 +291,7 @@ mod tests {
                 user_id: "test".to_string(),
                 email: Some("test@test.com".to_string()),
                 evm_wallet_id: None,
+                pubkey_id: None,
             },
             "en".to_string(),
         );
