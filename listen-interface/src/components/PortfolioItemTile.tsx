@@ -1,12 +1,13 @@
 import { useModal } from "../contexts/ModalContext";
 import { PortfolioItem } from "../lib/types";
+import { AggregatedPortfolioItem } from "../lib/portfolioHelpers";
 import { formatAmountUI } from "../lib/util";
 import { ChainIcon } from "./ChainIcon";
 
 interface PortfolioItemTileProps {
-  asset: PortfolioItem;
-  onBuy?: (asset: PortfolioItem) => void;
-  onSell?: (asset: PortfolioItem) => void;
+  asset: PortfolioItem | AggregatedPortfolioItem;
+  onBuy?: (asset: PortfolioItem | AggregatedPortfolioItem) => void;
+  onSell?: (asset: PortfolioItem | AggregatedPortfolioItem) => void;
 }
 
 export function PortfolioItemTile({
@@ -17,9 +18,12 @@ export function PortfolioItemTile({
   const { openChart } = useModal();
 
   const handleOpenChart = () => {
+    // For aggregated items, use the first chain
+    const chainId = "chains" in asset ? asset.chains[0] : asset.chain;
+
     openChart({
       mint: asset.address,
-      chainId: asset.chain,
+      chainId: chainId,
       onBuy: onBuy ? () => onBuy(asset) : undefined,
       onSell: onSell ? () => onSell(asset) : undefined,
       name: asset.name,
@@ -54,17 +58,24 @@ export function PortfolioItemTile({
                 <span className="text-gray-500 dark:text-gray-400">?</span>
               </div>
             )}
-            {asset.chain !== "solana" && (
-              <div className="absolute top-1 -left-1 z-10">
-                <ChainIcon chainId={asset.chain} className="w-4 h-4" />
-              </div>
-            )}
           </div>
           <div>
             <h3 className="font-[400] flex items-center gap-2">
               <div className="truncate max-w-[100px] sm:max-w-none text-lg">
                 {asset.name}
               </div>
+              {/* Display chain icons next to the name for aggregated assets */}
+              {"chains" in asset && asset.chains.length > 0 && (
+                <div className="flex items-center gap-1">
+                  {asset.chains.map((chain) => (
+                    <ChainIcon
+                      key={chain}
+                      chainId={chain}
+                      className="w-4 h-4"
+                    />
+                  ))}
+                </div>
+              )}
             </h3>
             <p className="text-sm text-gray-400 font-dm-sans">
               {formatAmountUI(asset.amount)} {asset.symbol}
@@ -77,10 +88,12 @@ export function PortfolioItemTile({
               <p className="font-bold font-dm-sans">
                 ${(asset.price * asset.amount).toFixed(2)}
               </p>
-              <p className={`text-sm font-dm-sans font-[500] ${pnlColor}`}>
-                {pnlSign}
-                {Math.abs(asset.priceChange24h).toFixed(2)}%
-              </p>
+              {asset.priceChange24h != 0 && (
+                <p className={`text-sm font-dm-sans font-[500] ${pnlColor}`}>
+                  {pnlSign}
+                  {Math.abs(asset.priceChange24h).toFixed(2)}%
+                </p>
+              )}
             </div>
           </div>
         </div>

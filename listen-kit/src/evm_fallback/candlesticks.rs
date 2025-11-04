@@ -42,7 +42,7 @@ impl EvmFallback {
     pub async fn fetch_candlesticks(
         &self,
         pool_address: &str,
-        chain_id: u64,
+        chain_id: String,
         interval: &str,
         limit: Option<usize>,
     ) -> Result<Vec<Candlestick>> {

@@ -19,7 +19,6 @@ import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { useHasAddedToHomeScreen } from "../hooks/useHasAddedToHomeScreen";
 import { usePWAStatus } from "../hooks/usePWAStatus";
-import { usePortfolioStore } from "../store/portfolioStore";
 import { useWalletStore } from "../store/walletStore";
 import { AddToHomeScreenPopup } from "./AddToHomeScreenPopup";
 import { PanelSelector } from "./PanelSelector";
@@ -97,13 +96,11 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isPWA = usePWAStatus();
   const { activePanel, setActivePanel } = usePanel();
   const { user, logout, ready, authenticated } = usePrivy();
-  const { clearPortfolio } = usePortfolioStore();
   const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
   const { hasAddedToHomeScreen, isVisible, hide } = useHasAddedToHomeScreen();
   useSolanaLedgerPlugin();
   const handleLogout = () => {
     logout();
-    clearPortfolio();
     clearWalletAddresses();
     clearEoaAddresses();
   };

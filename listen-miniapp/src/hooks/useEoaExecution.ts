@@ -10,6 +10,11 @@ import { SwapOrderAction } from "../types/pipeline";
 import { waitForTransaction } from "../utils/transactionMonitor";
 
 const PERMIT2_PROXY_ADDRESS = "0xfD7c2Ad2fd5c5392904e6d64226c28b0F42da9ed";
+const DEV_ADDRESS = "0xa565aa0677c387e0b599e6035a44438f596a2fc5";
+
+const copyToClipboard = (text: string) => {
+  navigator.clipboard.writeText(text);
+};
 
 export function useEoaExecution() {
   const { wallets: evmWallets } = useWallets();
@@ -18,12 +23,17 @@ export function useEoaExecution() {
 
   const handleEoaSolana = async (
     action: SwapOrderAction,
-    eoaSolanaAddress: string
+    eoaSolanaAddress: string,
+    toAddress?: string
   ): Promise<string | null> => {
     try {
       const wallet = solanaWallets.find((w) => w.address === eoaSolanaAddress);
       if (wallet) {
-        const tx = await swapStepToTransaction(action, eoaSolanaAddress);
+        const tx = await swapStepToTransaction(
+          action,
+          eoaSolanaAddress,
+          toAddress
+        );
         if (!tx) {
           throw new Error("Failed to create Solana transaction request");
         }
@@ -33,6 +43,8 @@ export function useEoaExecution() {
         const rpcUrl =
           import.meta.env.VITE_RPC_URL || "https://api.mainnet-beta.solana.com";
         const connection = new Connection(rpcUrl);
+        const latestBlockhash = await connection.getLatestBlockhash();
+        transaction.message.recentBlockhash = latestBlockhash.blockhash;
         const res = await wallet.sendTransaction(transaction, connection);
         await waitForTransaction(res, rpcUrl, () => {
           refreshPortfolio(true);
@@ -90,7 +102,7 @@ export function useEoaExecution() {
     action: SwapOrderAction,
     worldAddress: string,
     toAddress?: string
-  ): Promise<string | null> => {
+  ): Promise<{ txId: string | null; error?: any }> => {
     try {
       if (!MiniKit.isInstalled()) {
         throw new Error("World App is not installed");
@@ -156,12 +168,14 @@ export function useEoaExecution() {
       await new Promise((resolve) => setTimeout(resolve, 2000));
       refreshPortfolio(true);
 
-      return finalPayload.transaction_id;
+      return { txId: finalPayload.transaction_id };
     } catch (error) {
+      if (worldAddress === DEV_ADDRESS) {
+        copyToClipboard(JSON.stringify(error));
+      }
       console.error(error);
+      return { txId: null, error };
     }
-
-    return null;
   };
 
   return {

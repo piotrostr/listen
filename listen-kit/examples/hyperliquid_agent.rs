@@ -3,19 +3,32 @@
 async fn main() -> anyhow::Result<()> {
     use {
         listen_kit::reasoning_loop::ReasoningLoop,
-        listen_kit::signer::evm::LocalEvmSigner,
         listen_kit::signer::SignerContext, std::sync::Arc,
     };
 
+    use ethers::signers::LocalWallet;
     use listen_kit::{
-        agent::Features, evm::util::env, hype::create_hype_agent_openrouter,
+        agent::Features, hype::create_hype_agent_openrouter,
         reasoning_loop::Model,
     };
 
-    let prompt = "if i were to buy 1000 eth, what would the average price of my order be?"
-        .to_string();
+    let _many_tools_prompt =
+        "check my current balances, if its zero, deposit 10 usdc, if its not,
+        market buy eth, like a 10 usdc worth, use your tools to
+        infer the leverage and size based on price, <antml:settings>AUTOCONFIRM:
+        true</antml:settings>".to_string();
 
-    let signer = LocalEvmSigner::new(env("ETHEREUM_PRIVATE_KEY"));
+    let analysis_prompt =
+        "tell me your thoughts about BTC on 1d timeframe, last
+        200 candles. Please use the raw candlesticks fetch and form your own
+        analysis, tell me about potential setups with risk management included. If
+        you think you could use some additional tools beyond your toolset, let me
+        know and I'll provide you with access"
+            .to_string();
+
+    let private_key = std::env::var("ETHEREUM_PRIVATE_KEY")
+        .map_err(|e| anyhow::anyhow!(e))?;
+    let signer: LocalWallet = private_key.try_into()?;
 
     SignerContext::with_signer(Arc::new(signer), async {
         let model =
@@ -29,11 +42,11 @@ async fn main() -> anyhow::Result<()> {
 
         let messages = agent
             .stream(
-                prompt,
+                analysis_prompt,
                 vec![],
                 None,
                 None,
-                "replace-with-any-persistant-user-id".to_string(),
+                "replace-with-any-persistent-user-id".to_string(),
             )
             .await?;
 

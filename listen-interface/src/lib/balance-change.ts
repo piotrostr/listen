@@ -1,6 +1,6 @@
 import { Connection, ParsedTransactionWithMeta } from "@solana/web3.js";
-import { fetchListenMetadata } from "./listen";
 import { WSOL_MINT } from "./price";
+import { fetchTokenMetadataFromJupiter } from "./solanaPortfolio";
 import { formatAmountUI } from "./util";
 
 interface BalanceChange {
@@ -85,10 +85,10 @@ export const getBalanceChange = async (
   }
 
   const change = parseBalanceChanges(tx, userAddress);
-  const tokenThatChanged = await fetchListenMetadata(change.pubkey);
+  const tokenThatChanged = await fetchTokenMetadataFromJupiter(change.pubkey);
 
   return {
-    symbol: tokenThatChanged.mpl.symbol,
+    symbol: tokenThatChanged.symbol,
     pubkey: change.pubkey,
     uiAmount: change.uiAmount,
   };

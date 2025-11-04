@@ -12,6 +12,7 @@ import { Portfolio } from "./Portfolio";
 import { PriceUpdates } from "./PriceUpdates";
 import { PriceUpdatesHeader } from "./PriceUpdatesHeader";
 import { Settings } from "./Settings";
+import { WithdrawPanel } from "./WithdrawPanel";
 
 export function PanelSelector() {
   const [statusFilter, setStatusFilter] = useState<string>("All");
@@ -108,6 +109,17 @@ export function PanelSelector() {
             <></>
           </MobileHeader>
           <FundPanel />
+        </div>
+      );
+    }
+
+    if (activePanel === "withdraw") {
+      return (
+        <div className="h-[90vh] bg-black">
+          <MobileHeader>
+            <></>
+          </MobileHeader>
+          <WithdrawPanel />
         </div>
       );
     }

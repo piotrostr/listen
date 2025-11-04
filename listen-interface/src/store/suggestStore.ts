@@ -2,8 +2,7 @@ import { create } from "zustand";
 import { config } from "../config";
 import { compactPortfolio } from "../lib/util";
 import { Message } from "../types/message";
-import { usePortfolioStore } from "./portfolioStore";
-import { useSettingsStore } from "./settingsStore";
+import { PortfolioItem } from "../lib/types";
 
 interface SuggestionsPerChat {
   [chatId: string]: {
@@ -22,7 +21,9 @@ interface SuggestState {
     chatId: string,
     messages: Message[],
     getAccessToken: () => Promise<string | null>,
-    locale?: string
+    portfolio: PortfolioItem[],
+    chatType: string,
+    locale?: string,
   ) => Promise<void>;
   clearSuggestions: (chatId?: string) => void;
   getSuggestions: (chatId: string) => string[];
@@ -43,7 +44,7 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
     set({ lastMessageHadSpecialTags: value });
   },
 
-  fetchSuggestions: async (chatId, messages, getAccessToken, locale = "en") => {
+  fetchSuggestions: async (chatId, messages, getAccessToken, portfolio, _chatType, locale = "en") => {
     if (messages.length === 0) return;
 
     const lastMessage = messages[messages.length - 1];
@@ -58,19 +59,8 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
       return;
     }
 
-    // Instead of using the hook, access the store directly
-    const chatType = useSettingsStore.getState().chatType;
-    const portfolioStore = usePortfolioStore.getState();
-    const solanaAssets = portfolioStore.getSolanaAssets();
-    const evmAssets = portfolioStore.getEvmAssets();
-
-    const portfolio = [];
-    if (solanaAssets) {
-      portfolio.push(...compactPortfolio(solanaAssets));
-    }
-    if (evmAssets && chatType === "omni") {
-      portfolio.push(...compactPortfolio(evmAssets));
-    }
+    // Use the portfolio passed as parameter
+    const compactedPortfolio = compactPortfolio(portfolio);
 
     set({ isLoading: true, error: null });
 
@@ -90,7 +80,7 @@ export const useSuggestStore = create<SuggestState>((set, get) => ({
         body: JSON.stringify({
           chat_history: chatHistory,
           locale,
-          context: JSON.stringify(portfolio),
+          context: JSON.stringify(compactedPortfolio),
         }),
       });
 

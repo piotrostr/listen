@@ -41,8 +41,8 @@ export function Settings() {
     setDebugMode,
     displaySuggestions,
     setDisplaySuggestions,
-    hyperliquid,
-    setHyperliquid,
+    // hyperliquid,
+    // setHyperliquid,
   } = useSettingsStore();
 
   const { t } = useTranslation();
@@ -63,9 +63,9 @@ export function Settings() {
     setDisplaySuggestions(!displaySuggestions);
   };
 
-  const handleHyperliquidToggle = () => {
-    setHyperliquid(!hyperliquid);
-  };
+  // const handleHyperliquidToggle = () => {
+  //   setHyperliquid(!hyperliquid);
+  // };
 
   return (
     <div className="h-full overflow-auto px-4 scrollable-container">
@@ -109,12 +109,13 @@ export function Settings() {
 
       <br />
 
-      <Toggle
+      {/* Hyperliquid toggle moved to ChatInput */}
+      {/* <Toggle
         label={t("settings.hyperliquid")}
         checked={hyperliquid}
         onChange={handleHyperliquidToggle}
-      />
-      <br />
+      /> */}
+      {/* <br /> */}
 
       {/*
       <h2 className="text-lg font-bold mb-2 mt-4">{t("settings.mode")}</h2>

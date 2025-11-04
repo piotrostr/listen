@@ -50,8 +50,10 @@ export function PortfolioSummary({ totalBalance }: PortfolioSummaryProps) {
               />
               <TileButton
                 icon={<MdOutlineArrowOutward />}
-                onClick={() => {}}
-                ariaLabel="Export"
+                onClick={() => {
+                  setActivePanel("withdraw");
+                }}
+                ariaLabel="Withdraw"
               />
               <TileButton
                 icon={<TbDots className="w-5 h-5" />}

@@ -39,7 +39,7 @@ export function EvmRawTokenMetadataDisplay({
                 website: metadata.websites?.[0],
               }}
               pubkey={metadata.address}
-              chainId={metadata.chain_id}
+              chainId={metadata.chain_id.toString()}
             />
           </div>
         </div>

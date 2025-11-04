@@ -9,6 +9,7 @@ use rig_tool_macro::tool;
 use uniswap_sdk_core::prelude::SWAP_ROUTER_02_ADDRESSES;
 
 use crate::common::wrap_unsafe;
+use crate::data::TokenBalance;
 use crate::signer::SignerContext;
 
 use super::balance::{balance, token_balance};
@@ -190,7 +191,7 @@ pub async fn get_erc20_balance(
     token_address: String,
     address: String,
     chain_id: String,
-) -> Result<serde_json::Value> {
+) -> Result<TokenBalance> {
     wrap_unsafe(move || async move {
         let (balance, decimals) = token_balance(
             address.clone(),
@@ -198,12 +199,12 @@ pub async fn get_erc20_balance(
             &make_provider(chain_id.parse::<u64>()?)?,
         )
         .await?;
-        Ok(serde_json::json!({
-            "balance": balance,
-            "decimals": decimals,
-            "token_address": token_address,
-            "chain_id": chain_id,
-        }))
+        Ok(TokenBalance {
+            balance: balance.to_string(),
+            address: token_address,
+            chain_id,
+            decimals: decimals as u8,
+        })
     })
     .await
 }

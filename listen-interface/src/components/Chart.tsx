@@ -8,8 +8,9 @@ import {
   UTCTimestamp,
 } from "lightweight-charts";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { useListenMetadata } from "../hooks/useListenMetadata";
-import { CandlestickData, CandlestickDataSchema } from "../lib/types";
+import { z } from "zod";
+import { useSolanaToken } from "../hooks/useToken";
+import { CandlestickData } from "../lib/types";
 import { useTokenStore } from "../store/tokenStore";
 import { Socials } from "./Socials";
 
@@ -31,6 +32,34 @@ export interface ChartProps {
 // Available time intervals for the chart
 const INTERVALS = ["30s", "1m", "5m", "15m", "30m", "1h", "4h", "1d"] as const;
 
+// GeckoTerminal API schemas
+const GeckoTerminalPoolSchema = z.object({
+  data: z.array(
+    z.object({
+      attributes: z.object({
+        address: z.string(),
+        volume_usd: z.object({
+          h24: z.string(),
+        }),
+      }),
+    })
+  ),
+});
+
+const GeckoTerminalOHLCVSchema = z.object({
+  data: z.object({
+    attributes: z.object({
+      ohlcv_list: z.array(
+        z.array(z.union([z.number(), z.string()]))
+      ),
+    }),
+  }),
+});
+
+// Cache for pool addresses to prevent repeated API calls
+const poolAddressCache: Record<string, { address: string; timestamp: number }> = {};
+const CACHE_DURATION = 5 * 60 * 1000; // 5 minutes
+
 // Add TradingView color constants
 const TV_COLORS = {
   GREEN: "#26a69a",
@@ -38,6 +67,137 @@ const TV_COLORS = {
   GREEN_TRANSPARENT: "rgba(38, 166, 154, 0.3)",
   RED_TRANSPARENT: "rgba(239, 83, 80, 0.3)",
 } as const;
+
+// Find the most liquid pool for a token on Solana
+async function findSolanaPoolAddress(tokenAddress: string): Promise<string | null> {
+  const cacheKey = `solana:${tokenAddress}`;
+  const cached = poolAddressCache[cacheKey];
+  
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.address;
+  }
+
+  try {
+    const response = await fetch(
+      `https://api.geckoterminal.com/api/v2/networks/solana/tokens/${tokenAddress}/pools`,
+      {
+        headers: {
+          Accept: "application/json;version=20230302",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Failed to fetch pools for token ${tokenAddress}`);
+      return null;
+    }
+
+    const json = await response.json();
+    const result = GeckoTerminalPoolSchema.safeParse(json);
+
+    if (!result.success) {
+      console.error("Failed to parse pool response:", result.error);
+      return null;
+    }
+
+    // Sort pools by 24h volume to get the most active pool
+    const sortedPools = result.data.data.sort(
+      (a, b) =>
+        parseFloat(b.attributes.volume_usd.h24) -
+        parseFloat(a.attributes.volume_usd.h24)
+    );
+
+    if (sortedPools.length > 0) {
+      const address = sortedPools[0].attributes.address;
+      poolAddressCache[cacheKey] = {
+        address,
+        timestamp: Date.now(),
+      };
+      return address;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Failed to fetch pool address:", error);
+    return null;
+  }
+}
+
+// Map chart intervals to GeckoTerminal timeframes
+function mapIntervalToGeckoTimeframe(interval: string): { timeframe: string; aggregate: number } {
+  switch (interval) {
+    case "30s":
+    case "1m":
+      return { timeframe: "minute", aggregate: 1 };
+    case "5m":
+      return { timeframe: "minute", aggregate: 5 };
+    case "15m":
+      return { timeframe: "minute", aggregate: 15 };
+    case "30m":
+      return { timeframe: "hour", aggregate: 1 }; // Use 1h as closest available
+    case "1h":
+      return { timeframe: "hour", aggregate: 1 };
+    case "4h":
+      return { timeframe: "hour", aggregate: 4 };
+    case "1d":
+      return { timeframe: "day", aggregate: 1 };
+    default:
+      return { timeframe: "minute", aggregate: 1 };
+  }
+}
+
+// Fetch OHLC data from GeckoTerminal
+async function fetchGeckoTerminalOHLC(
+  poolAddress: string,
+  interval: string
+): Promise<CandlestickData | null> {
+  try {
+    const { timeframe, aggregate } = mapIntervalToGeckoTimeframe(interval);
+    
+    const response = await fetch(
+      `https://api.geckoterminal.com/api/v2/networks/solana/pools/${poolAddress}/ohlcv/${timeframe}?aggregate=${aggregate}&limit=1000`,
+      {
+        headers: {
+          Accept: "application/json;version=20230302",
+        },
+      }
+    );
+
+    if (!response.ok) {
+      console.error(`Failed to fetch OHLC data for pool ${poolAddress}`);
+      return null;
+    }
+
+    const json = await response.json();
+    const result = GeckoTerminalOHLCVSchema.safeParse(json);
+
+    if (!result.success) {
+      console.error("Failed to parse OHLC response:", result.error);
+      return null;
+    }
+
+    // Convert GeckoTerminal OHLCV format to our Candlestick format
+    const candlesticks: CandlestickData = result.data.data.attributes.ohlcv_list.map((item) => {
+      const [timestamp, open, high, low, close, volume] = item;
+      return {
+        timestamp: typeof timestamp === "number" ? timestamp : parseInt(timestamp as string),
+        open: typeof open === "number" ? open : parseFloat(open as string),
+        high: typeof high === "number" ? high : parseFloat(high as string),
+        low: typeof low === "number" ? low : parseFloat(low as string),
+        close: typeof close === "number" ? close : parseFloat(close as string),
+        volume: typeof volume === "number" ? volume : parseFloat(volume as string),
+      };
+    });
+
+    // Sort by timestamp in ascending order (required by lightweight-charts)
+    candlesticks.sort((a, b) => a.timestamp - b.timestamp);
+
+    return candlesticks;
+  } catch (error) {
+    console.error("Failed to fetch GeckoTerminal OHLC data:", error);
+    return null;
+  }
+}
 
 export function InnerChart({ data, displayOhlc }: InnerChartProps) {
   const chartContainerRef = useRef<HTMLDivElement>(null);
@@ -325,7 +485,7 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
   // Subscribe to token store updates
   const latestUpdate = useTokenStore((state) => state.latestUpdate);
 
-  const { data: metadata } = useListenMetadata(mint);
+  const { data: metadata } = useSolanaToken(mint);
 
   const percentChange = useMemo(() => {
     if (!data || data.length < 2) {
@@ -446,14 +606,23 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
       if (isDisposed.current) return;
 
       try {
-        const response = await fetch(
-          // use prod for charts always
-          `https://api.listen-rs.com/v1/adapter/candlesticks?mint=${mint}&interval=${selectedInterval}`
-        );
-        const responseData = CandlestickDataSchema.parse(await response.json());
+        // First try to get data from GeckoTerminal
+        const poolAddress = await findSolanaPoolAddress(mint);
+        let responseData: CandlestickData | null = null;
+
+        if (poolAddress) {
+          console.log(`Found pool address ${poolAddress} for token ${mint}, fetching from GeckoTerminal`);
+          responseData = await fetchGeckoTerminalOHLC(poolAddress, selectedInterval);
+        }
+
+        // If GeckoTerminal fails or no pool found, show empty chart
+        if (!responseData || responseData.length === 0) {
+          console.log(`No chart data available for token ${mint} - pool might not exist on GeckoTerminal`);
+          responseData = [];
+        }
 
         if (!isDisposed.current) {
-          setData(responseData);
+          setData(responseData || []);
           setIsLoading(false);
         }
       } catch (error) {
@@ -490,10 +659,10 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
 
   // Format pubkey for display
   const formattedPubkey = useMemo(() => {
-    if (!metadata?.mint) return "";
-    return metadata.mint.length > 12
-      ? `${metadata.mint.slice(0, 6)}...${metadata.mint.slice(-6)}`
-      : metadata.mint;
+    if (!metadata?.address) return "";
+    return metadata.address.length > 12
+      ? `${metadata.address.slice(0, 6)}...${metadata.address.slice(-6)}`
+      : metadata.address;
   }, [metadata]);
 
   return (
@@ -502,34 +671,34 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
       <div className="flex items-center justify-between mb-2 p-3 backdrop-blur-sm">
         <div className="flex items-center">
           {/* Add token image with proper spacing */}
-          {metadata?.mpl.ipfs_metadata?.image && (
+          {metadata?.logoURI && (
             <div className="w-8 h-8 relative rounded-full overflow-hidden mr-3">
               <img
-                src={metadata.mpl.ipfs_metadata.image.replace(
+                src={metadata.logoURI.replace(
                   "cf-ipfs.com",
                   "ipfs.io"
                 )}
-                alt={metadata?.mpl.symbol || "Token"}
+                alt={metadata?.symbol || "Token"}
                 className="w-full h-full object-cover"
               />
             </div>
           )}
           <div className="flex flex-col">
             <div className="flex items-center space-x-2">
-              {metadata?.mpl.symbol && (
+              {metadata?.symbol && (
                 <span className="font-bold text-white">
-                  {metadata.mpl.symbol}
+                  {metadata.symbol}
                 </span>
               )}
-              {metadata?.mpl.name && (
+              {metadata?.name && (
                 <span className="text-white ml-2 hidden lg:block">
-                  {metadata.mpl.name}
+                  {metadata.name}
                 </span>
               )}
-              {metadata?.mint && (
+              {metadata?.address && (
                 <span
                   className="text-xs text-white/70 ml-2 hidden lg:block"
-                  title={metadata.mint}
+                  title={metadata.address}
                 >
                   ({formattedPubkey})
                 </span>
@@ -547,7 +716,7 @@ export function Chart({ mint, interval: defaultInterval = "30s" }: ChartProps) {
                 </span>
               )}
             </div>
-            <Socials tokenMetadata={metadata ?? null} pubkey={mint} />
+            <Socials tokenMetadata={null} pubkey={mint} />
           </div>
         </div>
 

@@ -12,14 +12,16 @@ import {
 import { v4 as uuidv4 } from "uuid";
 import { config } from "../config";
 import { useDebounce } from "../hooks/useDebounce";
-import { usePrivyWallets } from "../hooks/usePrivyWallet";
+import { useHyperliquidPortfolio } from "../hooks/useHyperliquidPortfolio";
+import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
+import { useEvmPortfolio } from "../hooks/useEvmPortfolio";
+import { useWalletStore } from "../store/walletStore";
 import { useSolanaPrice } from "../hooks/useSolanaPrice";
 import i18n from "../i18n";
 import { chatCache } from "../lib/localStorage";
 import { compactPortfolio } from "../lib/util";
 import { renderAgentOutput } from "../parse-agent-output";
 import { systemPrompt } from "../prompts";
-import { usePortfolioStore } from "../store/portfolioStore";
 import { useSettingsStore } from "../store/settingsStore";
 import { useSuggestStore } from "../store/suggestStore";
 import {
@@ -67,12 +69,63 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     message: initialMessage,
   } = useSearch({ from: "/" });
   const navigate = useNavigate();
-  const { data: wallets, isLoading: isLoadingWallets } = usePrivyWallets();
-  const { getSolanaAssets, getEvmAssets } = usePortfolioStore();
+  const {
+    solanaAddress,
+    evmAddress,
+    eoaSolanaAddress,
+    eoaEvmAddress,
+    eoaEvmWallets,
+    selectedEoaEvmIndex,
+    activeWallet,
+  } = useWalletStore();
   const { data: solanaPrice } = useSolanaPrice();
 
-  const solanaAssets = getSolanaAssets();
-  const evmAssets = getEvmAssets();
+  // Get addresses based on active wallet
+  const currentSolanaAddress =
+    activeWallet === "listen"
+      ? solanaAddress
+      : activeWallet === "eoaSolana"
+        ? eoaSolanaAddress
+        : null;
+
+  // For EOA EVM, use the selected wallet from the list
+  const selectedEoaEvmWallet = eoaEvmWallets[selectedEoaEvmIndex];
+  const currentEvmAddress =
+    activeWallet === "listen"
+      ? evmAddress
+      : activeWallet === "eoaEvm"
+        ? selectedEoaEvmWallet?.address || eoaEvmAddress
+        : null;
+
+  // Use individual portfolio hooks
+  const solanaQuery = useSolanaPortfolio(currentSolanaAddress);
+  const evmQuery = useEvmPortfolio(currentEvmAddress);
+
+  // For Hyperliquid, we need to use the appropriate EVM address based on active wallet
+  const hyperliquidAddress =
+    activeWallet === "listen"
+      ? evmAddress
+      : activeWallet === "eoaEvm"
+        ? selectedEoaEvmWallet?.address || eoaEvmAddress
+        : null;
+
+  // Always call the hook, but control with enabled flag
+  const { data: hyperliquidData } = useHyperliquidPortfolio(
+    hyperliquidAddress,
+    hyperliquid && !!hyperliquidAddress,
+  );
+
+  // Combine all portfolio data
+  const rawPortfolio = [
+    ...(solanaQuery.data || []),
+    ...(evmQuery.data || []),
+    ...(hyperliquidData?.items || []),
+  ];
+
+  // Filter out low-value assets for cleaner agent context
+  const combinedPortfolio = rawPortfolio.filter(
+    (asset) => asset.price * asset.amount > 0.02,
+  );
 
   const [chat, setChat] = useState<Chat | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -117,7 +170,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         if (!prev) return prev;
         const updatedMessages = [...prev?.messages];
         const assistantMessageIndex = updatedMessages.findIndex(
-          (msg) => msg.id === assistantMessageId
+          (msg) => msg.id === assistantMessageId,
         );
         if (assistantMessageIndex !== -1) {
           updatedMessages[assistantMessageIndex] = {
@@ -133,13 +186,13 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         };
       });
     },
-    []
+    [],
   );
 
   const sendMessage = useCallback(
     async (
       userMessage: string,
-      options?: { skipAddingUserMessage?: boolean; existingMessageId?: string }
+      options?: { skipAddingUserMessage?: boolean; existingMessageId?: string },
     ) => {
       // Clear nested agent output when starting a new message
       setNestedAgentOutput(null);
@@ -199,8 +252,8 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
               .slice(
                 0,
                 chat.messages.findIndex(
-                  (msg) => msg.id === options.existingMessageId
-                ) + 1
+                  (msg) => msg.id === options.existingMessageId,
+                ) + 1,
               )
               .map((msg) => ({
                 role: msg.direction === "outgoing" ? "user" : "assistant",
@@ -227,13 +280,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           lastMessageAt: new Date(),
         }));
 
-        const portfolio = [];
-        if (solanaAssets) {
-          portfolio.push(...compactPortfolio(solanaAssets));
-        }
-        if (evmAssets && chatType === "omni") {
-          portfolio.push(...compactPortfolio(evmAssets));
-        }
+        const portfolio = compactPortfolio(combinedPortfolio);
         const chat_history = messageHistory
           .filter((msg) => msg.content !== "")
           .map((msg) => {
@@ -253,11 +300,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
           });
         const preamble = systemPrompt(
           portfolio,
-          wallets?.solanaWallet?.toString() || null,
-          wallets?.evmWallet?.toString() || null,
+          currentSolanaAddress,
+          currentEvmAddress,
           defaultAmount.toString(),
           user?.isGuest || false,
-          solanaPrice
+          solanaPrice,
+          hyperliquidData?.raw ?? null,
         );
 
         if (researchEnabled && modelType === "claude") {
@@ -312,12 +360,12 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
               case "Message":
                 updateAssistantMessage(
                   currentAssistantMessageId,
-                  data.content as string
+                  data.content as string,
                 );
                 break;
               case "NestedAgentOutput": {
                 const nestedOutput = NestedAgentOutputSchema.parse(
-                  data.content
+                  data.content,
                 );
 
                 setNestedAgentOutput((prev) => {
@@ -504,12 +552,21 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       chatId,
       updateAssistantMessage,
       getAccessToken,
-      solanaAssets,
-      evmAssets,
-      wallets,
+      combinedPortfolio,
+      currentSolanaAddress,
+      currentEvmAddress,
       chatType,
       navigate,
-    ]
+      defaultAmount,
+      user?.isGuest,
+      solanaPrice,
+      hyperliquidData,
+      researchEnabled,
+      modelType,
+      agentMode,
+      memoryEnabled,
+      hyperliquid,
+    ],
   );
 
   // If isNewChat is true, clear the current chat
@@ -604,13 +661,13 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await fetch(
         // leave this as always prod for debugging prod chats locally
-        `https://api.listen-rs.com/v1/adapter/get-chat?chat_id=${chatId}`,
+        `https://${config.kitEndpoint}/get-chat?chat_id=${chatId}`,
         {
           method: "GET",
           headers: {
             "Content-Type": "application/json",
           },
-        }
+        },
       );
 
       if (!response.ok) {
@@ -631,7 +688,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       if (!prev) return prev;
       const updatedMessages = [...prev.messages];
       const messageIndex = updatedMessages.findIndex(
-        (msg) => msg.id === messageId
+        (msg) => msg.id === messageId,
       );
       if (messageIndex !== -1) {
         updatedMessages[messageIndex] = {
@@ -655,7 +712,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         messageContent = content;
       } else {
         const messageToResend = chat?.messages.find(
-          (msg) => msg.id === messageId
+          (msg) => msg.id === messageId,
         );
         if (!messageToResend) return;
         messageContent = messageToResend.message;
@@ -665,7 +722,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
       setChat((prev) => {
         if (!prev) return prev;
         const messageIndex = prev.messages.findIndex(
-          (msg) => msg.id === messageId
+          (msg) => msg.id === messageId,
         );
         if (messageIndex === -1) return prev;
 
@@ -681,16 +738,16 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
         existingMessageId: messageId,
       });
     },
-    [chat, sendMessage]
+    [chat, sendMessage],
   );
 
   const isLastMessageOutgoing = checkIfLastMessageIsOutgoing(
-    chat?.messages || []
+    chat?.messages || [],
   );
 
   const value = {
     messages: chat?.messages || [],
-    isLoading: isLoadingWallets || isLoading,
+    isLoading: isLoading,
     nestedAgentOutput,
     sendMessage,
     setMessages: (messages: Message[]) =>
@@ -707,7 +764,7 @@ export const ChatProvider = ({ children }: { children: ReactNode }) => {
               createdAt: new Date(),
               lastMessageAt: new Date(),
               title: messages[0]?.message.slice(0, 50),
-            }
+            },
       ),
     stopGeneration,
     shareChat,

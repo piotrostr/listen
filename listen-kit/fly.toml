@@ -1,10 +1,5 @@
-# fly.toml app configuration file generated for listen-kit on 2025-01-28T12:38:42+01:00
-#
-# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
-#
-
 app = 'listen-kit'
-primary_region = 'sfo'
+primary_region = 'waw'
 
 [build]
 

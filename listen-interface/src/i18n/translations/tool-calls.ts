@@ -13,6 +13,7 @@ export const toolCalls = {
     search_tweets: "Searching through X...",
     fetch_top_tokens: "Fetching hottest picks...",
     fetch_price_action_analysis: "Analyzing price action...",
+    get_token_balance: "Looking up token balance...",
     analyze_risk: "Analyzing risk...",
     thinking: "Thinking...",
     thoughts: "Thoughts",
@@ -72,5 +73,6 @@ export const toolCalls = {
     fetch_top_tokens_by_category: "浏览热门代币中...",
     get_token: "获取代币中...",
     get_l2_snapshot: "查看订单簿中...",
+    get_token_balance: "查看代币余额中...",
   },
 };

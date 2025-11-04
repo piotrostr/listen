@@ -5,21 +5,14 @@ import { MdArrowBack } from "react-icons/md";
 import { useModal } from "../contexts/ModalContext";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import { useSolBalance } from "../hooks/useSolBalance";
+import { usePortfolioInvalidation } from "../hooks/usePortfolioInvalidation";
+import { PortfolioItem } from "../lib/types";
 
 interface BuySellModalProps {
   isOpen: boolean;
   onClose: () => void;
   action: "buy" | "sell";
-  asset: {
-    address: string;
-    name: string;
-    symbol: string;
-    amount: number;
-    logoURI?: string;
-    price: number;
-    decimals: number;
-    chainId?: string;
-  };
+  asset: PortfolioItem;
 }
 
 export function BuySellModal({
@@ -34,6 +27,7 @@ export function BuySellModal({
   const { isExecuting, quickBuyToken, sellTokenForSol } =
     usePipelineExecution();
   const { returnToChart, hasChartToReturnTo } = useModal();
+  const { invalidatePortfolios } = usePortfolioInvalidation();
 
   // Always refetch SOL balance when modal is open
   useEffect(() => {
@@ -80,7 +74,7 @@ export function BuySellModal({
   };
 
   const formattedAmount = calculateAmount().toFixed(
-    action === "buy" ? 2 : asset.decimals > 6 ? 6 : asset.decimals
+    action === "buy" ? 2 : asset.decimals > 6 ? 6 : asset.decimals,
   );
 
   const handleSubmit = async () => {
@@ -88,13 +82,19 @@ export function BuySellModal({
 
     if (action === "buy") {
       await quickBuyToken(asset.address, amount, {
-        onSuccess: onClose,
-        chainId: asset.chainId,
+        onSuccess: async () => {
+          await invalidatePortfolios();
+          onClose();
+        },
+        chainId: asset.chain,
       });
     } else {
       await sellTokenForSol(asset.address, amount, asset.decimals, asset.name, {
-        onSuccess: onClose,
-        chainId: asset.chainId,
+        onSuccess: async () => {
+          await invalidatePortfolios();
+          onClose();
+        },
+        chainId: asset.chain,
       });
     }
   };

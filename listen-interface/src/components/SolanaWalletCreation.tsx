@@ -60,7 +60,7 @@ export const SolanaWalletCreation = ({ error }: SolanaWalletCreationProps) => {
 
   // Find Solana embedded wallet to delegate
   const solanaWalletToDelegate = solanaWallets.find(
-    (wallet) => wallet.walletClientType === "privy"
+    (wallet) => wallet.walletClientType === "privy",
   );
 
   // Check delegation status for Solana
@@ -68,7 +68,7 @@ export const SolanaWalletCreation = ({ error }: SolanaWalletCreationProps) => {
     (account): account is WalletWithMetadata =>
       account.type === "wallet" &&
       account.delegated &&
-      account.chainType === "solana"
+      account.chainType === "solana",
   );
 
   if (solanaReady && !solanaWalletToDelegate) {
@@ -76,7 +76,7 @@ export const SolanaWalletCreation = ({ error }: SolanaWalletCreationProps) => {
       <button
         disabled={!solanaReady || isCreating}
         onClick={onCreateWallet}
-        className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-[#2D2D2D]"
+        className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-[#2D2D2D] mt-3"
       >
         {isCreating ? (
           <span>Creating Solana wallet...</span>
@@ -101,7 +101,7 @@ export const SolanaWalletCreation = ({ error }: SolanaWalletCreationProps) => {
             console.error("Error delegating Solana wallet:", error);
           }
         }}
-        className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-[#2D2D2D]"
+        className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm hover:bg-[#2D2D2D] mt-3"
       >
         Delegate Solana
       </button>
@@ -109,7 +109,7 @@ export const SolanaWalletCreation = ({ error }: SolanaWalletCreationProps) => {
   }
 
   return (
-    <div className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm">
+    <div className="p-2 border-2 border-[#2D2D2D] rounded-lg bg-black/40 backdrop-blur-sm flex items-center px-3 text-sm mt-3">
       {error ? (
         <span className="text-red-500">Error: {error}</span>
       ) : isSolanaDelegated ? (

@@ -232,7 +232,7 @@ mod tests {
     use std::sync::Arc;
 
     use privy::{auth::UserSession, config::PrivyConfig, Privy};
-    use solana_sdk::native_token::sol_to_lamports;
+    use solana_sdk::native_token::sol_str_to_lamports;
 
     use crate::{
         signer::{privy::PrivySigner, TransactionSigner},
@@ -250,7 +250,7 @@ mod tests {
         let quote = Jupiter::fetch_quote(
             "So11111111111111111111111111111111111111112",
             "9BB6NFEcjBCtnNLFko2FqVQBq8HHM13kCyYcdQbgpump",
-            sol_to_lamports(0.00001),
+            sol_str_to_lamports("0.00001").unwrap(),
         )
         .await
         .unwrap();
@@ -290,6 +290,7 @@ mod tests {
                 session_id: "test".to_string(),
                 user_id: "test".to_string(),
                 email: Some("test@test.com".to_string()),
+                evm_wallet_id: None,
             },
             "en".to_string(),
         );

@@ -1,9 +1,9 @@
 import { useCallback, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { IoCloseOutline, IoRefreshOutline } from "react-icons/io5";
+import { useQueryClient } from "@tanstack/react-query";
 import { useMobile } from "../contexts/MobileContext";
 import { usePanel } from "../contexts/PanelContext";
-import { usePortfolioStore } from "../store/portfolioStore";
 import { Chat } from "./Chat";
 import { FloatingPanel } from "./FloatingPanel";
 import { Pipelines, PipelinesHeader } from "./Pipelines";
@@ -18,7 +18,19 @@ export function PanelSelector() {
   const { t } = useTranslation();
   const { activePanel, setActivePanel } = usePanel();
 
-  const { refreshPortfolio } = usePortfolioStore();
+  const queryClient = useQueryClient();
+
+  const refreshPortfolio = useCallback(async () => {
+    await queryClient.invalidateQueries({
+      queryKey: ["solana-portfolio"],
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ["evm-portfolio"],
+    });
+    await queryClient.invalidateQueries({
+      queryKey: ["hyperliquid-portfolio"],
+    });
+  }, [queryClient]);
 
   const handleClose = useCallback(() => {
     setActivePanel(null);

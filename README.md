@@ -9,7 +9,9 @@
 </p>
 
 <p align="center">
-<code>listen</code> started as Solana Swiss-Knife toolkit for algorithmic trading, its mission is to become the go-to framework for AI portfolio management agents
+
+<code>listen</code> started as Solana Swiss-Knife toolkit for algorithmic trading, its mission is to become the go-to framework for AI crosschain portfolio management agents
+
 </p>
 <p align="center">
 It powers the <a href="https://app.listen-rs.com/">Listen App</a>, check it out to see what <code>listen</code> framework is capable of
@@ -83,6 +85,8 @@ framework](https://github.com/0xPlaygrounds/rig) framework allowing AI Agents
 interact with the Solana blockchain, see example:
 [src/agent.rs](https://github.com/piotrostr/listen/blob/main/src/agent.rs) and
 the output [image](https://github.com/piotrostr/listen/blob/main/example.png).
+
+Some more docs on the agentic stuff: [rig-onchain-kit](https://0xplaygrounds.github.io/rig-onchain-kit/introduction.html)
 
 For complete rundown of features, check out the CLI output of `cargo run` or the
 [documentation](https://docs.listen-rs.com/).

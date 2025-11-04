@@ -147,6 +147,7 @@ impl CategoryResponse {
                         .unwrap_or(0.0),
                     chain_id,
                     pools: vec![], // CMC doesn't provide pool information
+                    img_url: None,
                 })
             })
             .collect();

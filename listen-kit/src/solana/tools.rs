@@ -9,7 +9,7 @@ use once_cell::sync::Lazy;
 use reqwest::Client;
 use rig_tool_macro::tool;
 use solana_client::nonblocking::rpc_client::RpcClient;
-use solana_sdk::native_token::sol_to_lamports;
+use solana_sdk::native_token::sol_str_to_lamports;
 use solana_sdk::pubkey::Pubkey;
 use std::str::FromStr;
 
@@ -35,7 +35,7 @@ fn create_rpc() -> RpcClient {
 }
 
 #[tool(description = "
-Runs risk checks for any Solana token.
+Runs risk checks for a token. Currently only supports Solana tokens.
 
 Params:
 mint: public key of the token to analyze
@@ -306,7 +306,8 @@ pub async fn buy_pump_fun_token(
     execute_solana_transaction(move |owner| async move {
         create_buy_pump_fun_tx(
             mint,
-            sol_to_lamports(sol_amount),
+            sol_str_to_lamports(&sol_amount.to_string())
+                .ok_or(anyhow!("Invalid SOL amount"))?,
             slippage_bps,
             &create_rpc(),
             &owner,

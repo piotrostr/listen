@@ -31,7 +31,7 @@ export function Socials({
   tokenMetadata: TokenMetadataRaw | SocialLinks | null;
   pubkey: string;
   openChart?: (asset: ChartAsset) => void;
-  chainId?: number;
+  chainId?: string;
 }) {
   const [copied, setCopied] = useState(false);
 
@@ -118,7 +118,7 @@ export function Socials({
             onClick={() =>
               openChart({
                 mint: pubkey,
-                chainId: chainId?.toString(),
+                chainId,
               })
             }
             className="hover:text-blue-500"

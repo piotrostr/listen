@@ -5,7 +5,7 @@ import { usePrivyWallets } from "../hooks/usePrivyWallet";
 import { useWLDBalance, WLD_TOKEN_ADDRESS } from "../hooks/useWLDBalance";
 import { useWalletCreate } from "../hooks/useWalletCreate";
 import { useWorldAuth } from "../hooks/useWorldLogin";
-import { SOLANA_CAIP2, WORLD_CAIP2 } from "../lib/util";
+import { DEV_ADDRESS, SOLANA_CAIP2, WORLD_CAIP2 } from "../lib/util";
 import { PipelineActionType, SwapOrderAction } from "../types/pipeline";
 import { GradientOutlineButton } from "./GradientOutlineButton";
 import { PercentageButton, percentages } from "./PercentageButton";
@@ -17,6 +17,7 @@ export const FundPanel = () => {
   const [amount, setAmount] = useState("0");
   const { handleEoaWorld } = useEoaExecution();
   const [isFunding, setIsFunding] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const { solanaWalletAddress } = usePrivyWallets();
   const {
     handleCreate,
@@ -31,6 +32,7 @@ export const FundPanel = () => {
       return;
     }
     setIsFunding(true);
+    setError(null);
     try {
       const action: SwapOrderAction = {
         amount:
@@ -43,14 +45,20 @@ export const FundPanel = () => {
         to_chain_caip2: SOLANA_CAIP2,
         type: PipelineActionType.SwapOrder,
       };
-      const tx = await handleEoaWorld(
+      const { txId, error } = await handleEoaWorld(
         action,
         worldUserAddress,
         solanaWalletAddress
       );
-      console.log("tx", tx);
+      if (error && worldUserAddress === DEV_ADDRESS) {
+        setError(JSON.stringify(error, null, 2));
+      }
+      console.log("tx", txId);
     } catch (error) {
       console.error(error);
+      if (worldUserAddress === DEV_ADDRESS) {
+        setError(JSON.stringify(error, null, 2));
+      }
     } finally {
       setIsFunding(false);
     }
@@ -97,6 +105,11 @@ export const FundPanel = () => {
       ) : (
         <>
           <div className="flex flex-col items-center justify-center gap-4 px-4">
+            {error && worldUserAddress === DEV_ADDRESS && (
+              <div className="w-full p-4 bg-red-900/20 rounded-lg overflow-auto max-h-48 text-red-400 font-mono text-sm">
+                {error}
+              </div>
+            )}
             <div className="xs:h-[30vh] h-[20vh] flex items-center justify-center">
               <input
                 inputMode="decimal"

@@ -1,10 +1,13 @@
 import { usePrivy } from "@privy-io/react-auth";
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useChat } from "../contexts/ChatContext";
 import { useModal } from "../contexts/ModalContext";
 import { useSettingsStore } from "../store/settingsStore";
-import { useSuggestStore } from "../store/suggestStore";
+import { useSuggestions } from "../hooks/useSuggestions";
+import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
+import { useEvmPortfolio } from "../hooks/useEvmPortfolio";
+import { useWalletStore } from "../store/walletStore";
 import {
   ParToolCallSchema,
   RigToolCall,
@@ -55,18 +58,45 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     nestedAgentOutput,
   } = useChat();
 
+  const { displaySuggestions, chatType } = useSettingsStore();
+  
+  // Get wallet addresses
   const {
-    getSuggestions,
+    solanaAddress,
+    evmAddress,
+    eoaSolanaAddress,
+    eoaEvmAddress,
+    activeWallet,
+  } = useWalletStore();
+
+  // Get current addresses based on active wallet
+  const currentSolanaAddress =
+    activeWallet === "listen"
+      ? solanaAddress
+      : activeWallet === "eoaSolana"
+        ? eoaSolanaAddress
+        : null;
+
+  const currentEvmAddress =
+    activeWallet === "listen"
+      ? evmAddress
+      : activeWallet === "eoaEvm"
+        ? eoaEvmAddress
+        : null;
+
+  // Get portfolio data
+  const { data: solanaPortfolio = [] } = useSolanaPortfolio(currentSolanaAddress);
+  const { data: evmPortfolio = [] } = useEvmPortfolio(currentEvmAddress);
+  
+  // Combine portfolios
+  const combinedPortfolio = [...(solanaPortfolio || []), ...(evmPortfolio || [])];
+
+  const {
+    suggestions,
     isLoading: isSuggestionsLoading,
     fetchSuggestions,
-  } = useSuggestStore();
-
-  const { displaySuggestions } = useSettingsStore();
-
-  // Memoize the suggestions selector
-  const suggestions = useMemo(() => {
-    return urlParams.chatId ? getSuggestions(urlParams.chatId) : [];
-  }, [urlParams.chatId, getSuggestions]);
+    clearSuggestions,
+  } = useSuggestions(urlParams.chatId || "");
 
   const lastUserMessageRef = useRef<HTMLDivElement>(null);
   const [inputMessage, setInputMessage] = useState("");
@@ -133,10 +163,10 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
       }
       setInputMessage("");
       if (urlParams.chatId) {
-        useSuggestStore.getState().clearSuggestions(urlParams.chatId);
+        clearSuggestions();
       }
     },
-    [sendMessage, setMessages, urlParams.chatId]
+    [sendMessage, setMessages, urlParams.chatId, clearSuggestions]
   );
 
   // Focus the input field when creating a new chat
@@ -264,9 +294,9 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
 
     if (shouldFetchSuggestions) {
       fetchSuggestions(
-        urlParams.chatId,
         messages,
-        getAccessToken,
+        combinedPortfolio,
+        chatType,
         i18n.language
       );
     }
@@ -278,6 +308,10 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
     suggestions.length,
     getAccessToken,
     i18n.language,
+    fetchSuggestions,
+    combinedPortfolio,
+    chatType,
+    displaySuggestions,
   ]);
 
   if (IS_DISABLED) {

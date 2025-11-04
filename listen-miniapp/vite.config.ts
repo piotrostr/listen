@@ -4,6 +4,7 @@ import { visualizer } from "rollup-plugin-visualizer";
 import type { Plugin } from "vite";
 import { defineConfig } from "vite";
 import compression from "vite-plugin-compression";
+import { nodePolyfills } from "vite-plugin-node-polyfills";
 
 const handlePureAnnotations: Plugin = {
   name: "handle-pure-annotations",
@@ -24,6 +25,7 @@ export default defineConfig({
     react(),
     visualizer(),
     compression(),
+    nodePolyfills(),
   ],
   build: {
     target: "esnext",

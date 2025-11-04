@@ -2,7 +2,7 @@ import React, { useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { processMessageWithAllTags, tagHandlers } from "../process-tags";
 import { useSettingsStore } from "../store/settingsStore";
-import { useSuggestStore } from "../store/suggestStore";
+import { useSuggestions } from "../hooks/useSuggestions";
 import {
   ParToolResultSchema,
   ToolCallSchema,
@@ -68,7 +68,9 @@ export function MessageRendererBase({
 }) {
   const { t } = useTranslation();
   const { debugMode } = useSettingsStore();
-  const { setLastMessageHadSpecialTags } = useSuggestStore();
+  // We need chatId for the hook, but it's not passed to MessageRenderer
+  // For now, we'll use an empty string as MessageRenderer doesn't fetch suggestions
+  const { setLastMessageHadSpecialTags } = useSuggestions("");
 
   if (debugMode && msg.direction === "incoming") {
     return (

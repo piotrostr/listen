@@ -6,13 +6,14 @@ use crate::{
     Privy,
 };
 
-#[derive(Clone)]
+#[derive(Clone, Default, Debug)]
 pub struct UserSession {
     pub user_id: String,
     pub session_id: String,
     pub wallet_address: Option<String>,
     pub pubkey: Option<String>,
     pub email: Option<String>,
+    pub evm_wallet_id: Option<String>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -53,7 +54,11 @@ impl Privy {
         access_token: &str,
     ) -> Result<UserSession, PrivyAuthError> {
         let claims = self.validate_access_token(access_token)?;
-        let user = self.get_user_by_id(&claims.user_id).await?;
+        tracing::info!(?claims, "claims");
+        let user = self.get_user_by_id(&claims.user_id).await.map_err(|e| {
+            tracing::error!(?e, ?claims, "Failed to get user by id");
+            e
+        })?;
 
         let mut session = UserSession {
             user_id: user.id.clone(),
@@ -61,12 +66,14 @@ impl Privy {
             wallet_address: None,
             pubkey: None,
             email: None,
+            evm_wallet_id: None,
         };
 
         let user_info = self.user_to_user_info(&user);
         session.pubkey = user_info.pubkey;
         session.wallet_address = user_info.wallet_address;
         session.email = user_info.email;
+        session.evm_wallet_id = user_info.wallet_id;
 
         Ok(session)
     }

@@ -43,9 +43,11 @@ impl EvmFallback {
     pub async fn find_pair_address(
         &self,
         token_address: &str,
-        chain_id: u64,
+        chain_id: String,
     ) -> Result<Option<String>> {
-        let network = map_chain_id_to_network(chain_id)?;
+        let network = map_chain_id_to_network(chain_id.clone())?;
+
+        println!("network: {:?}", network);
 
         log::debug!(
             "Resolving pair address for {} on {}",
@@ -131,6 +133,8 @@ impl EvmFallback {
 
 #[cfg(test)]
 mod tests {
+    use crate::evm_fallback::SOLANA_CHAIN_ID;
+
     use super::*;
 
     #[tokio::test]
@@ -141,8 +145,24 @@ mod tests {
         let result = client
             .find_pair_address(
                 "0x6982508145454ce325ddbe47a25d4ec3d2311933",
-                1,
+                "1".to_string(),
             )
+            .await;
+
+        assert!(result.is_ok());
+        let pair = result.unwrap();
+        assert!(pair.is_some());
+        println!("Found pair address: {:?}", pair);
+    }
+
+    #[tokio::test]
+    async fn test_find_pair_address_bonk() {
+        let client =
+            EvmFallback::from_env().expect("Failed to create client");
+        let address = "DezXAZ8z7PnrnRJjz3wXBoRgixCa6xjnB7YaB1pPB263";
+        // BONK token on Solana
+        let result = client
+            .find_pair_address(address, SOLANA_CHAIN_ID.to_string())
             .await;
 
         assert!(result.is_ok());

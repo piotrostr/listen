@@ -9,7 +9,12 @@ export function ModalContainer() {
       isOpen={buySellModalState.isOpen}
       onClose={closeBuySellModal}
       action={buySellModalState.action}
-      asset={buySellModalState.asset}
+      asset={{
+        ...buySellModalState.asset,
+        // TODO: Check chainId format and determine proper chain mapping
+        chain: buySellModalState.asset.chainId ? "evm" : "solana",
+        priceChange24h: 0,
+      }}
     />
   ) : null;
 }

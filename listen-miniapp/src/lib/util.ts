@@ -596,3 +596,5 @@ export function getNetworkId(chainId: string | number): NetworkId | null {
     ] || null
   );
 }
+
+export const DEV_ADDRESS = "0xa565aa0677c387e0b599e6035a44438f596a2fc5";

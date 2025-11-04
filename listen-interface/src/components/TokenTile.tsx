@@ -7,7 +7,7 @@ import { FaBoltLightning, FaRegStar, FaStar } from "react-icons/fa6";
 import { HiOutlineSparkles } from "react-icons/hi2";
 import { useChat } from "../contexts/ChatContext";
 import { useModal } from "../contexts/ModalContext";
-import { useListenMetadata } from "../hooks/useListenMetadata";
+import { useSolanaToken } from "../hooks/useToken";
 import { usePipelineExecution } from "../hooks/usePipelineExecution";
 import i18n from "../i18n";
 import { useSettingsStore } from "../store/settingsStore";
@@ -22,7 +22,7 @@ interface TokenTileProps {
 export function TokenTile({ token }: TokenTileProps) {
   const { openChart } = useModal();
   const { isLoading } = useChat();
-  const { data: metadata } = useListenMetadata(token.pubkey);
+  const { data: metadata } = useSolanaToken(token.pubkey);
   const { quickBuyAmount } = useSettingsStore();
   const [copied, setCopied] = useState(false);
   const { isExecuting, quickBuyToken } = usePipelineExecution();
@@ -71,7 +71,7 @@ export function TokenTile({ token }: TokenTileProps) {
 
   const isTokenWatchlisted = isWatchlisted(token.pubkey);
 
-  const tokenSymbol = metadata?.mpl.symbol ?? token.name;
+  const tokenSymbol = metadata?.symbol ?? token.name;
   const researchMessage =
     i18n.language === "en"
       ? `Listen, please research $${tokenSymbol} (${token.pubkey}). Provide it a score between 1 and 100 on how solid the narrative is.`
@@ -85,11 +85,11 @@ export function TokenTile({ token }: TokenTileProps) {
       <div className="p-3 sm:p-4 flex items-center justify-between hover:bg-black/50 transition-colors relative">
         <div className="flex items-center space-x-2 sm:space-x-4">
           <div className="flex items-center space-x-2 sm:space-x-3">
-            {metadata?.mpl.ipfs_metadata?.image &&
-              metadata.mpl.ipfs_metadata.image.startsWith("https://") && (
+            {metadata?.logoURI &&
+              metadata.logoURI.startsWith("https://") && (
                 <div className="w-8 h-8 sm:w-12 sm:h-12 relative rounded-full overflow-hidden">
                   <img
-                    src={metadata.mpl.ipfs_metadata.image.replace(
+                    src={metadata.logoURI.replace(
                       "cf-ipfs.com",
                       "ipfs.io"
                     )}
@@ -105,7 +105,7 @@ export function TokenTile({ token }: TokenTileProps) {
                     className="hover:text-blue-500 truncate max-w-[90px] sm:max-w-none cursor-pointer"
                     onClick={() => openChart({ mint: token.pubkey })}
                   >
-                    {metadata?.mpl.symbol ?? token.name}
+                    {metadata?.symbol ?? token.name}
                   </div>
                   <button
                     onClick={(e) => {
@@ -127,7 +127,7 @@ export function TokenTile({ token }: TokenTileProps) {
                   </button>
                 </span>
               </div>
-              <Socials tokenMetadata={metadata ?? null} pubkey={token.pubkey} />
+              <Socials tokenMetadata={null} pubkey={token.pubkey} />
               <div className="text-xs sm:text-sm text-gray-500">
                 {t("token_tile.market_cap")}: $
                 {(token.marketCap / 1e6).toFixed(1)}M

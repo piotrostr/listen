@@ -10,7 +10,12 @@ import {
 } from "react-icons/fa";
 import { FaImage, FaRobot, FaXTwitter } from "react-icons/fa6";
 import { IoSwapHorizontal } from "react-icons/io5";
+import { formatUnits } from "viem";
 import { z } from "zod";
+import {
+  HyperliquidPortfolioOverviewSchema,
+  MarketOpenResponseSchema,
+} from "../lib/hype-types";
 import {
   CandlestickDataSchema,
   PriceActionAnalysisResponseSchema,
@@ -42,19 +47,23 @@ import {
 } from "./BubbleMapDisplay";
 import { Chart, InnerChart } from "./Chart";
 import { ChatMessage } from "./ChatMessage";
+import { DepositUsdcDisplay } from "./DepositUsdcDisplay";
 import { DexscreenerDisplay } from "./DexscreenerDisplay";
 import DropdownMessage from "./DropdownMessage";
 import { Erc20Balance, Erc20BalanceSchema } from "./Erc20Balance";
 import { EvmRawTokenMetadataDisplay } from "./EvmRawTokenMetadataDisplay";
 import { FetchXPostDisplay } from "./FetchXPostDisplay";
 import { GeckoTerminalChart } from "./GeckoTerminalChart";
+import { GetBalanceOverviewDisplay } from "./GetBalanceOverviewDisplay";
 import { JupiterQuoteDisplay } from "./JupiterQuoteDisplay";
+import { MarketOpenDisplay } from "./MarketOpenDisplay";
 import { OrderbookDisplay } from "./OrderbookDisplay";
 import { TransactionLink } from "./PipelineStepContainer";
 import { QuoteDisplay } from "./QuoteDisplay";
 import { RawTokenMetadataDisplay } from "./RawTokenMetadataDisplay";
 import { embedResearchAnchors } from "./ResearchOutput";
 import { RiskAnalysisDisplay, RiskAnalysisSchema } from "./RiskDisplay";
+import { TokenBalanceDisplay, TokenBalanceSchema } from "./TokenBalanceDisplay";
 import { TokenDisplay } from "./TokenDisplay";
 import { TopTokensDisplay, TopTokensResponseSchema } from "./TopTokensDisplay";
 import { TopicDisplay, TopicSchema } from "./TopicDisplay";
@@ -79,12 +88,12 @@ const parseAndCleanMessage = (input: string): string => {
       (parsed.startsWith("{") ||
         parsed.startsWith("[") ||
         parsed.startsWith('"') ||
-        parsed.includes('\\\"') ||
+        parsed.includes('\\"') ||
         parsed.includes("\\\\"))
     ) {
       try {
         parsed = JSON.parse(parsed);
-      } catch (e) {
+      } catch {
         break;
       }
     }
@@ -113,7 +122,7 @@ const parseAndCleanMessage = (input: string): string => {
             return content;
           }
           return match;
-        }
+        },
       );
     }
 
@@ -124,6 +133,34 @@ const parseAndCleanMessage = (input: string): string => {
   } catch (e) {
     console.error("[parsing error]:", e);
     return input;
+  }
+};
+
+const extractToolCallParams = (
+  toolCallInfo: any,
+): Record<string, any> | null => {
+  if (!toolCallInfo) return null;
+  try {
+    // Use pre-parsed arguments if available (from RigToolCall)
+    if ("_arguments" in toolCallInfo && toolCallInfo._arguments) {
+      return toolCallInfo._arguments as Record<string, any>;
+    }
+    // Otherwise parse the params string (from ToolCall or adapted RigToolCall)
+    // Check if params exists and is a string before parsing
+    if ("params" in toolCallInfo && typeof toolCallInfo.params === "string") {
+      return JSON.parse(toolCallInfo.params);
+    } else if ("params" in toolCallInfo) {
+      // Log a warning if params exists but is not a string
+      console.warn(
+        "Tool call 'params' exists but is not a string:",
+        toolCallInfo.params,
+      );
+      return null; // Return null as we can't parse it
+    }
+    return null; // Return null if neither _arguments nor valid params string is found
+  } catch (e) {
+    console.error("Failed to parse tool call params:", e);
+    return null;
   }
 };
 
@@ -204,18 +241,66 @@ export const ToolMessage = ({
     toolOutput.name,
   ]);
 
+  const params = useMemo(
+    () => extractToolCallParams(toolCallInfo),
+    [toolCallInfo],
+  );
+
   if (toolOutput.name === "think") {
     return null;
   }
 
+  if (toolOutput.name === "deposit_usdc") {
+    const amount = params?.amount;
+    if (!amount) {
+      console.warn("Failed to parse deposit usdc amount:", toolOutput.result);
+      return null;
+    }
+    const transactionHash = toolOutput.result;
+    const uiAmount = formatUnits(BigInt(String(amount)), 6);
+    return (
+      <DepositUsdcDisplay
+        transactionHash={transactionHash}
+        uiAmount={uiAmount}
+      />
+    );
+  }
+
   if (toolOutput.name === "get_l2_snapshot") {
     const parsed = L2OrderbookSnapshotSchema.safeParse(
-      JSON.parse(toolOutput.result)
+      JSON.parse(toolOutput.result),
     );
     if (parsed.success) {
       return <OrderbookDisplay orderbookSnapshot={parsed.data} />;
     }
     console.error("Failed to parse l2 snapshot:", parsed.error);
+    return null;
+  }
+
+  if (toolOutput.name === "market_open") {
+    let side = params?.side;
+    if (!side) {
+      side = "long";
+    }
+    console.log(params);
+    const parsed = MarketOpenResponseSchema.safeParse(
+      JSON.parse(toolOutput.result),
+    );
+    if (parsed.success) {
+      return <MarketOpenDisplay marketOpenResponse={parsed.data} side={side} />;
+    }
+    console.error("Failed to parse market open:", parsed.error);
+    return null;
+  }
+
+  if (toolOutput.name === "get_balance_overview") {
+    const parsed = HyperliquidPortfolioOverviewSchema.safeParse(
+      JSON.parse(toolOutput.result),
+    );
+    if (parsed.success) {
+      return <GetBalanceOverviewDisplay balanceOverview={parsed.data} />;
+    }
+    console.error("Failed to parse balance overview:", parsed.error);
     return null;
   }
 
@@ -228,44 +313,10 @@ export const ToolMessage = ({
     } catch (e) {
       console.error("Failed to parse token:", e);
     }
-    return (
-      <div className="text-gray-400">
-        <ChatMessage message={toolOutput.result} direction="agent" />
-      </div>
-    );
+    return null;
   }
 
   if (toolOutput.name === "fetch_price_action_analysis_evm") {
-    const params = useMemo(() => {
-      if (!toolCallInfo) return null;
-      try {
-        // Use pre-parsed arguments if available (from RigToolCall)
-        if ("_arguments" in toolCallInfo && toolCallInfo._arguments) {
-          return toolCallInfo._arguments as Record<string, any>;
-        }
-        // Otherwise parse the params string (from ToolCall or adapted RigToolCall)
-        // Check if params exists and is a string before parsing
-        if (
-          "params" in toolCallInfo &&
-          typeof toolCallInfo.params === "string"
-        ) {
-          return JSON.parse(toolCallInfo.params);
-        } else if ("params" in toolCallInfo) {
-          // Log a warning if params exists but is not a string
-          console.warn(
-            "Tool call 'params' exists but is not a string:",
-            toolCallInfo.params
-          );
-          return null; // Return null as we can't parse it
-        }
-        // Redundant else-if removed
-        return null; // Return null if neither _arguments nor valid params string is found
-      } catch (e) {
-        console.error("Failed to parse tool call params:", e);
-        return null;
-      }
-    }, [toolCallInfo]);
-
     console.debug(params);
     const pairAddress = params?.pair_address;
     const interval = params?.interval || "30s";
@@ -310,37 +361,6 @@ export const ToolMessage = ({
 
   if (toolOutput.name === "fetch_price_action_analysis") {
     try {
-      // Extract parameters using toolCallInfo
-      const params = useMemo(() => {
-        if (!toolCallInfo) return null;
-        try {
-          // Use pre-parsed arguments if available (from RigToolCall)
-          if ("_arguments" in toolCallInfo && toolCallInfo._arguments) {
-            return toolCallInfo._arguments as Record<string, any>;
-          }
-          // Otherwise parse the params string (from ToolCall or adapted RigToolCall)
-          // Check if params exists and is a string before parsing
-          if (
-            "params" in toolCallInfo &&
-            typeof toolCallInfo.params === "string"
-          ) {
-            return JSON.parse(toolCallInfo.params);
-          } else if ("params" in toolCallInfo) {
-            // Log a warning if params exists but is not a string
-            console.warn(
-              "Tool call 'params' exists but is not a string:",
-              toolCallInfo.params
-            );
-            return null; // Return null as we can't parse it
-          }
-          // Redundant else-if removed
-          return null; // Return null if neither _arguments nor valid params string is found
-        } catch (e) {
-          console.error("Failed to parse tool call params:", e);
-          return null;
-        }
-      }, [toolCallInfo]);
-
       const mint = params?.mint;
       const interval = params?.interval || "30s";
 
@@ -411,6 +431,19 @@ export const ToolMessage = ({
     }
   }
 
+  if (toolOutput.name === "get_token_balance") {
+    try {
+      const parsed = TokenBalanceSchema.parse(JSON.parse(toolOutput.result));
+      return (
+        <div className="p-3">
+          <TokenBalanceDisplay tokenBalance={parsed} />
+        </div>
+      );
+    } catch (e) {
+      console.error("Failed to parse token balance:", e);
+    }
+  }
+
   if (toolOutput.name === "get_spl_token_balance") {
     try {
       const parsed = SplTokenBalanceSchema.parse(JSON.parse(toolOutput.result));
@@ -444,7 +477,7 @@ export const ToolMessage = ({
             } catch (parseError) {
               console.error(
                 "Failed to parse params in error handler:",
-                parseError
+                parseError,
               );
             }
           }
@@ -657,7 +690,7 @@ export const ToolMessage = ({
   if (toolOutput.name === "analyze_holder_distribution") {
     try {
       const parsed = TokenHolderAnalysisSchema.parse(
-        JSON.parse(toolOutput.result)
+        JSON.parse(toolOutput.result),
       );
       return <BubbleMapDisplay topHolderAnalysis={parsed} />;
     } catch (e) {
@@ -677,7 +710,18 @@ export const ToolMessage = ({
   if (toolOutput.name === "fetch_top_tokens_by_category") {
     try {
       const parsed = TopTokensResponseSchema.parse(
-        JSON.parse(toolOutput.result)
+        JSON.parse(toolOutput.result),
+      );
+      return <TopTokensDisplay tokens={parsed} />;
+    } catch (e) {
+      console.error("Failed to parse top tokens response:", e);
+    }
+  }
+
+  if (toolOutput.name === "fetch_top_stocks") {
+    try {
+      const parsed = TopTokensResponseSchema.parse(
+        JSON.parse(toolOutput.result),
       );
       return <TopTokensDisplay tokens={parsed} />;
     } catch (e) {
@@ -712,7 +756,7 @@ export const ToolMessage = ({
   if (toolOutput.name === "fetch_token_metadata") {
     try {
       const parsed = TokenMetadataRawSchema.parse(
-        JSON.parse(toolOutput.result)
+        JSON.parse(toolOutput.result),
       );
       return <RawTokenMetadataDisplay metadata={parsed} />;
     } catch (e) {
@@ -747,7 +791,7 @@ export const ToolMessage = ({
   if (toolOutput.name === "search_on_dex_screener") {
     try {
       const parsed = DexScreenerResponseSchema.parse(
-        JSON.parse(toolOutput.result)
+        JSON.parse(toolOutput.result),
       );
       return <DexscreenerDisplay pairs={parsed.pairs} />;
     } catch (e) {
@@ -775,7 +819,7 @@ export const ToolMessage = ({
   ) {
     try {
       const parsed = TopTokensResponseSchema.parse(
-        JSON.parse(toolOutput.result)
+        JSON.parse(toolOutput.result),
       );
       return <TopTokensDisplay tokens={parsed} />;
     } catch (e) {

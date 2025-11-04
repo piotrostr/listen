@@ -24,6 +24,7 @@ pub struct PriceUpdate {
     pub is_pump: bool,
 }
 
+#[derive(Clone)]
 pub struct ClickhouseDb {
     client: Client,
 }
@@ -51,7 +52,7 @@ pub fn is_local() -> bool {
 }
 
 pub fn must_get_env(key: &str) -> String {
-    std::env::var(key).expect(&format!("{} must be set", key))
+    std::env::var(key).unwrap_or_else(|_| panic!("{} must be set", key))
 }
 
 pub fn make_db() -> Result<Arc<ClickhouseDb>> {

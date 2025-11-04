@@ -68,7 +68,7 @@ pub async fn create_sell_pump_fun_tx(
 
 #[cfg(test)]
 mod tests {
-    use solana_sdk::native_token::sol_to_lamports;
+    use solana_sdk::native_token::sol_str_to_lamports;
 
     use super::*;
     use crate::solana::util::{make_rpc_client, make_test_signer};
@@ -79,7 +79,7 @@ mod tests {
         let rpc_client = make_rpc_client();
         let mut tx = create_buy_pump_fun_tx(
             "76VCegXJdjqHXBdQyeVV3Swt3JgXrBoQpXcvRQsYpump".to_string(),
-            sol_to_lamports(0.0001),
+            sol_str_to_lamports("0.0001").unwrap(),
             500,
             &rpc_client,
             &Pubkey::from_str(&signer.pubkey().unwrap()).unwrap(),

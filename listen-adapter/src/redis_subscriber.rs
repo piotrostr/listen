@@ -5,6 +5,7 @@ use futures::StreamExt;
 use tokio::sync::broadcast;
 use tracing::{debug, error};
 
+#[derive(Clone)]
 pub struct RedisSubscriber {
     client: redis::Client,
     price_tx: broadcast::Sender<String>,

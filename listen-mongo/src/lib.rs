@@ -5,6 +5,7 @@ use serde::{de::DeserializeOwned, Serialize};
 use std::env;
 
 /// MongoDB client for inserting documents under a given key
+#[derive(Clone)]
 pub struct MongoClient {
     client: Client,
     db_name: String,

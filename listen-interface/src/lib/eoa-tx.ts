@@ -67,7 +67,7 @@ export async function swapStepToTransaction(
       ? TransactionRequestSchema.parse(data.transactionRequest)
       : null;
   } catch (error) {
-    console.error(error);
+    console.warn(error);
     return null;
   }
 }

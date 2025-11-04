@@ -3,14 +3,14 @@ import { Connection, VersionedTransaction } from "@solana/web3.js";
 import { type EIP1193Provider } from "viem";
 import { ensureApprovals } from "../lib/approvals";
 import { swapStepToTransaction } from "../lib/eoa-tx";
-import { usePortfolioStore } from "../store/portfolioStore";
+import { useInvalidatePortfolio } from "./useInvalidatePortfolio";
 import { SwapOrderAction } from "../types/pipeline";
 import { waitForTransaction } from "../utils/transactionMonitor";
 
 export function useEoaExecution() {
   const { wallets: evmWallets } = useWallets();
   const { wallets: solanaWallets } = useSolanaWallets();
-  const { refreshPortfolio } = usePortfolioStore();
+  const { refreshPortfolio } = useInvalidatePortfolio();
 
   const handleEoaSolana = async (
     action: SwapOrderAction,

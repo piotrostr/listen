@@ -25,7 +25,7 @@ mod tests {
     use crate::solana::{constants, util::load_keypair_for_tests};
 
     use super::*;
-    use solana_sdk::native_token::sol_to_lamports;
+    use solana_sdk::native_token::sol_str_to_lamports;
     use solana_sdk::signer::Signer;
 
     #[tokio::test]
@@ -33,7 +33,7 @@ mod tests {
         let keypair = load_keypair_for_tests();
         let result = create_jupiter_swap_transaction(
             constants::WSOL.to_string(),
-            sol_to_lamports(0.001),
+            sol_str_to_lamports("0.001").unwrap(),
             "FUAfBo2jgks6gB4Z4LfZkqSZgzNucisEHqnNebaRxM1P".to_string(),
             &keypair.pubkey(),
         )

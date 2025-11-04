@@ -1,0 +1,22 @@
+# fly.toml app configuration file generated for listen-engine on 2025-07-07T12:16:45+02:00
+#
+# See https://fly.io/docs/reference/configuration/ for information about how to use this file.
+#
+
+app = 'listen-engine'
+primary_region = 'ams'
+
+[build]
+
+[http_service]
+  internal_port = 6966
+  force_https = true
+  auto_stop_machines = 'stop'
+  auto_start_machines = true
+  min_machines_running = 0
+  processes = ['app']
+
+[[vm]]
+  memory = '1gb'
+  cpu_kind = 'shared'
+  cpus = 1

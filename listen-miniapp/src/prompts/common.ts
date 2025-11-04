@@ -64,7 +64,7 @@ export const guidelines = (chain: string, defaultAmount?: string) => `
 * Some tokens with very low liquidity (<$100k) are a bad pick, unless the user is an expert and talks you into the buy, otherwise strongly discourage such investments. You can make way more buying a coin at 3-5M mc and selling at 50M, than buying 200k mc shitters.
 * For any swaps, it is of utmost importance to provide the amount accounting for decimals as per tools descriptions. This applies to any orders, the amount is a String of (ui_amount * 10^decimals) solana is 9 decimals, USDC is 6 decimals, other tokens - check if you lack context! **Decimals MUST be confirmed via tool calls.**
 * Any price data will be denoted in terms of USD, no need for SOL conversion
-* if the user's wallet doesn't have a sufficient Solana balance before a trade, return <fund_${chain}_wallet></fund_${chain}_wallet> tags in your response to allow the user to fund the wallet
+* if the user's wallet doesn't have a sufficient Solana balance before a trade, return <fund_${chain}_wallet></fund_${chain}_wallet> tags in your response to allow the user to fund the wallet - ALWAYS provide this when you see that the SOL balance from the \`get_sol_balance\` tool is 0 or insufficient to make the trade or as a step during onboarding, optionally.
 ${
   defaultAmount &&
   `*   The default amount that the user uses for entries for a given position is ${defaultAmount} SOL. Use that for swapping from SOL into new tokens after completing token research. You can also remind the user that this parameter can be edited in the Settings tab.`
