@@ -19,7 +19,6 @@ import { usePanel } from "../contexts/PanelContext";
 import { useSidebar } from "../contexts/SidebarContext";
 import { useHasAddedToHomeScreen } from "../hooks/useHasAddedToHomeScreen";
 import { usePWAStatus } from "../hooks/usePWAStatus";
-import { useWalletStore } from "../store/walletStore";
 import { AddToHomeScreenPopup } from "./AddToHomeScreenPopup";
 import { PanelSelector } from "./PanelSelector";
 import { PipelinesInitializer } from "./PipelinesInitializer";
@@ -28,7 +27,6 @@ import { SimpleHeader } from "./SimpleHeader";
 import { SwipeHandler } from "./SwipeHandler";
 import { VersionAndLanguageDisplay } from "./VersionAndLanguage";
 import { VersionInitializer } from "./VersionInitializer";
-import { WalletInitializer } from "./WalletInitializer";
 import { WebsocketInitializer } from "./WebsocketInitializer";
 
 // Memoize the BottomLink component
@@ -96,13 +94,10 @@ export function Layout({ children }: { children: React.ReactNode }) {
   const isPWA = usePWAStatus();
   const { activePanel, setActivePanel } = usePanel();
   const { user, logout, ready, authenticated } = usePrivy();
-  const { clearWalletAddresses, clearEoaAddresses } = useWalletStore();
   const { hasAddedToHomeScreen, isVisible, hide } = useHasAddedToHomeScreen();
   useSolanaLedgerPlugin();
   const handleLogout = () => {
     logout();
-    clearWalletAddresses();
-    clearEoaAddresses();
   };
   const { t } = useTranslation();
 
@@ -192,7 +187,6 @@ export function Layout({ children }: { children: React.ReactNode }) {
       {/* Render initializers together and unconditionally once auth state is stable */}
       {shouldRenderInitializers && (
         <>
-          <WalletInitializer />
           <PipelinesInitializer />
         </>
       )}

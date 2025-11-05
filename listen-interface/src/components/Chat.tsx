@@ -7,7 +7,7 @@ import { useSettingsStore } from "../store/settingsStore";
 import { useSuggestions } from "../hooks/useSuggestions";
 import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
 import { useEvmPortfolio } from "../hooks/useEvmPortfolio";
-import { useWalletStore } from "../store/walletStore";
+import { useAllWallets } from "../hooks/useAllWallets";
 import {
   ParToolCallSchema,
   RigToolCall,
@@ -59,34 +59,13 @@ export function Chat({ selectedChatId }: { selectedChatId?: string }) {
   } = useChat();
 
   const { displaySuggestions, chatType } = useSettingsStore();
-  
+
   // Get wallet addresses
-  const {
-    solanaAddress,
-    evmAddress,
-    eoaSolanaAddress,
-    eoaEvmAddress,
-    activeWallet,
-  } = useWalletStore();
-
-  // Get current addresses based on active wallet
-  const currentSolanaAddress =
-    activeWallet === "listen"
-      ? solanaAddress
-      : activeWallet === "eoaSolana"
-        ? eoaSolanaAddress
-        : null;
-
-  const currentEvmAddress =
-    activeWallet === "listen"
-      ? evmAddress
-      : activeWallet === "eoaEvm"
-        ? eoaEvmAddress
-        : null;
+  const { solanaAddress, evmAddress } = useAllWallets();
 
   // Get portfolio data
-  const { data: solanaPortfolio = [] } = useSolanaPortfolio(currentSolanaAddress);
-  const { data: evmPortfolio = [] } = useEvmPortfolio(currentEvmAddress);
+  const { data: solanaPortfolio = [] } = useSolanaPortfolio(solanaAddress);
+  const { data: evmPortfolio = [] } = useEvmPortfolio(evmAddress);
   
   // Combine portfolios
   const combinedPortfolio = [...(solanaPortfolio || []), ...(evmPortfolio || [])];

@@ -13,8 +13,9 @@ import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import { I18nextProvider } from "react-i18next";
-import { arbitrum } from "viem/chains";
-import { WagmiProvider, createConfig, http } from "wagmi";
+import { WagmiProvider, createConfig } from "@privy-io/wagmi";
+import { http } from "wagmi";
+import { arbitrum } from "wagmi/chains";
 import { KeyboardProvider } from "./contexts/KeyboardContext";
 import { MobileProvider } from "./contexts/MobileContext";
 import { SidebarProvider } from "./contexts/SidebarContext";
@@ -31,7 +32,7 @@ const config = createConfig({
   transports: {
     [arbitrum.id]: http(),
   },
-});
+} as any);
 
 // Create a new router instance
 const router = createRouter({ routeTree });
@@ -48,9 +49,16 @@ createRoot(document.getElementById("root")!).render(
     <PrivyProvider
       appId={"cm6c7ifqd00ar52m1qxfgbkkn"}
       config={{
+        // EOA-only mode: disable embedded wallet creation
+        embeddedWallets: {
+          createOnLogin: 'off',
+        },
+        // Only allow external wallet connections
+        loginMethods: ['wallet'],
         appearance: {
           theme: "dark",
           walletChainType: "ethereum-and-solana",
+          showWalletLoginFirst: true,
           walletList: [
             "phantom",
             "okx_wallet",
@@ -80,15 +88,15 @@ createRoot(document.getElementById("root")!).render(
       <MobileProvider>
         <I18nextProvider i18n={i18n}>
           <ToastProvider>
-            <WagmiProvider config={config}>
-              <QueryClientProvider client={new QueryClient()}>
+            <QueryClientProvider client={new QueryClient()}>
+              <WagmiProvider config={config}>
                 <SidebarProvider>
                   <KeyboardProvider>
                     <RouterProvider router={router} />
                   </KeyboardProvider>
                 </SidebarProvider>
-              </QueryClientProvider>
-            </WagmiProvider>
+              </WagmiProvider>
+            </QueryClientProvider>
           </ToastProvider>
         </I18nextProvider>
       </MobileProvider>

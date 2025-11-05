@@ -14,6 +14,7 @@ pub struct UserSession {
     pub pubkey: Option<String>,
     pub email: Option<String>,
     pub evm_wallet_id: Option<String>,
+    pub pubkey_id: Option<String>,
 }
 
 #[derive(Debug, thiserror::Error)]
@@ -67,6 +68,7 @@ impl Privy {
             pubkey: None,
             email: None,
             evm_wallet_id: None,
+            pubkey_id: None,
         };
 
         let user_info = self.user_to_user_info(&user);
@@ -74,6 +76,7 @@ impl Privy {
         session.wallet_address = user_info.wallet_address;
         session.email = user_info.email;
         session.evm_wallet_id = user_info.wallet_id;
+        session.pubkey_id = user_info.pubkey_id;
 
         Ok(session)
     }
@@ -87,16 +90,30 @@ impl Privy {
             email: None,
         };
 
+        // Try embedded Solana wallet first (for backward compatibility)
         let solana_wallet = find_wallet(&user.linked_accounts, "solana", "privy");
         if let Ok(wallet) = solana_wallet {
             wallets.pubkey = Some(wallet.address.clone());
             wallets.pubkey_id = wallet.id.clone();
+        } else {
+            // Fallback to EOA Solana wallet
+            if let Ok(eoa_wallet) = find_eoa_wallet(&user.linked_accounts, "solana") {
+                wallets.pubkey = Some(eoa_wallet.address.clone());
+                // pubkey_id stays None for EOA wallets
+            }
         }
 
+        // Try embedded EVM wallet first (for backward compatibility)
         let evm_wallet = find_wallet(&user.linked_accounts, "ethereum", "privy");
         if let Ok(wallet) = evm_wallet {
             wallets.wallet_address = Some(wallet.address.clone());
             wallets.wallet_id = wallet.id.clone();
+        } else {
+            // Fallback to EOA EVM wallet
+            if let Ok(eoa_wallet) = find_eoa_wallet(&user.linked_accounts, "ethereum") {
+                wallets.wallet_address = Some(eoa_wallet.address.clone());
+                // wallet_id stays None for EOA wallets
+            }
         }
 
         let email = find_email(&user.linked_accounts);
@@ -169,6 +186,26 @@ fn find_wallet<'a>(
             _ => None,
         })
         .ok_or_else(|| anyhow!("Could not find a delegated {} wallet", chain_type))
+}
+
+fn find_eoa_wallet<'a>(
+    linked_accounts: &'a [LinkedAccount],
+    chain_type: &str,
+) -> Result<&'a WalletAccount> {
+    linked_accounts
+        .iter()
+        .find_map(|account| match account {
+            LinkedAccount::Wallet(wallet) => {
+                // EOA wallets: not delegated, matching chain type
+                if !wallet.delegated && wallet.chain_type == chain_type {
+                    Some(wallet)
+                } else {
+                    None
+                }
+            }
+            _ => None,
+        })
+        .ok_or_else(|| anyhow!("Could not find an EOA {} wallet", chain_type))
 }
 
 fn find_email<'a>(linked_accounts: &'a [LinkedAccount]) -> Result<&'a EmailAccount> {

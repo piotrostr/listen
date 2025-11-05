@@ -5,7 +5,7 @@ import { IoSettingsOutline, IoWalletOutline } from "react-icons/io5";
 import { MdHistory } from "react-icons/md";
 import { useMobile } from "../contexts/MobileContext";
 import { useSidebar } from "../contexts/SidebarContext";
-import { useWalletStore } from "../store/walletStore";
+import { useAllWallets } from "../hooks/useAllWallets";
 import { useSettingsStore } from "../store/settingsStore";
 import { useSolanaPortfolio } from "../hooks/useSolanaPortfolio";
 import { useEvmPortfolio } from "../hooks/useEvmPortfolio";
@@ -46,44 +46,22 @@ export function SimpleHeader({
   const { isSidebarOpen, setIsSidebarOpen } = useSidebar();
   const { isMobile, isVerySmallScreen } = useMobile();
   const { user } = usePrivy();
-  
-  const { 
-    solanaAddress, 
-    evmAddress, 
-    eoaSolanaAddress, 
-    eoaEvmAddress,
-    eoaEvmWallets,
-    selectedEoaEvmIndex,
-    activeWallet 
-  } = useWalletStore();
-  
+
+  const { evmAddress, solanaAddress } = useAllWallets();
   const { hyperliquid } = useSettingsStore();
 
   const togglePanel = (panelName: string) => {
     setActivePanel(activePanel === panelName ? null : panelName);
   };
 
-  // Get addresses based on active wallet
-  const currentSolanaAddress = activeWallet === "listen" ? solanaAddress : 
-                              activeWallet === "eoaSolana" ? eoaSolanaAddress : null;
-  
-  // For EOA EVM, use the selected wallet from the list
-  const selectedEoaEvmWallet = eoaEvmWallets[selectedEoaEvmIndex];
-  const currentEvmAddress = activeWallet === "listen" ? evmAddress : 
-                           activeWallet === "eoaEvm" ? selectedEoaEvmWallet?.address || eoaEvmAddress : null;
+  // Use individual portfolio hooks - always show all chains
+  const solanaQuery = useSolanaPortfolio(solanaAddress);
+  const evmQuery = useEvmPortfolio(evmAddress);
 
-  // Use individual portfolio hooks
-  const solanaQuery = useSolanaPortfolio(currentSolanaAddress);
-  const evmQuery = useEvmPortfolio(currentEvmAddress);
-  
-  // For Hyperliquid, we need to use the appropriate EVM address based on active wallet
-  const hyperliquidAddress = activeWallet === "listen" ? evmAddress : 
-                            activeWallet === "eoaEvm" ? selectedEoaEvmWallet?.address || eoaEvmAddress : null;
-  
-  // Always call the hook, but control with enabled flag
+  // Hyperliquid uses EVM address
   const hyperliquidQuery = useHyperliquidPortfolio(
-    hyperliquidAddress,
-    hyperliquid && !!hyperliquidAddress
+    evmAddress,
+    hyperliquid && !!evmAddress
   );
 
   // Calculate portfolio value

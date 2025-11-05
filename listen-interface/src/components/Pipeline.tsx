@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useEoaExecution } from "../hooks/useEoaExecution";
-import { usePipelineExecution } from "../hooks/usePipelineExecution";
-import { useWalletStore } from "../store/walletStore";
+import { useAllWallets } from "../hooks/useAllWallets";
 import { Pipeline, PipelineActionType } from "../types/pipeline";
 import { NotificationPipelineStep } from "./NotificationPipelineStep";
 import { PipelineMenu } from "./PipelineMenu";
@@ -16,38 +15,24 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
   const [status, setStatus] = useState<
     "loading" | "pending" | "approved" | "rejected"
   >("pending");
-  const { isExecuting, executePipeline } = usePipelineExecution();
   const { handleEoaSolana, handleEoaEvm } = useEoaExecution();
-
-  const sendPipelineForExecution = async () => {
-    setStatus("loading");
-    const success = await executePipeline(pipeline, {
-      onSuccess: () => setStatus("approved"),
-      onError: () => setStatus("pending"),
-    });
-    if (!success) {
-      setStatus("pending");
-    }
-  };
-
-  const { activeWallet, eoaEvmAddress, eoaSolanaAddress } = useWalletStore();
+  const { evmAddress, solanaAddress } = useAllWallets();
 
   const executeFromEoa = async () => {
     setStatus("loading");
-    if (!eoaEvmAddress) {
-      setStatus("pending");
-      return;
-    }
+
     for (const step of pipeline.steps) {
       switch (step.action.type) {
         case PipelineActionType.SwapOrder:
           const action = step.action;
+
+          // Solana swap
           if (
             action.from_chain_caip2?.startsWith("solana:") &&
             action.to_chain_caip2?.startsWith("solana:") &&
-            eoaSolanaAddress
+            solanaAddress
           ) {
-            const result = await handleEoaSolana(action, eoaSolanaAddress);
+            const result = await handleEoaSolana(action, solanaAddress);
             if (!result) {
               setStatus("pending");
               return;
@@ -55,12 +40,13 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
             setStatus("approved");
           }
 
+          // EVM swap
           if (
             step.action.from_chain_caip2?.startsWith("eip155:") &&
             step.action.to_chain_caip2?.startsWith("eip155:") &&
-            eoaEvmAddress
+            evmAddress
           ) {
-            const result = await handleEoaEvm(action, eoaEvmAddress);
+            const result = await handleEoaEvm(action, evmAddress);
             if (!result) {
               setStatus("pending");
               return;
@@ -97,18 +83,13 @@ export function PipelineDisplay({ pipeline }: PipelineProps) {
             return null;
         }
       })}
-      {isExecuting || status === "loading" ? (
+      {status === "loading" ? (
         <Spinner />
       ) : (
         <PipelineMenu
           status={status}
           setStatus={setStatus}
-          sendPipelineForExecution={
-            activeWallet === "listen" ? sendPipelineForExecution : undefined
-          }
-          executeFromEoa={
-            activeWallet !== "listen" ? () => executeFromEoa() : undefined
-          }
+          executeFromEoa={() => executeFromEoa()}
         />
       )}
     </div>

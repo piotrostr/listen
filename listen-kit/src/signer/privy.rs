@@ -71,6 +71,15 @@ impl TransactionSigner for PrivySigner {
                 "Pubkey is not set, wallet unavailable"
             ));
         }
+
+        // Check if this is an EOA wallet (has address but no wallet ID)
+        // EOA wallets cannot be signed via Privy API - must be signed in frontend
+        if self.session.pubkey.is_some() && self.session.pubkey_id.is_none() {
+            return Err(anyhow::anyhow!(
+                "Cannot sign for EOA Solana wallets from backend. Transaction must be signed in frontend using user's wallet (Phantom, etc)."
+            ));
+        }
+
         tx.message
             .set_recent_blockhash(BLOCKHASH_CACHE.get_blockhash().await?);
 
@@ -96,6 +105,14 @@ impl TransactionSigner for PrivySigner {
         &self,
         tx: alloy::rpc::types::TransactionRequest,
     ) -> Result<String> {
+        // Check if this is an EOA wallet (has address but no wallet ID)
+        // EOA wallets cannot be signed via Privy API - must be signed in frontend
+        if self.address().is_some() && self.evm_wallet_id().is_none() {
+            return Err(anyhow::anyhow!(
+                "Cannot sign for EOA EVM wallets from backend. Transaction must be signed in frontend using user's wallet (MetaMask, Rabby, etc)."
+            ));
+        }
+
         let caip2 =
             tx.chain_id.map_or(Caip2::ARBITRUM.to_string(), |chain_id| {
                 Caip2::from_chain_id(chain_id).to_string()
@@ -129,6 +146,14 @@ impl TransactionSigner for PrivySigner {
                 "Pubkey is not set, wallet unavailable"
             ));
         }
+
+        // Check if this is an EOA wallet (has address but no wallet ID)
+        if self.session.pubkey.is_some() && self.session.pubkey_id.is_none() {
+            return Err(anyhow::anyhow!(
+                "Cannot sign for EOA Solana wallets from backend. Transaction must be signed in frontend using user's wallet (Phantom, etc)."
+            ));
+        }
+
         self.privy
             .execute_solana_transaction(
                 self.pubkey().unwrap(),
@@ -149,6 +174,13 @@ impl TransactionSigner for PrivySigner {
         tx: serde_json::Value,
         caip2: Option<String>,
     ) -> Result<String> {
+        // Check if this is an EOA wallet (has address but no wallet ID)
+        if self.address().is_some() && self.evm_wallet_id().is_none() {
+            return Err(anyhow::anyhow!(
+                "Cannot sign for EOA EVM wallets from backend. Transaction must be signed in frontend using user's wallet (MetaMask, Rabby, etc)."
+            ));
+        }
+
         if self.evm_wallet_id().is_none() {
             return Err(anyhow::anyhow!(
                 "EVM wallet ID is not set, wallet unavailable"

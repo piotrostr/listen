@@ -15,6 +15,7 @@
     "@fontsource/dm-sans": "^5.2.5",
     "@fontsource/space-grotesk": "^5.2.5",
     "@privy-io/react-auth": "latest",
+    "@privy-io/wagmi": "^2.0.2",
     "@radix-ui/react-tooltip": "^1.1.8",
     "@solana/spl-token": "^0.4.13",
     "@solana/web3.js": "^1.98.0",

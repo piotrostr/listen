@@ -1,9 +1,3 @@
-import { useMfaEnrollment, usePrivy } from "@privy-io/react-auth";
-import { useFundWallet } from "@privy-io/react-auth/solana";
-import { MdOutlineArrowOutward } from "react-icons/md";
-import { TbDots, TbPlus } from "react-icons/tb";
-import { useWalletStore } from "../store/walletStore";
-import TileButton from "./TileButton";
 
 interface PortfolioSummaryProps {
   totalBalance: number;
@@ -46,20 +40,7 @@ export function PortfolioSummary({
   totalBalance,
   portfolioPnL,
 }: PortfolioSummaryProps) {
-  const { solanaAddress, activeWallet } = useWalletStore();
-  const { fundWallet } = useFundWallet();
-  const { login } = usePrivy();
-  const { showMfaEnrollmentModal } = useMfaEnrollment();
   const pnlAmount = (totalBalance * portfolioPnL) / 100;
-
-  const handleTopupListen = async () => {
-    if (solanaAddress) {
-      await fundWallet(solanaAddress);
-    } else {
-      login();
-    }
-  };
-
   const pnlColor = portfolioPnL >= 0 ? "text-[#8DFC63]" : "text-[#FF5C5C]";
   const pnlSign = portfolioPnL >= 0 ? "+" : "";
 
@@ -84,38 +65,6 @@ export function PortfolioSummary({
             </span>
           </div>
         )}
-      </div>
-      <div className="flex flex-row items-center gap-3 justify-center mt-2">
-        <>
-          {activeWallet === "listen" && (
-            <>
-              <TileButton
-                icon={<TbPlus className="w-4 h-4" />}
-                onClick={handleTopupListen}
-                ariaLabel="Deposit"
-              />
-              <TileButton
-                icon={<MdOutlineArrowOutward />}
-                onClick={() => {}}
-                ariaLabel="Export"
-              />
-              <TileButton
-                icon={<CopyIcon />}
-                onClick={() => {
-                  if (solanaAddress) {
-                    navigator.clipboard.writeText(solanaAddress);
-                  }
-                }}
-                ariaLabel="Copy"
-              />
-              <TileButton
-                icon={<TbDots className="w-5 h-5" />}
-                onClick={showMfaEnrollmentModal}
-                ariaLabel="More"
-              />
-            </>
-          )}
-        </>
       </div>
     </div>
   );
