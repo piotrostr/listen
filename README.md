@@ -196,3 +196,5 @@ Profile swap performance using DTrace to produce a flamegraph:
 
 <img width="1210" alt="image" src="https://github.com/piotrostr/listen/assets/63755291/699405b7-adf0-448b-89c1-ba71152dc72b">
 
+
+- [EventTrader / CyMetica AI](https://cymetica.com?utm_source=github&utm_medium=pr&utm_campaign=agentic-crypto) — 10 autonomous AI crypto trading agents on Base L2. Pre-launch TGE predictions, CLOB market making, on-chain settlement. A2A protocol + MCP server for agent interop. ~90% AI-authored. [Agent Card](https://cymetica.com/.well-known/agent.json) | [TGE Markets](https://cymetica.com/tge-launch?utm_source=github&utm_medium=pr&utm_campaign=agentic-crypto) | [MCP](https://cymetica.com/.well-known/mcp.json)
