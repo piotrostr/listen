@@ -7,7 +7,9 @@ pub mod user_info;
 pub mod user_tweets;
 
 // Re-export common types
-pub use client::{TwitterApiClient, TwitterApiResponseError};
+pub use client::{
+    TwitterApiClient, TwitterApiProvider, TwitterApiResponseError,
+};
 pub use tweets::Tweet;
 pub use user_info::UserInfo;
 pub use user_tweets::UserTweet;
@@ -38,19 +40,19 @@ pub struct TwitterApi {
 
 #[derive(Debug, thiserror::Error)]
 pub enum TwitterApiError {
-    #[error("[TwitterAPI] Twitter API Error: {0}")]
+    #[error("[Twitter] API Error: {0}")]
     ApiError(TwitterApiResponseError),
 
-    #[error("[TwitterAPI] Failed to parse response: {0}")]
+    #[error("[Twitter] Failed to parse response: {0}")]
     ParseError(reqwest::Error),
 
-    #[error("[TwitterAPI] Failed to deserialize response: {0}")]
+    #[error("[Twitter] Failed to send request: {0}")]
     RequestError(reqwest::Error),
 
-    #[error("[TwitterAPI] Deserialize error: {0} body: {1}")]
+    #[error("[Twitter] Deserialize error: {0} body: {1}")]
     DeserializeError(serde_json::Error, String),
 
-    #[error("[TwitterAPI] Invalid input: {0}")]
+    #[error("[Twitter] Invalid input: {0}")]
     InvalidInput(anyhow::Error),
 }
 
@@ -61,11 +63,32 @@ impl TwitterApi {
         }
     }
 
+    pub fn new_xquik(api_key: String) -> Self {
+        Self {
+            client: TwitterApiClient::new_xquik(api_key),
+        }
+    }
+
     pub fn from_env() -> Result<Self> {
-        let client = TwitterApiClient::new(
-            std::env::var("TWITTERAPI_API_KEY").unwrap(),
-            Some("https://api.twitterapi.io".to_string()),
-        );
+        let twitterapi_key = std::env::var("TWITTERAPI_API_KEY")
+            .ok()
+            .filter(|key| !key.trim().is_empty());
+        let xquik_key = std::env::var("XQUIK_API_KEY")
+            .ok()
+            .filter(|key| !key.trim().is_empty());
+
+        let client = if let Some(api_key) = twitterapi_key {
+            TwitterApiClient::with_provider(
+                api_key,
+                TwitterApiProvider::TwitterApiIo,
+                None,
+            )
+        } else if let Some(api_key) = xquik_key {
+            TwitterApiClient::new_xquik(api_key)
+        } else {
+            anyhow::bail!("TWITTERAPI_API_KEY or XQUIK_API_KEY must be set");
+        };
+
         Ok(Self { client })
     }
 
