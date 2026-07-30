@@ -1,4 +1,4 @@
-use super::{TwitterApi, TwitterApiError};
+use super::{TwitterApi, TwitterApiError, TwitterApiProvider};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -22,6 +22,7 @@ pub struct Tweet {
     pub lang: Option<String>,
     pub bookmark_count: Option<u32>,
     pub is_reply: Option<bool>,
+    pub is_quote_status: Option<bool>,
     pub in_reply_to_id: Option<String>,
     pub conversation_id: Option<String>,
     pub in_reply_to_user_id: Option<String>,
@@ -74,11 +75,20 @@ impl TwitterApi {
         }
 
         let mut params = HashMap::new();
-        params.insert("tweet_ids".to_string(), tweet_ids.join(","));
+        let endpoint = match self.client.provider() {
+            TwitterApiProvider::TwitterApiIo => {
+                params.insert("tweet_ids".to_string(), tweet_ids.join(","));
+                "/twitter/tweets"
+            }
+            TwitterApiProvider::Xquik => {
+                params.insert("ids".to_string(), tweet_ids.join(","));
+                "/x/tweets"
+            }
+        };
 
         let response = self
             .client
-            .request::<serde_json::Value>("/twitter/tweets", Some(params))
+            .request::<serde_json::Value>(endpoint, Some(params))
             .await?;
 
         Ok(response)
@@ -105,5 +115,18 @@ mod tests {
         )
         .unwrap();
         tracing::info!("{:#?}", tweets);
+    }
+
+    #[test]
+    fn twitter_xquik_tweets_response_deserialize() {
+        let raw_json = r#"{"tweets":[{"id":"1234567890","text":"Xquik tweet","createdAt":"2026-05-16T12:00:00Z","likeCount":4,"retweetCount":2,"replyCount":1,"quoteCount":0,"viewCount":100,"bookmarkCount":1,"isReply":false,"isQuoteStatus":false,"author":{"id":"42","username":"xquikcom","name":"Xquik","verified":true}}],"has_next_page":false,"next_cursor":""}"#;
+
+        let response =
+            serde_json::from_str::<super::TweetsResponse>(raw_json).unwrap();
+
+        assert_eq!(response.tweets.len(), 1);
+        assert_eq!(response.tweets[0].id.as_deref(), Some("1234567890"));
+        assert_eq!(response.tweets[0].like_count, Some(4));
+        assert_eq!(response.tweets[0].is_quote_status, Some(false));
     }
 }

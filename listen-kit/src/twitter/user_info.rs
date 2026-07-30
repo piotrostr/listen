@@ -1,4 +1,4 @@
-use super::{ApiResponse, TwitterApi, TwitterApiError};
+use super::{ApiResponse, TwitterApi, TwitterApiError, TwitterApiProvider};
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -8,10 +8,12 @@ use std::collections::HashMap;
 pub struct UserInfo {
     #[serde(default)]
     pub r#type: Option<String>,
+    #[serde(alias = "username")]
     pub user_name: Option<String>,
     pub url: Option<String>,
     pub id: Option<String>,
     pub name: Option<String>,
+    #[serde(alias = "verified")]
     pub is_verified: Option<bool>,
     pub is_blue_verified: Option<bool>,
     pub profile_picture: Option<String>,
@@ -71,18 +73,28 @@ impl TwitterApi {
         &self,
         username: &str,
     ) -> Result<UserInfo, TwitterApiError> {
-        let mut params = std::collections::HashMap::new();
-        params.insert("userName".to_string(), username.to_string());
+        match self.client.provider() {
+            TwitterApiProvider::TwitterApiIo => {
+                let mut params = std::collections::HashMap::new();
+                params.insert("userName".to_string(), username.to_string());
 
-        let response = self
-            .client
-            .request::<ApiResponse<UserInfo>>(
-                "/twitter/user/info",
-                Some(params),
-            )
-            .await?;
+                let response = self
+                    .client
+                    .request::<ApiResponse<UserInfo>>(
+                        "/twitter/user/info",
+                        Some(params),
+                    )
+                    .await?;
 
-        Ok(response.data)
+                Ok(response.data)
+            }
+            TwitterApiProvider::Xquik => {
+                let identifier =
+                    super::client::xquik_user_identifier(username)?;
+                let endpoint = format!("/x/users/{identifier}");
+                self.client.request::<UserInfo>(&endpoint, None).await
+            }
+        }
     }
 }
 
@@ -95,5 +107,17 @@ mod tests {
         let twitter = TwitterApi::from_env().unwrap();
         let user_info = twitter.fetch_user_info("listenonsol").await.unwrap();
         tracing::info!("{:#?}", user_info);
+    }
+
+    #[test]
+    fn twitter_xquik_user_info_deserialize() {
+        let raw_json = r#"{"id":"42","username":"xquikcom","name":"Xquik","description":"X automation API","followers":1200,"following":100,"verified":true,"profilePicture":"https://xquik.com/icon.svg","createdAt":"2026-05-01T00:00:00Z"}"#;
+
+        let user_info = serde_json::from_str::<UserInfo>(raw_json).unwrap();
+
+        assert_eq!(user_info.id.as_deref(), Some("42"));
+        assert_eq!(user_info.user_name.as_deref(), Some("xquikcom"));
+        assert_eq!(user_info.is_verified, Some(true));
+        assert_eq!(user_info.followers, Some(1200));
     }
 }

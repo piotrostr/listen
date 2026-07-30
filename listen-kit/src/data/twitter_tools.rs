@@ -37,7 +37,7 @@ pub async fn search_tweets(
 ) -> Result<String> {
     let locale = SignerContext::current().await.locale();
     let twitter = TwitterApi::from_env()
-        .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
+        .map_err(|_| anyhow!("Set TWITTERAPI_API_KEY or XQUIK_API_KEY"))?;
     let analyst = Analyst::from_env_with_locale(locale)
         .map_err(|_| anyhow!("Failed to create Analyst"))?;
     let query_type = match query_type.as_str() {
@@ -75,7 +75,7 @@ Returns a JSON object with the tweet data.
 ")]
 pub async fn fetch_x_post(id: String) -> Result<serde_json::Value> {
     let twitter = TwitterApi::from_env()
-        .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
+        .map_err(|_| anyhow!("Set TWITTERAPI_API_KEY or XQUIK_API_KEY"))?;
     let response = twitter
         .fetch_tweets_by_ids(vec![id])
         .await
@@ -106,7 +106,7 @@ pub async fn research_x_profile(
     intent: Option<String>,
 ) -> Result<String> {
     let twitter = TwitterApi::from_env()
-        .map_err(|_| anyhow!("Failed to create TwitterApi"))?;
+        .map_err(|_| anyhow!("Set TWITTERAPI_API_KEY or XQUIK_API_KEY"))?;
     let language = SignerContext::current().await.locale();
     let analyst = Analyst::from_env_with_locale(language)
         .map_err(|_| anyhow!("Failed to create Analyst"))?;
